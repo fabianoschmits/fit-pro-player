@@ -1,0 +1,15 @@
+.env
+.env.*
+!frontend/.env.vercel
+data/
+media/
+**/node_modules/
+frontend/dist/
+frontend/android/
+frontend/ios/
+frontend/resources/
+api/
+mcp/
+web/
+assets/
+docs/
