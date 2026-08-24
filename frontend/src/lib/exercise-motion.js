@@ -412,18 +412,25 @@ const fallbackByBodyPart = {
 function bodyPartMotion(ex, name) {
   switch (ex?.bp) {
     case 'upper arms':
-      if (/\b(?:curl|drag curl)\b/.test(name)) return 'biceps-curl'
-      if (/\b(?:extension|kickback|french press|pin press)\b/.test(name)) return 'triceps-extension'
+      if (/\b(?:curl|curls|drag curl)\b/.test(name)) return 'biceps-curl'
+      if (/\b(?:narrow pull-ups|body-up)\b/.test(name)) return 'pull-up'
+      if (/\b(?:clean)\b/.test(name)) return 'olympic-lift'
+      if (/\b(?:ski ergometer|rear drive)\b/.test(name)) return 'bent-over-row'
+      if (/\b(?:extension|kickback|kickbacks|french press|pin press|pin presses|hammer press|elbow press|tate press|triceps|handstand|stalder press|chest throw)\b/.test(name)) return 'triceps-extension'
       break
     case 'chest':
-      if (/\b(?:fly|flye|flyes|crossover|breathing pullover|pullover)\b/.test(name)) return 'chest-fly'
-      if (/\bpress\b/.test(name)) return 'chest-press'
+      if (/\b(?:fly|flye|flyes|crossover|crossovers|breeding|breathing pullover|pullover|lateral bent-over|chest squeeze)\b/.test(name)) return 'chest-fly'
+      if (/\b(?:press|push|chest pass|chest throw)\b/.test(name)) return 'chest-press'
+      if (/\b(?:shoulder raises?|shoulder flexor|isometric wipers)\b/.test(name)) return 'shoulder-blade-retraction'
+      if (/\bhands bike\b/.test(name)) return 'arm-circles'
       break
     case 'shoulders':
-      if (/\b(?:rear|reverse).*(?:fly|raise)|(?:fly|raise).*(?:rear|reverse)\b/.test(name)) return 'reverse-fly'
-      if (/\b(?:press|jerk)\b/.test(name)) return 'overhead-press'
+      if (/\b(?:rear|reverse).*(?:fly|raise|deltoid|delt|row)|(?:fly|raise|deltoid|delt|row).*(?:rear|reverse)\b/.test(name)) return 'reverse-fly'
+      if (/\b(?:press|jerk|overhead carry|seated alternate shoulder)\b/.test(name)) return 'overhead-press'
       if (/\b(?:front|forward).*\braise\b/.test(name)) return 'front-raise'
-      if (/\b(?:raise|iron cross|around the world|round arm)\b/.test(name)) return 'lateral-raise'
+      if (/\b(?:raise|iron cross|around the world|around world|round arm|barbell skier|battling ropes|pirate supper legs|kneeling step with swing)\b/.test(name)) return 'lateral-raise'
+      if (/\b(?:clean)\b/.test(name)) return 'olympic-lift'
+      if (/\bhook.*boxing\b/.test(name)) return 'spinal-twist'
       break
     case 'upper legs':
       if (/\b(?:clean|snatch|tire flip)\b/.test(name)) return 'olympic-lift'
@@ -435,6 +442,16 @@ function bodyPartMotion(ex, name) {
       if (/\b(?:leg extension|knee extension)\b/.test(name)) return 'leg-extension'
       if (/\b(?:flutter kick|swimmer kick)\b/.test(name)) return 'hip-flexion-demo'
       if (/\bstretch\b/.test(name)) return 'seated-forward-fold'
+      if (/\b(?:balance board)\b/.test(name)) return 'squat'
+      if (/\b(?:lying lifting|hip thrusts?)\b/.test(name)) return 'glute-bridge'
+      if (/\b(?:rack pull)\b/.test(name)) return 'deadlift'
+      if (/\b(?:butterfly yoga|wide angle pose|big toe pose)\b/.test(name)) return 'seated-forward-fold'
+      if (/\b(?:glute-ham|reverse hyper)\b/.test(name)) return 'hip-extension'
+      if (/\b(?:hug keens|flutter kicks|swimmer kicks)\b/.test(name)) return 'supine-leg-raise'
+      if (/\bquads\b/.test(name)) return 'standing-quad-stretch'
+      if (/\bquick feet\b/.test(name)) return 'high-knee-march'
+      if (/\b(?:platform slide)\b/.test(name)) return 'forward-lunge'
+      if (/\b(?:outer hip abductor)\b/.test(name)) return 'hip-abduction'
       break
     case 'waist':
       if (/\b(?:rollout|rollerout|ab roller|body saw|inchworm|planche|l-sit|maltese|flag)\b/.test(name)) return 'plank-hold'
@@ -442,19 +459,37 @@ function bodyPartMotion(ex, name) {
       if (/\bheel touch/.test(name)) return 'side-bend'
       if (/\b(?:v-up|curl-up|cocoon|elbow.to.knee|otis up|butt-ups)\b/.test(name)) return 'crunch'
       if (/\bpelvic tilt\b/.test(name)) return 'glute-bridge'
+      if (/\brectus femoris stretch\b/.test(name)) return 'standing-quad-stretch'
+      if (/\bside bent\b/.test(name)) return 'side-bend'
+      if (/\b(?:bottoms-up|cocoons|oblique crunches|pull-in|v-sit)\b/.test(name)) return 'crunch'
+      if (/\b(?:front lever|shoulder tap|side bridge)\b/.test(name)) return 'plank-hold'
+      if (/\b(?:gorilla chin|hanging pike|side hip)\b/.test(name)) return 'hanging-knee-raise'
+      if (/\b(?:bent press|russian twists|sledge hammer|spell caster)\b/.test(name)) return 'spinal-twist'
+      if (/\bleg pull\b/.test(name)) return 'supine-leg-raise'
+      if (/\bposterior step to overhead reach\b/.test(name)) return 'overhead-reach-reset'
+      if (/\bwind sprints\b/.test(name)) return 'walk-cycle'
       break
     case 'lower legs':
-      if (/\b(?:ankle|calf|heel|toe|tibialis|gastrocnemius|soleus)\b/.test(name)) return 'heel-raises'
+      if (/\b(?:ankle|calf|calves|heel|toe|tibialis|gastrocnemius|soleus)\b/.test(name)) return 'heel-raises'
+      if (/\b(?:knee stretch|peroneals|standing calves)\b/.test(name)) return 'heel-raises'
       break
     case 'cardio':
       if (/\b(?:burpee|bear crawl)\b/.test(name)) return 'mountain-climber'
-      if (/\b(?:scissor|skater|ski step|side hop)\b/.test(name)) return 'jumping-jacks'
-      if (/\b(?:cycle|stepmill|step machine)\b/.test(name)) return 'high-knee-march'
+      if (/\b(?:scissor|skater|ski step|side hop|astride jumps)\b/.test(name)) return 'jumping-jacks'
+      if (/\b(?:cycle|stepmill|step machine|back and forth step)\b/.test(name)) return 'high-knee-march'
+      if (/\bhalf knee bends\b/.test(name)) return 'squat'
+      if (/\bswing 360\b/.test(name)) return 'spinal-twist'
       break
     case 'back':
       if (/\b(?:pullover|muscle-up|muscle up|rope climb|chin|lever)\b/.test(name)) return 'pull-up'
       if (/\b(?:lat|back|spine).*(?:stretch)|(?:stretch).*(?:lat|back|spine)|upward facing dog|sphinx\b/.test(name)) return 'cobra'
       if (/\bslam\b/.test(name)) return 'pull-up'
+      if (/\b(?:bench pull-ups|elevator|london bridge|skin the cat)\b/.test(name)) return 'pull-up'
+      if (/\b(?:twisting pull|sumo high pull|standing archer)\b/.test(name)) return 'bent-over-row'
+      if (/\b(?:alternating arm ups|lower back curl)\b/.test(name)) return 'superman'
+      if (/\b(?:exercise ball hug|one arm against wall|side lying floor stretch)\b/.test(name)) return 'shoulder-stretch'
+      if (/\boverhead throw\b/.test(name)) return 'pull-up'
+      if (/\bstanding pelvic tilt\b/.test(name)) return 'glute-bridge'
       break
     case 'lower arms':
       if (/\b(?:pronation|supination|rotate|rotation|gripper|hand squeeze)\b/.test(name)) return 'wrist-forearm-rolls'

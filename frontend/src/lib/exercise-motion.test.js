@@ -20,9 +20,9 @@ describe('biblioteca de movimentos dos exercícios', () => {
     }
   })
 
-  it('identifica especificamente pelo menos 90% do catálogo', () => {
+  it('classifica deliberadamente todo o catálogo, sem cair no fallback genérico', () => {
     const identified = EXDB.filter(exercise => exerciseMotion(exercise).matched)
-    expect(identified.length / EXDB.length).toBeGreaterThan(0.9)
+    expect(identified).toHaveLength(EXDB.length)
   })
 
   it.each([
