@@ -1,26 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="660" height="190" viewBox="0 0 660 190" role="img" aria-label="openGym — self-hosted gym & body-weight tracker">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#12151b"/>
-      <stop offset="1" stop-color="#0c0e12"/>
-    </linearGradient>
-  </defs>
-  <rect width="660" height="190" rx="22" fill="url(#bg)"/>
-  <rect x="1.5" y="1.5" width="657" height="187" rx="20.5" fill="none" stroke="#2b3140" stroke-width="3"/>
-
-  <!-- dumbbell mark (centered to the text block) -->
-  <g transform="translate(122,96) scale(0.8)" fill="#a3e635">
-    <rect x="-72" y="-10" width="144" height="20" rx="7"/>
-    <rect x="-80" y="-36" width="20" height="72" rx="7"/>
-    <rect x="-104" y="-25" width="17" height="50" rx="7"/>
-    <rect x="60"  y="-36" width="20" height="72" rx="7"/>
-    <rect x="87"  y="-25" width="17" height="50" rx="7"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1320" height="380" viewBox="0 0 1320 380" role="img" aria-label="Fit Pro Player — seu treino, seu progresso, seus dados">
+  <rect width="1320" height="380" rx="28" fill="#0c0e12"/>
+  <rect x="3" y="3" width="1314" height="374" rx="25" fill="none" stroke="#2b3140" stroke-width="6"/>
+  <g transform="translate(192 190)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-70-92v184M70-92v184M-112-62v124M112-62v124" stroke="#a3f02b" stroke-width="30"/>
+    <path d="M-112 0h42M70 0h42" stroke="#35c8e8" stroke-width="24"/>
+    <path d="M-42-92 72 0-42 92Z" stroke="#a3f02b" stroke-width="30"/>
   </g>
-
-  <!-- wordmark + tagline -->
-  <text x="224" y="86" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="62" font-weight="800" letter-spacing="-2">
-    <tspan fill="#eef1f6">open</tspan><tspan fill="#a3e635">Gym</tspan>
+  <text x="392" y="148" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="72" font-weight="800" letter-spacing="-2">
+    <tspan fill="#eef1f6">Fit Pro</tspan><tspan fill="#a3f02b"> Player</tspan>
   </text>
-  <text x="226" y="120" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="20.5" font-weight="600" fill="#8b94a7">Self-hosted gym &amp; body-weight tracker</text>
-  <text x="226" y="146" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="500" fill="#5c6475">passkey login  ·  own your data  ·  docker  ·  AGPL</text>
+  <text x="398" y="214" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="30" font-weight="700" fill="#8b94a7">Seu treino. Seu progresso. Seus dados.</text>
+  <text x="400" y="270" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="22" font-weight="500" fill="#677083">PWA local-first  ·  Docker  ·  passkeys  ·  AGPL-3.0</text>
 </svg>

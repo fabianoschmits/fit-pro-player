@@ -1,9 +1,18 @@
-# openGym — standalone web server: serves the static app AND proxies /api to the backend,
+# Fit Pro Player — standalone web server: serves the static app AND proxies /api to the backend,
 # so the whole app lives on ONE origin (required for WebAuthn / passkeys).
 server {
     listen ${NGINX_PORT};
     root /usr/share/nginx/html;
     index index.html;
+    client_max_body_size 5m;
+
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net; media-src 'self' https://cdn.jsdelivr.net; connect-src 'self'; font-src 'self' data:; manifest-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header Permissions-Policy "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=(), publickey-credentials-create=(self), publickey-credentials-get=(self), screen-wake-lock=(self)" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
 
     # API → backend container
     location /api/ {
@@ -11,7 +20,8 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Overwrite instead of appending a client-supplied forwarding chain.
+        proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
@@ -22,13 +32,12 @@ server {
 
     # App shell: always revalidate so updates show up immediately
     location ~* \.(js|css|json|html)$ {
-        add_header Cache-Control "no-cache, must-revalidate";
+        expires -1;
     }
 
     # Exercise images/GIFs never change → cache hard
     location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|webp|avif)$ {
         expires 30d;
-        add_header Cache-Control "public, max-age=2592000, immutable";
     }
 
     gzip on;

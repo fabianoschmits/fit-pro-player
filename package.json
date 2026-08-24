@@ -1,0 +1,17 @@
+{
+  "name": "fit-pro-player",
+  "version": "1.2.9",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "setup": "npm ci --prefix frontend && npm ci --prefix api && npm ci --prefix mcp",
+    "dev": "concurrently --kill-others --names API,WEB --prefix-colors cyan,green \"npm --prefix api start\" \"npm --prefix frontend run dev\"",
+    "test": "npm --prefix frontend test && npm --prefix mcp test && npm --prefix mcp run check:node-loadable",
+    "build": "npm --prefix frontend run build",
+    "build:vercel": "npm --prefix frontend run build:vercel",
+    "audit": "npm audit --prefix frontend --audit-level=high && npm audit --prefix api --audit-level=high && npm audit --prefix mcp --audit-level=high"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

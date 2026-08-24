@@ -1,4 +1,4 @@
-/* opengym-api — passkey (WebAuthn) auth + per-user state storage for openGym
+/* fitproplayer-api — passkey (WebAuthn) auth + per-user state storage for Fit Pro Player
    No framework, JSON-file storage, signed session cookies.               */
 import http from 'node:http';
 import crypto from 'node:crypto';
@@ -11,10 +11,12 @@ import {
 import webpush from 'web-push';
 
 const PORT = +(process.env.PORT || 3000);
-const DATA = process.env.DATA_DIR || '/data';
+// Docker pins DATA_DIR to /data. A direct `npm start` keeps runtime files inside
+// the repository's ignored data/ directory, which also works on Windows.
+const DATA = process.env.DATA_DIR || path.resolve(process.cwd(), '../data');
 const RP_ID = process.env.RP_ID || 'localhost';
 const ORIGIN = process.env.ORIGIN || 'http://localhost:8080';
-const RP_NAME = process.env.RP_NAME || 'openGym';
+const RP_NAME = process.env.RP_NAME || 'Fit Pro Player';
 // Admin dashboard (issue): admins are matched by uid; INVITE_ONLY gates new signups behind a
 // code the admin generates. Both default off so a fresh self-hosted instance stays open.
 const ADMIN_UIDS = (process.env.ADMIN_UIDS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -203,9 +205,9 @@ function requireAdmin(req, res) {
   return user;
 }
 function sessionCookie(user) {
-  return `gymsid=${makeSession(user)}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly;${SECURE} SameSite=Lax`;
+  return `gymsid=${makeSession(user)}; Path=/; Max-Age=${SESSION_DAYS * 86400}; HttpOnly;${SECURE} SameSite=Strict`;
 }
-const clearCookie = `gymsid=; Path=/; Max-Age=0; HttpOnly;${SECURE} SameSite=Lax`;
+const clearCookie = `gymsid=; Path=/; Max-Age=0; HttpOnly;${SECURE} SameSite=Strict`;
 
 /* ---------- challenge store (in-memory, 5 min TTL) ---------- */
 const challenges = new Map(); // cid -> {challenge, name?, uid?, exp}
@@ -225,7 +227,14 @@ setInterval(() => { for (const [k, v] of challenges) if (v.exp < Date.now()) cha
 /* ---------- helpers ---------- */
 function json(res, code, obj, extraHeaders) {
   const body = JSON.stringify(obj);
-  res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...(extraHeaders || {}) });
+  res.writeHead(code, {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store',
+    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
+    'Referrer-Policy': 'no-referrer',
+    'X-Content-Type-Options': 'nosniff',
+    ...(extraHeaders || {})
+  });
   res.end(body);
 }
 function readBody(req) {
@@ -244,6 +253,31 @@ function readBody(req) {
   });
 }
 const b64uToBuf = s => Buffer.from(s, 'base64url');
+
+/* ---------- authentication rate limit (in-memory, per client) ---------- */
+const AUTH_RATE_WINDOW = 60000;
+const AUTH_RATE_MAX = Math.max(10, +(process.env.AUTH_RATE_MAX || 60) || 60);
+const authRate = new Map();
+function rateClient(req) {
+  const raw = String(req.headers['cf-connecting-ip'] || '').trim()
+    || String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()
+    || String(req.headers['x-real-ip'] || '').trim()
+    || String(req.socket?.remoteAddress || '').trim();
+  return raw.replace(/^::ffff:/, '').replace(/^\[|\]$/g, '').slice(0, 64) || 'unknown';
+}
+function takeAuthRate(req) {
+  const now = Date.now();
+  const key = rateClient(req);
+  let bucket = authRate.get(key);
+  if (!bucket || now - bucket.start >= AUTH_RATE_WINDOW) bucket = { start: now, count: 0 };
+  bucket.count += 1;
+  authRate.set(key, bucket);
+  return bucket.count <= AUTH_RATE_MAX;
+}
+setInterval(() => {
+  const cutoff = Date.now() - AUTH_RATE_WINDOW;
+  for (const [key, bucket] of authRate) if (bucket.start < cutoff) authRate.delete(key);
+}, AUTH_RATE_WINDOW).unref();
 
 /* ---------- live presence (in-memory) ---------- */
 // Clients heartbeat /api/activity while a workout is on screen; the admin dashboard reads who's
@@ -403,7 +437,8 @@ const routes = {
     } catch (e) {
       // e.message can echo attacker-supplied response fields, so only the reason code is kept.
       audit(req, 'auth.register.fail', { ok: false, name: c.name, msg: 'verify-error' });
-      return json(res, 400, { error: 'verification failed: ' + e.message });
+      console.error('passkey registration verification failed', e.message);
+      return json(res, 400, { error: 'passkey verification failed' });
     }
     if (!verification.verified) {
       audit(req, 'auth.register.fail', { ok: false, name: c.name, msg: 'not-verified' });
@@ -477,7 +512,8 @@ const routes = {
       });
     } catch (e) {
       audit(req, 'auth.login.fail', { ok: false, user: db.users.find(u => u.id === cred.userId), uid: cred.userId, msg: 'verify-error' });
-      return json(res, 400, { error: 'verification failed: ' + e.message });
+      console.error('passkey authentication verification failed', e.message);
+      return json(res, 400, { error: 'passkey verification failed' });
     }
     if (!verification.verified) {
       audit(req, 'auth.login.fail', { ok: false, user: db.users.find(u => u.id === cred.userId), uid: cred.userId, msg: 'not-verified' });
@@ -564,7 +600,7 @@ const routes = {
   'POST /api/push/test': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    await sendPush(user.id, { title: 'openGym', body: 'Test notification ✅ — this is what alerts look like.', tag: 'test' });
+    await sendPush(user.id, { title: 'Fit Pro Player', body: 'Test notification ✅ — this is what alerts look like.', tag: 'test' });
     json(res, 200, { ok: true });
   },
 
@@ -732,9 +768,12 @@ http.createServer(async (req, res) => {
   const key = req.method + ' ' + url.pathname;
   const handler = routes[key];
   if (!handler) return json(res, 404, { error: 'not found' });
+  if (req.method === 'POST' && /^\/api\/(register|login)\//.test(url.pathname) && !takeAuthRate(req)) {
+    return json(res, 429, { error: 'too many authentication attempts — try again shortly' }, { 'Retry-After': '60' });
+  }
   try { await handler(req, res); }
   catch (e) {
     console.error(key, e);
     if (!res.headersSent) json(res, 500, { error: 'server error' });
   }
-}).listen(PORT, () => console.log(`gym-api on :${PORT} (rpID=${RP_ID}, origin=${ORIGIN})`));
+}).listen(PORT, () => console.log(`fitproplayer-api on :${PORT} (rpID=${RP_ID}, origin=${ORIGIN})`));

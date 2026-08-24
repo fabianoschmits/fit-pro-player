@@ -1,18 +1,22 @@
-# Runs on pull requests too — the other two workflows only fire on push to main, so
-# contributed changes used to reach main without anything ever having been run.
 name: Tests
 
 on:
   pull_request:
     paths:
       - 'frontend/**'
+      - 'api/**'
       - 'mcp/**'
+      - 'web/**'
+      - 'vercel.json'
       - '.github/workflows/test.yml'
   push:
     branches: [main]
     paths:
       - 'frontend/**'
+      - 'api/**'
       - 'mcp/**'
+      - 'web/**'
+      - 'vercel.json'
       - '.github/workflows/test.yml'
   workflow_dispatch:
 
@@ -40,6 +44,10 @@ jobs:
         working-directory: frontend
       # A broken import or bad JSX fails the build long before any test covers it.
       - run: npm run build
+        working-directory: frontend
+      - run: npm run build:vercel
+        working-directory: frontend
+      - run: npm audit --audit-level=high
         working-directory: frontend
       - run: node scripts/check-locales.mjs
         working-directory: frontend
@@ -72,3 +80,21 @@ jobs:
       # module with 33 green tests standing over a server that died on startup.
       - run: npm run check:node-loadable
         working-directory: mcp
+      - run: npm audit --audit-level=high
+        working-directory: mcp
+
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+        working-directory: api
+      - run: node --check server.js
+        working-directory: api
+      - run: npm audit --audit-level=high
+        working-directory: api

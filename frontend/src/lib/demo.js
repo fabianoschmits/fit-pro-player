@@ -1,4 +1,5 @@
-// Demo build (VITE_DEMO=1) — what runs on the GitHub Pages deployment.
+// Static build flags. DEMO seeds example history; STANDALONE starts empty and
+// stores the user's real data only in this browser (the Vercel deployment).
 //
 // Pages can only serve static files, so there is no API: passkey sign-in, per-profile sync
 // and the admin dashboard all need the Node backend and are simply not part of a demo build.
@@ -10,5 +11,6 @@
 // time, so the demo-only UI folds away and the seed generator — imported dynamically — never
 // lands in a self-hosted bundle.
 export const DEMO = import.meta.env.VITE_DEMO === '1'
+export const STANDALONE = import.meta.env.VITE_STANDALONE === '1'
 export const DEMO_SEEDED = 'gym_demo_seeded_v1'
-export const REPO = 'https://gitlab.com/DuarteSantos8/opengym'
+export const REPO = 'https://github.com/fabianoschmits/fit-pro-player'

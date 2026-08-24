@@ -1,6 +1,6 @@
 # Dependency updates, deliberately quiet.
 #
-# openGym is dependency-light on purpose: the frontend is React + Router + Zustand, and api/
+# Fit Pro Player is dependency-light on purpose: the frontend is React + Router + Zustand, and api/
 # has two runtime dependencies. A default Dependabot setup would still open a PR per package
 # per week, which on a solo project means the alerts stop being read — the opposite of what
 # this is for. So: monthly, everything in an ecosystem grouped into a single PR, and a low
@@ -58,6 +58,26 @@ updates:
         patterns: ['*']
         update-types: ['major']
 
+  # Optional read-only MCP server.
+  - package-ecosystem: npm
+    directory: /mcp
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
+    groups:
+      mcp:
+        patterns: ['*']
+
+  # Root development runner.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 1
+    groups:
+      root:
+        patterns: ['*']
+
   # Base images — api/Dockerfile (node:22-alpine)
   - package-ecosystem: docker
     directory: /api
@@ -95,7 +115,7 @@ updates:
         patterns: ['*']
         update-types: ['minor', 'patch']
       # Action majors are usually a runner or Node-version change and usually harmless — but
-      # these workflows publish the ghcr images and deploy the live demo, so the blast radius
+      # these workflows publish the GHCR images and verify production builds, so the blast radius
       # is real. Separate PR, so a failure has an obvious cause.
       actions-major:
         patterns: ['*']

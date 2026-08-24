@@ -5,12 +5,27 @@ media/gif/
 # Runtime data — users, passkeys, per-user state, session secret
 data/
 
-# Local config
+# Local config and deployment metadata
 .env
+.env.*
+!.env.example
+!frontend/.env.development
+!frontend/.env.mobile
+!frontend/.env.vercel
+.vercel/
+
+# Signing keys and certificates must never enter source control
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+frontend/android/key.properties
 
 # Build output / deps
 frontend/dist/
+frontend/icons/
 node_modules/
 *.log
 .DS_Store
-node_modules

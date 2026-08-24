@@ -1,7 +1,8 @@
 {
-  "name": "openGym",
-  "short_name": "openGym",
-  "description": "Personal gym & body weight tracker",
+  "name": "Fit Pro Player",
+  "short_name": "Fit Pro",
+  "id": "./",
+  "description": "Planeje treinos, acompanhe cargas e monitore sua evolução.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
