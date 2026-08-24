@@ -1,5 +1,7 @@
 // Polish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "your fingerprint, face or PIN": "your fingerprint, face or PIN",
+  "fingerprint or face unlock": "fingerprint or face unlock",
   'Confirm': 'Potwierdź',
   'Cancel': 'Anuluj',
   'Press back again to exit': 'Naciśnij wstecz ponownie, aby wyjść',

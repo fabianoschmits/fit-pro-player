@@ -1,5 +1,7 @@
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "your fingerprint, face or PIN": "sua impressão digital, reconhecimento facial ou PIN",
+  "fingerprint or face unlock": "impressão digital ou reconhecimento facial",
   "Confirm": "Confirmar",
   "Cancel": "Cancelar",
   "Press back again to exit": "Pressione voltar novamente para sair",

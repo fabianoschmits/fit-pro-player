@@ -1,11 +1,29 @@
 # License and third-party notices
 
 Fit Pro Player modifications — Copyright (C) 2026 Fabiano Schmits.
-Portions of the upstream code — Copyright (C) 2026 Duarte Santos.
 The application code is licensed under **GNU AGPL-3.0-or-later**; see [LICENSE](LICENSE).
 
 The previous app-store exception is not asserted for this modified distribution. Publishing
 native builds through a store requires an independent review of the store terms and licenses.
+
+## Offline 3D exercise animations
+
+The default exercise player is generated locally from text-based kinematic movement programs;
+it does not download a character, model, image or animation at runtime.
+
+- [**Posecode**](https://github.com/posecode-dev/posecode) example movement documents are
+  embedded from pinned commit `579d986c3f8bf1f59414692dd2a0bbe4d867dc4a` under the
+  **Apache License 2.0**. The bundled `posecode-parser` package is also Apache-2.0.
+  Posecode Parser and Posecode Render are Copyright 2026 Posecode contributors.
+- `posecode-render` is used under **GNU AGPL-3.0-only**. The combined frontend is therefore
+  distributed under the compatible AGPL version 3 terms. Fit Pro Player does not use
+  Posecode's optional external character or motion-capture assets.
+- [**Three.js**](https://github.com/mrdoob/three.js) renders the procedural figure under the
+  **MIT License**, Copyright © 2010-2026 three.js authors.
+
+Fit Pro Player adds its own movement programs and catalogue-to-motion mapping. Dependency
+versions are preserved by `frontend/package-lock.json`; every build also publishes the packages'
+unaltered license and NOTICE files at `/third-party-licenses.txt`.
 
 ## Body diagram geometry
 
@@ -95,8 +113,9 @@ the 180×180 media, requires the attribution **© [Gym visual](https://gymvisual
 states that cloning the dataset does not grant a media licence.
 
 **Fit Pro Player does not redistribute or load that third-party media by default.** Public, mobile,
-development and container builds instead render an original code-native SVG/CSS visual, so there is
-no broken network dependency and no third-party artwork in this repository or its build output.
+development and container builds instead render the bundled procedural 3D player described above,
+so there is no broken network dependency and no third-party exercise artwork in this repository or
+its build output.
 
 A person who obtains their own licence may set `VITE_CATALOG_MEDIA_ENABLED=1` and configure
 `VITE_IMG_BASE` and `VITE_GIF_BASE` to point at media they are authorised to serve. For the bundled Docker stack, the authorised files can stay

@@ -1,5 +1,7 @@
 // German UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "your fingerprint, face or PIN": "your fingerprint, face or PIN",
+  "fingerprint or face unlock": "fingerprint or face unlock",
   // --- generic ---
   'Confirm': 'Bestätigen',
   'Cancel': 'Abbrechen',
