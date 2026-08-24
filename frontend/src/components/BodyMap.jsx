@@ -26,9 +26,16 @@ function useBodyPaths() {
   return paths
 }
 
-function View({ view, levels, onMuscle, selected }) {
+function View({ view, levels, onMuscle, selected, decorative }) {
   return (
-    <svg className="bm-v" viewBox={view.vb} role="img">
+    <svg
+      className="bm-v"
+      viewBox={view.vb}
+      role={decorative ? undefined : 'img'}
+      aria-hidden={decorative ? 'true' : undefined}
+      aria-label={decorative ? undefined : t('Body diagram')}
+      focusable="false"
+    >
       {INERT.map(slug => (view.p[slug] || []).map((d, i) =>
         <path key={slug + i} className="bm-sil" d={d} />))}
       {MUSCLES.map(slug => (view.p[slug] || []).map((d, i) =>
@@ -38,7 +45,7 @@ function View({ view, levels, onMuscle, selected }) {
           d={d}
           onClick={onMuscle ? () => onMuscle(slug) : undefined}
         >
-          <title>{t(MUSCLE_NAME[slug])}</title>
+          {!decorative && <title>{t(MUSCLE_NAME[slug])}</title>}
         </path>))}
     </svg>
   )
@@ -51,16 +58,28 @@ function View({ view, levels, onMuscle, selected }) {
  * `{ at, level, exclusive? }` `thresholds` for a fixed absolute scale (recovery views use this
  * to keep their semantic bands stable); omitting it preserves the balance behavior.
  */
-export default function BodyMap({ load = {}, thresholds, body = 'male', onMuscle, selected, className = '' }) {
+export default function BodyMap({
+  load = {}, thresholds, body = 'male', onMuscle, selected, className = '',
+  view = 'both', decorative = false,
+}) {
   const paths = useBodyPaths()
   const levels = levelsOf(load, thresholds)
   const g = paths && (paths[body] || paths.male)
+  const views = g && (view === 'front' ? [g.front] : view === 'back' ? [g.back] : [g.front, g.back])
   return (
     <div className={'bodymap ' + className}>
-      {g ? <>
-        <View view={g.front} levels={levels} onMuscle={onMuscle} selected={selected} />
-        <View view={g.back} levels={levels} onMuscle={onMuscle} selected={selected} />
-      </> : <div className="bm-ph" aria-hidden="true" />}
+      {views
+        ? views.map((bodyView, index) => (
+            <View
+              key={view === 'both' ? (index ? 'back' : 'front') : view}
+              view={bodyView}
+              levels={levels}
+              onMuscle={onMuscle}
+              selected={selected}
+              decorative={decorative}
+            />
+          ))
+        : <div className="bm-ph" aria-hidden="true" />}
     </div>
   )
 }

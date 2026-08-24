@@ -344,7 +344,7 @@ h4.sec{
   transition:background var(--fast);text-align:left;width:100%;
 }
 .item:active{background:var(--surface-2)}
-.thumb{width:50px;height:50px;border-radius:9px;object-fit:cover;background:#fff;flex:none}
+.thumb{width:50px;height:50px;border-radius:9px;object-fit:cover;background:var(--surface-2);flex:none}
 .thumb-x{
   display:flex;align-items:center;justify-content:center;font-size:21px;
   background:var(--surface-2);color:var(--label-2);
@@ -374,6 +374,13 @@ h4.sec{
 @keyframes exvis-arms{to{transform:rotate(5deg)}}
 .thumb.exercise-visual{padding:2px}
 .thumb.exercise-visual svg{width:72%;height:88%}
+.thumb.exercise-muscle-thumb{
+  display:flex;width:50px;height:50px;min-width:50px;padding:2px;gap:0;
+  align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;
+}
+.exercise-muscle-thumb .bm-v{width:100%;height:100%;max-height:none;flex:none}
+.exercise-muscle-thumb .bm-ph{width:100%;height:100%}
+.exercise-muscle-thumb .bm-v path{vector-effect:non-scaling-stroke;stroke-width:.65px}
 .item .tt{font-size:16px;font-weight:400;line-height:1.25;letter-spacing:-.009em}
 .item .ss{color:var(--label-2);font-size:13px;margin-top:2px}
 .item .grow{flex:1;min-width:0}
@@ -555,10 +562,13 @@ h4.sec{
 /* ------------------------------------------------------------- workout --- */
 .wprog{height:4px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-bottom:16px}
 .wprog i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width var(--med) var(--ease)}
-.exmedia{position:relative;border-radius:var(--r-lg);overflow:hidden;background:#fff;margin-bottom:12px}
+.exmedia{position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--surface-2);margin-bottom:12px}
 .exmedia img{width:100%;height:320px;object-fit:contain;display:block}
 .exmedia>.exercise-visual,.exmedia>.posecode-visual{width:100%;height:320px}
-.posecode-visual{position:relative;overflow:hidden;background:#0c0f15}
+.posecode-visual{
+  position:relative;overflow:hidden;background:var(--surface-2);
+  border-color:var(--surface-2);color:var(--acc);outline-color:var(--label-2);
+}
 .posecode-visual canvas{display:block;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity var(--med) var(--ease)}
 .posecode-visual.is-ready canvas{opacity:1}
 .posecode-visual>.exercise-visual{position:absolute;inset:0;width:100%;height:100%}

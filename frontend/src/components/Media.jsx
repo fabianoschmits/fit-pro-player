@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 import ExerciseVisual from './ExerciseVisual.jsx'
+import ExerciseMuscleThumb from './ExerciseMuscleThumb.jsx'
 import PosecodeVisual from './PosecodeVisual.jsx'
 
 // Big animation; tap toggles playback. Licensed media remains optional, while the normal
@@ -55,9 +56,5 @@ export default function Media({ ex, id, compact, minimizable }) {
 }
 
 export function Thumb({ ex }) {
-  const [failed, setFailed] = useState(false)
-  useEffect(() => { setFailed(false) }, [ex?.id])
-  const src = imgSrc(ex)
-  if (!src || failed) return <ExerciseVisual ex={ex} className="thumb" decorative />
-  return <img className="thumb" loading="lazy" decoding="async" src={src} alt="" onError={() => setFailed(true)} />
+  return <ExerciseMuscleThumb ex={ex} />
 }

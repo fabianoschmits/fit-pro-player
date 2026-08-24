@@ -7,6 +7,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "postinstall": "node scripts/patch-posecode-render.mjs",
     "dev": "vite --host 127.0.0.1 --port 8080 --strictPort",
     "build": "npm run generate:licenses && vite build",
     "build:vercel": "npm run generate:licenses && vite build --mode vercel",
