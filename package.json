@@ -3,6 +3,9 @@
   "version": "1.2.9",
   "private": true,
   "license": "AGPL-3.0-or-later",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "setup": "npm ci --prefix frontend && npm ci --prefix api && npm ci --prefix mcp",
     "dev": "concurrently --kill-others --names API,WEB --prefix-colors cyan,green \"npm --prefix api start\" \"npm --prefix frontend run dev\"",
