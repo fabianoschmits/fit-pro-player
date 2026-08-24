@@ -9,7 +9,7 @@
 import { best1RM } from './onerm.js'
 import { STRENGTH_FULL_MS, STRENGTH_HALF_LIFE_MS, STRENGTH_FLOOR, halfLifeDecay } from './recovery.js'
 import { musclesOf } from './muscles.js'
-import { EXIDX } from './exercises.js'
+import { EXIDX, exerciseName as localizedExerciseName } from './exercises.js'
 import { isWarmupRow } from './workout-model.js'
 
 const round1 = value => Math.round(value * 10) / 10
@@ -61,11 +61,11 @@ export function primaryMuscleOf(entry) {
   return best
 }
 
-function exerciseName(entry) {
+function historyExerciseName(entry) {
   // Imported history often has no name snapshot (entries are { id, sets, topW }) - the
   // catalogue (or the registered custom) is the canonical name source.
   const ex = entry && typeof entry === 'object' ? EXIDX[entry.id] : null
-  if (ex?.n) return ex.n
+  if (ex?.n) return localizedExerciseName(ex)
   if (entry?.muscleSnapshot?.n) return entry.muscleSnapshot.n
   return entry && typeof entry === 'object' && entry.n ? entry.n : null
 }
@@ -97,7 +97,7 @@ export function strengthExerciseRows(S, now) {
     const decay = lastAt == null ? STRENGTH_FLOOR : strengthFromAge(Number(now) - lastAt)
     rows.push({
       id,
-      name: exerciseName(entry) || id,
+      name: historyExerciseName(entry) || id,
       est: best.est,
       estDate: best.d,
       primary: primaryMuscleOf(entry) ? primaryMuscleOf(entry).slug : null,
@@ -129,7 +129,7 @@ export function strengthExerciseRowsForMuscle(S, now, slug) {
       const primary = primaryMuscleOf(entry)
       seen.set(entry.id, {
         id: entry.id,
-        name: exerciseName(entry) || entry.id,
+        name: historyExerciseName(entry) || entry.id,
         weight,
         primary: primary ? primary.slug : null,
         est: best.est,

@@ -14,7 +14,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:fatigue-probe": "node scripts/fatigue-monotonic-probe.mjs"
+    "test:fatigue-probe": "node scripts/fatigue-monotonic-probe.mjs",
+    "check:i18n": "node scripts/check-locales.mjs && node scripts/check-source-strings.mjs --strict && node scripts/check-pt-br.mjs"
   },
   "license": "AGPL-3.0-or-later",
   "dependencies": {

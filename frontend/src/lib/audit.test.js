@@ -26,8 +26,8 @@ describe('auditLabel', () => {
   it('shows an unknown event raw instead of rendering undefined', () => {
     // A dashboard one version behind the server must still say something truthful.
     expect(auditLabel('auth.something.new')).toBe('auth.something.new')
-    expect(auditLabel(undefined)).toBe('Unknown event')
-    expect(auditLabel('')).toBe('Unknown event')
+    expect(auditLabel(undefined)).toBe('Evento desconhecido')
+    expect(auditLabel('')).toBe('Evento desconhecido')
   })
 })
 
@@ -45,7 +45,7 @@ describe('auditCat', () => {
 })
 
 describe('auditReason', () => {
-  it('has plain English for every reason code', () => {
+  it('has readable pt-BR for every reason code', () => {
     for (const m of REASONS) {
       expect(auditReason(m), m).not.toBe(m)
       expect(auditReason(m).length).toBeGreaterThan(3)
@@ -60,32 +60,32 @@ describe('auditReason', () => {
 describe('auditLine', () => {
   it('names the person who did it', () => {
     expect(auditLine({ ev: 'auth.login.ok', ok: true, uid: 'u1', name: 'Bruno' }))
-      .toEqual({ title: 'Signed in', sub: 'Bruno' })
+      .toEqual({ title: 'Entrou', sub: 'Bruno' })
   })
 
   it('shows both sides of an admin action', () => {
     const l = auditLine({ ev: 'admin.user.disable', ok: true, uid: 'a', name: 'Bruno', tgt: 'b', tname: 'Ana' })
-    expect(l.title).toBe('Disabled an account')
+    expect(l.title).toBe('Desativou uma conta')
     expect(l.sub).toBe('Bruno · → Ana')
   })
 
   it('translates the reason on a failure but not the invite code on a success', () => {
     expect(auditLine({ ev: 'auth.login.fail', ok: false, msg: 'unknown-credential' }).sub)
-      .toBe('unknown caller · unknown passkey')
+      .toBe('origem desconhecida · chave de acesso desconhecida')
     // admin.invite.* put the actual code in msg — that must not be run through auditReason.
     expect(auditLine({ ev: 'admin.invite.create', ok: true, name: 'Bruno', msg: 'A1B2C3D4' }).sub)
       .toBe('Bruno · A1B2C3D4')
   })
 
   it('says "unknown caller" only when a failure carries no identity', () => {
-    expect(auditLine({ ev: 'auth.login.fail', ok: false }).sub).toBe('unknown caller')
+    expect(auditLine({ ev: 'auth.login.fail', ok: false }).sub).toBe('origem desconhecida')
     // A successful event without a name is not an anonymous attacker, so it stays blank.
     expect(auditLine({ ev: 'auth.logout', ok: true }).sub).toBe('')
   })
 
   it('falls back to the uid when the name was never recorded', () => {
     expect(auditLine({ ev: 'auth.login.fail', ok: false, uid: 'Xy1', msg: 'user-missing' }).sub)
-      .toBe('Xy1 · the passkey points at a profile that no longer exists')
+      .toBe('Xy1 · a chave de acesso aponta para um perfil que não existe mais')
   })
 
   it('appends the network when the operator opted into IPs', () => {
@@ -103,8 +103,8 @@ describe('fmtWhen', () => {
   const now = at(2026, 8, 23, 15, 0)   // Sunday
 
   it('says "today" for the same calendar day', () => {
-    expect(fmtWhen(at(2026, 8, 23, 9, 5), now)).toMatch(/^today /)
-    expect(fmtWhen(at(2026, 8, 23, 0, 1), now)).toMatch(/^today /)
+    expect(fmtWhen(at(2026, 8, 23, 9, 5), now)).toMatch(/^hoje /)
+    expect(fmtWhen(at(2026, 8, 23, 0, 1), now)).toMatch(/^hoje /)
   })
 
   it('uses the weekday inside the last six days', () => {

@@ -1,5 +1,6 @@
 import { EXDB } from './exercises-data.js'
-import { t } from './i18n-core.js'
+import PT_EXERCISE_NAMES from '../generated/pt-exercise-names.js'
+import { getLang, t } from './i18n-core.js'
 
 export { EXDB }
 
@@ -46,20 +47,25 @@ export function registerCustom(list) {
 // Full searchable catalogue — customs first so your own exercises are easy to find.
 export const allExercises = st => [...(st.customEx || []), ...EXDB]
 
-// Media normally sits next to the app (img/ and gif/, mounted into the web container).
-// A build can point them somewhere else — the demo build pulls them off a CDN instead of
-// shipping ~140 MB of images into the deployment. `import.meta.env` is undefined in plain
-// Node; the guard keeps this module loadable without Vite.
-// The defaults are absolute on purpose (issue #79). A bare 'img/' resolves against the
-// current document's directory, so on the one two-segment route in the app, /plan/r/:id,
-// every request went to /plan/r/img/… and 404'd — and nginx's extension block has no
-// try_files, so it 404s rather than falling through to index.html, leaving a blank image
-// and nothing in the console.
+// Catalogue names are localized independently of user-created exercise names. Keeping the
+// English name searchable lets a Brazilian user find an exercise by either term.
+export const exerciseName = ex =>
+  (getLang() === 'pt' && PT_EXERCISE_NAMES[ex?.id]) || ex?.n || t('Unknown exercise')
+export const exerciseSearchText = ex => [
+  exerciseName(ex), ex?.n, t(ex?.bp || ''), t(ex?.tg || ''), t(ex?.eq || ''), ex?.desc,
+].filter(Boolean).join(' ').toLocaleLowerCase(getLang() === 'pt' ? 'pt-BR' : undefined)
+
+// Licensed catalogue media is opt-in. Public builds leave these bases unset and render the
+// original code-native ExerciseVisual; a licence holder can point them at media they are
+// authorised to serve. The import.meta guard keeps this module loadable outside Vite too.
 const ENV = import.meta.env || {}
-const IMG_BASE = ENV.VITE_IMG_BASE || '/img/'
-const GIF_BASE = ENV.VITE_GIF_BASE || '/gif/'
-export const imgSrc = ex => IMG_BASE + ex.img
-export const gifSrc = ex => GIF_BASE + ex.gif
+const base = value => value ? String(value).replace(/\/?$/, '/') : ''
+const LICENSED_MEDIA = ENV.VITE_CATALOG_MEDIA_ENABLED === '1'
+const IMG_BASE = LICENSED_MEDIA ? base(ENV.VITE_IMG_BASE) : ''
+const GIF_BASE = LICENSED_MEDIA ? base(ENV.VITE_GIF_BASE) : ''
+export const catalogMediaEnabled = !!(IMG_BASE || GIF_BASE)
+export const imgSrc = ex => IMG_BASE && ex?.img ? IMG_BASE + ex.img : null
+export const gifSrc = ex => GIF_BASE && ex?.gif ? GIF_BASE + ex.gif : null
 
 // Cardio exercises log time + speed instead of weight × reps.
 export const isCardio = idOrEx => (typeof idOrEx === 'string' ? EXIDX[idOrEx] : idOrEx)?.bp === 'cardio'

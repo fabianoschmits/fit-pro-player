@@ -69,7 +69,7 @@ describe('setLabel', () => {
 
   it('appends RIR when present, including a valid 0', () => {
     expect(setLabel(LIFT, { w: 60, r: 10, rir: 2 })).toBe('60×10 (RIR 2)')
-    expect(setLabel(LIFT, { w: 60, r: 10, rir: 1.5 })).toBe('60×10 (RIR 1.5)')
+    expect(setLabel(LIFT, { w: 60, r: 10, rir: 1.5 })).toBe('60×10 (RIR 1,5)')
     expect(setLabel(LIFT, { w: 60, r: 10, rir: 0 })).toBe('60×10 (RIR 0)')
   })
 
@@ -81,7 +81,7 @@ describe('setLabel', () => {
 
   it('appends RPE for a set logged on that scale', () => {
     expect(setLabel(LIFT, { w: 60, r: 10, rpe: 8 })).toBe('60×10 (RPE 8)')
-    expect(setLabel(LIFT, { w: 60, r: 10, rpe: 9.5 })).toBe('60×10 (RPE 9.5)')
+    expect(setLabel(LIFT, { w: 60, r: 10, rpe: 9.5 })).toBe('60×10 (RPE 9,5)')
     expect(setLabel(LIFT, { w: 60, r: 10, rpe: null })).toBe('60×10')
   })
 
@@ -224,7 +224,7 @@ describe('logging effort across a session', () => {
     // four + taps from empty on an RPE profile: 6, 6.5, 7, 7.5
     let v = null
     for (let i = 0; i < 4; i++) v = stepEffort('rpe', v, 1)
-    expect(setLabel(LIFT, { w: 80, r: 5, rpe: v })).toBe('80×5 (RPE 7.5)')
+    expect(setLabel(LIFT, { w: 80, r: 5, rpe: v })).toBe('80×5 (RPE 7,5)')
   })
 
   it('a set taken to failure is logged, not left blank', () => {
@@ -320,7 +320,7 @@ describe('setLabel — bodyweight', () => {
 
 describe('exLine', () => {
   it('shows the split where there is room for it, next to the total you log', () => {
-    expect(exLine({ id: LIFT, sets: 3, reps: 16, side: true }, 'kg')).toBe('3 × 16 · 8/side')
+    expect(exLine({ id: LIFT, sets: 3, reps: 16, side: true }, 'kg')).toBe('3 × 16 · 8/lado')
   })
   it('marks added weight as added', () => {
     expect(exLine({ id: BW, sets: 3, reps: 8, weight: 10 }, 'kg')).toBe('3 × 8 · +10 kg')

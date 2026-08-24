@@ -28,7 +28,7 @@ npm run setup
 npm run dev
 ```
 
-Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000`, o Vite encaminha `/api`, e as mídias de exercícios são carregadas de uma versão fixada do dataset.
+Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. Os visuais animados dos exercícios são SVG/CSS originais incluídos no código, portanto funcionam sem rede.
 
 Comandos úteis:
 
@@ -48,7 +48,7 @@ Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
-Abra [http://localhost:8080](http://localhost:8080). No primeiro início, o Compose baixa aproximadamente 140 MB de imagens/animações de exercícios. Para usar passkeys em outro dispositivo, publique o serviço em um domínio HTTPS e ajuste `RP_ID` e `ORIGIN` no `.env`; consulte [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md).
+Abra [http://localhost:8080](http://localhost:8080). Para usar passkeys em outro dispositivo, publique o serviço em um domínio HTTPS e ajuste `RP_ID` e `ORIGIN` no `.env`; consulte [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md).
 
 Dados persistentes ficam em `./data`. Faça backup dessa pasta e nunca a envie ao Git.
 
@@ -61,7 +61,7 @@ vercel
 vercel --prod
 ```
 
-O build usa `frontend/.env.vercel`, ativa o modo local-first e aponta a mídia para uma revisão fixa do dataset. Nenhum segredo é necessário.
+O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora os visuais SVG/CSS do próprio app. Nenhum segredo é necessário.
 
 ## Estrutura
 
@@ -85,4 +85,4 @@ Veja [SECURITY.md](SECURITY.md) para comunicar vulnerabilidades.
 
 O código é distribuído sob **GNU AGPL-3.0-or-later**. Uma implantação pública modificada deve oferecer aos usuários o código-fonte correspondente desta versão. Consulte [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md).
 
-Metadados e instruções de exercícios têm avisos próprios. Imagens/animações são conteúdo de terceiros, não fazem parte deste repositório e são carregadas em tempo de execução; verifique os direitos aplicáveis antes de redistribuí-las ou explorá-las comercialmente.
+Metadados e instruções de exercícios têm avisos próprios. O app não inclui nem carrega imagens/animações de terceiros por padrão; quem possuir licença própria pode configurar uma origem autorizada conforme [NOTICE.md](NOTICE.md).

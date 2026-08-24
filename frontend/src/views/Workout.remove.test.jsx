@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Workout, { removeActiveExercise } from './Workout.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
+import { t } from '../lib/i18n.js'
 
 vi.mock('../lib/sound.js', () => ({ beep: vi.fn(), vibrate: vi.fn() }))
 vi.mock('../lib/api.js', () => ({ api: vi.fn(() => Promise.resolve({})) }))
@@ -40,7 +41,7 @@ function renderWorkout(entries) {
 }
 
 function removeButton() {
-  return [...container.querySelectorAll('button')].find(button => button.textContent.includes('Remove exercise'))
+  return [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Remove exercise')))
 }
 
 beforeEach(() => {

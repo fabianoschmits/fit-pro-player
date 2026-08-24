@@ -14,7 +14,9 @@ docker compose ps
 Invoke-RestMethod http://localhost:8080/api/health
 ```
 
-O primeiro início baixa as mídias de exercícios para `./media`. Contas, estados, segredo de sessão, chaves de push e auditoria ficam em `./data`.
+Os visuais SVG/CSS originais já estão incluídos no app. Contas, estados, segredo de sessão, chaves de push e auditoria ficam em `./data`.
+
+Se você possuir uma licença própria para a mídia do Gym Visual, coloque os arquivos autorizados em `./media/img` e `./media/gif`, defina `VITE_CATALOG_MEDIA_ENABLED=1`, `VITE_IMG_BASE=/img/` e `VITE_GIF_BASE=/gif/` no `.env` e reconstrua o container web. Não envie esses arquivos ao Git; a licença do dataset não é transferida a quem clona o repositório.
 
 ## HTTPS e passkeys
 

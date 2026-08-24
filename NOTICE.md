@@ -41,9 +41,10 @@ SOFTWARE.
 
 ## Exercise data & media
 
-Fit Pro Player obtains both through
-[**hasaneyldrm/exercises-dataset**](https://github.com/hasaneyldrm/exercises-dataset), which
-licenses them differently. Neither is covered by Fit Pro Player's AGPL license.
+Fit Pro Player obtains the exercise metadata and instruction source through
+[**hasaneyldrm/exercises-dataset**](https://github.com/hasaneyldrm/exercises-dataset). That
+dataset also offers a separate third-party media collection. Neither the dataset content nor
+the optional third-party media is covered by Fit Pro Player's AGPL license.
 
 That dataset is itself a redistribution: the content originates from
 [**ExerciseDB v1**](https://exercisedb.dev/) by **AscendAPI**. This is verifiable from Fit Pro Player's
@@ -57,8 +58,10 @@ and the instruction sentences are identical apart from stripped `Step:N ` prefix
 The exercise names, attributes and instructions (English in `frontend/src/lib/exercises-data.js`,
 other languages in `frontend/src/instr/`, regenerated via `scripts/build-instructions.mjs`)
 originate from ExerciseDB v1 and reach Fit Pro Player through the dataset above, which distributes them
-under the MIT license reproduced below. The translations into languages other than English are
-Fit Pro Player's own derivative work and are covered by Fit Pro Player's AGPL.
+under the MIT license reproduced below. The UI translations and most instruction packs are Fit Pro
+Player derivative work. The Brazilian Portuguese instruction pack is generated from the MIT-licensed
+`instruction_steps.pt` contribution in `dverzolla/exercises-dataset` at commit
+`01823800f6980ec54b6f566d73634551a5125253`; the MIT notice below applies to it.
 
 ```
 MIT License
@@ -86,27 +89,18 @@ SOFTWARE.
 
 ### Images & animations — third-party, not MIT and not AGPL
 
-The exercise thumbnails (180×180) and animations are **not** covered by the MIT license above and
-**not** by Fit Pro Player's AGPL. Their ownership is currently **unresolved**, and Fit Pro Player states this
-plainly rather than guessing:
+The Gym Visual exercise thumbnails and animations are **not** covered by the MIT license above or
+by Fit Pro Player's AGPL. The upstream dataset says it has separate written permission to distribute
+the 180×180 media, requires the attribution **© [Gym visual](https://gymvisual.com/)**, and explicitly
+states that cloning the dataset does not grant a media licence.
 
-- The upstream dataset attributes them to **© [Gym visual](https://gymvisual.com/)**, redistributed
-  there with that rights holder's written permission — a permission granted to *that dataset* and
-  **not transferable**.
-- **ExerciseDB/AscendAPI** describes itself as "the original creator and owner" of this content and
-  publishes its own [terms](https://exercisedb.io/faq), which permit self-hosting, bundling and
-  commercial display, while prohibiting redistribution of the raw dataset or media as a standalone
-  or competing content package.
+**Fit Pro Player does not redistribute or load that third-party media by default.** Public, mobile,
+development and container builds instead render an original code-native SVG/CSS visual, so there is
+no broken network dependency and no third-party artwork in this repository or its build output.
 
-These two claims contradict each other. A clarification has been requested from AscendAPI; this
-notice will be updated once the provenance is settled.
-
-**Until then, treat the media as third-party content licensed to neither Fit Pro Player nor to you.**
-
-**Fit Pro Player does not redistribute it.** It is not in this repository, not in its history, and not in
-the published container images or the Android APK. A self-hosted instance downloads it from the
-upstream source on first `docker compose up`; the mobile and demo builds load it from a CDN at
-runtime.
-
-If you want to reuse the media — in Fit Pro Player or anywhere else, commercially or not — **clear it with
-the rights holder first**, and keep any attribution that accompanies it intact.
+A person who obtains their own licence may set `VITE_CATALOG_MEDIA_ENABLED=1` and configure
+`VITE_IMG_BASE` and `VITE_GIF_BASE` to point at media they are authorised to serve. For the bundled Docker stack, the authorised files can stay
+untracked in `media/img` and `media/gif` and be served at `/img/` and `/gif/`. Keep the required Gym
+Visual attribution visible and follow the rights holder's
+[Terms & Conditions](https://gymvisual.com/content/3-terms-and-conditions-of-use). Credits alone do
+not replace the required licence or separate written redistribution permission.

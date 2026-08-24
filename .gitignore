@@ -1,4 +1,4 @@
-# Exercise media — fetched on first `docker compose up` (or via scripts/fetch-media.sh)
+# Optional licensed exercise media — supplied locally by the licence holder
 media/img/
 media/gif/
 

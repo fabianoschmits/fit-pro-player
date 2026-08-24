@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MUSCLES, levelsOf } from '../lib/muscles.js'
 import { FATIGUE_STATES, STRENGTH_FLOOR } from '../lib/recovery.js'
 import { fatigueStateOf } from '../lib/recovery-view.js'
+import { t } from '../lib/i18n.js'
 import Stats from './Stats.jsx'
 
 const DAY = 86400000
@@ -144,7 +145,7 @@ async function unmountStats() {
 function muscleCard() {
   return [...container.querySelectorAll('.card')].find(card =>
     [...card.querySelectorAll('.seg button')].some(button =>
-      ['Muscle balance', 'Fatigue', 'Strength'].includes(button.textContent.trim())))
+      [t('Muscle balance'), t('Fatigue'), t('Strength')].includes(button.textContent.trim())))
 }
 
 function buttonWithText(scope, text) {
@@ -186,28 +187,28 @@ afterEach(async () => {
 describe('Stats muscle recovery view runtime', () => {
   it('dispatches real clicks through Balance, Fatigue, and Strength and preserves selection', async () => {
     await mountStats()
-    expectPressed(viewButton('Muscle balance'))
-    expectPressed(balanceRangeButton('Week'))
+    expectPressed(viewButton(t('Muscle balance')))
+    expectPressed(balanceRangeButton(t('Week')))
 
     await click(balanceRangeButton('30d'))
-    await click(buttonWithText(muscleCard(), 'All'))
+    await click(buttonWithText(muscleCard(), t('All')))
     await click(muscleCard().querySelector('[data-muscle="chest"]'))
-    expect(buttonWithText(muscleCard(), 'Hard')).toBeTruthy()
+    expect(buttonWithText(muscleCard(), t('Hard'))).toBeTruthy()
 
-    await click(viewButton('Fatigue'))
-    expectPressed(viewButton('Fatigue'))
+    await click(viewButton(t('Fatigue')))
+    expectPressed(viewButton(t('Fatigue')))
     expect(lastMap().thresholds).toBeTruthy()
-    expect(container.textContent).toContain('Fatigue shows how recently each muscle was trained. High means rest.')
+    expect(container.textContent).toContain(t('Fatigue shows how recently each muscle was trained. High means rest.'))
     expect(container.querySelector('[data-selected-muscle="chest"]')).toBeTruthy()
 
-    await click(viewButton('Strength'))
-    expectPressed(viewButton('Strength'))
+    await click(viewButton(t('Strength')))
+    expectPressed(viewButton(t('Strength')))
     expect(lastMap().thresholds.at(-1)).toEqual({ at: 1, level: 4 })
-    expect(container.textContent).toContain('Strength shows retained muscle strength. Train again to reset it.')
+    expect(container.textContent).toContain(t('Strength shows retained muscle strength. Train again to reset it.'))
 
-    await click(viewButton('Muscle balance'))
+    await click(viewButton(t('Muscle balance')))
     expectPressed(balanceRangeButton('30d'))
-    expect(buttonWithText(muscleCard(), 'Hard')).toBeTruthy()
+    expect(buttonWithText(muscleCard(), t('Hard'))).toBeTruthy()
     expect(lastMap().selected).toBe('chest')
     expect(lastMap().load.chest).toBe(7)
   })
@@ -215,13 +216,13 @@ describe('Stats muscle recovery view runtime', () => {
   it('updates the rendered Fatigue map and Balance window on the real 60-second interval', async () => {
     await mountStats()
     await click(balanceRangeButton('30d'))
-    await click(viewButton('Fatigue'))
+    await click(viewButton(t('Fatigue')))
     await click(muscleCard().querySelector('[data-muscle="chest"]'))
 
     const mountsBeforeTick = mocks.mapMounts
     const beforeTick = lastMap().load.chest
     expect(fatigueStateOf(beforeTick)).toBe(FATIGUE_STATES.FATIGUED)
-    expect(container.textContent).toContain('Fatigued')
+    expect(container.textContent).toContain(t('Fatigued'))
 
     await tick(60000)
 
@@ -229,11 +230,11 @@ describe('Stats muscle recovery view runtime', () => {
     expect(mocks.mapMounts).toBe(mountsBeforeTick)
     expect(afterTick).toBeLessThan(beforeTick)
     expect(fatigueStateOf(afterTick)).toBe(FATIGUE_STATES.RECOVERING)
-    expect(container.textContent).toContain('Recovering')
+    expect(container.textContent).toContain(t('Recovering'))
 
-    await click(viewButton('Strength'))
+    await click(viewButton(t('Strength')))
     expect(lastMap().load.quadriceps).toBeLessThan(1)
-    await click(viewButton('Muscle balance'))
+    await click(viewButton(t('Muscle balance')))
     expect(lastMap().load.chest).toBe(6)
   })
 
@@ -246,7 +247,7 @@ describe('Stats muscle recovery view runtime', () => {
     mocks.S.bodyweight = [{ d: '2026-01-20', w: 180 }, { d: '2026-01-22', w: 220.462262 }]
 
     await mountStats()
-    await click(viewButton('Fatigue'))
+    await click(viewButton(t('Fatigue')))
 
     // 220.462262 lb ~= 100 kg; ten reps score 1000 kg against the initial 2000 kg reference.
     expect(lastMap().load.abs).toBeCloseTo(1 - Math.exp(-0.5), 6)
@@ -256,7 +257,7 @@ describe('Stats muscle recovery view runtime', () => {
   it('renders fixed absolute bands through the actual Fatigue and Strength views', async () => {
     resetFixture([allFatiguedWorkout()])
     await mountStats()
-    await click(viewButton('Fatigue'))
+    await click(viewButton(t('Fatigue')))
     const fatigueMap = lastMap()
     expect(Object.keys(fatigueMap.load)).toEqual(MUSCLES)
     expect(Object.values(fatigueMap.load).every(value => value > 0.5)).toBe(true)
@@ -265,7 +266,7 @@ describe('Stats muscle recovery view runtime', () => {
     await unmountStats()
     resetFixture([allSubfullWorkout()])
     await mountStats()
-    await click(viewButton('Strength'))
+    await click(viewButton(t('Strength')))
     const strengthMap = lastMap()
     expect(Object.values(strengthMap.load).every(value => value < 1)).toBe(true)
     expect(Math.min(...Object.values(strengthMap.load))).toBe(STRENGTH_FLOOR)

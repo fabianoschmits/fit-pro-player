@@ -1,37 +1,6 @@
 name: fitproplayer
 
 services:
-  # One-time: download the exercise images + GIFs into ./media (skipped if already there).
-  # ~140 MB, from github.com/hasaneyldrm/exercises-dataset. That dataset is MIT for the
-  # metadata and instruction text, but the images and GIFs are © Gym visual
-  # (https://gymvisual.com/) and are used under the dataset's terms — Fit Pro Player neither
-  # redistributes nor relicenses them. See NOTICE.md.
-  media:
-    image: alpine/git
-    volumes:
-      - ./media/img:/out/img
-      - ./media/gif:/out/gif
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        if [ -z "$$(ls -A /out/img 2>/dev/null)" ]; then
-          echo "↓ Downloading exercise media (~140 MB, one time)…"
-          echo "  Source:  github.com/hasaneyldrm/exercises-dataset"
-          echo "  Metadata and instruction text: MIT."
-          echo "  Images and animations: © Gym visual — https://gymvisual.com/"
-          echo "  They are used under that dataset's terms, not Fit Pro Player's AGPL, and are"
-          echo "  downloaded from upstream — Fit Pro Player does not redistribute them."
-          echo "  Terms: https://gymvisual.com/content/3-terms-and-conditions-of-use"
-          echo "  Reusing this media yourself, commercially or not, needs your own licence"
-          echo "  from Gym visual. Details in NOTICE.md."
-          git clone --depth 1 https://github.com/hasaneyldrm/exercises-dataset /tmp/ds
-          cp /tmp/ds/images/*.jpg /out/img/ && cp /tmp/ds/videos/*.gif /out/gif/
-          echo "✓ Exercise media ready ($$(ls /out/img | wc -l) images)."
-        else
-          echo "✓ Exercise media already present — skipping download."
-        fi
-    restart: "no"
-
   # Passkey auth + per-user data (Node, no framework).
   # image: prebuilt (docker compose pull). build: from source (docker compose up --build).
   api:
@@ -47,17 +16,19 @@ services:
     volumes:
       - ./data:/data         # users, passkeys, per-user state, session secret — BACK THIS UP
 
-  # Builds the React frontend (multi-stage) and serves it, proxying /api → api
-  # and the exercise media from the shared volume. Single origin for passkeys.
+  # Builds the React frontend (multi-stage) and serves it, proxying /api → api.
+  # Licensed media can optionally be mounted from the ignored ./media directory.
   web:
     image: ghcr.io/fabianoschmits/fit-pro-player-web:latest
     build:
       context: .
       dockerfile: web/Dockerfile
+      args:
+        VITE_CATALOG_MEDIA_ENABLED: ${VITE_CATALOG_MEDIA_ENABLED:-0}
+        VITE_IMG_BASE: ${VITE_IMG_BASE:-}
+        VITE_GIF_BASE: ${VITE_GIF_BASE:-}
     restart: unless-stopped
     depends_on:
-      media:
-        condition: service_completed_successfully
       api:
         condition: service_started
     ports:
