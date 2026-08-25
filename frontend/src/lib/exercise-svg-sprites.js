@@ -35,7 +35,7 @@ export const EXERCISE_SVG_SPRITES = Object.freeze({
   '0001': sprite('0001', { duration: 4560, posterFrame: 2, sequence: PING_PONG }),
   '0002': sprite('0002', { duration: 5000, sequence: ALTERNATING }),
   '0003': sprite('0003', { duration: 2400, ground: false, sequence: CYCLE }),
-  '1512': sprite('1512', { duration: 6000, sequence: ALTERNATING }),
+  '1512': sprite('1512', { duration: 6000, posterFrame: 2, sequence: ALTERNATING }),
   '0006': sprite('0006', { duration: 4400, posterFrame: 1, sequence: ALTERNATING }),
   '0007': sprite('0007', { duration: 5200, posterFrame: 1, sequence: ALTERNATING }),
   '1368': sprite('1368', { duration: 2700, sequence: CYCLE }),
