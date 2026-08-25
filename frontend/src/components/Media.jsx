@@ -6,6 +6,8 @@ import Icon from './Icon.jsx'
 import ExerciseVisual from './ExerciseVisual.jsx'
 import ExerciseMuscleThumb from './ExerciseMuscleThumb.jsx'
 import PosecodeVisual from './PosecodeVisual.jsx'
+import ExerciseSvgMotion from './ExerciseSvgMotion.jsx'
+import { hasExerciseSvgMotion } from '../lib/exercise-svg-motions.js'
 
 // Big animation; tap toggles playback. Licensed media remains optional, while the normal
 // build uses a fully bundled procedural 3D movement and custom exercises keep a static visual.
@@ -39,8 +41,10 @@ export default function Media({ ex, id, compact, minimizable }) {
     <div className={'exmedia' + (compact ? ' compact' : '') + (mini ? ' mini' : '')} id={id}>
       {src
         ? <img decoding="async" src={src} alt={exerciseName(ex)} onError={onMediaError} />
-        : ex?.gif
-          ? <PosecodeVisual ex={ex} playing={playing} />
+        : hasExerciseSvgMotion(ex)
+          ? <ExerciseSvgMotion ex={ex} playing={playing} />
+          : ex?.gif
+            ? <PosecodeVisual ex={ex} playing={playing} />
           : <ExerciseVisual ex={ex} />}
       {minimizable && (
         <button className="giftoggle" onClick={toggleSize}>
