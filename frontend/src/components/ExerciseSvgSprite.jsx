@@ -6,38 +6,37 @@ function spriteTransform(frame, frameWidth) {
   return `translateX(${-frame * frameWidth}px)`
 }
 
-const CROSSFADE_START = 0.62
-const CROSSFADE_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'
+const CROSSFADE_PORTION = 0.14
 
-function buildLayerKeyframes(config, layerIndex) {
+function smoothstep(value) {
+  const clamped = Math.max(0, Math.min(1, value))
+  return clamped * clamped * (3 - 2 * clamped)
+}
+
+export function spriteTimelineState(config, elapsed) {
   const steps = config.sequence.length
-  const keyframes = []
-  config.sequence.forEach((currentFrame, step) => {
-    const nextFrame = config.sequence[(step + 1) % steps]
-    const active = step % 2 === layerIndex
-    const transform = spriteTransform(active ? currentFrame : nextFrame, config.frameWidth)
-    const start = step / steps
-    const fadeStart = (step + CROSSFADE_START) / steps
-    const end = (step + 1) / steps
-    keyframes.push({ transform, opacity: active ? 1 : 0, offset: start })
-    keyframes.push({
-      transform,
-      opacity: active ? 1 : 0,
-      offset: fadeStart,
-      easing: CROSSFADE_EASING,
-    })
-    keyframes.push({ transform, opacity: active ? 0 : 1, offset: end })
-  })
-  return keyframes
+  const stepDuration = config.duration / steps
+  const cycleTime = ((elapsed % config.duration) + config.duration) % config.duration
+  const stepProgress = cycleTime / stepDuration
+  const step = Math.min(steps - 1, Math.floor(stepProgress))
+  const phase = stepProgress - step
+  const mix = smoothstep((phase - (1 - CROSSFADE_PORTION)) / CROSSFADE_PORTION)
+  return {
+    currentFrame: config.sequence[step],
+    nextFrame: config.sequence[(step + 1) % steps],
+    mix,
+  }
 }
 
 export default function ExerciseSvgSprite({ ex, playing }) {
   const config = exerciseSvgSprite(ex)
-  const clipId = `exercise-sprite-clip-${useId().replace(/:/g, '')}`
+  const instanceId = useId().replace(/:/g, '')
+  const clipId = `exercise-sprite-clip-${instanceId}`
+  const sheetId = `exercise-sprite-sheet-${instanceId}`
   const [paths, setPaths] = useState(null)
   const [failed, setFailed] = useState(false)
   const svgRef = useRef(null)
-  const animationsRef = useRef([])
+  const syncPlaybackRef = useRef(() => {})
   const visibleRef = useRef(true)
   const playingRef = useRef(playing)
   playingRef.current = playing
@@ -55,26 +54,59 @@ export default function ExerciseSvgSprite({ ex, playing }) {
   useEffect(() => {
     const svg = svgRef.current
     const layers = svg?.querySelectorAll('[data-sprite-layer]')
-    if (!layers?.length || !config || !paths || typeof Element === 'undefined' || !Element.prototype.animate) return undefined
+    if (layers?.length !== 2 || !config || !paths) return undefined
     let observer
     const posterStep = Math.max(0, config.sequence.indexOf(config.posterFrame))
-    const animations = [...layers].map((layer, layerIndex) => {
-      const animation = layer.animate(buildLayerKeyframes(config, layerIndex), {
-        duration: config.duration,
-        iterations: Infinity,
-        easing: 'linear',
-        fill: 'both',
-      })
-      animation.pause()
-      animation.currentTime = posterStep / config.sequence.length * config.duration
-      return animation
-    })
-    animationsRef.current = animations
+    const requestFrame = window.requestAnimationFrame?.bind(window) || (callback => window.setTimeout(() => callback(performance.now()), 16))
+    const cancelFrame = window.cancelAnimationFrame?.bind(window) || window.clearTimeout.bind(window)
+    const timeline = {
+      elapsed: posterStep / config.sequence.length * config.duration,
+      frameId: null,
+      lastSignature: '',
+      startTime: null,
+    }
+    visibleRef.current = true
+
+    const render = elapsed => {
+      const state = spriteTimelineState(config, elapsed)
+      const signature = `${state.currentFrame}:${state.nextFrame}:${state.mix.toFixed(3)}`
+      if (signature === timeline.lastSignature) return
+      timeline.lastSignature = signature
+      layers[0].style.transform = spriteTransform(state.currentFrame, config.frameWidth)
+      layers[0].style.opacity = String(1 - state.mix)
+      layers[1].style.transform = spriteTransform(state.nextFrame, config.frameWidth)
+      layers[1].style.opacity = String(state.mix)
+    }
+
+    const tick = timestamp => {
+      if (timeline.startTime === null) return
+      timeline.elapsed = (timestamp - timeline.startTime) % config.duration
+      render(timeline.elapsed)
+      timeline.frameId = requestFrame(tick)
+    }
+
+    const play = () => {
+      if (timeline.startTime !== null) return
+      timeline.startTime = performance.now() - timeline.elapsed
+      timeline.frameId = requestFrame(tick)
+    }
+
+    const pause = () => {
+      if (timeline.startTime !== null) {
+        timeline.elapsed = (performance.now() - timeline.startTime) % config.duration
+        timeline.startTime = null
+      }
+      if (timeline.frameId !== null) cancelFrame(timeline.frameId)
+      timeline.frameId = null
+      render(timeline.elapsed)
+    }
 
     const syncPlayback = () => {
       const shouldPlay = playingRef.current && visibleRef.current && !document.hidden
-      animations.forEach(animation => { shouldPlay ? animation.play() : animation.pause() })
+      shouldPlay ? play() : pause()
     }
+    syncPlaybackRef.current = syncPlayback
+    render(timeline.elapsed)
     if ('IntersectionObserver' in window) {
       observer = new IntersectionObserver(([entry]) => {
         visibleRef.current = entry.isIntersecting
@@ -89,16 +121,13 @@ export default function ExerciseSvgSprite({ ex, playing }) {
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
       observer?.disconnect()
-      animations.forEach(animation => animation.cancel())
-      animationsRef.current = []
+      pause()
+      syncPlaybackRef.current = () => {}
     }
   }, [config, paths])
 
   useEffect(() => {
-    const animations = animationsRef.current
-    if (!animations.length) return
-    const shouldPlay = playing && visibleRef.current && !document.hidden
-    animations.forEach(animation => { shouldPlay ? animation.play() : animation.pause() })
+    syncPlaybackRef.current()
   }, [playing])
 
   if (!config) return null
@@ -131,30 +160,32 @@ export default function ExerciseSvgSprite({ ex, playing }) {
           <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
             <rect width={config.frameWidth} height={config.height} />
           </clipPath>
+          <g id={sheetId} aria-hidden="true">
+            {paths.map((path, index) => (
+              <path
+                d={path.d}
+                fill={path.accentOpacity ? 'currentColor' : path.fill}
+                fillOpacity={path.accentOpacity || undefined}
+                key={index}
+              />
+            ))}
+          </g>
         </defs>
         {config.ground && <path className="sprite-ground" d={`M18 ${config.height - 15}H382`} aria-hidden="true" />}
         <g clipPath={`url(#${clipId})`}>
           {[0, 1].map(layerIndex => (
-            <g
+            <use
               className="sprite-sheet"
               data-sprite-layer={layerIndex}
               data-sprite-path-count={paths.length}
+              href={`#${sheetId}`}
               style={{
                 opacity: layerIndex === 0 ? 1 : 0,
                 transform: spriteTransform(config.posterFrame, config.frameWidth),
               }}
               aria-hidden="true"
               key={layerIndex}
-            >
-              {paths.map((path, index) => (
-                <path
-                  d={path.d}
-                  fill={path.accentOpacity ? 'currentColor' : path.fill}
-                  fillOpacity={path.accentOpacity || undefined}
-                  key={index}
-                />
-              ))}
-            </g>
+            />
           ))}
         </g>
       </svg>
