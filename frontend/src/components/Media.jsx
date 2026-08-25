@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { exerciseName, imgSrc, gifSrc } from '../lib/exercises.js'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
@@ -6,8 +6,9 @@ import Icon from './Icon.jsx'
 import ExerciseVisual from './ExerciseVisual.jsx'
 import ExerciseMuscleThumb from './ExerciseMuscleThumb.jsx'
 import PosecodeVisual from './PosecodeVisual.jsx'
-import ExerciseSvgMotion from './ExerciseSvgMotion.jsx'
-import { hasExerciseSvgMotion } from '../lib/exercise-svg-motions.js'
+import { hasExerciseSvgSprite } from '../lib/exercise-svg-sprites.js'
+
+const ExerciseSvgSprite = lazy(() => import('./ExerciseSvgSprite.jsx'))
 
 // Big animation; tap toggles playback. Licensed media remains optional, while the normal
 // build uses a fully bundled procedural 3D movement and custom exercises keep a static visual.
@@ -41,8 +42,10 @@ export default function Media({ ex, id, compact, minimizable }) {
     <div className={'exmedia' + (compact ? ' compact' : '') + (mini ? ' mini' : '')} id={id}>
       {src
         ? <img decoding="async" src={src} alt={exerciseName(ex)} onError={onMediaError} />
-        : hasExerciseSvgMotion(ex)
-          ? <ExerciseSvgMotion ex={ex} playing={playing} />
+        : hasExerciseSvgSprite(ex)
+          ? <Suspense fallback={<ExerciseVisual ex={ex} />}>
+              <ExerciseSvgSprite ex={ex} playing={playing} />
+            </Suspense>
           : ex?.gif
             ? <PosecodeVisual ex={ex} playing={playing} />
           : <ExerciseVisual ex={ex} />}
