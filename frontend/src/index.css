@@ -18,6 +18,7 @@
 
 /* ---------------------------------------------------------------- tokens -- */
 :root {
+  color-scheme:dark;
   /* surfaces — dark is the default */
   --bg:        #000000;
   --bg-el:     #0e0e10;   /* elevated backdrop (sheets, bars) */
@@ -62,6 +63,7 @@
 }
 
 :root[data-theme="light"] {
+  color-scheme:light;
   --bg:        #f2f2f7;
   --bg-el:     #f7f7fa;
   --surface:   #ffffff;
@@ -107,6 +109,10 @@
 
 /* ---------------------------------------------------------------- reset -- */
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{scrollbar-color:var(--surface-3) transparent}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--surface-3);border:3px solid transparent;border-radius:99px;background-clip:padding-box}
 html{
   font-size:16px;background:var(--bg);overscroll-behavior:none;overflow-x:clip;
   -webkit-text-size-adjust:100%;
@@ -136,7 +142,9 @@ button,.chip,.tile,.item,.wday,.cal-d,.swatch,.hm-c,.lrow,.seg button,.stp butto
   stroke-linecap:round;stroke-linejoin:round;
 }
 
-@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
 
 /* ------------------------------------------------------------ type scale -- */
 .t-large  {font-size:34px;line-height:1.06;font-weight:700;letter-spacing:-.028em}
@@ -152,12 +160,10 @@ button,.chip,.tile,.item,.wday,.cal-d,.swatch,.hm-c,.lrow,.seg button,.stp butto
 .muted{color:var(--label-2)} .dim{color:var(--label-3)}
 .small{font-size:13px;line-height:1.38}
 .accent{color:var(--acc)}
-.capitalize{text-transform:capitalize}
-/* exercise names and body-part/equipment terms arrive lowercase from the dataset,
-   so tags and chips capitalise by default. Anything that is a unit or a sentence opts
-   back out — blanket-capitalising turned "60 kg" into "60 Kg" and a whole hint into
-   Title Case. The compound selectors are needed: .tag/.chip come later in this file
-   and would otherwise win on source order. */
+.capitalize{text-transform:none}
+/* Exercise and taxonomy labels use sentence case in JavaScript. CSS title case
+   incorrectly uppercased Portuguese prepositions ("Dia De Empurrar", "Peso Corporal"),
+   so these utility classes preserve the localized spelling verbatim. */
 .nocap,.tag.nocap,.chip.nocap{text-transform:none}
 
 /* ---------------------------------------------------------------- layout -- */
@@ -311,11 +317,6 @@ h4.sec{
 #tabbar button.start .cir{color:var(--on-acc)}
 #tabbar button.start.rec .cir{background:var(--orange);color:#000;box-shadow:0 6px 18px -4px color-mix(in srgb,var(--orange) 55%,transparent)}
 #tabbar button.start.rec span{color:var(--orange)}
-#tabbar button.start.rec .cir::after{
-  content:'';position:absolute;inset:0;border-radius:50%;
-  border:2px solid var(--orange);animation:ping 1.9s var(--ease) infinite;
-}
-@keyframes ping{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.45);opacity:0}}
 
 /* ------------------------------------------------------------ week strip -- */
 .week{display:flex;justify-content:space-between;gap:4px}
@@ -368,10 +369,6 @@ h4.sec{
 .exercise-visual[data-zone="all"] .exvis-torso,
 .exercise-visual[data-zone="all"] .exvis-arms path,
 .exercise-visual[data-zone="all"] .exvis-legs path{stroke:var(--acc)}
-.exercise-visual.is-animated .exvis-figure{transform-origin:60px 92px;animation:exvis-bob 1.15s ease-in-out infinite alternate}
-.exercise-visual.is-animated .exvis-arms{transform-origin:60px 47px;animation:exvis-arms .9s ease-in-out infinite alternate}
-@keyframes exvis-bob{to{transform:translateY(-5px)}}
-@keyframes exvis-arms{to{transform:rotate(5deg)}}
 .thumb.exercise-visual{padding:2px}
 .thumb.exercise-visual svg{width:72%;height:88%}
 .thumb.exercise-muscle-thumb{
@@ -388,7 +385,7 @@ h4.sec{
 .tag{
   display:inline-flex;align-items:center;gap:3px;background:var(--surface-2);
   color:var(--label-2);border-radius:6px;padding:3px 7px;font-size:12px;
-  font-weight:500;text-transform:capitalize;
+  font-weight:500;text-transform:none;
 }
 .tag.acc{background:var(--acc-soft);color:var(--acc)}
 
@@ -400,7 +397,7 @@ h4.sec{
 .chips::-webkit-scrollbar{display:none}
 .chip{
   flex:none;padding:6px 13px;border-radius:99px;background:var(--surface);
-  font-size:14px;font-weight:400;color:var(--label);text-transform:capitalize;
+  font-size:14px;font-weight:400;color:var(--label);text-transform:none;
   letter-spacing:-.006em;transition:background var(--fast),color var(--fast);
 }
 .chip:active{background:var(--surface-2)}
@@ -453,12 +450,12 @@ h4.sec{
 .sw .knob{
   width:27px;height:27px;border-radius:50%;background:#fff;
   box-shadow:0 3px 8px rgba(0,0,0,.15),0 1px 1px rgba(0,0,0,.16);
-  transition:transform var(--med) var(--ease),width var(--fast) var(--ease);
+  transform-origin:center;transition:transform var(--med) var(--ease);
 }
 .sw.on{background:var(--acc)}
 .sw.on .knob{transform:translateX(20px)}
-.sw:active .knob{width:31px}
-.sw.on:active .knob{transform:translateX(16px)}
+.sw:active .knob{transform:scaleX(1.14)}
+.sw.on:active .knob{transform:translateX(20px) scaleX(1.14)}
 .sw:disabled{opacity:.4}
 
 /* --- segmented control --- */
@@ -533,14 +530,14 @@ h4.sec{
   position:absolute;left:0;right:0;height:6px;border-radius:99px;
   background:var(--surface-3);overflow:hidden;
 }
-.sld-fill{display:block;height:100%;background:var(--acc);border-radius:99px}
+.sld-fill{display:block;height:100%;background:var(--acc);border-radius:99px;transform:scaleX(var(--sld-pct,0));transform-origin:left center}
 .sld-knob{
-  position:absolute;width:26px;height:26px;border-radius:50%;background:#fff;
-  transform:translateX(-50%);
+  position:absolute;left:0;width:26px;height:26px;border-radius:50%;background:#fff;
+  transform:translate3d(var(--sld-x,0),0,0) translateX(-50%);
   box-shadow:0 4px 10px rgba(0,0,0,.22),0 1px 2px rgba(0,0,0,.16);
   transition:transform var(--fast) var(--ease);
 }
-.sld.dragging .sld-knob{transform:translateX(-50%) scale(1.14)}
+.sld.dragging .sld-knob{transform:translate3d(var(--sld-x,0),0,0) translateX(-50%) scale(1.14)}
 
 /* --- checkbox --- */
 .chk,.ck{
@@ -561,7 +558,7 @@ h4.sec{
 
 /* ------------------------------------------------------------- workout --- */
 .wprog{height:4px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-bottom:16px}
-.wprog i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width var(--med) var(--ease)}
+.wprog i{display:block;width:100%;height:100%;background:var(--acc);border-radius:99px;transform:scaleX(var(--progress,0));transform-origin:left center;transition:transform var(--med) var(--ease)}
 .exmedia{position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--surface-2);margin-bottom:12px}
 .exmedia img{width:100%;height:320px;object-fit:contain;display:block}
 .exmedia>.exercise-visual,.exmedia>.posecode-visual{width:100%;height:320px}
@@ -575,7 +572,7 @@ h4.sec{
 .exmedia .gifhint,.exmedia .giftoggle{
   position:absolute;bottom:9px;display:inline-flex;align-items:center;gap:4px;
   background:rgba(0,0,0,.45);color:#fff;border-radius:99px;padding:5px 11px;
-  font-size:12px;font-weight:500;
+  min-height:40px;font-size:12px;font-weight:500;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
 .exmedia .gifhint{right:9px}
@@ -667,7 +664,7 @@ h4.sec{
 @keyframes slideup{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 #timer .t{font-size:26px;font-weight:600;letter-spacing:-.026em;font-variant-numeric:tabular-nums;min-width:66px}
 #timer .bar{flex:1;height:4px;background:var(--surface-3);border-radius:99px;overflow:hidden}
-#timer .bar i{display:block;height:100%;background:var(--acc);transition:width 1s linear}
+#timer .bar i{display:block;width:100%;height:100%;background:var(--acc);transform:scaleX(var(--progress,0));transform-origin:left center;transition:transform 1s linear}
 /* rest variant: −15/+15/Skip and the clock won't share one line on a phone, so the clock and
    bar take the top row and the controls take their own. The work timer keeps a single row —
    it only ever has two buttons. */
@@ -682,7 +679,7 @@ h4.sec{
 #timer.working .t{color:var(--acc)}
 #timer.working .grow{flex:1;min-width:0}
 #timer.working .lbl{
-  font-size:12px;color:var(--label-2);margin-bottom:5px;text-transform:capitalize;
+  font-size:12px;color:var(--label-2);margin-bottom:5px;text-transform:none;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
@@ -693,6 +690,7 @@ h4.sec{
   position:absolute;inset:0;background:rgba(0,0,0,.4);
   backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
   touch-action:none;overscroll-behavior:none;
+  animation:backin var(--fast) var(--ease);
 }
 .sheet{
   position:absolute;left:0;right:0;bottom:0;background:var(--bg-el);
@@ -700,11 +698,12 @@ h4.sec{
   padding:8px 18px calc(20px + var(--sab));
   max-height:90vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
   animation:sheetup .34s var(--ease);
-  overscroll-behavior:contain;touch-action:pan-y;will-change:transform;
+  overscroll-behavior:contain;touch-action:pan-y;
 }
 :root[data-theme="light"] .sheet{background:var(--bg)}
 @keyframes sheetup{from{transform:translateY(100%)}to{transform:none}}
 .sheet .grab{width:36px;height:5px;border-radius:99px;background:var(--label-4);margin:6px auto 14px}
+.sheet:focus-visible,.center:focus-visible{outline:none}
 .sheet h3{font-size:20px;font-weight:600;letter-spacing:-.021em;margin-bottom:14px}
 .center{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
@@ -714,6 +713,14 @@ h4.sec{
 }
 :root[data-theme="light"] .center{background:#fff}
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.94);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+@keyframes backin{from{opacity:0}to{opacity:1}}
+@keyframes backout{from{opacity:1}to{opacity:0}}
+@keyframes sheetdown{from{transform:translateY(var(--sheet-drag,0))}to{transform:translateY(100%)}}
+@keyframes popout{from{transform:translate(-50%,-50%) scale(1);opacity:1}to{transform:translate(-50%,-50%) scale(.97);opacity:0}}
+.modal-layer.is-closing{pointer-events:none}
+.modal-layer.is-closing .mback{animation:backout var(--fast) var(--ease) both}
+.modal-layer.is-closing .sheet{animation:sheetdown 180ms var(--ease) both}
+.modal-layer.is-closing .center{animation:popout var(--fast) var(--ease) both}
 
 /* --- RIR/RPE conversion table (effort help sheet) ---
    The two scales only click when you see them side by side, so the numbers get fixed-width
@@ -946,8 +953,14 @@ h4.sec{
 .today-row:active{background:var(--surface-3)}
 .today-row .lbl2{font-size:11px;font-weight:500;letter-spacing:.03em;text-transform:uppercase;color:var(--label-3)}
 .today-row .ttl{
-  font-weight:500;font-size:17px;line-height:1.25;text-transform:capitalize;
+  font-weight:500;font-size:17px;line-height:1.25;text-transform:none;
   letter-spacing:-.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;
+}
+
+@media (max-width:340px){
+  .cols>div:first-child .item{gap:8px;padding-left:10px;padding-right:10px}
+  .cols>div:first-child .item .tt{font-size:15px;white-space:nowrap}
+  .cols>div:first-child .item .tag{font-size:11px;padding-left:6px;padding-right:6px;white-space:nowrap}
 }
 
 /* --------------------------------------------------- desktop (≥1000px) --- */

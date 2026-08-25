@@ -93,4 +93,93 @@ if (source.includes(after)) {
 // Three.js 0.185 treats PCFSoftShadowMap as the regular PCF mode and warns on
 // every player creation. Use the supported constant without changing rendering.
 source = source.replace('renderer.shadowMap.type = THREE.PCFSoftShadowMap;', 'renderer.shadowMap.type = THREE.PCFShadowMap;')
+
+// Upstream keeps rendering at the display refresh rate even while the timeline
+// is paused. That needlessly burns GPU in a modal, an offscreen workout card, or
+// a minimized player. Preserve the RAF only as a cheap scheduler and render on
+// demand while paused; playback and camera easing still render every frame.
+const loopBefore = `    let raf = 0;
+    let lastT = performance.now();
+    // Wall-clock delta consumed by frame() for the clip crossfade; zeroed after
+    // each frame so captureFrame() renders without advancing the fade.
+    let frameDt = 0;
+    function loopFn(now) {
+        const dt = Math.min(0.05, (now - lastT) / 1000);
+        lastT = now;
+        frameDt = dt;
+        if (playing && timeline) {
+            time += dt * speed;
+            if (time >= timeline.duration) {
+                if (loop) {
+                    time %= timeline.duration;
+                    loopCb();
+                }
+                else {
+                    time = timeline.duration;
+                    playing = false;
+                    constraintDiagnosticsDirty = true;
+                }
+            }
+            tickCb(time, timeline.duration);
+        }
+        frame();
+        raf = requestAnimationFrame(loopFn);
+    }`
+
+const loopAfter = `    let raf = 0;
+    let lastT = performance.now();
+    let needsRender = true;
+    // Wall-clock delta consumed by frame() for the clip crossfade; zeroed after
+    // each frame so captureFrame() renders without advancing the fade.
+    let frameDt = 0;
+    function loopFn(now) {
+        const dt = Math.min(0.05, (now - lastT) / 1000);
+        lastT = now;
+        frameDt = dt;
+        if (playing && timeline) {
+            time += dt * speed;
+            if (time >= timeline.duration) {
+                if (loop) {
+                    time %= timeline.duration;
+                    loopCb();
+                }
+                else {
+                    time = timeline.duration;
+                    playing = false;
+                    constraintDiagnosticsDirty = true;
+                    needsRender = true;
+                }
+            }
+            tickCb(time, timeline.duration);
+        }
+        const sizeChanged = canvas.width !== (canvas.clientWidth || 1) || canvas.height !== (canvas.clientHeight || 1);
+        if (playing || easeCamera || needsRender || sizeChanged) {
+            frame();
+            needsRender = false;
+        }
+        raf = requestAnimationFrame(loopFn);
+    }`
+
+if (!source.includes(loopAfter)) {
+  if (!source.includes(loopBefore)) throw new Error('posecode-render mudou; o controle de renderização pausada precisa ser revisado.')
+  source = source.replace(loopBefore, loopAfter)
+}
+
+const refreshBefore = `        getCharacter() {
+            return character;
+        },
+        captureFrame() {`
+const refreshAfter = `        getCharacter() {
+            return character;
+        },
+        refresh() {
+            needsRender = true;
+        },
+        captureFrame() {`
+
+if (!source.includes(refreshAfter)) {
+  if (!source.includes(refreshBefore)) throw new Error('posecode-render mudou; a atualização sob demanda precisa ser revisada.')
+  source = source.replace(refreshBefore, refreshAfter)
+}
+
 writeFileSync(target, source)

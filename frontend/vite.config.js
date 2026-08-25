@@ -14,5 +14,7 @@ export default defineConfig({
       '/gif': { target: media, changeOrigin: true }
     }
   },
-  build: { chunkSizeWarningLimit: 1500 }
+  // The only chunk above Vite's default is the optional Hindi instruction catalogue
+  // (1.58 MB raw / ~122 kB gzip), fetched only after that language is selected.
+  build: { chunkSizeWarningLimit: 1600 }
 })

@@ -35,7 +35,7 @@ const untranslated = Object.entries(pt)
   .map(([key]) => key)
 assert.deepEqual(untranslated, [], `Untranslated pt-BR UI strings: ${untranslated.join(', ')}`)
 
-const portugalOnly = /\b(telemóvel|ecrã|ficheiro|palavra-passe|definições|utilizador(?:es)?|eliminar|guardar|repor|registar|gémeos|abdómen|ergómetro|escadora|anca)\b|\w+-(?:te|vos)\b/i
+const portugalOnly = /\b(telemóvel|ecrã|ficheiro|palavra-passe|definições|utilizador(?:es)?|eliminar|guardar|repor|registar|gémeos|abdómen|ergómetro|escadora|anca|treinas|aguentaste|aponta)\b|\w+-(?:te|vos)\b/i
 const regional = Object.entries(pt).filter(([, value]) => portugalOnly.test(value))
 assert.deepEqual(regional, [], `European Portuguese terms found: ${regional.map(([key]) => key).join(', ')}`)
 

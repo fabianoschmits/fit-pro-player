@@ -1,21 +1,58 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useUI } from '../store/useUI.js'
 
+const EXIT_MS = 180
+
+// Keep removed sheets mounted just long enough to complete their exit. The store
+// remains the source of truth, so history/back accounting is still immediate.
+function useSheetPresence(sheets) {
+  const [rendered, setRendered] = useState(sheets)
+  const timers = useRef(new Map())
+
+  useLayoutEffect(() => {
+    const liveIds = new Set(sheets.map(sheet => sheet.id))
+    setRendered(previous => {
+      const alreadyExiting = previous.filter(sheet => sheet.exiting && !liveIds.has(sheet.id))
+      const justRemoved = previous.filter(sheet => !sheet.exiting && !liveIds.has(sheet.id))
+        .map(sheet => ({ ...sheet, exiting: true }))
+
+      for (const sheet of justRemoved) {
+        if (timers.current.has(sheet.id)) continue
+        const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+        const timer = setTimeout(() => {
+          timers.current.delete(sheet.id)
+          setRendered(current => current.filter(item => item.id !== sheet.id))
+        }, reduce ? 0 : EXIT_MS)
+        timers.current.set(sheet.id, timer)
+      }
+
+      return [...alreadyExiting, ...justRemoved, ...sheets.map(sheet => ({ ...sheet, exiting: false }))]
+    })
+  }, [sheets])
+
+  useEffect(() => () => {
+    for (const timer of timers.current.values()) clearTimeout(timer)
+    timers.current.clear()
+  }, [])
+
+  return rendered
+}
+
 // One bottom sheet (or centered dialog) with swipe-to-dismiss.
-function Sheet({ sheet }) {
+function Sheet({ sheet, exiting }) {
   const { closeSheet } = useUI()
   const ref = useRef(null)
-  const drag = useRef({ startY: null, delta: 0 })
+  const drag = useRef({ startY: null, delta: 0, startedAt: 0, kind: null })
 
   const onTouchStart = e => {
     const el = ref.current
     // a gesture that begins on a slider (or opted-out control) belongs to that control,
     // not to the sheet's swipe-to-dismiss — so it keeps working while you drag
     if (e.target.closest && e.target.closest('input[type=range], [data-nodrag]')) {
-      drag.current = { startY: null, delta: 0 }
+      drag.current = { startY: null, delta: 0, startedAt: 0, kind: null }
       return
     }
-    drag.current = { startY: el.scrollTop <= 0 ? e.touches[0].clientY : null, delta: 0 }
+    drag.current = { startY: el.scrollTop <= 0 ? e.touches[0].clientY : null, delta: 0, startedAt: Date.now(), kind: 'touch' }
   }
   const onTouchMove = e => {
     const el = ref.current, d = drag.current
@@ -30,20 +67,23 @@ function Sheet({ sheet }) {
   const onTouchEnd = () => {
     const el = ref.current, d = drag.current
     if (d.startY === null) return
-    el.style.transition = 'transform .2s'
-    if (d.delta > 90 && !sheet.locked) { el.style.transform = 'translateY(110%)'; setTimeout(() => closeSheet(sheet.id), 180) }
-    else el.style.transform = ''
+    const velocity = d.delta / Math.max(1, Date.now() - d.startedAt)
+    el.style.transition = 'transform var(--fast) var(--ease)'
+    if ((d.delta > 90 || (d.kind === 'touch' && d.delta > 28 && velocity > 0.65)) && !sheet.locked) {
+      el.style.setProperty('--sheet-drag', d.delta + 'px')
+      closeSheet(sheet.id)
+    } else el.style.transform = ''
     d.startY = null
   }
   // Mouse drag (desktop testing / trackpads): same swipe-to-dismiss behaviour.
   const onMouseDown = e => {
     if (e.button !== 0) return
     if (e.target.closest && e.target.closest('input[type=range], [data-nodrag]')) {
-      drag.current = { startY: null, delta: 0 }
+      drag.current = { startY: null, delta: 0, startedAt: 0, kind: null }
       return
     }
     const el = ref.current
-    drag.current = { startY: el.scrollTop <= 0 ? e.clientY : null, delta: 0 }
+    drag.current = { startY: el.scrollTop <= 0 ? e.clientY : null, delta: 0, startedAt: Date.now(), kind: 'mouse' }
   }
   const onMouseMove = e => {
     const el = ref.current, d = drag.current
@@ -56,11 +96,24 @@ function Sheet({ sheet }) {
     } else d.delta = 0
   }
   const onMouseUp = () => onTouchEnd()
+  const onKeyDown = e => {
+    if (e.key !== 'Tab') return
+    const surface = ref.current
+    const focusable = [...surface.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.closest('[aria-hidden="true"]'))
+    if (!focusable.length) { e.preventDefault(); return }
+    const first = focusable[0], last = focusable[focusable.length - 1]
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === surface)) {
+      e.preventDefault(); last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault(); first.focus()
+    }
+  }
 
   // non-passive touchmove so preventDefault works (bottom sheets only; centered dialogs have no ref)
   useEffect(() => {
     const el = ref.current
-    if (!el) return
+    if (!el || sheet.kind === 'center') return
     el.addEventListener('touchmove', onTouchMove, { passive: false })
     window.addEventListener('mouseup', onMouseUp)
     return () => {
@@ -69,20 +122,25 @@ function Sheet({ sheet }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (!exiting) ref.current?.focus?.({ preventScroll: true })
+  }, [exiting])
+
   const close = () => closeSheet(sheet.id)
   if (sheet.kind === 'center') {
     return (
-      <div>
+      <div className={'modal-layer' + (exiting ? ' is-closing' : '')}>
         <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
-        <div className="center">{sheet.render(close)}</div>
+        <div className="center" ref={ref} role="dialog" aria-modal="true" tabIndex="-1" onKeyDown={onKeyDown}>{sheet.render(close)}</div>
       </div>
     )
   }
   return (
-    <div>
+    <div className={'modal-layer' + (exiting ? ' is-closing' : '')}>
       <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
       <div className="sheet" ref={ref} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
-        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+        onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
+        role="dialog" aria-modal="true" tabIndex="-1" onKeyDown={onKeyDown}>
         <div className="grab" />
         {sheet.render(close)}
       </div>
@@ -92,6 +150,7 @@ function Sheet({ sheet }) {
 
 export default function Modals() {
   const sheets = useUI(s => s.sheets)
+  const renderedSheets = useSheetPresence(sheets)
   const closeSheet = useUI(s => s.closeSheet)
   const prevLen = useRef(0)
   const suppressPop = useRef(false)
@@ -164,10 +223,10 @@ export default function Modals() {
     }
   }, [sheets.length > 0])
 
-  if (!sheets.length) return null
+  if (!renderedSheets.length) return null
   return (
     <div id="modal-root" className="open">
-      {sheets.map(s => <Sheet key={s.id} sheet={s} />)}
+      {renderedSheets.map(s => <Sheet key={s.id} sheet={s} exiting={s.exiting} />)}
     </div>
   )
 }

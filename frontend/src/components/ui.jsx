@@ -13,7 +13,7 @@
 //   · :active gives a scale/tint response so touch feels acknowledged
 //   · focus-visible draws a ring; pointer interaction never does
 
-import { useRef, useState, useEffect, useCallback, forwardRef } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, forwardRef } from 'react'
 import Icon from './Icon.jsx'
 import { t } from '../lib/i18n.js'
 
@@ -140,7 +140,22 @@ export function Stepper({ value, step = 1, onChange, decimal = true, className =
 export function Slider({ value, min = 0, max = 100, step = 1, onChange, className = '' }) {
   const ref = useRef(null)
   const [drag, setDrag] = useState(false)
+  const [trackWidth, setTrackWidth] = useState(0)
   const pct = Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100))
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return undefined
+    const measure = () => setTrackWidth(el.getBoundingClientRect().width)
+    measure()
+    if (typeof ResizeObserver === 'function') {
+      const observer = new ResizeObserver(measure)
+      observer.observe(el)
+      return () => observer.disconnect()
+    }
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [])
 
   const posToValue = useCallback(clientX => {
     const el = ref.current
@@ -182,6 +197,7 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
     <div
       ref={ref}
       className={'sld' + (drag ? ' dragging' : '') + ' ' + className}
+      style={{ '--sld-pct': pct / 100, '--sld-x': (trackWidth * pct / 100) + 'px' }}
       role="slider"
       tabIndex={0}
       aria-valuenow={value} aria-valuemin={min} aria-valuemax={max}
@@ -189,8 +205,8 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
       onKeyDown={key}
       onPointerDown={e => { e.currentTarget.setPointerCapture?.(e.pointerId); setDrag(true); onChange(posToValue(e.clientX)) }}
     >
-      <span className="sld-track"><span className="sld-fill" style={{ width: pct + '%' }} /></span>
-      <span className="sld-knob" style={{ left: pct + '%' }} />
+      <span className="sld-track"><span className="sld-fill" /></span>
+      <span className="sld-knob" />
     </div>
   )
 }

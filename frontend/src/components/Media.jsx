@@ -28,6 +28,7 @@ export default function Media({ ex, id, compact, minimizable }) {
   }, [])
   useEffect(() => { setPlaying(!reduceMotion()); setFailedGif(false); setFailedImg(false) }, [ex?.id])
   const mini = minimizable && gifSize === 'mini'
+  useEffect(() => { if (mini) setPlaying(false) }, [mini])
   const toggleSize = e => { e.stopPropagation(); update(s => { s.gifSize = mini ? 'full' : 'mini' }) }
   const gif = gifSrc(ex), img = imgSrc(ex)
   const showGif = playing && gif && !failedGif
@@ -35,7 +36,7 @@ export default function Media({ ex, id, compact, minimizable }) {
   const src = showGif ? gif : showImg ? img : null
   const onMediaError = () => { if (showGif) setFailedGif(true); else setFailedImg(true) }
   return (
-    <div className={'exmedia' + (compact ? ' compact' : '') + (mini ? ' mini' : '')} id={id} onClick={() => setPlaying(p => !p)}>
+    <div className={'exmedia' + (compact ? ' compact' : '') + (mini ? ' mini' : '')} id={id}>
       {src
         ? <img decoding="async" src={src} alt={exerciseName(ex)} onError={onMediaError} />
         : ex?.gif
@@ -47,9 +48,9 @@ export default function Media({ ex, id, compact, minimizable }) {
         </button>
       )}
       {!mini && (
-        <span className="gifhint">
+        <button className="gifhint" onClick={() => setPlaying(p => !p)} aria-label={playing ? t('tap to pause') : t('tap to play')}>
           <Icon name={playing ? 'pause' : 'play'} />{playing ? t('tap to pause') : t('tap to play')}
-        </span>
+        </button>
       )}
     </div>
   )

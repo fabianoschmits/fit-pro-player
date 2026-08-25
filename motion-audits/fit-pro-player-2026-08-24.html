@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fit Pro Player — auditoria de movimento</title>
+<style>
+  :root{
+    --ink:oklch(.155 .006 255);--surface:oklch(.195 .007 255);--surface-2:oklch(.235 .008 255);
+    --paper:oklch(.945 .004 255);--paper-dim:oklch(.80 .006 255);--muted:oklch(.68 .008 255);
+    --faint:oklch(.505 .008 255);--line:oklch(.95 .01 255/.09);--line-strong:oklch(.95 .01 255/.16);
+    --accent:#30d158;--accent-soft:color-mix(in oklch,var(--accent) 72%,var(--paper));--accent-tint:color-mix(in oklch,var(--accent) 14%,transparent);
+    --crit:oklch(.655 .185 25);--crit-tint:oklch(.655 .185 25/.15);
+    --imp:oklch(.805 .125 78);--imp-tint:oklch(.805 .125 78/.15);
+    --opp:oklch(.745 .135 152);--opp-tint:oklch(.745 .135 152/.15);
+    --display:ui-rounded,"SF Pro Rounded","Segoe UI",system-ui,sans-serif;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:"SFMono-Regular",Consolas,monospace;
+    --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;--s7:48px;--s8:64px;
+  }
+  :root:has(#theme-light:checked){
+    --ink:oklch(.985 .003 255);--surface:oklch(.965 .004 255);--surface-2:oklch(.94 .005 255);
+    --paper:oklch(.18 .006 255);--paper-dim:oklch(.33 .008 255);--muted:oklch(.475 .01 255);
+    --faint:oklch(.64 .009 255);--line:oklch(.18 .01 255/.12);--line-strong:oklch(.18 .01 255/.22);
+    --crit:oklch(.555 .195 25);--crit-tint:oklch(.555 .195 25/.12);
+    --imp:oklch(.58 .155 78);--imp-tint:oklch(.58 .155 78/.14);
+    --opp:oklch(.555 .14 152);--opp-tint:oklch(.555 .14 152/.13);
+  }
+  *{box-sizing:border-box}html,body{margin:0;padding:0}body{background:var(--ink);color:var(--paper);font:16px/1.62 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:auto;padding:clamp(40px,6vw,72px) clamp(20px,5vw,40px) 96px}
+  .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .mono{font:500 10.5px/1.4 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+  code{font:400 .86em/1.5 var(--mono);color:var(--paper-dim)}
+  .theme-switch{display:flex;justify-content:flex-end;margin-bottom:var(--s5)}
+  .theme-pill,.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:999px;overflow:hidden}
+  .theme-pill label,.seg label{font:500 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:7px 12px;cursor:pointer}
+  #theme-dark:checked~.theme-pill label[for=theme-dark],#theme-light:checked~.theme-pill label[for=theme-light],
+  .demo input[id$="-a"]:checked~.demo-bar label[for$="-a"],.demo input[id$="-l"]:checked~.demo-bar label[for$="-l"],.demo input[id$="-d"]:checked~.demo-bar label[for$="-d"]{background:var(--accent-tint);color:var(--accent-soft)}
+  header{padding-bottom:var(--s7);margin-bottom:var(--s8);border-bottom:1px solid var(--line)}
+  .eyebrow{display:flex;align-items:center;gap:var(--s3)}.eyebrow:before{content:"";width:22px;height:2px;background:var(--accent)}
+  h1{font:700 clamp(38px,6vw,60px)/1.02 var(--display);letter-spacing:-.03em;max-width:17ch;margin:var(--s5) 0 var(--s4)}
+  .lede,.section-sub{color:var(--paper-dim);max-width:74ch}.meta{display:flex;flex-wrap:wrap;gap:var(--s6);margin-top:var(--s6)}.meta b{display:block;color:var(--paper);font-weight:500}
+  .stats{display:flex;flex-wrap:wrap;gap:clamp(20px,4vw,44px);margin-top:var(--s7)}.stat strong{display:block;font:600 40px/1 var(--display)}
+  .stat.crit strong{color:var(--crit)}.stat.imp strong{color:var(--imp)}.stat.opp strong{color:var(--opp)}
+  section{margin-bottom:var(--s8)}.idx{font:500 12px/1 var(--mono);letter-spacing:.16em;color:var(--accent-soft)}
+  h2{font:600 clamp(24px,3.4vw,32px)/1.1 var(--display);letter-spacing:-.02em;margin:var(--s2) 0 var(--s4)}
+  .assessment{border-top:1px solid var(--line);padding-top:var(--s6)}.assessment p{font:400 clamp(20px,2.8vw,26px)/1.42 var(--display);max-width:38ch;margin:var(--s4) 0}.assessment em{color:var(--accent-soft)}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--line)}th,td{text-align:left;padding:var(--s3) var(--s4);border-bottom:1px solid var(--line);vertical-align:top}th{font:500 10px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}td{color:var(--paper-dim)}td:first-child{color:var(--paper)}
+  .lens{padding-top:var(--s6);border-top:1px solid var(--line)}.lens-head{display:flex;align-items:baseline;gap:var(--s4);flex-wrap:wrap}.lens-head h2{margin:0}.weight{border:1px solid var(--line-strong);border-radius:999px;padding:4px 10px}
+  .verdict{display:inline-flex;align-items:center;gap:7px;margin:var(--s2) 0 var(--s6)}.verdict:before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}.problem{color:var(--crit)}.concern{color:var(--imp)}.strong{color:var(--opp)}
+  .good,.opps{list-style:none;padding:0;margin:var(--s3) 0 var(--s6);display:grid;gap:var(--s3);max-width:78ch}.good li,.opps li{display:grid;grid-template-columns:22px 1fr;gap:var(--s2);color:var(--paper-dim)}.good b{color:var(--opp)}.opps b{color:var(--accent-soft)}
+  .findings{display:grid;gap:var(--s5)}.finding{display:grid;grid-template-columns:1fr 380px;gap:clamp(24px,3vw,36px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(22px,3vw,30px)}.finding[data-sev=crit]{border-color:var(--crit-tint)}
+  .tags{display:flex;gap:var(--s2);margin-bottom:var(--s3)}.severity,.chip{font:500 10px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;border-radius:999px;padding:4px 9px}.severity.crit{background:var(--crit-tint);color:var(--crit)}.severity.imp{background:var(--imp-tint);color:var(--imp)}.chip{border:1px solid var(--line-strong);color:var(--muted)}
+  h3{font:600 clamp(19px,2.4vw,23px)/1.22 var(--display);letter-spacing:-.015em;margin:0 0 var(--s4)}.finding p{margin:0 0 var(--s4);color:var(--paper-dim)}.label{display:block;font:500 10px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}.fix{background:var(--surface-2);border-radius:8px;padding:var(--s4) var(--s5);color:var(--paper)}.fix .label{color:var(--accent-soft)}
+  .demo{position:sticky;top:var(--s5);align-self:start}.demo-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}.demo-title{font-size:13px;font-weight:600}.demo-time{display:block;font:400 11px/1.5 var(--mono);color:var(--muted)}
+  .demo-stage{--st-bg:var(--surface-2);--st-fg:var(--paper);--st-line:var(--line-strong);background:var(--st-bg);color:var(--st-fg);border:1px solid var(--line);border-radius:10px;min-height:168px;padding:var(--s5);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .demo input[id$="-l"]:checked~.demo-stage{--st-bg:#fbfbfd;--st-fg:#171719;--st-line:#1717192b}.demo input[id$="-d"]:checked~.demo-stage{--st-bg:#171719;--st-fg:#fbfbfd;--st-line:#fbfbfd2b}
+  .mock-phone{width:190px;border:1px solid var(--st-line);border-radius:18px;padding:12px;background:var(--st-bg)}.mock-row{display:flex;align-items:center;gap:9px}.mock-copy{height:7px;border-radius:9px;background:var(--st-fg);opacity:.22;flex:1}.mock-disc{width:38px;height:38px;border-radius:50%;background:var(--accent);display:grid;place-items:center;color:#000;font-weight:700}.mock-player{width:210px;height:118px;border:1px solid var(--st-line);border-radius:13px;background:color-mix(in srgb,var(--st-fg) 7%,var(--st-bg));position:relative;overflow:hidden}.mock-person{position:absolute;left:92px;top:28px;width:26px;height:58px;border-radius:15px;background:var(--accent)}.mock-person:before{content:"";position:absolute;left:6px;top:-16px;width:14px;height:14px;border-radius:50%;background:var(--st-fg)}.mock-pause{position:absolute;right:8px;bottom:8px;border:1px solid var(--st-line);border-radius:999px;padding:4px 8px;font:10px var(--mono)}
+  .mock-sheet{width:220px;border:1px solid var(--st-line);border-radius:18px 18px 4px 4px;padding:14px;background:var(--st-bg);box-shadow:0 16px 34px #0003}.mock-grab{width:34px;height:4px;border-radius:9px;background:var(--st-fg);opacity:.2;margin:0 auto 15px}.mock-line{height:9px;border-radius:9px;background:var(--st-fg);opacity:.18;margin-top:9px}.mock-line.short{width:62%}.mock-progress{width:220px;height:7px;border-radius:99px;background:var(--st-line);overflow:hidden}.mock-progress i{display:block;width:100%;height:100%;background:var(--accent);transform:scaleX(.72);transform-origin:left}
+  .take{margin-top:var(--s6);background:var(--surface-2);border-radius:10px;padding:var(--s5)}.take p{margin:var(--s2) 0 0;color:var(--paper)}
+  .rec{margin-bottom:var(--s7)}.rec-head{display:flex;align-items:center;gap:var(--s4);margin-bottom:var(--s4)}.rec-head:after{content:"";height:1px;background:var(--line);flex:1}
+  footer{display:flex;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;border-top:1px solid var(--line);padding-top:var(--s5);color:var(--faint);font:11px var(--mono)}
+  @media(max-width:860px){.finding{grid-template-columns:1fr}.demo{position:static}}
+  @media(max-width:600px){table,thead,tbody,tr,th,td{display:block}thead{display:none}tr{padding:var(--s3);border-bottom:1px solid var(--line)}td{border:0;padding:2px}.wrap{padding-left:18px;padding-right:18px}}
+  @media(prefers-reduced-motion:no-preference){
+    @keyframes motion-1-settle{0%{opacity:0;transform:scale(.92)}66%,100%{opacity:1;transform:scale(1)}}
+    .demo-card-1__motion-target .mock-disc{animation:motion-1-settle 3s cubic-bezier(.22,1,.36,1) infinite}
+    @keyframes motion-2-pause{0%{transform:translateX(-8px) rotate(-5deg)}66%,100%{transform:translateX(0) rotate(0)}}
+    .demo-card-2__motion-target .mock-person{animation:motion-2-pause 3s cubic-bezier(.32,.72,0,1) infinite}
+    @keyframes motion-3-sheet{0%{opacity:0;transform:translateY(100%)}66%,100%{opacity:1;transform:translateY(0)}}
+    .demo-card-3__motion-target{animation:motion-3-sheet 3s cubic-bezier(.32,.72,0,1) infinite}
+    @keyframes motion-4-progress{0%{transform:scaleX(0)}66%,100%{transform:scaleX(.72)}}
+    .demo-card-4__motion-target i{animation:motion-4-progress 3s cubic-bezier(.32,.72,0,1) infinite}
+  }
+  @media(prefers-reduced-motion:reduce){[class*="demo-card-"] *,[class*="demo-card-"]{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="theme-switch" role="radiogroup" aria-label="Tema do relatório">
+    <input class="vh" type="radio" name="theme" id="theme-dark" checked><input class="vh" type="radio" name="theme" id="theme-light">
+    <div class="theme-pill"><label for="theme-dark">Escuro</label><label for="theme-light">Claro</label></div>
+  </div>
+  <header>
+    <div class="eyebrow mono">Auditoria de movimento · design-motion-principles</div>
+    <h1>Fit Pro Player — rápido, estável e sem movimento ornamental</h1>
+    <p class="lede">Revisão do fluxo principal, navegação, modais, temporizadores e player 3D em telas de 320, 390 e 1024 px, nos temas claro e escuro.</p>
+    <div class="meta"><div><span class="mono">Produto</span><b>PWA de treino, mobile-first</b></div><div><span class="mono">Stack</span><b>React · CSS · Three.js/Posecode</b></div><div><span class="mono">Data</span><b>24 de agosto de 2026</b></div></div>
+    <div class="stats"><div class="stat"><strong>6</strong><span class="mono">Achados</span></div><div class="stat crit"><strong>2</strong><span class="mono">Críticos</span></div><div class="stat imp"><strong>2</strong><span class="mono">Importantes</span></div><div class="stat opp"><strong>2</strong><span class="mono">Oportunidades</span></div></div>
+  </header>
+
+  <section class="assessment"><span class="mono">Avaliação geral</span><p>A base visual é consistente e já usa durações curtas. Os problemas estavam concentrados em <em>trabalho contínuo invisível</em>, redução de movimento incompleta e superfícies que entravam com cuidado, mas desapareciam sem saída. Todos os achados críticos e importantes foram corrigidos nesta revisão.</p></section>
+
+  <section><div class="idx">01</div><h2>Como cada perspectiva leu o produto</h2><p class="section-sub">Jakub orientou o acabamento de estados e superfícies; Emil definiu o orçamento de duração e o que não deve se mover; Jhey foi usado apenas para oportunidades raras.</p>
+    <table><thead><tr><th>Perspectiva</th><th>Veredito inicial</th><th>Leitura</th></tr></thead><tbody>
+      <tr><td>Jakub Krehel · acabamento de produção</td><td><span class="verdict problem mono">Problema</span></td><td>O player pausado ainda se movia e os modais não tinham saída simétrica.</td></tr>
+      <tr><td>Emil Kowalski · contenção e velocidade</td><td><span class="verdict concern mono">Atenção</span></td><td>Um pulso infinito e atualizações por largura cobravam custo em ações frequentes.</td></tr>
+      <tr><td>Jhey Tompkins · experimentação seletiva</td><td><span class="verdict strong mono">Forte</span></td><td>O produto evita espetáculo; o espaço para deleite deve continuar reservado a conquistas raras.</td></tr>
+    </tbody></table>
+  </section>
+
+  <section class="lens"><div class="idx">02</div><div class="lens-head"><h2>Jakub Krehel — acabamento de produção</h2><span class="weight mono">Perspectiva principal</span></div><span class="verdict problem mono">Problema inicial · corrigido</span>
+    <ul class="good"><li><b>✓</b><span>Rotas usam apenas opacidade e deslocamento de 4 px em 220 ms; o feedback é discreto e orienta sem atrasar.</span></li><li><b>✓</b><span>Toasts já entram e saem pelo mesmo par de propriedades, e o player tem controle explícito de reproduzir/pausar.</span></li></ul>
+    <div class="findings">
+      <article class="finding" data-sev="crit"><div><div class="tags"><span class="severity crit">Crítico</span><span class="chip">Jakub</span></div><h3>O player 3D pausado ainda renderizava em todos os frames</h3><p><span class="label">O que acontecia</span>O Posecode mantinha o ciclo de renderização, respiração e GPU ativo mesmo pausado, minimizado ou fora da tela.</p><p><span class="label">Por que importa</span>“Pausado” não correspondia ao estado visual nem ao custo do componente. Em celular, isso consome bateria e compete com os controles do treino.</p><div class="fix"><span class="label">Correção aplicada</span>Renderização sob demanda enquanto pausado, retomada integral apenas durante playback ou ajuste de câmera, pausa automática ao minimizar e atualização pontual ao mudar tema/tamanho.</div><p><code>frontend/scripts/patch-posecode-render.mjs · components/PosecodeVisual.jsx · components/Media.jsx</code></p></div>
+        <div class="demo"><input class="vh" type="radio" name="st2" id="st2-a" checked><input class="vh" type="radio" name="st2" id="st2-l"><input class="vh" type="radio" name="st2" id="st2-d"><div class="demo-bar"><div><span class="demo-title">Movimento até a pausa</span><span class="demo-time">playback fluido · quadro final estável</span></div><div class="seg"><label for="st2-a">Auto</label><label for="st2-l">Claro</label><label for="st2-d">Escuro</label></div></div><div class="demo-stage"><div class="mock-player demo-card-2__motion-target"><span class="mock-person"></span><span class="mock-pause">Ⅱ pausado</span></div></div></div>
+      </article>
+      <article class="finding" data-sev="imp"><div><div class="tags"><span class="severity imp">Importante</span><span class="chip">Jakub</span></div><h3>Sheets e diálogos entravam suavemente, mas fechavam de forma instantânea</h3><p><span class="label">O que acontecia</span>A remoção direta do estado desmontava a superfície antes de qualquer animação de saída.</p><p><span class="label">Por que importa</span>Uma entrada polida seguida de desaparecimento abrupto parece um fluxo incompleto, especialmente no modal mais usado do aplicativo.</p><div class="fix"><span class="label">Correção aplicada</span>Camada de presença mantém a superfície por 180 ms, com saída por transform/opacidade, respeita redução de movimento e preserva a contabilidade do histórico.</div><p><code>frontend/src/components/Modals.jsx · frontend/src/index.css</code></p></div>
+        <div class="demo"><input class="vh" type="radio" name="st3" id="st3-a" checked><input class="vh" type="radio" name="st3" id="st3-l"><input class="vh" type="radio" name="st3" id="st3-d"><div class="demo-bar"><div><span class="demo-title">Sheet com presença completa</span><span class="demo-time">180–340 ms · curva personalizada</span></div><div class="seg"><label for="st3-a">Auto</label><label for="st3-l">Claro</label><label for="st3-d">Escuro</label></div></div><div class="demo-stage" style="align-items:flex-end"><div class="mock-sheet demo-card-3__motion-target"><div class="mock-grab"></div><div class="mock-line short"></div><div class="mock-line"></div><div class="mock-line"></div></div></div></div>
+      </article>
+    </div>
+    <div class="take"><span class="mono">Pela lente de Jakub</span><p>O aplicativo já tinha linguagem visual; faltava completar seus verbos. Pausa agora significa pausa, e toda superfície que entra também sabe sair.</p></div>
+  </section>
+
+  <section class="lens"><div class="idx">03</div><div class="lens-head"><h2>Emil Kowalski — contenção e velocidade</h2><span class="weight mono">Perspectiva secundária</span></div><span class="verdict concern mono">Atenção inicial · corrigida</span>
+    <ul class="good"><li><b>✓</b><span>Botões e controles respondem em 140–220 ms, sem bounce e sem deslocamentos grandes.</span></li><li><b>✓</b><span>O modo de redução de movimento já era detectado pelo player e agora cobre também pseudo-elementos.</span></li></ul>
+    <div class="findings">
+      <article class="finding" data-sev="crit"><div><div class="tags"><span class="severity crit">Crítico</span><span class="chip">Emil</span></div><h3>O botão central pulsava sem parar durante todo o treino</h3><p><span class="label">O que acontecia</span>Um anel laranja escalava e sumia em loop a cada 1,9 s. Como era um pseudo-elemento, escapava do seletor original de redução de movimento.</p><p><span class="label">Por que importa</span>É o elemento mais central e persistente da tela; o pulso competia com séries, temporizador e execução do exercício.</p><div class="fix"><span class="label">Correção aplicada</span>O loop foi removido. O estado em andamento continua inequívoco pela cor laranja, ícone de retomar e sombra estática. A regra reduzida cobre elementos e pseudo-elementos.</div><p><code>frontend/src/index.css</code></p></div>
+        <div class="demo"><input class="vh" type="radio" name="st1" id="st1-a" checked><input class="vh" type="radio" name="st1" id="st1-l"><input class="vh" type="radio" name="st1" id="st1-d"><div class="demo-bar"><div><span class="demo-title">Estado ativo, sem pulso</span><span class="demo-time">140 ms uma vez · depois estático</span></div><div class="seg"><label for="st1-a">Auto</label><label for="st1-l">Claro</label><label for="st1-d">Escuro</label></div></div><div class="demo-stage"><div class="mock-phone demo-card-1__motion-target"><div class="mock-row"><span class="mock-copy"></span><span class="mock-disc">▶</span><span class="mock-copy"></span></div></div></div></div>
+      </article>
+      <article class="finding" data-sev="imp"><div><div class="tags"><span class="severity imp">Importante</span><span class="chip">Emil</span></div><h3>Barras e slider atualizavam largura e posição de layout</h3><p><span class="label">O que acontecia</span>Progresso do treino e descanso transitavam <code>width</code>; o slider movia o thumb com <code>left</code> durante arraste.</p><p><span class="label">Por que importa</span>São mudanças frequentes. Recalcular layout a cada tick ou movimento do dedo aumenta a chance de engasgos justamente durante o treino.</p><div class="fix"><span class="label">Correção aplicada</span>Barras usam <code>scaleX()</code> com origem à esquerda, e o thumb usa <code>translate3d()</code> calculado a partir da largura observada.</div><p><code>components/RestTimer.jsx · components/ui.jsx · views/Workout.jsx · index.css</code></p></div>
+        <div class="demo"><input class="vh" type="radio" name="st4" id="st4-a" checked><input class="vh" type="radio" name="st4" id="st4-l"><input class="vh" type="radio" name="st4" id="st4-d"><div class="demo-bar"><div><span class="demo-title">Progresso composto</span><span class="demo-time">transform: scaleX · sem layout</span></div><div class="seg"><label for="st4-a">Auto</label><label for="st4-l">Claro</label><label for="st4-d">Escuro</label></div></div><div class="demo-stage"><div class="mock-progress demo-card-4__motion-target"><i></i></div></div></div>
+      </article>
+    </div>
+    <div class="take"><span class="mono">Pela lente de Emil</span><p>O estado deve ser legível, não insistente. Cor e rótulo resolvem o treino ativo; transform resolve o progresso sem cobrar layout.</p></div>
+  </section>
+
+  <section class="lens"><div class="idx">04</div><div class="lens-head"><h2>Jhey Tompkins — experimentação seletiva</h2><span class="weight mono">Uso seletivo</span></div><span class="verdict strong mono">Forte</span>
+    <ul class="good"><li><b>✓</b><span>O produto não aplica stagger, hover-lift ou motion de montagem em listas de exercícios, o que protege a biblioteca com 1.324 itens.</span></li><li><b>✓</b><span>A animação expressiva fica no próprio exercício — o lugar em que o movimento carrega informação funcional.</span></li></ul>
+    <p class="section-sub"><em>Nenhum problema adicional por esta perspectiva.</em> A contenção é adequada para uma ferramenta aberta durante séries e intervalos.</p>
+    <ul class="opps"><li><b>💡</b><span>Uma conclusão rara de treino ou novo recorde pode receber uma única celebração curta; nunca um loop persistente.</span></li><li><b>💡</b><span>Manter os estados vazios estáticos. A clareza atual vale mais do que animações de preenchimento ou stagger.</span></li></ul>
+    <div class="take"><span class="mono">Pela lente de Jhey</span><p>Não adicionar movimento por volume. Se houver investimento futuro, concentre-o apenas em um marco raro e emocional.</p></div>
+  </section>
+
+  <section><div class="idx">05</div><h2>Ordem de correção e estado final</h2>
+    <div class="rec"><div class="rec-head"><span class="mono" style="color:var(--crit)">Críticos · 2</span></div><table><thead><tr><th>Achado</th><th>Correção</th><th>Estado</th></tr></thead><tbody><tr><td>Render 3D contínuo quando pausado</td><td>Renderização sob demanda + pausa ao minimizar</td><td>Corrigido</td></tr><tr><td>Pulso infinito fora da redução de movimento</td><td>Loop removido + pseudo-elementos cobertos</td><td>Corrigido</td></tr></tbody></table></div>
+    <div class="rec"><div class="rec-head"><span class="mono" style="color:var(--imp)">Importantes · 2</span></div><table><thead><tr><th>Achado</th><th>Correção</th><th>Estado</th></tr></thead><tbody><tr><td>Modais sem saída</td><td>Presença de 180 ms, transform + opacidade</td><td>Corrigido</td></tr><tr><td>Progresso e slider por layout</td><td>scaleX + translate3d</td><td>Corrigido</td></tr></tbody></table></div>
+  </section>
+
+  <section><div class="idx">06</div><h2>Qual perspectiva carregou a revisão</h2><div class="take"><span class="mono">Referenciada mais</span><p><strong>Jakub Krehel — acabamento de produção.</strong> Os defeitos eram de estados incompletos e custo escondido. Emil determinou o que remover e as durações; Jhey confirmou que a melhor escolha, na maior parte da interface, era não acrescentar movimento.</p></div></section>
+  <footer><span>Fit Pro Player · auditoria design-motion-principles</span><span>6 achados · 2 críticos · 2 importantes · 2 oportunidades</span></footer>
+</main>
+</body>
+</html>

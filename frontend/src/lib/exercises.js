@@ -49,8 +49,12 @@ export const allExercises = st => [...(st.customEx || []), ...EXDB]
 
 // Catalogue names are localized independently of user-created exercise names. Keeping the
 // English name searchable lets a Brazilian user find an exercise by either term.
-export const exerciseName = ex =>
-  (getLang() === 'pt' && PT_EXERCISE_NAMES[ex?.id]) || ex?.n || t('Unknown exercise')
+export const exerciseName = ex => {
+  const name = (getLang() === 'pt' && PT_EXERCISE_NAMES[ex?.id]) || ex?.n || t('Unknown exercise')
+  if (ex?.custom) return name
+  const locale = getLang() === 'pt' ? 'pt-BR' : undefined
+  return name ? name[0].toLocaleUpperCase(locale) + name.slice(1) : name
+}
 export const exerciseSearchText = ex => [
   exerciseName(ex), ex?.n, t(ex?.bp || ''), t(ex?.tg || ''), t(ex?.eq || ''), ex?.desc,
 ].filter(Boolean).join(' ').toLocaleLowerCase(getLang() === 'pt' ? 'pt-BR' : undefined)

@@ -11,9 +11,10 @@ import {
 
 export { LANGS, DEFAULT_LANG, INSTR_LANGS, DATE_LOCALES, getLang, dateLocale, t, instrFor }
 
-// Vite code-splits each locale pack into its own chunk via import.meta.glob; instructions use
-// the same mechanism in src/instr/. Both are lazy, so the production bundle ships English only.
-const localePacks = import.meta.glob('../locales/*.js')
+// pt-BR is already bundled by i18n-core so the default first paint never flashes English.
+// Excluding it from this glob avoids a redundant dynamic-import edge and its build warning;
+// every non-default locale and every instruction catalogue remains lazy-loaded.
+const localePacks = import.meta.glob(['../locales/*.js', '!../locales/pt.js'])
 const instrPacks = import.meta.glob('../instr/*.js')
 
 // React subscription bookkeeping — kept here, not in core, so core has zero React coupling.
@@ -25,7 +26,7 @@ export async function setLang(l) {
   if (l === getLang() && getVersion() > 0) return
   let dict = {}, instr = null
   try {
-    dict = l === 'en' ? {} : (await localePacks['../locales/' + l + '.js']()).default
+    dict = l === 'en' ? {} : l === DEFAULT_LANG ? null : (await localePacks['../locales/' + l + '.js']()).default
     instr = l === 'en' || !INSTR_LANGS.includes(l) ? null : (await instrPacks['../instr/' + l + '.js']()).default
   } catch (e) { dict = {}; instr = null }
   _setLangState(l, dict, instr)

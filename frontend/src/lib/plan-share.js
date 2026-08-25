@@ -227,19 +227,19 @@ export function planPrintHTML(S, owner) {
   .w-row { display: flex; align-items: baseline; padding: 8px 14px; border-top: 1px solid #eef0f4; }
   .w-row:first-child { border-top: 0; }
   .w-day { width: 116px; font-weight: 600; color: #16181d; flex: none; }
-  .w-r { text-transform: capitalize; }
+  .w-r { text-transform: none; }
   .rest, .w-r .rest { color: #a2a8b6; text-transform: none; }
 
   .routine { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; padding: 14px 16px; border: 1px solid #e4e6ec; border-radius: 12px; }
   .r-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; border-bottom: 1px solid #eef0f4; padding-bottom: 8px; margin-bottom: 8px; break-after: avoid; page-break-after: avoid; }
-  .r-head h2 { font-size: 18px; letter-spacing: -.01em; margin: 0; text-transform: capitalize; }
+  .r-head h2 { font-size: 18px; letter-spacing: -.01em; margin: 0; text-transform: none; }
   .r-count { font-size: 12px; color: #8a90a0; white-space: nowrap; }
 
   .ex-list { display: flex; flex-direction: column; }
   .ex { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; padding: 6px 0; break-inside: avoid; page-break-inside: avoid; }
   .ex + .ex, .ss + .ex, .ex + .ss { border-top: 1px solid #f2f3f6; }
-  .ex-n { text-transform: capitalize; font-weight: 500; }
-  .ex-n .part { text-transform: capitalize; color: #9aa0ae; font-weight: 400; font-size: 12px; margin-left: 8px; }
+  .ex-n { text-transform: none; font-weight: 500; }
+  .ex-n .part { text-transform: none; color: #9aa0ae; font-weight: 400; font-size: 12px; margin-left: 8px; }
   .ex-s { color: #3d424e; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .ex.empty, .none { color: #a2a8b6; }
 

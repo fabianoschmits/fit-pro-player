@@ -25,6 +25,13 @@ export const durPart = ms => (ms >= 60000 ? [fmtDur(ms)] : [])
 // Numbers follow the UI language, like the dates above — a hardcoded locale put Swiss
 // apostrophes ("7'535 kg") in front of every user, in every language.
 export const fmtNum = n => (Math.round(n * 10) / 10).toLocaleString(dateLocale())
+// Catalogue labels arrive lowercase. Brazilian Portuguese uses sentence case in
+// UI labels ("Peso corporal"), not CSS title case ("Peso Corporal"). Keeping the
+// conversion in JavaScript also preserves prepositions such as "de" and "com".
+export const sentenceCase = value => {
+  const text = String(value || '')
+  return text ? text[0].toLocaleUpperCase(dateLocale()) + text.slice(1) : text
+}
 // Volume stays in the profile's unit throughout: the old shorthand turned anything over
 // 10 000 into "t", which is wrong for a pound profile and made one list mix "18.8t" with
 // "7'535 kg" — two numbers you can't compare at a glance.

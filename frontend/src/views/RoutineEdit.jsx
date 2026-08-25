@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useStore } from '../store/useStore.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
-import { uid } from '../lib/format.js'
+import { uid, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
 import { Thumb } from '../components/Media.jsx'
@@ -88,7 +88,7 @@ export default function RoutineEdit() {
         <h2>{t('What this session hits')}</h2>
         <BodyMap load={load} body={S.body} />
         <div className="mchips">
-          {worked.slice(0, 6).map(m => <span key={m} className="mchip">{t(MUSCLE_NAME[m])}</span>)}
+          {worked.slice(0, 6).map(m => <span key={m} className="mchip">{sentenceCase(t(MUSCLE_NAME[m]))}</span>)}
         </div>
       </div>
     })()}

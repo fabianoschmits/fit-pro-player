@@ -57,6 +57,7 @@ function themeViewer(viewer, wrapper) {
       material.needsUpdate = true
     }
   })
+  viewer.refresh?.()
 }
 
 // The motion documents are bundled JavaScript strings. Only the renderer is
