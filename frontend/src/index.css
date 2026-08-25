@@ -350,27 +350,6 @@ h4.sec{
   display:flex;align-items:center;justify-content:center;font-size:21px;
   background:var(--surface-2);color:var(--label-2);
 }
-.exercise-visual{
-  display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f6f7f9,#e9edf2);
-  color:#9aa3ad;overflow:hidden;
-}
-.exercise-visual svg{display:block;width:min(58%,150px);height:86%}
-.exercise-visual svg *{vector-effect:non-scaling-stroke}
-.exercise-visual .exvis-head,.exercise-visual .exvis-torso,.exercise-visual .exvis-core{
-  fill:none;stroke:currentColor;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
-}
-.exercise-visual .exvis-arms path,.exercise-visual .exvis-legs path{
-  fill:none;stroke:currentColor;stroke-width:7;stroke-linecap:round;stroke-linejoin:round;
-}
-.exercise-visual[data-zone="torso"] .exvis-torso,
-.exercise-visual[data-zone="core"] .exvis-core,
-.exercise-visual[data-zone="arms"] .exvis-arms path,
-.exercise-visual[data-zone="legs"] .exvis-legs path,
-.exercise-visual[data-zone="all"] .exvis-torso,
-.exercise-visual[data-zone="all"] .exvis-arms path,
-.exercise-visual[data-zone="all"] .exvis-legs path{stroke:var(--acc)}
-.thumb.exercise-visual{padding:2px}
-.thumb.exercise-visual svg{width:72%;height:88%}
 .thumb.exercise-muscle-thumb{
   display:flex;width:50px;height:50px;min-width:50px;padding:2px;gap:0;
   align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;
@@ -378,6 +357,12 @@ h4.sec{
 .exercise-muscle-thumb .bm-v{width:100%;height:100%;max-height:none;flex:none}
 .exercise-muscle-thumb .bm-ph{width:100%;height:100%}
 .exercise-muscle-thumb .bm-v path{vector-effect:non-scaling-stroke;stroke-width:.65px}
+.exercise-muscle-static{
+  display:flex;width:100%;height:320px;padding:24px;gap:0;
+  align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;
+}
+.exercise-muscle-static .bm-v{width:100%;height:100%;max-height:none;flex:none}
+.exercise-muscle-static .bm-ph{width:100%;height:100%}
 .item .tt{font-size:16px;font-weight:400;line-height:1.25;letter-spacing:-.009em}
 .item .ss{color:var(--label-2);font-size:13px;margin-top:2px}
 .item .grow{flex:1;min-width:0}
@@ -561,17 +546,17 @@ h4.sec{
 .wprog i{display:block;width:100%;height:100%;background:var(--acc);border-radius:99px;transform:scaleX(var(--progress,0));transform-origin:left center;transition:transform var(--med) var(--ease)}
 .exmedia{position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--surface-2);margin-bottom:12px}
 .exmedia img{width:100%;height:320px;object-fit:contain;display:block}
-.exmedia>.exercise-visual,.exmedia>.posecode-visual,.exmedia>.exercise-sprite-motion{width:100%;height:320px}
-.posecode-visual{
-  position:relative;overflow:hidden;background:var(--surface-2);
-  border-color:var(--surface-2);color:var(--acc);outline-color:var(--label-2);
-}
-.posecode-visual canvas{display:block;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity var(--med) var(--ease)}
-.posecode-visual.is-ready canvas{opacity:1}
-.posecode-visual>.exercise-visual{position:absolute;inset:0;width:100%;height:100%}
+.exmedia>.exercise-muscle-static,.exmedia>.exercise-sprite-motion{width:100%;height:320px}
 .exercise-sprite-motion{
   position:relative;background:transparent;color:var(--acc);isolation:isolate;
 }
+.exercise-sprite-motion.is-loading{display:grid;place-items:center;background:var(--surface-2)}
+.exercise-sprite-placeholder{
+  width:72px;height:3px;border-radius:99px;
+  background:color-mix(in srgb,var(--label) 14%,transparent);
+  box-shadow:0 -10px 0 color-mix(in srgb,var(--label) 7%,transparent),0 10px 0 color-mix(in srgb,var(--label) 7%,transparent);
+}
+.exercise-sprite-motion.has-error .exercise-sprite-placeholder{background:color-mix(in srgb,var(--red) 28%,transparent)}
 .exercise-sprite-motion svg{display:block;width:100%;height:100%;overflow:hidden;shape-rendering:geometricPrecision}
 .sprite-sheet{transform-box:view-box;transform-origin:0 0;pointer-events:none}
 .sprite-ground{
@@ -591,10 +576,8 @@ h4.sec{
    at 180px you had to scroll a full screen between two exercises done back-to-back */
 .exmedia.compact img{height:120px}
 .exmedia.mini img{height:84px}
-.exmedia.compact>.exercise-visual{height:120px}
-.exmedia.mini>.exercise-visual{height:84px}
-.exmedia.compact>.posecode-visual{height:120px}
-.exmedia.mini>.posecode-visual{height:84px}
+.exmedia.compact>.exercise-muscle-static{height:120px;padding:10px}
+.exmedia.mini>.exercise-muscle-static{height:84px;padding:6px}
 .exmedia.compact>.exercise-sprite-motion{height:120px}
 .exmedia.mini>.exercise-sprite-motion{height:84px}
 
@@ -997,6 +980,6 @@ h4.sec{
   /* 520px fits the clock, the bar and all three controls on one line again */
   #timer.rest{flex-direction:row;align-items:center;gap:14px}
   #timer.rest .head{flex:1;min-width:0}
-  .exmedia img,.exmedia>.exercise-visual,.exmedia>.posecode-visual,.exmedia>.exercise-sprite-motion{height:380px}
+  .exmedia img,.exmedia>.exercise-muscle-static,.exmedia>.exercise-sprite-motion{height:380px}
   .hm-wrap{display:flex;flex-direction:column;align-items:center}
 }

@@ -28,9 +28,7 @@ npm run setup
 npm run dev
 ```
 
-Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. O player 3D usa movimentos cinemáticos incorporados ao código e funciona sem rede, imagens ou modelos externos.
-
-O catálogo usa 73 perfis de movimento validados (57 exemplos abertos do Posecode e 16 movimentos próprios). Todos os 1.324 exercícios têm uma classificação deliberada por padrão biomecânico; variações de equipamento e pegada compartilham a mesma mecânica corporal quando não há um perfil exclusivo. A animação pausa fora da tela ou em uma aba oculta e não inicia automaticamente quando o sistema solicita movimento reduzido.
+Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. Os dez primeiros exercícios usam sequências SVG incorporadas ao código, sem links, imagens raster ou modelos externos; os demais usam o mapa muscular local. A animação pausa fora da tela ou em uma aba oculta e não inicia automaticamente quando o sistema solicita movimento reduzido.
 
 Comandos úteis:
 
@@ -63,7 +61,7 @@ vercel
 vercel --prod
 ```
 
-O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora o player 3D e todos os movimentos no próprio app. Nenhum segredo é necessário.
+O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora os sprites SVG e mapas musculares no próprio app. Nenhum segredo é necessário.
 
 ## Estrutura
 
@@ -87,4 +85,4 @@ Veja [SECURITY.md](SECURITY.md) para comunicar vulnerabilidades.
 
 O código é distribuído sob **GNU AGPL-3.0-or-later**. Uma implantação pública modificada deve oferecer aos usuários o código-fonte correspondente desta versão. Consulte [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md).
 
-Metadados, movimentos e bibliotecas de terceiros têm avisos próprios. O app não inclui nem carrega as imagens/GIFs restritos por padrão; quem possuir licença própria pode configurar uma origem autorizada conforme [NOTICE.md](NOTICE.md).
+Metadados, diagramas e bibliotecas de terceiros têm avisos próprios. O app não inclui nem carrega as imagens/GIFs restritos por padrão; quem possuir licença própria pode configurar uma origem autorizada conforme [NOTICE.md](NOTICE.md).

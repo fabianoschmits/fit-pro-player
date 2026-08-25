@@ -60,8 +60,8 @@ export const exerciseSearchText = ex => [
 ].filter(Boolean).join(' ').toLocaleLowerCase(getLang() === 'pt' ? 'pt-BR' : undefined)
 
 // Licensed catalogue media is opt-in. Public builds leave these bases unset and render the
-// original code-native ExerciseVisual; a licence holder can point them at media they are
-// authorised to serve. The import.meta guard keeps this module loadable outside Vite too.
+// local SVG sprite or static muscle map; a licence holder can point other exercises at media
+// they are authorised to serve. The import.meta guard keeps this module loadable outside Vite.
 const ENV = import.meta.env || {}
 const base = value => value ? String(value).replace(/\/?$/, '/') : ''
 const LICENSED_MEDIA = ENV.VITE_CATALOG_MEDIA_ENABLED === '1'

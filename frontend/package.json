@@ -7,17 +7,14 @@
     "node": "22.x"
   },
   "scripts": {
-    "postinstall": "node scripts/patch-posecode-render.mjs",
     "dev": "vite --host 127.0.0.1 --port 8080 --strictPort",
-    "build": "npm run generate:licenses && vite build",
-    "build:vercel": "npm run generate:licenses && vite build --mode vercel",
-    "build:mobile": "npm run generate:licenses && vite build --mode mobile && cap sync",
+    "build": "vite build",
+    "build:vercel": "vite build --mode vercel",
+    "build:mobile": "vite build --mode mobile && cap sync",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:fatigue-probe": "node scripts/fatigue-monotonic-probe.mjs",
-    "generate:motions": "node scripts/generate-posecode-library.mjs",
-    "generate:licenses": "node scripts/generate-third-party-licenses.mjs",
     "check:i18n": "node scripts/check-locales.mjs && node scripts/check-source-strings.mjs --strict && node scripts/check-pt-br.mjs"
   },
   "license": "AGPL-3.0-or-later",
@@ -27,12 +24,9 @@
     "@capacitor/filesystem": "^7.1.8",
     "@capacitor/local-notifications": "^7.0.7",
     "@capacitor/share": "^7.0.4",
-    "posecode-parser": "0.4.2",
-    "posecode-render": "0.4.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.2",
-    "three": "0.185.1",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

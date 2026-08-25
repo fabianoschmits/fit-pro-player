@@ -1,17 +1,15 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { exerciseName, imgSrc, gifSrc } from '../lib/exercises.js'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
-import ExerciseVisual from './ExerciseVisual.jsx'
 import ExerciseMuscleThumb from './ExerciseMuscleThumb.jsx'
-import PosecodeVisual from './PosecodeVisual.jsx'
+import ExerciseSvgSprite from './ExerciseSvgSprite.jsx'
 import { hasExerciseSvgSprite } from '../lib/exercise-svg-sprites.js'
 
-const ExerciseSvgSprite = lazy(() => import('./ExerciseSvgSprite.jsx'))
-
-// Big animation; tap toggles playback. Licensed media remains optional, while the normal
-// build uses a fully bundled procedural 3D movement and custom exercises keep a static visual.
+// Big animation; tap toggles playback. The first catalogue exercises use local SVG sprites.
+// Exercises that have not been redrawn yet keep the same static muscle map used by their card,
+// so loading never flashes a different avatar before the final visual is ready.
 // `minimizable` (workout view) adds a persistent minimize/expand control so the animation stops
 // eating the screen; the chosen size is saved to settings and carries across exercises and
 // future workouts (issue #12).
@@ -37,24 +35,22 @@ export default function Media({ ex, id, compact, minimizable }) {
   const showGif = playing && gif && !failedGif
   const showImg = img && !failedImg
   const src = showGif ? gif : showImg ? img : null
+  const hasSprite = hasExerciseSvgSprite(ex)
+  const canPlay = hasSprite || Boolean(gif && !failedGif)
   const onMediaError = () => { if (showGif) setFailedGif(true); else setFailedImg(true) }
   return (
     <div className={'exmedia' + (compact ? ' compact' : '') + (mini ? ' mini' : '')} id={id}>
-      {src
-        ? <img decoding="async" src={src} alt={exerciseName(ex)} onError={onMediaError} />
-        : hasExerciseSvgSprite(ex)
-          ? <Suspense fallback={<ExerciseVisual ex={ex} />}>
-              <ExerciseSvgSprite ex={ex} playing={playing} />
-            </Suspense>
-          : ex?.gif
-            ? <PosecodeVisual ex={ex} playing={playing} />
-          : <ExerciseVisual ex={ex} />}
+      {hasSprite
+        ? <ExerciseSvgSprite ex={ex} playing={playing} />
+        : src
+          ? <img decoding="async" src={src} alt={exerciseName(ex)} onError={onMediaError} />
+          : <ExerciseMuscleThumb ex={ex} full />}
       {minimizable && (
         <button className="giftoggle" onClick={toggleSize}>
           <Icon name={mini ? 'expand' : 'minimize'} />{mini ? t('Expand') : t('Minimize')}
         </button>
       )}
-      {!mini && (
+      {!mini && canPlay && (
         <button className="gifhint" onClick={() => setPlaying(p => !p)} aria-label={playing ? t('tap to pause') : t('tap to play')}>
           <Icon name={playing ? 'pause' : 'play'} />{playing ? t('tap to pause') : t('tap to play')}
         </button>
