@@ -28,7 +28,9 @@ npm run setup
 npm run dev
 ```
 
-Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. Os dez primeiros exercícios usam sequências SVG incorporadas ao código, sem links, imagens raster ou modelos externos; os demais usam o mapa muscular local. A animação pausa fora da tela ou em uma aba oculta e não inicia automaticamente quando o sistema solicita movimento reduzido.
+Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. O catálogo oferece somente os 173 exercícios que já possuem sequências SVG validadas e incorporadas ao código, sem links, imagens raster ou modelos externos. Os outros 1.151 registros da base permanecem preservados como pendentes para não quebrar planos e históricos existentes, mas não aparecem em novas seleções até receberem animações correspondentes. A animação pausa fora da tela ou em uma aba oculta e não inicia automaticamente quando o sistema solicita movimento reduzido.
+
+A ordem inicial prioriza os exercícios mais executados por número de séries na análise do [StrengthLog com milhões de treinos de mais de 500 mil usuários](https://www.strengthlog.com/strength-training-statistics/): supino, agachamento, levantamento terra, puxada alta, desenvolvimento e remada aparecem primeiro, seguidos pelos demais movimentos presentes nas listas feminina e masculina.
 
 Comandos úteis:
 
@@ -85,4 +87,4 @@ Veja [SECURITY.md](SECURITY.md) para comunicar vulnerabilidades.
 
 O código é distribuído sob **GNU AGPL-3.0-or-later**. Uma implantação pública modificada deve oferecer aos usuários o código-fonte correspondente desta versão. Consulte [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md).
 
-Metadados, diagramas e bibliotecas de terceiros têm avisos próprios. O app não inclui nem carrega as imagens/GIFs restritos por padrão; quem possuir licença própria pode configurar uma origem autorizada conforme [NOTICE.md](NOTICE.md).
+Metadados, diagramas e bibliotecas de terceiros têm avisos próprios. As animações SVG locais vêm do Workout Guide e permanecem sob CC BY-SA 4.0; consulte [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) e [NOTICE.md](NOTICE.md).

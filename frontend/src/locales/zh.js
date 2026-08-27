@@ -213,7 +213,7 @@ export default {
   'Delete routine?': '删除训练日？',
   '“{0}” and its exercises will be removed.': '“{0}”及其动作将被移除。',
   'Delete routine': '删除训练日',
-  '{0} exercises with animations': '{0} 个带动画的动作',
+  '{0} exercises in the catalogue': '目录中有 {0} 个动作',
   'Search…': '搜索…',
   'No workouts yet.': '还没有训练。',
   'Starter plan loaded — Mon Push · Wed Pull · Fri Legs': '入门计划已加载——周一推 · 周三拉 · 周五腿',

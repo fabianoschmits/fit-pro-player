@@ -213,7 +213,7 @@ export default {
   'Delete routine?': 'Rutin silinsin mi?',
   '“{0}” and its exercises will be removed.': '“{0}” ve egzersizleri kaldırılacak.',
   'Delete routine': 'Rutini sil',
-  '{0} exercises with animations': 'animasyonlu {0} egzersiz',
+  '{0} exercises in the catalogue': 'katalogda {0} egzersiz',
   'Search…': 'Ara…',
   'No workouts yet.': 'Henüz antrenman yok.',
   'Starter plan loaded — Mon Push · Wed Pull · Fri Legs': 'Başlangıç planı yüklendi — Pzt Push · Çar Pull · Cum Bacak',

@@ -8,10 +8,23 @@ native builds through a store requires an independent review of the store terms 
 
 ## Local exercise illustrations
 
-The first ten catalogue exercises use Fit Pro Player's own local SVG sprite sequences. Their
-vector paths are stored directly in the application source and do not download a character,
-model, raster image or animation at runtime. Other catalogue entries use the local body diagram
-described below.
+Verified catalogue matches use selected illustrations from
+[**Workout Guide**](https://github.com/bryllim/workout-guide) by Bryl Lim. Workout Guide credits
+the original pose artwork to [**Everkinetic**](https://github.com/everkinetic/data). These visual
+assets are licensed under **CC BY-SA 4.0**, not AGPL. Fit Pro Player embeds 516 SVG frames from
+172 Workout Guide exercises directly in local source modules and maps them to 173 catalogue IDs.
+The import uses Workout Guide 1.0.0 at commit
+`ba0b709cb20430361b2cb33aaadd20998164a916`.
+
+Fit Pro Player changes only packaging, exercise selection, animation timing, responsive layout,
+playback controls, and theme color treatment; SVG path geometry remains unchanged. The imported
+artwork and these visual adaptations remain under CC BY-SA 4.0. Complete attribution, source
+URLs, change notes, and license copies are in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) and
+`frontend/src/assets/workout-guide/`.
+
+Only exact Workout Guide movement matches are offered in new catalogue selections. Unmatched
+source records stay indexed solely to preserve existing plans and workout history until their
+corresponding local animations are ready.
 
 ## Body diagram geometry
 
@@ -92,22 +105,3 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
-
-### Images & animations — third-party, not MIT and not AGPL
-
-The Gym Visual exercise thumbnails and animations are **not** covered by the MIT license above or
-by Fit Pro Player's AGPL. The upstream dataset says it has separate written permission to distribute
-the 180×180 media, requires the attribution **© [Gym visual](https://gymvisual.com/)**, and explicitly
-states that cloning the dataset does not grant a media licence.
-
-**Fit Pro Player does not redistribute or load that third-party media by default.** Public, mobile,
-development and container builds instead render the bundled SVG exercise sequences or the local
-body diagram, so there is no broken network dependency and no restricted third-party exercise
-artwork in this repository or its build output.
-
-A person who obtains their own licence may set `VITE_CATALOG_MEDIA_ENABLED=1` and configure
-`VITE_IMG_BASE` and `VITE_GIF_BASE` to point at media they are authorised to serve. For the bundled Docker stack, the authorised files can stay
-untracked in `media/img` and `media/gif` and be served at `/img/` and `/gif/`. Keep the required Gym
-Visual attribution visible and follow the rights holder's
-[Terms & Conditions](https://gymvisual.com/content/3-terms-and-conditions-of-use). Credits alone do
-not replace the required licence or separate written redistribution permission.

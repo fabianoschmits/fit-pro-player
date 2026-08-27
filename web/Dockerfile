@@ -12,12 +12,6 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci 2>/dev/null || npm install
 COPY frontend/ ./
-ARG VITE_CATALOG_MEDIA_ENABLED
-ARG VITE_IMG_BASE
-ARG VITE_GIF_BASE
-ENV VITE_CATALOG_MEDIA_ENABLED=$VITE_CATALOG_MEDIA_ENABLED
-ENV VITE_IMG_BASE=$VITE_IMG_BASE
-ENV VITE_GIF_BASE=$VITE_GIF_BASE
 RUN npm run build
 
 FROM nginx:alpine
@@ -38,7 +32,6 @@ LABEL maintainer="Fabiano Schmits https://github.com/fabianoschmits" \
 
 COPY web/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
-# exercise media (img/gif) is mounted at runtime from the media volume
 
 # Set Default ENVs for nginx
 ENV NGINX_PORT=80

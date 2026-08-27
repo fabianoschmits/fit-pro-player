@@ -35,7 +35,7 @@ server {
         expires -1;
     }
 
-    # Exercise images/GIFs never change → cache hard
+    # Bundled visual assets and fonts are content-hashed and can be cached.
     location ~* \.(png|jpg|jpeg|gif|ico|svg|woff|woff2|webp|avif)$ {
         expires 30d;
     }

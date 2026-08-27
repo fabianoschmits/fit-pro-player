@@ -3,12 +3,13 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('./ExerciseSvgSprite.jsx', () => ({
+vi.mock('./ExerciseGuideAnimation.jsx', () => ({
   default: ({ playing }) => <div data-testid="sprite" data-playing={String(playing)} />,
 }))
 
-vi.mock('../lib/exercise-svg-sprites.js', () => ({
-  hasExerciseSvgSprite: () => true,
+vi.mock('../lib/exercise-guide-assets.js', async importOriginal => ({
+  ...(await importOriginal()),
+  hasExerciseGuideAsset: () => true,
 }))
 
 import Media from './Media.jsx'
@@ -47,7 +48,7 @@ describe('Media SVG playback', () => {
     installMotionPreference(false)
     act(() => root.render(<Media ex={EXERCISE} />))
 
-    const button = container.querySelector('.gifhint')
+    const button = container.querySelector('.media-playback')
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
     expect(button.getAttribute('aria-label')).toMatch(/pausar|pause/i)
 
@@ -61,6 +62,6 @@ describe('Media SVG playback', () => {
     act(() => root.render(<Media ex={EXERCISE} />))
 
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('false')
-    expect(container.querySelector('.gifhint').getAttribute('aria-label')).toMatch(/reproduzir|play/i)
+    expect(container.querySelector('.media-playback').getAttribute('aria-label')).toMatch(/reproduzir|play/i)
   })
 })

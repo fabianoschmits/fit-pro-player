@@ -1,8 +1,24 @@
-import { EXDB } from './exercises-data.js'
+import { EXDB as SOURCE_EXERCISES } from './exercises-data.js'
 import PT_EXERCISE_NAMES from '../generated/pt-exercise-names.js'
 import { getLang, t } from './i18n-core.js'
+import {
+  WORKOUT_GUIDE_EXERCISE_IDS,
+  WORKOUT_GUIDE_POPULARITY_IDS,
+} from './exercise-guide-assets.js'
 
-export { EXDB }
+// Keep the complete source dataset available to resolve old plans and workout history, but
+// expose only exercises with a checked local animation for new catalogue selections. The
+// remaining rows are intentionally pending here until their corresponding artwork is ready.
+const ACTIVE_IDS = new Set(WORKOUT_GUIDE_EXERCISE_IDS)
+const POPULARITY_RANK = new Map(WORKOUT_GUIDE_POPULARITY_IDS.map((id, index) => [id, index]))
+export const EXDB = SOURCE_EXERCISES
+  .filter(exercise => ACTIVE_IDS.has(exercise.id))
+  .sort((a, b) => {
+    const aRank = POPULARITY_RANK.get(a.id) ?? Number.MAX_SAFE_INTEGER
+    const bRank = POPULARITY_RANK.get(b.id) ?? Number.MAX_SAFE_INTEGER
+    return aRank - bRank
+  })
+export const PENDING_EXERCISE_COUNT = SOURCE_EXERCISES.length - EXDB.length
 
 // The generated dataset already supplies secondary muscles for most exercises. Keep the
 // handful of conservative catalogue additions that are useful to the muscle map here so a
@@ -24,7 +40,9 @@ export const smOf = ex => {
 }
 
 export const EXIDX = {}
-EXDB.forEach(e => { EXIDX[e.id] = e })
+// Historical entries may refer to exercises that are temporarily hidden from the catalogue.
+// Indexing the source list preserves those records without offering them in new selections.
+SOURCE_EXERCISES.forEach(e => { EXIDX[e.id] = e })
 export const BODYPARTS = [...new Set(EXDB.map(e => e.bp))].sort()
 
 // Equipment options present in a given list of exercises, most common first (issue #6).
@@ -59,17 +77,6 @@ export const exerciseSearchText = ex => [
   exerciseName(ex), ex?.n, t(ex?.bp || ''), t(ex?.tg || ''), t(ex?.eq || ''), ex?.desc,
 ].filter(Boolean).join(' ').toLocaleLowerCase(getLang() === 'pt' ? 'pt-BR' : undefined)
 
-// Licensed catalogue media is opt-in. Public builds leave these bases unset and render the
-// local SVG sprite or static muscle map; a licence holder can point other exercises at media
-// they are authorised to serve. The import.meta guard keeps this module loadable outside Vite.
-const ENV = import.meta.env || {}
-const base = value => value ? String(value).replace(/\/?$/, '/') : ''
-const LICENSED_MEDIA = ENV.VITE_CATALOG_MEDIA_ENABLED === '1'
-const IMG_BASE = LICENSED_MEDIA ? base(ENV.VITE_IMG_BASE) : ''
-const GIF_BASE = LICENSED_MEDIA ? base(ENV.VITE_GIF_BASE) : ''
-export const catalogMediaEnabled = !!(IMG_BASE || GIF_BASE)
-export const imgSrc = ex => IMG_BASE && ex?.img ? IMG_BASE + ex.img : null
-export const gifSrc = ex => GIF_BASE && ex?.gif ? GIF_BASE + ex.gif : null
 
 // Cardio exercises log time + speed instead of weight × reps.
 export const isCardio = idOrEx => (typeof idOrEx === 'string' ? EXIDX[idOrEx] : idOrEx)?.bp === 'cardio'

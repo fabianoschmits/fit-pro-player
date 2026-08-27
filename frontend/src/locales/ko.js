@@ -213,7 +213,7 @@ export default {
   'Delete routine?': '루틴을 삭제할까요?',
   '“{0}” and its exercises will be removed.': '"{0}"과(와) 그 운동들이 삭제됩니다.',
   'Delete routine': '루틴 삭제',
-  '{0} exercises with animations': '애니메이션이 있는 운동 {0}개',
+  '{0} exercises in the catalogue': '카탈로그에 운동 {0}개',
   'Search…': '검색…',
   'No workouts yet.': '아직 운동 기록이 없어요.',
   'Starter plan loaded — Mon Push · Wed Pull · Fri Legs': '스타터 계획 불러옴 — 월 푸시 · 수 풀 · 금 레그',

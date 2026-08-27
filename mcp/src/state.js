@@ -131,7 +131,7 @@ function defaultsShape() {
     unit: 'kg', restSec: 90, sound: true, lang: 'en',
     theme: 'dark', accent: 'lime', body: 'male', targetW: null,
     bodyweight: [], routines: [], week: {}, dayPlan: {},
-    exWeights: {}, workouts: [], customEx: [], gifSize: 'full',
+    exWeights: {}, workouts: [], customEx: [], mediaSize: 'full',
     reminder: { on: false, time: '08:00', tz: null }
   }
 }
