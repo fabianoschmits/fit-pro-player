@@ -1,31 +1,26 @@
 import { describe, expect, it } from 'vitest'
 import { guideTimelineState } from './ExerciseGuideAnimation.jsx'
 
-const CONFIG = { duration: 3200, sequence: [0, 1, 2, 1] }
+const CONFIG = { duration: 2400, sequence: [0, 1, 2] }
 
 describe('Workout Guide animation timeline', () => {
-  it('uses one continuous sequence for every visual layer', () => {
-    expect(guideTimelineState(CONFIG, 0)).toEqual({ currentFrame: 0, nextFrame: 1, mix: 0 })
+  it('uses the three canonical frames in their original order', () => {
+    expect(guideTimelineState(CONFIG, 0)).toEqual({ frame: 0 })
 
     const beforeBoundary = guideTimelineState(CONFIG, 799)
     const atBoundary = guideTimelineState(CONFIG, 800)
-    expect(beforeBoundary.currentFrame).toBe(0)
-    expect(beforeBoundary.nextFrame).toBe(1)
-    expect(beforeBoundary.mix).toBeGreaterThan(0.99)
-    expect(atBoundary).toEqual({ currentFrame: 1, nextFrame: 2, mix: 0 })
+    expect(beforeBoundary).toEqual({ frame: 0 })
+    expect(atBoundary).toEqual({ frame: 1 })
+    expect(guideTimelineState(CONFIG, 1600)).toEqual({ frame: 2 })
   })
 
-  it('crossfades only near the end of a pose interval', () => {
-    expect(guideTimelineState(CONFIG, 680).mix).toBe(0)
-    expect(guideTimelineState(CONFIG, 744).mix).toBeGreaterThan(0)
-    expect(guideTimelineState(CONFIG, 744).mix).toBeLessThan(1)
+  it('never inserts or repeats a synthetic pose', () => {
+    expect(CONFIG.sequence).toEqual([0, 1, 2])
+    expect(new Set(CONFIG.sequence).size).toBe(CONFIG.sequence.length)
   })
 
-  it('loops into the same frame that was already visible', () => {
-    const beforeLoop = guideTimelineState(CONFIG, 3199)
-    const afterLoop = guideTimelineState(CONFIG, 3200)
-    expect(beforeLoop.nextFrame).toBe(afterLoop.currentFrame)
-    expect(beforeLoop.mix).toBeGreaterThan(0.99)
-    expect(afterLoop).toEqual({ currentFrame: 0, nextFrame: 1, mix: 0 })
+  it('loops from the final ordered frame back to the first', () => {
+    expect(guideTimelineState(CONFIG, 2399)).toEqual({ frame: 2 })
+    expect(guideTimelineState(CONFIG, 2400)).toEqual({ frame: 0 })
   })
 })

@@ -32,8 +32,9 @@ that foundation with additional exercises and animation frames, normalized trans
   history; they are hidden from new selections until a corresponding local animation is ready.
 - The three standalone SVG files for each selected exercise are embedded verbatim as local
   JavaScript strings so production builds never fetch artwork from an external URL.
-- Fit Pro Player supplies animation timing, crossfades, responsive layout, playback controls,
-  and a theme-aware color treatment. SVG path geometry is unchanged.
+- Fit Pro Player supplies single-frame sequencing in the canonical 1-2-3 order, responsive
+  layout, playback controls, and a theme-aware color treatment. Complete SVG drawings are never
+  crossfaded or geometrically transformed, and their path geometry is unchanged.
 
 The imported artwork and Fit Pro Player's visual adaptations remain available under CC BY-SA
 4.0. This asset license is separate from the GNU AGPL-3.0-or-later license that covers the

@@ -34,7 +34,16 @@ describe('local Workout Guide assets', () => {
       const moduleUrl = new URL(`../assets/workout-guide/${slug}/frames.js`, import.meta.url)
       expect(existsSync(moduleUrl), slug).toBe(true)
       const source = readFileSync(moduleUrl, 'utf8')
-      expect((source.match(/<svg\b/g) || []).length, slug).toBe(3)
+      const literal = source.match(/Object\.freeze\((\[[\s\S]*\])\)\s*\nexport default/)?.[1]
+      expect(literal, slug).toBeTruthy()
+      const frames = JSON.parse(literal)
+      expect(frames, slug).toHaveLength(3)
+      expect(new Set(frames).size, `${slug}: duplicate SVG frame`).toBe(3)
+      for (const [index, frame] of frames.entries()) {
+        expect(frame, `${slug}: frame ${index + 1} canvas`).toMatch(
+          /^<svg\b[^>]*\bwidth="512"[^>]*\bheight="512"[^>]*\bviewBox="0 0 512 512"/i,
+        )
+      }
       expect(source, slug).not.toMatch(/<(?:script|image|foreignObject)\b|\b(?:href|xlink:href)\s*=|javascript:/i)
     }
   })
@@ -65,6 +74,7 @@ describe('local Workout Guide assets', () => {
   it('returns stable animation configuration objects', () => {
     const exercise = EXDB.find(candidate => candidate.id === '0003')
     expect(exerciseGuideAsset(exercise)).toBe(exerciseGuideAsset(exercise))
+    expect(exerciseGuideAsset(exercise)).toMatchObject({ duration: 2400, sequence: [0, 1, 2] })
     expect(hasExerciseGuideAsset(exercise)).toBe(true)
     expect(hasExerciseGuideAsset(EXDB.find(candidate => candidate.id === '0001'))).toBe(false)
   })

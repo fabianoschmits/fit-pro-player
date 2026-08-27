@@ -3,26 +3,13 @@ import { exerciseName } from '../lib/exercises.js'
 import { exerciseGuideAsset } from '../lib/exercise-guide-assets.js'
 
 const FRAME_LOADERS = import.meta.glob('../assets/workout-guide/*/frames.js', { import: 'default' })
-const CROSSFADE_PORTION = 0.14
-
-function smoothstep(value) {
-  const clamped = Math.max(0, Math.min(1, value))
-  return clamped * clamped * (3 - 2 * clamped)
-}
 
 export function guideTimelineState(config, elapsed) {
   const steps = config.sequence.length
   const stepDuration = config.duration / steps
   const cycleTime = ((elapsed % config.duration) + config.duration) % config.duration
-  const stepProgress = cycleTime / stepDuration
-  const step = Math.min(steps - 1, Math.floor(stepProgress))
-  const phase = stepProgress - step
-  const mix = smoothstep((phase - (1 - CROSSFADE_PORTION)) / CROSSFADE_PORTION)
-  return {
-    currentFrame: config.sequence[step],
-    nextFrame: config.sequence[(step + 1) % steps],
-    mix,
-  }
+  const step = Math.min(steps - 1, Math.floor(cycleTime / stepDuration))
+  return { frame: config.sequence[step] }
 }
 
 function validatedFrames(frames) {
@@ -68,35 +55,34 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
     if (layers?.length !== 3 || !config || !frames) return undefined
 
     let observer
-    const requestFrame = window.requestAnimationFrame?.bind(window) ||
-      (callback => window.setTimeout(() => callback(performance.now()), 16))
-    const cancelFrame = window.cancelAnimationFrame?.bind(window) || window.clearTimeout.bind(window)
-    const timeline = { elapsed: 0, frameId: null, lastSignature: '', startTime: null }
+    const stepDuration = config.duration / config.sequence.length
+    const timeline = { elapsed: 0, timerId: null, renderedFrame: null, startTime: null }
     visibleRef.current = true
 
     const render = elapsed => {
       const state = guideTimelineState(config, elapsed)
-      const signature = `${state.currentFrame}:${state.nextFrame}:${state.mix.toFixed(3)}`
-      if (signature === timeline.lastSignature) return
-      timeline.lastSignature = signature
-      layers.forEach(layer => { layer.style.opacity = '0' })
-      layers[state.currentFrame].style.opacity = String(1 - state.mix)
-      layers[state.nextFrame].style.opacity = String(
-        Number(layers[state.nextFrame].style.opacity) + state.mix,
-      )
+      if (state.frame === timeline.renderedFrame) return
+      timeline.renderedFrame = state.frame
+      layers.forEach((layer, index) => {
+        const active = index === state.frame
+        layer.classList.toggle('is-active', active)
+        layer.setAttribute('aria-hidden', String(!active))
+      })
     }
 
-    const tick = timestamp => {
+    const schedule = () => {
       if (timeline.startTime === null) return
-      timeline.elapsed = (timestamp - timeline.startTime) % config.duration
+      const now = performance.now()
+      timeline.elapsed = (now - timeline.startTime) % config.duration
       render(timeline.elapsed)
-      timeline.frameId = requestFrame(tick)
+      const untilNextFrame = stepDuration - (timeline.elapsed % stepDuration)
+      timeline.timerId = window.setTimeout(schedule, Math.max(16, untilNextFrame + 1))
     }
 
     const play = () => {
       if (timeline.startTime !== null) return
       timeline.startTime = performance.now() - timeline.elapsed
-      timeline.frameId = requestFrame(tick)
+      schedule()
     }
 
     const pause = () => {
@@ -104,8 +90,8 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
         timeline.elapsed = (performance.now() - timeline.startTime) % config.duration
         timeline.startTime = null
       }
-      if (timeline.frameId !== null) cancelFrame(timeline.frameId)
-      timeline.frameId = null
+      if (timeline.timerId !== null) window.clearTimeout(timeline.timerId)
+      timeline.timerId = null
       render(timeline.elapsed)
     }
 
@@ -163,12 +149,11 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
     >
       {frames.map((frame, index) => (
         <div
-          className="exercise-guide-frame"
+          className={'exercise-guide-frame' + (index === 0 ? ' is-active' : '')}
           data-guide-frame={index}
           // Frames are bundled source files, validated above and never supplied by users.
           dangerouslySetInnerHTML={{ __html: frame }}
-          style={{ opacity: index === 0 ? 1 : 0 }}
-          aria-hidden="true"
+          aria-hidden={index !== 0}
           key={index}
         />
       ))}

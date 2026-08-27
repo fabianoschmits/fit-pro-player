@@ -212,11 +212,13 @@ export const WORKOUT_GUIDE_POPULARITY_IDS = Object.freeze([
   '0201', // tricep pushdown
 ])
 
-const GUIDE_SEQUENCE = Object.freeze([0, 1, 2, 1])
+// Workout Guide defines three ordered 512 x 512 frames. Keep that canonical order exactly;
+// repeating the middle pose or blending complete drawings creates a visible ghost silhouette.
+const GUIDE_SEQUENCE = Object.freeze([0, 1, 2])
 const WORKOUT_GUIDE_ASSETS = Object.freeze(Object.fromEntries(
   Object.entries(WORKOUT_GUIDE_BY_EXERCISE_ID).map(([id, slug]) => [
     id,
-    Object.freeze({ duration: 3200, sequence: GUIDE_SEQUENCE, slug }),
+    Object.freeze({ duration: 2400, sequence: GUIDE_SEQUENCE, slug }),
   ]),
 ))
 

@@ -63,7 +63,7 @@ vercel
 vercel --prod
 ```
 
-O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora os sprites SVG e mapas musculares no próprio app. Nenhum segredo é necessário.
+O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora as sequências SVG e os mapas musculares no próprio app. Nenhum segredo é necessário.
 
 ## Estrutura
 
