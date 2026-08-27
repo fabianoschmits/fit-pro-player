@@ -11,5 +11,5 @@ frontend/resources/
 api/
 mcp/
 web/
-assets/
+/assets/
 docs/

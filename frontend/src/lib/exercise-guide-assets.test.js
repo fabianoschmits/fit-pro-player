@@ -39,6 +39,18 @@ describe('local Workout Guide assets', () => {
     }
   })
 
+  it('keeps the embedded animation directory in the Vercel build context', () => {
+    const ignoreUrl = new URL('../../../.vercelignore', import.meta.url)
+    const rules = readFileSync(ignoreUrl, 'utf8')
+      .split(/\r?\n/)
+      .map(rule => rule.trim())
+      .filter(rule => rule && !rule.startsWith('#'))
+    expect(rules).toContain('/assets/')
+    expect(rules).not.toContain('assets/')
+    expect(rules).not.toContain('frontend/src/assets/')
+    expect(rules).not.toContain('frontend/src/assets/**')
+  })
+
   it('preserves exact source provenance for the bundled subset', () => {
     const provenanceUrl = new URL('../assets/workout-guide/manifest.json', import.meta.url)
     const provenance = JSON.parse(readFileSync(provenanceUrl, 'utf8'))
