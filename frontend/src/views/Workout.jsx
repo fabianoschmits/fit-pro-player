@@ -21,11 +21,13 @@ import { isWarmupRow } from '../lib/workout-model.js'
 function StartChooser() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const todayR = effectiveRoutine(S, todayISO())
+  const scheduledToday = effectiveRoutine(S, todayISO())
+  const todayR = scheduledToday?.ex.length ? scheduledToday : null
+  const emptyToday = scheduledToday && !scheduledToday.ex.length ? scheduledToday : null
   const todayOvr = S.dayPlan[todayISO()] !== undefined
-  const others = S.routines.filter(r => r !== todayR)
+  const others = S.routines.filter(r => r !== todayR && r.ex.length)
   return <div className="narrow">
-    <div className="hdr"><div><h1>{t('Start workout')}</h1><div className="sub">{t(DAYN[new Date().getDay()])} — {todayR ? t('today is {0}', todayR.name) : t('rest day, but no one’s stopping you')}</div></div></div>
+    <div className="hdr"><div><h1>{t('Start workout')}</h1><div className="sub">{t(DAYN[new Date().getDay()])} — {scheduledToday ? t('today is {0}', scheduledToday.name) : t('rest day, but no one’s stopping you')}</div></div></div>
     {todayR && <div className="card" style={{ borderColor: 'var(--acc)' }}>
       <h2 className="accent">{t("Today's plan")}{todayOvr ? ' · ' + t('rescheduled') : ''}</h2>
       <div className="row between" style={{ marginBottom: 12 }}>
@@ -34,6 +36,14 @@ function StartChooser() {
       </div>
       <Button variant="primary" icon="play" onClick={() => startFlow(todayR.id)}>{t('Start {0}', todayR.name)}</Button>
     </div>}
+    {emptyToday && <div className="card">
+      <h2>{t("Today's plan")}</h2>
+      <div className="row between" style={{ marginBottom: 12 }}>
+        <div><div className="big">{emptyToday.name}</div><div className="muted small">{exCount(0)}</div></div>
+        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9, fontSize: 22 }}><Icon name={glyphOf(emptyToday.emoji)} /></span>
+      </div>
+      <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + emptyToday.id)}>{t('Add exercise')}</Button>
+    </div>}
     {others.length > 0 && <><h4 className="sec">{t('Other routines')}</h4>
       <div className="list">{others.map(r => <div key={r.id} className="item" onClick={() => startFlow(r.id)}>
         <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
@@ -41,7 +51,7 @@ function StartChooser() {
         <span className="tag acc">{t('Start')}</span></div>)}</div></>}
     <div style={{ height: 14 }} />
     <Button icon="shuffle" onClick={() => startFlow(null)}>{t('Freestyle workout (pick as you go)')}</Button>
-    {!S.routines.length && <><div style={{ height: 10 }} /><Button variant="primary" onClick={() => nav('/plan')}>{t('Build a plan first')}</Button></>}
+    {!S.routines.some(r => r.ex.length) && <><div style={{ height: 10 }} /><Button variant="primary" onClick={() => nav('/plan')}>{t('Build a plan first')}</Button></>}
   </div>
 }
 

@@ -350,6 +350,87 @@ h4.sec{
   display:flex;align-items:center;justify-content:center;font-size:21px;
   background:var(--surface-2);color:var(--label-2);
 }
+
+/* ------------------------------------------------------- weekly planner -- */
+.plan-onboarding{max-width:620px;margin:0 auto}
+.plan-onboarding .card{padding:24px;text-align:center}
+.plan-intro-icon{
+  width:52px;height:52px;border-radius:16px;margin:0 auto 14px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--acc-soft);color:var(--acc);font-size:25px;
+}
+.plan-intro-copy{max-width:460px;margin:7px auto 20px;line-height:1.45}
+.plan-steps{display:flex;align-items:center;justify-content:center;margin:0 auto 22px;max-width:420px}
+.plan-steps div{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:76px;color:var(--label-2);font-size:12px}
+.plan-steps span{
+  width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--acc);background:var(--acc-soft);font-size:13px;font-weight:600;
+}
+.plan-steps i{height:1px;flex:1;background:var(--sep);margin:0 2px 19px}
+.plan-section-head,.routine-section-head{margin:22px 0 10px;min-height:32px}
+.plan-section-head h4,.routine-section-head h4{margin:0}
+.plan-week-card{padding:10px}
+.plan-week-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.plan-day{
+  min-width:0;min-height:82px;padding:8px 4px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  background:var(--surface-2);color:var(--label-2);transition:background var(--fast),transform var(--fast),color var(--fast);
+}
+.plan-day:active{transform:scale(.94)}
+.plan-day.on{background:var(--acc-soft);color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc-line)}
+.plan-day.has-other{color:var(--label-3)}
+.plan-day-label{font-size:11px;text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.plan-day-icon{font-size:18px;display:flex}
+.plan-day-name{font-size:10px;line-height:1.1;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+.plan-routine-list .item{cursor:pointer}
+
+/* -------------------------------------------------------- routine builder */
+.routine-builder-head{align-items:center;margin-bottom:10px}
+.routine-name-wrap{flex:1;margin:0 8px;min-width:0}
+.routine-name{font-weight:600;font-size:20px;letter-spacing:-.021em;text-align:center}
+.routine-empty{padding:30px 20px}
+.routine-item-main{display:flex;align-items:center;gap:12px;flex:1;min-width:0;text-align:left;color:inherit}
+.routine-item-tools{display:flex;align-items:center;gap:3px;flex:none}
+.routine-item-tools .iconbtn{width:32px;height:32px;border-radius:9px;font-size:14px}
+.routine-item-tools .iconbtn:disabled{opacity:.24;pointer-events:none}
+.routine-organize-help{margin:10px 2px;gap:5px;line-height:1.35}
+.routine-organize-help .icn{font-size:13px;flex:none}
+.routine-week-card{margin-top:18px;padding:14px}
+.routine-card-title{margin-bottom:10px}
+.routine-card-title h2{margin:0}
+.routine-week-card .plan-day{min-height:72px}
+.routine-muscles{margin-top:18px}
+.routine-advanced{
+  margin:18px 0 12px;background:var(--surface);border-radius:var(--r-card);overflow:hidden;
+}
+.routine-advanced>summary{
+  min-height:52px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;
+  color:var(--label);cursor:pointer;list-style:none;
+}
+.routine-advanced>summary::-webkit-details-marker{display:none}
+.routine-advanced>summary>span{display:flex;align-items:center;gap:9px;font-size:15px}
+.routine-advanced>summary>span .icn{color:var(--acc)}
+.routine-advanced>summary>.icn{font-size:13px;color:var(--label-3);transition:transform var(--fast)}
+.routine-advanced[open]>summary>.icn{transform:rotate(180deg)}
+.routine-advanced-body{padding:0 12px 12px;border-top:var(--hair) solid var(--sep)}
+.routine-advanced-copy{padding:8px 4px 2px;line-height:1.4}
+.ex-config-more{margin:0 0 12px;background:var(--surface-2)}
+.ex-config-more .routine-advanced-body{padding-top:12px}
+.sheet-title-row{margin-bottom:12px}
+.sheet-title-row h3{margin:0}
+.item.item-selected{opacity:.64;cursor:default}
+
+@media (max-width:520px){
+  .plan-onboarding .card{padding:20px 16px}
+  .plan-steps div{min-width:64px}
+  .plan-day{min-height:70px;padding:7px 2px;gap:4px;border-radius:10px}
+  .plan-day-name{display:none}
+  .plan-day-icon{font-size:17px}
+  .routine-week-card{padding:12px 8px}
+  .routine-week-card .plan-week-grid{gap:4px}
+  .routine-week-card .plan-day{min-height:64px}
+  .routine-name{font-size:18px}
+}
 .thumb.exercise-muscle-thumb{
   display:flex;width:50px;height:50px;min-width:50px;padding:2px;gap:0;
   align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;
@@ -363,8 +444,8 @@ h4.sec{
 }
 .exercise-muscle-static .bm-v{width:100%;height:100%;max-height:none;flex:none}
 .exercise-muscle-static .bm-ph{width:100%;height:100%}
-.item .tt{font-size:16px;font-weight:400;line-height:1.25;letter-spacing:-.009em}
-.item .ss{color:var(--label-2);font-size:13px;margin-top:2px}
+.item .tt{display:block;font-size:16px;font-weight:400;line-height:1.25;letter-spacing:-.009em}
+.item .ss{display:block;color:var(--label-2);font-size:13px;margin-top:2px}
 .item .grow{flex:1;min-width:0}
 .chev{color:var(--label);flex:none;font-size:15px;--icon-stroke:2.4}
 .tag{

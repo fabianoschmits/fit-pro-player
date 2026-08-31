@@ -17,6 +17,7 @@ export default function TabBar({ onStart }) {
 
   const startWorkout = () => {
     if (!S.active) {
+      if (!S.routines.length) { nav('/plan'); return }
       const r = effectiveRoutine(S, todayISO())
       if (r && r.ex.length) { onStart(r.id); return }
     }

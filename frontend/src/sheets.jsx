@@ -415,9 +415,10 @@ function usageMap(st) {
   st.workouts.forEach(w => w.entries.forEach(e => { u[e.id] = (u[e.id] || 0) + 1 }))
   return u
 }
-function ExercisePicker({ onPick, close }) {
+function ExercisePicker({ onPick, close, routineId }) {
   const st = useStore(s => s.S)
   const usage = usageMap(st)
+  const selectedIds = new Set((st.routines.find(r => r.id === routineId)?.ex || []).map(e => e.id))
   const [q, setQ] = useState('')
   const [bp, setBp] = useState('')          // '' = all, '★' = chosen, else a body part
   const [eq, setEq] = useState('')          // '' = any equipment
@@ -434,7 +435,10 @@ function ExercisePicker({ onPick, close }) {
   const f = eqOn ? base.filter(e => e.eq === eqOn) : base
   const chosenCount = Object.keys(usage).length
   return <>
-    <h3>{t('Add exercise')}</h3>
+    <div className="row between sheet-title-row">
+      <h3>{t('Add exercise')}</h3>
+      <Button size="sm" variant="tinted" icon="check" onClick={close}>{t('Done')}</Button>
+    </div>
     <div className="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
       <input className="input" placeholder={t('Search {0} exercises…', all.length)} value={q} onChange={e => { setQ(e.target.value); setShown(50) }} /></div>
     <div className="chips" style={{ margin: eqOpts.length > 1 ? '10px 0 6px' : '10px 0' }}>
@@ -451,16 +455,20 @@ function ExercisePicker({ onPick, close }) {
         <div className="thumb thumb-x"><Icon name="sparkles" /></div>
         <div className="grow"><div className="tt">{t('Create your own exercise')}</div><div className="ss">{t('name + body part, no animation')}</div></div><Icon name="plus" className="chev" />
       </div>}
-      {f.slice(0, shown).map(e => <div key={e.id} className="item" onClick={() => onPick(e)}>
+      {f.slice(0, shown).map(e => {
+        const selected = selectedIds.has(e.id)
+        return <div key={e.id} className={'item' + (selected ? ' item-selected' : '')}
+          aria-disabled={selected || undefined} onClick={() => { if (!selected) onPick(e) }}>
         <Thumb ex={e} /><div className="grow"><div className="tt">{exerciseName(e)}</div><div className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</div></div>
-        {usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}<Icon name="plus" className="chev" />
-      </div>)}
+        {selected ? <span className="tag acc"><Icon name="check" />{t('already in')}</span>
+          : <>{usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}<Icon name="plus" className="chev" /></>}
+      </div>})}
       {f.length === 0 && bp === '★' && <div className="empty">{t('Nothing chosen yet — add exercises and they’ll show up here.')}</div>}
     </div>
     {f.length > shown && <><div style={{ height: 8 }} /><Button onClick={() => setShown(s => s + 50)}>{t('Show more')}</Button></>}
   </>
 }
-export const exercisePicker = onPick => ui().openSheet(close => <ExercisePicker onPick={onPick} close={close} />)
+export const exercisePicker = (onPick, opts = {}) => ui().openSheet(close => <ExercisePicker onPick={onPick} close={close} {...opts} />)
 
 /* ============================ exercise config ============================ */
 // Progression settings for one exercise (issue #17). Shown inside the config sheet because
@@ -532,7 +540,7 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial }) {
   }
   return <>
     <h3 className="capitalize">{exerciseName(ex)}</h3>
-    <Media ex={ex} />
+    <Media ex={ex} compact />
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0 14px' }}>
       {cardio && <span className="tag acc"><Icon name="figureRun" />{t('Cardio')}</span>}
       <span className="tag">{sentenceCase(t(ex.tg || ex.bp))}</span><span className="tag">{sentenceCase(t(ex.eq))}</span>
@@ -562,6 +570,9 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial }) {
     {mode === 'time' && !bw && <div className="small dim" style={{ marginBottom: 18 }}>
       {t('A timer runs while you hold the set. Leave the weight at 0 for bodyweight holds.')}
     </div>}
+    <details className="routine-advanced ex-config-more">
+      <summary><span><Icon name="gear" />{t('More')}</span><Icon name="chevronDown" /></summary>
+      <div className="routine-advanced-body">
     {/* ---------- bodyweight + per side (issues #31/#32/#33) ---------- */}
     {!cardio && <div className="sect-b" style={{ marginBottom: 8 }}>
       <Row icon="figureStrength" iconTint="var(--acc)" title={t('Bodyweight')}
@@ -598,6 +609,8 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial }) {
         : t('Reps climb by one whenever every set was clean. Set a ceiling to add sets instead of reps forever.')}
     </div>}
     <ProgressionFields ex={ex} mode={mode} c={c} setC={setC} routine={routine} unit={st.unit} />
+      </div>
+    </details>
     <Button variant="primary" onClick={save}>{existing ? t('Save') : t('Add to routine')}</Button>
     {ex.custom && <><div style={{ height: 8 }} /><Button icon="pencil" onClick={() => { close(); customExSheet(ex) }}>{t('Edit or delete this exercise')}</Button></>}
     {onDelete && <><div style={{ height: 8 }} /><Button variant="danger" onClick={() => { close(); onDelete() }}>{t('Remove from routine')}</Button></>}
@@ -724,6 +737,11 @@ function DayOverride({ iso, close }) {
   return <>
     <h3>{fmtDate(iso, true)}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{t('Weekly plan:')} {weeklyR ? weeklyR.name : t('Rest')}{hasOvr && <span style={{ color: 'var(--orange)' }}> · {t('changed for this day')}</span>}<br />{t('Sick, missed a day or want a different session? Pick what to train instead.')}</div>
+    {!st.routines.length && <>
+      <div className="empty"><div className="ico"><Icon name="clipboard" /></div>{t('No routines yet.')}<br />{t('Create one or load the starter plan.')}</div>
+      <Button variant="primary" icon="plus" onClick={() => { close(); nav('/plan') }}>{t('Build my own plan')}</Button>
+    </>}
+    {!!st.routines.length &&
     <div className="list">
       {st.routines.map(r => <div key={r.id} className="item" onClick={() => set(r.id)}>
         <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
@@ -731,7 +749,7 @@ function DayOverride({ iso, close }) {
         {effId === r.id && <Icon name="check" className="accent" />}</div>)}
       <div className="item" onClick={() => set('rest')}><span className="lrow-i" style={{ background: 'var(--surface-3)' }}><Icon name="moon" /></span><div className="grow"><div className="tt">{t('Rest / skip this day')}</div></div>{effId === null && <Icon name="check" className="accent" />}</div>
       {hasOvr && <div className="item" onClick={() => set('')}><span className="lrow-i" style={{ background: 'var(--surface-3)' }}><Icon name="reset" /></span><div className="grow"><div className="tt">{t('Back to weekly plan')}</div></div></div>}
-    </div>
+    </div>}
   </>
 }
 export const dayOverrideSheet = iso => ui().openSheet(close => <DayOverride iso={iso} close={close} />)
@@ -741,13 +759,16 @@ function DayAssign({ day, close }) {
   const set = v => { update(s => { if (v) s.week[day] = v; else delete s.week[day] }); close() }
   return <>
     <h3>{t(DAYN[day])}</h3>
-    <div className="list">
+    {!st.routines.length ? <>
+      <div className="empty"><div className="ico"><Icon name="clipboard" /></div>{t('No routines yet.')}<br />{t('Create one or load the starter plan.')}</div>
+      <Button variant="primary" icon="plus" onClick={() => { close(); nav('/plan') }}>{t('Build my own plan')}</Button>
+    </> : <div className="list">
       <div className="item" onClick={() => set('')}><span className="lrow-i" style={{ background: 'var(--surface-3)' }}><Icon name="moon" /></span><div className="grow"><div className="tt">{t('Rest day')}</div></div>{!st.week[day] && <Icon name="check" className="accent" />}</div>
       {st.routines.map(r => <div key={r.id} className="item" onClick={() => set(r.id)}>
         <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
         <div className="grow"><div className="tt">{r.name}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         {st.week[day] === r.id && <Icon name="check" className="accent" />}</div>)}
-    </div>
+    </div>}
   </>
 }
 export const dayAssignSheet = day => ui().openSheet(close => <DayAssign day={day} close={close} />)

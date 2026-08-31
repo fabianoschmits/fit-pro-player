@@ -43,7 +43,12 @@ export default function Home() {
   const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
 
   // today's session shown right under the week strip
-  const onToday = () => { if (S.active) nav('/workout'); else if (routine) startFlow(routine.id); else dayOverrideSheet(todayISO()) }
+  const onToday = () => {
+    if (S.active) nav('/workout')
+    else if (routine?.ex.length) startFlow(routine.id)
+    else if (routine) nav('/plan/r/' + routine.id)
+    else dayOverrideSheet(todayISO())
+  }
 
   return <div className="narrow">
     <div className="hdr">
@@ -69,7 +74,8 @@ export default function Home() {
           </div>
         </div>
         {S.active ? <span className="tag" style={{ color: 'var(--orange)', background: 'color-mix(in srgb,var(--orange) 16%,transparent)' }}>{t('Resume')}</span>
-          : routine ? <span className="tag acc">{t('Start')}</span>
+          : routine?.ex.length ? <span className="tag acc">{t('Start')}</span>
+          : routine ? <span className="tag acc">{t('Edit')}</span>
           : <Icon name="plus" className="chev" />}
       </div>
     </div>
@@ -81,8 +87,8 @@ export default function Home() {
           <div className="big" style={{ fontSize: 22 }}>{t('Welcome!')}</div>
         </div>
         <div className="muted small" style={{ marginBottom: 12 }}>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</div>
-        <Button variant="primary" icon="sparkles" onClick={loadStarterPlan}>{t('Load starter plan (PPL)')}</Button>
-        <div style={{ height: 8 }} /><Button onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
+        <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
+        <div style={{ height: 8 }} /><Button icon="sparkles" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
       </div>
     )}
 
