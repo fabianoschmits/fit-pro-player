@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW } from '../lib/history.js'
@@ -19,6 +19,18 @@ export default function Home() {
   const user = useStore(s => s.user)
   const update = useStore(s => s.update)
   const [weekOffset, setWeekOffset] = useState(0)
+  const [calOpen, setCalOpen] = useState(false)
+  const calRef = useRef(null)
+
+  useEffect(() => {
+    if (!calOpen) return
+    const handler = e => {
+      if (calRef.current && !calRef.current.contains(e.target)) setCalOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('touchstart', handler) }
+  }, [calOpen])
 
   const today = new Date()
   const routine = effectiveRoutine(S, todayISO())
@@ -43,6 +55,17 @@ export default function Home() {
   }
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
   const wkLabel = weekOffset === 0 ? t('This week') : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} – ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
+
+  // Build full-month calendar grid for the month shown by the current week
+  const calMonth = new Date(monday.getFullYear(), monday.getMonth(), 1)
+  const calMonthLabel = calMonth.toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' })
+  const firstDow = (calMonth.getDay() + 6) % 7 // Monday-first
+  const daysInMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 0).getDate()
+  const calCells = []
+  for (let i = 0; i < firstDow; i++) calCells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) calCells.push(d)
+  const calRows = []
+  for (let r = 0; r < Math.ceil(calCells.length / 7); r++) calRows.push(calCells.slice(r * 7, r * 7 + 7))
 
   const wThisWeek = S.workouts.filter(w => weekKey(w.d) === weekKey(todayISO())).length
   const plannedPerWeek = Object.keys(S.week).filter(k => S.week[k]).length
@@ -71,13 +94,46 @@ export default function Home() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    <div className="card">
+    <div className="card" ref={calRef}>
       <div className="row between" style={{ marginBottom: 8 }}>
         <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w - 1)} aria-label={t('Previous week')}><Icon name="chevronLeft" /></button>
-        <div className="small muted" style={{ fontWeight: 500 }}>{wkLabel}</div>
+        <button
+          className="wk-label-btn"
+          onClick={() => setCalOpen(o => !o)}
+          aria-expanded={calOpen}
+          aria-label={t('Toggle month calendar')}
+        >
+          <span className="small muted" style={{ fontWeight: 500 }}>{wkLabel}</span>
+          <Icon name={calOpen ? 'chevronUp' : 'chevronDown'} style={{ fontSize: 11, opacity: 0.5 }} />
+        </button>
         <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w + 1)} aria-label={t('Next week')}><Icon name="chevronRight" /></button>
       </div>
       <div className="week">{strip}</div>
+      <div className={`month-cal-wrap${calOpen ? ' open' : ''}`}>
+        <div className="month-cal">
+          <div className="month-cal-hdr">{calMonthLabel}</div>
+          <div className="month-cal-grid">
+            {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d => <div key={d} className="month-cal-dow">{d}</div>)}
+            {calRows.map((row, ri) => row.map((day, ci) => {
+              if (!day) return <div key={`e${ri}-${ci}`} className="month-cal-cell empty" />
+              const iso = isoOf(new Date(calMonth.getFullYear(), calMonth.getMonth(), day))
+              const done = doneDays.has(iso)
+              const isToday = iso === todayISO()
+              return (
+                <div
+                  key={iso}
+                  className={`month-cal-cell${isToday ? ' today' : ''}${done ? ' done' : ''}`}
+                  onClick={() => { dayOverrideSheet(iso); setCalOpen(false) }}
+                >
+                  <span className="month-cal-num">{day}</span>
+                  {done && <span className="month-cal-dot done" />}
+                  {!done && effectiveRoutineId(S, iso) && <span className="month-cal-dot plan" />}
+                </div>
+              )
+            }))}
+          </div>
+        </div>
+      </div>
       <div className="today-row" onClick={onToday}>
         <div className="row" style={{ gap: 9, minWidth: 0 }}>
           <span className="lrow-i" style={{ background: S.active ? 'var(--orange)' : routine ? 'var(--acc)' : 'var(--surface-3)' }}>
