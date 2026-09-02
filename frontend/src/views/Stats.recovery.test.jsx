@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   S: {
     unit: 'kg', body: 'male', effort: 'rir', targetW: null,
     bodyweight: [], routines: [], workouts: [],
+    simpleMode: false,
   },
 }))
 
@@ -131,6 +132,8 @@ function installDom() {
 async function mountStats() {
   installDom()
   await act(async () => { root.render(React.createElement(Stats)) })
+  const bodyTab = [...container.querySelectorAll('button')].find(b => b.textContent.trim() === t('Body'))
+  if (bodyTab) await click(bodyTab)
 }
 
 async function unmountStats() {

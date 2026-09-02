@@ -16,7 +16,9 @@ export const DEF = {
   // that a profile which never chose (loaded state is overlaid on DEF, on every path: local,
   // server pull, backup import) still falls back to the `showRir` boolean this replaced and
   // keeps the column it had. See effortOf.
-  reminder: { on: false, time: '08:00', tz: null }, effort: null
+  reminder: { on: false, time: '08:00', tz: null }, effort: null,
+  // UX prefs — weighBeforeWorkout defaults true; skipped automatically when already weighed today.
+  weighBeforeWorkout: true, onboardingDone: false, simpleMode: true, seenTips: {}
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 

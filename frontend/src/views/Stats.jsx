@@ -20,6 +20,7 @@ import {
   effortHistogram, isHardSet, HARD_RIR
 } from '../lib/effort.js'
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
+import TipOnce from '../components/TipOnce.jsx'
 import { isWarmupRow } from '../lib/workout-model.js'
 
 // Which muscles the training in a window actually hit — and, the point of the card,
@@ -277,8 +278,11 @@ export default function Stats() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const [range, setRange] = useState(90)
+  const [tab, setTab] = useState('summary')
   const [exId, setExId] = useState(null)
   const [exMetric, setExMetric] = useState('top')
+  const simple = S.simpleMode !== false
+  const showTabs = !simple
   const now = Date.now()
   const kind = displayScale(S)
   const hd = scaleName(kind)
@@ -366,6 +370,16 @@ export default function Stats() {
     <div className="hdr"><div><h1>{t('Stats')}</h1><div className="sub">{t('Progress & history')}</div></div>
       <button className="iconbtn" onClick={() => nav('/history')} aria-label={t('History')}><Icon name="history" /></button></div>
 
+    {showTabs && (
+      <Segmented className="seg-range stats-tabs" value={tab} onChange={setTab}
+        options={[
+          { value: 'summary', label: t('Summary') },
+          { value: 'body', label: t('Body') },
+          { value: 'exercises', label: t('Exercises') },
+        ]} />
+    )}
+
+    {(tab === 'summary' || simple) && <>
     <div className="tiles">
       <div className="tile"><div className="l"><Icon name="dumbbell" />{t('Workouts')}</div><div className="v">{workouts.length}</div></div>
       <div className="tile"><div className="l"><Icon name="calendar" />{t('This month')}</div><div className="v">{monthW}</div></div>
@@ -379,9 +393,16 @@ export default function Stats() {
       <Heatmap S={S} onDay={iso => { const ws = workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso) }} />
     </div>
 
-    {workouts.length > 0 && <MuscleBalance S={S} />}
-    {hasEffort(S) && <EffortCard S={S} />}
+    {workouts.length > 0 && <>
+      <div className="row between" style={{ marginBottom: 10 }}>
+        <h4 className="sec" style={{ margin: 0 }}>{t('Recent workouts')}</h4>
+        <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')} {workouts.length}</Button>
+      </div>
+      <div className="list">{[...workouts].reverse().slice(0, 6).map(w => <WorkoutRow key={w.id} w={w} onClick={() => workoutDetailSheet(w)} />)}</div>
+    </>}
+    </>}
 
+    {(tab === 'body' && !simple) && <>
     <div className="cols">
       <div className="card">
         <div className="row between" style={{ marginBottom: 8 }}>
@@ -395,7 +416,15 @@ export default function Stats() {
           options={[{ value: 30, label: '1M' }, { value: 90, label: '3M' }, { value: 365, label: '1Y' }, { value: 0, label: t('All') }]} />
         <div className="chart"><LineChart points={bwPts} h={160} unit={S.unit} goal={S.targetW} /></div>
       </div>
+      {workouts.length > 0 && <MuscleBalance S={S} />}
+      {hasEffort(S) && <EffortCard S={S} />}
+    </div>
+  </>}
 
+    {(tab === 'exercises' && !simple) && <>
+      <TipOnce id="e1rm-tip">
+        <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
+      </TipOnce>
       <div className="card">
         <h2>{t('Exercise progress')}</h2>
         {exHist.length ? <>
@@ -423,14 +452,6 @@ export default function Stats() {
           </div>}
         </> : <div className="muted small">{t('Finish your first workout to see progress curves here.')}</div>}
       </div>
-    </div>
-
-    {workouts.length > 0 && <>
-      <div className="row between" style={{ marginBottom: 10 }}>
-        <h4 className="sec" style={{ margin: 0 }}>{t('Recent workouts')}</h4>
-        <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')} {workouts.length}</Button>
-      </div>
-      <div className="list">{[...workouts].reverse().slice(0, 6).map(w => <WorkoutRow key={w.id} w={w} onClick={() => workoutDetailSheet(w)} />)}</div>
     </>}
   </>
 }

@@ -323,12 +323,12 @@ function ActiveWorkout() {
         if (e.sets.every(x => x.done)) { exJustDone = true; if (loaded && !e.asked) { e.asked = true; askTop = true } }
       }
     })
-    // reps: topWeight first (it chains into the finish/continue prompt on the last unit).
-    // cardio/timed or already-confirmed: go straight to the prompt.
-    if (askTop) topWeightSheet(idx)
-    else if (workoutDone) workoutCompleteSheet()
-    else if (exJustDone && cardioEntry) useUI.getState().toast(t('Cardio logged'))
-    else if (exJustDone && m === 'time') useUI.getState().toast(t('Hold logged'))
+    const triggerFinishAction = () => {
+      if (askTop) topWeightSheet(idx)
+      else if (workoutDone) workoutCompleteSheet()
+      else if (exJustDone && cardioEntry) useUI.getState().toast(t('Cardio logged'))
+      else if (exJustDone && m === 'time') useUI.getState().toast(t('Hold logged'))
+    }
 
     // Only progress beyond this exercise's high-water mark may navigate or change rest. This
     // prevents an uncheck/re-check of finished work from replaying the flow side effects.
@@ -344,27 +344,33 @@ function ActiveWorkout() {
       const freshLastUnit = freshUnitIdx >= freshUnits.length - 1
       const freshUnitDone = freshUnit?.every(ui => fresh.entries[ui].sets.every(x => x.done))
 
-      // Singleton units are ordinary exercises: preserve their historical between-set rest,
-      // while final sets finish quietly and never enter superset navigation.
-      if (freshUnitDone) stopRest()
+      // Singleton units are ordinary exercises: start rest timer and display completion sheet AFTER rest ends
+      if (freshUnitDone) {
+        startRest(S.restSec, triggerFinishAction)
+        return
+      }
       if (!freshUnit || freshUnit.length <= 1) {
-        if (!freshUnitDone) startRest(S.restSec)
+        startRest(S.restSec)
         return
       }
 
       const step = supersetFlowStep(fresh.entries, freshUnit, idx)
       if (!step) return
       if (step.unitDone) {
-        if (!freshLastUnit) {
-          const nextUnit = freshUnits[freshUnitIdx + 1]
-          // The top-weight sheet's explicit "Just close" path owns the choice not to advance.
-          if (!askTop && nextUnit?.length) update(s => { if (s.active) s.active.cur = nextUnit[0] })
-          startRest(S.restSec)
-        }
+        startRest(S.restSec, () => {
+          if (!freshLastUnit) {
+            const nextUnit = freshUnits[freshUnitIdx + 1]
+            // The top-weight sheet's explicit "Just close" path owns the choice not to advance.
+            if (!askTop && nextUnit?.length) update(s => { if (s.active) s.active.cur = nextUnit[0] })
+          }
+          triggerFinishAction()
+        })
       } else {
         if (step.nextIdx != null) update(s => { if (s.active) s.active.cur = step.nextIdx })
         if (step.roundDone) startRest(S.restSec)
       }
+    } else if (!checked) {
+      stopRest(false)
     }
   }
 

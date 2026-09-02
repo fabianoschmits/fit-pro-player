@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
-import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, setsDoneActive } from '../lib/history.js'
+import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW } from '../lib/history.js'
 import { fmtNum, fmtDate, todayISO, isoOf, weekKey, DAYS } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
-import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor } from '../sheets.jsx'
+import { needsOnboarding, planSetupProgress } from '../lib/ux.js'
+import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor, repeatLastWorkout, WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
+import Onboarding from '../components/Onboarding.jsx'
+import PlanProgress from '../components/PlanProgress.jsx'
 
-// Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
@@ -24,6 +26,9 @@ export default function Home() {
   const bw = lastBW(S)
   const prevBW = S.bodyweight.length > 1 ? S.bodyweight[S.bodyweight.length - 2] : null
   const delta = bw && prevBW ? bw.w - prevBW.w : null
+  const lastWorkout = S.workouts.length ? S.workouts[S.workouts.length - 1] : null
+  const recentWorkouts = [...S.workouts].reverse().slice(0, 3)
+  const planProgress = planSetupProgress(S)
 
   const monday = new Date(today); monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + weekOffset * 7)
   const doneDays = new Set(S.workouts.map(w => w.d))
@@ -43,7 +48,6 @@ export default function Home() {
   const plannedPerWeek = Object.keys(S.week).filter(k => S.week[k]).length
   const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
 
-  // today's session shown right under the week strip
   const onToday = () => {
     if (S.active) nav('/workout')
     else if (routine?.ex.length) startFlow(routine.id)
@@ -51,16 +55,21 @@ export default function Home() {
     else dayOverrideSheet(todayISO())
   }
 
+  const onRepeat = () => {
+    if (!repeatLastWorkout()) nav('/workout')
+  }
+
   return <div className="narrow">
+    {needsOnboarding(S) && <Onboarding />}
+
     <div className="hdr">
       <div><h1>{user ? t('Hi {0}', user.name) : 'Fit Pro Player'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
-      <div className="row" style={{ gap: 8 }}>
-        <button className="iconbtn" onClick={() => update(s => { s.theme = s.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
-          <Icon name={S.theme === 'light' ? 'sun' : 'moon'} />
-        </button>
-        <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
-      </div>
+      <button className="iconbtn" onClick={() => update(s => { s.theme = s.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
+        <Icon name={S.theme === 'light' ? 'sun' : 'moon'} />
+      </button>
     </div>
+
+    {planProgress && <PlanProgress progress={planProgress} />}
 
     <div className="card">
       <div className="row between" style={{ marginBottom: 8 }}>
@@ -86,6 +95,16 @@ export default function Home() {
       </div>
     </div>
 
+    {lastWorkout && !S.active && (
+      <div className="card">
+        <div className="row between" style={{ marginBottom: 10 }}>
+          <h2 style={{ margin: 0, fontSize: '1.05rem' }}>{t('Repeat last workout')}</h2>
+        </div>
+        <div className="muted small" style={{ marginBottom: 10 }}>{lastWorkout.name} · {fmtDate(lastWorkout.d, true)}</div>
+        <Button variant="primary" icon="reset" onClick={onRepeat}>{t('Repeat {0}', lastWorkout.name)}</Button>
+      </div>
+    )}
+
     {!S.routines.length && !S.active && (
       <div className="card">
         <div className="row" style={{ gap: 10, marginBottom: 6 }}>
@@ -96,6 +115,16 @@ export default function Home() {
         <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
         <div style={{ height: 8 }} /><Button icon="sparkles" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
       </div>
+    )}
+
+    {recentWorkouts.length > 0 && (
+      <>
+        <div className="row between" style={{ margin: '18px 0 10px' }}>
+          <h4 className="sec" style={{ margin: 0 }}>{t('Recent workouts')}</h4>
+          <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')}</Button>
+        </div>
+        <div className="list">{recentWorkouts.map(w => <WorkoutRow key={w.id} w={w} onClick={() => workoutDetailSheet(w)} />)}</div>
+      </>
     )}
 
     <div className="card">
@@ -109,7 +138,6 @@ export default function Home() {
       {bw ? <>
         <div className="row" style={{ gap: 8, alignItems: 'baseline' }}>
           <div className="big">{fmtNum(bw.w)} <span className="muted" style={{ fontSize: '1rem' }}>{S.unit}</span></div>
-          {/* only when it actually moved — an unchanged weight used to read as "− 0" */}
           {!!delta && (
             <span className="small row" style={{ gap: 2, fontWeight: 500, color: bwDeltaColor(delta, bw.w) }}>
               <Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} style={{ fontSize: 12 }} />

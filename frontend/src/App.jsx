@@ -4,7 +4,7 @@ import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { bindUI } from './components/ui.jsx'
 import { ACCENTS } from './lib/format.js'
-import { DEFAULT_LANG, setLang, useLang } from './lib/i18n.js'
+import { DEFAULT_LANG, setLang, useLang, t } from './lib/i18n.js'
 import { setNav } from './lib/nav.js'
 import { initBackButton } from './lib/back.js'
 import { useWakeLock } from './lib/wakelock.js'
@@ -25,6 +25,7 @@ import History from './views/History.jsx'
 import Library from './views/Library.jsx'
 import Settings from './views/Settings.jsx'
 import Admin from './views/Admin.jsx'
+import More from './views/More.jsx'
 
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
 
@@ -54,8 +55,9 @@ function Shell() {
   const authed = user || isGuest
   if (!ready && !authed) return (
     <div id="app">
-      <div style={{ paddingTop: '44vh', display: 'flex', justifyContent: 'center', fontSize: 34, color: 'var(--label-3)' }}>
+      <div className="boot-loading">
         <Icon name="dumbbell" />
+        <span className="muted small">{t('Loading…')}</span>
       </div>
     </div>
   )
@@ -75,6 +77,7 @@ function Shell() {
               <Route path="/stats" element={<Stats />} />
               <Route path="/history" element={<History />} />
               <Route path="/library" element={<Library />} />
+              <Route path="/more" element={<More />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />

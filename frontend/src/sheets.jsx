@@ -4,6 +4,7 @@ import { useUI } from './store/useUI.js'
 import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText } from './lib/exercises.js'
 import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, uid, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps, workSetsDone } from './lib/history.js'
+import { shouldWeighBeforeWorkout, hasWeighedToday } from './lib/ux.js'
 import { beep, vibrate } from './lib/sound.js'
 import { t, instrFor, getLang, INSTR_LANGS } from './lib/i18n.js'
 import { nav } from './lib/nav.js'
@@ -415,7 +416,7 @@ function usageMap(st) {
   st.workouts.forEach(w => w.entries.forEach(e => { u[e.id] = (u[e.id] || 0) + 1 }))
   return u
 }
-function ExercisePicker({ onPick, close, routineId }) {
+function ExercisePicker({ onPick, close, routineId, quickAdd }) {
   const st = useStore(s => s.S)
   const usage = usageMap(st)
   const selectedIds = new Set((st.routines.find(r => r.id === routineId)?.ex || []).map(e => e.id))
@@ -439,6 +440,9 @@ function ExercisePicker({ onPick, close, routineId }) {
       <h3>{t('Add exercise')}</h3>
       <Button size="sm" variant="tinted" icon="check" onClick={close}>{t('Done')}</Button>
     </div>
+    <div className="muted small" style={{ marginBottom: quickAdd ? 6 : 0 }}>
+      {quickAdd ? t('Tap to add with smart defaults — use the gear to configure first.') : null}
+    </div>
     <div className="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
       <input className="input" placeholder={t('Search {0} exercises…', all.length)} value={q} onChange={e => { setQ(e.target.value); setShown(50) }} /></div>
     <div className="chips" style={{ margin: eqOpts.length > 1 ? '10px 0 6px' : '10px 0' }}>
@@ -458,10 +462,12 @@ function ExercisePicker({ onPick, close, routineId }) {
       {f.slice(0, shown).map(e => {
         const selected = selectedIds.has(e.id)
         return <div key={e.id} className={'item' + (selected ? ' item-selected' : '')}
-          aria-disabled={selected || undefined} onClick={() => { if (!selected) onPick(e) }}>
+          aria-disabled={selected || undefined} onClick={() => { if (!selected) onPick(e, quickAdd ? {} : undefined) }}>
         <Thumb ex={e} /><div className="grow"><div className="tt">{exerciseName(e)}</div><div className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</div></div>
         {selected ? <span className="tag acc"><Icon name="check" />{t('already in')}</span>
-          : <>{usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}<Icon name="plus" className="chev" /></>}
+          : <>{usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}
+            {quickAdd && <button className="iconbtn picker-cfg" aria-label={t('Configure before adding')} onClick={ev => { ev.stopPropagation(); onPick(e, { configure: true }) }}><Icon name="gear" /></button>}
+            <Icon name="plus" className="chev" /></>}
       </div>})}
       {f.length === 0 && bp === '★' && <div className="empty">{t('Nothing chosen yet — add exercises and they’ll show up here.')}</div>}
     </div>
@@ -570,7 +576,7 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial }) {
     {mode === 'time' && !bw && <div className="small dim" style={{ marginBottom: 18 }}>
       {t('A timer runs while you hold the set. Leave the weight at 0 for bodyweight holds.')}
     </div>}
-    <details className="routine-advanced ex-config-more">
+    <details className="routine-advanced ex-config-more" style={st.simpleMode !== false ? { display: 'none' } : undefined}>
       <summary><span><Icon name="gear" />{t('More')}</span><Icon name="chevronDown" /></summary>
       <div className="routine-advanced-body">
     {/* ---------- bodyweight + per side (issues #31/#32/#33) ---------- */}
@@ -849,7 +855,23 @@ export function WorkoutRow({ w, onClick }) {
 
 /* ============================ workout lifecycle ============================ */
 export function startFlow(routineId) {
-  bwSheet({ required: true, onDone: bw => beginWorkout(routineId, bw) })
+  const st = S()
+  if (shouldWeighBeforeWorkout(st)) {
+    bwSheet({ required: true, onDone: bw => beginWorkout(routineId, bw) })
+  } else {
+    const bw = hasWeighedToday(st) ? lastBW(st)?.w : null
+    beginWorkout(routineId, bw ?? null)
+  }
+}
+export function repeatLastWorkout() {
+  const st = S()
+  const last = st.workouts[st.workouts.length - 1]
+  if (!last) return false
+  const rid = last.routineId
+  if (rid && st.routines.find(r => r.id === rid && r.ex.length)) { startFlow(rid); return true }
+  const byName = st.routines.find(r => r.name === last.name && r.ex.length)
+  if (byName) { startFlow(byName.id); return true }
+  return false
 }
 export function beginWorkout(routineId, bw) {
   const st = S()

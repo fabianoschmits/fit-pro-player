@@ -11,6 +11,7 @@ import { t, LANGS, DEFAULT_LANG, INSTR_LANGS } from '../lib/i18n.js'
 import { DEMO, REPO, STANDALONE } from '../lib/demo.js'
 import { MOBILE, shareExport, syncReminder } from '../lib/mobile.js'
 import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
+import TipOnce from '../components/TipOnce.jsx'
 import Icon from '../components/Icon.jsx'
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField } from '../components/ui.jsx'
 
@@ -68,7 +69,7 @@ export default function Settings() {
 
   return <div className="narrow">
     <div className="hdr">
-      <button className="iconbtn" onClick={() => nav('/home')} aria-label={t('Home')}><Icon name="chevronLeft" /></button>
+      <button className="iconbtn" onClick={() => nav('/more')} aria-label={t('More')}><Icon name="chevronLeft" /></button>
       <div style={{ flex: 1, marginLeft: 10 }}><h1>{t('Settings')}</h1></div>
     </div>
 
@@ -121,6 +122,9 @@ export default function Settings() {
 
     {/* ---------- during a workout ---------- */}
     <Section title={t('During a workout')} footer={wakeOK ? t('The screen stays on while a workout is running, so you don’t have to unlock your phone between sets.') : null}>
+      <TipOnce id="effort-tip">
+        <span>{t('RIR counts reps left in the tank; RPE rates effort from 1–10. Both are optional — turn them on only if you use them.')}</span>
+      </TipOnce>
       <SelectRow icon="timer" iconTint="var(--orange)" title={t('Rest timer')}
         value={S.restSec} onChange={v => update(s => { s.restSec = v })}
         options={[60, 90, 120, 150, 180].map(v => ({ value: v, label: v + 's' }))} />
@@ -141,6 +145,14 @@ export default function Settings() {
         <Segmented className="seg-inline"
           options={[{ value: 'none', label: t('Off') }, { value: 'rir', label: t('RIR') }, { value: 'rpe', label: t('RPE') }]}
           value={effortOf(S)} onChange={v => update(s => { s.effort = v; delete s.showRir })} />
+      </Row>
+      <Row icon="scale" iconTint="var(--teal)" title={t('Ask weight before workout')}
+        subtitle={t('Skipped automatically if you already logged weight today.')}>
+        <Switch checked={S.weighBeforeWorkout !== false} onChange={v => update(s => { s.weighBeforeWorkout = v })} />
+      </Row>
+      <Row icon="sparkles" iconTint="var(--acc)" title={t('Simple mode')}
+        subtitle={t('Hides advanced stats and progression options for a cleaner experience.')}>
+        <Switch checked={S.simpleMode !== false} onChange={v => update(s => { s.simpleMode = v })} />
       </Row>
     </Section>
 
@@ -200,8 +212,8 @@ export default function Settings() {
 
     <div className="dim small" style={{ textAlign: 'center', marginTop: 4, lineHeight: 1.6 }}>
       Fit Pro Player · {t('free & open source (AGPL v3)')}<br />
-      <a href="https://github.com/fabianoschmits/fit-pro-player" target="_blank" rel="noopener">{S.lang === 'pt' ? 'código-fonte' : 'source code'}</a> · {S.lang === 'pt' ? 'dados de exercícios' : 'exercise data'}: hasaneyldrm/exercises-dataset (MIT)<br />
-      {S.lang === 'pt' ? 'animações SVG' : 'SVG animations'}: <a href="https://github.com/bryllim/workout-guide" target="_blank" rel="noopener">Workout Guide</a> · Bryl Lim / Everkinetic · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
+      <a href="https://github.com/fabianoschmits/fit-pro-player" target="_blank" rel="noopener">{t('source code')}</a> · {t('exercise data')}: hasaneyldrm/exercises-dataset (MIT)<br />
+      {t('SVG animations')}: <a href="https://github.com/bryllim/workout-guide" target="_blank" rel="noopener">Workout Guide</a> · Bryl Lim / Everkinetic · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
     </div>
   </div>
 }

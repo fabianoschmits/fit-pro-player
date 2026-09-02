@@ -74,9 +74,14 @@ export const useUI = create((set, get) => ({
     toastTm = setTimeout(() => set({ toastMsg: '' }), 2200)
   },
 
-  startRest(sec) {
-    get().stopRest()
+  startRest(sec, onDone) {
+    get().stopRest(false)
+    if (!sec || sec <= 0) {
+      if (onDone) onDone()
+      return
+    }
     const endsAt = Date.now() + sec * 1000
+    timerDone = onDone
     set({ timer: { left: sec, total: sec, endsAt } })
     requestRestNotificationPermission()
     pushRestTimer(sec)
@@ -88,7 +93,11 @@ export const useUI = create((set, get) => ({
       const snd = useStore.getState().S.sound
       if (left <= 0) {
         beep(snd, 880, 0.15); beep(snd, 880, 0.15, 0.25); beep(snd, 1320, 0.4, 0.5)
-        vibrate([200, 100, 200]); maybeRestNotification(); get().toast(t('Rest over — next set!')); get().stopRest(); return
+        vibrate([200, 100, 200]); maybeRestNotification(); get().toast(t('Rest over — next set!'))
+        const cb = timerDone
+        get().stopRest(false)
+        if (cb) cb()
+        return
       }
       if (left <= 3) beep(snd, 660, 0.1)
       set({ timer: { ...tm, left } })
@@ -102,15 +111,18 @@ export const useUI = create((set, get) => ({
     const left = tm.left + sec
     // taking off more than is left means "I'm ready now" — same as skipping, and it keeps a
     // negative duration out of both the progress bar and the server-side push schedule
-    if (left <= 0) { get().stopRest(); return }
+    if (left <= 0) { get().stopRest(true); return }
     set({ timer: { ...tm, left, total: tm.total + sec, endsAt: tm.endsAt + sec * 1000 } })
     pushRestTimer(left)
   },
-  stopRest() {
+  stopRest(triggerCb = true) {
     if (timerInt) clearInterval(timerInt); timerInt = null
     if (timerTick) document.removeEventListener('visibilitychange', timerTick); timerTick = null
     if (get().timer) cancelPushRestTimer()
+    const cb = triggerCb ? timerDone : null
+    timerDone = null
     set({ timer: null })
+    if (cb) cb()
   },
 
   /* ---- work timer (issue #16) ----

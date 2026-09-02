@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
+import { useUI } from '../store/useUI.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { DAYN, DAYS, uid, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
+import { planSetupProgress, smartDefaultConfig } from '../lib/ux.js'
 import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
 import { Thumb } from '../components/Media.jsx'
 import { glyphPicker, exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
@@ -12,6 +14,7 @@ import { glyphOf } from '../lib/glyphs.js'
 import { Button, SelectRow } from '../components/ui.jsx'
 import { POLICIES_FOR, POLICY_NAME, POLICY_DESC } from '../lib/progression.js'
 import BodyMap from '../components/BodyMap.jsx'
+import PlanProgress from '../components/PlanProgress.jsx'
 import { loadOfRoutine, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
@@ -39,16 +42,24 @@ export default function RoutineEdit() {
     if (s.week[day] === id) delete s.week[day]
     else s.week[day] = id
   })
-  const addExercise = () => exercisePicker(ex => {
-    exConfigSheet(ex, null, cfg => edit(list => { list.push({ id: ex.id, ...cfg }) }), null, r)
-  }, { routineId: id })
+  const addExercise = () => exercisePicker((ex, meta) => {
+    if (meta?.configure) {
+      exConfigSheet(ex, null, cfg => edit(list => { list.push({ id: ex.id, ...cfg }) }), null, r)
+      return
+    }
+    const cfg = smartDefaultConfig(ex.id, S)
+    edit(list => { list.push({ id: ex.id, ...cfg }) })
+    useUI.getState().toast(t('"{0}" added — tap to adjust', exerciseName(ex)))
+  }, { routineId: id, quickAdd: true })
 
   const units = supersetUnits(r.ex)
   const unitFirst = new Set(units.filter(u => u.length > 1).map(u => u[0]))
   const inSS = new Set(units.filter(u => u.length > 1).flat())
   const assignedDays = WEEK_DAYS.filter(day => S.week[day] === id)
+  const planProgress = planSetupProgress(S)
 
   return <div className="narrow routine-builder">
+    {planProgress && <PlanProgress progress={planProgress} />}
     <div className="hdr routine-builder-head">
       <button className="iconbtn" onClick={() => nav('/plan')} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
       <div className="routine-name-wrap">
@@ -124,7 +135,7 @@ export default function RoutineEdit() {
       </div>
     })()}
 
-    <details className="routine-advanced">
+    <details className="routine-advanced" style={S.simpleMode !== false ? { display: 'none' } : undefined}>
       <summary><span><Icon name="gear" />{t('More')}</span><Icon name="chevronDown" /></summary>
       <div className="routine-advanced-body">
         <div className="sect-b">

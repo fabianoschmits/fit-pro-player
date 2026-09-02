@@ -1101,3 +1101,66 @@ h4.sec{
   .exmedia img,.exmedia>.exercise-muscle-static,.exmedia>.exercise-guide-motion{height:380px}
   .hm-wrap{display:flex;flex-direction:column;align-items:center}
 }
+
+/* ----------------------------------------------------------- UX additions -- */
+.boot-loading{
+  padding-top:42vh;display:flex;flex-direction:column;align-items:center;gap:12px;
+  font-size:34px;color:var(--label-3);
+}
+.boot-loading .muted{font-size:15px}
+
+#tabbar.tabbar-6 button:not(.start){font-size:9px}
+#tabbar.tabbar-6 button:not(.start) .icn{font-size:22px}
+#tabbar button.start .start-lbl{
+  max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+.onboarding-overlay{
+  position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;
+  padding:16px 16px calc(80px + var(--sab));background:rgba(0,0,0,.55);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+}
+.onboarding-card{
+  width:100%;max-width:420px;padding:24px 20px 20px;text-align:center;
+  animation:sheetUp .28s var(--ease);
+}
+.onboarding-icon{
+  width:52px;height:52px;border-radius:16px;margin:0 auto 12px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--acc-soft);color:var(--acc);font-size:25px;
+}
+.onboarding-copy{line-height:1.45;margin-bottom:16px}
+.onboarding-steps{
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px;max-width:320px;
+}
+.onboarding-steps div{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:72px;color:var(--label-2);font-size:11px}
+.onboarding-steps div.on{color:var(--acc);font-weight:600}
+.onboarding-steps span{
+  width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:var(--acc);background:var(--acc-soft);font-size:12px;font-weight:600;
+}
+.onboarding-steps div.on span{background:var(--acc);color:var(--on-acc)}
+.onboarding-steps i{height:1px;flex:1;background:var(--sep);margin:0 2px 17px}
+
+.plan-progress{padding:12px 14px;margin-bottom:12px}
+.plan-progress-bar{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
+.plan-progress-bar i{display:block;height:100%;background:var(--acc);border-radius:2px;transition:width .3s var(--ease)}
+
+.tip-banner{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:8px;
+  border-radius:var(--r-sm);background:color-mix(in srgb,var(--acc) 12%,var(--surface));
+  border:var(--hair) solid color-mix(in srgb,var(--acc) 25%,transparent);
+}
+.tip-ico{font-size:16px;color:var(--acc);flex:none;margin-top:1px}
+.tip-body{flex:1;font-size:13px;line-height:1.4;color:var(--label-2)}
+.tip-dismiss{
+  flex:none;font-size:13px;font-weight:600;color:var(--acc);background:none;padding:2px 0;
+}
+
+.stats-tabs{margin-bottom:14px}
+
+.picker-cfg{width:34px;height:34px;border-radius:8px;font-size:16px;color:var(--label-2);flex:none}
+
+@media(min-width:1000px){
+  #tabbar.tabbar-6{width:600px}
+}

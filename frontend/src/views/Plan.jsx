@@ -2,10 +2,12 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { DAYN, DAYS, uid, exCount } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
+import { planSetupProgress } from '../lib/ux.js'
 import { dayAssignSheet, loadStarterPlan, planToolsSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
+import PlanProgress from '../components/PlanProgress.jsx'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 
@@ -22,12 +24,15 @@ export default function Plan() {
   }
 
   const scheduledDays = WEEK_DAYS.filter(day => S.week[day] && S.routines.some(r => r.id === S.week[day])).length
+  const planProgress = planSetupProgress(S)
 
   return <>
     <div className="hdr">
       <div><h1>{t('Plan')}</h1><div className="sub">{t('Your weekly routine')}</div></div>
       <button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>
     </div>
+
+    {planProgress && <PlanProgress progress={planProgress} />}
 
     {!S.routines.length ? <div className="plan-onboarding">
       <div className="card">
@@ -43,7 +48,7 @@ export default function Plan() {
         </div>
         <Button variant="primary" icon="plus" onClick={addRoutine}>{t('Build my own plan')}</Button>
         <div style={{ height: 8 }} />
-        <Button icon="sparkles" onClick={loadStarterPlan}>{t('Load starter plan (Push / Pull / Legs)')}</Button>
+        <Button icon="sparkles" onClick={loadStarterPlan}>{t('Load starter plan (PPL)')}</Button>
       </div>
     </div> : <div className="cols plan-cols">
       <section>
