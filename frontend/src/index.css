@@ -10,6 +10,18 @@
       400 for its content, and size does the rest.
    2. A NEUTRAL SURFACE RAMP. Cards are near-neutral greys a few points apart, not
       saturated blue-greys. Colour is spent only on the accent and on status.
+/* ============================================================================
+   Fit Pro Player — design system
+   ----------------------------------------------------------------------------
+   Rebuilt around four rules, each aimed at a specific "generated" tell in the
+   previous sheet:
+
+   1. ONE TYPE SCALE, MOSTLY REGULAR WEIGHT. The old sheet set font-weight 700/800
+      on nearly every element, which flattens hierarchy — when everything shouts,
+      position is the only cue left. Here weight carries meaning: 600 for a title,
+      400 for its content, and size does the rest.
+   2. A NEUTRAL SURFACE RAMP. Cards are near-neutral greys a few points apart, not
+      saturated blue-greys. Colour is spent only on the accent and on status.
    3. HAIRLINES, NOT BORDERS. Separators are sub-pixel and inset past the icon
       rail, so a list reads as one object instead of a stack of outlined boxes.
    4. MOTION THAT ACKNOWLEDGES, NOT ANIMATES. Presses scale ~2%, transitions run
@@ -64,42 +76,39 @@
 
 :root[data-theme="light"] {
   color-scheme:light;
-  --bg:        #f2f2f7;
-  --bg-el:     #f7f7fa;
+  --bg:        #eef2f6;   /* Ice slate backdrop ("estilo gelo") */
+  --bg-el:     #f6f8fb;
   --surface:   #ffffff;
-  --surface-2: #ececef;
-  --surface-3: #e3e3e8;
+  --surface-2: #e2e8f0;
+  --surface-3: #cbd5e1;
 
-  --label:     #000000;
-  --label-2:   rgba(60,60,67,.60);
-  --label-3:   rgba(60,60,67,.30);
-  --label-4:   rgba(60,60,67,.16);
+  --label:     #0f172a;   /* Deep slate text */
+  --label-2:   rgba(15,23,42,.68);
+  --label-3:   rgba(15,23,42,.42);
+  --label-4:   rgba(15,23,42,.20);
 
-  --sep:       rgba(60,60,67,.29);
-  --sep-op:    rgba(60,60,67,.20);
+  --sep:       rgba(15,23,42,.14);
+  --sep-op:    rgba(15,23,42,.08);
 
-  --blue:#007aff; --green:#34c759; --red:#ff3b30; --orange:#ff9500;
-  --yellow:#ffcc00; --teal:#30b0c7; --indigo:#5856d6; --pink:#ff2d55;
-  --purple:#af52de; --mint:#00c7be; --brown:#a2845e; --grey:#8e8e93;
-  --acc-2:#248a3d;
+  --blue:#0284c7; --green:#16a34a; --red:#dc2626; --orange:#ea580c;
+  --yellow:#d97706; --teal:#0d9488; --indigo:#4f46e5; --pink:#db2777;
+  --purple:#9333ea; --mint:#0d9488; --brown:#9a3412; --grey:#64748b;
+  --acc:  #c5802e;   /* Caramel / Amber accent ("caramelo") */
+  --acc-2:#9e621d;
   --on-acc:#ffffff;
 }
 
-/* accents — Apple's system colours, so a recolour never looks off-system */
-:root[data-accent="lime"]  { --acc:var(--green);  --acc-2:#248a3d; --on-acc:#000 }
-:root[data-accent="sky"]   { --acc:var(--blue);   --acc-2:#0060df; --on-acc:#fff }
-:root[data-accent="orange"]{ --acc:var(--orange); --acc-2:#c76b00; --on-acc:#000 }
-:root[data-accent="violet"]{ --acc:var(--purple); --acc-2:#8944ab; --on-acc:#fff }
-:root[data-accent="pink"]  { --acc:var(--pink);   --acc-2:#d70036; --on-acc:#fff }
-:root[data-accent="red"]   { --acc:var(--red);    --acc-2:#d70015; --on-acc:#fff }
-:root[data-accent="teal"]  { --acc:var(--teal);   --acc-2:#0071a4; --on-acc:#000 }
-:root[data-accent="gold"]  { --acc:var(--yellow); --acc-2:#b25000; --on-acc:#000 }
-/* Label colour on a filled accent button is picked per accent by measured contrast,
-   not by taste. Button text is 17px/600, so the AA bar is 3:1 (large text). White on
-   the light-theme green is 2.22:1 and on teal 2.57:1 — both fail, and green is the
-   DEFAULT accent, so every primary button in light mode was failing. Black scores
-   9.46 / 8.16 there. Blue, purple, pink and red keep white (3.5–4.1:1), which both
-   passes and matches the platform convention. */
+/* accents */
+:root[data-accent="lime"]   { --acc:var(--green);  --acc-2:#248a3d; --on-acc:#000 }
+:root[data-accent="sky"]    { --acc:var(--blue);   --acc-2:#0060df; --on-acc:#fff }
+:root[data-accent="orange"] { --acc:var(--orange); --acc-2:#c76b00; --on-acc:#000 }
+:root[data-accent="violet"] { --acc:var(--purple); --acc-2:#8944ab; --on-acc:#fff }
+:root[data-accent="pink"]   { --acc:var(--pink);   --acc-2:#d70036; --on-acc:#fff }
+:root[data-accent="red"]    { --acc:var(--red);    --acc-2:#d70015; --on-acc:#fff }
+:root[data-accent="teal"]   { --acc:var(--teal);   --acc-2:#0071a4; --on-acc:#000 }
+:root[data-accent="gold"]   { --acc:var(--yellow); --acc-2:#b25000; --on-acc:#000 }
+:root[data-accent="caramel"]{ --acc:#c5802e;       --acc-2:#9e621d; --on-acc:#fff }
+
 :root[data-theme="light"][data-accent="lime"],
 :root[data-theme="light"][data-accent="teal"]  { --on-acc:#000 }
 :root[data-theme="light"][data-accent="sky"],

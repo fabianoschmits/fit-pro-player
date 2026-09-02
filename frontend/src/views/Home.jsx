@@ -15,6 +15,7 @@ export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
+  const update = useStore(s => s.update)
   const [weekOffset, setWeekOffset] = useState(0)
 
   const today = new Date()
@@ -53,7 +54,12 @@ export default function Home() {
   return <div className="narrow">
     <div className="hdr">
       <div><h1>{user ? t('Hi {0}', user.name) : 'Fit Pro Player'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
-      <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
+      <div className="row" style={{ gap: 8 }}>
+        <button className="iconbtn" onClick={() => update(s => { s.theme = s.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
+          <Icon name={S.theme === 'light' ? 'sun' : 'moon'} />
+        </button>
+        <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
+      </div>
     </div>
 
     <div className="card">
