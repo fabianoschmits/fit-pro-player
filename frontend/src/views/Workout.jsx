@@ -396,10 +396,13 @@ function ActiveWorkout() {
   }, [])
 
   return <div className="narrow">
-    <div className="hdr">
+    <div className="hdr" style={{ alignItems: 'center' }}>
       <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { update(s => { s.active = null }); stopRest(); nav('/home') } })}><Icon name="xmark" /></button>
-      <div style={{ textAlign: 'center' }}><div style={{ fontWeight: 600 }}>{A.name}</div><div className="sub"><Elapsed start={A.start} /> · {t('{0} sets', done + '/' + total)}</div></div>
-      <button className="iconbtn" style={{ color: 'var(--acc)' }} aria-label={t('Finish')} onClick={finishWorkout}><Icon name="check" /></button>
+      <div style={{ textAlign: 'center', minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{A.name}</div><div className="sub"><Elapsed start={A.start} /> · {t('{0} sets', done + '/' + total)}</div></div>
+      <button className="finish-hdr-btn" aria-label={t('Finish workout')} onClick={finishWorkout}>
+        <span className="finish-hdr-lbl">{t('Finalizar o treino')}</span>
+        <Icon name="check" />
+      </button>
     </div>
     <div className="wprog"><i style={{ '--progress': total ? done / total : 0 }} /></div>
 

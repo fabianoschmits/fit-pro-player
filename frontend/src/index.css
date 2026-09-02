@@ -215,6 +215,17 @@ body.resting #app{padding-bottom:calc(250px + var(--sab))}
 .iconbtn:active{background:var(--surface-2);transform:scale(.92)}
 .iconbtn.on-ss{background:var(--acc-soft);color:var(--acc)}
 
+.finish-hdr-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--surface);color:var(--acc);border-radius:99px;
+  padding:6px 10px;font-size:11px;font-weight:600;letter-spacing:-.01em;
+  white-space:nowrap;flex:none;border:none;cursor:pointer;
+  box-shadow:var(--card-shadow);
+  transition:background var(--fast),transform var(--fast);
+}
+.finish-hdr-btn:active{background:var(--surface-2);transform:scale(.94)}
+.finish-hdr-btn .icn{font-size:16px}
+
 h4.sec{
   font-size:13px;font-weight:400;letter-spacing:-.004em;color:var(--label-2);
   text-transform:none;margin:22px 0 8px;padding:0 4px;
