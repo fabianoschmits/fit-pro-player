@@ -332,23 +332,6 @@ h4.sec{
   width:100%;height:56px;transition:height .5s cubic-bezier(.32,.72,0,1);
 }
 #tabbar.compact .tabbar-row{height:48px}
-.tab-pill-track{
-  position:absolute;top:4px;left:0;width:48px;height:48px;
-  pointer-events:none;z-index:0;opacity:0;
-  transition:transform .48s cubic-bezier(.34,1.25,.64,1),opacity .25s;
-}
-.tab-pill-track.ready{opacity:1}
-.tab-pill-inner{
-  display:block;width:100%;height:100%;border-radius:50%;background:var(--acc);
-  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--acc) 55%,transparent);
-}
-.tab-pill-track.pop .tab-pill-inner{
-  animation:tabPillPop .42s cubic-bezier(.34,1.2,.64,1);
-}
-@keyframes tabPillPop{
-  from{opacity:.6;transform:scaleX(1.45) scaleY(.65)}
-  to{opacity:1;transform:scale(1)}
-}
 .tab-item{
   position:relative;z-index:1;
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
@@ -360,26 +343,30 @@ h4.sec{
   position:relative;display:flex;align-items:center;justify-content:center;
   width:48px;height:40px;transition:height .5s cubic-bezier(.32,.72,0,1);
 }
-#tabbar.compact .tab-icon-slot{height:44px}
+.tab-icon-slot.tall{height:44px}
 .tab-lift{
   position:relative;display:flex;align-items:center;justify-content:center;
   width:48px;height:48px;
-  transition:transform .48s cubic-bezier(.34,1.25,.64,1);
 }
-.tab-lift.up{transform:translateY(-18px)}
+.tab-active-pill{
+  position:absolute;inset:0;border-radius:50%;background:var(--acc);z-index:1;
+  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--acc) 55%,transparent);
+}
+.tab-icn-wrap{
+  position:relative;z-index:2;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
 .tab-icn{
-  position:relative;z-index:2;font-size:22px;--icon-stroke:1.75;
-  color:var(--label-3);transition:color .25s,font-size .3s,--icon-stroke .3s;
+  font-size:22px;--icon-stroke:1.75;
+  color:inherit;transition:font-size .3s,--icon-stroke .3s;
 }
-.tab-item.on .tab-icn{color:var(--on-acc);font-size:24px;--icon-stroke:2.2}
+.tab-icn--on{font-size:24px;--icon-stroke:2.2}
 .tab-label{
   font-size:10px;font-weight:500;line-height:1;letter-spacing:.005em;
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  transition:opacity .35s cubic-bezier(.34,1.2,.64,1),max-height .35s,margin .35s,transform .35s,color .25s;
-  margin-top:2px;
 }
-.tab-item.on .tab-label{font-weight:700;color:var(--acc);transform:scale(1.05)}
-.tab-item.compact .tab-label{opacity:0;max-height:0;margin-top:0;transform:scale(1)}
+.tab-item.on .tab-label{font-weight:700;color:var(--acc)}
+.tab-item.compact .tab-label{max-height:0}
 
 /* Start — permanent elevated FAB (original Fit Pro Player highlight). */
 .tab-item--start{margin-top:-24px;padding-bottom:0}

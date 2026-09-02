@@ -1,5 +1,5 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
@@ -17,29 +17,48 @@ const TABS = [
   { k: 'more', icon: 'more', to: '/more', label: () => t('More') },
 ]
 
+const SPRING = { type: 'spring', stiffness: 300, damping: 30 }
+const PILL_SPRING = {
+  type: 'spring',
+  stiffness: 400,
+  damping: 25,
+  mass: 1,
+  layout: { type: 'spring', stiffness: 350, damping: 25 },
+}
+
 function isActive(cur, k) {
   if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings'
   if (k === 'start') return cur === 'workout'
   return cur === k
 }
 
-function TabItem({ tabRef, featured, active, visible, icon, label, recording, onClick }) {
+function TabItem({ featured, active, visible, icon, label, recording, onClick }) {
   if (featured) {
     return (
       <button
         type="button"
-        ref={tabRef}
         className={'tab-item tab-item--start' + (active ? ' on' : '') + (recording ? ' rec' : '') + (!visible ? ' compact' : '')}
         onClick={onClick}
         aria-label={label}
         aria-current={active ? 'page' : undefined}
       >
-        <div className="tab-start-wrap" data-tab-anchor>
+        <div className="tab-start-wrap">
           <span className="tab-start-cir">
             <Icon name={icon} className="tab-icn" />
           </span>
         </div>
-        <span className="tab-label">{label}</span>
+        <motion.span
+          className="tab-label"
+          initial={false}
+          animate={{
+            opacity: visible ? 1 : 0,
+            height: visible ? 'auto' : 0,
+            marginTop: visible ? 2 : 0,
+          }}
+          transition={SPRING}
+        >
+          {label}
+        </motion.span>
       </button>
     )
   }
@@ -47,18 +66,51 @@ function TabItem({ tabRef, featured, active, visible, icon, label, recording, on
   return (
     <button
       type="button"
-      ref={tabRef}
       className={'tab-item' + (active ? ' on' : '') + (!visible ? ' compact' : '')}
       onClick={onClick}
       aria-label={label}
       aria-current={active ? 'page' : undefined}
     >
-      <div className="tab-icon-slot" data-tab-anchor>
-        <div className={'tab-lift' + (active && visible ? ' up' : '')}>
-          <Icon name={icon} className="tab-icn" />
-        </div>
+      <div className={'tab-icon-slot' + (visible ? '' : ' tall')}>
+        <motion.div
+          className="tab-lift"
+          animate={{ y: active && visible ? -18 : 0 }}
+          transition={SPRING}
+        >
+          <AnimatePresence>
+            {active && (
+              <motion.span
+                layoutId="active-pill"
+                className="tab-active-pill"
+                initial={{ opacity: 0, scaleX: 1.5, scaleY: 0.6 }}
+                animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
+                exit={{ opacity: 0, scaleX: 0.5, scaleY: 1.5 }}
+                transition={PILL_SPRING}
+              />
+            )}
+          </AnimatePresence>
+          <motion.span
+            className="tab-icn-wrap"
+            animate={{ color: active ? 'var(--on-acc)' : 'var(--label-3)' }}
+            transition={{ duration: 0.2 }}
+          >
+            <Icon name={icon} className={'tab-icn' + (active ? ' tab-icn--on' : '')} />
+          </motion.span>
+        </motion.div>
       </div>
-      <span className="tab-label">{label}</span>
+      <motion.span
+        className="tab-label"
+        initial={false}
+        animate={{
+          opacity: visible ? 1 : 0,
+          height: visible ? 'auto' : 0,
+          scale: active ? 1.05 : 1,
+          marginTop: visible ? 2 : 0,
+        }}
+        transition={SPRING}
+      >
+        {label}
+      </motion.span>
     </button>
   )
 }
@@ -70,49 +122,8 @@ export default function TabBar({ onStart }) {
   const user = useStore(s => s.user)
   const isGuest = useStore(s => s.isGuest())
   const isVisible = useScrollDirection()
-  const rowRef = useRef(null)
-  const tabRefs = useRef({})
-  const prevActive = useRef(null)
-  const [pill, setPill] = useState({ x: 0, ready: false, hide: false, pop: false })
 
   const cur = loc.pathname.split('/')[1] || 'home'
-  const activeKey = TABS.find(t => isActive(cur, t.k))?.k
-
-  const updatePill = useCallback(() => {
-    const row = rowRef.current
-    const el = activeKey ? tabRefs.current[activeKey] : null
-    if (!row || !el || activeKey === 'start') {
-      setPill(p => ({ ...p, hide: true }))
-      return
-    }
-    const anchor = el.querySelector('[data-tab-anchor]')
-    if (!anchor) return
-    const rowRect = row.getBoundingClientRect()
-    const anchorRect = anchor.getBoundingClientRect()
-    const x = anchorRect.left - rowRect.left + anchorRect.width / 2 - 24
-    const pop = prevActive.current != null && prevActive.current !== activeKey
-    prevActive.current = activeKey
-    setPill({ x, ready: true, hide: false, pop })
-    if (pop) {
-      requestAnimationFrame(() => {
-        setPill(p => ({ ...p, pop: false }))
-      })
-    }
-  }, [activeKey])
-
-  useLayoutEffect(() => {
-    updatePill()
-    const row = rowRef.current
-    if (!row || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() => updatePill())
-    ro.observe(row)
-    return () => ro.disconnect()
-  }, [updatePill, isVisible, loc.pathname])
-
-  useLayoutEffect(() => {
-    window.addEventListener('resize', updatePill)
-    return () => window.removeEventListener('resize', updatePill)
-  }, [updatePill])
 
   if (!user && !isGuest) return null
 
@@ -133,33 +144,27 @@ export default function TabBar({ onStart }) {
     <div id="tabbar" className={(isVisible ? '' : 'hidden ') + (!isVisible ? 'compact' : '')}>
       <nav className="tabbar-nav" aria-label={t('Main navigation')}>
         <div className="tabbar-bg" aria-hidden="true" />
-        <div className="tabbar-row" ref={rowRef}>
-          <div
-            className={'tab-pill-track' + (pill.ready ? ' ready' : '') + (pill.pop ? ' pop' : '')}
-            style={{ transform: `translateX(${pill.x}px)`, opacity: pill.hide ? 0 : undefined }}
-            aria-hidden="true"
-          >
-            <span className="tab-pill-inner" />
+        <LayoutGroup>
+          <div className="tabbar-row">
+            {TABS.map(tab => {
+              const active = isActive(cur, tab.k)
+              const icon = typeof tab.icon === 'function' ? tab.icon(S) : tab.icon
+              const label = tab.label(S)
+              return (
+                <TabItem
+                  key={tab.k}
+                  featured={!!tab.featured}
+                  active={active}
+                  visible={isVisible}
+                  icon={icon}
+                  label={label}
+                  recording={tab.k === 'start' && !!S.active}
+                  onClick={() => onTab(tab)}
+                />
+              )
+            })}
           </div>
-          {TABS.map(tab => {
-            const active = isActive(cur, tab.k)
-            const icon = typeof tab.icon === 'function' ? tab.icon(S) : tab.icon
-            const label = tab.label(S)
-            return (
-              <TabItem
-                key={tab.k}
-                tabRef={el => { tabRefs.current[tab.k] = el }}
-                featured={!!tab.featured}
-                active={active}
-                visible={isVisible}
-                icon={icon}
-                label={label}
-                recording={tab.k === 'start' && !!S.active}
-                onClick={() => onTab(tab)}
-              />
-            )
-          })}
-        </div>
+        </LayoutGroup>
       </nav>
     </div>
   )
