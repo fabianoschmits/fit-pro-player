@@ -307,7 +307,7 @@ h4.sec{
 .btn:disabled{opacity:.32;pointer-events:none}
 
 /* ----------------------------------------------------------- tab bar ----- */
-/* ConfiLar-style: full-width bar, active pill lifts up, hides on scroll-down. */
+/* ConfiLar-style pill slide + lift; start tab keeps the elevated FAB. */
 #tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:50;
   pointer-events:none;overflow:visible;
@@ -328,13 +328,31 @@ h4.sec{
 :root[data-theme="light"] .tabbar-bg{background:rgba(249,249,251,.95)}
 #tabbar.hidden .tabbar-bg{transform:translateY(100%);opacity:0}
 .tabbar-row{
-  position:relative;z-index:1;display:flex;align-items:stretch;justify-content:space-around;
+  position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:space-around;
   width:100%;height:56px;transition:height .5s cubic-bezier(.32,.72,0,1);
 }
 #tabbar.compact .tabbar-row{height:48px}
+.tab-pill-track{
+  position:absolute;top:4px;left:0;width:48px;height:48px;
+  pointer-events:none;z-index:0;opacity:0;
+  transition:transform .48s cubic-bezier(.34,1.25,.64,1),opacity .25s;
+}
+.tab-pill-track.ready{opacity:1}
+.tab-pill-inner{
+  display:block;width:100%;height:100%;border-radius:50%;background:var(--acc);
+  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--acc) 55%,transparent);
+}
+.tab-pill-track.pop .tab-pill-inner{
+  animation:tabPillPop .42s cubic-bezier(.34,1.2,.64,1);
+}
+@keyframes tabPillPop{
+  from{opacity:.6;transform:scaleX(1.45) scaleY(.65)}
+  to{opacity:1;transform:scale(1)}
+}
 .tab-item{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-width:0;padding:0 2px;background:none;border:none;color:var(--label-3);
+  position:relative;z-index:1;
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  min-width:0;padding:0 2px 2px;background:none;border:none;color:var(--label-3);
   pointer-events:auto;transition:transform .14s var(--ease);
 }
 .tab-item:active{transform:scale(.9)}
@@ -342,41 +360,48 @@ h4.sec{
   position:relative;display:flex;align-items:center;justify-content:center;
   width:48px;height:40px;transition:height .5s cubic-bezier(.32,.72,0,1);
 }
-#tabbar.compact .tab-icon-slot{height:48px}
+#tabbar.compact .tab-icon-slot{height:44px}
 .tab-lift{
   position:relative;display:flex;align-items:center;justify-content:center;
   width:48px;height:48px;
-  transition:transform .45s cubic-bezier(.34,1.2,.64,1);
+  transition:transform .48s cubic-bezier(.34,1.25,.64,1);
 }
 .tab-lift.up{transform:translateY(-18px)}
-.tab-pill{
-  position:absolute;inset:0;border-radius:50%;background:var(--acc);
-  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--acc) 55%,transparent);
-  animation:tabPillPop .42s cubic-bezier(.34,1.2,.64,1);
-}
-.tab-item.rec .tab-pill{
-  background:var(--orange);
-  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--orange) 55%,transparent);
-}
-@keyframes tabPillPop{
-  from{opacity:0;transform:scaleX(1.5) scaleY(.6)}
-  to{opacity:1;transform:scale(1)}
-}
 .tab-icn{
   position:relative;z-index:2;font-size:22px;--icon-stroke:1.75;
-  color:var(--label-3);transition:color .2s,font-size .3s,--icon-stroke .3s;
+  color:var(--label-3);transition:color .25s,font-size .3s,--icon-stroke .3s;
 }
 .tab-item.on .tab-icn{color:var(--on-acc);font-size:24px;--icon-stroke:2.2}
-.tab-item.rec.on .tab-icn{color:#000}
 .tab-label{
   font-size:10px;font-weight:500;line-height:1;letter-spacing:.005em;
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  transition:opacity .35s cubic-bezier(.34,1.2,.64,1),max-height .35s,margin .35s,transform .35s;
+  transition:opacity .35s cubic-bezier(.34,1.2,.64,1),max-height .35s,margin .35s,transform .35s,color .25s;
   margin-top:2px;
 }
 .tab-item.on .tab-label{font-weight:700;color:var(--acc);transform:scale(1.05)}
-.tab-item.rec.on .tab-label{color:var(--orange)}
 .tab-item.compact .tab-label{opacity:0;max-height:0;margin-top:0;transform:scale(1)}
+
+/* Start — permanent elevated FAB (original Fit Pro Player highlight). */
+.tab-item--start{margin-top:-24px;padding-bottom:0}
+.tab-start-wrap{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:52px;height:52px;
+}
+.tab-start-cir{
+  width:52px;height:52px;border-radius:50%;background:var(--acc);color:var(--on-acc);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--acc) 55%,transparent);
+  transition:transform .45s cubic-bezier(.34,1.2,.64,1),background .25s,box-shadow .25s;
+}
+.tab-item--start:active .tab-start-cir{transform:scale(.93)}
+.tab-item--start .tab-icn{font-size:26px;--icon-stroke:2;color:inherit}
+.tab-item--start .tab-label{color:var(--acc);font-weight:600}
+.tab-item--start.rec .tab-start-cir{
+  background:var(--orange);color:#000;
+  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--orange) 55%,transparent);
+}
+.tab-item--start.rec .tab-label{color:var(--orange)}
+.tab-item--start.on .tab-start-cir{transform:scale(1.04)}
 
 /* ------------------------------------------------------------ week strip -- */
 .week{display:flex;justify-content:space-between;gap:4px}
@@ -1117,6 +1142,18 @@ h4.sec{
   .narrow{max-width:640px;margin:0 auto}
   .tiles{grid-template-columns:repeat(4,1fr)}
   .cols .tiles{grid-template-columns:1fr 1fr}
+  #tabbar{
+    left:50%;right:auto;bottom:16px;width:min(600px,calc(100% - 32px));
+    transform:translateX(-50%);
+  }
+  #tabbar.hidden .tabbar-bg{transform:translateY(calc(100% + 20px))}
+  .tabbar-nav{padding:0 10px 8px}
+  .tabbar-bg{
+    border-radius:var(--r-xl);
+    border:var(--hair) solid var(--sep-op);
+    box-shadow:0 12px 40px -10px rgba(0,0,0,.45);
+  }
+  .tab-item--start{margin-top:-26px}
   .sheet{left:50%;right:auto;margin-left:-320px;width:640px;border-radius:var(--r-xl) var(--r-xl) 0 0}
   .center{width:340px}
   #timer{left:50%;right:auto;margin-left:-260px;width:520px;bottom:112px}
