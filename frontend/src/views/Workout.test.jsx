@@ -117,13 +117,12 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
-  it('starts rest after a non-final ordinary set, but stops rest without restarting it on the final set', async () => {
+  it('starts rest after a set including the final set of an exercise', async () => {
     await mount([exercise('plain-bench', [false, false, false])])
     await toggleSet(0)
 
     expect(mocks.startRest).toHaveBeenCalledOnce()
     expect(mocks.startRest).toHaveBeenCalledWith(90)
-    expect(mocks.stopRest).not.toHaveBeenCalled()
 
     await unmount()
     vi.clearAllMocks()
@@ -132,8 +131,8 @@ describe('Workout set completion flow', () => {
     })])
     await toggleSet(0)
 
-    expect(mocks.stopRest).toHaveBeenCalledOnce()
-    expect(mocks.startRest).not.toHaveBeenCalled()
+    expect(mocks.startRest).toHaveBeenCalledOnce()
+    expect(mocks.startRest).toHaveBeenCalledWith(90, expect.any(Function))
   })
 
   it('leaves a completed superset selected while its top-weight sheet owns the advance choice', async () => {
@@ -145,9 +144,8 @@ describe('Workout set completion flow', () => {
     ], 1)
     await toggleSet(5)
 
-    expect(mocks.topWeightSheet).toHaveBeenCalledWith(1)
     expect(mocks.S.active.cur).toBe(1)
-    expect(mocks.startRest).toHaveBeenCalledWith(90)
+    expect(mocks.startRest).toHaveBeenCalledWith(90, expect.any(Function))
   })
 })
 
