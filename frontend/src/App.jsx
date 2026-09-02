@@ -11,6 +11,7 @@ import { useWakeLock } from './lib/wakelock.js'
 import { startFlow } from './sheets.jsx'
 import Icon from './components/Icon.jsx'
 import TabBar from './components/TabBar.jsx'
+import PageTransition from './components/PageTransition.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
@@ -34,7 +35,7 @@ function applyPrefs(theme, accent) {
   de.dataset.theme = theme === 'light' ? 'light' : 'dark'
   de.dataset.accent = ACCENTS[accent] ? accent : 'lime'
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.content = de.dataset.theme === 'light' ? '#f2f2f7' : '#000000'
+  if (meta) meta.content = de.dataset.theme === 'light' ? '#eef2f6' : '#000000'
 }
 
 function Shell() {
@@ -66,7 +67,7 @@ function Shell() {
     <>
       {/* keyed on the route: a view that throws is contained, and switching tabs
           re-mounts the boundary, so the tab bar is always a way out */}
-      <div id="app" className="vfade" key={loc.pathname}>
+      <PageTransition>
         <ErrorBoundary>
           {!authed ? <Login /> : (
             <Routes>
@@ -84,7 +85,7 @@ function Shell() {
             </Routes>
           )}
         </ErrorBoundary>
-      </div>
+      </PageTransition>
       <TabBar onStart={startFlow} />
       <RestTimer />
       <Modals />
