@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { exerciseName } from '../lib/exercises.js'
 import { exerciseGuideAsset } from '../lib/exercise-guide-assets.js'
+import { applyGuideFrameTransition, guideTransitionMode, guideTransitionLabel, GUIDE_TRANSITION_BY_SLUG } from '../lib/guide-transitions.js'
 
 const FRAME_LOADERS = import.meta.glob('../assets/workout-guide/*/frames.js', { import: 'default' })
 
@@ -30,12 +31,14 @@ async function loadFrames(slug) {
 
 export default function ExerciseGuideAnimation({ ex, playing, fallback = null }) {
   const config = exerciseGuideAsset(ex)
+  const transition = config ? guideTransitionMode(config.slug) : 'crossfade'
   const [frames, setFrames] = useState(null)
   const [failed, setFailed] = useState(false)
   const rootRef = useRef(null)
   const syncPlaybackRef = useRef(() => {})
   const visibleRef = useRef(true)
   const playingRef = useRef(playing)
+  const cleanupTransitionRef = useRef(() => {})
   playingRef.current = playing
 
   useEffect(() => {
@@ -55,6 +58,7 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
     if (layers?.length !== config?.sequence.length || !config || !frames) return undefined
 
     let observer
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
     const stepDuration = config.duration / config.sequence.length
     const timeline = { elapsed: 0, timerId: null, renderedFrame: null, startTime: null }
     visibleRef.current = true
@@ -62,12 +66,19 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
     const render = elapsed => {
       const state = guideTimelineState(config, elapsed)
       if (state.frame === timeline.renderedFrame) return
+      const prev = timeline.renderedFrame
       timeline.renderedFrame = state.frame
-      layers.forEach((layer, index) => {
-        const active = index === state.frame
-        layer.classList.toggle('is-active', active)
-        layer.setAttribute('aria-hidden', String(!active))
-      })
+      cleanupTransitionRef.current()
+      if (reducedMotion) {
+        layers.forEach((layer, index) => {
+          const active = index === state.frame
+          layer.classList.toggle('is-active', active)
+          layer.classList.remove('is-entering', 'is-exiting')
+          layer.setAttribute('aria-hidden', String(!active))
+        })
+        return
+      }
+      cleanupTransitionRef.current = applyGuideFrameTransition(layers, state.frame, prev)
     }
 
     const schedule = () => {
@@ -100,7 +111,8 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
       shouldPlay ? play() : pause()
     }
     syncPlaybackRef.current = syncPlayback
-    render(0)
+    timeline.renderedFrame = null
+    render(timeline.elapsed)
 
     if ('IntersectionObserver' in window) {
       observer = new IntersectionObserver(([entry]) => {
@@ -116,6 +128,7 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
       observer?.disconnect()
+      cleanupTransitionRef.current()
       pause()
       syncPlaybackRef.current = () => {}
     }
@@ -143,6 +156,7 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
     <div
       className={'exercise-guide-motion' + (playing ? ' is-playing' : '')}
       data-exercise-animation={ex.id}
+      data-transition={transition}
       ref={rootRef}
       role="img"
       aria-label={exerciseName(ex)}
@@ -157,6 +171,9 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
           key={index}
         />
       ))}
+      {GUIDE_TRANSITION_BY_SLUG[config.slug] && (
+        <span className="guide-transition-badge" aria-hidden="true">{guideTransitionLabel(transition)}</span>
+      )}
     </div>
   )
 }
