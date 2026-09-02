@@ -198,27 +198,54 @@ export const WORKOUT_GUIDE_SLUGS = Object.freeze([...new Set(Object.values(WORKO
 // the remaining entries merge both lists so the default is useful to the whole audience.
 // Source: https://www.strengthlog.com/strength-training-statistics/
 export const WORKOUT_GUIDE_POPULARITY_IDS = Object.freeze([
-  '0025', // bench press
-  '0043', // squat
-  '0032', // deadlift
-  '0198', // lat pulldown
-  '1457', // overhead press
-  '0027', // barbell row
-  '0334', // dumbbell lateral raise
-  '0585', // leg extension
-  '0739', // leg press
-  '0058', // hip thrust
-  '0294', // closest animated match for the curl slot (dumbbell curl)
-  '0201', // tricep pushdown
+  '0025', // supino_com_barra
+  '0043', // agachamento_com_barra
+  '0032', // levantamento_terra_com_barra
+  '0198', // puxada_alta_no_cabo
+  '1457', // desenvolvimento_militar_em_pe_com_barra
+  '0027', // remada_curvada_com_barra
+  '0334', // elevacao_lateral_com_halteres
+  '0585', // extensao_de_perna_na_maquina
+  '0739', // leg_press_45_graus
+  '0058', // elevacao_de_quadril_com_barra
+  '0294', // rosca_de_biceps_com_halteres
+  '0201', // triceps_na_polia_no_cabo
+  '0003', // bicicleta_no_ar
+  '0006', // toque_alternado_nos_calcanhares
+  '2355', // elevação de pernas suspensa com joelhos flexionados
 ])
 
-// Workout Guide defines three ordered 512 x 512 frames. Keep that canonical order exactly;
-// repeating the middle pose or blending complete drawings creates a visible ghost silhouette.
-const GUIDE_SEQUENCE = Object.freeze([0, 1, 2])
+const DEFAULT_SEQUENCE = Object.freeze([0, 1, 2])
+const FOUR_FRAME_SEQUENCE = Object.freeze([0, 1, 2, 3])
+const FIVE_FRAME_SEQUENCE = Object.freeze([0, 1, 2, 3, 4])
+const TWO_FRAME_SEQUENCE = Object.freeze([0, 1])
+
+const CUSTOM_SEQUENCES = Object.freeze({
+  '0025': FOUR_FRAME_SEQUENCE, // bench-press
+  '0043': FOUR_FRAME_SEQUENCE, // squat
+  '0032': FOUR_FRAME_SEQUENCE, // deadlift
+  '0198': FOUR_FRAME_SEQUENCE, // lat-pulldown
+  '1457': FOUR_FRAME_SEQUENCE, // overhead-press
+  '0027': FOUR_FRAME_SEQUENCE, // barbell-row
+  '0334': FOUR_FRAME_SEQUENCE, // lateral-raise
+  '0585': FOUR_FRAME_SEQUENCE, // leg-extension
+  '0739': TWO_FRAME_SEQUENCE,  // leg-press
+  '0058': FOUR_FRAME_SEQUENCE, // hip-thrust
+  '0294': FOUR_FRAME_SEQUENCE, // bicep-curl
+  '0201': FOUR_FRAME_SEQUENCE, // tricep-pushdown
+  '0003': FOUR_FRAME_SEQUENCE, // bicycle-crunch
+  '0006': FIVE_FRAME_SEQUENCE, // heel-tap
+  '2355': FIVE_FRAME_SEQUENCE, // hanging-knee-raise
+})
+
 const WORKOUT_GUIDE_ASSETS = Object.freeze(Object.fromEntries(
   Object.entries(WORKOUT_GUIDE_BY_EXERCISE_ID).map(([id, slug]) => [
     id,
-    Object.freeze({ duration: 2400, sequence: GUIDE_SEQUENCE, slug }),
+    Object.freeze({
+      duration: 2400,
+      sequence: CUSTOM_SEQUENCES[id] || DEFAULT_SEQUENCE,
+      slug,
+    }),
   ]),
 ))
 

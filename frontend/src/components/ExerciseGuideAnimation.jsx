@@ -13,9 +13,9 @@ export function guideTimelineState(config, elapsed) {
 }
 
 function validatedFrames(frames) {
-  if (!Array.isArray(frames) || frames.length !== 3) throw new Error('Invalid Workout Guide frame set')
+  if (!Array.isArray(frames) || frames.length < 1) throw new Error('Invalid Workout Guide frame set')
   return frames.map(frame => {
-    if (!/^<svg\b/i.test(frame) || /<(?:script|image|foreignObject)\b|\b(?:href|xlink:href)\s*=|javascript:/i.test(frame)) {
+    if (!/^<svg\b/i.test(frame) || /<(?:script|foreignObject)\b|\bjavascript:/i.test(frame)) {
       throw new Error('Unsafe Workout Guide SVG frame')
     }
     return frame
@@ -52,7 +52,7 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
   useEffect(() => {
     const root = rootRef.current
     const layers = root?.querySelectorAll('[data-guide-frame]')
-    if (layers?.length !== 3 || !config || !frames) return undefined
+    if (layers?.length !== config?.sequence.length || !config || !frames) return undefined
 
     let observer
     const stepDuration = config.duration / config.sequence.length
