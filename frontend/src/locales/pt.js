@@ -568,6 +568,7 @@ export default {
   "A timer runs while you hold the set. Leave the weight at 0 for bodyweight holds.": "O cronômetro funciona enquanto você mantém a posição. Deixe o peso em 0 para isometrias com o peso do corpo.",
   "Done": "Pronto",
   "Start set": "Iniciar série",
+  "Rest now": "Descanse",
   "Hold logged": "Isometria registrada",
   "Longest hold per workout": "Isometria mais longa por treino",
   "Progression": "Progressão",

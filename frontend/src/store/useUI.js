@@ -53,6 +53,7 @@ let timerDone = null
 let workInt = null
 let workTick = null
 let workDone = null
+let workRestDone = null
 
 export const useUI = create((set, get) => ({
   sheets: [],          // { id, render:(close)=>JSX, kind:'sheet'|'center', locked }
@@ -77,6 +78,29 @@ export const useUI = create((set, get) => ({
 
   startRest(sec, onDone) {
     get().stopRest(false)
+    const wk = get().work
+    if (wk) {
+      if (!sec || sec <= 0) {
+        const cb = onDone
+        get().stopWork()
+        if (cb) cb()
+        return
+      }
+      workRestDone = onDone
+      const endsAt = Date.now() + sec * 1000
+      requestRestNotificationPermission()
+      pushRestTimer(sec)
+      set({
+        work: {
+          ...wk,
+          phase: 'rest',
+          restLeft: sec,
+          restTotal: sec,
+          restEndsAt: endsAt,
+        },
+      })
+      return
+    }
     if (!sec || sec <= 0) {
       if (onDone) onDone()
       return
@@ -127,55 +151,88 @@ export const useUI = create((set, get) => ({
   },
 
   /* ---- work timer (issue #16) ----
-     Times the set itself, not the recovery after it. Kept separate from the rest timer on
-     purpose: the two mean opposite things, they must never run together, and a work set is
-     something you are watching — so it gets no server push (that endpoint says "rest over",
-     and a plank does not need a notification you are staring at anyway).
-     `onDone(elapsedSec)` is called both when the countdown reaches zero and on an early
-     finish; the elapsed time is what actually gets logged, so stopping at 0:38 of a 0:45
-     hold records 0:38 rather than crediting the full target. */
-  startWork(sec, label, onDone) {
+     Times the set itself inside the workout overlay; rest after a timed hold stays in the
+     same overlay so the animation stays visible above the clock. */
+  startWork(sec, label, onDone, opts = {}) {
     get().stopWork()
     get().stopRest()
     const total = Math.max(1, Math.round(sec) || 1)
     const endsAt = Date.now() + total * 1000
     workDone = onDone
-    set({ work: { left: total, total, endsAt, label } })
-    workTick = () => {
+    workRestDone = null
+    set({
+      work: {
+        left: total,
+        total,
+        endsAt,
+        label,
+        phase: 'work',
+        entryIdx: opts.entryIdx,
+        setIdx: opts.setIdx,
+      },
+    })
+    const tick = () => {
       const wk = get().work
       if (!wk) return
+      const snd = useStore.getState().S.sound
+      if (wk.phase === 'rest') {
+        const left = Math.max(0, Math.round((wk.restEndsAt - Date.now()) / 1000))
+        if (left === wk.restLeft) return
+        if (left <= 0) {
+          beep(snd, 880, 0.15); beep(snd, 880, 0.15, 0.25); beep(snd, 1320, 0.4, 0.5)
+          vibrate([200, 100, 200]); maybeRestNotification(); get().toast(t('Rest over — next set!'))
+          const cb = workRestDone
+          workRestDone = null
+          cancelPushRestTimer()
+          get().stopWork()
+          if (cb) cb()
+          return
+        }
+        if (left <= 3) beep(snd, 660, 0.1)
+        set({ work: { ...wk, restLeft: left } })
+        return
+      }
       const left = Math.max(0, Math.round((wk.endsAt - Date.now()) / 1000))
       if (left === wk.left) return
-      const snd = useStore.getState().S.sound
       if (left <= 0) {
         beep(snd, 880, 0.15); beep(snd, 880, 0.15, 0.25); beep(snd, 1320, 0.4, 0.5)
         vibrate([200, 100, 200])
         const done = workDone
-        get().stopWork()
+        workDone = null
         if (done) done(wk.total)
         return
       }
       if (left <= 3) beep(snd, 660, 0.1)
       set({ work: { ...wk, left } })
     }
-    workInt = setInterval(workTick, 1000)
-    document.addEventListener('visibilitychange', workTick)
+    workTick = tick
+    workInt = setInterval(tick, 1000)
+    document.addEventListener('visibilitychange', tick)
   },
-  // Ended the hold early — log what was actually held.
   finishWorkEarly() {
     const wk = get().work
-    if (!wk) return
+    if (!wk || wk.phase !== 'work') return
     const elapsed = Math.max(1, wk.total - wk.left)
     const done = workDone
+    workDone = null
     vibrate(30)
-    get().stopWork()
     if (done) done(elapsed)
   },
-  // Abandon without logging anything.
+  skipWorkRest() {
+    const wk = get().work
+    if (!wk || wk.phase !== 'rest') return
+    const cb = workRestDone
+    workRestDone = null
+    cancelPushRestTimer()
+    get().stopWork()
+    if (cb) cb()
+  },
   stopWork() {
     if (workInt) clearInterval(workInt); workInt = null
     if (workTick) document.removeEventListener('visibilitychange', workTick); workTick = null
     workDone = null
+    workRestDone = null
+    if (get().work) cancelPushRestTimer()
     set({ work: null })
   }
 }))
