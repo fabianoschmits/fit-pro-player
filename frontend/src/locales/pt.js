@@ -725,4 +725,5 @@ export default {
   "Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.": "1RM est. é uma estimativa calculada a partir do seu melhor set — útil para acompanhar progresso, não um máximo testado.",
   "Loading…": "Carregando…",
   "Admin dashboard": "Painel admin",
+  "Main navigation": "Navegação principal",
 }

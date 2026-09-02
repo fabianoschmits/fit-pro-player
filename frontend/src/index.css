@@ -307,45 +307,76 @@ h4.sec{
 .btn:disabled{opacity:.32;pointer-events:none}
 
 /* ----------------------------------------------------------- tab bar ----- */
+/* ConfiLar-style: full-width bar, active pill lifts up, hides on scroll-down. */
 #tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:50;
-  display:flex;justify-content:space-around;align-items:flex-end;
-  padding:7px 6px calc(6px + var(--sab));
-  background:color-mix(in srgb,var(--bg-el) 72%,transparent);
-  backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);
+  pointer-events:none;overflow:visible;
+}
+.tabbar-nav{
+  position:relative;display:flex;align-items:stretch;justify-content:center;
+  padding:0 6px calc(var(--sab));
+  pointer-events:none;
+}
+.tabbar-bg{
+  position:absolute;inset:0;z-index:0;
+  background:color-mix(in srgb,var(--bg-el) 95%,transparent);
+  backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
   border-top:var(--hair) solid var(--sep-op);
+  box-shadow:0 -4px 20px rgba(0,0,0,.08);
+  transition:transform .5s cubic-bezier(.32,.72,0,1),opacity .5s cubic-bezier(.32,.72,0,1);
 }
-:root[data-theme="light"] #tabbar{background:rgba(249,249,251,.78)}
-#tabbar button{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  color:var(--label-3);font-size:10px;font-weight:500;letter-spacing:.005em;padding-top:3px;
-  transition:color var(--fast);
+:root[data-theme="light"] .tabbar-bg{background:rgba(249,249,251,.95)}
+#tabbar.hidden .tabbar-bg{transform:translateY(100%);opacity:0}
+.tabbar-row{
+  position:relative;z-index:1;display:flex;align-items:stretch;justify-content:space-around;
+  width:100%;height:56px;transition:height .5s cubic-bezier(.32,.72,0,1);
 }
-/* The inactive tint is semi-transparent, so wherever two strokes cross inside an
-   icon (the calendar's hangers over its frame, the divider's caps on its sides)
-   the alpha doubled up and the icon read as a stack of loose layers. Carrying the
-   fade on the <svg> instead of in the stroke colour flattens the icon first and
-   fades it as one shape — and it does that for every icon, not just this one. */
-#tabbar button .icn{font-size:25px;--icon-stroke:1.65;color:var(--label)}
-#tabbar button.on{color:var(--acc)}
-#tabbar button.on .icn{--icon-stroke:2;color:inherit;opacity:1}
-#tabbar button.start{margin-top:-24px}
-#tabbar button.start .cir{
-  width:52px;height:52px;border-radius:50%;background:var(--acc);color:var(--on-acc);
-  display:flex;align-items:center;justify-content:center;position:relative;
+#tabbar.compact .tabbar-row{height:48px}
+.tab-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-width:0;padding:0 2px;background:none;border:none;color:var(--label-3);
+  pointer-events:auto;transition:transform .14s var(--ease);
+}
+.tab-item:active{transform:scale(.9)}
+.tab-icon-slot{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:48px;height:40px;transition:height .5s cubic-bezier(.32,.72,0,1);
+}
+#tabbar.compact .tab-icon-slot{height:48px}
+.tab-lift{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  width:48px;height:48px;
+  transition:transform .45s cubic-bezier(.34,1.2,.64,1);
+}
+.tab-lift.up{transform:translateY(-18px)}
+.tab-pill{
+  position:absolute;inset:0;border-radius:50%;background:var(--acc);
   box-shadow:0 6px 18px -4px color-mix(in srgb,var(--acc) 55%,transparent);
-  transition:transform var(--fast) var(--ease);
+  animation:tabPillPop .42s cubic-bezier(.34,1.2,.64,1);
 }
-#tabbar button.start:active .cir{transform:scale(.93)}
-#tabbar button.start .cir .icn{font-size:26px;--icon-stroke:2;color:inherit;opacity:1}
-#tabbar button.start span{color:var(--acc);font-weight:600}
-/* `.cir` is itself a <span>, so the label rules above and below reach it too and
-   outrank the `.cir` block — which is how the running state ended up painting an
-   orange play glyph onto an orange disc. Both states restate their own colour.
-   The disc is orange in either theme, so its glyph is black, not `--on-acc`. */
-#tabbar button.start .cir{color:var(--on-acc)}
-#tabbar button.start.rec .cir{background:var(--orange);color:#000;box-shadow:0 6px 18px -4px color-mix(in srgb,var(--orange) 55%,transparent)}
-#tabbar button.start.rec span{color:var(--orange)}
+.tab-item.rec .tab-pill{
+  background:var(--orange);
+  box-shadow:0 6px 18px -4px color-mix(in srgb,var(--orange) 55%,transparent);
+}
+@keyframes tabPillPop{
+  from{opacity:0;transform:scaleX(1.5) scaleY(.6)}
+  to{opacity:1;transform:scale(1)}
+}
+.tab-icn{
+  position:relative;z-index:2;font-size:22px;--icon-stroke:1.75;
+  color:var(--label-3);transition:color .2s,font-size .3s,--icon-stroke .3s;
+}
+.tab-item.on .tab-icn{color:var(--on-acc);font-size:24px;--icon-stroke:2.2}
+.tab-item.rec.on .tab-icn{color:#000}
+.tab-label{
+  font-size:10px;font-weight:500;line-height:1;letter-spacing:.005em;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:opacity .35s cubic-bezier(.34,1.2,.64,1),max-height .35s,margin .35s,transform .35s;
+  margin-top:2px;
+}
+.tab-item.on .tab-label{font-weight:700;color:var(--acc);transform:scale(1.05)}
+.tab-item.rec.on .tab-label{color:var(--orange)}
+.tab-item.compact .tab-label{opacity:0;max-height:0;margin-top:0;transform:scale(1)}
 
 /* ------------------------------------------------------------ week strip -- */
 .week{display:flex;justify-content:space-between;gap:4px}
@@ -1086,12 +1117,6 @@ h4.sec{
   .narrow{max-width:640px;margin:0 auto}
   .tiles{grid-template-columns:repeat(4,1fr)}
   .cols .tiles{grid-template-columns:1fr 1fr}
-  #tabbar{
-    left:50%;right:auto;bottom:16px;transform:translateX(-50%);width:520px;
-    border:var(--hair) solid var(--sep-op);border-radius:var(--r-xl);
-    padding:7px 10px 9px;box-shadow:0 12px 40px -10px rgba(0,0,0,.5);
-  }
-  #tabbar button.start{margin-top:-26px}
   .sheet{left:50%;right:auto;margin-left:-320px;width:640px;border-radius:var(--r-xl) var(--r-xl) 0 0}
   .center{width:340px}
   #timer{left:50%;right:auto;margin-left:-260px;width:520px;bottom:112px}
@@ -1108,12 +1133,6 @@ h4.sec{
   font-size:34px;color:var(--label-3);
 }
 .boot-loading .muted{font-size:15px}
-
-#tabbar.tabbar-6 button:not(.start){font-size:9px}
-#tabbar.tabbar-6 button:not(.start) .icn{font-size:22px}
-#tabbar button.start .start-lbl{
-  max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-}
 
 .onboarding-overlay{
   position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;
@@ -1160,7 +1179,3 @@ h4.sec{
 .stats-tabs{margin-bottom:14px}
 
 .picker-cfg{width:34px;height:34px;border-radius:8px;font-size:16px;color:var(--label-2);flex:none}
-
-@media(min-width:1000px){
-  #tabbar.tabbar-6{width:600px}
-}

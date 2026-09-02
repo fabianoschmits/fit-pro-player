@@ -37,6 +37,16 @@ export function startTabLabel(S) {
   return t('Choose workout')
 }
 
+/** Short label for the tab bar start action. */
+export function startTabShortLabel(S) {
+  if (S.active) return t('Resume')
+  if (!S.routines.length) return t('Plan')
+  const r = effectiveRoutine(S, todayISO())
+  if (r?.ex?.length) return t('Start')
+  if (r) return t('Plan')
+  return t('Start')
+}
+
 /** null when the weekly plan is fully set up. */
 export function planSetupProgress(S) {
   if (!S.routines.length) return { step: 1, total: 3, label: t('Create routines') }

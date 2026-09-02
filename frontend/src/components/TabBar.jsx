@@ -3,8 +3,44 @@ import { useStore } from '../store/useStore.js'
 import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { startTabLabel } from '../lib/ux.js'
+import { startTabShortLabel } from '../lib/ux.js'
+import { useScrollDirection } from '../hooks/useScrollDirection.js'
 import Icon from './Icon.jsx'
+
+const TABS = [
+  { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
+  { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
+  { k: 'start', icon: S => S.active ? 'play' : 'dumbbell', action: true, label: S => startTabShortLabel(S) },
+  { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
+  { k: 'library', icon: 'list', to: '/library', label: () => t('Exercises') },
+  { k: 'more', icon: 'more', to: '/more', label: () => t('More') },
+]
+
+function isActive(cur, k) {
+  if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings'
+  if (k === 'start') return cur === 'workout'
+  return cur === k
+}
+
+function TabItem({ active, visible, icon, label, recording, onClick }) {
+  return (
+    <button
+      type="button"
+      className={'tab-item' + (active ? ' on' : '') + (recording ? ' rec' : '') + (!visible ? ' compact' : '')}
+      onClick={onClick}
+      aria-label={label}
+      aria-current={active ? 'page' : undefined}
+    >
+      <div className="tab-icon-slot">
+        <div className={'tab-lift' + (active && visible ? ' up' : '')}>
+          {active && <span className="tab-pill" aria-hidden="true" />}
+          <Icon name={icon} className="tab-icn" />
+        </div>
+      </div>
+      <span className="tab-label">{label}</span>
+    </button>
+  )
+}
 
 export default function TabBar({ onStart }) {
   const nav = useNavigate()
@@ -12,9 +48,10 @@ export default function TabBar({ onStart }) {
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
   const isGuest = useStore(s => s.isGuest())
+  const isVisible = useScrollDirection()
   if (!user && !isGuest) return null
+
   const cur = loc.pathname.split('/')[1] || 'home'
-  const on = k => cur === k || (cur === 'history' && k === 'more') || (cur === 'settings' && k === 'more')
 
   const startWorkout = () => {
     if (S.active) { nav('/workout'); return }
@@ -24,24 +61,34 @@ export default function TabBar({ onStart }) {
     nav('/workout')
   }
 
-  const startLabel = startTabLabel(S)
-  const Tab = ({ k, icon, to, label }) => (
-    <button className={on(k) ? 'on' : ''} onClick={() => nav(to)} aria-label={label}>
-      <Icon name={icon} /><span>{label}</span>
-    </button>
-  )
+  const onTab = tab => {
+    if (tab.action) startWorkout()
+    else nav(tab.to)
+  }
 
   return (
-    <nav id="tabbar" className="tabbar-6">
-      <Tab k="home" icon="house" to="/home" label={t('Home')} />
-      <Tab k="plan" icon="calendar" to="/plan" label={t('Plan')} />
-      <button className={'start' + (S.active ? ' rec' : '')} onClick={startWorkout} aria-label={startLabel}>
-        <span className="cir"><Icon name={S.active ? 'play' : 'dumbbell'} /></span>
-        <span className="start-lbl">{startLabel}</span>
-      </button>
-      <Tab k="stats" icon="chart" to="/stats" label={t('Stats')} />
-      <Tab k="library" icon="list" to="/library" label={t('Exercises')} />
-      <Tab k="more" icon="more" to="/more" label={t('More')} />
-    </nav>
+    <div id="tabbar" className={(isVisible ? '' : 'hidden ') + (!isVisible ? 'compact' : '')}>
+      <nav className="tabbar-nav" aria-label={t('Main navigation')}>
+        <div className="tabbar-bg" aria-hidden="true" />
+        <div className="tabbar-row">
+          {TABS.map(tab => {
+            const active = isActive(cur, tab.k)
+            const icon = typeof tab.icon === 'function' ? tab.icon(S) : tab.icon
+            const label = tab.label(S)
+            return (
+              <TabItem
+                key={tab.k}
+                active={active}
+                visible={isVisible}
+                icon={icon}
+                label={label}
+                recording={tab.k === 'start' && !!S.active}
+                onClick={() => onTab(tab)}
+              />
+            )
+          })}
+        </div>
+      </nav>
+    </div>
   )
 }
