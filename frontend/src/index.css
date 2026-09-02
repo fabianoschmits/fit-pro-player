@@ -151,7 +151,7 @@ button,.chip,.tile,.item,.wday,.cal-d,.swatch,.hm-c,.lrow,.seg button,.stp butto
 }
 
 @media (prefers-reduced-motion: reduce){
-  .exercise-guide-frame{transition:none!important;filter:none!important;clip-path:none!important;transform:none!important}
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
 
 /* ------------------------------------------------------------ type scale -- */
@@ -722,96 +722,15 @@ h4.sec{
 }
 .exercise-guide-frame{
   position:absolute;inset:0;min-width:0;min-height:0;pointer-events:none;
-  opacity:0;visibility:hidden;z-index:0;
-  will-change:transform,opacity,filter,clip-path;
+  opacity:0;visibility:hidden;
 }
-.exercise-guide-frame.is-active,
-.exercise-guide-frame.is-entering,
-.exercise-guide-frame.is-exiting{visibility:visible}
-.exercise-guide-frame.is-active{z-index:2;opacity:1}
-.exercise-guide-frame.is-entering{z-index:3}
-.exercise-guide-frame.is-exiting{z-index:1}
-
-/* --- drag: horizontal carousel — both frames slide together, no fade --- */
-.exercise-guide-motion[data-transition="drag"] .exercise-guide-frame{
-  transition:transform .5s cubic-bezier(.32,.72,0,1);
-  transform:translateX(24%);
-  opacity:1;
-}
-.exercise-guide-motion[data-transition="drag"] .exercise-guide-frame.is-active{transform:translateX(0);opacity:1}
-.exercise-guide-motion[data-transition="drag"] .exercise-guide-frame.is-entering{transform:translateX(24%);opacity:1}
-.exercise-guide-motion[data-transition="drag"] .exercise-guide-frame.is-exiting{transform:translateX(-24%);opacity:1}
-
-/* --- default / crossfade --- */
-.exercise-guide-motion[data-transition="crossfade"] .exercise-guide-frame{
-  transition:opacity .42s cubic-bezier(.32,.72,0,1),transform .42s cubic-bezier(.32,.72,0,1),filter .42s cubic-bezier(.32,.72,0,1);
-  transform:scale(1.02);
-}
-.exercise-guide-motion[data-transition="crossfade"] .exercise-guide-frame.is-active{transform:scale(1)}
-.exercise-guide-motion[data-transition="crossfade"] .exercise-guide-frame.is-entering{opacity:0;transform:scale(1.04)}
-.exercise-guide-motion[data-transition="crossfade"] .exercise-guide-frame.is-exiting{opacity:0;transform:scale(.98)}
-
-/* --- slide-x: horizontal drag with soft fade --- */
-.exercise-guide-motion[data-transition="slide-x"] .exercise-guide-frame{
-  transition:transform .46s cubic-bezier(.32,.72,0,1),opacity .38s cubic-bezier(.32,.72,0,1);
-  transform:translateX(16%);
-}
-.exercise-guide-motion[data-transition="slide-x"] .exercise-guide-frame.is-active{transform:translateX(0);opacity:1}
-.exercise-guide-motion[data-transition="slide-x"] .exercise-guide-frame.is-entering{opacity:.15;transform:translateX(18%)}
-.exercise-guide-motion[data-transition="slide-x"] .exercise-guide-frame.is-exiting{opacity:.1;transform:translateX(-16%)}
-
-/* --- slide-y: vertical lift --- */
-.exercise-guide-motion[data-transition="slide-y"] .exercise-guide-frame{
-  transition:transform .46s cubic-bezier(.32,.72,0,1),opacity .38s cubic-bezier(.32,.72,0,1);
-  transform:translateY(14%);
-}
-.exercise-guide-motion[data-transition="slide-y"] .exercise-guide-frame.is-active{transform:translateY(0);opacity:1}
-.exercise-guide-motion[data-transition="slide-y"] .exercise-guide-frame.is-entering{opacity:.2;transform:translateY(16%)}
-.exercise-guide-motion[data-transition="slide-y"] .exercise-guide-frame.is-exiting{opacity:.1;transform:translateY(-14%)}
-
-/* --- spring: push with squash --- */
-.exercise-guide-motion[data-transition="spring"] .exercise-guide-frame{
-  transition:transform .5s cubic-bezier(.34,1.28,.64,1),opacity .34s cubic-bezier(.32,.72,0,1);
-  transform:translateX(12%) scale(.9);
-}
-.exercise-guide-motion[data-transition="spring"] .exercise-guide-frame.is-active{transform:translateX(0) scale(1);opacity:1}
-.exercise-guide-motion[data-transition="spring"] .exercise-guide-frame.is-entering{opacity:0;transform:translateX(14%) scale(.88)}
-.exercise-guide-motion[data-transition="spring"] .exercise-guide-frame.is-exiting{opacity:0;transform:translateX(-10%) scale(.94)}
-
-/* --- blur: morph dissolve --- */
-.exercise-guide-motion[data-transition="blur"] .exercise-guide-frame{
-  transition:opacity .42s cubic-bezier(.32,.72,0,1),filter .46s cubic-bezier(.32,.72,0,1),transform .46s cubic-bezier(.32,.72,0,1);
-  filter:blur(7px);transform:scale(1.02);
-}
-.exercise-guide-motion[data-transition="blur"] .exercise-guide-frame.is-active{filter:blur(0);transform:scale(1);opacity:1}
-.exercise-guide-motion[data-transition="blur"] .exercise-guide-frame.is-entering{opacity:0;filter:blur(10px);transform:scale(1.04)}
-.exercise-guide-motion[data-transition="blur"] .exercise-guide-frame.is-exiting{opacity:0;filter:blur(8px);transform:scale(.98)}
-
-/* --- wipe: clip reveal --- */
-.exercise-guide-motion[data-transition="wipe"] .exercise-guide-frame{
-  transition:clip-path .48s cubic-bezier(.32,.72,0,1),opacity .3s cubic-bezier(.32,.72,0,1);
-  clip-path:inset(0 100% 0 0);
-}
-.exercise-guide-motion[data-transition="wipe"] .exercise-guide-frame.is-active{clip-path:inset(0 0 0 0);opacity:1}
-.exercise-guide-motion[data-transition="wipe"] .exercise-guide-frame.is-entering{clip-path:inset(0 100% 0 0);opacity:1}
-.exercise-guide-motion[data-transition="wipe"] .exercise-guide-frame.is-exiting{
-  clip-path:inset(0 0 0 100%);opacity:1;
-  transition:clip-path .48s cubic-bezier(.32,.72,0,1),opacity .22s .28s cubic-bezier(.32,.72,0,1);
-}
-
+.exercise-guide-frame.is-active{opacity:1;visibility:visible}
 .exercise-guide-frame svg{
   position:absolute;inset:0;display:block;width:100%;height:100%;max-width:100%;max-height:100%;
   overflow:hidden;shape-rendering:geometricPrecision;
 }
 .exercise-guide-frame path{
   fill:color-mix(in srgb,#fff 94%,var(--acc));
-}
-.guide-transition-badge{
-  position:absolute;top:8px;left:8px;z-index:5;
-  font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
-  color:rgba(255,255,255,.72);background:rgba(0,0,0,.45);
-  border-radius:6px;padding:3px 7px;pointer-events:none;
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
 }
 .exmedia .media-playback,.exmedia .media-size-toggle{
   position:absolute;bottom:9px;display:inline-flex;align-items:center;gap:4px;
