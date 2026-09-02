@@ -49,6 +49,7 @@ const maybeRestNotification = async () => {
 let toastTm = null
 let timerInt = null
 let timerTick = null
+let timerDone = null
 let workInt = null
 let workTick = null
 let workDone = null
