@@ -114,8 +114,8 @@
 :root[data-accent="gold"]   { --acc:var(--yellow); --acc-2:#b25000; --on-acc:#000 }
 :root[data-accent="caramel"]{ --acc:#c5802e;       --acc-2:#9e621d; --on-acc:#fff }
 
-:root[data-theme="light"][data-accent="lime"],
 :root[data-theme="light"][data-accent="teal"]  { --on-acc:#000 }
+:root[data-theme="light"][data-accent="lime"],
 :root[data-theme="light"][data-accent="sky"],
 :root[data-theme="light"][data-accent="violet"],
 :root[data-theme="light"][data-accent="pink"],
