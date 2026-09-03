@@ -212,7 +212,8 @@ export default function Settings() {
 
     <div className="dim small" style={{ textAlign: 'center', marginTop: 4, lineHeight: 1.6 }}>
       Fit Pro Player · {t('free & open source (AGPL v3)')}<br />
-      <a href="https://github.com/fabianoschmits/fit-pro-player" target="_blank" rel="noopener">{t('source code')}</a> · {t('exercise data')}: hasaneyldrm/exercises-dataset (MIT)
+      <a href="https://github.com/fabianoschmits/fit-pro-player" target="_blank" rel="noopener">{t('source code')}</a> · {t('exercise data')}: hasaneyldrm/exercises-dataset (MIT)<br />
+      {t('SVG animations')}: <a href="https://github.com/bryllim/workout-guide" target="_blank" rel="noopener">Workout Guide</a> · Bryl Lim / Everkinetic · <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
     </div>
   </div>
 }
