@@ -524,20 +524,27 @@ h4.sec{
 .exercise-muscle-thumb .bm-v path{vector-effect:non-scaling-stroke;stroke-width:.65px}
 .exmedia .exercise-muscle-overlay{
   position:absolute;left:8px;bottom:8px;z-index:1;
-  display:flex;width:44px;height:48px;min-width:44px;padding:0;gap:0;
-  align-items:center;justify-content:center;overflow:hidden;
+  display:flex;width:88px;height:96px;min-width:88px;padding:0;gap:0;
+  align-items:center;justify-content:center;overflow:visible;
   background:transparent;pointer-events:none;
-  --bm-base:color-mix(in srgb,#fff 20%,transparent);
+  --surface:#ffffff;
+  --label:#0f172a;
+  --bm-base:#ffffff;
 }
-.exmedia .exercise-muscle-overlay .bm-sil{fill:color-mix(in srgb,#fff 34%,transparent)}
-.exmedia .exercise-muscle-overlay .bm-v path{stroke:#000;stroke-width:3}
-.exmedia:has(.exercise-muscle-overlay) .media-size-toggle{left:58px}
+.exmedia .exercise-muscle-overlay .bm-sil{fill:#eef2f6}
+.exmedia .exercise-muscle-overlay .bm-m{fill:#ffffff}
+.exmedia .exercise-muscle-overlay .bm-m.l1{fill:color-mix(in srgb,var(--acc) 32%,#ffffff)}
+.exmedia .exercise-muscle-overlay .bm-m.l2{fill:color-mix(in srgb,var(--acc) 56%,#ffffff)}
+.exmedia .exercise-muscle-overlay .bm-m.l3{fill:color-mix(in srgb,var(--acc) 78%,#ffffff)}
+.exmedia .exercise-muscle-overlay .bm-m.l4{fill:var(--acc)}
+.exmedia .exercise-muscle-overlay .bm-v path{stroke:#cbd5e1;stroke-width:2.2}
+.exmedia:has(.exercise-muscle-overlay) .media-size-toggle{left:102px}
 .exmedia.compact .exercise-muscle-overlay,
 .exmedia.mini .exercise-muscle-overlay{
-  width:30px;height:34px;min-width:30px;left:6px;bottom:6px;
+  width:60px;height:68px;min-width:60px;left:6px;bottom:6px;
 }
 .exmedia.compact:has(.exercise-muscle-overlay) .media-size-toggle,
-.exmedia.mini:has(.exercise-muscle-overlay) .media-size-toggle{left:42px}
+.exmedia.mini:has(.exercise-muscle-overlay) .media-size-toggle{left:72px}
 .exercise-muscle-static{
   display:flex;width:100%;height:320px;padding:24px;gap:0;
   align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;
@@ -722,6 +729,7 @@ h4.sec{
 .wprog{height:4px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-bottom:16px}
 .wprog i{display:block;width:100%;height:100%;background:var(--acc);border-radius:99px;transform:scaleX(var(--progress,0));transform-origin:left center;transition:transform var(--med) var(--ease)}
 .exmedia{position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--surface-2);margin-bottom:12px}
+.exmedia:has(.media-playback){cursor:pointer}
 .exmedia:has(.exercise-guide-motion){background:#000}
 .exmedia img{width:100%;height:320px;object-fit:contain;display:block}
 .exmedia>.exercise-muscle-static{width:100%;height:320px}
@@ -759,7 +767,7 @@ h4.sec{
   min-height:40px;font-size:12px;font-weight:500;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
-.exmedia .media-playback{right:9px}
+.exmedia .media-playback{right:9px;width:40px;padding:0;justify-content:center}
 .exmedia .media-size-toggle{left:9px}
 .exmedia .media-playback .icn,.exmedia .media-size-toggle .icn{font-size:13px}
 /* superset: both exercises are on screen together, so the animations have to give way —

@@ -18,20 +18,10 @@ const EXERCISE = { id: '0001', name: 'Abdominal 3/4', name_pt: 'Abdominal 3/4' }
 let container
 let root
 
-function installMotionPreference(reduced) {
-  Object.defineProperty(window, 'matchMedia', {
-    configurable: true,
-    value: vi.fn(query => ({
-      matches: query === '(prefers-reduced-motion: reduce)' && reduced,
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  })
-}
-
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  vi.useFakeTimers()
+  vi.setSystemTime(1_000_000)
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -40,12 +30,21 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount())
   container.remove()
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 
 describe('Media SVG playback', () => {
-  it('starts automatically and lets the user pause', () => {
-    installMotionPreference(false)
+  it('starts automatically even with reduced motion, and lets the user pause', () => {
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => ({
+        matches: true,
+        media: '(prefers-reduced-motion: reduce)',
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    })
     act(() => root.render(<Media ex={EXERCISE} />))
 
     const button = container.querySelector('.media-playback')
@@ -54,15 +53,14 @@ describe('Media SVG playback', () => {
     expect(button.getAttribute('aria-label')).toMatch(/pausar|pause/i)
 
     act(() => button.dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
+
+    act(() => { vi.advanceTimersByTime(500) })
+    act(() => button.dispatchEvent(new MouseEvent('click', { bubbles: true })))
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('false')
     expect(button.getAttribute('aria-label')).toMatch(/reproduzir|play/i)
-  })
 
-  it('opens paused when reduced motion is requested', () => {
-    installMotionPreference(true)
-    act(() => root.render(<Media ex={EXERCISE} />))
-
-    expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('false')
-    expect(container.querySelector('.media-playback').getAttribute('aria-label')).toMatch(/reproduzir|play/i)
+    act(() => container.querySelector('.exmedia').dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
   })
 })

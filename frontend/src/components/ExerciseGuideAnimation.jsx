@@ -60,19 +60,21 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
   useEffect(() => {
     const root = rootRef.current
     const layers = root?.querySelectorAll('[data-guide-frame]')
-    if (layers?.length !== config?.sequence.length || !config || !frames) return undefined
+    if (!root || !config || !frames || !layers?.length) return undefined
 
     let observer
+    let hideTimer
     const stepDuration = config.duration / config.sequence.length
     const timeline = { elapsed: 0, timerId: null, renderedFrame: null, startTime: null }
     visibleRef.current = true
 
     const render = elapsed => {
       const state = guideTimelineState(config, elapsed)
-      if (state.frame === timeline.renderedFrame) return
-      timeline.renderedFrame = state.frame
+      const frame = Math.min(layers.length - 1, Math.max(0, state.frame))
+      if (frame === timeline.renderedFrame) return
+      timeline.renderedFrame = frame
       layers.forEach((layer, index) => {
-        const active = index === state.frame
+        const active = index === frame
         layer.classList.toggle('is-active', active)
         layer.setAttribute('aria-hidden', String(!active))
       })
@@ -112,9 +114,18 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
 
     if ('IntersectionObserver' in window) {
       observer = new IntersectionObserver(([entry]) => {
-        visibleRef.current = entry.isIntersecting
-        syncPlayback()
-      }, { threshold: 0.08 })
+        window.clearTimeout(hideTimer)
+        if (entry.isIntersecting) {
+          visibleRef.current = true
+          syncPlayback()
+          return
+        }
+        // Body scroll-lock and sheet transforms briefly report 0 intersection on desktop.
+        hideTimer = window.setTimeout(() => {
+          visibleRef.current = false
+          syncPlayback()
+        }, 600)
+      }, { threshold: 0 })
       observer.observe(root)
     }
     const onVisibility = () => syncPlayback()
@@ -124,6 +135,7 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
     return () => {
       document.removeEventListener('visibilitychange', onVisibility)
       observer?.disconnect()
+      window.clearTimeout(hideTimer)
       pause()
       syncPlaybackRef.current = () => {}
     }
