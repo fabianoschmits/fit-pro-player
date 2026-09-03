@@ -946,21 +946,18 @@ h4.sec{
 .sheet h3{font-size:20px;font-weight:600;letter-spacing:-.021em;margin-bottom:14px}
 .ex-detail{position:relative}
 .ex-detail-swipe{touch-action:pan-y}
-.ex-detail-stage{position:relative;margin-bottom:12px}
-.ex-detail-stage .exmedia{margin-bottom:0}
+.ex-detail-stage{display:flex;align-items:center;gap:4px;margin-bottom:12px}
+.ex-detail-stage .exmedia{flex:1;min-width:0;margin-bottom:0}
 .ex-swipe-edge{
-  display:flex;position:absolute;top:50%;transform:translateY(-50%);
-  width:36px;height:44px;z-index:6;padding:0;border:0;
+  display:flex;flex:none;width:32px;height:44px;z-index:6;padding:0;border:0;
   align-items:center;justify-content:center;
   background:rgba(0,0,0,.4);color:#fff;border-radius:99px;
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   -webkit-tap-highlight-color:transparent;cursor:pointer;
 }
-.ex-swipe-edge.is-prev{left:6px}
-.ex-swipe-edge.is-next{right:6px}
 .ex-swipe-edge .icn{font-size:18px;opacity:.95}
 .ex-swipe-edge:hover{background:rgba(0,0,0,.55)}
-.ex-swipe-edge:active{transform:translateY(-50%) scale(.94)}
+.ex-swipe-edge:active{transform:scale(.94)}
 .center{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:min(84vw,300px);background:var(--surface);border-radius:var(--r-lg);padding:20px;
