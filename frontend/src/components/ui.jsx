@@ -213,16 +213,16 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
 
 /* ============================ checkbox ============================ */
 
-export function Check({ checked, onChange, className = '', size }) {
+export function Check({ checked, onChange, className = '', size, playMode = false }) {
   return (
     <button
       role="checkbox"
       aria-checked={!!checked}
-      className={'chk' + (checked ? ' on' : '') + ' ' + className}
+      className={'chk' + (checked ? ' on' : '') + (playMode && !checked ? ' play-mode' : '') + ' ' + className}
       style={size ? { width: size, height: size } : null}
       onClick={() => onChange(!checked)}
     >
-      <Icon name="check" />
+      {playMode && !checked ? <Icon name="play" /> : <Icon name="check" />}
     </button>
   )
 }

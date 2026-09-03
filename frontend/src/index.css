@@ -842,6 +842,11 @@ h4.sec{
 .setrow .setgo:disabled{opacity:.3;cursor:default}
 .setrow .setgo:not(:disabled):active{background:var(--surface-3)}
 
+/* play-mode checkbox: circle shows play when pending, check when done */
+.chk.play-mode{background:transparent;border:2px solid color-mix(in srgb,var(--acc) 40%,transparent);color:var(--acc);font-size:12px;padding-left:2px}
+.chk.play-mode:not(:disabled):hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.chk.play-mode:not(:disabled):active{transform:scale(.92)}
+
 /* timed-set overlay — large clock below the exercise animation */
 .work-set-overlay{position:relative;margin:-4px 0 14px;z-index:25}
 .work-set-overlay__backdrop{
@@ -860,14 +865,16 @@ h4.sec{
   border-color:color-mix(in srgb,var(--acc) 42%,var(--surface-border));
 }
 .work-set-overlay__phase{
-  text-align:center;font-size:12px;font-weight:600;letter-spacing:.06em;
-  text-transform:uppercase;color:var(--acc);margin-bottom:10px;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  text-align:center;font-size:13px;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--acc);margin-bottom:12px;
 }
 .work-set-overlay__time{
-  font-size:68px;font-weight:700;letter-spacing:-.04em;line-height:1;
+  font-size:76px;font-weight:800;letter-spacing:-.04em;line-height:1;
   font-variant-numeric:tabular-nums;text-align:center;color:var(--acc);
+  text-shadow:0 0 40px color-mix(in srgb,var(--acc) 30%,transparent);
 }
-.work-set-overlay.is-rest .work-set-overlay__time{font-size:60px}
+.work-set-overlay.is-rest .work-set-overlay__time{font-size:68px;color:var(--label-2)}
 .work-set-overlay__label{
   text-align:center;font-size:15px;color:var(--label-2);
   margin-top:8px;margin-bottom:16px;line-height:1.35;
@@ -879,8 +886,11 @@ h4.sec{
   display:block;height:100%;background:var(--acc);border-radius:99px;
   transform:scaleX(var(--progress,0));transform-origin:left center;transition:transform 1s linear;
 }
-.work-set-overlay__actions{display:flex;gap:10px}
+.work-set-overlay__actions{display:flex;gap:10px;margin-top:4px}
 .work-set-overlay__actions .btn{flex:1}
+.work-set-overlay__next-hint{
+  text-align:center;font-size:12px;color:var(--dim);margin-top:10px;line-height:1.4;
+}
 
 /* exercise-config sheet: three steppers side by side on narrow phones */
 .cfgrow{gap:8px}
