@@ -336,6 +336,7 @@ export default {
   "Worked muscles": "Músculos trabalhados",
   "Close": "Fechar",
   "Next exercise": "Próximo exercício",
+  "Previous exercise": "Exercício anterior",
   "back": "costas",
   "cardio": "cardio",
   "chest": "peito",

@@ -292,8 +292,9 @@ function ExerciseDetail({ ex: initial, neighbors, close }) {
   const last = lastEntryFor(st, ex.id)
   const best = bestWeightFor(st, ex.id)
   const canSwipe = list.length > 1
-  const edgeRef = useRef(null)
+  const stageRef = useRef(null)
   const swipe = useRef({ x: 0, y: 0, dx: 0, active: false, axis: null, moved: false })
+  const ignoreClickUntil = useRef(0)
   const [offset, setOffset] = useState(0)
 
   const go = dir => {
@@ -306,8 +307,8 @@ function ExerciseDetail({ ex: initial, neighbors, close }) {
   }, [ex.id])
 
   useEffect(() => {
-    const el = edgeRef.current
-    if (!el) return
+    const el = stageRef.current
+    if (!el || !canSwipe) return
     const onMove = e => {
       const t = e.touches?.[0]
       const s = swipe.current
@@ -322,13 +323,16 @@ function ExerciseDetail({ ex: initial, neighbors, close }) {
       e.preventDefault()
       s.dx = dx
       s.moved = true
-      setOffset(Math.max(-140, Math.min(140, dx)))
+      setOffset(Math.max(-160, Math.min(160, dx)))
     }
     el.addEventListener('touchmove', onMove, { passive: false })
     return () => el.removeEventListener('touchmove', onMove)
   }, [canSwipe])
 
   const onSwipeStart = e => {
+    if (!canSwipe) return
+    const block = e.target.closest?.('button, a, input, textarea, [role="slider"], .sld')
+    if (block && !block.classList.contains('ex-swipe-edge')) return
     const t = e.touches?.[0]
     if (!t) return
     swipe.current = { x: t.clientX, y: t.clientY, dx: 0, active: true, axis: null, moved: false }
@@ -337,38 +341,61 @@ function ExerciseDetail({ ex: initial, neighbors, close }) {
     const s = swipe.current
     if (!s.active) return
     const dx = s.dx
+    const moved = s.moved
     s.active = false
     s.axis = null
     setOffset(0)
-    if (dx < -56) go(1)
-    else if (dx > 56) go(-1)
+    if (!moved) return
+    if (dx < -48) {
+      ignoreClickUntil.current = Date.now() + 400
+      go(1)
+    } else if (dx > 48) {
+      ignoreClickUntil.current = Date.now() + 400
+      go(-1)
+    }
   }
-  const onEdgeClick = () => {
-    if (swipe.current.moved) return
-    go(1)
+  const onEdgeClick = dir => e => {
+    e.stopPropagation()
+    if (Date.now() < ignoreClickUntil.current) return
+    go(dir)
   }
 
   return (
-    <div className="ex-detail" style={{ transform: offset ? `translateX(${offset * 0.18}px)` : undefined }}>
-      <h3 className="capitalize">{exerciseName(ex)}</h3>
-      <div className="ex-detail-stage">
-        <Media ex={ex} key={ex.id} />
-        {canSwipe && (
-          <div
-            ref={edgeRef}
-            className="ex-swipe-edge"
-            data-nodrag
-            role="button"
-            tabIndex={0}
-            aria-label={t('Next exercise')}
-            onTouchStart={onSwipeStart}
-            onTouchEnd={onSwipeEnd}
-            onTouchCancel={onSwipeEnd}
-            onClick={onEdgeClick}
-          >
-            <Icon name="chevronRight" />
-          </div>
-        )}
+    <div className="ex-detail">
+      <div
+        ref={stageRef}
+        className="ex-detail-swipe"
+        style={{ transform: offset ? `translateX(${offset * 0.22}px)` : undefined }}
+        onTouchStart={onSwipeStart}
+        onTouchEnd={onSwipeEnd}
+        onTouchCancel={onSwipeEnd}
+      >
+        <h3 className="capitalize">{exerciseName(ex)}</h3>
+        <div className="ex-detail-stage">
+          <Media ex={ex} key={ex.id} />
+          {canSwipe && (
+            <button
+              type="button"
+              className="ex-swipe-edge is-prev"
+              data-nodrag
+              aria-label={t('Previous exercise')}
+              onClick={onEdgeClick(-1)}
+            >
+              <Icon name="chevronLeft" />
+            </button>
+          )}
+          {canSwipe && (
+            <button
+              type="button"
+              className="ex-swipe-edge is-next"
+              data-nodrag
+              aria-label={t('Next exercise')}
+              onClick={onEdgeClick(1)}
+            >
+              <Icon name="chevronRight" />
+            </button>
+          )}
+        </div>
       </div>
       <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0' }}>
         <span className="tag acc">{sentenceCase(t(ex.bp))}</span>
