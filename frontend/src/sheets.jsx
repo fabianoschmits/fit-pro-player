@@ -48,12 +48,15 @@ export function confirmSheet(opts) {
 
 /* ============================ starter plan ============================ */
 export function loadStarterPlan() {
-  const [push, pull, legs] = starterRoutines()
+  const routines = starterRoutines()
   update(st => {
-    st.routines.push(push, pull, legs)
-    st.week[1] = push.id; st.week[3] = pull.id; st.week[5] = legs.id
+    st.routines.push(...routines)
+    // Only set days for the first three (Chest, Back, Legs) on Mon, Wed, Fri
+    if (routines[0]) st.week[1] = routines[0].id
+    if (routines[1]) st.week[3] = routines[1].id
+    if (routines[2]) st.week[5] = routines[2].id
   })
-  toast(t('Starter plan loaded — Mon Push · Wed Pull · Fri Legs'))
+  toast(t('Starter plan loaded'))
 }
 
 /* ============================ weight picker (shared: body weight + goal) ============================ */

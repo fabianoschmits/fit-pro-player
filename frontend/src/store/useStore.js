@@ -5,6 +5,7 @@ import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED, STANDALONE } from '../lib/demo.js'
 import { guestAllowed } from '../lib/guest.js'
 import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
+import { starterRoutines } from '../lib/starter.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
@@ -23,11 +24,21 @@ export const DEF = {
 const clone = o => JSON.parse(JSON.stringify(o))
 
 function loadState() {
+  let state = clone(DEF)
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return Object.assign(clone(DEF), JSON.parse(raw))
+    if (raw) state = Object.assign(state, JSON.parse(raw))
   } catch (e) { /* ignore */ }
-  return clone(DEF)
+  
+  // Inject default routines for users that don't have any routines yet
+  if (!state.routines || state.routines.length === 0) {
+    state.routines = starterRoutines()
+    // Default the first 3 days to Mon, Wed, Fri
+    if (state.routines[0]) state.week[1] = state.routines[0].id
+    if (state.routines[1]) state.week[3] = state.routines[1].id
+    if (state.routines[2]) state.week[5] = state.routines[2].id
+  }
+  return state
 }
 
 const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length)

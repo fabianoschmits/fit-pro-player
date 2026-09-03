@@ -40,7 +40,7 @@ export default function Onboarding() {
           <div><span>3</span>{t('Train')}</div>
         </div>
 
-        <Button variant="primary" icon="sparkles" onClick={pickStarter}>{t('Load starter plan (PPL)')}</Button>
+        <Button variant="primary" icon="sparkles" onClick={pickStarter}>{t('Load starter plan (Full)')}</Button>
         <div style={{ height: 8 }} />
         <Button icon="plus" onClick={pickBuild}>{t('Build my own plan')}</Button>
         <div style={{ height: 8 }} />
