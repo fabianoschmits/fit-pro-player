@@ -372,6 +372,7 @@ function ExerciseDetail({ ex: initial, neighbors, close }) {
       >
         <h3 className="capitalize">{exerciseName(ex)}</h3>
         <div className="ex-detail-stage">
+          <Media ex={ex} key={ex.id} />
           {canSwipe && (
             <button
               type="button"
@@ -383,7 +384,6 @@ function ExerciseDetail({ ex: initial, neighbors, close }) {
               <Icon name="chevronLeft" />
             </button>
           )}
-          <Media ex={ex} key={ex.id} />
           {canSwipe && (
             <button
               type="button"
