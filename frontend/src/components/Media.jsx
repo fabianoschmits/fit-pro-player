@@ -51,7 +51,7 @@ export default function Media({ ex, id, compact, minimizable }) {
         : <ExerciseMuscleThumb ex={ex} full />}
       {minimizable && (
         <button className="media-size-toggle" onClick={toggleSize}>
-          <Icon name={mini ? 'expand' : 'minimize'} />{mini ? t('Expand') : t('Minimize')}
+          <Icon name={mini ? 'expand' : 'minimize'} />
         </button>
       )}
       {!mini && hasGuideAnimation && (
