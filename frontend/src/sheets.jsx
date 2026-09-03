@@ -9,6 +9,7 @@ import { beep, vibrate } from './lib/sound.js'
 import { t, instrFor, getLang, INSTR_LANGS } from './lib/i18n.js'
 import { nav } from './lib/nav.js'
 import { starterRoutines } from './lib/starter.js'
+import { cycleNeighborIndex, neighborIndexOf } from './lib/exercise-neighbors.js'
 import Media, { Thumb } from './components/Media.jsx'
 import Stepper from './components/Stepper.jsx'
 import Icon from './components/Icon.jsx'
@@ -283,31 +284,111 @@ function OneRM({ ex }) {
   </>
 }
 
-function ExerciseDetail({ ex, close }) {
+function ExerciseDetail({ ex: initial, neighbors, close }) {
+  const list = neighbors?.length ? neighbors : [initial]
+  const [idx, setIdx] = useState(() => neighborIndexOf(list, initial.id))
+  const ex = list[idx] || initial
   const st = useStore(s => s.S)
   const last = lastEntryFor(st, ex.id)
   const best = bestWeightFor(st, ex.id)
-  return <>
-    <h3 className="capitalize">{exerciseName(ex)}</h3>
-    <Media ex={ex} />
-    <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0' }}>
-      <span className="tag acc">{sentenceCase(t(ex.bp))}</span>
-      {ex.tg && <span className="tag"><Icon name="target" />{sentenceCase(t(ex.tg))}</span>}
-      <span className="tag"><Icon name="dumbbell" />{sentenceCase(t(ex.eq))}</span>
-      {smOf(ex).slice(0, 3).map((s, i) => <span key={i} className="tag">{sentenceCase(t(s))}</span>)}
+  const canSwipe = list.length > 1
+  const edgeRef = useRef(null)
+  const swipe = useRef({ x: 0, y: 0, dx: 0, active: false, axis: null, moved: false })
+  const [offset, setOffset] = useState(0)
+
+  const go = dir => {
+    if (!canSwipe) return
+    setIdx(i => cycleNeighborIndex(list.length, i, dir))
+  }
+
+  useEffect(() => {
+    document.querySelector('#modal-root .sheet:last-of-type')?.scrollTo({ top: 0 })
+  }, [ex.id])
+
+  useEffect(() => {
+    const el = edgeRef.current
+    if (!el) return
+    const onMove = e => {
+      const t = e.touches?.[0]
+      const s = swipe.current
+      if (!t || !s.active) return
+      const dx = t.clientX - s.x
+      const dy = t.clientY - s.y
+      if (!s.axis) {
+        if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return
+        s.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      }
+      if (s.axis !== 'x') return
+      e.preventDefault()
+      s.dx = dx
+      s.moved = true
+      setOffset(Math.max(-140, Math.min(140, dx)))
+    }
+    el.addEventListener('touchmove', onMove, { passive: false })
+    return () => el.removeEventListener('touchmove', onMove)
+  }, [canSwipe])
+
+  const onSwipeStart = e => {
+    const t = e.touches?.[0]
+    if (!t) return
+    swipe.current = { x: t.clientX, y: t.clientY, dx: 0, active: true, axis: null, moved: false }
+  }
+  const onSwipeEnd = () => {
+    const s = swipe.current
+    if (!s.active) return
+    const dx = s.dx
+    s.active = false
+    s.axis = null
+    setOffset(0)
+    if (dx < -56) go(1)
+    else if (dx > 56) go(-1)
+  }
+  const onEdgeClick = () => {
+    if (swipe.current.moved) return
+    go(1)
+  }
+
+  return (
+    <div className="ex-detail" style={{ transform: offset ? `translateX(${offset * 0.18}px)` : undefined }}>
+      <h3 className="capitalize">{exerciseName(ex)}</h3>
+      <div className="ex-detail-stage">
+        <Media ex={ex} key={ex.id} />
+        {canSwipe && (
+          <div
+            ref={edgeRef}
+            className="ex-swipe-edge"
+            data-nodrag
+            role="button"
+            tabIndex={0}
+            aria-label={t('Next exercise')}
+            onTouchStart={onSwipeStart}
+            onTouchEnd={onSwipeEnd}
+            onTouchCancel={onSwipeEnd}
+            onClick={onEdgeClick}
+          >
+            <Icon name="chevronRight" />
+          </div>
+        )}
+      </div>
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0' }}>
+        <span className="tag acc">{sentenceCase(t(ex.bp))}</span>
+        {ex.tg && <span className="tag"><Icon name="target" />{sentenceCase(t(ex.tg))}</span>}
+        <span className="tag"><Icon name="dumbbell" />{sentenceCase(t(ex.eq))}</span>
+        {smOf(ex).slice(0, 3).map((s, i) => <span key={i} className="tag">{sentenceCase(t(s))}</span>)}
+      </div>
+      {ex.desc && <div className="exnote">{ex.desc}</div>}
+      {best > 0 && <div className="small row" style={{ marginBottom: 6, gap: 5 }}><Icon name="trophy" style={{ fontSize: 14, color: 'var(--yellow)' }} />{t('Best:')} <b className="accent">{fmtNum(best)} {st.unit}</b>{last ? ` · ${t('last')} ${fmtDate(last.d)}: ${last.sets.map(s => setLabel(ex.id, s, last.target)).join(', ')}` : ''}</div>}
+      <Button variant="primary" icon="plus" style={{ margin: '10px 0 4px' }} onClick={() => addToRoutineSheet(ex)}>{t('Add to my plan')}</Button>
+      {ex.custom && <div className="row" style={{ gap: 8, marginTop: 8 }}>
+        <Button icon="pencil" style={{ flex: 1 }} onClick={() => { close(); customExSheet(ex) }}>{t('Edit')}</Button>
+        <Button variant="danger" icon="trash" style={{ flex: 1 }} onClick={() => deleteCustomEx(ex, close)}>{t('Delete')}</Button>
+      </div>}
+      {!isCardio(ex) && <OneRM ex={ex} key={ex.id} />}
+      {instrFor(ex).length > 0 &&<><h4 className="sec">{t('How to')}{!INSTR_LANGS.includes(getLang()) && <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}> · {t('instructions in English')}</span>}</h4><ol className="steps-list">{instrFor(ex).map((s, i) => <li key={i}>{s}</li>)}</ol></>}
     </div>
-    {ex.desc && <div className="exnote">{ex.desc}</div>}
-    {best > 0 && <div className="small row" style={{ marginBottom: 6, gap: 5 }}><Icon name="trophy" style={{ fontSize: 14, color: 'var(--yellow)' }} />{t('Best:')} <b className="accent">{fmtNum(best)} {st.unit}</b>{last ? ` · ${t('last')} ${fmtDate(last.d)}: ${last.sets.map(s => setLabel(ex.id, s, last.target)).join(', ')}` : ''}</div>}
-    <Button variant="primary" icon="plus" style={{ margin: '10px 0 4px' }} onClick={() => addToRoutineSheet(ex)}>{t('Add to my plan')}</Button>
-    {ex.custom && <div className="row" style={{ gap: 8, marginTop: 8 }}>
-      <Button icon="pencil" style={{ flex: 1 }} onClick={() => { close(); customExSheet(ex) }}>{t('Edit')}</Button>
-      <Button variant="danger" icon="trash" style={{ flex: 1 }} onClick={() => deleteCustomEx(ex, close)}>{t('Delete')}</Button>
-    </div>}
-    {!isCardio(ex) && <OneRM ex={ex} />}
-    {instrFor(ex).length > 0 &&<><h4 className="sec">{t('How to')}{!INSTR_LANGS.includes(getLang()) && <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}> · {t('instructions in English')}</span>}</h4><ol className="steps-list">{instrFor(ex).map((s, i) => <li key={i}>{s}</li>)}</ol></>}
-  </>
+  )
 }
-export const exerciseDetailSheet = ex => ui().openSheet(close => <ExerciseDetail ex={ex} close={close} />)
+export const exerciseDetailSheet = (ex, neighbors) => ui().openSheet(close => <ExerciseDetail ex={ex} neighbors={neighbors} close={close} />)
 
 /* ============================ add to routine ============================ */
 function AddToRoutine({ ex, close }) {

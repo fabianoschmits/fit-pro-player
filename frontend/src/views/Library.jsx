@@ -42,7 +42,7 @@ export default function Library() {
       </div>
       {f.slice(0, shown).map(e => {
         const best = bestWeightFor(S, e.id)
-        return <div key={e.id} className="item" onClick={() => exerciseDetailSheet(e)}>
+        return <div key={e.id} className="item" onClick={() => exerciseDetailSheet(e, f)}>
           <Thumb ex={e} />
           <div className="grow"><div className="tt">{exerciseName(e)}</div><div className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</div></div>
           {best > 0 && <span className="tag acc">{fmtNum(best)}</span>}

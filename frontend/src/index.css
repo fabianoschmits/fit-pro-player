@@ -943,7 +943,19 @@ h4.sec{
 @keyframes sheetup{from{transform:translateY(100%)}to{transform:none}}
 .sheet .grab{width:36px;height:5px;border-radius:99px;background:var(--label-4);margin:6px auto 14px}
 .sheet:focus-visible,.center:focus-visible{outline:none}
-.sheet h3{font-size:20px;font-weight:600;letter-spacing:-.021em;margin-bottom:14px}
+.ex-detail{position:relative}
+.ex-detail-stage{display:flex;align-items:stretch;margin-bottom:12px}
+.ex-detail-stage .exmedia{flex:1;min-width:0;margin-bottom:0}
+.ex-swipe-edge{display:none}
+@media (max-width:520px), (pointer: coarse){
+  .ex-detail-stage:has(.ex-swipe-edge){margin-right:-18px}
+  .ex-swipe-edge{
+    display:flex;flex:none;width:40px;z-index:6;
+    align-items:center;justify-content:flex-end;padding-right:6px;
+    touch-action:none;color:var(--label-3);
+  }
+  .ex-swipe-edge .icn{font-size:18px;opacity:.5}
+}
 .center{
   position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:min(84vw,300px);background:var(--surface);border-radius:var(--r-lg);padding:20px;
