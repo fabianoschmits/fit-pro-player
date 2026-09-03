@@ -522,6 +522,22 @@ h4.sec{
 .exercise-muscle-thumb .bm-v{width:100%;height:100%;max-height:none;flex:none}
 .exercise-muscle-thumb .bm-ph{width:100%;height:100%}
 .exercise-muscle-thumb .bm-v path{vector-effect:non-scaling-stroke;stroke-width:.65px}
+.exmedia .exercise-muscle-overlay{
+  position:absolute;left:8px;bottom:8px;z-index:1;
+  display:flex;width:44px;height:48px;min-width:44px;padding:0;gap:0;
+  align-items:center;justify-content:center;overflow:hidden;
+  background:transparent;pointer-events:none;
+  --bm-base:color-mix(in srgb,#fff 20%,transparent);
+}
+.exmedia .exercise-muscle-overlay .bm-sil{fill:color-mix(in srgb,#fff 34%,transparent)}
+.exmedia .exercise-muscle-overlay .bm-v path{stroke:#000;stroke-width:3}
+.exmedia:has(.exercise-muscle-overlay) .media-size-toggle{left:58px}
+.exmedia.compact .exercise-muscle-overlay,
+.exmedia.mini .exercise-muscle-overlay{
+  width:30px;height:34px;min-width:30px;left:6px;bottom:6px;
+}
+.exmedia.compact:has(.exercise-muscle-overlay) .media-size-toggle,
+.exmedia.mini:has(.exercise-muscle-overlay) .media-size-toggle{left:42px}
 .exercise-muscle-static{
   display:flex;width:100%;height:320px;padding:24px;gap:0;
   align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;

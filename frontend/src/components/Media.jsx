@@ -34,6 +34,7 @@ export default function Media({ ex, id, compact, minimizable }) {
       {hasGuideAnimation
         ? <ExerciseGuideAnimation ex={ex} playing={playing} fallback={<ExerciseMuscleThumb ex={ex} full />} />
         : <ExerciseMuscleThumb ex={ex} full />}
+      {hasGuideAnimation && <ExerciseMuscleThumb ex={ex} overlay />}
       {minimizable && (
         <button className="media-size-toggle" onClick={toggleSize}>
           <Icon name={mini ? 'expand' : 'minimize'} />{mini ? t('Expand') : t('Minimize')}

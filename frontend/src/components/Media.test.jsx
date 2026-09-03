@@ -50,6 +50,7 @@ describe('Media SVG playback', () => {
 
     const button = container.querySelector('.media-playback')
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
+    expect(container.querySelector('.exercise-muscle-overlay')).toBeTruthy()
     expect(button.getAttribute('aria-label')).toMatch(/pausar|pause/i)
 
     act(() => button.dispatchEvent(new MouseEvent('click', { bubbles: true })))
