@@ -17,6 +17,7 @@ import {
   strengthOf,
 } from './recovery.js'
 import { EXDB, registerCustom } from './exercises.js'
+import { EXDB as SOURCE_EXERCISES } from './exercises-data.js'
 import { MUSCLES, musclesOf } from './muscles.js'
 import { fatigueStateOf } from './recovery-view.js'
 
@@ -404,12 +405,12 @@ describe('warm-up flag in strength and fatigue', () => {
 })
 
 describe('canonical loads and configured bodyweight', () => {
-  const loaded = EXDB.find(ex => {
+  const loaded = SOURCE_EXERCISES.find(ex => {
     const weights = musclesOf(ex)
     return ex.bp !== 'cardio' && ex.eq !== 'body weight'
       && Object.keys(weights).length === 1 && Object.values(weights)[0] === 1
   })
-  const bodyweight = EXDB.find(ex => ex.bp !== 'cardio' && ex.eq === 'body weight')
+  const bodyweight = SOURCE_EXERCISES.find(ex => ex.bp !== 'cardio' && ex.eq === 'body weight')
   if (!loaded || !bodyweight) throw new Error('recovery tests require loaded and bodyweight fixtures')
   const loadedSlug = Object.keys(musclesOf(loaded))[0]
   const bodyweightSlug = Object.keys(musclesOf(bodyweight))[0]
