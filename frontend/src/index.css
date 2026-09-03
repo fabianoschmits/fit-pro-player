@@ -522,29 +522,11 @@ h4.sec{
 .exercise-muscle-thumb .bm-v{width:100%;height:100%;max-height:none;flex:none}
 .exercise-muscle-thumb .bm-ph{width:100%;height:100%}
 .exercise-muscle-thumb .bm-v path{vector-effect:non-scaling-stroke;stroke-width:.65px}
-.exmedia .exercise-muscle-overlay{
-  position:absolute;left:8px;bottom:8px;z-index:1;
-  display:flex;width:88px;height:96px;min-width:88px;padding:0;gap:0;
-  align-items:center;justify-content:center;overflow:visible;
-  background:transparent;pointer-events:none;
-  --surface:#ffffff;
-  --label:#0f172a;
-  --bm-base:#ffffff;
+.exmedia .exercise-muscle-popup{
+  display:flex;width:100%;height:min(42vw,168px);min-height:120px;padding:0;gap:8px;
+  align-items:center;justify-content:center;background:transparent;overflow:visible;
 }
-.exmedia .exercise-muscle-overlay .bm-sil{fill:#eef2f6}
-.exmedia .exercise-muscle-overlay .bm-m{fill:#ffffff}
-.exmedia .exercise-muscle-overlay .bm-m.l1{fill:color-mix(in srgb,var(--acc) 32%,#ffffff)}
-.exmedia .exercise-muscle-overlay .bm-m.l2{fill:color-mix(in srgb,var(--acc) 56%,#ffffff)}
-.exmedia .exercise-muscle-overlay .bm-m.l3{fill:color-mix(in srgb,var(--acc) 78%,#ffffff)}
-.exmedia .exercise-muscle-overlay .bm-m.l4{fill:var(--acc)}
-.exmedia .exercise-muscle-overlay .bm-v path{stroke:#cbd5e1;stroke-width:2.2}
-.exmedia:has(.exercise-muscle-overlay) .media-size-toggle{left:102px}
-.exmedia.compact .exercise-muscle-overlay,
-.exmedia.mini .exercise-muscle-overlay{
-  width:60px;height:68px;min-width:60px;left:6px;bottom:6px;
-}
-.exmedia.compact:has(.exercise-muscle-overlay) .media-size-toggle,
-.exmedia.mini:has(.exercise-muscle-overlay) .media-size-toggle{left:72px}
+.exmedia .exercise-muscle-popup .bm-v{width:100%;height:100%;max-height:none;flex:1}
 .exercise-muscle-static{
   display:flex;width:100%;height:320px;padding:24px;gap:0;
   align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;
@@ -761,15 +743,38 @@ h4.sec{
 .exercise-guide-frame path{
   fill:color-mix(in srgb,#fff 94%,var(--acc));
 }
-.exmedia .media-playback,.exmedia .media-size-toggle{
+.exmedia .media-playback,.exmedia .media-size-toggle,.exmedia .media-muscles{
   position:absolute;bottom:9px;display:inline-flex;align-items:center;gap:4px;
   background:rgba(0,0,0,.45);color:#fff;border-radius:99px;padding:5px 11px;
-  min-height:40px;font-size:12px;font-weight:500;
+  min-height:40px;font-size:12px;font-weight:500;z-index:2;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
 .exmedia .media-playback{right:9px;width:40px;padding:0;justify-content:center}
+.exmedia .media-muscles{left:9px;width:40px;padding:0;justify-content:center}
+.exmedia:has(.media-muscles) .media-size-toggle{left:54px}
 .exmedia .media-size-toggle{left:9px}
-.exmedia .media-playback .icn,.exmedia .media-size-toggle .icn{font-size:13px}
+.exmedia .media-playback .icn,.exmedia .media-size-toggle .icn,.exmedia .media-muscles .icn{font-size:13px}
+.exmedia .media-muscles-scrim{
+  position:absolute;inset:0;z-index:4;display:grid;place-items:center;padding:14px;
+  background:rgba(0,0,0,.55);
+}
+.exmedia .media-muscles-pop{
+  position:relative;width:100%;max-width:280px;
+  background:var(--surface);color:var(--label);
+  border-radius:var(--r-lg);padding:16px 14px 12px;
+  border:var(--hair) solid var(--surface-border);
+  box-shadow:0 16px 40px -10px rgba(0,0,0,.5);
+  animation:pop-in-media .22s var(--ease);
+}
+@keyframes pop-in-media{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+.exmedia .media-muscles-title{
+  font-size:15px;font-weight:600;letter-spacing:-.012em;text-align:center;margin-bottom:8px;
+}
+.exmedia .media-muscles-close{
+  position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;
+  display:grid;place-items:center;color:var(--label-2);background:transparent;
+  border:none;font-size:15px;
+}
 /* superset: both exercises are on screen together, so the animations have to give way —
    at 180px you had to scroll a full screen between two exercises done back-to-back */
 .exmedia.compact img{height:120px}
@@ -777,6 +782,7 @@ h4.sec{
 .exmedia.compact>.exercise-muscle-static{height:120px;padding:10px}
 .exmedia.mini>.exercise-muscle-static{height:84px;padding:6px}
 .exmedia.compact>.exercise-guide-motion{height:120px}
+.exmedia.compact .exercise-muscle-popup{height:72px;min-height:56px}
 .exmedia.mini>.exercise-guide-motion{height:84px}
 
 .sethead{

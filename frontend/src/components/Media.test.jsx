@@ -49,7 +49,8 @@ describe('Media SVG playback', () => {
 
     const button = container.querySelector('.media-playback')
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
-    expect(container.querySelector('.exercise-muscle-overlay')).toBeTruthy()
+    expect(container.querySelector('.exercise-muscle-overlay')).toBeFalsy()
+    expect(container.querySelector('.media-muscles')).toBeTruthy()
     expect(button.getAttribute('aria-label')).toMatch(/pausar|pause/i)
 
     act(() => button.dispatchEvent(new MouseEvent('click', { bubbles: true })))
@@ -61,6 +62,18 @@ describe('Media SVG playback', () => {
     expect(button.getAttribute('aria-label')).toMatch(/reproduzir|play/i)
 
     act(() => container.querySelector('.exmedia').dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
+  })
+
+  it('opens a muscle map dialog inside the animation', () => {
+    act(() => root.render(<Media ex={EXERCISE} />))
+    act(() => { vi.advanceTimersByTime(500) })
+    act(() => container.querySelector('.media-muscles').dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(container.querySelector('.media-muscles-pop')).toBeTruthy()
+    expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('false')
+
+    act(() => container.querySelector('.media-muscles-close').dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(container.querySelector('.media-muscles-pop')).toBeFalsy()
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
   })
 })

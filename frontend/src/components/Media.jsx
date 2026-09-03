@@ -14,17 +14,31 @@ export default function Media({ ex, id, compact, minimizable }) {
   const update = useStore(s => s.update)
   const mini = minimizable && mediaSize === 'mini'
   const [playing, setPlaying] = useState(() => !mini)
+  const [musclesOpen, setMusclesOpen] = useState(false)
   const ignoreClickUntil = useRef(0)
+  const resumeAfterMuscles = useRef(false)
   useEffect(() => {
     setPlaying(!mini)
+    setMusclesOpen(false)
     ignoreClickUntil.current = Date.now() + 450
   }, [ex?.id, mini])
   const toggleSize = e => { e.stopPropagation(); update(s => { s.mediaSize = mini ? 'full' : 'mini' }) }
   const hasGuideAnimation = hasExerciseGuideAsset(ex)
   const togglePlayback = e => {
     e.stopPropagation()
-    if (!hasGuideAnimation || mini || Date.now() < ignoreClickUntil.current) return
+    if (!hasGuideAnimation || mini || musclesOpen || Date.now() < ignoreClickUntil.current) return
     setPlaying(p => !p)
+  }
+  const openMuscles = e => {
+    e.stopPropagation()
+    resumeAfterMuscles.current = playing
+    setPlaying(false)
+    setMusclesOpen(true)
+  }
+  const closeMuscles = e => {
+    e.stopPropagation()
+    setMusclesOpen(false)
+    if (resumeAfterMuscles.current && !mini) setPlaying(true)
   }
   return (
     <div
@@ -35,16 +49,31 @@ export default function Media({ ex, id, compact, minimizable }) {
       {hasGuideAnimation
         ? <ExerciseGuideAnimation ex={ex} playing={playing} fallback={<ExerciseMuscleThumb ex={ex} full />} />
         : <ExerciseMuscleThumb ex={ex} full />}
-      {hasGuideAnimation && <ExerciseMuscleThumb ex={ex} overlay />}
       {minimizable && (
         <button className="media-size-toggle" onClick={toggleSize}>
           <Icon name={mini ? 'expand' : 'minimize'} />{mini ? t('Expand') : t('Minimize')}
         </button>
       )}
       {!mini && hasGuideAnimation && (
+        <button className="media-muscles" onClick={openMuscles} aria-label={t('Show muscles')}>
+          <Icon name="figureStrength" />
+        </button>
+      )}
+      {!mini && hasGuideAnimation && (
         <button className="media-playback" onClick={togglePlayback} aria-label={playing ? t('tap to pause') : t('tap to play')}>
           <Icon name={playing ? 'pause' : 'play'} />
         </button>
+      )}
+      {musclesOpen && (
+        <div className="media-muscles-scrim" onClick={closeMuscles}>
+          <div className="media-muscles-pop" role="dialog" aria-label={t('Worked muscles')} onClick={e => e.stopPropagation()}>
+            <button className="media-muscles-close" onClick={closeMuscles} aria-label={t('Close')}>
+              <Icon name="xmark" />
+            </button>
+            <div className="media-muscles-title">{t('Worked muscles')}</div>
+            <ExerciseMuscleThumb ex={ex} popup />
+          </div>
+        </div>
       )}
     </div>
   )
