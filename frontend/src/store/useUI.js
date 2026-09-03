@@ -169,6 +169,8 @@ export const useUI = create((set, get) => ({
         phase: 'work',
         entryIdx: opts.entryIdx,
         setIdx: opts.setIdx,
+        isLastSet: opts.isLastSet,
+        onNext: opts.onNext,
       },
     })
     const tick = () => {
@@ -192,6 +194,7 @@ export const useUI = create((set, get) => ({
         set({ work: { ...wk, restLeft: left } })
         return
       }
+      if (wk.phase === 'done') return
       const left = Math.max(0, Math.round((wk.endsAt - Date.now()) / 1000))
       if (left === wk.left) return
       if (left <= 0) {
@@ -199,6 +202,8 @@ export const useUI = create((set, get) => ({
         vibrate([200, 100, 200])
         const done = workDone
         workDone = null
+        // Transition to 'done' phase — overlay stays open, user chooses next action
+        set({ work: { ...wk, phase: 'done', left: 0 } })
         if (done) done(wk.total)
         return
       }

@@ -300,10 +300,13 @@ function ActiveWorkout() {
   // behave exactly as they do for a reps set.
   const startTimed = (idx, i) => {
     const e = A.entries[idx]
+    const pendingAfter = e.sets.slice(i + 1).filter(s => !s.done).length
+    const isLastSet = pendingAfter === 0
+    const onNext = isLastSet ? null : () => startNextTimed(idx)
     useUI.getState().startWork(e.sets[i].sec || 45, exOr(e.id).n, elapsed => {
       mutEntry(idx, en => { en.sets[i].sec = elapsed })
       if (!useStore.getState().S.active.entries[idx].sets[i].done) toggle(idx, i)
-    }, { entryIdx: idx, setIdx: i })
+    }, { entryIdx: idx, setIdx: i, isLastSet, onNext })
   }
   const startNextTimed = idx => {
     const entry = A.entries[idx]

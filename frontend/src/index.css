@@ -843,7 +843,13 @@ h4.sec{
 .setrow .setgo:not(:disabled):active{background:var(--surface-3)}
 
 /* play-mode checkbox: circle shows play when pending, check when done */
-.chk.play-mode{background:transparent;border:2px solid color-mix(in srgb,var(--acc) 40%,transparent);color:var(--acc);font-size:12px;padding-left:2px}
+.chk.play-mode{
+  background:transparent;
+  border:2px solid color-mix(in srgb,var(--acc) 40%,transparent);
+  color:var(--acc);font-size:11px;
+  display:flex;align-items:center;justify-content:center;
+}
+.chk.play-mode svg{display:block;margin:0 auto;transform:translateX(1px)}
 .chk.play-mode:not(:disabled):hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
 .chk.play-mode:not(:disabled):active{transform:scale(.92)}
 
@@ -888,9 +894,27 @@ h4.sec{
 }
 .work-set-overlay__actions{display:flex;gap:10px;margin-top:4px}
 .work-set-overlay__actions .btn{flex:1}
-.work-set-overlay__next-hint{
-  text-align:center;font-size:12px;color:var(--dim);margin-top:10px;line-height:1.4;
+/* 'done' phase — timer finished, overlay stays open */
+.work-set-overlay.is-done .work-set-overlay__card{
+  border-color:color-mix(in srgb,var(--green,#30d158) 45%,var(--surface-border));
+  box-shadow:var(--card-shadow),0 16px 40px -16px color-mix(in srgb,var(--green,#30d158) 30%,transparent);
 }
+.work-set-overlay__done-icon{
+  width:64px;height:64px;border-radius:50%;margin:0 auto 16px;
+  background:color-mix(in srgb,var(--green,#30d158) 15%,transparent);
+  border:2px solid color-mix(in srgb,var(--green,#30d158) 50%,transparent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:var(--green,#30d158);
+  animation:scalein .35s cubic-bezier(.34,1.56,.64,1);
+}
+.work-set-overlay__done-title{
+  text-align:center;font-size:20px;font-weight:700;letter-spacing:-.02em;
+  color:var(--label);margin-bottom:8px;
+}
+.work-set-overlay__done-sub{
+  text-align:center;font-size:14px;color:var(--label-2);line-height:1.45;margin-bottom:20px;
+}
+@keyframes scalein{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* exercise-config sheet: three steppers side by side on narrow phones */
 .cfgrow{gap:8px}
