@@ -75,6 +75,17 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
   const mode = modeOf({ ...(entry.target || {}), id: entry.id })
   const cardio = mode === 'cardio'
   const timed = mode === 'time'
+  const allDone = entry.sets.length > 0 && entry.sets.every(s => s.done)
+
+  // Auto-collapse when all sets are done; user can re-expand
+  const [collapsed, setCollapsed] = useState(false)
+  const prevAllDone = useRef(false)
+  useEffect(() => {
+    if (allDone && !prevAllDone.current) setCollapsed(true)
+    if (!allDone) setCollapsed(false)
+    prevAllDone.current = allDone
+  }, [allDone])
+
   const last = lastEntryFor(S, entry.id)
   // The same number the "confirm your working weight" sheet calls your best, so the two
   // never disagree inside one session: heaviest logged set, or the working weight you kept.
@@ -146,40 +157,56 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
       <Icon name={plan.kind === 'up' ? 'arrowUp' : plan.kind === 'deload' ? 'arrowDown' : 'lightbulb'} />
       <span>{t(...plan.why)}</span>
     </div>}
-    <div className="card" style={{ marginTop: 10, marginBottom: 0 }}>
-      {/* the header carries the same eff3 sizing as the rows, or the labels drift off their columns */}
-      <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}{timed && <span className="ck-sp" />}<span className="ck-sp" /></div>
-      {entry.sets.map((s, i) => {
-        const warm = isWarmupRow(s)
-        const warmBefore = i > 0 && isWarmupRow(entry.sets[i - 1])
-        const isFirstWarmup = warm && !warmBefore
-        // Numbering restarts per phase: with two warm-ups the first work set reads 1, not 3.
-        const phaseNum = entry.sets.slice(0, i + 1).filter(x => isWarmupRow(x) === warm).length
-        return <div key={i}>
-          {isFirstWarmup && <div className="setph">{t('Warm-up')}</div>}
-          {!warm && warmBefore && <div className="setsep" />}
-          <div className={'setrow' + (s.done ? ' done' : '') + (col3 ? ' eff3' : '')}>
-            <div className="n">{phaseNum}</div>
-            {cell(s, i, col1, 'w')}
-            {col2 && cell(s, i, col2, 'r')}
-            {col3 && cell(s, i, col3, 'eff')}
-            {/* A timed set is started, not typed: the timer counts the hold down and checks the
-                set off itself. The checkbox stays for anyone who timed it on their own watch. */}
-            {timed && <button className="setgo" aria-label={t('Start set')} disabled={s.done || !!(working && working.phase === 'work')}
-              onClick={() => onStartTimed(i)}><Icon name="play" /></button>}
-            {warm && <button className="iconbtn" style={{ fontSize: 13 }} aria-label={t('Remove set')}
-              disabled={entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
-            <Check checked={s.done} onChange={() => onToggle(i)} playMode />
+
+    {/* Collapsed completion banner */}
+    {allDone && collapsed ? (
+      <button className="ex-done-banner" onClick={() => setCollapsed(false)} aria-label={t('Expand sets')}>
+        <span className="ex-done-banner__icon"><Icon name="check" /></span>
+        <span className="ex-done-banner__label">{t('Exercise complete')} · {entry.sets.length} {entry.sets.length === 1 ? t('set') : t('sets')}</span>
+        <span className="ex-done-banner__expand"><Icon name="expand" /></span>
+      </button>
+    ) : (
+      <div className="card" style={{ marginTop: 10, marginBottom: 0 }}>
+        {/* the header carries the same eff3 sizing as the rows, or the labels drift off their columns */}
+        <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}{timed && <span className="ck-sp" />}<span className="ck-sp" /></div>
+        {entry.sets.map((s, i) => {
+          const warm = isWarmupRow(s)
+          const warmBefore = i > 0 && isWarmupRow(entry.sets[i - 1])
+          const isFirstWarmup = warm && !warmBefore
+          // Numbering restarts per phase: with two warm-ups the first work set reads 1, not 3.
+          const phaseNum = entry.sets.slice(0, i + 1).filter(x => isWarmupRow(x) === warm).length
+          return <div key={i}>
+            {isFirstWarmup && <div className="setph">{t('Warm-up')}</div>}
+            {!warm && warmBefore && <div className="setsep" />}
+            <div className={'setrow' + (s.done ? ' done' : '') + (col3 ? ' eff3' : '')}>
+              <div className="n">{phaseNum}</div>
+              {cell(s, i, col1, 'w')}
+              {col2 && cell(s, i, col2, 'r')}
+              {col3 && cell(s, i, col3, 'eff')}
+              {/* A timed set is started, not typed: the timer counts the hold down and checks the
+                  set off itself. The checkbox stays for anyone who timed it on their own watch. */}
+              {timed && <button className="setgo" aria-label={t('Start set')} disabled={s.done || !!(working && working.phase === 'work')}
+                onClick={() => onStartTimed(i)}><Icon name="play" /></button>}
+              {warm && <button className="iconbtn" style={{ fontSize: 13 }} aria-label={t('Remove set')}
+                disabled={entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
+              <Check checked={s.done} onChange={() => onToggle(i)} playMode />
+            </div>
           </div>
-        </div>
-      })}
-      <div style={{ height: 8 }} />
-      <div className="row" style={{ flexWrap: 'wrap' }}>
-        <Button size="sm" icon="flame" onClick={onAddWarmup}>{t('Add warm-up set')}</Button>
-        <Button size="sm" icon="minus" disabled={entry.sets.length <= 1} onClick={onRemoveSet}>{t('Remove set')}</Button>
-        <Button size="sm" icon="plus" onClick={onAddSet}>{t('Add set')}</Button>
+        })}
+        <div style={{ height: 8 }} />
+        {allDone ? (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Button size="sm" variant="ghost" icon="minimize" onClick={() => setCollapsed(true)}>{t('Collapse')}</Button>
+          </div>
+        ) : (
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <Button size="sm" icon="flame" onClick={onAddWarmup}>{t('Add warm-up set')}</Button>
+            <Button size="sm" icon="minus" disabled={entry.sets.length <= 1} onClick={onRemoveSet}>{t('Remove set')}</Button>
+            <Button size="sm" icon="plus" onClick={onAddSet}>{t('Add set')}</Button>
+          </div>
+        )}
       </div>
-    </div>
+    )}
   </>
 }
 

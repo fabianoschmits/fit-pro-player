@@ -842,6 +842,26 @@ h4.sec{
 .setrow .setgo:disabled{opacity:.3;cursor:default}
 .setrow .setgo:not(:disabled):active{background:var(--surface-3)}
 
+/* exercise completion banner — replaces the collapsed sets card */
+.ex-done-banner{
+  display:flex;align-items:center;gap:10px;width:100%;
+  margin-top:10px;padding:12px 14px;border-radius:var(--r-lg);
+  background:color-mix(in srgb,var(--green,#30d158) 12%,var(--surface-2));
+  border:var(--hair) solid color-mix(in srgb,var(--green,#30d158) 35%,transparent);
+  color:var(--label);cursor:pointer;text-align:left;
+  transition:background var(--fast),transform var(--fast);
+  animation:slideup var(--med) var(--ease);
+}
+.ex-done-banner:active{transform:scale(.98);background:color-mix(in srgb,var(--green,#30d158) 18%,var(--surface-2))}
+.ex-done-banner__icon{
+  width:30px;height:30px;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--green,#30d158) 22%,transparent);
+  color:var(--green,#30d158);font-size:14px;
+}
+.ex-done-banner__label{flex:1;font-size:14px;font-weight:600;color:var(--green,#30d158)}
+.ex-done-banner__expand{color:var(--dim);font-size:13px;flex:none}
+
 /* play-mode checkbox: circle shows play when pending, check when done */
 .chk.play-mode{
   background:transparent;
