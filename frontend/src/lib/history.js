@@ -1,6 +1,6 @@
 // Pure helpers over the state object S (ported 1:1 from the vanilla app).
 import { todayISO, isoOf, weekKey, fmtNum } from './format.js'
-import { isCardio, isBodyweightEq } from './exercises.js'
+import { isCardio, isBodyweightEq, EXIDX } from './exercises.js'
 import { phaseForSet, modeForSet, modeForEntry, isWarmupRow, normalizeMode } from './workout-model.js'
 const objectOf = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 // Completed-state-independent work rows whose authoritative mode matches the requested mode.
@@ -237,6 +237,38 @@ export function bestWeightFor(S, exId) {
     if (e.id === exId) best = Math.max(best, bestWeightForEntry(e))
   }))
   return best
+}
+export function isWorkoutDay(st, isoDate) {
+  const overrides = st.dayPlan || {}
+  const overrideId = overrides[isoDate]
+  if (overrideId !== undefined) return overrideId !== null
+  const d = new Date(isoDate + 'T00:00:00') // Local timezone parsing of the date
+  return !!st.week[d.getDay()]
+}
+
+// Calculates a suggested starting weight based on the user's body weight and the exercise type.
+export function suggestedWeightFor(st, exId) {
+  const bw = lastBW(st)?.w || st.targetW || 70
+  const ex = EXIDX[exId]
+  if (!ex) return 20
+
+  if (isBodyweightEq(exId)) return 0 // Dips, Pull-ups etc.
+
+  let pct = 0.3 // default 30%
+  const eq = ex.eq
+  const name = ex.n.toLowerCase()
+  const tg = ex.tg
+
+  if (eq === 'sled machine' || name.includes('leg press')) pct = 1.0
+  else if (name.includes('squat') && (eq === 'barbell' || eq === 'smith machine')) pct = 0.5
+  else if (tg === 'quads' || tg === 'hamstrings') pct = 0.4
+  else if (eq === 'leverage machine' && (tg === 'chest' || tg === 'lats' || tg === 'upper back')) pct = 0.5
+  else if (eq === 'barbell' && (tg === 'chest' || tg === 'lats' || tg === 'upper back')) pct = 0.4
+  else if (eq === 'cable') pct = 0.3
+  else if (eq === 'dumbbell') pct = 0.15
+
+  // Round to nearest 2.5
+  return Math.max(2.5, Math.round((bw * pct) / 2.5) * 2.5)
 }
 export function effectiveRoutineId(S, iso) {
   const ov = S.dayPlan[iso]
