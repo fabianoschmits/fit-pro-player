@@ -48,8 +48,8 @@ export function confirmSheet(opts) {
 
 /* ============================ starter plan ============================ */
 export function loadStarterPlan() {
-  const routines = starterRoutines()
   update(st => {
+    const routines = starterRoutines(st)
     st.routines.push(...routines)
     // Only set days for the first three (Chest, Back, Legs) on Mon, Wed, Fri
     if (routines[0]) st.week[1] = routines[0].id

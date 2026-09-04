@@ -32,7 +32,7 @@ function loadState() {
   
   // Inject default routines for users that don't have any routines yet
   if (!state.routines || state.routines.length === 0) {
-    state.routines = starterRoutines()
+    state.routines = starterRoutines(state)
     // Default the first 3 days to Mon, Wed, Fri
     if (state.routines[0]) state.week[1] = state.routines[0].id
     if (state.routines[1]) state.week[3] = state.routines[1].id

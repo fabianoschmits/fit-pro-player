@@ -61,7 +61,8 @@ const monday = date => { const d = new Date(date); d.setDate(d.getDate() - ((d.g
 // per-set effort ratings on most (not all) of it.
 export function buildDemoState() {
   const rnd = rng(20260723)
-  const [push, pull, legs] = starterRoutines()
+  const mockState = { targetW: TARGET_W }
+  const [push, pull, legs] = starterRoutines(mockState)
   const byWeekday = { 1: push, 3: pull, 5: legs }
 
   const nowH = new Date().getHours()

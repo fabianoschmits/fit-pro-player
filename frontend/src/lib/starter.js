@@ -2,6 +2,7 @@
 // and by the demo build, which seeds a history on top of exactly these routines.
 import { uid } from './format.js'
 import { t } from './i18n-core.js'
+import { suggestedWeightFor } from './history.js'
 
 const SPEC = [
   ['Dia de Peito', 'chest', [['0025', 4, 8], ['0047', 3, 10], ['0289', 3, 10], ['0308', 3, 12], ['0251', 3, 10], ['0314', 3, 10]]],
@@ -14,5 +15,5 @@ const SPEC = [
 ]
 
 // Fresh routine objects (new ids)
-export const starterRoutines = () =>
-  SPEC.map(([name, emoji, list]) => ({ id: uid(), name: t(name), emoji, ex: list.map(([id, sets, reps]) => ({ id, sets, reps, weight: 0 })) }))
+export const starterRoutines = (st) =>
+  SPEC.map(([name, emoji, list]) => ({ id: uid(), name: t(name), emoji, ex: list.map(([id, sets, reps]) => ({ id, sets, reps, weight: suggestedWeightFor(st, id) })) }))
