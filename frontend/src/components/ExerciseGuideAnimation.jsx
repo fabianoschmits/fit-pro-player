@@ -33,7 +33,22 @@ function validatedFrames(frames) {
 async function loadFrames(slug) {
   const loader = FRAME_LOADERS[`../assets/workout-guide/${slug}/frames.js`]
   if (!loader) throw new Error(`Missing Workout Guide frames: ${slug}`)
-  return validatedFrames(await loader())
+  const frames = validatedFrames(await loader())
+  
+  // Preload raster images to prevent flickering on first playback
+  await Promise.all(frames.map(frame => {
+    if (!isSvgFrame(frame)) {
+      return new Promise((resolve) => {
+        const img = new Image()
+        img.onload = resolve
+        img.onerror = resolve
+        img.src = frame
+      })
+    }
+    return Promise.resolve()
+  }))
+  
+  return frames
 }
 
 export default function ExerciseGuideAnimation({ ex, playing, fallback = null }) {
@@ -176,7 +191,7 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
         >
           {isSvgFrame(frame)
             ? <div className="exercise-guide-svg" dangerouslySetInnerHTML={{ __html: frame }} />
-            : <img className="exercise-guide-img" src={frame} alt="" draggable={false} decoding="async" />}
+            : <img className="exercise-guide-img" src={frame} alt="" draggable={false} />}
         </div>
       ))}
     </div>
