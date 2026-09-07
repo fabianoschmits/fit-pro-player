@@ -12,7 +12,7 @@ const W = 340   // viewBox width; the svg stretches to its container, height com
 // opts: { h, unit, color, axes, goal, invert }
 //   invert flips the y axis, for a scale that counts down as it gets harder (RIR). Without it
 //   a curve of reps-in-reserve reads upside down, with the hardest sets at the floor.
-export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false }) {
+export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointDoubleClick }) {
   const svgRef = useRef(null)
   const wrapRef = useRef(null)
   const tipRef = useRef(null)
@@ -105,11 +105,16 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
     setHover(best)
   }
 
+  const onDoubleClick = () => {
+    if (hover && onPointDoubleClick) onPointDoubleClick(hover)
+  }
+
   return (
     <div className="chart-i" ref={wrapRef}
       onMouseMove={onMove} onMouseDown={onMove}
       onMouseLeave={() => setHover(null)}
-      onTouchStart={onMove} onTouchMove={onMove}>
+      onTouchStart={onMove} onTouchMove={onMove}
+      onDoubleClick={onDoubleClick}>
       <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ aspectRatio: `${W}/${H}` }}>
         <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={color} stopOpacity=".28" />
