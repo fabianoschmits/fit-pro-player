@@ -94,6 +94,8 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
   const hoverPts = (single ? [points[0]] : points).map(p => ({ x: X(p.t), y: Y(p.y), iso: p.d || isoOf(new Date(p.t)), v: p.y, note: p.note }))
   const marked = points.some(p => p.m != null)
 
+  const lastTap = useRef(0)
+
   const onMove = e => {
     const c = e.touches ? e.touches[0] : e
     if (!c || c.clientX === undefined) return
@@ -102,19 +104,25 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
     const vx = (c.clientX - r.left) / w * W
     let best = hoverPts[0]
     hoverPts.forEach(p => { if (Math.abs(p.x - vx) < Math.abs(best.x - vx)) best = p })
-    setHover(best)
-  }
+    
+    if (e.type === 'touchstart' || e.type === 'mousedown') {
+      const now = Date.now()
+      if (best && now - lastTap.current < 400) {
+        if (onPointDoubleClick) onPointDoubleClick(best)
+        lastTap.current = 0
+      } else {
+        lastTap.current = now
+      }
+    }
 
-  const onDoubleClick = () => {
-    if (hover && onPointDoubleClick) onPointDoubleClick(hover)
+    setHover(best)
   }
 
   return (
     <div className="chart-i" ref={wrapRef}
       onMouseMove={onMove} onMouseDown={onMove}
       onMouseLeave={() => setHover(null)}
-      onTouchStart={onMove} onTouchMove={onMove}
-      onDoubleClick={onDoubleClick}>
+      onTouchStart={onMove} onTouchMove={onMove}>
       <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ aspectRatio: `${W}/${H}` }}>
         <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={color} stopOpacity=".28" />
