@@ -612,4 +612,10 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
+,
+  "Total Volume Lifted": "कुल उठाया गया वजन",
+  "Total all-time volume: ": "कुल ऐतिहासिक वजन: ",
+  "That is equivalent to lifting {0} elephants!": "यह {0} हाथियों को उठाने के बराबर है!",
+  "That is equivalent to lifting {0} cars!": "यह {0} कारों को उठाने के बराबर है!",
+  "Keep training to lift your first car!": "अपनी पहली कार उठाने के लिए प्रशिक्षण जारी रखें!"
 }

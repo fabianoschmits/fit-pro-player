@@ -612,4 +612,10 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
+,
+  "Total Volume Lifted": "总举起重量",
+  "Total all-time volume: ": "历史总重量：",
+  "That is equivalent to lifting {0} elephants!": "这相当于举起了 {0} 头大象！",
+  "That is equivalent to lifting {0} cars!": "这相当于举起了 {0} 辆汽车！",
+  "Keep training to lift your first car!": "继续训练，举起你的第一辆车吧！"
 }

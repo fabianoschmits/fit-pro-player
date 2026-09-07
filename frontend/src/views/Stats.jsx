@@ -391,7 +391,7 @@ export default function Stats() {
       <div className="tile"><div className="l"><Icon name="dumbbell" />{t('Workouts')}</div><div className="v">{workouts.length}</div></div>
       <div className="tile"><div className="l"><Icon name="calendar" />{t('This month')}</div><div className="v">{monthW}</div></div>
       <div className="tile"><div className="l"><Icon name="flame" />{t('Week streak')}</div><div className="v">{streakWeeks(S)}</div></div>
-      <div className="tile"><div className="l"><Icon name="scale" />{t('Weight 30d')}</div><div className="v" style={{ fontSize: 22, color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</div></div>
+      <div className="tile"><div className="l"><Icon name="scale" />{t('Weight 30d')}</div><div className="v" style={{ fontSize: 20, whiteSpace: 'nowrap', color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</div></div>
     </div>
 
     {!simple && <>
@@ -411,7 +411,7 @@ export default function Stats() {
       <div className="card" style={{ marginBottom: 16 }}>
         <h2>{t('Total Volume Lifted')}</h2>
         <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
-        <div className="small dim" style={{ marginTop: 8 }}>
+        <div className="small dim" style={{ marginTop: 12, lineHeight: 1.5 }}>
           {t('Total all-time volume: ')} <b className="accent">{fmtNum(totalVolume)} {S.unit}</b>
           <br />
           {elephants > 0 ? t('That is equivalent to lifting {0} elephants!', elephants) : cars > 0 ? t('That is equivalent to lifting {0} cars!', cars) : t('Keep training to lift your first car!')}

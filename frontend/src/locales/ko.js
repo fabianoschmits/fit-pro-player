@@ -612,4 +612,10 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
+,
+  "Total Volume Lifted": "총 들어올린 중량",
+  "Total all-time volume: ": "전체 누적 중량: ",
+  "That is equivalent to lifting {0} elephants!": "이것은 코끼리 {0}마리를 들어올린 것과 같습니다!",
+  "That is equivalent to lifting {0} cars!": "이것은 자동차 {0}대를 들어올린 것과 같습니다!",
+  "Keep training to lift your first car!": "첫 번째 자동차를 들어올리기 위해 계속 훈련하세요!"
 }

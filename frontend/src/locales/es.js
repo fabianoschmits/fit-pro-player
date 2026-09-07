@@ -612,4 +612,10 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
+,
+  "Total Volume Lifted": "Volumen Total Levantado",
+  "Total all-time volume: ": "Volumen histórico total: ",
+  "That is equivalent to lifting {0} elephants!": "¡Eso equivale a levantar {0} elefantes!",
+  "That is equivalent to lifting {0} cars!": "¡Eso equivale a levantar {0} coches!",
+  "Keep training to lift your first car!": "¡Sigue entrenando para levantar tu primer coche!"
 }

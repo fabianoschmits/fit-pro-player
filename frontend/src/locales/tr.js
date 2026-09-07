@@ -612,4 +612,10 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
+,
+  "Total Volume Lifted": "Kaldırılan Toplam Ağırlık",
+  "Total all-time volume: ": "Tüm zamanların toplam ağırlığı: ",
+  "That is equivalent to lifting {0} elephants!": "Bu {0} fil kaldırmaya eşdeğer!",
+  "That is equivalent to lifting {0} cars!": "Bu {0} araba kaldırmaya eşdeğer!",
+  "Keep training to lift your first car!": "İlk arabanı kaldırmak için eğitime devam et!"
 }
