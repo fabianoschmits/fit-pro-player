@@ -12,7 +12,7 @@ const W = 340   // viewBox width; the svg stretches to its container, height com
 // opts: { h, unit, color, axes, goal, invert }
 //   invert flips the y axis, for a scale that counts down as it gets harder (RIR). Without it
 //   a curve of reps-in-reserve reads upside down, with the hardest sets at the floor.
-export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointDoubleClick }) {
+export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit }) {
   const svgRef = useRef(null)
   const wrapRef = useRef(null)
   const tipRef = useRef(null)
@@ -94,8 +94,6 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
   const hoverPts = (single ? [points[0]] : points).map(p => ({ x: X(p.t), y: Y(p.y), iso: p.d || isoOf(new Date(p.t)), v: p.y, note: p.note }))
   const marked = points.some(p => p.m != null)
 
-  const lastTap = useRef(0)
-
   const onMove = e => {
     const c = e.touches ? e.touches[0] : e
     if (!c || c.clientX === undefined) return
@@ -104,17 +102,6 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
     const vx = (c.clientX - r.left) / w * W
     let best = hoverPts[0]
     hoverPts.forEach(p => { if (Math.abs(p.x - vx) < Math.abs(best.x - vx)) best = p })
-    
-    if (e.type === 'touchstart' || e.type === 'mousedown') {
-      const now = Date.now()
-      if (best && now - lastTap.current < 400) {
-        if (onPointDoubleClick) onPointDoubleClick(best)
-        lastTap.current = 0
-      } else {
-        lastTap.current = now
-      }
-    }
-
     setHover(best)
   }
 
@@ -144,8 +131,15 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
           <circle cx={hover.x} cy={hover.y} r="5" fill={color} stroke="var(--bg)" strokeWidth="2" />
         </g>}
       </svg>
-      {hover && <div className="ctip" ref={tipRef}>
-        {fmtDate(hover.iso, true)} · {fmtNum(hover.v)}{unit ? ' ' + unit : ''}{hover.note ? ' · ' + hover.note : ''}
+      {hover && <div className="ctip" ref={tipRef} style={{ pointerEvents: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>{fmtDate(hover.iso, true)} · {fmtNum(hover.v)}{unit ? ' ' + unit : ''}{hover.note ? ' · ' + hover.note : ''}</span>
+          {onPointEdit && (
+            <button className="iconbtn" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--acc)', padding: '2px 4px', background: 'transparent', height: 'auto', border: 'none' }} onClick={(e) => { e.stopPropagation(); onPointEdit(hover) }}>
+              {t('Edit')}
+            </button>
+          )}
+        </div>
       </div>}
     </div>
   )
