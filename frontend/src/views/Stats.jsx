@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { EXIDX } from '../lib/exercises.js'
-import { lastBW, streakWeeks, setLabel, modeOf, effortOf, metricModeForEntry, metricRowsForEntry, bestWeightForEntry } from '../lib/history.js'
+import { lastBW, streakWeeks, setLabel, modeOf, effortOf, metricModeForEntry, metricRowsForEntry, bestWeightForEntry, workoutVolume } from '../lib/history.js'
 import { fmtNum, fmtDate, fmtVol, todayISO, weekKey, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, WorkoutRow, bwDeltaColor } from '../sheets.jsx'
@@ -278,20 +278,37 @@ export default function Stats() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const [range, setRange] = useState(90)
-  const [tab, setTab] = useState('summary')
   const [exId, setExId] = useState(null)
   const [exMetric, setExMetric] = useState('top')
-  const simple = S.simpleMode !== false
-  const showTabs = !simple
+  const workouts = S.workouts
+  const simple = workouts.length === 0
+
+  const bwPts = useMemo(() => {
+    let raw = S.bodyweight
+    if (range > 0) {
+      const cutoff = Date.now() - range * 86400000
+      raw = raw.filter(b => b.t >= cutoff)
+    }
+    return raw.map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
+  }, [S.bodyweight, range])
+
+  const volPts = useMemo(() => {
+    return [...workouts].reverse().map(w => ({
+      t: w.start || new Date(w.d).getTime(),
+      y: workoutVolume(w),
+      d: w.d
+    }))
+  }, [workouts])
+
+  const totalVolume = useMemo(() => workouts.reduce((sum, w) => sum + workoutVolume(w), 0), [workouts])
+  const elephants = Math.floor(totalVolume / 4000)
+  const cars = Math.floor(totalVolume / 1500)
   const now = Date.now()
   const kind = displayScale(S)
   const hd = scaleName(kind)
 
-  const bwPts = S.bodyweight.filter(b => range === 0 || (b.t || new Date(b.d).getTime()) > now - range * 86400000)
-    .map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
   const bw30 = S.bodyweight.filter(b => (b.t || new Date(b.d).getTime()) > now - 30 * 86400000)
   const bwDelta30 = bw30.length > 1 ? bw30[bw30.length - 1].w - bw30[0].w : null
-  const workouts = S.workouts
   const monthW = workouts.filter(w => String(w.d || '').slice(0, 7) === todayISO().slice(0, 7)).length
 
   const nameOf = id => EXIDX[id]?.n || workouts.flatMap(w => w.entries).find(e => e.id === id)?.n || id
@@ -370,41 +387,15 @@ export default function Stats() {
     <div className="hdr"><div><h1>{t('Stats')}</h1><div className="sub">{t('Progress & history')}</div></div>
       <button className="iconbtn" onClick={() => nav('/history')} aria-label={t('History')}><Icon name="history" /></button></div>
 
-    {showTabs && (
-      <Segmented className="seg-range stats-tabs" value={tab} onChange={setTab}
-        options={[
-          { value: 'summary', label: t('Summary') },
-          { value: 'body', label: t('Body') },
-          { value: 'exercises', label: t('Exercises') },
-        ]} />
-    )}
-
-    {(tab === 'summary' || simple) && <>
     <div className="tiles">
       <div className="tile"><div className="l"><Icon name="dumbbell" />{t('Workouts')}</div><div className="v">{workouts.length}</div></div>
       <div className="tile"><div className="l"><Icon name="calendar" />{t('This month')}</div><div className="v">{monthW}</div></div>
       <div className="tile"><div className="l"><Icon name="flame" />{t('Week streak')}</div><div className="v">{streakWeeks(S)}</div></div>
       <div className="tile"><div className="l"><Icon name="scale" />{t('Weight 30d')}</div><div className="v" style={{ fontSize: 22, color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</div></div>
-
     </div>
 
-    <div className="card">
-      <h2>{t('Activity — last 12 months')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('by time trained')}</span></h2>
-      <Heatmap S={S} onDay={iso => { const ws = workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso) }} />
-    </div>
-
-    {workouts.length > 0 && <>
-      <div className="row between" style={{ marginBottom: 10 }}>
-        <h4 className="sec" style={{ margin: 0 }}>{t('Recent workouts')}</h4>
-        <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')} {workouts.length}</Button>
-      </div>
-      <div className="list">{[...workouts].reverse().slice(0, 6).map(w => <WorkoutRow key={w.id} w={w} onClick={() => workoutDetailSheet(w)} />)}</div>
-    </>}
-    </>}
-
-    {(tab === 'body' && !simple) && <>
-    <div className="cols">
-      <div className="card">
+    {!simple && <>
+      <div className="card" style={{ marginBottom: 16 }}>
         <div className="row between" style={{ marginBottom: 8 }}>
           <h2 style={{ margin: 0 }}>{t('Body weight')}</h2>
           <div className="row" style={{ gap: 8 }}>
@@ -416,16 +407,30 @@ export default function Stats() {
           options={[{ value: 30, label: '1M' }, { value: 90, label: '3M' }, { value: 365, label: '1Y' }, { value: 0, label: t('All') }]} />
         <div className="chart"><LineChart points={bwPts} h={160} unit={S.unit} goal={S.targetW} /></div>
       </div>
-      {workouts.length > 0 && <MuscleBalance S={S} />}
-      {hasEffort(S) && <EffortCard S={S} />}
-    </div>
-  </>}
 
-    {(tab === 'exercises' && !simple) && <>
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h2>{t('Total Volume Lifted')}</h2>
+        <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
+        <div className="small dim" style={{ marginTop: 8 }}>
+          {t('Total all-time volume: ')} <b className="accent">{fmtNum(totalVolume)} {S.unit}</b>
+          <br />
+          {elephants > 0 ? t('That is equivalent to lifting {0} elephants!', elephants) : cars > 0 ? t('That is equivalent to lifting {0} cars!', cars) : t('Keep training to lift your first car!')}
+        </div>
+      </div>
+
+      <div className="cols">
+        <div className="card">
+          <h2>{t('Activity — last 12 months')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('by time trained')}</span></h2>
+          <Heatmap S={S} onDay={iso => { const ws = workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso) }} />
+        </div>
+        {workouts.length > 0 && <MuscleBalance S={S} />}
+        {hasEffort(S) && <EffortCard S={S} />}
+      </div>
+
       <TipOnce id="e1rm-tip">
         <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
       </TipOnce>
-      <div className="card">
+      <div className="card" style={{ marginTop: 16 }}>
         <h2>{t('Exercise progress')}</h2>
         {exHist.length ? <>
           <div className="sect-b" style={{ marginBottom: 10 }}>

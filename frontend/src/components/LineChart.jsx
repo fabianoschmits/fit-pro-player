@@ -135,9 +135,9 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>{fmtDate(hover.iso, true)} · {fmtNum(hover.v)}{unit ? ' ' + unit : ''}{hover.note ? ' · ' + hover.note : ''}</span>
           {onPointEdit && (
-            <button className="iconbtn" style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--acc)', padding: '2px 4px', background: 'transparent', height: 'auto', border: 'none' }} onClick={(e) => { e.stopPropagation(); onPointEdit(hover) }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--acc)', cursor: 'pointer', padding: '2px 4px' }} onClick={(e) => { e.stopPropagation(); onPointEdit(hover) }}>
               {t('Edit')}
-            </button>
+            </span>
           )}
         </div>
       </div>}
