@@ -189,7 +189,9 @@ export default function Home() {
       </div>
       {bw ? <>
         <div className="row" style={{ gap: 8, alignItems: 'baseline' }}>
-          <div className="big">{fmtNum(bw.w)} <span className="muted" style={{ fontSize: '1rem' }}>{S.unit}</span></div>
+          <div className="big tappable" style={{ cursor: 'pointer' }} onClick={() => bwSheet()} title={t('Edit current weight')}>
+            {fmtNum(bw.w)} <span className="muted" style={{ fontSize: '1rem' }}>{S.unit}</span>
+          </div>
           {!!delta && (
             <span className="small row" style={{ gap: 2, fontWeight: 500, color: bwDeltaColor(delta, bw.w) }}>
               <Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} style={{ fontSize: 12 }} />
