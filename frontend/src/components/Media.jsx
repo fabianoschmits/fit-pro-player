@@ -26,7 +26,12 @@ export default function Media({ ex, id, compact, minimizable }) {
   const hasGuideAnimation = hasExerciseGuideAsset(ex)
   const togglePlayback = e => {
     e.stopPropagation()
-    if (!hasGuideAnimation || mini || musclesOpen || Date.now() < ignoreClickUntil.current) return
+    if (musclesOpen || Date.now() < ignoreClickUntil.current) return
+    if (mini) {
+      update(s => { s.mediaSize = 'full' })
+      return
+    }
+    if (!hasGuideAnimation) return
     setPlaying(p => !p)
   }
   const openMuscles = e => {
