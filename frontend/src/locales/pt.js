@@ -732,7 +732,6 @@ export default {
   "Loading…": "Carregando…",
   "Admin dashboard": "Painel admin",
   "Main navigation": "Navegação principal",
-,
   "Total Volume Lifted": "Volume Total Levantado",
   "Total all-time volume: ": "Volume histórico total: ",
   "That is equivalent to lifting {0} elephants!": "Isso equivale a levantar {0} elefantes!",

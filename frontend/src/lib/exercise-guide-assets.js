@@ -2,6 +2,7 @@
 // enough for exercise instruction, so every entry below was checked for equipment and movement.
 // Legacy Bryl Lim / Everkinetic SVGs remain for exercises not yet redrawn; PNG sets are custom.
 // See THIRD_PARTY_ASSETS.md and scripts/import-guide-sprites.mjs.
+import WORKOUT_GUIDE_PNG_FRAME_COUNTS from './workout-guide-png-frame-counts.json' with { type: 'json' }
 import WORKOUT_GUIDE_PNG_SLUGS from './workout-guide-png-slugs.json' with { type: 'json' }
 
 export const WORKOUT_GUIDE_VERSION = '1.0.0'
@@ -224,6 +225,14 @@ const FOUR_FRAME_SEQUENCE = Object.freeze([0, 1, 2, 3])
 const FIVE_FRAME_SEQUENCE = Object.freeze([0, 1, 2, 3, 4])
 const TWO_FRAME_SEQUENCE = Object.freeze([0, 1])
 
+function sequenceForFrameCount(count) {
+  if (count === 2) return TWO_FRAME_SEQUENCE
+  if (count === 3) return DEFAULT_SEQUENCE
+  if (count === 4) return FOUR_FRAME_SEQUENCE
+  if (count === 5) return FIVE_FRAME_SEQUENCE
+  return Object.freeze(Array.from({ length: count }, (_, i) => i))
+}
+
 const CUSTOM_SEQUENCES = Object.freeze({
   '0025': FOUR_FRAME_SEQUENCE, // bench-press
   '0043': FOUR_FRAME_SEQUENCE, // squat
@@ -250,8 +259,9 @@ const WORKOUT_GUIDE_ASSETS = Object.freeze(Object.fromEntries(
     id,
     Object.freeze({
       duration: 2400,
-      sequence: CUSTOM_SEQUENCES[id]
-        || (PNG_SLUG_SET.has(slug) ? FOUR_FRAME_SEQUENCE : DEFAULT_SEQUENCE),
+      sequence: PNG_SLUG_SET.has(slug)
+        ? sequenceForFrameCount(WORKOUT_GUIDE_PNG_FRAME_COUNTS[slug] || 4)
+        : (CUSTOM_SEQUENCES[id] || DEFAULT_SEQUENCE),
       slug,
     }),
   ]),
