@@ -12,19 +12,9 @@ export function guideTimelineState(config, elapsed) {
   return { frame: config.sequence[step] }
 }
 
-function isSvgFrame(frame) {
-  return typeof frame === 'string' && /^<svg\b/i.test(frame)
-}
-
 function validatedFrames(frames) {
   if (!Array.isArray(frames) || frames.length < 1) throw new Error('Invalid Workout Guide frame set')
   return frames.map(frame => {
-    if (isSvgFrame(frame)) {
-      if (/<(?:script|foreignObject)\b|\bjavascript:/i.test(frame)) {
-        throw new Error('Unsafe Workout Guide SVG frame')
-      }
-      return frame
-    }
     if (typeof frame === 'string' && frame.length > 0) return frame
     throw new Error('Invalid Workout Guide frame')
   })
@@ -36,17 +26,12 @@ async function loadFrames(slug) {
   const frames = validatedFrames(await loader())
   
   // Preload raster images to prevent flickering on first playback
-  await Promise.all(frames.map(frame => {
-    if (!isSvgFrame(frame)) {
-      return new Promise((resolve) => {
-        const img = new Image()
-        img.onload = resolve
-        img.onerror = resolve
-        img.src = frame
-      })
-    }
-    return Promise.resolve()
-  }))
+  await Promise.all(frames.map(frame => new Promise((resolve) => {
+    const img = new Image()
+    img.onload = resolve
+    img.onerror = resolve
+    img.src = frame
+  })))
   
   return frames
 }
@@ -189,9 +174,7 @@ export default function ExerciseGuideAnimation({ ex, playing, fallback = null })
           aria-hidden={index !== 0}
           key={index}
         >
-          {isSvgFrame(frame)
-            ? <div className="exercise-guide-svg" dangerouslySetInnerHTML={{ __html: frame }} />
-            : <img className="exercise-guide-img" src={frame} alt="" draggable={false} />}
+          <img className="exercise-guide-img" src={frame} alt="" draggable={false} />
         </div>
       ))}
     </div>

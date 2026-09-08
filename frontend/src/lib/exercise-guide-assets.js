@@ -1,12 +1,9 @@
 ﻿// Local Workout Guide artwork. The mapping is deliberately explicit: similar names are not
 // enough for exercise instruction, so every entry below was checked for equipment and movement.
-// Legacy Bryl Lim / Everkinetic SVGs remain for exercises not yet redrawn; PNG sets are custom.
-// See THIRD_PARTY_ASSETS.md and scripts/import-guide-sprites.mjs.
+// Only slugs listed in the generated PNG catalogue are exposed; the other mappings are
+// placeholders for sprite sets that have not been redrawn yet. See import-guide-sprites.mjs.
 import WORKOUT_GUIDE_PNG_FRAME_COUNTS from './workout-guide-png-frame-counts.json' with { type: 'json' }
 import WORKOUT_GUIDE_PNG_SLUGS from './workout-guide-png-slugs.json' with { type: 'json' }
-
-export const WORKOUT_GUIDE_VERSION = '1.0.0'
-export const WORKOUT_GUIDE_COMMIT = 'ba0b709cb20430361b2cb33aaadd20998164a916'
 
 export const WORKOUT_GUIDE_BY_EXERCISE_ID = Object.freeze({
   // Chest and shoulders
@@ -15,7 +12,6 @@ export const WORKOUT_GUIDE_BY_EXERCISE_ID = Object.freeze({
   '0314': 'incline-dumbbell-press',
   '0289': 'dumbbell-bench-press',
   '0033': 'decline-bench-press',
-  '0576': 'machine-chest-press',
   '0577': 'machine-chest-press',
   '0227': 'cable-fly',
   '0662': 'push-up',
@@ -193,8 +189,16 @@ export const WORKOUT_GUIDE_BY_EXERCISE_ID = Object.freeze({
   '1494': 'butterfly-stretch',
 })
 
-export const WORKOUT_GUIDE_EXERCISE_IDS = Object.freeze(Object.keys(WORKOUT_GUIDE_BY_EXERCISE_ID))
-export const WORKOUT_GUIDE_SLUGS = Object.freeze([...new Set(Object.values(WORKOUT_GUIDE_BY_EXERCISE_ID))])
+const PNG_SLUG_SET = new Set(WORKOUT_GUIDE_PNG_SLUGS)
+
+export const WORKOUT_GUIDE_EXERCISE_IDS = Object.freeze(
+  Object.entries(WORKOUT_GUIDE_BY_EXERCISE_ID)
+    .filter(([, slug]) => PNG_SLUG_SET.has(slug))
+    .map(([id]) => id),
+)
+export const WORKOUT_GUIDE_SLUGS = Object.freeze(
+  [...new Set(Object.values(WORKOUT_GUIDE_BY_EXERCISE_ID).filter(slug => PNG_SLUG_SET.has(slug)))],
+)
 export { WORKOUT_GUIDE_PNG_SLUGS }
 
 // Relevance order for the catalogue's first results. The leading movements follow the
@@ -233,38 +237,17 @@ function sequenceForFrameCount(count) {
   return Object.freeze(Array.from({ length: count }, (_, i) => i))
 }
 
-const CUSTOM_SEQUENCES = Object.freeze({
-  '0025': FOUR_FRAME_SEQUENCE, // bench-press
-  '0043': FOUR_FRAME_SEQUENCE, // squat
-  '0032': FOUR_FRAME_SEQUENCE, // deadlift
-  '0198': FOUR_FRAME_SEQUENCE, // lat-pulldown
-  '1457': FOUR_FRAME_SEQUENCE, // overhead-press
-  '0027': FOUR_FRAME_SEQUENCE, // barbell-row
-  '0334': FOUR_FRAME_SEQUENCE, // lateral-raise
-  '0585': FOUR_FRAME_SEQUENCE, // leg-extension
-  '0739': TWO_FRAME_SEQUENCE,  // leg-press
-  '0058': FOUR_FRAME_SEQUENCE, // hip-thrust
-  '0294': FOUR_FRAME_SEQUENCE, // bicep-curl
-  '0201': FOUR_FRAME_SEQUENCE, // tricep-pushdown
-  '0003': FOUR_FRAME_SEQUENCE, // bicycle-crunch
-  '0006': FIVE_FRAME_SEQUENCE, // heel-tap
-  '1160': FIVE_FRAME_SEQUENCE, // burpee
-  '2355': FIVE_FRAME_SEQUENCE, // hanging-knee-raise
-})
-
-const PNG_SLUG_SET = new Set(WORKOUT_GUIDE_PNG_SLUGS)
-
 const WORKOUT_GUIDE_ASSETS = Object.freeze(Object.fromEntries(
-  Object.entries(WORKOUT_GUIDE_BY_EXERCISE_ID).map(([id, slug]) => [
-    id,
-    Object.freeze({
-      duration: 2400,
-      sequence: PNG_SLUG_SET.has(slug)
-        ? sequenceForFrameCount(WORKOUT_GUIDE_PNG_FRAME_COUNTS[slug] || 4)
-        : (CUSTOM_SEQUENCES[id] || DEFAULT_SEQUENCE),
-      slug,
-    }),
-  ]),
+  Object.entries(WORKOUT_GUIDE_BY_EXERCISE_ID)
+    .filter(([, slug]) => PNG_SLUG_SET.has(slug))
+    .map(([id, slug]) => [
+      id,
+      Object.freeze({
+        duration: 2400,
+        sequence: sequenceForFrameCount(WORKOUT_GUIDE_PNG_FRAME_COUNTS[slug]),
+        slug,
+      }),
+    ]),
 ))
 
 export function exerciseGuideAsset(exercise) {

@@ -14,7 +14,7 @@ docker compose ps
 Invoke-RestMethod http://localhost:8080/api/health
 ```
 
-Os mapas musculares e as sequências SVG selecionadas do Workout Guide já estão incluídos no app. Nenhum servidor de imagens ou volume de mídia externo é necessário. Contas, estados, segredo de sessão, chaves de push e auditoria ficam em `./data`.
+Os mapas musculares e as sequências PNG dos exercícios já estão incluídos no app. Nenhum servidor de imagens ou volume de mídia externo é necessário. Contas, estados, segredo de sessão, chaves de push e auditoria ficam em `./data`.
 
 ## HTTPS e passkeys
 

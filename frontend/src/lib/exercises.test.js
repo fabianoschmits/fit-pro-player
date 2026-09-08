@@ -6,6 +6,7 @@ import {
   PENDING_EXERCISE_COUNT,
 } from './exercises.js'
 import {
+  WORKOUT_GUIDE_BY_EXERCISE_ID,
   WORKOUT_GUIDE_EXERCISE_IDS,
   WORKOUT_GUIDE_POPULARITY_IDS,
   hasExerciseGuideAsset,
@@ -16,6 +17,13 @@ describe('active exercise catalogue', () => {
     expect(EXDB.map(exercise => exercise.id)).toHaveLength(WORKOUT_GUIDE_EXERCISE_IDS.length)
     expect(EXDB.every(hasExerciseGuideAsset)).toBe(true)
     expect(new Set(EXDB.map(exercise => exercise.id))).toEqual(new Set(WORKOUT_GUIDE_EXERCISE_IDS))
+  })
+
+  it('offers each PNG-backed movement only once', () => {
+    const slugs = EXDB.map(exercise => WORKOUT_GUIDE_BY_EXERCISE_ID[exercise.id])
+    const names = EXDB.map(exercise => exercise.n.trim().toLocaleLowerCase())
+    expect(new Set(slugs).size).toBe(EXDB.length)
+    expect(new Set(names).size).toBe(EXDB.length)
   })
 
   it('puts the researched popularity order first', () => {

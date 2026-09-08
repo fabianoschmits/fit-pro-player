@@ -11,13 +11,12 @@ import {
 // remaining rows are intentionally pending here until their corresponding artwork is ready.
 const ACTIVE_IDS = new Set(WORKOUT_GUIDE_EXERCISE_IDS)
 const POPULARITY_RANK = new Map(WORKOUT_GUIDE_POPULARITY_IDS.map((id, index) => [id, index]))
+
+// Every active exercise has a new PNG sprite set. Popularity determines the initial order.
 export const EXDB = SOURCE_EXERCISES
   .filter(exercise => ACTIVE_IDS.has(exercise.id))
-  .sort((a, b) => {
-    const aRank = POPULARITY_RANK.get(a.id) ?? Number.MAX_SAFE_INTEGER
-    const bRank = POPULARITY_RANK.get(b.id) ?? Number.MAX_SAFE_INTEGER
-    return aRank - bRank
-  })
+  .sort((a, b) => (POPULARITY_RANK.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+    (POPULARITY_RANK.get(b.id) ?? Number.MAX_SAFE_INTEGER))
 export const PENDING_EXERCISE_COUNT = SOURCE_EXERCISES.length - EXDB.length
 
 // The generated dataset already supplies secondary muscles for most exercises. Keep the

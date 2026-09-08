@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Copies new PNG sprite sets from the user's Downloads folder into workout-guide assets.
-// Replaces SVG/PNG frames for every matched exercise; unmapped catalogue entries keep SVG.
+// Replaces the PNG frames for every matched exercise and discovers nested sprite packages.
 // Usage: node scripts/import-guide-sprites.mjs [sourceDir]
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { WORKOUT_GUIDE_BY_EXERCISE_ID } from '../src/lib/exercise-guide-assets.js'
 
@@ -16,20 +16,29 @@ const PT = ptNames.default || ptNames
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 const GUIDE = join(ROOT, 'src', 'assets', 'workout-guide')
-const DEFAULT_SRC = 'C:/Users/FabianoSchmits/Downloads/Exercicios/novos/Novos'
+const DEFAULT_SRC = 'C:/Users/FabianoSchmits/Downloads/Exercicios/novos'
 
 /** Folder names that do not match PT catalogue names exactly */
 const FOLDER_ALIASES = {
+  'agachamento_com_barra': '0043',
   'Alongamento de panturrilhas com mãos': '1377',
   'Avanço para a frente': '3470',
+  'desenvolvimento_militar_em_pe_com_barra': '1457',
+  'elevacao_de_quadril_com_barra': '0058',
+  'extensao_de_perna_na_maquina': '0585',
   'Elevação de panturrilhas sentado agachamento no perna desenvolvimento': '1385',
   'Elevação de panturrilhas unilateral': '1387',
+  'Extensão de tríceps alto polia acima da cabeça': '1722', // folder omits "no cabo"
   'Flexão de braços inclinadoFlexão de braços inclinado': '0493',
+  'leg_press_45_graus': '0739',
   'Salto polichinelo': '3224',
   'Triceps mergulhos com peso adicional': '1755',
+  'uxada suporte com barra': '0074', // typo: missing leading "P"
 }
 
-const FRAME_RE = /^(?:frame[_-]?(\d+)|(\d+))\.png$/i
+// One delivered cycling set contains the typo "feame_01.png"; accept it as frame 1 so the
+// sequence is complete without requiring the source archive to be renamed in place.
+const FRAME_RE = /^(?:(?:frame|feame)[_-]?(\d+)|(\d+))\.png$/i
 
 function frameSortKey(name) {
   const m = name.match(FRAME_RE)
@@ -38,18 +47,24 @@ function frameSortKey(name) {
 
 function collectFramePngs(dir) {
   const entries = readdirSync(dir, { withFileTypes: true })
-  const direct = entries
+  return entries
     .filter(e => e.isFile() && FRAME_RE.test(e.name))
     .map(e => e.name)
     .sort((a, b) => frameSortKey(a) - frameSortKey(b))
-  if (direct.length) return direct.map(name => join(dir, name))
+    .map(name => join(dir, name))
+}
 
+function collectSpriteDirs(dir) {
+  const direct = collectFramePngs(dir)
+  if (direct.length) return [dir]
+
+  const spriteDirs = []
+  const entries = readdirSync(dir, { withFileTypes: true })
   for (const entry of entries) {
     if (!entry.isDirectory()) continue
-    const nested = collectFramePngs(join(dir, entry.name))
-    if (nested.length) return nested
+    spriteDirs.push(...collectSpriteDirs(join(dir, entry.name)))
   }
-  return []
+  return spriteDirs
 }
 
 function writeFramesModule(destDir, count) {
@@ -85,11 +100,21 @@ function importSlug(srcDir, slug) {
 
 function resolveExerciseId(folderName) {
   if (FOLDER_ALIASES[folderName]) return FOLDER_ALIASES[folderName]
-  const lower = folderName.toLowerCase()
-  const hits = Object.entries(PT).filter(([, name]) => String(name).toLowerCase() === lower)
+  const normalized = normalizeName(folderName)
+  const hits = Object.entries(PT).filter(([, name]) => normalizeName(name) === normalized)
   if (!hits.length) return null
   const active = hits.find(([id]) => WORKOUT_GUIDE_BY_EXERCISE_ID[id])
   return (active || hits[0])[0]
+}
+
+function normalizeName(value) {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
 }
 
 const srcRoot = process.argv[2] || DEFAULT_SRC
@@ -98,28 +123,30 @@ if (!existsSync(srcRoot)) {
   process.exit(1)
 }
 
-const folders = readdirSync(srcRoot, { withFileTypes: true }).filter(d => d.isDirectory())
+const spriteDirs = collectSpriteDirs(srcRoot)
 const imported = []
 const skipped = []
 const frameCounts = {}
 
-for (const entry of folders) {
-  const id = resolveExerciseId(entry.name)
+for (const spriteDir of spriteDirs) {
+  const folderName = basename(spriteDir)
+  const sourceLabel = relative(srcRoot, spriteDir)
+  const id = resolveExerciseId(folderName)
   if (!id) {
-    skipped.push({ folder: entry.name, reason: 'no PT name match' })
+    skipped.push({ folder: sourceLabel, reason: 'no PT name match' })
     continue
   }
   const slug = WORKOUT_GUIDE_BY_EXERCISE_ID[id]
   if (!slug) {
-    skipped.push({ folder: entry.name, reason: `id ${id} not in active guide catalogue` })
+    skipped.push({ folder: sourceLabel, reason: `id ${id} not in active guide catalogue` })
     continue
   }
   try {
-    const count = importSlug(join(srcRoot, entry.name), slug)
+    const count = importSlug(spriteDir, slug)
     frameCounts[slug] = count
-    imported.push({ folder: entry.name, id, slug, frames: count })
+    imported.push({ folder: sourceLabel, id, slug, frames: count })
   } catch (err) {
-    skipped.push({ folder: entry.name, reason: err.message })
+    skipped.push({ folder: sourceLabel, reason: err.message })
   }
 }
 

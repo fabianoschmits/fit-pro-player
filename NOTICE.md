@@ -8,23 +8,17 @@ native builds through a store requires an independent review of the store terms 
 
 ## Local exercise illustrations
 
-Verified catalogue matches use selected illustrations from
-[**Workout Guide**](https://github.com/bryllim/workout-guide) by Bryl Lim. Workout Guide credits
-the original pose artwork to [**Everkinetic**](https://github.com/everkinetic/data). These visual
-assets are licensed under **CC BY-SA 4.0**, not AGPL. Fit Pro Player embeds 516 SVG frames from
-172 Workout Guide exercises directly in local source modules and maps them to 173 catalogue IDs.
-The import uses Workout Guide 1.0.0 at commit
-`ba0b709cb20430361b2cb33aaadd20998164a916`.
+Fit Pro Player bundles 156 local PNG exercise animations comprising 646 individual frames. It no
+longer ships or renders the previous SVG animation modules. Where the PNG artwork adapts poses
+from [**Workout Guide**](https://github.com/bryllim/workout-guide) by Bryl Lim, Workout Guide
+credits the original pose artwork to [**Everkinetic**](https://github.com/everkinetic/data).
+Those upstream assets and adaptations remain licensed under **CC BY-SA 4.0**, not AGPL.
 
-Fit Pro Player changes only packaging, exercise selection, animation timing, responsive layout,
-playback controls, and theme color treatment; SVG path geometry remains unchanged. The imported
-artwork and these visual adaptations remain under CC BY-SA 4.0. Complete attribution, source
-URLs, change notes, and license copies are in [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) and
-`frontend/src/assets/workout-guide/`.
-
-Only exact Workout Guide movement matches are offered in new catalogue selections. Unmatched
-source records stay indexed solely to preserve existing plans and workout history until their
-corresponding local animations are ready.
+Complete attribution and license copies are in
+[THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) and `frontend/src/assets/workout-guide/`.
+Only exercises with a complete new PNG sprite sequence are offered in new catalogue selections,
+with one active entry per movement. Other source records stay indexed solely to preserve
+existing plans and workout history, without loading removed legacy artwork.
 
 ## Body diagram geometry
 

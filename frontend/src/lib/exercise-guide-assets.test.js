@@ -1,76 +1,71 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import PT_EXERCISE_NAMES from '../generated/pt-exercise-names.js'
 import { EXDB } from './exercises-data.js'
 import {
-  WORKOUT_GUIDE_COMMIT,
   WORKOUT_GUIDE_BY_EXERCISE_ID,
   WORKOUT_GUIDE_EXERCISE_IDS,
   WORKOUT_GUIDE_PNG_SLUGS,
   WORKOUT_GUIDE_SLUGS,
-  WORKOUT_GUIDE_VERSION,
   exerciseGuideAsset,
   hasExerciseGuideAsset,
 } from './exercise-guide-assets.js'
 
-const pngSlugSet = new Set(WORKOUT_GUIDE_PNG_SLUGS)
-
 function frameCountForSlug(slug, source) {
-  if (pngSlugSet.has(slug)) {
-    return (source.match(/from '\.\/frame-\d+\.png'/g) || []).length
-  }
-  const literal = source.match(/Object\.freeze\((\[[\s\S]*\])\)\s*\nexport default/)?.[1]
-  expect(literal, slug).toBeTruthy()
-  return JSON.parse(literal).length
+  const count = (source.match(/from '\.\/frame-\d+\.png'/g) || []).length
+  expect(count, slug).toBeGreaterThanOrEqual(2)
+  return count
 }
 
-describe('local Workout Guide assets', () => {
-  it('maps only real catalogue exercises', () => {
+describe('local PNG exercise assets', () => {
+  it('maps only real catalogue exercises with new PNG sprites', () => {
     const catalogueIds = new Set(EXDB.map(exercise => exercise.id))
-    expect(WORKOUT_GUIDE_EXERCISE_IDS).toHaveLength(173)
-    expect(WORKOUT_GUIDE_SLUGS).toHaveLength(172)
+    expect(WORKOUT_GUIDE_EXERCISE_IDS).toHaveLength(156)
+    expect(WORKOUT_GUIDE_SLUGS).toHaveLength(156)
+    expect(WORKOUT_GUIDE_PNG_SLUGS).toHaveLength(156)
     expect(WORKOUT_GUIDE_EXERCISE_IDS.every(id => catalogueIds.has(id))).toBe(true)
+    expect(new Set(WORKOUT_GUIDE_SLUGS)).toEqual(new Set(WORKOUT_GUIDE_PNG_SLUGS))
   })
 
-  it('uses the exact new movement for mapped exercises and no old first-ten substitute', () => {
+  it('uses the exact new movement for mapped exercises and no duplicate catalogue entry', () => {
     expect(WORKOUT_GUIDE_BY_EXERCISE_ID['0003']).toBe('bicycle-crunch')
     expect(WORKOUT_GUIDE_BY_EXERCISE_ID['0006']).toBe('heel-tap')
     expect(WORKOUT_GUIDE_BY_EXERCISE_ID['2355']).toBe('hanging-knee-raise')
     expect(WORKOUT_GUIDE_BY_EXERCISE_ID['3294']).toBe('archer-push-up')
+    expect(WORKOUT_GUIDE_BY_EXERCISE_ID['0576']).toBeUndefined()
+    expect(WORKOUT_GUIDE_BY_EXERCISE_ID['0577']).toBe('machine-chest-press')
+
+    const activeNames = WORKOUT_GUIDE_EXERCISE_IDS.map(id => PT_EXERCISE_NAMES[id])
+    expect(new Set(activeNames).size).toBe(activeNames.length)
     for (const id of ['0001', '0002', '1512', '0007', '1368', '3293']) {
       expect(WORKOUT_GUIDE_BY_EXERCISE_ID[id]).toBeUndefined()
     }
   })
 
-  it('ships valid SVG or PNG frames for every mapped animation', () => {
+  it('ships only valid PNG frame modules and no legacy sprite directories', () => {
+    const guideUrl = new URL('../assets/workout-guide/', import.meta.url)
+    const guideDir = fileURLToPath(guideUrl)
+    const assetDirs = readdirSync(guideDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory())
+      .map(entry => entry.name)
+      .sort()
+    expect(assetDirs).toEqual([...WORKOUT_GUIDE_SLUGS].sort())
+
     for (const slug of WORKOUT_GUIDE_SLUGS) {
       const moduleUrl = new URL(`../assets/workout-guide/${slug}/frames.js`, import.meta.url)
       const moduleDir = dirname(fileURLToPath(moduleUrl))
       expect(existsSync(moduleUrl), slug).toBe(true)
       const source = readFileSync(moduleUrl, 'utf8')
       const count = frameCountForSlug(slug, source)
-      expect(count, slug).toBeGreaterThanOrEqual(2)
-
-      if (pngSlugSet.has(slug)) {
-        expect(source, slug).toMatch(/from '\.\/frame-\d+\.png'/)
-        for (let i = 1; i <= count; i++) {
-          expect(existsSync(join(moduleDir, `frame-${i}.png`)), `${slug}/frame-${i}.png`).toBe(true)
-        }
-      } else {
-        const literal = source.match(/Object\.freeze\((\[[\s\S]*\])\)\s*\nexport default/)?.[1]
-        const frames = JSON.parse(literal)
-        expect(new Set(frames).size, `${slug}: unique SVG frames`).toBeGreaterThanOrEqual(2)
-        for (const [index, frame] of frames.entries()) {
-          expect(frame, `${slug}: frame ${index + 1} canvas`).toMatch(
-            /^<svg\b[^>]*\bwidth="512"[^>]*\bheight="512"[^>]*\bviewBox="0 0 512 512"/i,
-          )
-        }
-        expect(source, slug).not.toMatch(/<(?:script|foreignObject)\b|\bjavascript:/i)
+      expect(source, slug).not.toMatch(/<svg\b|data:image\/svg|dangerouslySetInnerHTML/)
+      for (let i = 1; i <= count; i++) {
+        expect(existsSync(join(moduleDir, `frame-${i}.png`)), `${slug}/frame-${i}.png`).toBe(true)
       }
 
       const asset = exerciseGuideAsset(EXDB.find(ex => WORKOUT_GUIDE_BY_EXERCISE_ID[ex.id] === slug))
-      if (asset) expect(asset.sequence.length, slug).toBe(count)
+      expect(asset?.sequence.length, slug).toBe(count)
     }
   })
 
@@ -86,12 +81,11 @@ describe('local Workout Guide assets', () => {
     expect(rules).not.toContain('frontend/src/assets/**')
   })
 
-  it('returns stable animation configuration objects', () => {
-    expect(WORKOUT_GUIDE_VERSION).toBe('1.0.0')
-    expect(WORKOUT_GUIDE_COMMIT).toBe('ba0b709cb20430361b2cb33aaadd20998164a916')
+  it('returns stable configurations only for exercises with new sprites', () => {
     const exercise = EXDB.find(candidate => candidate.id === '3294')
     expect(exerciseGuideAsset(exercise)).toBe(exerciseGuideAsset(exercise))
     expect(hasExerciseGuideAsset(exercise)).toBe(true)
+    expect(hasExerciseGuideAsset(EXDB.find(candidate => candidate.id === '1326'))).toBe(false)
     expect(hasExerciseGuideAsset(EXDB.find(candidate => candidate.id === '0001'))).toBe(false)
   })
 })

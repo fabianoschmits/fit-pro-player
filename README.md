@@ -87,4 +87,4 @@ Veja [SECURITY.md](SECURITY.md) para comunicar vulnerabilidades.
 
 O código é distribuído sob **GNU AGPL-3.0-or-later**. Uma implantação pública modificada deve oferecer aos usuários o código-fonte correspondente desta versão. Consulte [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md).
 
-Metadados, diagramas e bibliotecas de terceiros têm avisos próprios. As animações SVG locais vêm do Workout Guide e permanecem sob CC BY-SA 4.0; consulte [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) e [NOTICE.md](NOTICE.md).
+Metadados, diagramas e bibliotecas de terceiros têm avisos próprios. As animações de exercícios usam sequências PNG locais; adaptações de arte do Workout Guide/Everkinetic permanecem sob CC BY-SA 4.0. Consulte [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) e [NOTICE.md](NOTICE.md).
