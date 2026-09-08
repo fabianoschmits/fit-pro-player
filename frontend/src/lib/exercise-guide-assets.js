@@ -1,11 +1,11 @@
-﻿// Local Workout Guide artwork. The mapping is deliberately explicit: similar names are not
+// Original Fit Pro Player exercise sprites. The mapping is deliberately explicit: similar names are not
 // enough for exercise instruction, so every entry below was checked for equipment and movement.
 // Only slugs listed in the generated PNG catalogue are exposed; the other mappings are
 // placeholders for sprite sets that have not been redrawn yet. See import-guide-sprites.mjs.
-import WORKOUT_GUIDE_PNG_FRAME_COUNTS from './workout-guide-png-frame-counts.json' with { type: 'json' }
-import WORKOUT_GUIDE_PNG_SLUGS from './workout-guide-png-slugs.json' with { type: 'json' }
+import EXERCISE_SPRITE_FRAME_COUNTS from './exercise-sprite-frame-counts.json' with { type: 'json' }
+import EXERCISE_SPRITE_PNG_SLUGS from './exercise-sprite-slugs.json' with { type: 'json' }
 
-export const WORKOUT_GUIDE_BY_EXERCISE_ID = Object.freeze({
+export const EXERCISE_SPRITE_BY_EXERCISE_ID = Object.freeze({
   // Chest and shoulders
   '0025': 'bench-press',
   '0047': 'incline-bench-press',
@@ -189,24 +189,21 @@ export const WORKOUT_GUIDE_BY_EXERCISE_ID = Object.freeze({
   '1494': 'butterfly-stretch',
 })
 
-const PNG_SLUG_SET = new Set(WORKOUT_GUIDE_PNG_SLUGS)
+const PNG_SLUG_SET = new Set(EXERCISE_SPRITE_PNG_SLUGS)
 
-export const WORKOUT_GUIDE_EXERCISE_IDS = Object.freeze(
-  Object.entries(WORKOUT_GUIDE_BY_EXERCISE_ID)
+export const EXERCISE_SPRITE_EXERCISE_IDS = Object.freeze(
+  Object.entries(EXERCISE_SPRITE_BY_EXERCISE_ID)
     .filter(([, slug]) => PNG_SLUG_SET.has(slug))
     .map(([id]) => id),
 )
-export const WORKOUT_GUIDE_SLUGS = Object.freeze(
-  [...new Set(Object.values(WORKOUT_GUIDE_BY_EXERCISE_ID).filter(slug => PNG_SLUG_SET.has(slug)))],
+export const EXERCISE_SPRITE_SLUGS = Object.freeze(
+  [...new Set(Object.values(EXERCISE_SPRITE_BY_EXERCISE_ID).filter(slug => PNG_SLUG_SET.has(slug)))],
 )
-export { WORKOUT_GUIDE_PNG_SLUGS }
+export { EXERCISE_SPRITE_PNG_SLUGS }
 
-// Relevance order for the catalogue's first results. The leading movements follow the
-// most-performed exercises (by logged sets) in StrengthLog's analysis of millions of
-// workouts from more than 500,000 users. Their male/female top tens share the first six;
-// the remaining entries merge both lists so the default is useful to the whole audience.
-// Source: https://www.strengthlog.com/strength-training-statistics/
-export const WORKOUT_GUIDE_POPULARITY_IDS = Object.freeze([
+// Curated relevance order for the catalogue's first results. The leading movements cover
+// common compound exercises, followed by complementary strength and conditioning work.
+export const EXERCISE_SPRITE_POPULARITY_IDS = Object.freeze([
   '0025', // supino_com_barra
   '0043', // agachamento_com_barra
   '0032', // levantamento_terra_com_barra
@@ -237,21 +234,21 @@ function sequenceForFrameCount(count) {
   return Object.freeze(Array.from({ length: count }, (_, i) => i))
 }
 
-const WORKOUT_GUIDE_ASSETS = Object.freeze(Object.fromEntries(
-  Object.entries(WORKOUT_GUIDE_BY_EXERCISE_ID)
+const EXERCISE_SPRITE_ASSETS = Object.freeze(Object.fromEntries(
+  Object.entries(EXERCISE_SPRITE_BY_EXERCISE_ID)
     .filter(([, slug]) => PNG_SLUG_SET.has(slug))
     .map(([id, slug]) => [
       id,
       Object.freeze({
         duration: 2400,
-        sequence: sequenceForFrameCount(WORKOUT_GUIDE_PNG_FRAME_COUNTS[slug]),
+        sequence: sequenceForFrameCount(EXERCISE_SPRITE_FRAME_COUNTS[slug]),
         slug,
       }),
     ]),
 ))
 
 export function exerciseGuideAsset(exercise) {
-  return exercise?.id ? WORKOUT_GUIDE_ASSETS[exercise.id] || null : null
+  return exercise?.id ? EXERCISE_SPRITE_ASSETS[exercise.id] || null : null
 }
 
 export function hasExerciseGuideAsset(exercise) {

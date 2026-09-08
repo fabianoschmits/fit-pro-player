@@ -7,7 +7,7 @@
     "node": "22.x"
   },
   "main": "server.js",
-  "license": "AGPL-3.0-or-later",
+  "license": "UNLICENSED",
   "scripts": {
     "start": "node --env-file-if-exists=../.env server.js"
   },

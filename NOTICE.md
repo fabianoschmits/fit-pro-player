@@ -1,24 +1,7 @@
-# License and third-party notices
+# Third-party notices
 
-Fit Pro Player modifications — Copyright (C) 2026 Fabiano Schmits.
-The application code is licensed under **GNU AGPL-3.0-or-later**; see [LICENSE](LICENSE).
-
-The previous app-store exception is not asserted for this modified distribution. Publishing
-native builds through a store requires an independent review of the store terms and licenses.
-
-## Local exercise illustrations
-
-Fit Pro Player bundles 156 local PNG exercise animations comprising 646 individual frames. It no
-longer ships or renders the previous SVG animation modules. Where the PNG artwork adapts poses
-from [**Workout Guide**](https://github.com/bryllim/workout-guide) by Bryl Lim, Workout Guide
-credits the original pose artwork to [**Everkinetic**](https://github.com/everkinetic/data).
-Those upstream assets and adaptations remain licensed under **CC BY-SA 4.0**, not AGPL.
-
-Complete attribution and license copies are in
-[THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) and `frontend/src/assets/workout-guide/`.
-Only exercises with a complete new PNG sprite sequence are offered in new catalogue selections,
-with one active entry per movement. Other source records stay indexed solely to preserve
-existing plans and workout history, without loading removed legacy artwork.
+Fit Pro Player — Copyright (C) 2026 Fabiano Schmits. All rights reserved.
+The application code, identity and original exercise sprites are proprietary.
 
 ## Body diagram geometry
 
@@ -57,7 +40,7 @@ SOFTWARE.
 Fit Pro Player obtains the exercise metadata and instruction source through
 [**hasaneyldrm/exercises-dataset**](https://github.com/hasaneyldrm/exercises-dataset). That
 dataset also offers a separate third-party media collection. Neither the dataset content nor
-the optional third-party media is covered by Fit Pro Player's AGPL license.
+the optional third-party media is part of Fit Pro Player's proprietary exercise artwork.
 
 That dataset is itself a redistribution: the content originates from
 [**ExerciseDB v1**](https://exercisedb.dev/) by **AscendAPI**. This is verifiable from Fit Pro Player's

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { starterRoutines } from './starter.js'
-import { WORKOUT_GUIDE_EXERCISE_IDS } from './exercise-guide-assets.js'
+import { EXERCISE_SPRITE_EXERCISE_IDS } from './exercise-guide-assets.js'
 
 describe('starter plan', () => {
   it('uses only exercises that are available with local animations', () => {
-    const active = new Set(WORKOUT_GUIDE_EXERCISE_IDS)
+    const active = new Set(EXERCISE_SPRITE_EXERCISE_IDS)
     const routines = starterRoutines()
 
     expect(routines).toHaveLength(3)

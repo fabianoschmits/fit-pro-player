@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { exerciseName } from '../lib/exercises.js'
 import { exerciseGuideAsset } from '../lib/exercise-guide-assets.js'
 
-const FRAME_LOADERS = import.meta.glob('../assets/workout-guide/*/frames.js', { import: 'default' })
+const FRAME_LOADERS = import.meta.glob('../assets/exercise-sprites/*/frames.js', { import: 'default' })
 
 export function guideTimelineState(config, elapsed) {
   const steps = config.sequence.length
@@ -13,16 +13,16 @@ export function guideTimelineState(config, elapsed) {
 }
 
 function validatedFrames(frames) {
-  if (!Array.isArray(frames) || frames.length < 1) throw new Error('Invalid Workout Guide frame set')
+  if (!Array.isArray(frames) || frames.length < 1) throw new Error('Invalid exercise sprite frame set')
   return frames.map(frame => {
     if (typeof frame === 'string' && frame.length > 0) return frame
-    throw new Error('Invalid Workout Guide frame')
+    throw new Error('Invalid exercise sprite frame')
   })
 }
 
 async function loadFrames(slug) {
-  const loader = FRAME_LOADERS[`../assets/workout-guide/${slug}/frames.js`]
-  if (!loader) throw new Error(`Missing Workout Guide frames: ${slug}`)
+  const loader = FRAME_LOADERS[`../assets/exercise-sprites/${slug}/frames.js`]
+  if (!loader) throw new Error(`Missing exercise sprite frames: ${slug}`)
   const frames = validatedFrames(await loader())
   
   // Preload raster images to prevent flickering on first playback

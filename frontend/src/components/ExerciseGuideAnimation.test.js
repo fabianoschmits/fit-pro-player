@@ -3,7 +3,7 @@ import { guideTimelineState } from './ExerciseGuideAnimation.jsx'
 
 const CONFIG = { duration: 2400, sequence: [0, 1, 2] }
 
-describe('Workout Guide animation timeline', () => {
+describe('exercise sprite animation timeline', () => {
   it('uses the three canonical frames in their original order', () => {
     expect(guideTimelineState(CONFIG, 0)).toEqual({ frame: 0 })
 

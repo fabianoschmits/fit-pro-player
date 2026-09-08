@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// Overlays custom PNG sprite folders onto restored SVG workout-guide assets.
-// Run after: git checkout <base> -- frontend/src/assets/workout-guide/
+// Overlays custom PNG sprite folders onto the app's exercise assets.
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -8,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const GUIDE = join(ROOT, 'src', 'assets', 'workout-guide')
+const SPRITES = join(ROOT, 'src', 'assets', 'exercise-sprites')
 const OVERLAY = join(ROOT, '.png-overlay')
 
 // Overlay folder name must match the catalogue slug. Do not alias across different
@@ -17,7 +16,7 @@ const OVERLAY = join(ROOT, '.png-overlay')
 function overlaySlug(importSlug) {
   const targetSlug = importSlug
   const srcDir = join(OVERLAY, importSlug)
-  const destDir = join(GUIDE, targetSlug)
+  const destDir = join(SPRITES, targetSlug)
   if (!existsSync(srcDir)) {
     console.warn('skip missing overlay:', importSlug)
     return null
@@ -55,6 +54,6 @@ const imported = readdirSync(OVERLAY, { withFileTypes: true })
   .map(entry => overlaySlug(entry.name))
   .filter(Boolean)
 
-const slugsPath = join(ROOT, 'src', 'lib', 'workout-guide-png-slugs.json')
+const slugsPath = join(ROOT, 'src', 'lib', 'exercise-sprite-slugs.json')
 writeFileSync(slugsPath, JSON.stringify([...new Set(imported)].sort(), null, 2) + '\n', 'utf8')
 console.log(`Overlaid ${imported.length} PNG sprite sets`)

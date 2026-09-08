@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Copies new PNG sprite sets from the user's Downloads folder into workout-guide assets.
+// Copies new PNG sprite sets from the user's Downloads folder into the app's exercise assets.
 // Replaces the PNG frames for every matched exercise and discovers nested sprite packages.
 // Usage: node scripts/import-guide-sprites.mjs [sourceDir]
 
@@ -7,7 +7,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync,
 import { createRequire } from 'node:module'
 import { basename, dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { WORKOUT_GUIDE_BY_EXERCISE_ID } from '../src/lib/exercise-guide-assets.js'
+import { EXERCISE_SPRITE_BY_EXERCISE_ID } from '../src/lib/exercise-guide-assets.js'
 
 const require = createRequire(import.meta.url)
 const ptNames = require('../src/generated/pt-exercise-names.js')
@@ -15,7 +15,7 @@ const PT = ptNames.default || ptNames
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
-const GUIDE = join(ROOT, 'src', 'assets', 'workout-guide')
+const SPRITES = join(ROOT, 'src', 'assets', 'exercise-sprites')
 const DEFAULT_SRC = 'C:/Users/FabianoSchmits/Downloads/Exercicios/novos'
 
 /** Folder names that do not match PT catalogue names exactly */
@@ -86,7 +86,7 @@ function clearGuideDir(destDir) {
 }
 
 function importSlug(srcDir, slug) {
-  const destDir = join(GUIDE, slug)
+  const destDir = join(SPRITES, slug)
   const pngs = collectFramePngs(srcDir)
   if (pngs.length < 2) throw new Error(`${slug}: expected at least 2 PNG frames in ${srcDir}`)
 
@@ -103,7 +103,7 @@ function resolveExerciseId(folderName) {
   const normalized = normalizeName(folderName)
   const hits = Object.entries(PT).filter(([, name]) => normalizeName(name) === normalized)
   if (!hits.length) return null
-  const active = hits.find(([id]) => WORKOUT_GUIDE_BY_EXERCISE_ID[id])
+  const active = hits.find(([id]) => EXERCISE_SPRITE_BY_EXERCISE_ID[id])
   return (active || hits[0])[0]
 }
 
@@ -136,7 +136,7 @@ for (const spriteDir of spriteDirs) {
     skipped.push({ folder: sourceLabel, reason: 'no PT name match' })
     continue
   }
-  const slug = WORKOUT_GUIDE_BY_EXERCISE_ID[id]
+  const slug = EXERCISE_SPRITE_BY_EXERCISE_ID[id]
   if (!slug) {
     skipped.push({ folder: sourceLabel, reason: `id ${id} not in active guide catalogue` })
     continue
@@ -150,14 +150,14 @@ for (const spriteDir of spriteDirs) {
   }
 }
 
-const slugsPath = join(ROOT, 'src', 'lib', 'workout-guide-png-slugs.json')
-const countsPath = join(ROOT, 'src', 'lib', 'workout-guide-png-frame-counts.json')
+const slugsPath = join(ROOT, 'src', 'lib', 'exercise-sprite-slugs.json')
+const countsPath = join(ROOT, 'src', 'lib', 'exercise-sprite-frame-counts.json')
 
 // Keep previous custom PNG sets that were not replaced in this import run.
-if (existsSync(GUIDE)) {
-  for (const entry of readdirSync(GUIDE, { withFileTypes: true })) {
+if (existsSync(SPRITES)) {
+  for (const entry of readdirSync(SPRITES, { withFileTypes: true })) {
     if (!entry.isDirectory() || frameCounts[entry.name]) continue
-    const dir = join(GUIDE, entry.name)
+    const dir = join(SPRITES, entry.name)
     const pngs = readdirSync(dir).filter(name => /^frame-\d+\.png$/i.test(name))
     if (pngs.length >= 2 && existsSync(join(dir, 'frames.js'))) {
       const source = readFileSync(join(dir, 'frames.js'), 'utf8')

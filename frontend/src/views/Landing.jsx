@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, hasData } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { webauthnOK, passkeyLogin, passkeyRegister, BIO } from '../lib/api.js'
-import { DEMO, STANDALONE, REPO } from '../lib/demo.js'
+import { DEMO, STANDALONE } from '../lib/demo.js'
 import { guestAllowed } from '../lib/guest.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
@@ -380,7 +380,7 @@ export default function Landing() {
       <footer className="landing-footer">
         <a className="landing-brand" href="#top"><span><Icon name="dumbbell" /></span>Fit Pro Player</a>
         <p>Treine com intenção. Acompanhe com clareza.</p>
-        <a href={REPO} target="_blank" rel="noopener">Código aberto <Icon name="chevronRight" /></a>
+        <span>Todos os direitos reservados.</span>
       </footer>
     </main>
   )

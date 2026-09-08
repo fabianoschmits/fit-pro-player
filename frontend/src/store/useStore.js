@@ -192,7 +192,7 @@ export const useStore = create((set, get) => {
         set({ ready: true })
         return
       }
-      // Demo build (GitHub Pages): seed once, then let the landing page introduce the product
+      // Static demo build: seed once, then let the landing page introduce the product
       // before the visitor explicitly opens the browser-only example profile.
       if (DEMO) {
         if (!localStorage.getItem(DEMO_SEEDED)) {

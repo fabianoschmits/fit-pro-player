@@ -20,7 +20,7 @@ vi.mock('../lib/api.js', () => ({
   BIO: 'your fingerprint, face or PIN', webauthnOK: () => true,
   passkeyLogin: vi.fn(), passkeyRegister: vi.fn(),
 }))
-vi.mock('../lib/demo.js', () => ({ DEMO: false, STANDALONE: true, REPO: 'https://example.com/repo' }))
+vi.mock('../lib/demo.js', () => ({ DEMO: false, STANDALONE: true }))
 vi.mock('../lib/i18n.js', () => ({ t: value => value === 'your fingerprint, face or PIN' ? 'biometria ou PIN' : value }))
 vi.mock('../lib/exercises.js', () => {
   const ids = ['0025', '0043', '0032', '0198', '0334']

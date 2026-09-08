@@ -9,7 +9,7 @@
 - Cookies de sessão restritos com `SameSite=Strict`.
 - Limite por cliente nos endpoints de registro/login por passkey.
 - Mensagens internas de validação WebAuthn deixaram de ser expostas ao cliente.
-- Pipelines consolidados no GitHub Actions e imagens preparadas para GHCR.
+- Pipelines de integração e imagens de contêiner consolidados.
 - Ferramentas de desenvolvimento vulneráveis ou não utilizadas removidas/atualizadas.
 
 ## 1.2.9

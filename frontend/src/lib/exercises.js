@@ -2,15 +2,15 @@ import { EXDB as SOURCE_EXERCISES } from './exercises-data.js'
 import PT_EXERCISE_NAMES from '../generated/pt-exercise-names.js'
 import { getLang, t } from './i18n-core.js'
 import {
-  WORKOUT_GUIDE_EXERCISE_IDS,
-  WORKOUT_GUIDE_POPULARITY_IDS,
+  EXERCISE_SPRITE_EXERCISE_IDS,
+  EXERCISE_SPRITE_POPULARITY_IDS,
 } from './exercise-guide-assets.js'
 
 // Keep the complete source dataset available to resolve old plans and workout history, but
 // expose only exercises with a checked local animation for new catalogue selections. The
 // remaining rows are intentionally pending here until their corresponding artwork is ready.
-const ACTIVE_IDS = new Set(WORKOUT_GUIDE_EXERCISE_IDS)
-const POPULARITY_RANK = new Map(WORKOUT_GUIDE_POPULARITY_IDS.map((id, index) => [id, index]))
+const ACTIVE_IDS = new Set(EXERCISE_SPRITE_EXERCISE_IDS)
+const POPULARITY_RANK = new Map(EXERCISE_SPRITE_POPULARITY_IDS.map((id, index) => [id, index]))
 
 // Every active exercise has a new PNG sprite set. Popularity determines the initial order.
 export const EXDB = SOURCE_EXERCISES

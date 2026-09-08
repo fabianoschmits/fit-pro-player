@@ -13,4 +13,3 @@
 export const DEMO = import.meta.env.VITE_DEMO === '1'
 export const STANDALONE = import.meta.env.VITE_STANDALONE === '1'
 export const DEMO_SEEDED = 'gym_demo_seeded_v1'
-export const REPO = 'https://github.com/fabianoschmits/fit-pro-player'

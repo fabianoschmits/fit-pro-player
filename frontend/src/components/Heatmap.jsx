@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { fmtVol, isoOf, todayISO, MONTHS } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 
-// GitHub-style activity heatmap, shaded by time trained per day.
+// Calendar activity heatmap, shaded by time trained per day.
 export default function Heatmap({ S, onDay }) {
   const wrapRef = useRef(null)
   useEffect(() => { if (wrapRef.current) wrapRef.current.scrollLeft = wrapRef.current.scrollWidth }, [])

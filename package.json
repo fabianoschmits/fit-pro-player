@@ -2,7 +2,7 @@
   "name": "fit-pro-player",
   "version": "1.2.9",
   "private": true,
-  "license": "AGPL-3.0-or-later",
+  "license": "UNLICENSED",
   "engines": {
     "node": "22.x"
   },

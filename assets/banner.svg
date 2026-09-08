@@ -10,5 +10,5 @@
     <tspan fill="#eef1f6">Fit Pro</tspan><tspan fill="#a3f02b"> Player</tspan>
   </text>
   <text x="398" y="214" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="30" font-weight="700" fill="#8b94a7">Seu treino. Seu progresso. Seus dados.</text>
-  <text x="400" y="270" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="22" font-weight="500" fill="#677083">PWA local-first  ·  Docker  ·  passkeys  ·  AGPL-3.0</text>
+  <text x="400" y="270" font-family="Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="22" font-weight="500" fill="#677083">PWA local-first  ·  Treinos  ·  Progresso  ·  Privacidade</text>
 </svg>

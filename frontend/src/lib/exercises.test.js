@@ -6,34 +6,34 @@ import {
   PENDING_EXERCISE_COUNT,
 } from './exercises.js'
 import {
-  WORKOUT_GUIDE_BY_EXERCISE_ID,
-  WORKOUT_GUIDE_EXERCISE_IDS,
-  WORKOUT_GUIDE_POPULARITY_IDS,
+  EXERCISE_SPRITE_BY_EXERCISE_ID,
+  EXERCISE_SPRITE_EXERCISE_IDS,
+  EXERCISE_SPRITE_POPULARITY_IDS,
   hasExerciseGuideAsset,
 } from './exercise-guide-assets.js'
 
 describe('active exercise catalogue', () => {
   it('offers only exercises with a validated local animation', () => {
-    expect(EXDB.map(exercise => exercise.id)).toHaveLength(WORKOUT_GUIDE_EXERCISE_IDS.length)
+    expect(EXDB.map(exercise => exercise.id)).toHaveLength(EXERCISE_SPRITE_EXERCISE_IDS.length)
     expect(EXDB.every(hasExerciseGuideAsset)).toBe(true)
-    expect(new Set(EXDB.map(exercise => exercise.id))).toEqual(new Set(WORKOUT_GUIDE_EXERCISE_IDS))
+    expect(new Set(EXDB.map(exercise => exercise.id))).toEqual(new Set(EXERCISE_SPRITE_EXERCISE_IDS))
   })
 
   it('offers each PNG-backed movement only once', () => {
-    const slugs = EXDB.map(exercise => WORKOUT_GUIDE_BY_EXERCISE_ID[exercise.id])
+    const slugs = EXDB.map(exercise => EXERCISE_SPRITE_BY_EXERCISE_ID[exercise.id])
     const names = EXDB.map(exercise => exercise.n.trim().toLocaleLowerCase())
     expect(new Set(slugs).size).toBe(EXDB.length)
     expect(new Set(names).size).toBe(EXDB.length)
   })
 
   it('puts the researched popularity order first', () => {
-    expect(EXDB.slice(0, WORKOUT_GUIDE_POPULARITY_IDS.length).map(exercise => exercise.id))
-      .toEqual(WORKOUT_GUIDE_POPULARITY_IDS)
+    expect(EXDB.slice(0, EXERCISE_SPRITE_POPULARITY_IDS.length).map(exercise => exercise.id))
+      .toEqual(EXERCISE_SPRITE_POPULARITY_IDS)
   })
 
   it('keeps pending source rows resolvable for existing plans and history', () => {
     expect(PENDING_EXERCISE_COUNT).toBe(SOURCE_EXERCISES.length - EXDB.length)
-    const pending = SOURCE_EXERCISES.find(exercise => !WORKOUT_GUIDE_EXERCISE_IDS.includes(exercise.id))
+    const pending = SOURCE_EXERCISES.find(exercise => !EXERCISE_SPRITE_EXERCISE_IDS.includes(exercise.id))
     expect(pending).toBeTruthy()
     expect(EXDB).not.toContain(pending)
     expect(EXIDX[pending.id]).toBe(pending)

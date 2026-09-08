@@ -286,7 +286,6 @@ export default {
   'to install Fit Pro Player as a full-screen app.': 'per installare Fit Pro Player come app a schermo intero.',
   'Your data syncs with your profile — sign in anywhere to see it.': 'I tuoi dati si sincronizzano col profilo — accedi ovunque per vederli.',
   'Guest data stays on this device — export a backup now and then!': 'I dati ospite restano su questo dispositivo — esporta un backup ogni tanto!',
-  'free & open source (AGPL v3)': 'gratuito e open source (AGPL v3)',
   'Notifications': 'Notifiche',
   'Not supported in this browser.': 'Non supportato in questo browser.',
   'Push notifications': 'Notifiche push',

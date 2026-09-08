@@ -4,13 +4,9 @@ ARG VERSION=dev
 ARG VCS_REF=dev
 ARG BUILD_DATE=unknown
 
-LABEL maintainer="Fabiano Schmits https://github.com/fabianoschmits" \
+LABEL maintainer="Fabiano Schmits" \
     org.opencontainers.image.title="fit-pro-player-api" \
     org.opencontainers.image.description="Backend for Self-hosted gym & body-weight tracker — plan routines, log workouts (supersets & cardio too), track your weight and progress, passkey login. Your data, your server." \
-    org.opencontainers.image.source="https://github.com/fabianoschmits/fit-pro-player" \
-    org.opencontainers.image.url="https://github.com/fabianoschmits/fit-pro-player/pkgs/container/fit-pro-player-api" \
-    org.opencontainers.image.documentation="https://github.com/fabianoschmits/fit-pro-player#readme" \
-    org.opencontainers.image.licenses="AGPL-3.0-or-later" \
     org.opencontainers.image.version=$VERSION \
     org.opencontainers.image.revision=$VCS_REF \
     org.opencontainers.image.created=$BUILD_DATE

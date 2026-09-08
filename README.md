@@ -1,10 +1,10 @@
 <div align="center">
 
-<img src="assets/banner.png" alt="Fit Pro Player" width="880">
+<img src="assets/banner.svg" alt="Fit Pro Player" width="880">
 
 Planeje treinos, acompanhe cargas, registre o peso corporal e visualize sua evolução.
 
-[Aplicação na Vercel](https://fit-pro-player.vercel.app) · [Código-fonte](https://github.com/fabianoschmits/fit-pro-player)
+[Aplicação na Vercel](https://fit-pro-player.vercel.app)
 
 </div>
 
@@ -28,9 +28,9 @@ npm run setup
 npm run dev
 ```
 
-Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. O catálogo oferece somente os 173 exercícios que já possuem sequências SVG validadas e incorporadas ao código, sem links, imagens raster ou modelos externos. Os outros 1.151 registros da base permanecem preservados como pendentes para não quebrar planos e históricos existentes, mas não aparecem em novas seleções até receberem animações correspondentes. A animação pausa fora da tela ou em uma aba oculta e não inicia automaticamente quando o sistema solicita movimento reduzido.
+Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. O catálogo oferece somente os 156 exercícios que já possuem sequências PNG próprias, validadas e incorporadas ao aplicativo. Os demais registros da base permanecem preservados como pendentes para não quebrar planos e históricos existentes, mas não aparecem em novas seleções até receberem animações correspondentes. A animação pausa fora da tela ou em uma aba oculta e não inicia automaticamente quando o sistema solicita movimento reduzido.
 
-A ordem inicial prioriza os exercícios mais executados por número de séries na análise do [StrengthLog com milhões de treinos de mais de 500 mil usuários](https://www.strengthlog.com/strength-training-statistics/): supino, agachamento, levantamento terra, puxada alta, desenvolvimento e remada aparecem primeiro, seguidos pelos demais movimentos presentes nas listas feminina e masculina.
+A ordem inicial prioriza movimentos frequentes como supino, agachamento, levantamento terra, puxada alta, desenvolvimento e remada, seguidos pelos demais exercícios disponíveis.
 
 Comandos úteis:
 
@@ -63,7 +63,7 @@ vercel
 vercel --prod
 ```
 
-O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora as sequências SVG e os mapas musculares no próprio app. Nenhum segredo é necessário.
+O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora as sequências PNG e os mapas musculares no próprio app. Nenhum segredo é necessário.
 
 ## Estrutura
 
@@ -83,8 +83,6 @@ O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora as sequ
 
 Veja [SECURITY.md](SECURITY.md) para comunicar vulnerabilidades.
 
-## Licença e dados de terceiros
+## Direitos
 
-O código é distribuído sob **GNU AGPL-3.0-or-later**. Uma implantação pública modificada deve oferecer aos usuários o código-fonte correspondente desta versão. Consulte [LICENSE](LICENSE) e [NOTICE.md](NOTICE.md).
-
-Metadados, diagramas e bibliotecas de terceiros têm avisos próprios. As animações de exercícios usam sequências PNG locais; adaptações de arte do Workout Guide/Everkinetic permanecem sob CC BY-SA 4.0. Consulte [THIRD_PARTY_ASSETS.md](THIRD_PARTY_ASSETS.md) e [NOTICE.md](NOTICE.md).
+Código, identidade visual e animações de exercícios do Fit Pro Player são proprietários. Todos os direitos reservados. Componentes externos utilizados pelo aplicativo continuam sujeitos aos termos de seus respectivos autores.
