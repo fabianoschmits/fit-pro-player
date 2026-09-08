@@ -1,6 +1,7 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
-   Media (img/gif) cache-first; everything else network-first with offline fallback. */
-const CACHE = 'fit-pro-player-rt-v3'
+   Media (img/gif) cache-first; everything else network-first with offline fallback.
+   Bump CACHE when shipping large asset replacements so activate drops stale entries. */
+const CACHE = 'fit-pro-player-rt-v4'
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', e => {
