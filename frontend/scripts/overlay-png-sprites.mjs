@@ -11,14 +11,11 @@ const ROOT = join(__dirname, '..')
 const GUIDE = join(ROOT, 'src', 'assets', 'workout-guide')
 const OVERLAY = join(ROOT, '.png-overlay')
 
-/** Import slug → catalogue slug when they differ */
-const SLUG_ALIASES = {
-  'standing-calf-raise': 'calf-raise',
-  'hip-thrust': 'barbell-glute-bridge',
-}
+// Overlay folder name must match the catalogue slug. Do not alias across different
+// exercises (that previously put hip-thrust art on barbell-glute-bridge, etc.).
 
 function overlaySlug(importSlug) {
-  const targetSlug = SLUG_ALIASES[importSlug] || importSlug
+  const targetSlug = importSlug
   const srcDir = join(OVERLAY, importSlug)
   const destDir = join(GUIDE, targetSlug)
   if (!existsSync(srcDir)) {
