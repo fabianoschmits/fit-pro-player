@@ -171,10 +171,9 @@ export const useStore = create((set, get) => {
 
     // Boot: ask the server who we are, then pull.
     async boot() {
-      // Public static deployment: no ephemeral server storage. Start with a real,
-      // empty local profile and keep it in localStorage; users can export backups.
+      // Public static deployment: show the product landing page first. Entering the app
+      // creates the local guest marker; returning visitors keep going straight to their data.
       if (STANDALONE) {
-        get().setGuest(true)
         set({ ready: true })
         return
       }
@@ -193,13 +192,13 @@ export const useStore = create((set, get) => {
         set({ ready: true })
         return
       }
-      // Demo build (GitHub Pages): no backend at all — seed once, stay in guest mode.
+      // Demo build (GitHub Pages): seed once, then let the landing page introduce the product
+      // before the visitor explicitly opens the browser-only example profile.
       if (DEMO) {
         if (!localStorage.getItem(DEMO_SEEDED)) {
           localStorage.setItem(DEMO_SEEDED, '1')
           await get().resetDemo()
         }
-        get().setGuest(true)
         set({ ready: true })
         return
       }
