@@ -1,5 +1,8 @@
+import { onboardingLocale } from '../lib/onboarding-locales.js'
+
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...onboardingLocale('tr'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",
   'Confirm': 'Onayla',
@@ -611,7 +614,6 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
-,
   "Total Volume Lifted": "Kaldırılan Toplam Ağırlık",
   "Total all-time volume: ": "Tüm zamanların toplam ağırlığı: ",
   "That is equivalent to lifting {0} elephants!": "Bu {0} fil kaldırmaya eşdeğer!",

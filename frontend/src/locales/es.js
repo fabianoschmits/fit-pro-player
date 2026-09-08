@@ -1,5 +1,8 @@
+import { onboardingLocale } from '../lib/onboarding-locales.js'
+
 // Spanish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...onboardingLocale('es'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",
   'Confirm': 'Confirmar',
@@ -611,7 +614,6 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
-,
   "Total Volume Lifted": "Volumen Total Levantado",
   "Total all-time volume: ": "Volumen histórico total: ",
   "That is equivalent to lifting {0} elephants!": "¡Eso equivale a levantar {0} elefantes!",

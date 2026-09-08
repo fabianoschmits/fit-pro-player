@@ -39,7 +39,7 @@ export async function syncReminder(S, interactive = false) {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
     await LocalNotifications.cancel({ notifications: [0, 1, 2, 3, 4, 5, 6].map(d => ({ id: 100 + d })) }).catch(() => {})
     const r = S.reminder
-    if (!r?.on) return true
+    if (!r?.on || S.planMode === 'daily') return true
     let perm = await LocalNotifications.checkPermissions()
     if (perm.display !== 'granted' && interactive) perm = await LocalNotifications.requestPermissions()
     if (perm.display !== 'granted') return false

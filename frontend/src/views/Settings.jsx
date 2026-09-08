@@ -44,7 +44,7 @@ export default function Settings() {
       try {
         const data = JSON.parse(rd.result)
         if (!data.workouts || !data.routines) throw new Error('not a Fit Pro Player backup')
-        confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => { replaceState(Object.assign(JSON.parse(JSON.stringify(DEF)), data), true); toast(t('Backup imported')) } })
+        confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => { replaceState(data, true); toast(t('Backup imported')) } })
       } catch (e) { toast(t('Import failed: {0}', e.message)) }
     }
     rd.readAsText(f)
@@ -96,6 +96,12 @@ export default function Settings() {
       )}
     </Section>
     {!user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
+
+    <Section title={t('Personal profile')}>
+      <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
+        subtitle={t('Name, birth date, body, measurements and training goal')}
+        accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
+    </Section>
 
     {/* ---------- general ---------- */}
     <Section title={t('General')} footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
@@ -168,7 +174,7 @@ export default function Settings() {
           className="seg-inline"
           options={[{ value: 'male', label: t('Male') }, { value: 'female', label: t('Female') }]}
           value={S.body === 'female' ? 'female' : 'male'}
-          onChange={v => update(s => { s.body = v })}
+          onChange={v => update(s => { s.body = v; s.profile = { ...s.profile, sex: v } })}
         />
       </Row>
       <div className="lrow" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12, paddingTop: 13, paddingBottom: 14 }}>

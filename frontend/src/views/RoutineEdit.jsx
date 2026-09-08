@@ -64,7 +64,7 @@ export default function RoutineEdit() {
       <button className="iconbtn" onClick={() => nav('/plan')} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
       <div className="routine-name-wrap">
         <input className="input routine-name" value={r.name}
-          onChange={e => update(s => { s.routines.find(x => x.id === id).name = e.target.value })}
+          onChange={e => update(s => { const routine = s.routines.find(x => x.id === id); routine.name = e.target.value; delete routine.starterKey; routine.starterCustomName = true })}
           onBlur={e => update(s => { s.routines.find(x => x.id === id).name = e.target.value.trim() || t('Routine') })}
           aria-label={t('Routine')} />
       </div>

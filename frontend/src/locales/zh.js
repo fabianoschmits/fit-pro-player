@@ -1,5 +1,8 @@
+import { onboardingLocale } from '../lib/onboarding-locales.js'
+
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...onboardingLocale('zh'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",
   'Confirm': '确认',
@@ -611,7 +614,6 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
-,
   "Total Volume Lifted": "总举起重量",
   "Total all-time volume: ": "历史总重量：",
   "That is equivalent to lifting {0} elephants!": "这相当于举起了 {0} 头大象！",

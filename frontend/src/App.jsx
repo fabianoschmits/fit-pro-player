@@ -43,6 +43,7 @@ function Shell() {
   const loc = useLocation()
   const { S, user, ready } = useStore()
   const isGuest = useStore(s => s.isGuest())
+  const authed = user || isGuest
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => { applyPrefs(S.theme, S.accent) }, [S.theme, S.accent])
@@ -50,10 +51,14 @@ function Shell() {
   useEffect(() => { document.documentElement.lang = (S.lang || DEFAULT_LANG) === 'pt' ? 'pt-BR' : (S.lang || DEFAULT_LANG) }, [langV, S.lang])
   // every tab/route change starts at the top of the page
   useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
+  // First entry is a single, resumable setup inside Plan. Until it is complete, other routes
+  // cannot accidentally surface an empty dashboard or the retired Home overlay.
+  useEffect(() => {
+    if (ready && authed && !S.onboardingDone && loc.pathname !== '/plan') navigate('/plan', { replace: true })
+  }, [S.onboardingDone, authed, loc.pathname, navigate, ready])
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
 
-  const authed = user || isGuest
   if (!ready && !authed) return (
     <div id="app">
       <div className="boot-loading">

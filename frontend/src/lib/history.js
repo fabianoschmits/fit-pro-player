@@ -241,14 +241,15 @@ export function bestWeightFor(S, exId) {
 export function isWorkoutDay(st, isoDate) {
   const overrides = st.dayPlan || {}
   const overrideId = overrides[isoDate]
-  if (overrideId !== undefined) return overrideId !== null
+  if (overrideId !== undefined) return overrideId !== 'rest' && !!(st.routines || []).some(r => r.id === overrideId)
+  if (st.planMode === 'daily') return false
   const d = new Date(isoDate + 'T00:00:00') // Local timezone parsing of the date
   return !!st.week[d.getDay()]
 }
 
 // Calculates a suggested starting weight based on the user's body weight and the exercise type.
 export function suggestedWeightFor(st, exId) {
-  const bw = lastBW(st)?.w || st.targetW || 70
+  const bw = (st ? lastBW(st)?.w : null) || st?.targetW || 70
   const ex = EXIDX[exId]
   if (!ex) return 20
 
@@ -271,11 +272,12 @@ export function suggestedWeightFor(st, exId) {
   return Math.max(2.5, Math.round((bw * pct) / 2.5) * 2.5)
 }
 export function effectiveRoutineId(S, iso) {
-  const ov = S.dayPlan[iso]
+  const ov = S.dayPlan?.[iso]
   if (ov === 'rest') return null
-  if (ov && S.routines.some(r => r.id === ov)) return ov
+  if (ov && S.routines?.some(r => r.id === ov)) return ov
+  if (S.planMode === 'daily') return null
   const wd = new Date(iso + 'T12:00:00').getDay()
-  return S.week[wd] || null
+  return S.week?.[wd] || null
 }
 export function effectiveRoutine(S, iso) {
   const id = effectiveRoutineId(S, iso)

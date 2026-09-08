@@ -1,5 +1,8 @@
+import { onboardingLocale } from '../lib/onboarding-locales.js'
+
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...onboardingLocale('ko'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",
   'Confirm': '확인',
@@ -611,7 +614,6 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
-,
   "Total Volume Lifted": "총 들어올린 중량",
   "Total all-time volume: ": "전체 누적 중량: ",
   "That is equivalent to lifting {0} elephants!": "이것은 코끼리 {0}마리를 들어올린 것과 같습니다!",

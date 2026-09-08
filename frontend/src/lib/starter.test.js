@@ -7,7 +7,7 @@ describe('starter plan', () => {
     const active = new Set(EXERCISE_SPRITE_EXERCISE_IDS)
     const routines = starterRoutines()
 
-    expect(routines).toHaveLength(3)
+    expect(routines).toHaveLength(7)
     expect(routines.every(routine => routine.ex.length >= 5)).toBe(true)
     expect(routines.flatMap(routine => routine.ex).every(exercise => active.has(exercise.id))).toBe(true)
   })
@@ -16,7 +16,7 @@ describe('starter plan', () => {
     const first = starterRoutines()
     const second = starterRoutines()
 
-    expect(new Set(first.map(routine => routine.id)).size).toBe(3)
+    expect(new Set(first.map(routine => routine.id)).size).toBe(7)
     expect(first.map(routine => routine.id)).not.toEqual(second.map(routine => routine.id))
     first[0].ex.pop()
     expect(second[0].ex).toHaveLength(6)

@@ -1,5 +1,8 @@
+import { onboardingLocale } from '../lib/onboarding-locales.js'
+
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  ...onboardingLocale('pt'),
   "your fingerprint, face or PIN": "sua impressão digital, reconhecimento facial ou PIN",
   "fingerprint or face unlock": "impressão digital ou reconhecimento facial",
   "Confirm": "Confirmar",

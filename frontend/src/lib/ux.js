@@ -49,15 +49,10 @@ export function startTabShortLabel(S) {
 
 /** null when the weekly plan is fully set up. */
 export function planSetupProgress(S) {
+  if (!S.onboardingDone || S.planMode === 'daily') return null
   if (!S.routines.length) return { step: 1, total: 3, label: t('Create routines') }
   if (!S.routines.some(r => r.ex.length > 0)) return { step: 2, total: 3, label: t('Add exercises') }
   const scheduled = WEEK_DAYS.filter(d => S.week[d] && S.routines.some(r => r.id === S.week[d])).length
   if (!scheduled) return { step: 3, total: 3, label: t('Schedule your week') }
   return null
-}
-
-export function needsOnboarding(S) {
-  if (S.onboardingDone) return false
-  if (S.routines.length || S.workouts.length || S.active) return false
-  return true
 }

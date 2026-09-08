@@ -150,6 +150,12 @@ export function buildDemoState() {
   }
 
   return {
+    onboardingDone: true,
+    planMode: 'weekly',
+    profile: {
+      name: 'Alex', birthDate: '1992-04-18', sex: 'male', heightCm: 178,
+      startWeight: BW_FROM, goal: 'lose_weight', experience: 'intermediate', completedAt: Date.now()
+    },
     routines: [push, pull, legs],
     week: { 1: push.id, 3: pull.id, 5: legs.id },
     dayPlan,

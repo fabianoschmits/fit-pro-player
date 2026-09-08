@@ -1,5 +1,8 @@
+import { onboardingLocale } from '../lib/onboarding-locales.js'
+
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...onboardingLocale('ru'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",
   'Confirm': 'Подтвердить',
@@ -611,7 +614,6 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
-,
   "Total Volume Lifted": "Общий поднятый вес",
   "Total all-time volume: ": "Общий исторический вес: ",
   "That is equivalent to lifting {0} elephants!": "Это равносильно поднятию {0} слонов!",

@@ -5,12 +5,14 @@ import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED, STANDALONE } from '../lib/demo.js'
 import { guestAllowed } from '../lib/guest.js'
 import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
-import { starterRoutines } from '../lib/starter.js'
+import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from '../lib/starter.js'
+import { DEFAULT_PROFILE, normalizeProfile } from '../lib/profile.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
+  profile: DEFAULT_PROFILE, planMode: 'weekly',
   bodyweight: [], routines: [], week: {}, dayPlan: {},
   exWeights: {}, workouts: [], active: null, customEx: [], mediaSize: 'mini',
   // effort: which per-set effort scale is logged — 'none' | 'rir' | 'rpe'. null, not 'none', so
@@ -23,25 +25,54 @@ export const DEF = {
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 
-function loadState() {
-  let state = clone(DEF)
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) state = Object.assign(state, JSON.parse(raw))
-  } catch (e) { /* ignore */ }
-  
-  // Inject default routines for users that don't have any routines yet
-  if (!state.routines || state.routines.length === 0) {
-    state.routines = starterRoutines(state)
-    // Default the first 3 days to Mon, Wed, Fri
-    if (state.routines[0]) state.week[1] = state.routines[0].id
-    if (state.routines[1]) state.week[3] = state.routines[1].id
-    if (state.routines[2]) state.week[5] = state.routines[2].id
+const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+
+// Older installations did not have a personal-profile object. Keep established users out of
+// first-run setup, but do not mistake the auto-injected starter routines for personal data.
+function legacyHasPersonalData(state) {
+  if (state.onboardingDone || state.active) return true
+  if ((state.workouts || []).length || (state.bodyweight || []).length || (state.customEx || []).length) return true
+  return (state.routines || []).some(routine => !isStarterRoutine(routine))
+}
+
+export function normalizeState(source) {
+  const raw = object(source)
+  const state = Object.assign(clone(DEF), raw)
+  state.bodyweight = Array.isArray(state.bodyweight) ? state.bodyweight : []
+  state.routines = Array.isArray(state.routines) ? state.routines : []
+  state.workouts = Array.isArray(state.workouts) ? state.workouts : []
+  state.customEx = Array.isArray(state.customEx) ? state.customEx : []
+  state.week = object(state.week)
+  state.dayPlan = object(state.dayPlan)
+  state.exWeights = object(state.exWeights)
+  state.planMode = state.planMode === 'daily' ? 'daily' : 'weekly'
+  state.profile = normalizeProfile(raw.profile, state.body)
+
+  if (!Object.prototype.hasOwnProperty.call(raw, 'profile') && legacyHasPersonalData(raw)) {
+    state.onboardingDone = true
+    state.profile.startWeight = state.bodyweight[0]?.w || null
+    state.profile.completedAt = raw._ts || Date.now()
   }
+
+  annotateStarterRoutines(state)
+  if (!state.onboardingDone && !state.routines.length) ensureStarterRoutines(state)
   return state
 }
 
-const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length)
+function loadState() {
+  let state = null
+  try {
+    const raw = localStorage.getItem(KEY)
+    if (raw) state = JSON.parse(raw)
+  } catch (e) { /* ignore */ }
+  return normalizeState(state || DEF)
+}
+
+const hasData = st => !!(
+  st?.onboardingDone || st?.active || st?.profile?.name
+  || (st?.workouts || []).length || (st?.bodyweight || []).length || (st?.customEx || []).length
+  || (st?.routines || []).some(routine => !isStarterRoutine(routine))
+)
 
 export const useStore = create((set, get) => {
   let pushTm = null
@@ -90,7 +121,7 @@ export const useStore = create((set, get) => {
     localStorage.removeItem('gym_guest')
     localStorage.removeItem('gym_dirty')
     localStorage.removeItem(KEY)
-    persist(clone(DEF), false)
+    persist(normalizeState(DEF), false)
   }
 
   return {
@@ -104,7 +135,7 @@ export const useStore = create((set, get) => {
       mut(S)
       persist(S, push)
     },
-    replaceState(S, push = false) { persist(clone(S), push) },
+    replaceState(S, push = false) { persist(normalizeState(S), push) },
 
     isGuest: () => localStorage.getItem('gym_guest') === '1',
     setGuest(v) { if (v) localStorage.setItem('gym_guest', '1'); else localStorage.removeItem('gym_guest'); set({}) },
@@ -138,7 +169,7 @@ export const useStore = create((set, get) => {
         const dirty = localStorage.getItem('gym_dirty') === '1'
         if (state && (!hasData(S) || ((state._ts || 0) >= (S._ts || 0) && !dirty))) {
           const active = S.active
-          const next = Object.assign(clone(DEF), state)
+          const next = normalizeState(state)
           if (active) next.active = active
           persist(next, false)
         } else if (hasData(S)) { await get().pushState() }
@@ -166,7 +197,7 @@ export const useStore = create((set, get) => {
     async resetDemo() {
       const { buildDemoState } = await import('../lib/demoSeed.js')
       localStorage.removeItem('gym_dirty')
-      persist(Object.assign(clone(DEF), buildDemoState()), false)
+      persist(normalizeState(Object.assign(clone(DEF), buildDemoState())), false)
     },
 
     // Boot: ask the server who we are, then pull.
@@ -183,7 +214,7 @@ export const useStore = create((set, get) => {
         const saved = await nativeLoad()
         const S = get().S
         if (saved && (!hasData(S) || (saved._ts || 0) >= (S._ts || 0))) {
-          persist(Object.assign(clone(DEF), saved), false)
+          persist(normalizeState(saved), false)
         } else if (hasData(S)) {
           nativeSave(S)   // first run after an update from a file-less version: seed the mirror
         }

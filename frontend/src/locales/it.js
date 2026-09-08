@@ -1,5 +1,8 @@
+import { onboardingLocale } from '../lib/onboarding-locales.js'
+
 // Italian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...onboardingLocale('it'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",
   'Confirm': 'Conferma',
@@ -611,7 +614,6 @@ export default {
   "Next week": "Next week",
   "Previous month": "Previous month",
   "Previous week": "Previous week",
-,
   "Total Volume Lifted": "Volume Totale Sollevato",
   "Total all-time volume: ": "Volume storico totale: ",
   "That is equivalent to lifting {0} elephants!": "Equivale a sollevare {0} elefanti!",

@@ -125,7 +125,7 @@ export default function TabBar({ onStart }) {
 
   const cur = loc.pathname.split('/')[1] || 'home'
 
-  if (!user && !isGuest) return null
+  if ((!user && !isGuest) || !S.onboardingDone) return null
 
   const startWorkout = () => {
     if (S.active) { nav('/workout'); return }

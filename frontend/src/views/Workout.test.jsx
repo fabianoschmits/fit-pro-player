@@ -142,7 +142,8 @@ describe('Workout set completion flow', () => {
       exercise('superset-b', [true, true, false], { sg: group }),
       exercise('next-exercise', [false, false, false]),
     ], 1)
-    await toggleSet(5)
+    // The completed first member auto-collapses, so the partner's final visible row is index 2.
+    await toggleSet(2)
 
     expect(mocks.S.active.cur).toBe(1)
     expect(mocks.startRest).toHaveBeenCalledWith(90, expect.any(Function))

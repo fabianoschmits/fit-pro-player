@@ -4,13 +4,13 @@ import { useStore } from '../store/useStore.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW } from '../lib/history.js'
 import { fmtNum, fmtDate, todayISO, isoOf, weekKey, DAYS } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
-import { needsOnboarding, planSetupProgress } from '../lib/ux.js'
+import { planSetupProgress } from '../lib/ux.js'
 import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor, repeatLastWorkout, WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
-import Onboarding from '../components/Onboarding.jsx'
+import { routineName } from '../lib/starter.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 
 export default function Home() {
@@ -76,7 +76,7 @@ export default function Home() {
   const expandedWeeks = calOpen ? [1, 2, 3].map(o => ({ offset: weekOffset + o, ...buildStrip(weekOffset + o) })) : []
 
   const wThisWeek = S.workouts.filter(w => weekKey(w.d) === weekKey(todayISO())).length
-  const plannedPerWeek = Object.keys(S.week).filter(k => S.week[k]).length
+  const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(k => S.week[k]).length
   const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
 
   const onToday = () => {
@@ -91,10 +91,8 @@ export default function Home() {
   }
 
   return <div className="narrow">
-    {needsOnboarding(S) && <Onboarding />}
-
     <div className="hdr">
-      <div><h1>{user ? t('Hi {0}', user.name) : 'Fit Pro Player'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
+      <div><h1>{S.profile?.name || user?.name ? t('Hi {0}', S.profile?.name || user.name) : 'Fit Pro Player'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
       <button className="iconbtn" onClick={() => update(s => { s.theme = s.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
         <Icon name={S.theme === 'light' ? 'sun' : 'moon'} />
       </button>
@@ -137,7 +135,7 @@ export default function Home() {
           </span>
           <div style={{ minWidth: 0 }}>
             <div className="lbl2">{t('Today')}</div>
-            <div className="ttl">{S.active ? t('{0} — in progress', S.active.name) : routine ? routine.name : t('Rest day')}{todayOvr && routine ? ' · ' + t('rescheduled') : ''}</div>
+            <div className="ttl">{S.active ? t('{0} — in progress', S.active.name) : routine ? routineName(routine) : t('Rest day')}{todayOvr && routine ? ' · ' + t('rescheduled') : ''}</div>
           </div>
         </div>
         {S.active ? <span className="tag" style={{ color: 'var(--orange)', background: 'color-mix(in srgb,var(--orange) 16%,transparent)' }}>{t('Resume')}</span>
