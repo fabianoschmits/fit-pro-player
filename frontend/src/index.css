@@ -186,9 +186,17 @@ body.landing-mode #tabbar{display:none}
   --landing-max:1200px;--landing-edge:max(18px,calc((100vw - var(--landing-max))/2));
   min-height:100vh;overflow:hidden;background:var(--bg);color:var(--label);
 }
-.app-plan-profile-header{width:calc(100% - 32px);margin:10px auto 0}
-.app-plan-profile-header .grow{align-items:center;text-align:center;justify-content:center}
+.app-plan-profile-header{width:calc(100% - 32px);margin:10px auto 0;padding-right:98px}
+.app-plan-profile-header .grow{align-items:flex-start;text-align:left;justify-content:flex-start}
 .app-plan-profile-header .grow strong{font-family:ui-rounded,'Avenir Next Rounded','Arial Rounded MT Bold',-apple-system,sans-serif;font-size:clamp(17px,5.8vw,24px);font-weight:850;letter-spacing:-.045em;line-height:1.02;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;text-wrap:balance}
+.app-profile-copy{padding-top:2px}
+.profile-message-stage{position:relative;display:block;width:100%;height:24px;overflow:hidden;margin-top:8px}
+.profile-message{position:absolute;inset:0 auto auto 0;width:100%;color:var(--label-2);font-size:clamp(12px,3.5vw,14px);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;will-change:transform,opacity,filter}
+.profile-goal-wrap{position:absolute;z-index:2;right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:5px;color:var(--acc)}
+.profile-goal-ring{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--acc) var(--profile-goal-progress),color-mix(in srgb,var(--acc) 16%,var(--surface-2)) 0);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 35%,transparent),0 10px 28px -18px var(--acc)}
+.profile-goal-ring::before{content:"";position:absolute;inset:8px;border-radius:inherit;background:color-mix(in srgb,var(--surface) 82%,#000);box-shadow:inset 0 0 18px rgba(0,0,0,.2)}
+.profile-goal-ring .icn{position:relative;z-index:1;font-size:27px;color:var(--label)}
+.profile-goal-percent{font-size:12px;font-weight:850;line-height:1;color:var(--label)}
 .landing-nav-shell{
   height:68px;position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);
   border-bottom:var(--hair) solid var(--surface-border);backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25);

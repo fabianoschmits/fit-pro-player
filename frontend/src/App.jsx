@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
@@ -16,7 +17,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
-import { ageFromBirthDate, heightText, weightText } from './lib/profile.js'
+import { currentProfileWeight } from './lib/profile.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 import Home from './views/Home.jsx'
@@ -32,6 +33,47 @@ import More from './views/More.jsx'
 
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
 
+const PROFILE_MOTIVATION_MESSAGES = [
+  'Um treino por vez.',
+  'Hoje conta muito.',
+  'Continue firme.',
+  'Seu ritmo vale.',
+  'Voce esta evoluindo.',
+  'Mais uma vitoria.',
+  'Forca no processo.',
+  'Constancia vence.',
+  'Siga aparecendo.',
+  'Treino feito pesa.',
+  'Pequenos passos.',
+  'A meta esta viva.',
+  'Foco no proximo.',
+  'Seu corpo responde.',
+  'Nao quebra a sequencia.',
+  'Cada serie soma.',
+  'Energia em acao.',
+  'Vai no seu tempo.',
+  'Hoje tem progresso.',
+  'Voce chegou ate aqui.',
+]
+
+function weightGoalRemainingPercent(S) {
+  const current = currentProfileWeight(S)
+  const target = Number(S.targetW) || null
+  if (!(current > 0) || !(target > 0)) return null
+  const first = (S.bodyweight || []).reduce((earliest, entry) => {
+    if (!entry || !(entry.w > 0)) return earliest
+    if (!earliest) return entry
+    if (String(entry.d || '') < String(earliest.d || '')) return entry
+    if (String(entry.d || '') === String(earliest.d || '') && (entry.t || 0) < (earliest.t || 0)) return entry
+    return earliest
+  }, null)?.w
+  const start = first > 0 ? first : current
+  const total = Math.abs(start - target)
+  if (!total) return current === target ? 0 : null
+  const remaining = Math.min(1, Math.max(0, Math.abs(current - target) / total))
+  return Math.round(remaining * 100)
+}
+
 function applyPrefs(theme, accent) {
   const de = document.documentElement
   de.dataset.theme = theme === 'light' ? 'light' : 'dark'
@@ -41,12 +83,47 @@ function applyPrefs(theme, accent) {
 }
 
 function ProfileHeader({ S }) {
-  const age = ageFromBirthDate(S.profile?.birthDate)
-  const details = [age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')
+  const [messageIndex, setMessageIndex] = useState(0)
+  const reduceMotion = useReducedMotion()
+  const remainingPercent = weightGoalRemainingPercent(S)
+  const progress = remainingPercent == null ? 0 : 100 - remainingPercent
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setMessageIndex(index => {
+        if (PROFILE_MOTIVATION_MESSAGES.length < 2) return index
+        let next = index
+        while (next === index) next = Math.floor(Math.random() * PROFILE_MOTIVATION_MESSAGES.length)
+        return next
+      })
+    }, 7000)
+    return () => window.clearInterval(interval)
+  }, [])
   if (!S.onboardingDone || !S.profile?.name) return null
   return <div className="card plan-profile-card app-plan-profile-header" aria-label={S.profile.name}>
     <span className="plan-profile-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile.avatarId} /></span>
-    <span className="grow"><strong>{S.profile.name}</strong>{details && <small>{details}</small>}</span>
+    <span className="grow app-profile-copy">
+      <strong>{S.profile.name}</strong>
+      <span className="profile-message-stage" aria-live="polite">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.small
+            key={messageIndex}
+            className="profile-message"
+            initial={reduceMotion ? { opacity: 1 } : { x: 28, opacity: 0, filter: 'blur(4px)' }}
+            animate={reduceMotion ? { opacity: 1 } : { x: 0, opacity: 1, filter: 'blur(0px)' }}
+            exit={reduceMotion ? { opacity: 0 } : { x: -28, opacity: 0, filter: 'blur(4px)' }}
+            transition={reduceMotion ? { duration: 0 } : { type: 'spring', duration: 0.48, bounce: 0 }}
+          >
+            {PROFILE_MOTIVATION_MESSAGES[messageIndex]}
+          </motion.small>
+        </AnimatePresence>
+      </span>
+    </span>
+    <span className="profile-goal-wrap" aria-label={remainingPercent == null ? t('Goal') : `${remainingPercent}%`}>
+      <span className="profile-goal-ring" style={{ '--profile-goal-progress': `${progress}%` }}>
+        <Icon name="scale" />
+      </span>
+      <span className="profile-goal-percent">{remainingPercent == null ? '--%' : `${remainingPercent}%`}</span>
+    </span>
   </div>
 }
 
