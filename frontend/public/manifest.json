@@ -1,6 +1,6 @@
 {
   "name": "Fit Pro Player",
-  "short_name": "Fit Pro",
+  "short_name": "Fit Pro Player",
   "id": "./",
   "description": "Planeje treinos, acompanhe cargas e monitore sua evolução.",
   "start_url": "./",
@@ -11,6 +11,6 @@
   "theme_color": "#000000",
   "icons": [
     { "src": "icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ]
 }
