@@ -148,6 +148,27 @@ describe('Workout set completion flow', () => {
     expect(mocks.S.active.cur).toBe(1)
     expect(mocks.startRest).toHaveBeenCalledWith(90, expect.any(Function))
   })
+
+  it('advances a completed ordinary exercise after rest so the next one uses the same flow', async () => {
+    await mount([
+      exercise('timed-hold', [false], {
+        target: { mode: 'time', sec: 30, bodyweight: true },
+        sets: [{ sec: 30, done: false }],
+      }),
+      exercise('next-hold', [false], {
+        target: { mode: 'time', sec: 30, bodyweight: true },
+        sets: [{ sec: 30, done: false }],
+      }),
+    ])
+
+    await toggleSet(0)
+
+    expect(mocks.startRest).toHaveBeenCalledWith(90, expect.any(Function))
+    const afterRest = mocks.startRest.mock.calls[0][1]
+    await act(async () => { afterRest() })
+
+    expect(mocks.S.active.cur).toBe(1)
+  })
 })
 
 describe('superset flow survives an exercise being removed mid-session', () => {

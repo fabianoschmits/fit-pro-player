@@ -68,7 +68,7 @@ function Elapsed({ start }) {
 }
 
 /* ---------- one exercise block (reps: weight×reps · time: a held duration · cardio: duration+speed) ---------- */
-function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onStartNextTimed, onPairPrev, onPairNext }) {
+function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
   const entry = S.active.entries[entryIdx]
@@ -135,7 +135,7 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
   )
   return <>
     <Media ex={ex} key={entry.id} compact={compact} minimizable />
-    <WorkSetOverlay entryIdx={entryIdx} onStartNext={onStartNextTimed} />
+    <WorkSetOverlay entryIdx={entryIdx} />
     <div className="row between" style={{ marginBottom: 6 }}>
       <div style={{ fontSize: compact ? 17 : 20, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2 }}>{exerciseName(ex)}</div>
       <button className="iconbtn" aria-label={t('Details')} onClick={() => exerciseDetailSheet(ex)}><Icon name="info" /></button>
@@ -337,7 +337,7 @@ function ActiveWorkout() {
     }, { entryIdx: idx, setIdx: i, isLastSet, onNext })
   }
   const startNextTimed = idx => {
-    const entry = A.entries[idx]
+    const entry = useStore.getState().S.active?.entries?.[idx]
     if (!entry) return
     const nextIdx = entry.sets.findIndex(s => !s.done)
     if (nextIdx >= 0) startTimed(idx, nextIdx)
@@ -385,7 +385,13 @@ function ActiveWorkout() {
 
       // Singleton units are ordinary exercises: start rest timer and display completion sheet AFTER rest ends
       if (freshUnitDone) {
-        startRest(S.restSec, triggerFinishAction)
+        startRest(S.restSec, () => {
+          if (!freshLastUnit && !askTop) {
+            const nextUnit = freshUnits[freshUnitIdx + 1]
+            if (nextUnit?.length) update(s => { if (s.active) s.active.cur = nextUnit[0] })
+          }
+          triggerFinishAction()
+        })
         return
       }
       if (!freshUnit || freshUnit.length <= 1) {
@@ -462,11 +468,11 @@ function ActiveWorkout() {
           {unit.map((idx, k) => <div key={idx} ref={el => { exRefs.current[idx] = el }} className="ss-ex" data-exidx={idx}>
             {k > 0 && <div className="ss-amp">+</div>}
             <ExerciseBlock entryIdx={idx} compact
-              onToggle={i => toggle(idx, i)} onField={(i, f, v) => setField(idx, i, f, v)} onAddSet={() => addSet(idx)} onRemoveSet={() => removeSet(idx)} onAddWarmup={() => addWarmup(idx)} onRemoveSetAt={i => removeSetAt(idx, i)} onStartTimed={i => startTimed(idx, i)} onStartNextTimed={() => startNextTimed(idx)} />
+              onToggle={i => toggle(idx, i)} onField={(i, f, v) => setField(idx, i, f, v)} onAddSet={() => addSet(idx)} onRemoveSet={() => removeSet(idx)} onAddWarmup={() => addWarmup(idx)} onRemoveSetAt={i => removeSetAt(idx, i)} onStartTimed={i => startTimed(idx, i)} />
           </div>)}
         </div>
       ) : (
-        <ExerciseBlock entryIdx={cur} onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onAddSet={() => addSet(cur)} onRemoveSet={() => removeSet(cur)} onAddWarmup={() => addWarmup(cur)} onRemoveSetAt={i => removeSetAt(cur, i)} onStartTimed={i => startTimed(cur, i)} onStartNextTimed={() => startNextTimed(cur)} onPairPrev={onPairPrev} onPairNext={onPairNext} />
+        <ExerciseBlock entryIdx={cur} onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onAddSet={() => addSet(cur)} onRemoveSet={() => removeSet(cur)} onAddWarmup={() => addWarmup(cur)} onRemoveSetAt={i => removeSetAt(cur, i)} onStartTimed={i => startTimed(cur, i)} onPairPrev={onPairPrev} onPairNext={onPairNext} />
       )}
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 

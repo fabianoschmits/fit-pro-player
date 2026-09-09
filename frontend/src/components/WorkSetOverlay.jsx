@@ -5,7 +5,7 @@ import Icon from './Icon.jsx'
 
 const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0')
 
-export default function WorkSetOverlay({ entryIdx, onStartNext }) {
+export default function WorkSetOverlay({ entryIdx }) {
   const work = useUI(s => s.work)
   const { finishWorkEarly, stopWork, skipWorkRest } = useUI()
 
@@ -22,9 +22,8 @@ export default function WorkSetOverlay({ entryIdx, onStartNext }) {
     // onNext is set by startTimed when there are more sets; it starts the next timed set
     if (work.onNext) {
       work.onNext()
-    } else if (onStartNext) {
+    } else {
       skipWorkRest()
-      onStartNext()
     }
   }
 
@@ -89,7 +88,9 @@ export default function WorkSetOverlay({ entryIdx, onStartNext }) {
           {isRest ? (
             <>
               <Button variant="ghost" onClick={skipWorkRest}>{t('Skip rest')}</Button>
-              <Button variant="primary" icon="play" onClick={handleStartNext}>{t('Next set')}</Button>
+              <Button variant="primary" icon="play" onClick={handleStartNext}>
+                {work.onNext ? t('Next set') : t('Next exercise')}
+              </Button>
             </>
           ) : (
             <>
