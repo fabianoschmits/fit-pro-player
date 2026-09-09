@@ -6,7 +6,7 @@ import { DEMO, DEMO_SEEDED, STANDALONE } from '../lib/demo.js'
 import { guestAllowed } from '../lib/guest.js'
 import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
 import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from '../lib/starter.js'
-import { DEFAULT_PROFILE, normalizeProfile } from '../lib/profile.js'
+import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
@@ -51,6 +51,7 @@ export function normalizeState(source) {
   state.exWeights = object(state.exWeights)
   state.planMode = state.planMode === 'daily' ? 'daily' : 'weekly'
   state.profile = normalizeProfile(raw.profile, state.body)
+  syncProfileWeightFromBodyweight(state)
 
   if (!hasCompleteProfile(state.profile) && legacyHasPersonalData(raw)) {
     state.onboardingDone = false

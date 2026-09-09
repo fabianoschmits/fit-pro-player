@@ -3,10 +3,10 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { DAYN, DAYS, exCount, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { lastBW } from '../lib/history.js'
 import { isStarterRoutine, routineName } from '../lib/starter.js'
 import {
   EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS,
+  currentProfileWeight,
   decimalNumber, defaultBirthDate, formatPersonName, heightCmFromText, heightInput,
   heightText, normalizeProfile, weightInput, weightText,
 } from '../lib/profile.js'
@@ -34,7 +34,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const update = useStore(s => s.update)
   const reduceMotion = useReducedMotion()
   const profile = normalizeProfile(S.profile, S.body)
-  const lastWeight = lastBW(S)?.w || null
+  const lastWeight = currentProfileWeight(S)
   const scheduled = WEEK_DAYS.filter(day => S.week?.[day] && S.routines.some(r => r.id === S.week[day]))
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
@@ -45,7 +45,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     birthDate: profile.birthDate || defaultBirthDate(),
     sex: profile.sex || (S.body === 'female' ? 'female' : 'male'),
     height: heightText(profile.heightCm),
-    startWeight: weightText(profile.startWeight || lastWeight),
+    startWeight: weightText(lastWeight || profile.startWeight),
     targetWeight: weightText(S.targetW),
     goal: profile.goal || '',
     experience: profile.experience || '',
@@ -113,7 +113,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       || !S.routines.some(routine => routine.planGenerated)
       || S.profile?.goal !== draft.goal
       || S.profile?.experience !== draft.experience
-      || Number(S.profile?.startWeight) !== startWeight
+      || Number(currentProfileWeight(S)) !== startWeight
       || S.planMode !== draft.planMode
       || (draft.planMode === 'weekly' && scheduled.length !== days.length)
     update(state => {
@@ -134,12 +134,10 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       state.targetW = targetWeight
       state.planMode = draft.planMode
 
-      if (!editing) {
-        const existing = state.bodyweight.find(entry => entry.d === today)
-        if (existing) { existing.w = startWeight; existing.t = Date.now() }
-        else state.bodyweight.push({ d: today, w: startWeight, t: Date.now() })
-        state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
-      }
+      const existing = state.bodyweight.find(entry => entry.d === today)
+      if (existing) { existing.w = startWeight; existing.t = Date.now() }
+      else state.bodyweight.push({ d: today, w: startWeight, t: Date.now() })
+      state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
 
       const ready = planInputsChanged
         ? applyPersonalizedPlan(state, state.profile, draft.planMode === 'daily' ? 7 : days.length, { daily: draft.planMode === 'daily' })
@@ -184,6 +182,13 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       state.unit = draft.unit
       if (targetWeight) state.targetW = targetWeight
       state.planMode = draft.planMode
+      if (startWeight) {
+        const today = todayISO()
+        const existing = state.bodyweight.find(entry => entry.d === today)
+        if (existing) { existing.w = startWeight; existing.t = Date.now() }
+        else state.bodyweight.push({ d: today, w: startWeight, t: Date.now() })
+        state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
+      }
     })
     onDone?.()
   }
@@ -232,7 +237,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <Segmented options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} value={draft.unit} onChange={unit => set({ unit })} />
       <div className="wizard-measure-grid">
         <label><span>{t('Height')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="1,76" value={draft.height} onChange={event => set({ height: heightInput(event.target.value) })} /><i>m</i></span></label>
-        <label><span>{t('Weight at signup')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="71,2" value={draft.startWeight} onChange={event => set({ startWeight: weightInput(event.target.value) })} /><i>{draft.unit}</i></span></label>
+        <label><span>{t('Body weight')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="71,2" value={draft.startWeight} onChange={event => set({ startWeight: weightInput(event.target.value) })} /><i>{draft.unit}</i></span></label>
       </div>
       <label className="wizard-label" htmlFor="wizard-target">{t('Target weight')} <small>{t('optional')}</small></label>
       <span className="wizard-input-unit"><input id="wizard-target" className="field" inputMode="decimal" placeholder="68,0" value={draft.targetWeight} onChange={event => set({ targetWeight: weightInput(event.target.value) })} /><i>{draft.unit}</i></span>

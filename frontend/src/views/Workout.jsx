@@ -61,6 +61,7 @@ function StartChooser() {
 function Elapsed({ start }) {
   const [t, setT] = useState('0:00')
   useEffect(() => {
+    if (!start) { setT('0:00'); return undefined }
     const tick = () => { const s = Math.floor((Date.now() - start) / 1000); setT(Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')) }
     tick(); const iv = setInterval(tick, 1000); return () => clearInterval(iv)
   }, [start])
@@ -68,7 +69,7 @@ function Elapsed({ start }) {
 }
 
 /* ---------- one exercise block (reps: weight×reps · time: a held duration · cardio: duration+speed) ---------- */
-function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext }) {
+function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
   const entry = S.active.entries[entryIdx]
@@ -126,23 +127,29 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
   // as every other +/- field in the app.
   const cell = (s, i, col, cls) => (
     <div className={'stp ' + cls}>
-      <button aria-label={t('Decrease')} onClick={() => bump(s, i, col, -1)}><Icon name="minus" /></button>
+      <button aria-label={t('Decrease')} disabled={locked} onClick={() => bump(s, i, col, -1)}><Icon name="minus" /></button>
       {/* a typed effort is capped — there is no RPE 12, and 12 reps in reserve is a warm-up */}
       <span className="val"><NumberField decimal={col.dec} nullable={col.opt} value={s[col.f] ?? ''}
-        onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : v)} /></span>
-      <button aria-label={t('Increase')} onClick={() => bump(s, i, col, 1)}><Icon name="plus" /></button>
+        disabled={locked} onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : v)} /></span>
+      <button aria-label={t('Increase')} disabled={locked} onClick={() => bump(s, i, col, 1)}><Icon name="plus" /></button>
     </div>
   )
   return <>
     <Media ex={ex} key={entry.id} compact={compact} minimizable />
     <WorkSetOverlay entryIdx={entryIdx} />
+    {locked && (
+      <button type="button" className="exercise-start-card" onClick={onStartWorkout}>
+        <span className="exercise-start-card__label">{t('Start workout')}</span>
+        <span className="exercise-start-card__button"><Icon name="play" /></span>
+      </button>
+    )}
     <div className="row between" style={{ marginBottom: 6 }}>
       <div style={{ fontSize: compact ? 17 : 20, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2 }}>{exerciseName(ex)}</div>
       <button className="iconbtn" aria-label={t('Details')} onClick={() => exerciseDetailSheet(ex)}><Icon name="info" /></button>
     </div>
     {!compact && (onPairPrev || onPairNext) && <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-      {onPairPrev && <Button size="xs" variant="tinted" icon="link" title={t('Make superset with previous')} onClick={onPairPrev}>{t('Make superset with previous')}</Button>}
-      {onPairNext && <Button size="xs" variant="tinted" icon="link" title={t('Make superset with next')} onClick={onPairNext}>{t('Make superset with next')}</Button>}
+      {onPairPrev && <Button size="xs" variant="tinted" icon="link" title={t('Make superset with previous')} disabled={locked} onClick={onPairPrev}>{t('Make superset with previous')}</Button>}
+      {onPairNext && <Button size="xs" variant="tinted" icon="link" title={t('Make superset with next')} disabled={locked} onClick={onPairNext}>{t('Make superset with next')}</Button>}
     </div>}
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
       {cardio && <span className="tag acc"><Icon name="figureRun" />{t('Cardio')}</span>}
@@ -167,7 +174,7 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
         <span className="ex-done-banner__expand"><Icon name="expand" /></span>
       </button>
     ) : (
-      <div className="card" style={{ marginTop: 10, marginBottom: 0 }}>
+      <div className={'card exercise-input-card' + (locked ? ' is-locked' : '')} style={{ marginTop: 10, marginBottom: 0 }}>
         {/* the header carries the same eff3 sizing as the rows, or the labels drift off their columns */}
         <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}{timed && <span className="ck-sp" />}<span className="ck-sp" /></div>
         {entry.sets.map((s, i) => {
@@ -186,24 +193,24 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
               {col3 && cell(s, i, col3, 'eff')}
               {/* A timed set is started, not typed: the timer counts the hold down and checks the
                   set off itself. The checkbox stays for anyone who timed it on their own watch. */}
-              {timed && <button className="setgo" aria-label={t('Start set')} disabled={s.done || !!(working && working.phase === 'work')}
+              {timed && <button className="setgo" aria-label={t('Start set')} disabled={locked || s.done || !!(working && working.phase === 'work')}
                 onClick={() => onStartTimed(i)}><Icon name="play" /></button>}
               {warm && <button className="iconbtn" style={{ fontSize: 13 }} aria-label={t('Remove set')}
-                disabled={entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
-              <Check checked={s.done} onChange={() => onToggle(i)} playMode />
+                disabled={locked || entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
+              <Check checked={s.done} onChange={() => onToggle(i)} playMode disabled={locked} />
             </div>
           </div>
         })}
         <div style={{ height: 8 }} />
         {allDone ? (
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <Button size="sm" variant="ghost" icon="minimize" onClick={() => setCollapsed(true)}>{t('Collapse')}</Button>
+            <Button size="sm" variant="ghost" icon="minimize" disabled={locked} onClick={() => setCollapsed(true)}>{t('Collapse')}</Button>
           </div>
         ) : (
           <div className="row" style={{ flexWrap: 'wrap' }}>
-            <Button size="sm" icon="flame" onClick={onAddWarmup}>{t('Add warm-up set')}</Button>
-            <Button size="sm" icon="minus" disabled={entry.sets.length <= 1} onClick={onRemoveSet}>{t('Remove set')}</Button>
-            <Button size="sm" icon="plus" onClick={onAddSet}>{t('Add set')}</Button>
+            <Button size="sm" icon="flame" disabled={locked} onClick={onAddWarmup}>{t('Add warm-up set')}</Button>
+            <Button size="sm" icon="minus" disabled={locked || entry.sets.length <= 1} onClick={onRemoveSet}>{t('Remove set')}</Button>
+            <Button size="sm" icon="plus" disabled={locked} onClick={onAddSet}>{t('Add set')}</Button>
           </div>
         )}
       </div>
@@ -237,6 +244,10 @@ function ActiveWorkout() {
   const unit = A.entries.length ? unitOf(units, cur) : []
   const unitIdx = units.findIndex(u => u === unit)
   const isSuperset = unit.length > 1
+  const workoutStarted = !!A.start
+  const startWorkout = () => update(s => {
+    if (s.active && !s.active.start) s.active.start = Date.now()
+  })
   // Superset flow: keep the active exercise in view - completing a set scrolls to the
   // next exercise in the group, then back up to the first exercise of the next round.
   const exRefs = useRef({})
@@ -427,6 +438,7 @@ function ActiveWorkout() {
     const ping = active => {
       const A2 = useStore.getState().S.active
       if (!A2) return
+      if (active && !A2.start) return
       const u = supersetUnits(A2.entries)
       const c = Math.min(A2.cur, Math.max(0, A2.entries.length - 1))
       const ui = u.findIndex(x => x.includes(c))
@@ -468,21 +480,26 @@ function ActiveWorkout() {
           {unit.map((idx, k) => <div key={idx} ref={el => { exRefs.current[idx] = el }} className="ss-ex" data-exidx={idx}>
             {k > 0 && <div className="ss-amp">+</div>}
             <ExerciseBlock entryIdx={idx} compact
+              locked={!workoutStarted && idx === 0}
+              onStartWorkout={startWorkout}
               onToggle={i => toggle(idx, i)} onField={(i, f, v) => setField(idx, i, f, v)} onAddSet={() => addSet(idx)} onRemoveSet={() => removeSet(idx)} onAddWarmup={() => addWarmup(idx)} onRemoveSetAt={i => removeSetAt(idx, i)} onStartTimed={i => startTimed(idx, i)} />
           </div>)}
         </div>
       ) : (
-        <ExerciseBlock entryIdx={cur} onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onAddSet={() => addSet(cur)} onRemoveSet={() => removeSet(cur)} onAddWarmup={() => addWarmup(cur)} onRemoveSetAt={i => removeSetAt(cur, i)} onStartTimed={i => startTimed(cur, i)} onPairPrev={onPairPrev} onPairNext={onPairNext} />
+        <ExerciseBlock entryIdx={cur}
+          locked={!workoutStarted && cur === 0}
+          onStartWorkout={startWorkout}
+          onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onAddSet={() => addSet(cur)} onRemoveSet={() => removeSet(cur)} onAddWarmup={() => addWarmup(cur)} onRemoveSetAt={i => removeSetAt(cur, i)} onStartTimed={i => startTimed(cur, i)} onPairPrev={onPairPrev} onPairNext={onPairNext} />
       )}
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 
     <div style={{ height: 12 }} />
     <div className="row">
-      <Button icon="chevronLeft" disabled={unitIdx <= 0} onClick={() => update(s => { s.active.cur = units[unitIdx - 1][0] })}>{t('Prev')}</Button>
-      <Button trailingIcon="chevronRight" disabled={unitIdx < 0 || unitIdx >= units.length - 1} onClick={() => update(s => { s.active.cur = units[unitIdx + 1][0] })}>{t('Next')}</Button>
+      <Button icon="chevronLeft" disabled={!workoutStarted || unitIdx <= 0} onClick={() => update(s => { s.active.cur = units[unitIdx - 1][0] })}>{t('Prev')}</Button>
+      <Button trailingIcon="chevronRight" disabled={!workoutStarted || unitIdx < 0 || unitIdx >= units.length - 1} onClick={() => update(s => { s.active.cur = units[unitIdx + 1][0] })}>{t('Next')}</Button>
     </div>
     <div style={{ height: 10 }} />
-    <Button onClick={() => exercisePicker(ex => {
+    <Button disabled={!workoutStarted} onClick={() => exercisePicker(ex => {
       const routine = S.routines.find(r => r.id === A.routineId)
       const freestyle = !A.routineId
       // Freestyle has no routine prescription to apply: show the last target in the config
@@ -499,7 +516,7 @@ function ActiveWorkout() {
     {A.entries.length > 0 && <>
       <div style={{ height: 6 }} />
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <Button size="sm" icon="minus" style={{ color: 'var(--red)' }} disabled={!!(work && work.phase === 'work')} onClick={removeExerciseSheet}>{t('Remove exercise')}</Button>
+        <Button size="sm" icon="minus" style={{ color: 'var(--red)' }} disabled={!workoutStarted || !!(work && work.phase === 'work')} onClick={removeExerciseSheet}>{t('Remove exercise')}</Button>
       </div>
     </>}
     <div style={{ height: 10 }} />

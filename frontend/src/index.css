@@ -678,7 +678,9 @@ h4.sec{
   background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 12%,var(--surface)) 0%,var(--surface) 48%,color-mix(in srgb,var(--surface-2) 60%,var(--surface)) 100%);
   box-shadow:var(--card-shadow),inset 0 1px 0 rgba(255,255,255,.06);transition:transform var(--fast),background var(--fast),box-shadow var(--fast);
 }
-.plan-profile-card::after{content:"";position:absolute;z-index:-1;right:8%;top:10px;width:92px;height:92px;border-radius:50%;background:color-mix(in srgb,var(--acc) 13%,transparent);filter:blur(22px);pointer-events:none}
+.plan-profile-card::after{content:"";position:absolute;z-index:-1;right:8%;top:10px;width:92px;height:92px;border-radius:50%;background:color-mix(in srgb,var(--acc) 13%,transparent);filter:blur(22px);pointer-events:none;transform:translate3d(0,0,0) scale(1);animation:profile-glow-drift 8s ease-in-out infinite alternate}
+@keyframes profile-glow-drift{0%{transform:translate3d(-3px,-1px,0) scale(.97);opacity:.72}50%{transform:translate3d(4px,5px,0) scale(1.04);opacity:1}100%{transform:translate3d(0,8px,0) scale(1);opacity:.82}}
+@media (prefers-reduced-motion:reduce){.plan-profile-card::after{animation:none}}
 .plan-profile-card:active{transform:scale(.985);background:var(--surface-2);box-shadow:none}
 .plan-profile-avatar{position:absolute;z-index:0;left:-14px;bottom:-2px;width:143px;height:157px;display:block;pointer-events:none;filter:drop-shadow(0 10px 10px rgba(0,0,0,.22))}
 .profile-avatar-image{display:block;width:100%;height:100%;max-width:none;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 8px 8px rgba(0,0,0,.15));user-select:none}
@@ -1057,6 +1059,26 @@ h4.sec{
 .setrow.eff3 .stp .num{font-size:14px}
 .setrow.done .n{background:var(--acc);color:var(--on-acc)}
 .setrow.done{opacity:.45}
+.exercise-start-card{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:0 0 12px;padding:14px 15px;border-radius:var(--r-lg);
+  background:color-mix(in srgb,var(--acc) 14%,var(--surface-2));
+  border:var(--hair) solid color-mix(in srgb,var(--acc) 38%,var(--surface-border));
+  color:var(--label);text-align:left;box-shadow:0 12px 34px -22px var(--acc);
+  transition:transform var(--fast),background var(--fast);
+}
+.exercise-start-card:active{transform:scale(.985);background:color-mix(in srgb,var(--acc) 20%,var(--surface-2))}
+.exercise-start-card__label{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+.exercise-start-card__button{
+  width:38px;height:38px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;
+  background:var(--acc);color:var(--on-acc);font-size:13px;font-weight:700;white-space:nowrap;
+}
+.exercise-input-card.is-locked{
+  border-color:color-mix(in srgb,var(--acc) 32%,var(--surface-border));
+  background:color-mix(in srgb,var(--surface) 80%,var(--surface-2));
+}
+.exercise-input-card.is-locked .sethead,.exercise-input-card.is-locked .setrow,.exercise-input-card.is-locked .progline{opacity:.5}
+.exercise-input-card.is-locked input,.exercise-input-card.is-locked button{cursor:default}
 /* why the next target is what it is (issue #17) */
 .progline{
   display:flex;align-items:flex-start;gap:7px;margin:6px 0 2px;

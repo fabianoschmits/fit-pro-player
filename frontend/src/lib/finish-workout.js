@@ -1,6 +1,7 @@
 // The persisted boundary for a finished session. Keep this pure so compatibility tests can
 // exercise the exact shape the UI writes without mounting React or mutating store state.
 export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snapshotFor } = {}) {
+  const start = active?.start || end
   const entries = (active?.entries || []).map(entry => {
     const completed = {
       id: entry.id,
@@ -18,7 +19,7 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
   return {
     id: active.id,
     d: active.d,
-    start: active.start,
+    start,
     end,
     routineId: active.routineId,
     name: active.name,

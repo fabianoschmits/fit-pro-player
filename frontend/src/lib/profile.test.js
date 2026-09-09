@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   ageFromBirthDate, dateFromParts, dateParts, daysInMonth, decimalNumber,
+  currentProfileWeight,
   defaultBirthDate, formatPersonName, heightCmFromText, heightInput, heightText,
-  normalizeProfile, weightInput, weightText,
+  latestBodyWeight, normalizeProfile, syncProfileWeightFromBodyweight, weightInput, weightText,
 } from './profile.js'
 import { AVATARS, DEFAULT_AVATAR_ID } from './avatars.js'
 
@@ -39,6 +40,23 @@ describe('personal profile', () => {
     expect(heightCmFromText('1,76')).toBe(176)
     expect(heightText(176)).toBe('1,76')
     expect(weightText(71.2)).toBe('71,2')
+  })
+
+  it('treats the newest weigh-in as the user current weight', () => {
+    const state = {
+      body: 'male',
+      profile: { startWeight: 70 },
+      bodyweight: [
+        { d: '2026-09-08', w: 81.2, t: 2 },
+        { d: '2026-09-09', w: 80.7, t: 1 },
+      ],
+    }
+
+    expect(latestBodyWeight(state.bodyweight).w).toBe(80.7)
+    expect(currentProfileWeight(state)).toBe(80.7)
+
+    syncProfileWeightFromBodyweight(state)
+    expect(state.profile.startWeight).toBe(80.7)
   })
 
   it('builds safe wheel dates and clamps impossible days', () => {

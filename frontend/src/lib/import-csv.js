@@ -20,6 +20,7 @@
 
 import { EXDB, EXIDX } from './exercises.js'
 import { uid } from './format.js'
+import { syncProfileWeightFromBodyweight } from './profile.js'
 import { isWarmupRow } from './workout-model.js'
 
 /* ----------------------------------------------------------------- CSV ---- */
@@ -522,6 +523,7 @@ export function mergeImport(S, parsed) {
     const have = new Set(S.bodyweight.map(b => b.d))
     const fresh = parsed.bodyweight.filter(b => !have.has(b.d))
     S.bodyweight = [...S.bodyweight, ...fresh].sort((a, b) => (a.d < b.d ? -1 : 1))
+    syncProfileWeightFromBodyweight(S)
     return { added: fresh.length, skipped: parsed.bodyweight.length - fresh.length }
   }
   const have = new Set(S.workouts.map(w => w.d))

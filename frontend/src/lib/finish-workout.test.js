@@ -35,4 +35,16 @@ describe('completed workout boundary', () => {
       n: 'Custom lift', muscleWeights: { chest: 1 },
     })
   })
+
+  it('stores zero duration when a prepared workout is finished before being started', () => {
+    const active = {
+      id: 'active-1', d: '2026-08-08', start: null, routineId: 'routine-1', name: 'Push',
+      entries: [{ id: '0025', sets: [{ done: true, w: 60, r: 8 }] }],
+    }
+
+    const completed = buildCompletedWorkout(active, { end: 2000 })
+
+    expect(completed.start).toBe(2000)
+    expect(completed.end).toBe(2000)
+  })
 })

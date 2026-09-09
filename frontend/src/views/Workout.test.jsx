@@ -108,6 +108,10 @@ async function toggleSet(index) {
   await act(async () => { checkbox.dispatchEvent(new dom.Event('click', { bubbles: true })) })
 }
 
+function startWorkoutButton() {
+  return [...container.querySelectorAll('button')].find(button => button.textContent.includes('Começar treino'))
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
@@ -117,6 +121,22 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
+  it('keeps the first exercise card locked and the clock paused until the workout starts', async () => {
+    await mount([exercise('plain-bench', [false, false])])
+    mocks.S.active.start = null
+    await act(async () => { root.render(React.createElement(Workout)) })
+
+    expect(container.textContent).toContain('0:00')
+    expect(startWorkoutButton()).toBeTruthy()
+    expect(container.querySelector('[role="checkbox"]')?.disabled).toBe(true)
+
+    await act(async () => { startWorkoutButton().dispatchEvent(new dom.Event('click', { bubbles: true })) })
+
+    expect(mocks.S.active.start).toEqual(expect.any(Number))
+    await act(async () => { root.render(React.createElement(Workout)) })
+    expect(container.querySelector('[role="checkbox"]')?.disabled).toBe(false)
+  })
+
   it('starts rest after a set including the final set of an exercise', async () => {
     await mount([exercise('plain-bench', [false, false, false])])
     await toggleSet(0)

@@ -100,6 +100,29 @@ export function normalizeProfile(profile, fallbackBody = 'male') {
   }
 }
 
+export function latestBodyWeight(bodyweight = []) {
+  return (Array.isArray(bodyweight) ? bodyweight : []).reduce((latest, entry) => {
+    if (!entry || !(entry.w > 0)) return latest
+    if (!latest) return entry
+    if (String(entry.d || '') > String(latest.d || '')) return entry
+    if (String(entry.d || '') === String(latest.d || '') && (entry.t || 0) > (latest.t || 0)) return entry
+    return latest
+  }, null)
+}
+
+export function currentProfileWeight(state = {}) {
+  return latestBodyWeight(state.bodyweight)?.w || state.profile?.startWeight || null
+}
+
+export function syncProfileWeightFromBodyweight(state) {
+  const currentWeight = latestBodyWeight(state?.bodyweight)?.w
+  if (!(currentWeight > 0)) return
+  state.profile = {
+    ...normalizeProfile(state.profile, state.body),
+    startWeight: currentWeight,
+  }
+}
+
 export function ageFromBirthDate(value, now = new Date()) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return null
   const birth = new Date(value + 'T12:00:00')

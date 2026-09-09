@@ -50,4 +50,15 @@ describe('state migration for first-run profiles', () => {
       startWeight: 71, goal: 'lose_weight', experience: 'intermediate',
     })
   })
+
+  it('updates the profile weight from the latest weigh-in when restoring saved data', () => {
+    const restored = normalizeState({
+      ...DEF,
+      onboardingDone: true,
+      profile: { name: 'Ana', birthDate: '1990-09-09', heightCm: 167, startWeight: 71, goal: 'lose_weight', experience: 'intermediate' },
+      bodyweight: [{ d: '2026-09-08', w: 72.4, t: 1 }, { d: '2026-09-09', w: 72.1, t: 2 }],
+    })
+
+    expect(restored.profile.startWeight).toBe(72.1)
+  })
 })

@@ -24,6 +24,7 @@ import { nextPrescription, applyPrescription, policyFor, defaultIncrement, POLIC
 import { MOBILE, shareExport } from './lib/mobile.js'
 import { buildCompletedWorkout } from './lib/finish-workout.js'
 import { isWarmupRow } from './lib/workout-model.js'
+import { syncProfileWeightFromBodyweight } from './lib/profile.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -104,12 +105,16 @@ function BwSheet({ required, onDone, close, date }) {
       const ex = s.bodyweight.find(b => b.d === iso)
       if (ex) { ex.w = n; ex.t = Date.now() } else s.bodyweight.push({ d: iso, w: n, t: Date.now() })
       s.bodyweight.sort((a, b) => (a.d < b.d ? -1 : 1))
+      syncProfileWeightFromBodyweight(s)
     })
     close()
     if (onDone) onDone(n); else toast(t('Weight saved'))
   }
   const recent = [...st.bodyweight].reverse().slice(0, 3)
-  const delEntry = d => update(s => { s.bodyweight = s.bodyweight.filter(b => b.d !== d) })
+  const delEntry = d => update(s => {
+    s.bodyweight = s.bodyweight.filter(b => b.d !== d)
+    syncProfileWeightFromBodyweight(s)
+  })
   return <>
     <h3>{required ? t('Quick check-in') : date ? t('Edit body weight') : t('Log body weight')}</h3>
     <div className="muted small">{required ? t('Slide or tap to set your weight — tracked before every workout so your curve stays honest.') : date ? fmtDate(date, true) : t('Today') + ', ' + fmtDate(todayISO(), true)}</div>
@@ -1006,7 +1011,7 @@ export function beginWorkout(routineId, bw) {
     return { id: cfg.id, sg: cfg.sg, target: { ...cfg }, plan, sets: applyPrescription(buildSets(st, cfg), plan) }
   })
   update(s => {
-    s.active = { id: uid(), d: todayISO(), start: Date.now(), routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries }
+    s.active = { id: uid(), d: todayISO(), start: null, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries }
   })
   useUI.getState().stopRest()
   nav('/workout')
