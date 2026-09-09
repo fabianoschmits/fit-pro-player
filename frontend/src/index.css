@@ -678,8 +678,8 @@ h4.sec{
   background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 12%,var(--surface)) 0%,var(--surface) 48%,color-mix(in srgb,var(--surface-2) 60%,var(--surface)) 100%);
   box-shadow:var(--card-shadow),inset 0 1px 0 rgba(255,255,255,.06);transition:transform var(--fast),background var(--fast),box-shadow var(--fast);
 }
-.plan-profile-card::after{content:"";position:absolute;z-index:0;right:2%;top:2px;width:148px;height:126px;border-radius:999px;background:radial-gradient(circle at 50% 50%,color-mix(in srgb,var(--acc) 38%,transparent) 0 34%,color-mix(in srgb,var(--acc) 22%,transparent) 52%,transparent 76%);filter:blur(15px);opacity:.9;pointer-events:none;transform:translate3d(0,0,0) scale(1);animation:profile-glow-drift 5.5s ease-in-out infinite alternate}
-@keyframes profile-glow-drift{0%{transform:translate3d(-18px,-5px,0) scale(.92);opacity:.68}45%{transform:translate3d(10px,13px,0) scale(1.08);opacity:1}100%{transform:translate3d(-6px,24px,0) scale(1);opacity:.82}}
+.plan-profile-card::after{content:"";position:absolute;z-index:0;inset:1px;border-radius:inherit;background:radial-gradient(ellipse 120px 82px at center,color-mix(in srgb,var(--acc) 42%,transparent) 0 28%,color-mix(in srgb,var(--acc) 24%,transparent) 48%,transparent 74%) no-repeat;background-size:150px 112px;background-position:0% 50%;opacity:.9;pointer-events:none;animation:profile-glow-drift 4.8s ease-in-out infinite alternate}
+@keyframes profile-glow-drift{0%{background-position:0% 52%;opacity:.68}35%{background-position:48% 42%;opacity:1}70%{background-position:100% 58%;opacity:.9}100%{background-position:0% 46%;opacity:.78}}
 @media (prefers-reduced-motion:reduce){.plan-profile-card::after{animation:none}}
 .plan-profile-card:active{transform:scale(.985);background:var(--surface-2);box-shadow:none}
 .plan-profile-avatar{position:absolute;z-index:1;left:-14px;bottom:-2px;width:143px;height:157px;display:block;pointer-events:none;filter:drop-shadow(0 10px 10px rgba(0,0,0,.22))}
