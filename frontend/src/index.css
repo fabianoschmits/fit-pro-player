@@ -685,8 +685,8 @@ h4.sec{
 .plan-profile-edit{position:relative;z-index:2;display:grid;place-items:center;width:28px;height:28px;flex:none;color:var(--acc)}.plan-profile-edit .icn{font-size:15px}
 .stats-profile-card{margin-top:0;margin-bottom:18px}.stats-profile-card .stats-profile-avatar{width:132px;height:146px}
 .app-plan-profile-header{
-  width:min(calc(100% - 32px),760px);min-height:128px;margin:12px auto 0;padding:22px 20px 22px 184px;
-  display:grid;grid-template-columns:minmax(0,1fr) 88px 104px;column-gap:22px;align-items:center;
+  width:min(calc(100% - 32px),760px);min-height:128px;margin:12px auto 0;padding:22px 34px 22px 184px;
+  display:grid;grid-template-columns:minmax(0,1fr) 78px 96px;column-gap:20px;align-items:center;
   overflow:visible;border-color:color-mix(in srgb,var(--acc) 34%,var(--surface-border));
   background:linear-gradient(90deg,color-mix(in srgb,#031415 70%,var(--surface)) 0%,color-mix(in srgb,var(--acc) 11%,var(--surface)) 47%,var(--surface) 100%);
   box-shadow:0 0 0 var(--hair) color-mix(in srgb,var(--acc) 30%,transparent),0 18px 38px -30px #000,inset 0 1px 0 rgba(255,255,255,.05);
@@ -703,14 +703,14 @@ h4.sec{
 .profile-message-stage{position:relative;display:block;width:100%;height:24px;overflow:hidden}
 .profile-message{position:absolute;inset:0 auto auto 0;width:100%;color:var(--label-2);font-size:clamp(14px,2.6vw,17px);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;will-change:transform,opacity,filter}
 .profile-goal-wrap{position:relative;z-index:2;display:flex;justify-content:center;color:var(--acc)}
-.profile-goal-ring{width:88px;height:88px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;background:conic-gradient(var(--acc) var(--profile-goal-progress),color-mix(in srgb,var(--acc) 18%,#071012) 0);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 34%,transparent),0 10px 30px -20px var(--acc)}
-.profile-goal-ring::before{content:"";position:absolute;inset:13px;border-radius:inherit;background:color-mix(in srgb,var(--surface) 88%,#000);box-shadow:inset 0 0 18px rgba(0,0,0,.28)}
-.profile-goal-ring .icn{position:relative;z-index:1;font-size:29px;color:var(--label)}
-.profile-goal-percent{position:relative;z-index:1;font-size:16px;font-weight:850;line-height:1;color:var(--label);letter-spacing:-.02em}
-.profile-stat-stack{position:relative;z-index:2;min-width:0;padding-left:15px;border-left:var(--hair) solid color-mix(in srgb,var(--acc) 26%,var(--surface-border));display:flex;flex-direction:column;gap:12px}
-.profile-stat{display:flex;align-items:center;gap:8px;min-width:0;color:var(--label)}
-.profile-stat .icn{font-size:16px;color:var(--acc);--icon-stroke:2}
-.profile-stat b{font-size:13px;font-weight:750;line-height:1;white-space:nowrap}
+.profile-goal-ring{width:78px;height:78px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;background:conic-gradient(var(--acc) var(--profile-goal-progress),color-mix(in srgb,var(--acc) 18%,#071012) 0);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 34%,transparent),0 10px 30px -20px var(--acc)}
+.profile-goal-ring::before{content:"";position:absolute;inset:12px;border-radius:inherit;background:color-mix(in srgb,var(--surface) 88%,#000);box-shadow:inset 0 0 18px rgba(0,0,0,.28)}
+.profile-goal-ring .icn{position:relative;z-index:1;font-size:25px;color:var(--label)}
+.profile-goal-percent{position:relative;z-index:1;font-size:14px;font-weight:850;line-height:1;color:var(--label);letter-spacing:-.02em}
+.profile-stat-stack{position:relative;z-index:2;min-width:0;padding-left:13px;border-left:var(--hair) solid color-mix(in srgb,var(--acc) 26%,var(--surface-border));display:flex;flex-direction:column;gap:11px}
+.profile-stat{display:flex;align-items:center;gap:7px;min-width:0;color:var(--label)}
+.profile-stat .icn{font-size:14px;color:var(--acc);--icon-stroke:2}
+.profile-stat b{font-size:12px;font-weight:750;line-height:1;white-space:nowrap}
 .daily-plan-today{width:100%;min-height:108px;display:flex;align-items:center;gap:14px;text-align:left;padding:17px;transition:transform var(--fast),background var(--fast)}
 .daily-plan-today:active{transform:scale(.985);background:var(--surface-2)}
 .daily-plan-icon{width:54px;height:54px;display:grid;place-items:center;flex:none;border-radius:16px;background:var(--surface-2);color:var(--label-2);font-size:25px}
@@ -774,18 +774,18 @@ h4.sec{
   .routine-week-card .plan-week-grid{gap:4px}
   .routine-week-card .plan-day{min-height:64px}
   .routine-name{font-size:18px}
-  .app-plan-profile-header{width:calc(100% - 18px);min-height:108px;padding:14px 7px 14px 88px;grid-template-columns:minmax(0,1fr) 46px 46px;column-gap:4px}
+  .app-plan-profile-header{width:calc(100% - 18px);min-height:108px;padding:14px 12px 14px 88px;grid-template-columns:minmax(0,1fr) 42px 42px;column-gap:4px}
   .app-plan-profile-header .plan-profile-avatar{left:-13px;bottom:-5px;width:106px;height:120px}
   .app-plan-profile-header .grow{gap:5px;align-items:center;text-align:center}
   .app-plan-profile-header .grow strong{font-size:clamp(13px,3.55vw,14px);letter-spacing:0;white-space:nowrap;text-wrap:nowrap}
   .profile-message-stage{height:19px}
   .profile-message{font-size:clamp(11px,3.3vw,13px)}
-  .profile-goal-ring{width:46px;height:46px}
-  .profile-goal-ring::before{inset:7px}
-  .profile-goal-ring .icn{font-size:15px}
-  .profile-goal-percent{font-size:10px}
-  .profile-stat-stack{display:flex;padding-left:5px;gap:7px}
-  .profile-stat{gap:3px}.profile-stat .icn{font-size:10px}.profile-stat b{font-size:8.5px}
+  .profile-goal-ring{width:42px;height:42px}
+  .profile-goal-ring::before{inset:6px}
+  .profile-goal-ring .icn{font-size:14px}
+  .profile-goal-percent{font-size:9px}
+  .profile-stat-stack{display:flex;padding-left:4px;gap:6px}
+  .profile-stat{gap:2px}.profile-stat .icn{font-size:9px}.profile-stat b{font-size:8px}
 }
 .thumb.exercise-muscle-thumb{
   display:flex;width:50px;height:50px;min-width:50px;padding:2px;gap:0;
@@ -1562,16 +1562,16 @@ h4.sec{
 
 @media (max-width:340px){
   .plan-profile-card{min-height:96px;padding-left:108px}.plan-profile-avatar{left:-12px;width:120px;height:136px}.plan-profile-edit{width:24px;height:24px}.plan-profile-edit .icn{font-size:13px}
-  .app-plan-profile-header{min-height:98px;padding:12px 6px 12px 74px;grid-template-columns:minmax(0,1fr) 40px 42px;column-gap:3px}
+  .app-plan-profile-header{min-height:98px;padding:12px 10px 12px 74px;grid-template-columns:minmax(0,1fr) 36px 38px;column-gap:3px}
   .app-plan-profile-header .plan-profile-avatar{left:-15px;width:92px;height:106px}
   .app-plan-profile-header .grow strong{font-size:12px;white-space:nowrap;text-wrap:nowrap}
   .profile-message-stage{height:18px}.profile-message{font-size:10px}
-  .profile-goal-ring{width:42px;height:42px}
-  .profile-goal-ring::before{inset:6px}
-  .profile-goal-ring .icn{font-size:13px}
-  .profile-goal-percent{font-size:9px}
-  .profile-stat-stack{padding-left:4px;gap:6px}
-  .profile-stat{gap:2px}.profile-stat .icn{font-size:9px}.profile-stat b{font-size:7.5px}
+  .profile-goal-ring{width:36px;height:36px}
+  .profile-goal-ring::before{inset:5px}
+  .profile-goal-ring .icn{font-size:12px}
+  .profile-goal-percent{font-size:8px}
+  .profile-stat-stack{padding-left:3px;gap:5px}
+  .profile-stat{gap:2px}.profile-stat .icn{font-size:8px}.profile-stat b{font-size:7px}
   .cols>div:first-child .item{gap:8px;padding-left:10px;padding-right:10px}
   .cols>div:first-child .item .tt{font-size:15px;white-space:nowrap}
   .cols>div:first-child .item .tag{font-size:11px;padding-left:6px;padding-right:6px;white-space:nowrap}
