@@ -9,6 +9,7 @@ import { ensureStarterRoutines, routineName } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { dayAssignSheet, dayOverrideSheet, planToolsSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
+import AvatarImage from '../components/AvatarImage.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
@@ -88,7 +89,9 @@ export default function Plan() {
     </div>
 
     <button className="card plan-profile-card" onClick={() => setEditingProfile(true)}>
-      <span className="plan-profile-avatar"><Icon name="person" /></span>
+      <span className="plan-profile-avatar" aria-hidden="true">
+        <AvatarImage avatarId={S.profile?.avatarId} />
+      </span>
       <span className="grow"><strong>{S.profile?.name}</strong><small>{[age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')}</small>
         {S.profile?.goal && S.profile?.experience && <em>{t(PROFILE_GOAL_LABELS[S.profile.goal])} · {t(EXPERIENCE_LABELS[S.profile.experience])}</em>}
       </span>

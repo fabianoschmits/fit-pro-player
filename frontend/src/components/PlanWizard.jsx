@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { DAYN, DAYS, exCount, todayISO } from '../lib/format.js'
@@ -13,6 +13,7 @@ import {
 import { applyPersonalizedPlan, personalizedRoutineSpecs } from '../lib/personalized-plan.js'
 import BodyMap from './BodyMap.jsx'
 import DateWheelPicker from './DateWheelPicker.jsx'
+import AvatarPicker from './AvatarPicker.jsx'
 import Icon from './Icon.jsx'
 import { Button, Segmented, TextField } from './ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
@@ -40,6 +41,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(() => ({
     name: formatPersonName(profile.name || user?.name || ''),
+    avatarId: profile.avatarId,
     birthDate: profile.birthDate || defaultBirthDate(),
     sex: profile.sex || (S.body === 'female' ? 'female' : 'male'),
     height: heightText(profile.heightCm),
@@ -72,18 +74,22 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const set = patch => setDraft(current => ({ ...current, ...patch }))
   const toggleDay = day => setDays(current => current.includes(day) ? current.filter(d => d !== day) : [...current, day])
   const maxDate = todayISO()
-  const total = 6
+  const total = 7
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [step])
 
   const validate = () => {
     if (step === 0 && draft.name.trim().length < 2) return t('Enter your name to continue.')
-    if (step === 1 && (!draft.birthDate || draft.birthDate < '1900-01-01' || draft.birthDate > maxDate)) return t('Enter a valid date of birth.')
+    if (step === 2 && (!draft.birthDate || draft.birthDate < '1900-01-01' || draft.birthDate > maxDate)) return t('Enter a valid date of birth.')
     const heightCm = heightCmFromText(draft.height)
     const startWeight = decimalNumber(draft.startWeight)
-    if (step === 2 && (!heightCm || heightCm < 100 || heightCm > 250 || !startWeight)) return t('Enter valid measurements to continue.')
-    if (step === 3 && (!draft.goal || !draft.experience)) return t('Choose a goal and experience level.')
-    if (step === 4 && !draft.planMode) return t('Choose how you want to plan your workouts.')
-    if (step === 5 && draft.planMode === 'weekly' && !days.length) return t('Choose at least one training day.')
-    if (step === 5 && draft.planMode === 'daily' && !dailyRoutineKey) return t("Choose today's workout.")
+    if (step === 3 && (!heightCm || heightCm < 100 || heightCm > 250 || !startWeight)) return t('Enter valid measurements to continue.')
+    if (step === 4 && (!draft.goal || !draft.experience)) return t('Choose a goal and experience level.')
+    if (step === 5 && !draft.planMode) return t('Choose how you want to plan your workouts.')
+    if (step === 6 && draft.planMode === 'weekly' && !days.length) return t('Choose at least one training day.')
+    if (step === 6 && draft.planMode === 'daily' && !dailyRoutineKey) return t("Choose today's workout.")
     return ''
   }
 
@@ -114,6 +120,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       state.profile = {
         ...normalizeProfile(state.profile, state.body),
         name,
+        avatarId: draft.avatarId,
         birthDate: draft.birthDate,
         sex: draft.sex,
         heightCm,
@@ -169,6 +176,12 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <label className="wizard-label" htmlFor="wizard-name">{t('Your name')}</label>
       <TextField id="wizard-name" autoFocus={!reduceMotion} maxLength={50} autoComplete="name" value={draft.name} onChange={event => set({ name: formatPersonName(event.target.value) })} placeholder={t('How should we call you?')} />
     </div>,
+    <div className="wizard-step wizard-avatar-step" key="avatar">
+      <span className="wizard-kicker">{t('Your avatar')}</span>
+      <h1>{t('Choose your avatar')}</h1>
+      <p>{t('Pick the character that will represent you in the app. You can change it whenever you want.')}</p>
+      <AvatarPicker value={draft.avatarId} onChange={avatarId => set({ avatarId })} t={t} />
+    </div>,
     <div className="wizard-step wizard-body-step" key="body">
       <span className="wizard-kicker">{t('About you')}</span>
       <h1>{t('Your body profile')}</h1>
@@ -178,7 +191,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
         <div className="wizard-body-fields">
           <span className="wizard-label">{t('Sex')}</span>
           <Segmented options={[{ value: 'male', label: t('Male') }, { value: 'female', label: t('Female') }]} value={draft.sex} onChange={sex => set({ sex })} />
-          <small>{t('The avatar and body statistics follow this selection.')}</small>
+          <small>{t('The body map and body statistics follow this selection.')}</small>
         </div>
       </div>
       <span className="wizard-label">{t('Date of birth')}</span>

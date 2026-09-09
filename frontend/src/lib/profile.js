@@ -1,5 +1,8 @@
+import { DEFAULT_AVATAR_ID, isAvatarId } from './avatars.js'
+
 export const DEFAULT_PROFILE = {
   name: '',
+  avatarId: DEFAULT_AVATAR_ID,
   birthDate: '',
   sex: 'male',
   heightCm: null,
@@ -92,6 +95,7 @@ export function normalizeProfile(profile, fallbackBody = 'male') {
     ...DEFAULT_PROFILE,
     ...(profile && typeof profile === 'object' ? profile : {}),
     name: formatPersonName(profile?.name || ''),
+    avatarId: isAvatarId(profile?.avatarId) ? profile.avatarId : DEFAULT_AVATAR_ID,
     sex: profile?.sex === 'female' ? 'female' : profile?.sex === 'male' ? 'male' : fallbackBody === 'female' ? 'female' : 'male',
   }
 }

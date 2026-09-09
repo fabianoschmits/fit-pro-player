@@ -37,12 +37,12 @@ describe('state migration for first-run profiles', () => {
       ...DEF,
       onboardingDone: true,
       planMode: 'daily',
-      profile: { name: 'Ana', birthDate: '1990-09-09', sex: 'female', heightCm: 167, startWeight: 71, goal: 'lose_weight', experience: 'intermediate' },
+      profile: { name: 'Ana', avatarId: 'avatar-42', birthDate: '1990-09-09', sex: 'female', heightCm: 167, startWeight: 71, goal: 'lose_weight', experience: 'intermediate' },
     })
     const restored = normalizeState(JSON.parse(JSON.stringify(original)))
     expect(restored.planMode).toBe('daily')
     expect(restored.profile).toMatchObject({
-      name: 'Ana', birthDate: '1990-09-09', sex: 'female', heightCm: 167,
+      name: 'Ana', avatarId: 'avatar-42', birthDate: '1990-09-09', sex: 'female', heightCm: 167,
       startWeight: 71, goal: 'lose_weight', experience: 'intermediate',
     })
   })

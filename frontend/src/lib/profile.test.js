@@ -4,11 +4,19 @@ import {
   defaultBirthDate, formatPersonName, heightCmFromText, heightInput, heightText,
   normalizeProfile, weightInput, weightText,
 } from './profile.js'
+import { AVATARS, DEFAULT_AVATAR_ID } from './avatars.js'
 
 describe('personal profile', () => {
   it('normalizes legacy body choice into the profile', () => {
     expect(normalizeProfile(null, 'female').sex).toBe('female')
     expect(normalizeProfile({ name: 'Ana', sex: 'female' }, 'male')).toMatchObject({ name: 'Ana', sex: 'female' })
+    expect(normalizeProfile({ avatarId: 'missing-avatar' }).avatarId).toBe(DEFAULT_AVATAR_ID)
+  })
+
+  it('provides the complete avatar collection with stable unique ids', () => {
+    expect(AVATARS).toHaveLength(80)
+    expect(new Set(AVATARS.map(avatar => avatar.id)).size).toBe(80)
+    expect(AVATARS.some(avatar => avatar.id === DEFAULT_AVATAR_ID)).toBe(true)
   })
 
   it('calculates age without crossing the birthday early', () => {
