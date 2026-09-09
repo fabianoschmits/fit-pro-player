@@ -22,8 +22,6 @@ import {
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
 import TipOnce from '../components/TipOnce.jsx'
 import { isWarmupRow } from '../lib/workout-model.js'
-import { ageFromBirthDate, heightText, weightText } from '../lib/profile.js'
-import AvatarImage from '../components/AvatarImage.jsx'
 
 // Which muscles the training in a window actually hit — and, the point of the card,
 // which ones it keeps missing. Shading is relative within the window (lib/muscles.js).
@@ -312,7 +310,6 @@ export default function Stats() {
   const bw30 = S.bodyweight.filter(b => (b.t || new Date(b.d).getTime()) > now - 30 * 86400000)
   const bwDelta30 = bw30.length > 1 ? bw30[bw30.length - 1].w - bw30[0].w : null
   const monthW = workouts.filter(w => String(w.d || '').slice(0, 7) === todayISO().slice(0, 7)).length
-  const profileAge = ageFromBirthDate(S.profile?.birthDate)
 
   const nameOf = id => EXIDX[id]?.n || workouts.flatMap(w => w.entries).find(e => e.id === id)?.n || id
   const currentOf = id => {
@@ -387,12 +384,6 @@ export default function Stats() {
   if (showEff) exOpts.push({ value: 'effort', label: t('Effort') })
 
   return <>
-    <div className="card plan-profile-card stats-profile-card" aria-label={S.profile?.name || t('Stats')}>
-      <span className="plan-profile-avatar stats-profile-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile?.avatarId} /></span>
-      <span className="grow"><strong>{S.profile?.name || t('Stats')}</strong><small>{[profileAge != null ? t('{0} years', profileAge) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')}</small></span>
-      <button type="button" className="plan-profile-edit" onClick={() => nav('/history')} aria-label={t('History')}><Icon name="history" /></button>
-    </div>
-
     <div className="tiles">
       <div className="tile"><div className="l"><Icon name="dumbbell" />{t('Workouts')}</div><div className="v">{workouts.length}</div></div>
       <div className="tile"><div className="l"><Icon name="calendar" />{t('This month')}</div><div className="v">{monthW}</div></div>

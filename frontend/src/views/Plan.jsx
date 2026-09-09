@@ -4,12 +4,11 @@ import { useStore } from '../store/useStore.js'
 import { DAYN, DAYS, uid, exCount, fmtDate, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { effectiveRoutine, effectiveRoutineId } from '../lib/history.js'
-import { EXPERIENCE_LABELS, PROFILE_GOAL_LABELS, ageFromBirthDate, heightText, weightText } from '../lib/profile.js'
+import { EXPERIENCE_LABELS, PROFILE_GOAL_LABELS } from '../lib/profile.js'
 import { ensureStarterRoutines, routineName } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { dayAssignSheet, dayOverrideSheet, planToolsSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
-import AvatarImage from '../components/AvatarImage.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
@@ -42,7 +41,6 @@ export default function Plan() {
   const scheduledDays = WEEK_DAYS.filter(day => S.week[day] && S.routines.some(r => r.id === S.week[day])).length
   const planProgress = planSetupProgress(S)
   const recentWorkouts = [...S.workouts].reverse().slice(0, 5)
-  const age = ageFromBirthDate(S.profile?.birthDate)
   const mode = S.planMode === 'daily' ? 'daily' : 'weekly'
 
   const switchMode = nextMode => {
@@ -86,16 +84,6 @@ export default function Plan() {
     <div className="hdr">
       <div><h1>{t('Plan')}</h1><div className="sub">{mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')}</div></div>
       <button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>
-    </div>
-
-    <div className="card plan-profile-card">
-      <span className="plan-profile-avatar" aria-hidden="true">
-        <AvatarImage avatarId={S.profile?.avatarId} />
-      </span>
-      <span className="grow"><strong>{S.profile?.name}</strong><small>{[age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')}</small>
-        {S.profile?.goal && S.profile?.experience && <em>{t(PROFILE_GOAL_LABELS[S.profile.goal])} · {t(EXPERIENCE_LABELS[S.profile.experience])}</em>}
-      </span>
-      <button type="button" className="plan-profile-edit" onClick={() => setEditingProfile(true)} aria-label={`${t('Edit')} ${S.profile?.name || t('Personal profile')}`}><Icon name="chevronRight" /></button>
     </div>
 
     {planProgress && <PlanProgress progress={planProgress} />}

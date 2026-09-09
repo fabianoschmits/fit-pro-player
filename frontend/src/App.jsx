@@ -44,9 +44,10 @@ function ProfileHeader({ S }) {
   const age = ageFromBirthDate(S.profile?.birthDate)
   const details = [age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')
   if (!S.onboardingDone || !S.profile?.name) return null
-  return <div className="app-profile-header" aria-label={S.profile.name}>
-    <span className="app-profile-header-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile.avatarId} /></span>
-    <span className="app-profile-header-copy"><strong>{S.profile.name}</strong>{details && <small>{details}</small>}</span>
+  return <div className="card plan-profile-card app-plan-profile-header" aria-label={S.profile.name}>
+    <span className="plan-profile-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile.avatarId} /></span>
+    <span className="grow"><strong>{S.profile.name}</strong>{details && <small>{details}</small>}</span>
+    <button type="button" className="plan-profile-edit" onClick={() => window.location.hash = '#/plan?profile=edit'} aria-label={t('Edit')}><Icon name="chevronRight" /></button>
   </div>
 }
 
