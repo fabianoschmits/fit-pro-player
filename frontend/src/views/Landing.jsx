@@ -64,6 +64,7 @@ const FEATURES = [
   { step: '03', icon: 'chartLine', title: 'Acompanhe', label: 'Evolução real', copy: 'Peso, volume e desempenho transformados em histórico legível.' },
   { step: '04', icon: 'shield', title: 'Decida', label: 'Leitura corporal', copy: 'Equilíbrio, fadiga e força para orientar o próximo treino.' },
 ]
+const BRAND_LOGO = '/brand-logo.png'
 
 export function buildWeightPreviewPoints(now = Date.now()) {
   const weights = [82.4, 82.1, 81.9, 81.6, 81.3, 80.9, 80.7, 80.3, 79.8]
@@ -294,7 +295,7 @@ export default function Landing() {
     <main className="landing-page">
       <header className="landing-nav-shell">
         <div className="landing-nav">
-          <a className="landing-brand" href="#top" aria-label="Fit Pro Player — início"><span><Icon name="dumbbell" /></span>Fit Pro Player</a>
+          <a className="landing-brand" href="#top" aria-label="Fit Pro Player — início"><span><img src={BRAND_LOGO} alt="" /></span>Fit Pro Player</a>
           <nav aria-label="Seções da página">
             <a href="#como-funciona">Exercícios</a>
             <a href="#progresso">Progresso</a>
@@ -306,6 +307,7 @@ export default function Landing() {
 
       <section className="landing-hero" id="top">
         <div className="landing-hero-copy">
+          <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" />
           <div className="landing-eyebrow">TREINO, PROGRESSO E RECUPERAÇÃO</div>
           <h1>Seu treino fica mais claro quando tudo está no mesmo lugar.</h1>
           <p>Planeje a semana, registre cada série e entenda a sua evolução em um aplicativo feito para acompanhar você na academia.</p>
@@ -391,7 +393,7 @@ export default function Landing() {
       </section>
 
       <footer className="landing-footer">
-        <a className="landing-brand" href="#top"><span><Icon name="dumbbell" /></span>Fit Pro Player</a>
+        <a className="landing-brand" href="#top"><span><img src={BRAND_LOGO} alt="" /></span>Fit Pro Player</a>
         <p>Treine com intenção. Acompanhe com clareza.</p>
         <span>Todos os direitos reservados.</span>
       </footer>
