@@ -15,6 +15,8 @@ import PageTransition from './components/PageTransition.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
+import AvatarImage from './components/AvatarImage.jsx'
+import { ageFromBirthDate, heightText, weightText } from './lib/profile.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 import Home from './views/Home.jsx'
@@ -36,6 +38,16 @@ function applyPrefs(theme, accent) {
   de.dataset.accent = ACCENTS[accent] ? accent : 'lime'
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.content = de.dataset.theme === 'light' ? '#eef2f6' : '#000000'
+}
+
+function ProfileHeader({ S }) {
+  const age = ageFromBirthDate(S.profile?.birthDate)
+  const details = [age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')
+  if (!S.onboardingDone || !S.profile?.name) return null
+  return <div className="app-profile-header" aria-label={S.profile.name}>
+    <span className="app-profile-header-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile.avatarId} /></span>
+    <span className="app-profile-header-copy"><strong>{S.profile.name}</strong>{details && <small>{details}</small>}</span>
+  </div>
 }
 
 function Shell() {
@@ -75,7 +87,7 @@ function Shell() {
       <PageTransition>
         <ErrorBoundary>
           {!authed ? <Landing /> : (
-            <Routes>
+            <><ProfileHeader S={S} /><Routes>
               <Route path="/home" element={<Home />} />
               <Route path="/plan" element={<Plan />} />
               <Route path="/plan/r/:id" element={<RoutineEdit />} />
@@ -87,7 +99,7 @@ function Shell() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
+            </Routes></>
           )}
         </ErrorBoundary>
       </PageTransition>
