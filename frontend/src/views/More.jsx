@@ -16,6 +16,8 @@ export default function More() {
     </div>
 
     <Section title={t('Your app')}>
+      <Row icon="personCircle" iconTint="var(--teal)" title={t('Edit your personal data')} subtitle={t('These details personalize your progress, body map and training suggestions.')}
+        accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
       <Row icon="gear" iconTint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')}
         accessory="chevron" onClick={() => nav('/settings')} />
       <Row icon="history" iconTint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')}

@@ -47,7 +47,6 @@ function ProfileHeader({ S }) {
   return <div className="card plan-profile-card app-plan-profile-header" aria-label={S.profile.name}>
     <span className="plan-profile-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile.avatarId} /></span>
     <span className="grow"><strong>{S.profile.name}</strong>{details && <small>{details}</small>}</span>
-    <button type="button" className="plan-profile-edit" onClick={() => window.location.hash = '#/plan?profile=edit'} aria-label={t('Edit')}><Icon name="chevronRight" /></button>
   </div>
 }
 
