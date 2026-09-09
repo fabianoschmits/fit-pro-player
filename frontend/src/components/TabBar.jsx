@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
@@ -32,11 +33,13 @@ function isActive(cur, k) {
   return cur === k
 }
 
-function TabItem({ featured, active, visible, icon, label, recording, onClick }) {
+function TabItem({ featured, active, visible, icon, label, recording, onClick, tabKey, tabRef }) {
   if (featured) {
     return (
       <button
         type="button"
+        ref={tabRef}
+        data-tab-key={tabKey}
         className={'tab-item tab-item--start' + (active ? ' on' : '') + (recording ? ' rec' : '') + (!visible ? ' compact' : '')}
         onClick={onClick}
         aria-label={label}
@@ -66,6 +69,8 @@ function TabItem({ featured, active, visible, icon, label, recording, onClick })
   return (
     <button
       type="button"
+      ref={tabRef}
+      data-tab-key={tabKey}
       className={'tab-item' + (active ? ' on' : '') + (!visible ? ' compact' : '')}
       onClick={onClick}
       aria-label={label}
@@ -122,6 +127,52 @@ export default function TabBar({ onStart }) {
   const user = useStore(s => s.user)
   const isGuest = useStore(s => s.isGuest())
   const isVisible = useScrollDirection()
+  const rowRef = useRef(null)
+  const tabRefs = useRef(new Map())
+  const [dragTab, setDragTab] = useState(null)
+
+  useEffect(() => {
+    const row = rowRef.current
+    if (!row) return
+    let pointerId = null
+    let moved = false
+    const nearest = x => {
+      let found = null, distance = Infinity
+      for (const [key, el] of tabRefs.current) {
+        const rect = el.getBoundingClientRect()
+        const d = Math.abs(x - (rect.left + rect.width / 2))
+        if (d < distance) { distance = d; found = key }
+      }
+      return found
+    }
+    const down = event => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return
+      if (!event.target.closest('.tab-item')) return
+      pointerId = event.pointerId; row._startX = event.clientX; moved = false
+    }
+    const move = event => {
+      if (pointerId !== event.pointerId) return
+      if (!moved && Math.abs(event.clientX - row._startX) < 8) return
+      moved = true
+      row._startX ??= event.clientX
+      if (!row.hasPointerCapture(event.pointerId)) row.setPointerCapture(event.pointerId)
+      event.preventDefault()
+      setDragTab(nearest(event.clientX))
+    }
+    const end = event => {
+      if (pointerId !== event.pointerId) return
+      const target = moved ? nearest(event.clientX) : null
+      pointerId = null; row._startX = null
+      if (row.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId)
+      if (target) row.querySelector(`[data-tab-key="${target}"]`)?.click()
+      setDragTab(null)
+    }
+    row.addEventListener('pointerdown', down)
+    row.addEventListener('pointermove', move, { passive: false })
+    row.addEventListener('pointerup', end)
+    row.addEventListener('pointercancel', end)
+    return () => { row.removeEventListener('pointerdown', down); row.removeEventListener('pointermove', move); row.removeEventListener('pointerup', end); row.removeEventListener('pointercancel', end) }
+  }, [])
 
   const cur = loc.pathname.split('/')[1] || 'home'
 
@@ -145,14 +196,16 @@ export default function TabBar({ onStart }) {
       <nav className="tabbar-nav" aria-label={t('Main navigation')}>
         <div className="tabbar-bg" aria-hidden="true" />
         <LayoutGroup>
-          <div className="tabbar-row">
+          <div ref={rowRef} className="tabbar-row tabbar-row-draggable">
             {TABS.map(tab => {
-              const active = isActive(cur, tab.k)
+              const active = dragTab ? dragTab === tab.k : isActive(cur, tab.k)
               const icon = typeof tab.icon === 'function' ? tab.icon(S) : tab.icon
               const label = tab.label(S)
               return (
                 <TabItem
-                  key={tab.k}
+                key={tab.k}
+                tabKey={tab.k}
+                tabRef={element => { if (element) tabRefs.current.set(tab.k, element); else tabRefs.current.delete(tab.k) }}
                   featured={!!tab.featured}
                   active={active}
                   visible={isVisible}

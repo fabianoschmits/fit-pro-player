@@ -405,6 +405,7 @@ h4.sec{
   position:fixed;left:0;right:0;bottom:0;z-index:50;
   pointer-events:none;overflow:visible;
 }
+.tabbar-row-draggable{touch-action:none;user-select:none}
 .tabbar-nav{
   position:relative;display:flex;align-items:stretch;justify-content:center;
   padding:0 6px calc(var(--sab));
