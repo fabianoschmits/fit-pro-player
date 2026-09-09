@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText } from './lib/exercises.js'
-import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, uid, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase } from './lib/format.js'
+import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, isoOf, uid, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps, workSetsDone, suggestedWeightFor } from './lib/history.js'
 import { shouldWeighBeforeWorkout, hasWeighedToday } from './lib/ux.js'
 import { beep, vibrate } from './lib/sound.js'
@@ -94,14 +94,25 @@ function WeightInput({ value, setValue, unit }) {
 function BwSheet({ required, onDone, close, date }) {
   const st = useStore(s => s.S)
   const unit = st.unit
-  const existingForDate = date ? st.bodyweight.find(b => b.d === date) : null
+  const [selectedDate, setSelectedDate] = useState(date || todayISO())
+  const existingForDate = st.bodyweight.find(b => b.d === selectedDate)
   const bw = existingForDate || lastBW(st)
   const [v, setV] = useState(bw ? bw.w : (st.targetW || 70))
+  useEffect(() => {
+    const next = st.bodyweight.find(b => b.d === selectedDate)
+    const fallback = next || lastBW(st)
+    setV(fallback ? fallback.w : (st.targetW || 70))
+  }, [selectedDate, st.bodyweight, st.targetW])
+  const shiftDate = days => setSelectedDate(current => {
+    const next = new Date(current + 'T12:00:00')
+    next.setDate(next.getDate() + days)
+    return isoOf(next)
+  })
   const save = () => {
     const n = Math.round((v || 0) * 10) / 10
     if (!n || n <= 0) { toast(t('Enter a valid weight')); return }
     update(s => {
-      const iso = date || todayISO()
+      const iso = required ? todayISO() : selectedDate
       const ex = s.bodyweight.find(b => b.d === iso)
       if (ex) { ex.w = n; ex.t = Date.now() } else s.bodyweight.push({ d: iso, w: n, t: Date.now() })
       s.bodyweight.sort((a, b) => (a.d < b.d ? -1 : 1))
@@ -116,8 +127,19 @@ function BwSheet({ required, onDone, close, date }) {
     syncProfileWeightFromBodyweight(s)
   })
   return <>
-    <h3>{required ? t('Quick check-in') : date ? t('Edit body weight') : t('Log body weight')}</h3>
-    <div className="muted small">{required ? t('Slide or tap to set your weight — tracked before every workout so your curve stays honest.') : date ? fmtDate(date, true) : t('Today') + ', ' + fmtDate(todayISO(), true)}</div>
+    <h3>{required ? t('Quick check-in') : existingForDate ? t('Edit body weight') : t('Log body weight')}</h3>
+    {required ? (
+      <div className="muted small">{t('Slide or tap to set your weight — tracked before every workout so your curve stays honest.')}</div>
+    ) : (
+      <div className="bw-date-nav" aria-label={t('Weight date')}>
+        <button className="iconbtn" onClick={() => shiftDate(-1)} aria-label={t('Previous day')} title={t('Previous day')}><Icon name="chevronLeft" /></button>
+        <div className="bw-date-label">
+          <strong>{selectedDate === todayISO() ? t('Today') : fmtDate(selectedDate, true)}</strong>
+          <span>{selectedDate === todayISO() ? fmtDate(selectedDate, true) : selectedDate}</span>
+        </div>
+        <button className="iconbtn" disabled={selectedDate >= todayISO()} onClick={() => shiftDate(1)} aria-label={t('Next day')} title={t('Next day')}><Icon name="chevronRight" /></button>
+      </div>
+    )}
     <WeightInput value={v} setValue={setV} unit={unit} />
     <div style={{ height: 14 }} />
     <Button variant="primary" onClick={save}>{required ? t('Save & start workout') : t('Save')}</Button>

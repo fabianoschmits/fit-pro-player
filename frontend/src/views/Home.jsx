@@ -77,7 +77,7 @@ export default function Home() {
 
   const wThisWeek = S.workouts.filter(w => weekKey(w.d) === weekKey(todayISO())).length
   const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(k => S.week[k]).length
-  const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
+  const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d, iso: b.d }))
 
   const onToday = () => {
     if (S.active) nav('/workout')
@@ -167,16 +167,6 @@ export default function Home() {
       </div>
     )}
 
-    {recentWorkouts.length > 0 && (
-      <>
-        <div className="row between" style={{ margin: '18px 0 10px' }}>
-          <h4 className="sec" style={{ margin: 0 }}>{t('Recent workouts')}</h4>
-          <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')}</Button>
-        </div>
-        <div className="list">{recentWorkouts.map(w => <WorkoutRow key={w.id} w={w} onClick={() => workoutDetailSheet(w)} />)}</div>
-      </>
-    )}
-
     <div className="card">
       <div className="row between" style={{ marginBottom: 6 }}>
         <h2 style={{ margin: 0 }}>{t('Body weight')}</h2>
@@ -187,7 +177,7 @@ export default function Home() {
       </div>
       {bw ? <>
         <div className="row" style={{ gap: 8, alignItems: 'baseline' }}>
-          <div className="big tappable" style={{ cursor: 'pointer' }} onClick={() => bwSheet()} title={t('Edit current weight')}>
+          <div className="big tappable" style={{ cursor: 'pointer' }} onClick={() => bwSheet({ date: bw.d || todayISO() })} title={t('Edit current weight')}>
             {fmtNum(bw.w)} <span className="muted" style={{ fontSize: '1rem' }}>{S.unit}</span>
           </div>
           {!!delta && (
@@ -204,9 +194,19 @@ export default function Home() {
             <span>{t('Goal')} {fmtNum(S.targetW)} {S.unit} · {Math.abs(S.targetW - bw.w) < 0.05 ? t('reached!') : t(S.targetW > bw.w ? '{0} to gain' : '{0} to lose', fmtNum(Math.abs(S.targetW - bw.w)) + ' ' + S.unit)}</span>
           </div>
         )}
-        <div className="chart" style={{ marginTop: 8 }}><LineChart points={bwPoints} h={130} unit={S.unit} goal={S.targetW} onPointEdit={(pt) => bwSheet({ date: pt.iso })} /></div>
+        <div className="chart" style={{ marginTop: 8 }}><LineChart points={bwPoints} h={130} unit={S.unit} goal={S.targetW} onPointEdit={(pt) => bwSheet({ date: pt.iso || pt.d || todayISO() })} /></div>
       </> : <div className="muted small">{t("No entries yet — log your weight to start the curve. It's also asked before every workout.")}</div>}
     </div>
+
+    {recentWorkouts.length > 0 && (
+      <>
+        <div className="row between" style={{ margin: '18px 0 10px' }}>
+          <h4 className="sec" style={{ margin: 0 }}>{t('Recent workouts')}</h4>
+          <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')}</Button>
+        </div>
+        <div className="list">{recentWorkouts.map(w => <WorkoutRow key={w.id} w={w} onClick={() => workoutDetailSheet(w)} />)}</div>
+      </>
+    )}
 
     <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => calendarSheet()}>
       <div className="row between">
