@@ -337,7 +337,7 @@ export function setsDoneActive(A) {
   if (A) A.entries.forEach(e => e.sets.forEach(s => { if (s.done) n++ }))
   return n
 }
-export const lastBW = S => (S.bodyweight.length ? S.bodyweight[S.bodyweight.length - 1] : null)
+export const lastBW = S => (S?.bodyweight?.length ? S.bodyweight[S.bodyweight.length - 1] : null)
 
 // Group consecutive items sharing a superset id (sg) into "units" of indices.
 // items may be routine exercises ({sg}) or active-workout entries ({sg}).
