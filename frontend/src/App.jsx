@@ -82,12 +82,13 @@ function Shell() {
 
   return (
     <>
+      {authed && <ProfileHeader S={S} />}
       {/* keyed on the route: a view that throws is contained, and switching tabs
           re-mounts the boundary, so the tab bar is always a way out */}
       <PageTransition>
         <ErrorBoundary>
           {!authed ? <Landing /> : (
-            <><ProfileHeader S={S} /><Routes>
+            <Routes>
               <Route path="/home" element={<Home />} />
               <Route path="/plan" element={<Plan />} />
               <Route path="/plan/r/:id" element={<RoutineEdit />} />
@@ -99,7 +100,7 @@ function Shell() {
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes></>
+            </Routes>
           )}
         </ErrorBoundary>
       </PageTransition>
