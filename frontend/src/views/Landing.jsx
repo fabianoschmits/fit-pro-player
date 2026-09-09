@@ -295,7 +295,7 @@ export default function Landing() {
     <main className="landing-page">
       <header className="landing-nav-shell">
         <div className="landing-nav">
-          <a className="landing-brand" href="#top" aria-label="Fit Pro Player — início"><span><img src={BRAND_LOGO} alt="" /></span>Fit Pro Player</a>
+          <a className="landing-brand" href="#top" aria-label="Fit Pro Player — início"><img src={BRAND_LOGO} alt="" /></a>
           <nav aria-label="Seções da página">
             <a href="#como-funciona">Exercícios</a>
             <a href="#progresso">Progresso</a>
@@ -393,7 +393,7 @@ export default function Landing() {
       </section>
 
       <footer className="landing-footer">
-        <a className="landing-brand" href="#top"><span><img src={BRAND_LOGO} alt="" /></span>Fit Pro Player</a>
+        <a className="landing-brand" href="#top" aria-label="Fit Pro Player — início"><img src={BRAND_LOGO} alt="" /></a>
         <p>Treine com intenção. Acompanhe com clareza.</p>
         <span>Todos os direitos reservados.</span>
       </footer>
