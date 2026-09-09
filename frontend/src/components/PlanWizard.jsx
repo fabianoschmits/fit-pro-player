@@ -161,6 +161,33 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     onDone?.()
   }
 
+  const saveProgress = () => {
+    const heightCm = heightCmFromText(draft.height)
+    const startWeight = decimalNumber(draft.startWeight)
+    const targetWeight = decimalNumber(draft.targetWeight)
+    const name = formatPersonName(draft.name).trim()
+    if (!name && !S.profile?.name) { setError(t('Enter your name to continue.')); return }
+    update(state => {
+      const current = normalizeProfile(state.profile, state.body)
+      state.profile = {
+        ...current,
+        ...(name ? { name } : {}),
+        ...(draft.avatarId ? { avatarId: draft.avatarId } : {}),
+        ...(draft.birthDate ? { birthDate: draft.birthDate } : {}),
+        ...(draft.sex ? { sex: draft.sex } : {}),
+        ...(heightCm ? { heightCm } : {}),
+        ...(startWeight ? { startWeight } : {}),
+        ...(draft.goal ? { goal: draft.goal } : {}),
+        ...(draft.experience ? { experience: draft.experience } : {}),
+      }
+      state.body = draft.sex || state.body
+      state.unit = draft.unit
+      if (targetWeight) state.targetW = targetWeight
+      state.planMode = draft.planMode
+    })
+    onDone?.()
+  }
+
   const slide = reduceMotion ? {} : {
     initial: { opacity: 0, x: direction * 24 },
     animate: { opacity: 1, x: 0 },
@@ -274,6 +301,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       {error && <div className="wizard-error" role="alert"><Icon name="info" />{error}</div>}
       <div className="wizard-actions">
         {editing && step === 0 && <Button variant="ghost" onClick={onCancel}>{t('Cancel')}</Button>}
+        {editing && <Button variant="ghost" onClick={saveProgress}>{t('Save')}</Button>}
         {step < total - 1
           ? <Button variant="primary" trailingIcon="chevronRight" onClick={() => go(step + 1)}>{t('Continue')}</Button>
           : <Button variant="primary" icon="check" onClick={finish}>{editing ? t('Save changes') : t('Finish setup')}</Button>}
