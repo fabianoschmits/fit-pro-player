@@ -675,8 +675,8 @@ h4.sec{
   background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 12%,var(--surface)) 0%,var(--surface) 48%,color-mix(in srgb,var(--surface-2) 60%,var(--surface)) 100%);
   box-shadow:var(--card-shadow),inset 0 1px 0 rgba(255,255,255,.06);transition:transform var(--fast),background var(--fast),box-shadow var(--fast);
 }
-.plan-profile-card::after{content:"";position:absolute;z-index:0;inset:1px;border-radius:inherit;background:radial-gradient(ellipse 120px 82px at center,color-mix(in srgb,var(--acc) 42%,transparent) 0 28%,color-mix(in srgb,var(--acc) 24%,transparent) 48%,transparent 74%) no-repeat;background-size:150px 112px;background-position:0% 50%;opacity:.9;pointer-events:none;animation:profile-glow-drift 4.8s ease-in-out infinite alternate}
-@keyframes profile-glow-drift{0%{background-position:0% 52%;opacity:.68}35%{background-position:48% 42%;opacity:1}70%{background-position:100% 58%;opacity:.9}100%{background-position:0% 46%;opacity:.78}}
+.plan-profile-card::after{content:"";position:absolute;z-index:0;inset:1px;border-radius:inherit;background:radial-gradient(ellipse 170px 92px at center,color-mix(in srgb,var(--acc) 38%,transparent) 0 20%,color-mix(in srgb,var(--acc) 21%,transparent) 46%,transparent 76%) no-repeat;background-size:220px 100%;background-position:-230px 50%;opacity:.86;pointer-events:none;animation:profile-glow-drift 5.2s cubic-bezier(.45,0,.2,1) infinite}
+@keyframes profile-glow-drift{0%{background-position:-230px 50%;opacity:.28}14%{opacity:.72}50%{opacity:.92}86%{opacity:.72}100%{background-position:calc(100% + 230px) 50%;opacity:.28}}
 @media (prefers-reduced-motion:reduce){.plan-profile-card::after{animation:none}}
 .plan-profile-card:active{transform:scale(.985);background:var(--surface-2);box-shadow:none}
 .plan-profile-avatar{position:absolute;z-index:1;left:-14px;bottom:-2px;width:143px;height:157px;display:block;pointer-events:none;filter:drop-shadow(0 10px 10px rgba(0,0,0,.22))}
@@ -691,9 +691,9 @@ h4.sec{
   background:linear-gradient(90deg,color-mix(in srgb,#031415 70%,var(--surface)) 0%,color-mix(in srgb,var(--acc) 11%,var(--surface)) 47%,var(--surface) 100%);
   box-shadow:0 0 0 var(--hair) color-mix(in srgb,var(--acc) 30%,transparent),0 18px 38px -30px #000,inset 0 1px 0 rgba(255,255,255,.05);
 }
-.app-plan-profile-header::after{inset:1px;background:radial-gradient(ellipse 190px 102px at center,color-mix(in srgb,var(--acc) 34%,transparent) 0 27%,color-mix(in srgb,var(--acc) 18%,transparent) 48%,transparent 74%) no-repeat;background-size:210px 114px;background-position:0% 50%;opacity:.8;animation:profile-glow-drift 4.8s cubic-bezier(.45,0,.2,1) infinite}
+.app-plan-profile-header::after{inset:1px;background:radial-gradient(ellipse 210px 108px at center,color-mix(in srgb,var(--acc) 36%,transparent) 0 22%,color-mix(in srgb,var(--acc) 18%,transparent) 50%,transparent 78%) no-repeat;background-size:230px 100%;background-position:-240px 50%;opacity:.82;animation:profile-glow-drift 5.2s cubic-bezier(.45,0,.2,1) infinite}
 .app-plan-profile-header .plan-profile-avatar{left:-8px;bottom:-4px;width:178px;height:182px}
-.app-plan-profile-header .grow{align-items:flex-start;text-align:left;justify-content:center;gap:7px;min-width:0}
+.app-plan-profile-header .grow{align-items:center;text-align:center;justify-content:center;gap:7px;min-width:0}
 .app-plan-profile-header .grow strong{
   width:100%;font-family:ui-rounded,'Avenir Next Rounded','Arial Rounded MT Bold',-apple-system,sans-serif;
   font-size:clamp(24px,4.8vw,34px);font-weight:850;letter-spacing:-.025em;line-height:1.02;
@@ -776,7 +776,7 @@ h4.sec{
   .routine-name{font-size:18px}
   .app-plan-profile-header{width:calc(100% - 18px);min-height:108px;padding:14px 7px 14px 88px;grid-template-columns:minmax(0,1fr) 46px 46px;column-gap:4px}
   .app-plan-profile-header .plan-profile-avatar{left:-13px;bottom:-5px;width:106px;height:120px}
-  .app-plan-profile-header .grow{gap:5px}
+  .app-plan-profile-header .grow{gap:5px;align-items:center;text-align:center}
   .app-plan-profile-header .grow strong{font-size:clamp(13px,3.55vw,14px);letter-spacing:0;white-space:nowrap;text-wrap:nowrap}
   .profile-message-stage{height:19px}
   .profile-message{font-size:clamp(11px,3.3vw,13px)}
