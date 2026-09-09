@@ -25,6 +25,7 @@ export default function RestTimer() {
   return (
     <div id="timer" className="rest">
       <div className="head">
+        <div className="rest-label">{t('Rest')}</div>
         <div className="t">{clock(timer.left)}</div>
         <div className="bar"><i style={{ '--progress': pct / 100 }} /></div>
       </div>

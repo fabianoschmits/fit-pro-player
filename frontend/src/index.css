@@ -1088,15 +1088,15 @@ h4.sec{
 .ex-done-banner__label{flex:1;font-size:14px;font-weight:600;color:var(--green,#30d158)}
 .ex-done-banner__expand{color:var(--dim);font-size:13px;flex:none}
 
-/* play-mode checkbox: circle shows play when pending, check when done */
+/* play-mode checkbox: pending sets stay visibly empty; completed sets become filled */
 .chk.play-mode{
-  background:transparent;
-  border:2px solid color-mix(in srgb,var(--acc) 40%,transparent);
-  color:var(--acc);font-size:11px;
+  width:30px;height:30px;border-radius:8px;
+  background:transparent;box-shadow:inset 0 0 0 1px var(--label-4);
+  color:var(--on-acc);font-size:11px;
   display:flex;align-items:center;justify-content:center;
 }
-.chk.play-mode svg{display:block;margin:0 auto;transform:translateX(1px)}
-.chk.play-mode:not(:disabled):hover{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.chk.play-mode.on{background:var(--acc);box-shadow:none}
+.chk.play-mode:not(:disabled):hover{box-shadow:inset 0 0 0 1px var(--acc);background:color-mix(in srgb,var(--acc) 10%,transparent)}
 .chk.play-mode:not(:disabled):active{transform:scale(.92)}
 
 /* timed-set overlay — large clock below the exercise animation */
@@ -1182,6 +1182,7 @@ h4.sec{
 }
 @keyframes slideup{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 #timer .t{font-size:26px;font-weight:600;letter-spacing:-.026em;font-variant-numeric:tabular-nums;min-width:66px}
+#timer .rest-label{color:var(--label-2);font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
 #timer .bar{flex:1;height:4px;background:var(--surface-3);border-radius:99px;overflow:hidden}
 #timer .bar i{display:block;width:100%;height:100%;background:var(--acc);transform:scaleX(var(--progress,0));transform-origin:left center;transition:transform 1s linear}
 /* rest variant: −15/+15/Skip and the clock won't share one line on a phone, so the clock and

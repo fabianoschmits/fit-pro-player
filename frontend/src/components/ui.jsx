@@ -222,7 +222,7 @@ export function Check({ checked, onChange, className = '', size, playMode = fals
       style={size ? { width: size, height: size } : null}
       onClick={() => onChange(!checked)}
     >
-      {playMode && !checked ? <Icon name="play" /> : <Icon name="check" />}
+      {checked && <Icon name="check" />}
     </button>
   )
 }
