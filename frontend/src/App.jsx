@@ -17,6 +17,7 @@ import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, heightText, weightText } from './lib/profile.js'
+import { lastBW } from './lib/history.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 import Home from './views/Home.jsx'
@@ -42,7 +43,8 @@ function applyPrefs(theme, accent) {
 
 function ProfileHeader({ S }) {
   const age = ageFromBirthDate(S.profile?.birthDate)
-  const details = [age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')
+  const currentWeight = lastBW(S)?.w || S.profile?.startWeight
+  const details = [age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', currentWeight ? `${weightText(currentWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')
   if (!S.onboardingDone || !S.profile?.name) return null
   return <div className="card plan-profile-card app-plan-profile-header" aria-label={S.profile.name}>
     <span className="plan-profile-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile.avatarId} /></span>
