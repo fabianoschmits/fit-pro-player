@@ -188,6 +188,7 @@ body.landing-mode #tabbar{display:none}
 }
 .app-plan-profile-header{width:calc(100% - 32px);margin:10px auto 0}
 .app-plan-profile-header .grow{align-items:center;text-align:center;justify-content:center}
+.app-plan-profile-header .grow strong{font-family:ui-rounded,'Avenir Next Rounded','Arial Rounded MT Bold',-apple-system,sans-serif;font-size:clamp(17px,5.8vw,24px);font-weight:850;letter-spacing:-.045em;line-height:1.02;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;text-wrap:balance}
 .landing-nav-shell{
   height:68px;position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 82%,transparent);
   border-bottom:var(--hair) solid var(--surface-border);backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25);
