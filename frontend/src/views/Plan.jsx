@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore.js'
 import { DAYN, DAYS, uid, exCount, fmtDate, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { effectiveRoutine, effectiveRoutineId } from '../lib/history.js'
-import { ageFromBirthDate } from '../lib/profile.js'
+import { EXPERIENCE_LABELS, PROFILE_GOAL_LABELS, ageFromBirthDate, heightText, weightText } from '../lib/profile.js'
 import { ensureStarterRoutines, routineName } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { dayAssignSheet, dayOverrideSheet, planToolsSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
@@ -49,10 +49,12 @@ export default function Plan() {
     const currentId = effectiveRoutineId(S, today)
     update(state => {
       state.planMode = nextMode
-      const ready = ensureStarterRoutines(state)
       if (nextMode === 'weekly') {
         const hasWeek = WEEK_DAYS.some(day => state.week[day] && state.routines.some(r => r.id === state.week[day]))
-        if (!hasWeek) DEFAULT_DAYS.forEach((day, index) => { state.week[day] = ready[index].id })
+        if (!hasWeek) {
+          const ready = state.routines.length ? state.routines : ensureStarterRoutines(state)
+          DEFAULT_DAYS.forEach((day, index) => { if (ready[index]) state.week[day] = ready[index].id })
+        }
       } else if (state.dayPlan[today] === undefined && currentId) {
         state.dayPlan[today] = currentId
       }
@@ -87,7 +89,9 @@ export default function Plan() {
 
     <button className="card plan-profile-card" onClick={() => setEditingProfile(true)}>
       <span className="plan-profile-avatar"><Icon name="person" /></span>
-      <span className="grow"><strong>{S.profile?.name}</strong><small>{[age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${S.profile.heightCm} cm` : '', S.profile?.startWeight ? `${S.profile.startWeight} ${S.unit}` : ''].filter(Boolean).join(' · ')}</small></span>
+      <span className="grow"><strong>{S.profile?.name}</strong><small>{[age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')}</small>
+        {S.profile?.goal && S.profile?.experience && <em>{t(PROFILE_GOAL_LABELS[S.profile.goal])} · {t(EXPERIENCE_LABELS[S.profile.experience])}</em>}
+      </span>
       <span className="plan-profile-edit">{t('Edit')} <Icon name="chevronRight" /></span>
     </button>
 

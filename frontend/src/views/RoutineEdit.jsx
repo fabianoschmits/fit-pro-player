@@ -16,6 +16,7 @@ import { POLICIES_FOR, POLICY_NAME, POLICY_DESC } from '../lib/progression.js'
 import BodyMap from '../components/BodyMap.jsx'
 import PlanProgress from '../components/PlanProgress.jsx'
 import { loadOfRoutine, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
+import { routineName } from '../lib/starter.js'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 
@@ -57,13 +58,14 @@ export default function RoutineEdit() {
   const inSS = new Set(units.filter(u => u.length > 1).flat())
   const assignedDays = WEEK_DAYS.filter(day => S.week[day] === id)
   const planProgress = planSetupProgress(S)
+  const displayName = routineName(r)
 
   return <div className="narrow routine-builder">
     {planProgress && <PlanProgress progress={planProgress} />}
     <div className="hdr routine-builder-head">
       <button className="iconbtn" onClick={() => nav('/plan')} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
       <div className="routine-name-wrap">
-        <input className="input routine-name" value={r.name}
+        <input className="input routine-name" value={displayName}
           onChange={e => update(s => { const routine = s.routines.find(x => x.id === id); routine.name = e.target.value; delete routine.starterKey; routine.starterCustomName = true })}
           onBlur={e => update(s => { s.routines.find(x => x.id === id).name = e.target.value.trim() || t('Routine') })}
           aria-label={t('Routine')} />
@@ -111,11 +113,11 @@ export default function RoutineEdit() {
           const selected = S.week[day] === id
           const other = !selected && S.routines.find(x => x.id === S.week[day])
           return <button key={day} className={'plan-day' + (selected ? ' on' : '') + (other ? ' has-other' : '')}
-            aria-label={`${t(DAYN[day])}: ${selected ? r.name : other ? other.name : t('Rest')}`}
+            aria-label={`${t(DAYN[day])}: ${selected ? displayName : other ? routineName(other) : t('Rest')}`}
             aria-pressed={selected} onClick={() => toggleDay(day)}>
             <span className="plan-day-label">{t(DAYS[day])}</span>
             <span className="plan-day-icon"><Icon name={selected ? glyphOf(r.emoji) : other ? glyphOf(other.emoji) : 'moon'} /></span>
-            <span className="plan-day-name">{selected ? r.name : other ? other.name : t('Rest')}</span>
+            <span className="plan-day-name">{selected ? displayName : other ? routineName(other) : t('Rest')}</span>
           </button>
         })}
       </div>
@@ -146,7 +148,7 @@ export default function RoutineEdit() {
         <div className="small dim routine-advanced-copy">{t('Applies to every exercise in this routine that does not set its own rule.')}</div>
         <div style={{ height: 10 }} />
         <Button variant="danger" onClick={() => confirmSheet({
-          title: t('Delete routine?'), message: t('“{0}” and its exercises will be removed.', r.name), confirmText: t('Delete'), danger: true,
+          title: t('Delete routine?'), message: t('“{0}” and its exercises will be removed.', displayName), confirmText: t('Delete'), danger: true,
           onConfirm: () => {
             update(s => {
               s.routines = s.routines.filter(x => x.id !== id)

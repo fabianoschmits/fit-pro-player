@@ -4,32 +4,21 @@ import { useStore } from '../store/useStore.js'
 import { DAYN, DAYS, exCount, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { lastBW } from '../lib/history.js'
-import { ensureStarterRoutines, routineName } from '../lib/starter.js'
-import { EXPERIENCE_LEVELS, PROFILE_GOALS, normalizeProfile } from '../lib/profile.js'
+import { isStarterRoutine, routineName } from '../lib/starter.js'
+import {
+  EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS,
+  decimalNumber, defaultBirthDate, formatPersonName, heightCmFromText, heightInput,
+  heightText, normalizeProfile, weightInput, weightText,
+} from '../lib/profile.js'
+import { applyPersonalizedPlan, personalizedRoutineSpecs } from '../lib/personalized-plan.js'
 import BodyMap from './BodyMap.jsx'
+import DateWheelPicker from './DateWheelPicker.jsx'
 import Icon from './Icon.jsx'
 import { Button, Segmented, TextField } from './ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 const DEFAULT_DAYS = [1, 3, 5]
-const GOAL_LABELS = {
-  lose_weight: 'Lose weight',
-  build_muscle: 'Build muscle',
-  improve_fitness: 'Improve fitness',
-  maintain_weight: 'Maintain weight',
-}
-const EXPERIENCE_LABELS = {
-  beginner: 'Beginner',
-  intermediate: 'Intermediate',
-  advanced: 'Advanced',
-}
-
-const numberOrNull = value => {
-  const n = Number(String(value).replace(',', '.'))
-  return Number.isFinite(n) && n > 0 ? n : null
-}
-
 function Choice({ selected, icon, title, copy, onClick }) {
   return <button type="button" className={'wizard-choice' + (selected ? ' on' : '')} aria-pressed={selected} onClick={onClick}>
     <span className="wizard-choice-icon"><Icon name={icon} /></span>
@@ -50,30 +39,35 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const [direction, setDirection] = useState(1)
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(() => ({
-    name: profile.name || user?.name || '',
-    birthDate: profile.birthDate || '',
+    name: formatPersonName(profile.name || user?.name || ''),
+    birthDate: profile.birthDate || defaultBirthDate(),
     sex: profile.sex || (S.body === 'female' ? 'female' : 'male'),
-    heightCm: profile.heightCm || null,
-    startWeight: profile.startWeight || lastWeight,
-    targetWeight: S.targetW || null,
+    height: heightText(profile.heightCm),
+    startWeight: weightText(profile.startWeight || lastWeight),
+    targetWeight: weightText(S.targetW),
     goal: profile.goal || '',
     experience: profile.experience || '',
     unit: S.unit === 'lb' ? 'lb' : 'kg',
     planMode: S.planMode === 'daily' ? 'daily' : 'weekly',
   }))
   const [days, setDays] = useState(scheduled.length ? scheduled : DEFAULT_DAYS)
-  const [dailyRoutineId, setDailyRoutineId] = useState(() => {
+  const [dailyRoutineKey, setDailyRoutineKey] = useState(() => {
     const value = S.dayPlan?.[todayISO()]
-    return S.routines.some(r => r.id === value) ? value : ''
+    const routine = S.routines.find(r => r.id === value)
+    return routine?.personalizedKey || routine?.starterKey || (routine ? `custom:${routine.id}` : '')
   })
 
-  // A first-run state already carries these routines. The fallback only covers old backups
-  // whose user intentionally removed every routine and then chose to edit their setup.
   const previewRoutines = useMemo(() => {
-    if (S.routines.length) return S.routines
-    const temp = { ...S, routines: [] }
-    return ensureStarterRoutines(temp)
-  }, [S])
+    const startWeight = decimalNumber(draft.startWeight)
+    const generated = personalizedRoutineSpecs({
+      goal: draft.goal, experience: draft.experience, startWeight,
+    }, draft.planMode === 'daily' ? 7 : Math.max(1, days.length), {
+      daily: draft.planMode === 'daily', state: S,
+    }).map(routine => ({ ...routine, id: `plan:${routine.personalizedKey}`, name: routine.starterKey }))
+    if (draft.planMode !== 'daily') return generated
+    const custom = S.routines.filter(routine => !routine.planGenerated && !isStarterRoutine(routine))
+    return [...generated, ...custom]
+  }, [S, days.length, draft.experience, draft.goal, draft.planMode, draft.startWeight])
 
   const set = patch => setDraft(current => ({ ...current, ...patch }))
   const toggleDay = day => setDays(current => current.includes(day) ? current.filter(d => d !== day) : [...current, day])
@@ -82,12 +76,14 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
 
   const validate = () => {
     if (step === 0 && draft.name.trim().length < 2) return t('Enter your name to continue.')
-    if (step === 1 && (!draft.birthDate || draft.birthDate > maxDate)) return t('Enter a valid date of birth.')
-    if (step === 2 && (!draft.heightCm || draft.heightCm < 100 || draft.heightCm > 250 || !draft.startWeight)) return t('Enter valid measurements to continue.')
+    if (step === 1 && (!draft.birthDate || draft.birthDate < '1900-01-01' || draft.birthDate > maxDate)) return t('Enter a valid date of birth.')
+    const heightCm = heightCmFromText(draft.height)
+    const startWeight = decimalNumber(draft.startWeight)
+    if (step === 2 && (!heightCm || heightCm < 100 || heightCm > 250 || !startWeight)) return t('Enter valid measurements to continue.')
     if (step === 3 && (!draft.goal || !draft.experience)) return t('Choose a goal and experience level.')
     if (step === 4 && !draft.planMode) return t('Choose how you want to plan your workouts.')
     if (step === 5 && draft.planMode === 'weekly' && !days.length) return t('Choose at least one training day.')
-    if (step === 5 && draft.planMode === 'daily' && !dailyRoutineId) return t("Choose today's workout.")
+    if (step === 5 && draft.planMode === 'daily' && !dailyRoutineKey) return t("Choose today's workout.")
     return ''
   }
 
@@ -103,40 +99,54 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     const message = validate()
     if (message) { setError(message); return }
     const today = todayISO()
+    const heightCm = heightCmFromText(draft.height)
+    const startWeight = decimalNumber(draft.startWeight)
+    const targetWeight = decimalNumber(draft.targetWeight)
+    const name = formatPersonName(draft.name).trim()
+    const planInputsChanged = !editing
+      || !S.routines.some(routine => routine.planGenerated)
+      || S.profile?.goal !== draft.goal
+      || S.profile?.experience !== draft.experience
+      || Number(S.profile?.startWeight) !== startWeight
+      || S.planMode !== draft.planMode
+      || (draft.planMode === 'weekly' && scheduled.length !== days.length)
     update(state => {
       state.profile = {
         ...normalizeProfile(state.profile, state.body),
-        name: draft.name.trim(),
+        name,
         birthDate: draft.birthDate,
         sex: draft.sex,
-        heightCm: draft.heightCm,
-        startWeight: draft.startWeight,
+        heightCm,
+        startWeight,
         goal: draft.goal,
         experience: draft.experience,
         completedAt: state.profile?.completedAt || Date.now(),
       }
       state.body = draft.sex
       state.unit = draft.unit
-      state.targetW = draft.targetWeight || null
+      state.targetW = targetWeight
       state.planMode = draft.planMode
 
       if (!editing) {
         const existing = state.bodyweight.find(entry => entry.d === today)
-        if (existing) { existing.w = draft.startWeight; existing.t = Date.now() }
-        else state.bodyweight.push({ d: today, w: draft.startWeight, t: Date.now() })
+        if (existing) { existing.w = startWeight; existing.t = Date.now() }
+        else state.bodyweight.push({ d: today, w: startWeight, t: Date.now() })
         state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
       }
 
-      const ready = ensureStarterRoutines(state)
+      const ready = planInputsChanged
+        ? applyPersonalizedPlan(state, state.profile, draft.planMode === 'daily' ? 7 : days.length, { daily: draft.planMode === 'daily' })
+        : state.routines
       if (draft.planMode === 'weekly') {
         WEEK_DAYS.filter(day => !days.includes(day)).forEach(day => { delete state.week[day] })
         WEEK_DAYS.filter(day => days.includes(day)).forEach((day, index) => {
           const current = state.week[day]
-          if (!editing || !state.routines.some(r => r.id === current)) state.week[day] = ready[index % ready.length].id
+          if (planInputsChanged || !editing || !state.routines.some(r => r.id === current)) state.week[day] = ready[index % ready.length].id
         })
-      } else if (dailyRoutineId) {
-        const chosen = state.routines.find(r => r.id === dailyRoutineId)
-          || ready.find(r => r.starterKey === previewRoutines.find(x => x.id === dailyRoutineId)?.starterKey)
+      } else if (dailyRoutineKey) {
+        const customId = dailyRoutineKey.startsWith('custom:') ? dailyRoutineKey.slice(7) : ''
+        const chosen = state.routines.find(routine => routine.id === customId)
+          || ready.find(routine => routine.personalizedKey === dailyRoutineKey || routine.starterKey === dailyRoutineKey)
         if (chosen) state.dayPlan[today] = chosen.id
       }
       state.onboardingDone = true
@@ -157,21 +167,22 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <h1>{editing ? t('Edit your personal data') : t("Let's build your plan")}</h1>
       <p>{t('These details personalize your progress, body map and training suggestions.')}</p>
       <label className="wizard-label" htmlFor="wizard-name">{t('Your name')}</label>
-      <TextField id="wizard-name" autoFocus={!reduceMotion} maxLength={50} autoComplete="name" value={draft.name} onChange={event => set({ name: event.target.value })} placeholder={t('How should we call you?')} />
+      <TextField id="wizard-name" autoFocus={!reduceMotion} maxLength={50} autoComplete="name" value={draft.name} onChange={event => set({ name: formatPersonName(event.target.value) })} placeholder={t('How should we call you?')} />
     </div>,
     <div className="wizard-step wizard-body-step" key="body">
       <span className="wizard-kicker">{t('About you')}</span>
       <h1>{t('Your body profile')}</h1>
       <p>{t('The body diagram adapts to your selection and is used in your statistics.')}</p>
-      <div className="wizard-body-layout">
+      <div className="wizard-body-choice">
         <div className="wizard-avatar" aria-hidden="true"><BodyMap body={draft.sex} view="front" decorative /></div>
         <div className="wizard-body-fields">
-          <label className="wizard-label" htmlFor="wizard-birth">{t('Date of birth')}</label>
-          <input id="wizard-birth" className="field" type="date" min="1900-01-01" max={maxDate} value={draft.birthDate} onInput={event => set({ birthDate: event.currentTarget.value })} onChange={event => set({ birthDate: event.target.value })} />
           <span className="wizard-label">{t('Sex')}</span>
           <Segmented options={[{ value: 'male', label: t('Male') }, { value: 'female', label: t('Female') }]} value={draft.sex} onChange={sex => set({ sex })} />
+          <small>{t('The avatar and body statistics follow this selection.')}</small>
         </div>
       </div>
+      <span className="wizard-label">{t('Date of birth')}</span>
+      <DateWheelPicker value={draft.birthDate} max={maxDate} reducedMotion={reduceMotion} onChange={birthDate => set({ birthDate })} />
     </div>,
     <div className="wizard-step" key="measurements">
       <span className="wizard-kicker">{t('Measurements')}</span>
@@ -180,11 +191,11 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <span className="wizard-label">{t('Weight unit')}</span>
       <Segmented options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} value={draft.unit} onChange={unit => set({ unit })} />
       <div className="wizard-measure-grid">
-        <label><span>{t('Height')}</span><span className="wizard-input-unit"><input className="field" inputMode="numeric" value={draft.heightCm || ''} onChange={event => set({ heightCm: numberOrNull(event.target.value) })} /><i>cm</i></span></label>
-        <label><span>{t('Weight at signup')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" value={draft.startWeight || ''} onChange={event => set({ startWeight: numberOrNull(event.target.value) })} /><i>{draft.unit}</i></span></label>
+        <label><span>{t('Height')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="1,76" value={draft.height} onChange={event => set({ height: heightInput(event.target.value) })} /><i>m</i></span></label>
+        <label><span>{t('Weight at signup')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="71,2" value={draft.startWeight} onChange={event => set({ startWeight: weightInput(event.target.value) })} /><i>{draft.unit}</i></span></label>
       </div>
       <label className="wizard-label" htmlFor="wizard-target">{t('Target weight')} <small>{t('optional')}</small></label>
-      <span className="wizard-input-unit"><input id="wizard-target" className="field" inputMode="decimal" value={draft.targetWeight || ''} onChange={event => set({ targetWeight: numberOrNull(event.target.value) })} /><i>{draft.unit}</i></span>
+      <span className="wizard-input-unit"><input id="wizard-target" className="field" inputMode="decimal" placeholder="68,0" value={draft.targetWeight} onChange={event => set({ targetWeight: weightInput(event.target.value) })} /><i>{draft.unit}</i></span>
     </div>,
     <div className="wizard-step" key="goal">
       <span className="wizard-kicker">{t('Training profile')}</span>
@@ -192,7 +203,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <p>{t('You can change these answers later without losing any history.')}</p>
       <span className="wizard-label">{t('Main goal')}</span>
       <div className="wizard-choice-grid compact">
-        {PROFILE_GOALS.map((goal, index) => <Choice key={goal} selected={draft.goal === goal} icon={['scale', 'figureStrength', 'bolt', 'heart'][index]} title={t(GOAL_LABELS[goal])} onClick={() => set({ goal })} />)}
+        {PROFILE_GOALS.map((goal, index) => <Choice key={goal} selected={draft.goal === goal} icon={['scale', 'figureStrength', 'bolt', 'heart'][index]} title={t(PROFILE_GOAL_LABELS[goal])} onClick={() => set({ goal })} />)}
       </div>
       <span className="wizard-label">{t('Experience')}</span>
       <div className="wizard-levels">
@@ -211,21 +222,26 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     <div className="wizard-step" key="schedule">
       <span className="wizard-kicker">{draft.planMode === 'weekly' ? t('Weekly plan') : t('Daily plan')}</span>
       <h1>{draft.planMode === 'weekly' ? t('Choose your training days') : t("Choose today's workout")}</h1>
-      <p>{draft.planMode === 'weekly' ? t('The ready-made routines are distributed across the days you select.') : t('Tomorrow you can choose again. Your completed workouts stay in history.')}</p>
+      <p>{draft.planMode === 'weekly' ? t('Your exercises, sets, repetitions and starting loads adapt to the number of days you select.') : t('Tomorrow you can choose again. Your completed workouts stay in history.')}</p>
+      <div className="wizard-plan-fit"><Icon name="sparkles" /><span><strong>{t('Personalized for {0} · {1}', t(PROFILE_GOAL_LABELS[draft.goal]), t(EXPERIENCE_LABELS[draft.experience]))}</strong><small>{t('Built from your goal, experience, weight and training frequency.')} {t('Starting loads are estimates. Adjust them whenever technique or comfort requires it.')}</small></span></div>
       {draft.planMode === 'weekly' ? <>
         <div className="wizard-week" role="group" aria-label={t('Training days')}>
           {WEEK_DAYS.map(day => <button type="button" key={day} className={days.includes(day) ? 'on' : ''} aria-pressed={days.includes(day)} onClick={() => toggleDay(day)}><span>{t(DAYS[day])}</span><strong>{t(DAYN[day]).slice(0, 3)}</strong></button>)}
         </div>
         <div className="wizard-schedule-preview">
           {WEEK_DAYS.filter(day => days.includes(day)).map((day, index) => {
-            const routine = (editing && S.routines.find(item => item.id === S.week[day])) || previewRoutines[index % previewRoutines.length]
-            return <div key={day}><span>{t(DAYN[day])}</span><strong>{routineName(routine)}</strong></div>
+            const routine = previewRoutines[index % previewRoutines.length]
+            return <div key={day}><span>{t(DAYN[day])}</span><p><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)}</small></p></div>
           })}
         </div>
       </> : <div className="wizard-routine-grid">
-        {previewRoutines.map(routine => <button type="button" key={routine.id} className={dailyRoutineId === routine.id ? 'on' : ''} aria-pressed={dailyRoutineId === routine.id} onClick={() => setDailyRoutineId(routine.id)}>
+        {previewRoutines.map(routine => {
+          const key = routine.personalizedKey || routine.starterKey || `custom:${routine.id}`
+          const selected = dailyRoutineKey === key || dailyRoutineKey === routine.starterKey
+          return <button type="button" key={routine.id} className={selected ? 'on' : ''} aria-pressed={selected} onClick={() => setDailyRoutineKey(key)}>
           <span><Icon name={glyphOf(routine.emoji)} /></span><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)}</small>
-        </button>)}
+          </button>
+        })}
       </div>}
     </div>,
   ]

@@ -1,12 +1,20 @@
 // Strings introduced by the profile/plan onboarding. Keeping this small catalogue shared avoids
 // eleven locale files drifting whenever the wizard gains a field. Locale packs spread it first,
 // so their existing hand-written translations still take precedence.
-const KEYS = [
+const ROUTINE_KEYS = [
   'Chest Day', 'Back Day', 'Leg Day', 'Abs Day', 'Arms Day', 'Shoulders Day', 'Glutes Day',
+  'Full Body', 'Full Body A', 'Full Body B', 'Upper Body', 'Lower Body', 'Push Day', 'Pull Day',
+  'Chest & Triceps', 'Back & Biceps', 'Legs & Core', 'Shoulders & Abs', 'Arms & Core',
+  'Glutes & Legs', 'Conditioning', 'Cardio & Core', 'Active Recovery',
+]
+
+const KEYS = [
+  ...ROUTINE_KEYS,
   'Your profile', 'Edit your personal data', "Let's build your plan",
   'These details personalize your progress, body map and training suggestions.',
   'How should we call you?', 'Enter your name to continue.', 'About you', 'Your body profile',
   'The body diagram adapts to your selection and is used in your statistics.', 'Date of birth', 'Sex',
+  'The avatar and body statistics follow this selection.', 'Day', 'Month', 'Year', 'Selected date: {0}',
   'Enter a valid date of birth.', 'Measurements', 'Your starting point',
   'Your first weight starts the progress chart and remains saved as your registration weight.',
   'Weight unit', 'Height', 'Weight at signup', 'optional', 'Enter valid measurements to continue.',
@@ -19,6 +27,9 @@ const KEYS = [
   'Choose the workout you want each day and keep previous days in history.',
   'Choose how you want to plan your workouts.', 'Choose your training days', "Choose today's workout",
   'The ready-made routines are distributed across the days you select.',
+  'Your exercises, sets, repetitions and starting loads adapt to the number of days you select.',
+  'Personalized for {0} · {1}', 'Built from your goal, experience, weight and training frequency.',
+  'Starting loads are estimates. Adjust them whenever technique or comfort requires it.',
   'Tomorrow you can choose again. Your completed workouts stay in history.', 'Training days',
   'Choose at least one training day.', "Choose today's workout.", 'Back', 'Continue', 'Save changes',
   'Finish setup', 'Personal profile', 'Personal data',
@@ -55,17 +66,17 @@ const KEYS = [
 const BASE = Object.fromEntries(KEYS.map(key => [key, key]))
 
 const ROUTINES = {
-  pt: ['Dia de Peito', 'Dia de Costas', 'Dia de Pernas', 'Dia de Abdômen', 'Dia de Braços', 'Dia de Ombros', 'Dia de Glúteos'],
-  de: ['Brusttag', 'Rückentag', 'Beintag', 'Bauchtag', 'Armtag', 'Schultertag', 'Gesäßtag'],
-  es: ['Día de pecho', 'Día de espalda', 'Día de piernas', 'Día de abdominales', 'Día de brazos', 'Día de hombros', 'Día de glúteos'],
-  fr: ['Jour pectoraux', 'Jour dos', 'Jour jambes', 'Jour abdominaux', 'Jour bras', 'Jour épaules', 'Jour fessiers'],
-  it: ['Giorno petto', 'Giorno schiena', 'Giorno gambe', 'Giorno addominali', 'Giorno braccia', 'Giorno spalle', 'Giorno glutei'],
-  pl: ['Dzień klatki', 'Dzień pleców', 'Dzień nóg', 'Dzień brzucha', 'Dzień ramion', 'Dzień barków', 'Dzień pośladków'],
-  tr: ['Göğüs Günü', 'Sırt Günü', 'Bacak Günü', 'Karın Günü', 'Kol Günü', 'Omuz Günü', 'Kalça Günü'],
-  ru: ['День груди', 'День спины', 'День ног', 'День пресса', 'День рук', 'День плеч', 'День ягодиц'],
-  zh: ['胸部训练日', '背部训练日', '腿部训练日', '腹肌训练日', '手臂训练日', '肩部训练日', '臀部训练日'],
-  ko: ['가슴 운동일', '등 운동일', '하체 운동일', '복근 운동일', '팔 운동일', '어깨 운동일', '둔근 운동일'],
-  hi: ['छाती दिवस', 'पीठ दिवस', 'पैर दिवस', 'एब्स दिवस', 'बांह दिवस', 'कंधे दिवस', 'ग्लूट्स दिवस'],
+  pt: ['Dia de Peito', 'Dia de Costas', 'Dia de Pernas', 'Dia de Abdômen', 'Dia de Braços', 'Dia de Ombros', 'Dia de Glúteos', 'Corpo Inteiro', 'Corpo Inteiro A', 'Corpo Inteiro B', 'Parte Superior', 'Parte Inferior', 'Dia de Empurrar', 'Dia de Puxar', 'Peito e Tríceps', 'Costas e Bíceps', 'Pernas e Core', 'Ombros e Abdômen', 'Braços e Core', 'Glúteos e Pernas', 'Condicionamento', 'Cardio e Core', 'Recuperação Ativa'],
+  de: ['Brusttag', 'Rückentag', 'Beintag', 'Bauchtag', 'Armtag', 'Schultertag', 'Gesäßtag', 'Ganzkörper', 'Ganzkörper A', 'Ganzkörper B', 'Oberkörper', 'Unterkörper', 'Drücktag', 'Zugtag', 'Brust & Trizeps', 'Rücken & Bizeps', 'Beine & Rumpf', 'Schultern & Bauch', 'Arme & Rumpf', 'Gesäß & Beine', 'Kondition', 'Cardio & Rumpf', 'Aktive Erholung'],
+  es: ['Día de pecho', 'Día de espalda', 'Día de piernas', 'Día de abdominales', 'Día de brazos', 'Día de hombros', 'Día de glúteos', 'Cuerpo completo', 'Cuerpo completo A', 'Cuerpo completo B', 'Tren superior', 'Tren inferior', 'Día de empuje', 'Día de tirón', 'Pecho y tríceps', 'Espalda y bíceps', 'Piernas y core', 'Hombros y abdomen', 'Brazos y core', 'Glúteos y piernas', 'Acondicionamiento', 'Cardio y core', 'Recuperación activa'],
+  fr: ['Jour pectoraux', 'Jour dos', 'Jour jambes', 'Jour abdominaux', 'Jour bras', 'Jour épaules', 'Jour fessiers', 'Corps entier', 'Corps entier A', 'Corps entier B', 'Haut du corps', 'Bas du corps', 'Jour poussée', 'Jour tirage', 'Pectoraux et triceps', 'Dos et biceps', 'Jambes et sangle abdominale', 'Épaules et abdominaux', 'Bras et sangle abdominale', 'Fessiers et jambes', 'Conditionnement', 'Cardio et sangle abdominale', 'Récupération active'],
+  it: ['Giorno petto', 'Giorno schiena', 'Giorno gambe', 'Giorno addominali', 'Giorno braccia', 'Giorno spalle', 'Giorno glutei', 'Corpo completo', 'Corpo completo A', 'Corpo completo B', 'Parte superiore', 'Parte inferiore', 'Giorno spinta', 'Giorno tirata', 'Petto e tricipiti', 'Schiena e bicipiti', 'Gambe e core', 'Spalle e addominali', 'Braccia e core', 'Glutei e gambe', 'Condizionamento', 'Cardio e core', 'Recupero attivo'],
+  pl: ['Dzień klatki', 'Dzień pleców', 'Dzień nóg', 'Dzień brzucha', 'Dzień ramion', 'Dzień barków', 'Dzień pośladków', 'Całe ciało', 'Całe ciało A', 'Całe ciało B', 'Górna część ciała', 'Dolna część ciała', 'Dzień wypychania', 'Dzień przyciągania', 'Klatka i triceps', 'Plecy i biceps', 'Nogi i core', 'Barki i brzuch', 'Ramiona i core', 'Pośladki i nogi', 'Kondycja', 'Cardio i core', 'Aktywna regeneracja'],
+  tr: ['Göğüs Günü', 'Sırt Günü', 'Bacak Günü', 'Karın Günü', 'Kol Günü', 'Omuz Günü', 'Kalça Günü', 'Tüm Vücut', 'Tüm Vücut A', 'Tüm Vücut B', 'Üst Vücut', 'Alt Vücut', 'İtiş Günü', 'Çekiş Günü', 'Göğüs ve Triseps', 'Sırt ve Biseps', 'Bacak ve Merkez', 'Omuz ve Karın', 'Kol ve Merkez', 'Kalça ve Bacak', 'Kondisyon', 'Kardiyo ve Merkez', 'Aktif Toparlanma'],
+  ru: ['День груди', 'День спины', 'День ног', 'День пресса', 'День рук', 'День плеч', 'День ягодиц', 'Всё тело', 'Всё тело A', 'Всё тело B', 'Верх тела', 'Низ тела', 'День жима', 'День тяги', 'Грудь и трицепс', 'Спина и бицепс', 'Ноги и корпус', 'Плечи и пресс', 'Руки и корпус', 'Ягодицы и ноги', 'Кондиционная тренировка', 'Кардио и корпус', 'Активное восстановление'],
+  zh: ['胸部训练日', '背部训练日', '腿部训练日', '腹肌训练日', '手臂训练日', '肩部训练日', '臀部训练日', '全身训练', '全身训练 A', '全身训练 B', '上半身训练', '下半身训练', '推力训练日', '拉力训练日', '胸部与三头肌', '背部与二头肌', '腿部与核心', '肩部与腹肌', '手臂与核心', '臀部与腿部', '体能训练', '有氧与核心', '主动恢复'],
+  ko: ['가슴 운동일', '등 운동일', '하체 운동일', '복근 운동일', '팔 운동일', '어깨 운동일', '둔근 운동일', '전신 운동', '전신 운동 A', '전신 운동 B', '상체 운동', '하체 운동', '밀기 운동일', '당기기 운동일', '가슴 및 삼두근', '등 및 이두근', '다리 및 코어', '어깨 및 복근', '팔 및 코어', '둔근 및 다리', '컨디셔닝', '유산소 및 코어', '활동적 회복'],
+  hi: ['छाती दिवस', 'पीठ दिवस', 'पैर दिवस', 'एब्स दिवस', 'बांह दिवस', 'कंधे दिवस', 'ग्लूट्स दिवस', 'पूरा शरीर', 'पूरा शरीर A', 'पूरा शरीर B', 'ऊपरी शरीर', 'निचला शरीर', 'पुश दिवस', 'पुल दिवस', 'छाती और ट्राइसेप्स', 'पीठ और बाइसेप्स', 'पैर और कोर', 'कंधे और एब्स', 'बांह और कोर', 'ग्लूट्स और पैर', 'कंडीशनिंग', 'कार्डियो और कोर', 'सक्रिय रिकवरी'],
 }
 
 const PT = {
@@ -99,6 +110,11 @@ const PT = {
   'The body diagram adapts to your selection and is used in your statistics.': 'O diagrama corporal se adapta à sua escolha e será usado nas suas estatísticas.',
   'Date of birth': 'Data de nascimento',
   'Sex': 'Sexo',
+  'The avatar and body statistics follow this selection.': 'O avatar e as estatísticas corporais acompanham esta escolha.',
+  'Day': 'Dia',
+  'Month': 'Mês',
+  'Year': 'Ano',
+  'Selected date: {0}': 'Data selecionada: {0}',
   'Enter a valid date of birth.': 'Informe uma data de nascimento válida.',
   'Measurements': 'Medidas',
   'Your starting point': 'Seu ponto de partida',
@@ -132,6 +148,10 @@ const PT = {
   'Choose your training days': 'Escolha seus dias de treino',
   "Choose today's workout": 'Escolha o treino de hoje',
   'The ready-made routines are distributed across the days you select.': 'Os treinos prontos são distribuídos entre os dias que você selecionar.',
+  'Your exercises, sets, repetitions and starting loads adapt to the number of days you select.': 'Seus exercícios, séries, repetições e cargas iniciais se adaptam à quantidade de dias escolhida.',
+  'Personalized for {0} · {1}': 'Personalizado para {0} · {1}',
+  'Built from your goal, experience, weight and training frequency.': 'Criado a partir do seu objetivo, experiência, peso e frequência de treino.',
+  'Starting loads are estimates. Adjust them whenever technique or comfort requires it.': 'As cargas iniciais são estimativas. Ajuste sempre que a técnica ou o conforto exigirem.',
   'Tomorrow you can choose again. Your completed workouts stay in history.': 'Amanhã você escolhe novamente. Os treinos concluídos ficam no histórico.',
   'Training days': 'Dias de treino',
   'Choose at least one training day.': 'Escolha pelo menos um dia de treino.',
@@ -161,6 +181,6 @@ const PT = {
 
 export function onboardingLocale(lang) {
   const routineValues = ROUTINES[lang] || ROUTINES.pt
-  const routineTranslations = Object.fromEntries(KEYS.slice(0, 7).map((key, index) => [key, routineValues[index]]))
+  const routineTranslations = Object.fromEntries(ROUTINE_KEYS.map((key, index) => [key, routineValues[index]]))
   return { ...BASE, ...routineTranslations, ...(lang === 'pt' ? PT : {}) }
 }
