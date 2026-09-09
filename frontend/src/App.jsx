@@ -17,7 +17,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
-import { currentProfileWeight } from './lib/profile.js'
+import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 import Home from './views/Home.jsx'
@@ -87,6 +87,13 @@ function ProfileHeader({ S }) {
   const reduceMotion = useReducedMotion()
   const remainingPercent = weightGoalRemainingPercent(S)
   const progress = remainingPercent == null ? 0 : 100 - remainingPercent
+  const currentWeight = currentProfileWeight(S)
+  const age = ageFromBirthDate(S.profile?.birthDate)
+  const stats = [
+    { icon: 'calendar', value: t('{0} years', age ?? '--') },
+    { icon: 'figureStrength', value: `${heightText(S.profile?.heightCm) || '--'} m` },
+    { icon: 'scale', value: `${currentWeight ? weightText(currentWeight) : '--'} ${S.unit}` },
+  ]
   useEffect(() => {
     const interval = window.setInterval(() => {
       setMessageIndex(index => {
@@ -121,8 +128,16 @@ function ProfileHeader({ S }) {
     <span className="profile-goal-wrap" aria-label={remainingPercent == null ? t('Goal') : `${remainingPercent}%`}>
       <span className="profile-goal-ring" style={{ '--profile-goal-progress': `${progress}%` }}>
         <Icon name="scale" />
+        <span className="profile-goal-percent">{remainingPercent == null ? '--%' : `${remainingPercent}%`}</span>
       </span>
-      <span className="profile-goal-percent">{remainingPercent == null ? '--%' : `${remainingPercent}%`}</span>
+    </span>
+    <span className="profile-stat-stack">
+      {stats.map((stat, index) => (
+        <span className="profile-stat" key={index}>
+          <Icon name={stat.icon} />
+          <b>{stat.value}</b>
+        </span>
+      ))}
     </span>
   </div>
 }
