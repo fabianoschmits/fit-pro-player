@@ -595,11 +595,11 @@ h4.sec{
 .wizard-step>p{max-width:470px;margin:12px 0 28px;color:var(--label-2);font-size:15px;line-height:1.5}
 .wizard-avatar-step>p{margin-bottom:18px}
 .avatar-picker-grid{
-  position:relative;max-height:340px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:4px 5px 12px;
+  position:relative;height:340px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:clamp(96px,18vw,126px);align-content:start;gap:9px;padding:4px 5px 12px;
   overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--sep) transparent;
 }
 .avatar-picker-option{
-  position:relative;aspect-ratio:1;min-width:0;overflow:hidden;border-radius:18px;background:var(--surface);
+  position:relative;width:100%;height:100%;min-width:0;overflow:hidden;border-radius:18px;background:var(--surface);
   border:var(--hair) solid var(--surface-border);box-shadow:var(--card-shadow);transition:background var(--fast),border-color var(--fast);
 }
 .avatar-picker-option:active{background:var(--surface-2)}
@@ -730,7 +730,7 @@ h4.sec{
 @media (max-width:520px){
   .plan-wizard{place-items:start stretch;padding-top:0}
   .wizard-topbar{margin-bottom:9px}.wizard-stage{min-height:440px}.wizard-step{padding-inline:0}.wizard-step>p{margin-bottom:23px}
-  .wizard-avatar-step>p{margin-bottom:15px}.avatar-picker-grid{max-height:min(380px,52dvh);gap:7px;padding-inline:3px}.avatar-picker-option{border-radius:15px}.avatar-picker-check{top:5px;right:5px;width:21px;height:21px;font-size:11px}
+  .wizard-avatar-step>p{margin-bottom:15px}.avatar-picker-grid{height:min(380px,52dvh);grid-auto-rows:clamp(94px,27vw,118px);gap:7px;padding-inline:3px}.avatar-picker-option{border-radius:15px}.avatar-picker-check{top:5px;right:5px;width:21px;height:21px;font-size:11px}
   .wizard-body-choice{grid-template-columns:82px minmax(0,1fr);gap:13px}.wizard-avatar{height:112px;border-radius:16px;padding-inline:0}
   .wizard-choice-grid.compact{grid-template-columns:1fr}.wizard-choice-grid.compact .wizard-choice{min-height:60px;padding-block:9px}
   .wizard-week{gap:4px}.wizard-week button{height:60px;border-radius:10px}.wizard-routine-grid{gap:6px}.wizard-routine-grid button{min-height:82px;padding:9px}
