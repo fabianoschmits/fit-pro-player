@@ -23,13 +23,17 @@ describe('state migration for first-run profiles', () => {
     expect(hasData(state)).toBe(false)
   })
 
-  it('migrates established legacy data without forcing onboarding again', () => {
+  it('sends established legacy data through the wizard without losing progress', () => {
     const state = normalizeState({
       body: 'female', routines: [], week: {}, dayPlan: {}, customEx: [],
-      bodyweight: [{ d: '2026-08-01', w: 68, t: 1 }], workouts: [],
+      bodyweight: [{ d: '2026-08-01', w: 68, t: 1 }],
+      workouts: [{ id: 'w1', d: '2026-08-02', entries: [] }],
+      exWeights: { '0025': 60 },
     })
-    expect(state.onboardingDone).toBe(true)
+    expect(state.onboardingDone).toBe(false)
     expect(state.profile).toMatchObject({ sex: 'female', startWeight: 68 })
+    expect(state.workouts).toHaveLength(1)
+    expect(state.exWeights).toEqual({ '0025': 60 })
   })
 
   it('keeps the personal profile and plan mode through JSON backup restoration', () => {

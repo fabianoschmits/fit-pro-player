@@ -27,12 +27,16 @@ const clone = o => JSON.parse(JSON.stringify(o))
 
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 
-// Older installations did not have a personal-profile object. Keep established users out of
-// first-run setup, but do not mistake the auto-injected starter routines for personal data.
+// Older installations did not have the full personal-profile object. Established data should
+// enter the new wizard prefilled, while untouched starter plans remain first-run installs.
 function legacyHasPersonalData(state) {
   if (state.onboardingDone || state.active) return true
   if ((state.workouts || []).length || (state.bodyweight || []).length || (state.customEx || []).length) return true
   return (state.routines || []).some(routine => !isStarterRoutine(routine))
+}
+
+function hasCompleteProfile(profile) {
+  return !!(profile?.name && profile?.birthDate && profile?.heightCm && profile?.startWeight && profile?.goal && profile?.experience)
 }
 
 export function normalizeState(source) {
@@ -48,10 +52,10 @@ export function normalizeState(source) {
   state.planMode = state.planMode === 'daily' ? 'daily' : 'weekly'
   state.profile = normalizeProfile(raw.profile, state.body)
 
-  if (!Object.prototype.hasOwnProperty.call(raw, 'profile') && legacyHasPersonalData(raw)) {
-    state.onboardingDone = true
-    state.profile.startWeight = state.bodyweight[0]?.w || null
-    state.profile.completedAt = raw._ts || Date.now()
+  if (!hasCompleteProfile(state.profile) && legacyHasPersonalData(raw)) {
+    state.onboardingDone = false
+    state.profile.startWeight = state.profile.startWeight || state.bodyweight[0]?.w || null
+    state.profile.completedAt = null
   }
 
   annotateStarterRoutines(state)

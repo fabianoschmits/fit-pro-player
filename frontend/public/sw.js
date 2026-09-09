@@ -1,13 +1,17 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
    Media (img/gif) cache-first; everything else network-first with offline fallback.
    Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v7'
+const CACHE = 'fit-pro-player-rt-v8'
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ).then(() => self.clients.claim()))
+  e.waitUntil(caches.keys().then(keys => {
+    const oldRuntimeCache = keys.some(k => k.startsWith('fit-pro-player-rt-') && k !== CACHE)
+    return Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      .then(() => self.clients.claim())
+      .then(() => oldRuntimeCache ? self.clients.matchAll({ type: 'window' }) : [])
+      .then(clients => Promise.all(clients.map(client => client.navigate(client.url))))
+  }))
 })
 self.addEventListener('push', e => {
   const data = e.data ? e.data.json() : {}
@@ -25,6 +29,15 @@ self.addEventListener('notificationclick', e => {
     const c = clients.find(c => 'focus' in c)
     return c ? c.focus() : self.clients.openWindow('./')
   }))
+})
+
+self.addEventListener('message', e => {
+  if (e.data?.type === 'SKIP_WAITING') self.skipWaiting()
+  if (e.data?.type === 'CLEAR_RUNTIME_CACHE') {
+    e.waitUntil(caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k.startsWith('fit-pro-player-rt-')).map(k => caches.delete(k)))
+    ))
+  }
 })
 
 self.addEventListener('fetch', e => {
