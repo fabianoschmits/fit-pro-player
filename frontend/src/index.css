@@ -681,6 +681,7 @@ h4.sec{
 .profile-avatar-image{display:block;width:100%;height:100%;max-width:none;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 8px 8px rgba(0,0,0,.15));user-select:none}
 .plan-profile-card .grow{position:relative;z-index:1;min-width:0;flex:1 1 auto;display:flex;flex-direction:column;gap:4px}.plan-profile-card strong,.plan-profile-card small,.plan-profile-card em{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.plan-profile-card strong{font-size:clamp(16px,5vw,22px);font-weight:800;letter-spacing:-.035em;line-height:1.05}.plan-profile-card small{color:var(--label-2);font-size:clamp(10px,3.1vw,12px)}.plan-profile-card em{color:var(--acc);font-size:clamp(10px,2.8vw,12px);font-style:normal;font-weight:700}
 .plan-profile-edit{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;flex:none;color:var(--acc)}.plan-profile-edit .icn{font-size:15px}
+.stats-profile-card{margin-top:0;margin-bottom:18px}.stats-profile-card .stats-profile-avatar{width:132px;height:146px}
 .daily-plan-today{width:100%;min-height:108px;display:flex;align-items:center;gap:14px;text-align:left;padding:17px;transition:transform var(--fast),background var(--fast)}
 .daily-plan-today:active{transform:scale(.985);background:var(--surface-2)}
 .daily-plan-icon{width:54px;height:54px;display:grid;place-items:center;flex:none;border-radius:16px;background:var(--surface-2);color:var(--label-2);font-size:25px}
