@@ -87,7 +87,7 @@ const PROFILE_MOTIVATION_MESSAGES = [
   'Treina agora, reclama depois.',
 ]
 
-function weightGoalRemainingPercent(S) {
+function weightGoalProgressPercent(S) {
   const current = currentProfileWeight(S)
   const target = Number(S.targetW) || null
   if (!(current > 0) || !(target > 0)) return null
@@ -100,9 +100,11 @@ function weightGoalRemainingPercent(S) {
   }, null)?.w
   const start = first > 0 ? first : current
   const total = Math.abs(start - target)
-  if (!total) return current === target ? 0 : null
-  const remaining = Math.min(1, Math.max(0, Math.abs(current - target) / total))
-  return Math.round(remaining * 100)
+  if (!total) return current === target ? 100 : 0
+  const progress = target > start
+    ? (current - start) / total
+    : (start - current) / total
+  return Math.round(Math.min(1, Math.max(0, progress)) * 100)
 }
 
 function applyPrefs(theme, accent) {
@@ -116,8 +118,8 @@ function applyPrefs(theme, accent) {
 function ProfileHeader({ S }) {
   const [messageIndex, setMessageIndex] = useState(0)
   const reduceMotion = useReducedMotion()
-  const remainingPercent = weightGoalRemainingPercent(S)
-  const progress = remainingPercent == null ? 0 : 100 - remainingPercent
+  const goalProgressPercent = weightGoalProgressPercent(S)
+  const progress = goalProgressPercent == null ? 0 : goalProgressPercent
   const currentWeight = currentProfileWeight(S)
   const age = ageFromBirthDate(S.profile?.birthDate)
   const stats = [
@@ -157,10 +159,10 @@ function ProfileHeader({ S }) {
         </AnimatePresence>
       </span>
     </span>
-    <span className="profile-goal-wrap" aria-label={remainingPercent == null ? t('Goal') : `${remainingPercent}%`}>
+    <span className="profile-goal-wrap" aria-label={goalProgressPercent == null ? t('Goal') : `${goalProgressPercent}%`}>
       <span className="profile-goal-ring" style={{ '--profile-goal-progress': `${progress}%` }}>
         <img className="profile-goal-icon" src={progressDumbbell} alt="" />
-        <span className="profile-goal-percent">{remainingPercent == null ? '--%' : `${remainingPercent}%`}</span>
+        <span className="profile-goal-percent">{goalProgressPercent == null ? '--%' : `${goalProgressPercent}%`}</span>
       </span>
     </span>
     <span className="profile-stat-stack">
