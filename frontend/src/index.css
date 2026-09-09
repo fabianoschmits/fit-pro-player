@@ -714,8 +714,9 @@ h4.sec{
 .profile-message{position:absolute;inset:0 auto auto 0;width:100%;color:var(--label-2);font-size:clamp(14px,2.6vw,17px);line-height:1.18;text-align:center;white-space:normal;overflow:visible;text-overflow:clip;text-wrap:balance;will-change:transform,opacity,filter}
 .profile-goal-wrap{position:relative;z-index:2;display:flex;justify-content:center;color:var(--acc)}
 .profile-goal-ring{width:78px;height:78px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;background:conic-gradient(var(--acc) var(--profile-goal-progress),color-mix(in srgb,var(--acc) 18%,#071012) 0);box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) 34%,transparent),0 10px 30px -20px var(--acc)}
-.profile-goal-ring::before{content:"";position:absolute;inset:12px;border-radius:inherit;background:color-mix(in srgb,var(--surface) 88%,#000);box-shadow:inset 0 0 18px rgba(0,0,0,.28)}
+.profile-goal-ring::before{content:"";position:absolute;inset:6px;border-radius:inherit;background:color-mix(in srgb,var(--surface) 88%,#000);box-shadow:inset 0 0 18px rgba(0,0,0,.28)}
 .profile-goal-ring .icn{position:relative;z-index:1;font-size:25px;color:var(--label)}
+.profile-goal-icon{position:relative;z-index:1;width:34px;height:auto;display:block;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.25));pointer-events:none}
 .profile-goal-percent{position:relative;z-index:1;font-size:14px;font-weight:850;line-height:1;color:var(--label);letter-spacing:-.02em}
 .profile-stat-stack{position:relative;z-index:2;min-width:0;padding-left:13px;border-left:var(--hair) solid color-mix(in srgb,var(--acc) 26%,var(--surface-border));display:flex;flex-direction:column;gap:11px}
 .profile-stat{display:flex;align-items:center;gap:7px;min-width:0;color:var(--label)}
@@ -792,8 +793,9 @@ h4.sec{
   .profile-message-stage{height:32px}
   .profile-message{font-size:clamp(10px,3vw,12px);line-height:1.16}
   .profile-goal-ring{width:42px;height:42px}
-  .profile-goal-ring::before{inset:6px}
+  .profile-goal-ring::before{inset:3px}
   .profile-goal-ring .icn{font-size:14px}
+  .profile-goal-icon{width:19px}
   .profile-goal-percent{font-size:9px}
   .profile-stat-stack{display:flex;padding-left:4px;gap:6px}
   .profile-stat{gap:2px}.profile-stat .icn{font-size:9px}.profile-stat b{font-size:8px}
@@ -1579,8 +1581,9 @@ h4.sec{
   .app-plan-profile-header .grow strong{font-size:12px;white-space:nowrap;text-wrap:nowrap}
   .profile-message-stage{height:30px}.profile-message{font-size:9px;line-height:1.15}
   .profile-goal-ring{width:36px;height:36px}
-  .profile-goal-ring::before{inset:5px}
+  .profile-goal-ring::before{inset:2.5px}
   .profile-goal-ring .icn{font-size:12px}
+  .profile-goal-icon{width:17px}
   .profile-goal-percent{font-size:8px}
   .profile-stat-stack{padding-left:3px;gap:5px}
   .profile-stat{gap:2px}.profile-stat .icn{font-size:8px}.profile-stat b{font-size:7px}

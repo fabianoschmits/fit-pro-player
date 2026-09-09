@@ -17,6 +17,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
+import progressDumbbell from './assets/progress-dumbbell.png'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
@@ -158,7 +159,7 @@ function ProfileHeader({ S }) {
     </span>
     <span className="profile-goal-wrap" aria-label={remainingPercent == null ? t('Goal') : `${remainingPercent}%`}>
       <span className="profile-goal-ring" style={{ '--profile-goal-progress': `${progress}%` }}>
-        <Icon name="scale" />
+        <img className="profile-goal-icon" src={progressDumbbell} alt="" />
         <span className="profile-goal-percent">{remainingPercent == null ? '--%' : `${remainingPercent}%`}</span>
       </span>
     </span>
