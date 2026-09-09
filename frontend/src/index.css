@@ -186,8 +186,8 @@ body.landing-mode #tabbar{display:none}
   --landing-max:1200px;--landing-edge:max(18px,calc((100vw - var(--landing-max))/2));
   min-height:100vh;overflow:hidden;background:var(--bg);color:var(--label);
 }
-.app-plan-profile-header{width:calc(100% - 32px);min-height:92px;margin:10px auto 0;padding:13px 10px 11px 112px}
-.app-plan-profile-header .plan-profile-avatar{left:-12px;width:120px;height:136px}
+.app-plan-profile-header{width:calc(100% - 32px);min-height:68px;margin:4px auto 0;padding:8px 8px 8px 88px}
+.app-plan-profile-header .plan-profile-avatar{left:-8px;width:92px;height:104px}
 .app-plan-profile-header .grow{align-items:center;text-align:center;justify-content:center}
 .app-plan-profile-header .grow strong{font-family:ui-rounded,'Avenir Next Rounded','Arial Rounded MT Bold',-apple-system,sans-serif;font-size:clamp(16px,5.2vw,22px);font-weight:850;letter-spacing:-.045em;line-height:1.02;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;text-wrap:balance}
 .landing-nav-shell{
