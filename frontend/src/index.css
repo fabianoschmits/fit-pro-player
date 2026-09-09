@@ -671,13 +671,13 @@ h4.sec{
 /* --------------------------------------------------- plan modes/profile -- */
 .plan-profile-card{
   position:relative;isolation:isolate;width:100%;min-height:104px;display:flex;align-items:center;gap:8px;overflow:visible;
-  text-align:left;margin-top:33px;margin-bottom:18px;padding:17px 13px 15px 116px;transition:transform var(--fast),background var(--fast);
+  text-align:left;margin-top:33px;margin-bottom:18px;padding:17px 10px 15px 128px;transition:transform var(--fast),background var(--fast);
 }
 .plan-profile-card:active{transform:scale(.985);background:var(--surface-2)}
 .plan-profile-avatar{position:absolute;z-index:0;left:-13px;bottom:-1px;width:137px;height:151px;display:block;pointer-events:none}
 .profile-avatar-image{display:block;width:100%;height:100%;max-width:none;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 8px 8px rgba(0,0,0,.15));user-select:none}
-.plan-profile-card .grow{position:relative;z-index:1;min-width:0;display:flex;flex-direction:column;gap:3px}.plan-profile-card strong{font-size:16px;letter-spacing:-.015em}.plan-profile-card small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--label-2);font-size:12px}.plan-profile-card em{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--acc);font-size:10px;font-style:normal;font-weight:650}
-.plan-profile-edit{position:relative;z-index:1;display:flex;align-items:center;gap:5px;flex:none;color:var(--acc);font-size:12px}.plan-profile-edit .icn{font-size:11px}
+.plan-profile-card .grow{position:relative;z-index:1;min-width:0;flex:1 1 auto;display:flex;flex-direction:column;gap:3px}.plan-profile-card strong,.plan-profile-card small,.plan-profile-card em{display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.plan-profile-card strong{font-size:clamp(13px,4.1vw,16px);letter-spacing:-.015em}.plan-profile-card small{color:var(--label-2);font-size:clamp(10px,3.1vw,12px)}.plan-profile-card em{color:var(--acc);font-size:10px;font-style:normal;font-weight:650}
+.plan-profile-edit{position:relative;z-index:1;display:grid;place-items:center;width:28px;height:28px;flex:none;color:var(--acc)}.plan-profile-edit .icn{font-size:15px}
 .daily-plan-today{width:100%;min-height:108px;display:flex;align-items:center;gap:14px;text-align:left;padding:17px;transition:transform var(--fast),background var(--fast)}
 .daily-plan-today:active{transform:scale(.985);background:var(--surface-2)}
 .daily-plan-icon{width:54px;height:54px;display:grid;place-items:center;flex:none;border-radius:16px;background:var(--surface-2);color:var(--label-2);font-size:25px}
@@ -1496,7 +1496,7 @@ h4.sec{
 }
 
 @media (max-width:340px){
-  .plan-profile-card{min-height:96px;padding-left:100px}.plan-profile-avatar{left:-12px;width:120px;height:136px}.plan-profile-edit{font-size:0}.plan-profile-edit .icn{font-size:12px}
+  .plan-profile-card{min-height:96px;padding-left:110px}.plan-profile-avatar{left:-12px;width:120px;height:136px}.plan-profile-edit{width:24px;height:24px}.plan-profile-edit .icn{font-size:13px}
   .cols>div:first-child .item{gap:8px;padding-left:10px;padding-right:10px}
   .cols>div:first-child .item .tt{font-size:15px;white-space:nowrap}
   .cols>div:first-child .item .tag{font-size:11px;padding-left:6px;padding-right:6px;white-space:nowrap}

@@ -88,14 +88,14 @@ export default function Plan() {
       <button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>
     </div>
 
-    <button className="card plan-profile-card" onClick={() => setEditingProfile(true)}>
+    <button className="card plan-profile-card" onClick={() => setEditingProfile(true)} aria-label={`${t('Edit')} ${S.profile?.name || t('Personal profile')}`}>
       <span className="plan-profile-avatar" aria-hidden="true">
         <AvatarImage avatarId={S.profile?.avatarId} />
       </span>
       <span className="grow"><strong>{S.profile?.name}</strong><small>{[age != null ? t('{0} years', age) : '', S.profile?.heightCm ? `${heightText(S.profile.heightCm)} m` : '', S.profile?.startWeight ? `${weightText(S.profile.startWeight)} ${S.unit}` : ''].filter(Boolean).join(' · ')}</small>
         {S.profile?.goal && S.profile?.experience && <em>{t(PROFILE_GOAL_LABELS[S.profile.goal])} · {t(EXPERIENCE_LABELS[S.profile.experience])}</em>}
       </span>
-      <span className="plan-profile-edit">{t('Edit')} <Icon name="chevronRight" /></span>
+      <span className="plan-profile-edit" aria-hidden="true"><Icon name="chevronRight" /></span>
     </button>
 
     {planProgress && <PlanProgress progress={planProgress} />}
