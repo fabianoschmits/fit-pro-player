@@ -16,7 +16,7 @@ import { strengthExerciseRowsForMuscle } from '../lib/strength-exercises.js'
 import { fatigueStateOf } from '../lib/recovery-view.js'
 import { e1rmSeries, best1RM } from '../lib/onerm.js'
 import {
-  hasEffort, displayScale, scaleName, toScale, avgRir, effortSummary, effortWeeks,
+  displayScale, scaleName, toScale, avgRir, effortSummary, effortWeeks,
   effortHistogram, isHardSet, HARD_RIR
 } from '../lib/effort.js'
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
@@ -174,7 +174,12 @@ function MuscleBalance({ S }) {
           <div className="muted small" style={{ marginTop: 10 }}>{on
             ? t('Every muscle group got at least one hard set in this period.')
             : t('Every muscle group got some work in this period.')}</div>}
-      </> : <div className="muted small">{t('No workouts in this period yet.')}</div>}
+      </> : <>
+        <BodyMap className="tappable" load={load} body={S.body} selected={sel}
+          onMuscle={m => setSel(s => (s === m ? null : m))} />
+        <BodyMapLegend />
+        <div className="muted small" style={{ marginTop: 10 }}>{t('No workouts in this period yet.')}</div>
+      </>}
     </> : view === 'fatigue' ? <>
       <h2>{t('Fatigue')}</h2>
       <BodyMap className="tappable hm-fatigue" load={fatigue} thresholds={FATIGUE_LEVELS} body={S.body} selected={sel} onMuscle={toggleSel} />
@@ -281,7 +286,6 @@ export default function Stats() {
   const [exId, setExId] = useState(null)
   const [exMetric, setExMetric] = useState('top')
   const workouts = S.workouts
-  const simple = workouts.length === 0
 
   const bwPts = useMemo(() => {
     let raw = S.bodyweight
@@ -391,8 +395,7 @@ export default function Stats() {
       <div className="tile"><div className="l"><Icon name="scale" />{t('Weight 30d')}</div><div className="v" style={{ fontSize: 20, whiteSpace: 'nowrap', color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</div></div>
     </div>
 
-    {!simple && <>
-      <div className="card" style={{ marginBottom: 16 }}>
+    <div className="card" style={{ marginBottom: 16 }}>
         <div className="row between" style={{ marginBottom: 8 }}>
           <h2 style={{ margin: 0 }}>{t('Body weight')}</h2>
           <div className="row" style={{ gap: 8 }}>
@@ -403,9 +406,9 @@ export default function Stats() {
         <Segmented className="seg-range" value={range} onChange={setRange}
           options={[{ value: 30, label: '1M' }, { value: 90, label: '3M' }, { value: 365, label: '1Y' }, { value: 0, label: t('All') }]} />
         <div className="chart"><LineChart points={bwPts} h={160} unit={S.unit} goal={S.targetW} /></div>
-      </div>
+    </div>
 
-      <div className="card" style={{ marginBottom: 16 }}>
+    <div className="card" style={{ marginBottom: 16 }}>
         <h2>{t('Total Volume Lifted')}</h2>
         <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
         <div className="small dim" style={{ marginTop: 12, lineHeight: 1.5 }}>
@@ -413,21 +416,21 @@ export default function Stats() {
           <br />
           {elephants > 0 ? t('That is equivalent to lifting {0} elephants!', elephants) : cars > 0 ? t('That is equivalent to lifting {0} cars!', cars) : t('Keep training to lift your first car!')}
         </div>
-      </div>
+    </div>
 
-      <div className="cols">
+    <div className="cols">
         <div className="card">
           <h2>{t('Activity — last 12 months')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('by time trained')}</span></h2>
           <Heatmap S={S} onDay={iso => { const ws = workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso) }} />
         </div>
-        {workouts.length > 0 && <MuscleBalance S={S} />}
-        {hasEffort(S) && <EffortCard S={S} />}
-      </div>
+        <MuscleBalance S={S} />
+        <EffortCard S={S} />
+    </div>
 
-      <TipOnce id="e1rm-tip">
-        <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
-      </TipOnce>
-      <div className="card" style={{ marginTop: 16 }}>
+    <TipOnce id="e1rm-tip">
+      <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
+    </TipOnce>
+    <div className="card" style={{ marginTop: 16 }}>
         <h2>{t('Exercise progress')}</h2>
         {exHist.length ? <>
           <div className="sect-b" style={{ marginBottom: 10 }}>
@@ -453,7 +456,6 @@ export default function Stats() {
             {t('A fuller dot means less left in the tank — the same weight at a lower {0} is progress the line alone does not show.', hd)}
           </div>}
         </> : <div className="muted small">{t('Finish your first workout to see progress curves here.')}</div>}
-      </div>
-    </>}
+    </div>
   </>
 }
