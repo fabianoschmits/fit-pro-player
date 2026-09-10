@@ -10,7 +10,9 @@ import { t, instrFor, getLang, INSTR_LANGS } from './lib/i18n.js'
 import { nav } from './lib/nav.js'
 import { ensureStarterRoutines, routineName } from './lib/starter.js'
 import { cycleNeighborIndex, neighborIndexOf } from './lib/exercise-neighbors.js'
+import { hasExerciseGuideAsset } from './lib/exercise-guide-assets.js'
 import Media, { Thumb } from './components/Media.jsx'
+import ExerciseGuideAnimation from './components/ExerciseGuideAnimation.jsx'
 import Stepper from './components/Stepper.jsx'
 import Icon from './components/Icon.jsx'
 import { Button, Slider, Switch, Segmented, SelectRow, Row } from './components/ui.jsx'
@@ -931,15 +933,32 @@ export const dayAssignSheet = day => ui().openSheet(close => <DayAssign day={day
 /* ============================ workout detail ============================ */
 function WorkoutDetail({ w, close }) {
   const st = useStore(s => s.S)
+  const [openEntry, setOpenEntry] = useState(null)
   return <>
     <h3>{w.name}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
     {w.entries.map((e, i) => {
       const ex = EXIDX[e.id]
-      return <div key={i} className="row" style={{ marginBottom: 12, alignItems: 'flex-start' }}>
-        {ex && <Thumb ex={ex} />}
-        <div className="grow"><div className="tt capitalize" style={{ fontWeight: 600 }}>{ex ? exerciseName(ex) : (e.n || e.id)} {w.prs && w.prs.includes(e.id) && <span className="pr"><Icon name="trophy" />{getLang() === 'pt' ? 'RP' : 'PR'}</span>}</div>
-          <div className="ss">{e.sets.filter(s => s.done).map(s => setLabel(e.id, s, e.target)).join('  ·  ') || t('no sets')}</div></div>
+      const hasAnimation = ex && hasExerciseGuideAsset(ex)
+      const expanded = openEntry === i && hasAnimation
+      const title = ex ? exerciseName(ex) : (e.n || e.id)
+      return <div key={i} className={'workout-entry-detail' + (expanded ? ' is-open' : '')}>
+        <button
+          type="button"
+          className="workout-entry-toggle"
+          disabled={!hasAnimation}
+          aria-expanded={expanded}
+          aria-label={title}
+          onClick={() => setOpenEntry(cur => cur === i ? null : i)}
+        >
+          {ex && <Thumb ex={ex} />}
+          <div className="grow"><div className="tt capitalize" style={{ fontWeight: 600 }}>{title} {w.prs && w.prs.includes(e.id) && <span className="pr"><Icon name="trophy" />{getLang() === 'pt' ? 'RP' : 'PR'}</span>}</div>
+            <div className="ss">{e.sets.filter(s => s.done).map(s => setLabel(e.id, s, e.target)).join('  ·  ') || t('no sets')}</div></div>
+          {hasAnimation && <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="chev" />}
+        </button>
+        {expanded && <div className="workout-entry-motion">
+          <ExerciseGuideAnimation ex={ex} playing />
+        </div>}
       </div>
     })}
     <Button variant="danger" onClick={() => confirmSheet({ title: t('Delete workout?'), message: t('This removes it from your history for good.'), confirmText: t('Delete'), danger: true, onConfirm: () => { update(s => { s.workouts = s.workouts.filter(x => x.id !== w.id) }); close(); toast(t('Workout deleted')) } })}>{t('Delete workout')}</Button>

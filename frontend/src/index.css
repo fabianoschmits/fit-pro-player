@@ -1356,6 +1356,39 @@ h4.sec{
 .modal-layer.is-closing .sheet{animation:sheetdown 180ms var(--ease) both}
 .modal-layer.is-closing .center{animation:popout var(--fast) var(--ease) both}
 
+.workout-entry-detail{
+  margin-bottom:12px;
+  border-radius:var(--r-lg);
+}
+.workout-entry-toggle{
+  width:100%;display:flex;align-items:flex-start;gap:12px;
+  padding:0;background:transparent;border:0;color:inherit;text-align:left;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+.workout-entry-toggle:disabled{cursor:default}
+.workout-entry-toggle .chev{
+  margin-top:13px;flex:none;color:var(--label-3);
+  transition:transform 180ms cubic-bezier(.2,.8,.2,1),color 180ms cubic-bezier(.2,.8,.2,1);
+}
+.workout-entry-detail.is-open .workout-entry-toggle .chev{color:var(--acc)}
+.workout-entry-motion{
+  margin:10px 0 4px 46px;overflow:hidden;border-radius:var(--r-lg);
+  background:#000;box-shadow:inset 0 0 0 var(--hair) rgba(255,255,255,.09);
+  animation:workout-entry-motion-in 220ms cubic-bezier(.2,.8,.2,1) both;
+  transform-origin:top center;
+}
+.workout-entry-motion .exercise-guide-motion{
+  width:100%;height:auto;aspect-ratio:5/3.55;
+}
+@keyframes workout-entry-motion-in{
+  from{opacity:0;transform:translateY(-6px);filter:blur(4px)}
+  to{opacity:1;transform:translateY(0);filter:blur(0)}
+}
+@media (prefers-reduced-motion:reduce){
+  .workout-entry-toggle .chev{transition:none}
+  .workout-entry-motion{animation:none}
+}
+
 /* --- RIR/RPE conversion table (effort help sheet) ---
    The two scales only click when you see them side by side, so the numbers get fixed-width
    tabular columns you can read straight down, and the words take whatever is left. Built out
