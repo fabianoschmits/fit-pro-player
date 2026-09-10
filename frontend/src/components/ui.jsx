@@ -248,10 +248,10 @@ export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none'
   return (
     <Tag className={'lrow' + (onClick ? ' tap' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick}>
       {icon && <span className="lrow-i" style={iconTint ? { '--tint': iconTint } : null}><Icon name={icon} /></span>}
-      <span className="lrow-m">
+      {title && <span className="lrow-m">
         <span className="lrow-t">{title}</span>
         {subtitle && <span className="lrow-s">{subtitle}</span>}
-      </span>
+      </span>}
       {children}
       {value != null && <span className="lrow-v">{value}</span>}
       {accessory === 'chevron' && <Icon name="chevronRight" className="lrow-c" />}
@@ -288,7 +288,7 @@ export function SelectRow({ icon, iconTint, title, value, options, onChange, she
     return h
   }
   return (
-    <Row icon={icon} iconTint={iconTint} title={title} value={cur ? cur.label : value} accessory="chevron" onClick={open} />
+    <Row icon={icon} iconTint={iconTint} title={title} value={cur ? cur.label : value} accessory="chevron" onClick={open} className={!title ? 'lrow-value-only' : ''} />
   )
 }
 

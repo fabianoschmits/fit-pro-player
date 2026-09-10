@@ -395,6 +395,10 @@ export default function Stats() {
       <div className="tile"><div className="l"><Icon name="scale" />{t('Weight 30d')}</div><div className="v" style={{ fontSize: 20, whiteSpace: 'nowrap', color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</div></div>
     </div>
 
+    <div style={{ marginBottom: 16 }}>
+      <MuscleBalance S={S} />
+    </div>
+
     <div className="card" style={{ marginBottom: 16 }}>
         <div className="row between" style={{ marginBottom: 8 }}>
           <h2 style={{ margin: 0 }}>{t('Body weight')}</h2>
@@ -408,22 +412,11 @@ export default function Stats() {
         <div className="chart"><LineChart points={bwPts} h={160} unit={S.unit} goal={S.targetW} /></div>
     </div>
 
-    <div className="card" style={{ marginBottom: 16 }}>
-        <h2>{t('Total Volume Lifted')}</h2>
-        <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
-        <div className="small dim" style={{ marginTop: 12, lineHeight: 1.5 }}>
-          {t('Total all-time volume: ')} <b className="accent">{fmtNum(totalVolume)} {S.unit}</b>
-          <br />
-          {elephants > 0 ? t('That is equivalent to lifting {0} elephants!', elephants) : cars > 0 ? t('That is equivalent to lifting {0} cars!', cars) : t('Keep training to lift your first car!')}
-        </div>
-    </div>
-
     <div className="cols">
         <div className="card">
           <h2>{t('Activity — last 12 months')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('by time trained')}</span></h2>
           <Heatmap S={S} onDay={iso => { const ws = workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso) }} />
         </div>
-        <MuscleBalance S={S} />
         <EffortCard S={S} />
     </div>
 
@@ -433,9 +426,12 @@ export default function Stats() {
     <div className="card" style={{ marginTop: 16 }}>
         <h2>{t('Exercise progress')}</h2>
         {exHist.length ? <>
-          <div className="sect-b" style={{ marginBottom: 10 }}>
-            <SelectRow title={t('Exercise')} sheetTitle={t('Exercise progress')} value={curEx} onChange={setExId}
-              options={exHist.map(id => ({ value: id, label: nameOf(id) + (exCurrent[id].mx ? ' ' + '—' + ' ' + fmtNum(exCurrent[id].mx) + ' ' + exCurrent[id].unit : '') }))} />
+          <div className="stats-exercise-picker" style={{ marginBottom: 10 }}>
+            <h4 className="sec">{t('Exercise')}</h4>
+            <div className="sect-b">
+              <SelectRow title="" sheetTitle={t('Exercise progress')} value={curEx} onChange={setExId}
+                options={exHist.map(id => ({ value: id, label: nameOf(id) + (exCurrent[id].mx ? ' ' + '—' + ' ' + fmtNum(exCurrent[id].mx) + ' ' + exCurrent[id].unit : '') }))} />
+            </div>
           </div>
           {exOpts.length > 1 && <Segmented className="seg-range" value={onEff ? 'effort' : onE1 ? 'e1rm' : 'top'} onChange={setExMetric} options={exOpts} />}
           <div className="chart">
@@ -456,6 +452,16 @@ export default function Stats() {
             {t('A fuller dot means less left in the tank — the same weight at a lower {0} is progress the line alone does not show.', hd)}
           </div>}
         </> : <div className="muted small">{t('Finish your first workout to see progress curves here.')}</div>}
+    </div>
+
+    <div className="card" style={{ marginTop: 16 }}>
+        <h2>{t('Total Volume Lifted')}</h2>
+        <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
+        <div className="small dim" style={{ marginTop: 12, lineHeight: 1.5 }}>
+          {t('Total all-time volume: ')} <b className="accent">{fmtNum(totalVolume)} {S.unit}</b>
+          <br />
+          {elephants > 0 ? t('That is equivalent to lifting {0} elephants!', elephants) : cars > 0 ? t('That is equivalent to lifting {0} cars!', cars) : t('Keep training to lift your first car!')}
+        </div>
     </div>
   </>
 }
