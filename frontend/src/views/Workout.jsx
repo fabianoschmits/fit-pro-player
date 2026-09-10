@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, lastEntryFor, bestWeightFor, buildSets, freestyleConfig, defaultConfig, setsDoneActive, supersetUnits, unitOf, setLabel, modeOf, isBw, isPerSide, sideReps, repStep, EFFORT, effortOf, stepEffort, capEffort, cascadeWeight, insertWarmupRow, removeRowAt, pairAdjacent, unpairSuperset, cleanupSg } from '../lib/history.js'
-import { fmtNum, fmtDate, todayISO, exCount, DAYN, sentenceCase } from '../lib/format.js'
+import { fmtNum, fmtDate, todayISO, exCount, DAYN, sentenceCase, uid } from '../lib/format.js'
 import { beep, vibrate } from '../lib/sound.js'
 import { t } from '../lib/i18n.js'
 import { api } from '../lib/api.js'
@@ -15,7 +15,7 @@ import { startFlow, exercisePicker, exConfigSheet, exerciseDetailSheet, topWeigh
 import Icon from '../components/Icon.jsx'
 import { Button, Check, NumberField } from '../components/ui.jsx'
 import { nextPrescription, applyPrescription } from '../lib/progression.js'
-import { glyphOf } from '../lib/glyphs.js'
+import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import { isWarmupRow } from '../lib/workout-model.js'
 
@@ -23,11 +23,22 @@ import { isWarmupRow } from '../lib/workout-model.js'
 function StartChooser() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const scheduledToday = effectiveRoutine(S, todayISO())
+  const update = useStore(s => s.update)
+  const today = todayISO()
+  const scheduledToday = effectiveRoutine(S, today)
   const todayR = scheduledToday?.ex.length ? scheduledToday : null
   const emptyToday = scheduledToday && !scheduledToday.ex.length ? scheduledToday : null
-  const todayOvr = S.dayPlan[todayISO()] !== undefined
-  const others = S.routines.filter(r => r !== todayR && r.ex.length)
+  const todayOvr = S.dayPlan[today] !== undefined
+  const restDay = !scheduledToday
+  const others = restDay ? [] : S.routines.filter(r => r !== todayR && r.ex.length)
+  const createTodayPlan = () => {
+    const r = { id: uid(), name: t("Today's plan"), emoji: DEFAULT_GLYPH, ex: [] }
+    update(state => {
+      state.routines.push(r)
+      state.dayPlan[today] = r.id
+    })
+    nav('/plan/r/' + r.id)
+  }
   return <div className="narrow">
     <div className="hdr"><div><h1>{t('Start workout')}</h1><div className="sub">{t(DAYN[new Date().getDay()])} — {scheduledToday ? t('today is {0}', routineName(scheduledToday)) : t('rest day, but no one’s stopping you')}</div></div></div>
     {todayR && <div className="card" style={{ borderColor: 'var(--acc)' }}>
@@ -52,7 +63,14 @@ function StartChooser() {
         <div className="grow"><div className="tt">{routineName(r)}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         <span className="tag acc">{t('Start')}</span></div>)}</div></>}
     <div style={{ height: 14 }} />
-    <Button icon="shuffle" onClick={() => startFlow(null)}>{t('Freestyle workout (pick as you go)')}</Button>
+    {restDay && <div className="card">
+      <h2>{t('Rest day')}</h2>
+      <div className="muted small" style={{ marginBottom: 12 }}>{t('Freestyle workout — add your first exercise.')}</div>
+      <Button icon="shuffle" onClick={() => startFlow(null)}>{t('Freestyle workout (pick as you go)')}</Button>
+      <div style={{ height: 8 }} />
+      <Button variant="primary" icon="plus" onClick={createTodayPlan}>{t('Create a plan for today')}</Button>
+    </div>}
+    {!restDay && <Button icon="shuffle" onClick={() => startFlow(null)}>{t('Freestyle workout (pick as you go)')}</Button>}
     {!S.routines.some(r => r.ex.length) && <><div style={{ height: 10 }} /><Button variant="primary" onClick={() => nav('/plan')}>{t('Build a plan first')}</Button></>}
   </div>
 }
@@ -499,7 +517,7 @@ function ActiveWorkout() {
       <Button trailingIcon="chevronRight" disabled={!workoutStarted || unitIdx < 0 || unitIdx >= units.length - 1} onClick={() => update(s => { s.active.cur = units[unitIdx + 1][0] })}>{t('Next')}</Button>
     </div>
     <div style={{ height: 10 }} />
-    <Button disabled={!workoutStarted} onClick={() => exercisePicker(ex => {
+    <Button disabled={!workoutStarted && A.entries.length > 0} onClick={() => exercisePicker(ex => {
       const routine = S.routines.find(r => r.id === A.routineId)
       const freestyle = !A.routineId
       // Freestyle has no routine prescription to apply: show the last target in the config

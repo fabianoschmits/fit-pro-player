@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { parseHTML } from 'linkedom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Workout from './Workout.jsx'
+import { todayISO } from '../lib/format.js'
 
 const mocks = vi.hoisted(() => {
   const state = {
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => {
     startRest: vi.fn(),
     stopRest: vi.fn(),
     topWeightSheet: vi.fn(),
+    navigate: vi.fn(),
   }
   state.storeSnapshot = () => ({
     S: state.S,
@@ -36,7 +38,7 @@ vi.mock('../store/useUI.js', () => {
   useUI.getState = mocks.uiSnapshot
   return { useUI }
 })
-vi.mock('react-router-dom', () => ({ useNavigate: () => () => {} }))
+vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('../sheets.jsx', () => ({
   startFlow: vi.fn(),
   exercisePicker: vi.fn(),
@@ -71,7 +73,7 @@ function exercise(id, sets, extra = {}) {
 function workout(entries, cur = 0) {
   return {
     unit: 'kg', restSec: 90, sound: false, effort: 'none', mediaSize: 'full',
-    workouts: [], exWeights: {}, routines: [],
+    workouts: [], exWeights: {}, routines: [], week: {}, dayPlan: {},
     active: { id: 'active', name: 'Test workout', start: Date.now(), cur, entries },
   }
 }
@@ -90,6 +92,12 @@ function installDom() {
 
 async function mount(entries, cur = 0) {
   mocks.S = workout(entries, cur)
+  installDom()
+  await act(async () => { root.render(React.createElement(Workout)) })
+}
+
+async function mountState(state) {
+  mocks.S = state
   installDom()
   await act(async () => { root.render(React.createElement(Workout)) })
 }
@@ -121,6 +129,41 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
+  it('shows only freestyle and today-plan actions on rest days', async () => {
+    await mountState({
+      unit: 'kg', restSec: 90, sound: false, effort: 'none', mediaSize: 'full',
+      workouts: [], exWeights: {}, week: {}, dayPlan: {}, active: null,
+      routines: [
+        { id: 'push', name: 'Push', emoji: 'dumbbell', ex: [{ id: 'plain-bench', sets: 3, reps: 8, weight: 60 }] },
+        { id: 'pull', name: 'Pull', emoji: 'pullup', ex: [{ id: 'row', sets: 3, reps: 8, weight: 50 }] },
+      ],
+    })
+
+    expect(container.textContent).toContain('Treino livre')
+    expect(container.textContent).toContain('Criar um plano para hoje')
+    expect(container.textContent).not.toContain('Outros treinos')
+
+    const create = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Criar um plano para hoje'))
+    expect(create).toBeTruthy()
+    await act(async () => { create.dispatchEvent(new dom.Event('click', { bubbles: true })) })
+
+    const created = mocks.S.routines.find(r => r.name === 'Plano de hoje')
+    expect(created).toBeTruthy()
+    expect(mocks.S.dayPlan[todayISO()]).toBe(created.id)
+    expect(mocks.navigate).toHaveBeenCalledWith('/plan/r/' + created.id)
+  })
+
+  it('lets an empty freestyle workout add its first exercise before the timer starts', async () => {
+    await mount([])
+    mocks.S.active.start = null
+    mocks.S.active.routineId = null
+    await act(async () => { root.render(React.createElement(Workout)) })
+
+    const add = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Adicionar exercício'))
+    expect(add).toBeTruthy()
+    expect(add.disabled).toBe(false)
+  })
+
   it('keeps the first exercise card locked and the clock paused until the workout starts', async () => {
     await mount([exercise('plain-bench', [false, false])])
     mocks.S.active.start = null
