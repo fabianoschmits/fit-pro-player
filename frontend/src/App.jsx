@@ -143,13 +143,13 @@ function ProfileHeader({ S, preview }) {
   return <div className="card plan-profile-card app-plan-profile-header" aria-label={profile.name}>
     <span className="profile-card-glow" aria-hidden="true" />
     <span className="plan-profile-avatar" aria-hidden="true">
-      <AnimatePresence mode="wait" initial={false}>
+      <AnimatePresence mode="sync" initial={false}>
         <motion.span
           key={profile.avatarId}
           className="profile-avatar-drop"
           initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -34, scale: 1.03, rotate: -2, filter: 'blur(3px)' }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: [0, 8, -3, 0], scale: [1, 1.025, 0.995, 1], rotate: [0, -1.8, 1.2, 0], filter: 'blur(0px)' }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.98, filter: 'blur(3px)' }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 0, scale: 0.995, filter: 'blur(3px)' }}
           transition={reduceMotion ? { duration: 0 } : { duration: 0.58, times: [0, 0.46, 0.72, 1], ease: [0.2, 0.8, 0.2, 1] }}
         >
           <AvatarImage avatarId={profile.avatarId} />
