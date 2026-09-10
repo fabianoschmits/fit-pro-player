@@ -1373,6 +1373,13 @@ h4.sec{
 .workout-entry-toggle:disabled{cursor:default}
 .workout-entry-toggle:not(:disabled):active{transform:scale(.99)}
 .workout-entry-toggle:not(:disabled):hover{background:var(--surface-2)}
+.workout-entry-toggle .thumb.exercise-muscle-thumb{
+  width:64px;height:86px;min-width:64px;
+  padding:4px;border-radius:12px;
+}
+.workout-entry-toggle .grow{
+  align-self:center;
+}
 .workout-entry-sets{
   display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;
 }
