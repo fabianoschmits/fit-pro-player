@@ -1359,20 +1359,37 @@ h4.sec{
 .workout-entry-detail{
   margin-bottom:12px;
   border-radius:var(--r-lg);
+  background:var(--surface);
+  border:var(--hair) solid var(--surface-border);
+  box-shadow:0 10px 28px -22px rgba(0,0,0,.45);
+  overflow:hidden;
 }
 .workout-entry-toggle{
   width:100%;display:flex;align-items:flex-start;gap:12px;
-  padding:0;background:transparent;border:0;color:inherit;text-align:left;
+  min-height:74px;padding:12px;background:transparent;border:0;color:inherit;text-align:left;
   cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background 180ms cubic-bezier(.2,.8,.2,1),transform 180ms cubic-bezier(.2,.8,.2,1);
 }
 .workout-entry-toggle:disabled{cursor:default}
+.workout-entry-toggle:not(:disabled):active{transform:scale(.99)}
+.workout-entry-toggle:not(:disabled):hover{background:var(--surface-2)}
+.workout-entry-sets{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;
+}
+.workout-entry-sets span{
+  display:inline-flex;align-items:center;min-height:24px;
+  padding:3px 8px;border-radius:999px;
+  background:var(--surface-2);color:var(--label-2);
+  font-size:12px;font-weight:600;line-height:1.25;
+  box-shadow:inset 0 0 0 var(--hair) var(--surface-border);
+}
 .workout-entry-toggle .chev{
   margin-top:13px;flex:none;color:var(--label-3);
   transition:transform 180ms cubic-bezier(.2,.8,.2,1),color 180ms cubic-bezier(.2,.8,.2,1);
 }
 .workout-entry-detail.is-open .workout-entry-toggle .chev{color:var(--acc)}
 .workout-entry-motion{
-  margin:10px 0 4px 46px;overflow:hidden;border-radius:var(--r-lg);
+  margin:0 12px 12px;overflow:hidden;border-radius:var(--r-lg);
   background:#000;box-shadow:inset 0 0 0 var(--hair) rgba(255,255,255,.09);
   animation:workout-entry-motion-in 220ms cubic-bezier(.2,.8,.2,1) both;
   transform-origin:top center;

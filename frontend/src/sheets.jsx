@@ -942,6 +942,7 @@ function WorkoutDetail({ w, close }) {
       const hasAnimation = ex && hasExerciseGuideAsset(ex)
       const expanded = openEntry === i && hasAnimation
       const title = ex ? exerciseName(ex) : (e.n || e.id)
+      const doneSets = e.sets.filter(s => s.done)
       return <div key={i} className={'workout-entry-detail' + (expanded ? ' is-open' : '')}>
         <button
           type="button"
@@ -953,7 +954,8 @@ function WorkoutDetail({ w, close }) {
         >
           {ex && <Thumb ex={ex} />}
           <div className="grow"><div className="tt capitalize" style={{ fontWeight: 600 }}>{title} {w.prs && w.prs.includes(e.id) && <span className="pr"><Icon name="trophy" />{getLang() === 'pt' ? 'RP' : 'PR'}</span>}</div>
-            <div className="ss">{e.sets.filter(s => s.done).map(s => setLabel(e.id, s, e.target)).join('  ·  ') || t('no sets')}</div></div>
+            {doneSets.length ? <div className="workout-entry-sets">{doneSets.map((s, setIndex) => <span key={setIndex}>{setLabel(e.id, s, e.target)}</span>)}</div>
+              : <div className="ss">{t('no sets')}</div>}</div>
           {hasAnimation && <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="chev" />}
         </button>
         {expanded && <div className="workout-entry-motion">
