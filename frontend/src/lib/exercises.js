@@ -1,6 +1,6 @@
 import { EXDB as SOURCE_EXERCISES } from './exercises-data.js'
 import PT_EXERCISE_NAMES from '../generated/pt-exercise-names.js'
-import { getLang, t } from './i18n-core.js'
+import { dateLocale, getLang, t } from './i18n-core.js'
 import {
   EXERCISE_SPRITE_EXERCISE_IDS,
   EXERCISE_SPRITE_POPULARITY_IDS,
@@ -67,14 +67,15 @@ export const allExercises = st => [...(st.customEx || []), ...EXDB]
 // Catalogue names are localized independently of user-created exercise names. Keeping the
 // English name searchable lets a Brazilian user find an exercise by either term.
 export const exerciseName = ex => {
-  const name = (getLang() === 'pt' && PT_EXERCISE_NAMES[ex?.id]) || ex?.n || t('Unknown exercise')
+  const sourceName = ex?.n || t('Unknown exercise')
+  const name = (getLang() === 'pt' && PT_EXERCISE_NAMES[ex?.id]) || (ex?.custom ? sourceName : t(sourceName))
   if (ex?.custom) return name
-  const locale = getLang() === 'pt' ? 'pt-BR' : undefined
+  const locale = dateLocale()
   return name ? name[0].toLocaleUpperCase(locale) + name.slice(1) : name
 }
 export const exerciseSearchText = ex => [
   exerciseName(ex), ex?.n, t(ex?.bp || ''), t(ex?.tg || ''), t(ex?.eq || ''), ex?.desc,
-].filter(Boolean).join(' ').toLocaleLowerCase(getLang() === 'pt' ? 'pt-BR' : undefined)
+].filter(Boolean).join(' ').toLocaleLowerCase(dateLocale())
 
 
 // Cardio exercises log time + speed instead of weight × reps.
