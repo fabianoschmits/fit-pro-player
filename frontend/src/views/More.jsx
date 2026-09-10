@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx'
 import { Section, Row } from '../components/ui.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
+import { EXDB } from '../lib/exercises.js'
 
 export default function More() {
   const nav = useNavigate()
@@ -16,6 +17,8 @@ export default function More() {
     </div>
 
     <Section title={t('Your app')}>
+      <Row icon="list" iconTint="var(--blue)" title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)}
+        accessory="chevron" onClick={() => nav('/library')} />
       <Row icon="personCircle" iconTint="var(--teal)" title={t('Edit your personal data')} subtitle={t('These details personalize your progress, body map and training suggestions.')}
         accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
       <Row icon="gear" iconTint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')}

@@ -36,17 +36,19 @@ export default function Library() {
       {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(40) }}>{sentenceCase(t(x))}</button>)}
     </div>}
     <div className="list">
-      <div className="item" onClick={() => customExSheet(null, ex => exerciseDetailSheet(ex), q.trim())}>
-        <div className="thumb thumb-x"><Icon name="sparkles" /></div>
+      <button type="button" className="item" onClick={() => customExSheet(null, ex => exerciseDetailSheet(ex), q.trim())}>
+        <div className="thumb thumb-x"><Icon name="plus" /></div>
         <div className="grow"><div className="tt">{t('Create your own exercise')}</div><div className="ss">{t('name + body part, no animation')}</div></div><Icon name="plus" className="chev" />
-      </div>
+      </button>
       {f.slice(0, shown).map(e => {
         const best = bestWeightFor(S, e.id)
-        return <div key={e.id} className="item" onClick={() => exerciseDetailSheet(e, f)}>
-          <Thumb ex={e} />
-          <div className="grow"><div className="tt">{exerciseName(e)}</div><div className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</div></div>
-          {best > 0 && <span className="tag acc">{fmtNum(best)}</span>}
-          <Button size="sm" variant="tinted" icon="plus" onClick={ev => { ev.stopPropagation(); addToRoutineSheet(e) }}>{t('Plan')}</Button>
+        return <div key={e.id} className="item picker-item">
+          <button type="button" className="picker-item-main" onClick={() => exerciseDetailSheet(e, f)}>
+            <Thumb ex={e} />
+            <span className="grow"><span className="tt">{exerciseName(e)}</span><span className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</span></span>
+            {best > 0 && <span className="tag acc">{fmtNum(best)}</span>}
+          </button>
+          <Button size="sm" variant="tinted" icon="plus" onClick={() => addToRoutineSheet(e)}>{t('Plan')}</Button>
         </div>
       })}
       {f.length === 0 && <div className="empty"><div className="ico"><Icon name="magnifier" /></div>{t('No match')}</div>}

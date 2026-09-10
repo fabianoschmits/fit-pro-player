@@ -30,8 +30,8 @@ export default function RestTimer() {
         <div className="bar"><i style={{ '--progress': pct / 100 }} /></div>
       </div>
       <div className="acts">
-        <Button size="sm" icon="minus" onClick={() => addRest(-15)}>15s</Button>
-        <Button size="sm" icon="plus" onClick={() => addRest(15)}>15s</Button>
+        <Button size="sm" icon="minus" aria-label={`${t('Decrease')} 15s`} onClick={() => addRest(-15)}>15s</Button>
+        <Button size="sm" icon="plus" aria-label={`${t('Increase')} 15s`} onClick={() => addRest(15)}>15s</Button>
         <Button size="sm" variant="primary" className="skip" onClick={stopRest}>{t('Skip')}</Button>
       </div>
     </div>

@@ -488,6 +488,7 @@ h4.sec{
   flex:1;text-align:center;padding:8px 2px 9px;border-radius:10px;
   background:none;border:none;transition:background var(--fast);
 }
+.wday .lbl,.wday .num,.wday .dot{display:block}
 .wday .lbl{font-size:11px;color:var(--label-3);font-weight:500;text-transform:uppercase;letter-spacing:.03em}
 .wday .num{font-size:17px;font-weight:400;margin:4px 0;letter-spacing:-.012em}
 .wday .dot{width:5px;height:5px;border-radius:50%;background:transparent;margin:0 auto}
@@ -542,6 +543,9 @@ h4.sec{
   transition:background var(--fast);text-align:left;width:100%;
 }
 .item:active{background:var(--surface-2)}
+.picker-item{gap:6px}
+.picker-item-main{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:0;background:none;color:inherit;text-align:left}
+.picker-item-main:disabled{opacity:1}
 .thumb{width:50px;height:50px;border-radius:9px;object-fit:cover;background:var(--surface-2);flex:none}
 .thumb-x{
   display:flex;align-items:center;justify-content:center;font-size:21px;
@@ -593,7 +597,7 @@ h4.sec{
 .wizard-stage{min-height:460px}
 .wizard-step{padding:8px 2px 20px}
 .wizard-kicker{display:block;margin-bottom:9px;color:var(--acc);font-size:11px;font-weight:720;letter-spacing:.1em;text-transform:uppercase}
-.wizard-step h1{max-width:460px;font-size:clamp(30px,8vw,40px);line-height:1.06;letter-spacing:-.042em;text-wrap:balance}
+.wizard-step h1{max-width:460px;font-size:36px;line-height:1.06;letter-spacing:0;text-wrap:balance}
 .wizard-step>p{max-width:470px;margin:12px 0 28px;color:var(--label-2);font-size:15px;line-height:1.5}
 .wizard-avatar-step>p{margin-bottom:18px}
 .avatar-picker-grid{
@@ -788,6 +792,7 @@ h4.sec{
 
 @media (max-width:520px){
   .plan-wizard{place-items:start stretch;padding-top:0}
+  .wizard-step h1{font-size:30px;line-height:1.1}
   .wizard-topbar{margin-bottom:9px}.wizard-stage{min-height:440px}.wizard-step{padding-inline:0}.wizard-step>p{margin-bottom:23px}
   .wizard-avatar-step>p{margin-bottom:15px}.avatar-picker-grid{height:min(380px,52dvh);grid-auto-rows:clamp(94px,27vw,118px);gap:7px;padding-inline:3px}.avatar-picker-option{border-radius:15px}.avatar-picker-check{top:5px;right:5px;width:21px;height:21px;font-size:11px}
   .wizard-body-choice{grid-template-columns:82px minmax(0,1fr);gap:13px}.wizard-avatar{height:112px;border-radius:16px;padding-inline:0}
@@ -1576,6 +1581,16 @@ h4.sec{
 .tile .v{font-size:26px;font-weight:600;letter-spacing:-.026em;margin-top:5px;line-height:1.1}
 .tile.tappable:active{background:var(--surface-2)}
 
+.finish-metrics{
+  display:grid;grid-template-columns:1fr 1fr;margin:14px 0 16px;
+  border-top:var(--hair) solid var(--sep);border-bottom:var(--hair) solid var(--sep);
+}
+.finish-metric{min-width:0;padding:11px 9px}
+.finish-metric:nth-child(even){border-left:var(--hair) solid var(--sep)}
+.finish-metric:nth-child(n+3){border-top:var(--hair) solid var(--sep)}
+.finish-metric .l{font-size:12px;color:var(--label-2)}
+.finish-metric .v{margin-top:4px;font-size:16px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
+
 /* --- PR badge --- */
 .pr{
   display:inline-flex;align-items:center;gap:4px;
@@ -1661,8 +1676,18 @@ h4.sec{
   font-weight:500;font-size:17px;line-height:1.25;text-transform:none;
   letter-spacing:-.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;
 }
+.body-weight-current{padding:0;background:none;color:inherit;text-align:left}
+.home-streak-card{display:block;width:100%;color:inherit;text-align:left}
+
+@media (max-width:360px){
+  .lrow:not(.lrow-value-only)>.lrow-v{max-width:50%;font-size:15px}
+  .lrow:has(>.seg-inline){flex-wrap:wrap}
+  .lrow:has(>.seg-inline)>.lrow-m{flex-basis:calc(100% - 41px)}
+  .lrow:has(>.seg-inline)>.seg-inline{width:calc(100% - 41px);min-width:0;margin-left:41px}
+}
 
 @media (max-width:340px){
+  .wizard-step h1{font-size:27px}
   .plan-profile-card{min-height:96px;padding-left:108px}.plan-profile-avatar{left:-12px;width:120px;height:136px}.plan-profile-edit{width:24px;height:24px}.plan-profile-edit .icn{font-size:13px}
   .app-plan-profile-header{min-height:78px;padding:6px 10px 6px 74px;grid-template-columns:minmax(0,1fr) 36px 38px;column-gap:3px}
   .app-plan-profile-header .plan-profile-avatar{left:-15px;width:92px;height:106px}
@@ -1719,6 +1744,7 @@ h4.sec{
   padding-top:42vh;display:flex;flex-direction:column;align-items:center;gap:12px;
   font-size:34px;color:var(--label-3);
 }
+.route-loading{min-height:180px;display:grid;place-items:center;color:var(--label-3);font-size:24px}
 .boot-loading .muted{font-size:15px}
 
 .plan-progress{padding:12px 14px;margin-bottom:12px}

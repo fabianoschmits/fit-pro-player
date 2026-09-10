@@ -145,11 +145,11 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
   // as every other +/- field in the app.
   const cell = (s, i, col, cls) => (
     <div className={'stp ' + cls}>
-      <button aria-label={t('Decrease')} disabled={locked} onClick={() => bump(s, i, col, -1)}><Icon name="minus" /></button>
+      <button aria-label={`${t('Decrease')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, -1)}><Icon name="minus" /></button>
       {/* a typed effort is capped — there is no RPE 12, and 12 reps in reserve is a warm-up */}
       <span className="val"><NumberField decimal={col.dec} nullable={col.opt} value={s[col.f] ?? ''}
-        disabled={locked} onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : v)} /></span>
-      <button aria-label={t('Increase')} disabled={locked} onClick={() => bump(s, i, col, 1)}><Icon name="plus" /></button>
+        aria-label={col.hd} disabled={locked} onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : v)} /></span>
+      <button aria-label={`${t('Increase')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, 1)}><Icon name="plus" /></button>
     </div>
   )
   return <>
@@ -215,7 +215,8 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
                 onClick={() => onStartTimed(i)}><Icon name="play" /></button>}
               {warm && <button className="iconbtn" style={{ fontSize: 13 }} aria-label={t('Remove set')}
                 disabled={locked || entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
-              <Check checked={s.done} onChange={() => onToggle(i)} playMode disabled={locked} />
+              <Check checked={s.done} onChange={() => onToggle(i)} playMode disabled={locked}
+                ariaLabel={`${warm ? t('Warm-up') : t('Sets')} ${phaseNum}: ${s.done ? t('Done') : t('Start set')}`} />
             </div>
           </div>
         })}
@@ -411,6 +412,13 @@ function ActiveWorkout() {
       const freshUnitIdx = freshUnits.indexOf(freshUnit)
       const freshLastUnit = freshUnitIdx >= freshUnits.length - 1
       const freshUnitDone = freshUnit?.every(ui => fresh.entries[ui].sets.every(x => x.done))
+
+      // The final set ends the session immediately. A rest timer here obscures the finish action
+      // and asks the user to wait even though there is no next set or exercise.
+      if (freshUnitDone && freshLastUnit) {
+        triggerFinishAction()
+        return
+      }
 
       // Singleton units are ordinary exercises: start rest timer and display completion sheet AFTER rest ends
       if (freshUnitDone) {

@@ -14,7 +14,6 @@ const TABS = [
   { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
   { k: 'start', icon: S => S.active ? 'play' : 'dumbbell', action: true, featured: true, label: S => startTabShortLabel(S) },
   { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
-  { k: 'library', icon: 'list', to: '/library', label: () => t('Exercises') },
   { k: 'more', icon: 'more', to: '/more', label: () => t('More') },
 ]
 
@@ -28,7 +27,7 @@ const PILL_SPRING = {
 }
 
 function isActive(cur, k) {
-  if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings'
+  if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings' || cur === 'library'
   if (k === 'start') return cur === 'workout'
   return cur === k
 }

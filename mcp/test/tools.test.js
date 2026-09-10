@@ -10,16 +10,15 @@ import { TOOLS } from '../src/tools.js'
 
 // Re-stated here so the assertions stand alone without reaching into lib internals to learn
 // the demo state's exact values.
-const FAKE_TODAY_ISO = '2026-07-27'                         // Monday — Push Day is scheduled
+const FAKE_TODAY_ISO = '2026-07-27'                         // Monday — Chest Day is scheduled
 const GOAL_WEIGHT = 77
-const PUSH_DAY = 'Dia de Empurrar'
-const PULL_DAY = 'Dia de Puxar'
+const CHEST_DAY = 'Dia de Peito'
+const BACK_DAY = 'Dia de Costas'
 const LEG_DAY = 'Dia de Pernas'
-// Re-pinned against the v1.2.4 seed, which moved when the demo learned about bodyweight work
-// and effort. Hand-checked rather than copied off a failing run: 18412.5 is the sum of w×r
-// over the twenty completed sets, and 1.3 is 78.3 − 77.
-const NEWEST_WORKOUT = { date: '2026-07-24', name: LEG_DAY, volume: 18412.5, bw: 78.4, sets_done: 20, sets_total: 20, duration: '1h 11m' }
-const LATEST_BW = { date: '2026-07-27', weight: 78.3, delta: 1.3 }
+// Re-pinned against the current deterministic seed after the starter catalogue changed.
+// 18782.5 is the sum of w×r over the twenty completed sets, and 1.1 is 78.1 − 77.
+const NEWEST_WORKOUT = { date: '2026-07-24', name: LEG_DAY, volume: 18782.5, bw: 78.6, sets_done: 20, sets_total: 20, duration: '1h 10m' }
+const LATEST_BW = { date: '2026-07-27', weight: 78.1, delta: 1.1 }
 const LEG_PRESS_ID = '0739'                                 // sled 45° leg press in the demo data
 const LEG_PRESS_BEST = { w: 152.5, r: 12, epley: 213.5, brzycki: 219.6 }
 
@@ -64,7 +63,7 @@ describe('list_routines', () => {
     const r = call('list_routines')
     expect(r.unit).toBe('kg')
     expect(r.routines.length).toBe(3)
-    expect(r.routines.map(x => x.name).sort()).toEqual([PUSH_DAY, LEG_DAY, PULL_DAY].sort())
+    expect(r.routines.map(x => x.name).sort()).toEqual([CHEST_DAY, LEG_DAY, BACK_DAY].sort())
     r.routines.forEach(rn => {
       expect(typeof rn.id).toBe('string')
       expect(rn.exercise_count).toBeGreaterThan(0)
@@ -87,11 +86,11 @@ describe('list_routines', () => {
 /* ---------- get_routine ---------- */
 
 describe('get_routine', () => {
-  test('returns the full exercise list for Push Day with per-exercise summaries', () => {
-    const push = call('list_routines').routines.find(x => x.name === PUSH_DAY)
-    const r = call('get_routine', { routine_id: push.id })
-    expect(r.name).toBe(PUSH_DAY)
-    expect(r.exercises.length).toBe(push.exercise_count)
+  test('returns the full exercise list for Chest Day with per-exercise summaries', () => {
+    const chest = call('list_routines').routines.find(x => x.name === CHEST_DAY)
+    const r = call('get_routine', { routine_id: chest.id })
+    expect(r.name).toBe(CHEST_DAY)
+    expect(r.exercises.length).toBe(chest.exercise_count)
     expect(r.policy_name).toBeTruthy()
     r.exercises.forEach(e => {
       expect(['reps', 'time', 'cardio']).toContain(e.mode)
@@ -119,10 +118,10 @@ describe('get_routine', () => {
     // Append synthetic entries the starter plan doesn't ship: a timed plank (sec, no w) and a
     // cardio treadmill block (min + speed). These exercise ids don't exist in EXDB, so exOr
     // returns a placeholder named "Unknown exercise" — that's fine, we test the cfg fields.
-    const push = S.routines.find(r => r.name === PUSH_DAY)
-    push.ex.push({ id: 'synth-plank', sets: 3, sec: 60, weight: 0, mode: 'time' })
-    push.ex.push({ id: 'synth-treadmill', sets: 1, min: 20, speed: 8, mode: 'cardio' })
-    const r = call('get_routine', { routine_id: push.id })
+    const chest = S.routines.find(r => r.name === CHEST_DAY)
+    chest.ex.push({ id: 'synth-plank', sets: 3, sec: 60, weight: 0, mode: 'time' })
+    chest.ex.push({ id: 'synth-treadmill', sets: 1, min: 20, speed: 8, mode: 'cardio' })
+    const r = call('get_routine', { routine_id: chest.id })
     const t = r.exercises[r.exercises.length - 2]
     const c = r.exercises[r.exercises.length - 1]
     expect(t.mode).toBe('time')
@@ -145,19 +144,19 @@ describe('get_week_plan', () => {
       .toEqual(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'])
   })
 
-  test('today is the pinned Monday, and Push Day is scheduled', () => {
+  test('today is the pinned Monday, and Chest Day is scheduled', () => {
     const r = call('get_week_plan')
     expect(r.today).toBe(FAKE_TODAY_ISO)
-    const push = S.routines.find(x => x.name === PUSH_DAY)
-    expect(r.today_routine_id).toBe(push.id)
-    expect(r.today_routine_name).toBe(PUSH_DAY)
+    const chest = S.routines.find(x => x.name === CHEST_DAY)
+    expect(r.today_routine_id).toBe(chest.id)
+    expect(r.today_routine_name).toBe(CHEST_DAY)
   })
 
-  test('week[1]/[3]/[5] map to Push/Pull/Leg, other weekdays are rest', () => {
+  test('week[1]/[3]/[5] map to Chest/Back/Leg, other weekdays are rest', () => {
     const r = call('get_week_plan')
     const byWd = Object.fromEntries(r.weekdays.map(d => [d.weekday, d]))
-    expect(byWd[1].routine_name).toBe(PUSH_DAY)
-    expect(byWd[3].routine_name).toBe(PULL_DAY)
+    expect(byWd[1].routine_name).toBe(CHEST_DAY)
+    expect(byWd[3].routine_name).toBe(BACK_DAY)
     expect(byWd[5].routine_name).toBe(LEG_DAY)
     ;[0, 2, 4, 6].forEach(wd => {
       expect(byWd[wd].routine_id).toBeNull()

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from './store/useStore.js'
@@ -9,7 +9,6 @@ import { DEFAULT_LANG, setLang, useLang, t } from './lib/i18n.js'
 import { setNav } from './lib/nav.js'
 import { initBackButton } from './lib/back.js'
 import { useWakeLock } from './lib/wakelock.js'
-import { startFlow } from './sheets.jsx'
 import Icon from './components/Icon.jsx'
 import TabBar from './components/TabBar.jsx'
 import PageTransition from './components/PageTransition.jsx'
@@ -20,70 +19,92 @@ import AvatarImage from './components/AvatarImage.jsx'
 import progressDumbbell from './assets/progress-dumbbell.png'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import RestTimer from './components/RestTimer.jsx'
-import Landing from './views/Landing.jsx'
-import Home from './views/Home.jsx'
-import Plan from './views/Plan.jsx'
-import RoutineEdit from './views/RoutineEdit.jsx'
-import Workout from './views/Workout.jsx'
-import Stats from './views/Stats.jsx'
-import History from './views/History.jsx'
-import Library from './views/Library.jsx'
-import Settings from './views/Settings.jsx'
-import Admin from './views/Admin.jsx'
-import More from './views/More.jsx'
+const loadLanding = () => import('./views/Landing.jsx')
+const loadHome = () => import('./views/Home.jsx')
+const loadPlan = () => import('./views/Plan.jsx')
+const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
+const loadWorkout = () => import('./views/Workout.jsx')
+const loadStats = () => import('./views/Stats.jsx')
+const loadHistory = () => import('./views/History.jsx')
+const loadLibrary = () => import('./views/Library.jsx')
+const loadSettings = () => import('./views/Settings.jsx')
+const loadAdmin = () => import('./views/Admin.jsx')
+const loadMore = () => import('./views/More.jsx')
+const loadSheets = () => import('./sheets.jsx')
+
+const Landing = lazy(loadLanding)
+const Home = lazy(loadHome)
+const Plan = lazy(loadPlan)
+const RoutineEdit = lazy(loadRoutineEdit)
+const Workout = lazy(loadWorkout)
+const Stats = lazy(loadStats)
+const History = lazy(loadHistory)
+const Library = lazy(loadLibrary)
+const Settings = lazy(loadSettings)
+const Admin = lazy(loadAdmin)
+const More = lazy(loadMore)
+
+// Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
+// pass through the service worker and become available offline without delaying first paint.
+export const preloadCoreRoutes = () => Promise.allSettled([
+  loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(),
+  loadLibrary(), loadSettings(), loadMore(), loadSheets(),
+])
+
+const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))
 
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
 
 const PROFILE_MOTIVATION_MESSAGES = [
   'Birlll!',
-  'Aqui e bodybuilder!',
-  'O pai ta on.',
+  'Aqui é bodybuilder!',
+  'O pai tá on.',
   'Receba!',
-  'E os guri!',
+  'É os guri!',
   'Mete marcha.',
-  'So vai, pai.',
-  'Ta pago.',
+  'Só vai, pai.',
+  'Tá pago.',
   'Bora, filho!',
-  'Sem cao.',
+  'Sem caô.',
   'Respeita o pai.',
-  'A tropa ta forte.',
-  'Hoje e sem desculpa.',
+  'A tropa tá forte.',
+  'Hoje é sem desculpa.',
   'O shape vem, confia.',
-  'Farmando musculo.',
+  'Farmando músculo.',
   'Modo monstro: ON.',
-  'So progresso.',
+  'Só progresso.',
   'Vai dar bom.',
-  'E dentro.',
-  'Ta maluco!',
+  'É dentro.',
+  'Tá maluco!',
   'Amassa esse treino.',
-  'Zerou a preguica.',
+  'Zerou a preguiça.',
   'Cria do leg day.',
-  'Shape inexplicavel.',
+  'Shape inexplicável.',
   'Hoje tem!',
-  'Fe no processo.',
-  'Nao tem como, pai.',
+  'Fé no processo.',
+  'Não tem como, pai.',
   'Marcha no treino.',
   'O monstro acordou.',
-  'So os cria treinam.',
+  'Só os cria treinam.',
   'Projeto monstro.',
-  'Hoje doi, amanha posa.',
+  'Hoje dói, amanhã posa.',
   'Menos papo, mais carga.',
   'Treina e confia.',
-  'O sofa nao da shape.',
+  'O sofá não dá shape.',
   'Sofrendo e evoluindo.',
-  'Sem suor, sem historia.',
-  'Ta leve? Aumenta.',
-  'Nao foge do leg day.',
-  'O shape nao vem por Wi-Fi.',
-  'So mais uma... confia.',
+  'Sem suor, sem história.',
+  'Tá leve? Aumenta.',
+  'Não foge do leg day.',
+  'O shape não vem por Wi-Fi.',
+  'Só mais uma… confia.',
   'Treino pago, treino feito.',
   'Levanta e vai.',
-  'Build de monstro carregando...',
-  'Buff de forca ativado.',
-  'NPC nao treina perna.',
+  'Build de monstro carregando…',
+  'Buff de força ativado.',
+  'NPC não treina perna.',
   'Hoje o frango evolui.',
-  'Foco no shape, nao na fofoca.',
-  'Desistir nao queima calorias.',
+  'Foco no shape, não na fofoca.',
+  'Desistir não queima calorias.',
   'Treina agora, reclama depois.',
 ]
 
@@ -113,6 +134,10 @@ function applyPrefs(theme, accent) {
   de.dataset.accent = ACCENTS[accent] ? accent : 'lime'
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.content = de.dataset.theme === 'light' ? '#eef2f6' : '#000000'
+}
+
+function RouteFallback() {
+  return <div className="route-loading" role="status"><Icon name="dumbbell" /><span className="sr-only">{t('Loading…')}</span></div>
 }
 
 function ProfileHeader({ S, preview }) {
@@ -229,20 +254,20 @@ function Shell() {
           re-mounts the boundary, so the tab bar is always a way out */}
       <PageTransition>
         <ErrorBoundary>
-          {!authed ? <Landing /> : (
-            <><ProfileHeader S={S} preview={profilePreview} /><Routes>
-              <Route path="/home" element={<Home />} />
-              <Route path="/plan" element={<Plan />} />
-              <Route path="/plan/r/:id" element={<RoutineEdit />} />
-              <Route path="/workout" element={<Workout />} />
-              <Route path="/stats" element={<Stats />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/library" element={<Library />} />
-              <Route path="/more" element={<More />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
-              <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes></>
+          {!authed ? <Suspense fallback={<RouteFallback />}><Landing /></Suspense> : (
+            <><ProfileHeader S={S} preview={profilePreview} /><Suspense fallback={<RouteFallback />}><Routes>
+                <Route path="/home" element={<Home />} />
+                <Route path="/plan" element={<Plan />} />
+                <Route path="/plan/r/:id" element={<RoutineEdit />} />
+                <Route path="/workout" element={<Workout />} />
+                <Route path="/stats" element={<Stats />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/library" element={<Library />} />
+                <Route path="/more" element={<More />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
+                <Route path="*" element={<Navigate to="/home" replace />} />
+              </Routes></Suspense></>
           )}
         </ErrorBoundary>
       </PageTransition>

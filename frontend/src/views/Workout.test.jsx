@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
     startRest: vi.fn(),
     stopRest: vi.fn(),
     topWeightSheet: vi.fn(),
+    workoutCompleteSheet: vi.fn(),
     navigate: vi.fn(),
   }
   state.storeSnapshot = () => ({
@@ -46,7 +47,7 @@ vi.mock('../sheets.jsx', () => ({
   exerciseDetailSheet: vi.fn(),
   topWeightSheet: mocks.topWeightSheet,
   finishWorkout: vi.fn(),
-  workoutCompleteSheet: vi.fn(),
+  workoutCompleteSheet: mocks.workoutCompleteSheet,
   confirmSheet: vi.fn(),
 }))
 vi.mock('../components/Media.jsx', () => ({ default: () => null }))
@@ -180,7 +181,7 @@ describe('Workout set completion flow', () => {
     expect(container.querySelector('[role="checkbox"]')?.disabled).toBe(false)
   })
 
-  it('starts rest after a set including the final set of an exercise', async () => {
+  it('starts rest between sets but finishes immediately after the final set of the workout', async () => {
     await mount([exercise('plain-bench', [false, false, false])])
     await toggleSet(0)
 
@@ -194,8 +195,8 @@ describe('Workout set completion flow', () => {
     })])
     await toggleSet(0)
 
-    expect(mocks.startRest).toHaveBeenCalledOnce()
-    expect(mocks.startRest).toHaveBeenCalledWith(90, expect.any(Function))
+    expect(mocks.startRest).not.toHaveBeenCalled()
+    expect(mocks.workoutCompleteSheet).toHaveBeenCalledOnce()
   })
 
   it('leaves a completed superset selected while its top-weight sheet owns the advance choice', async () => {

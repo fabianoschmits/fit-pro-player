@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW } from '../lib/history.js'
@@ -16,7 +16,6 @@ import PlanProgress from '../components/PlanProgress.jsx'
 export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const user = useStore(s => s.user)
   const update = useStore(s => s.update)
   const [weekOffset, setWeekOffset] = useState(0)
   const [calOpen, setCalOpen] = useState(false)
@@ -50,8 +49,9 @@ export default function Home() {
     const iso = isoOf(d)
     const eff = effectiveRoutineId(S, iso), ovr = S.dayPlan[iso] !== undefined, done = doneDays.has(iso)
     const dot = done ? ' done' : ovr && eff ? ' ovr' : eff ? ' plan' : ''
-    strip.push(<div key={i} className={'wday' + (iso === todayISO() ? ' today' : '')} onClick={() => dayOverrideSheet(iso)}>
-      <div className="lbl">{t(DAYS[d.getDay()])}</div><div className="num">{d.getDate()}</div><div className={'dot' + dot} /></div>)
+    strip.push(<button type="button" key={i} className={'wday' + (iso === todayISO() ? ' today' : '')} onClick={() => dayOverrideSheet(iso)}
+      aria-label={d.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}>
+      <span className="lbl">{t(DAYS[d.getDay()])}</span><span className="num">{d.getDate()}</span><span className={'dot' + dot} /></button>)
   }
   const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
   const wkLabel = weekOffset === 0 ? t('This week') : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} – ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
@@ -68,8 +68,9 @@ export default function Home() {
       const iso = isoOf(d)
       const eff = effectiveRoutineId(S, iso), ovr = S.dayPlan[iso] !== undefined, done = doneDays.has(iso)
       const dot = done ? ' done' : ovr && eff ? ' ovr' : eff ? ' plan' : ''
-      days.push(<div key={i} className={'wday' + (iso === todayISO() ? ' today' : '')} onClick={() => { dayOverrideSheet(iso); setCalOpen(false) }}>
-        <div className="lbl">{t(DAYS[d.getDay()])}</div><div className="num">{d.getDate()}</div><div className={'dot' + dot} /></div>)
+      days.push(<button type="button" key={i} className={'wday' + (iso === todayISO() ? ' today' : '')} onClick={() => { dayOverrideSheet(iso); setCalOpen(false) }}
+        aria-label={d.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}>
+        <span className="lbl">{t(DAYS[d.getDay()])}</span><span className="num">{d.getDate()}</span><span className={'dot' + dot} /></button>)
     }
     return { label, days }
   }
@@ -92,7 +93,7 @@ export default function Home() {
 
   return <div className="narrow">
     <div className="hdr">
-      <div><h1>{S.profile?.name || user?.name ? t('Hi {0}', S.profile?.name || user.name) : 'Fit Pro Player'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
+      <div><h1>{t('Today')}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
       <button className="iconbtn" onClick={() => update(s => { s.theme = s.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
         <Icon name={S.theme === 'light' ? 'sun' : 'moon'} />
       </button>
@@ -125,7 +126,7 @@ export default function Home() {
           ))}
         </div>
       </div>
-      <div className="today-row" onClick={onToday}>
+      <button type="button" className="today-row" onClick={onToday}>
         <div className="row" style={{ gap: 9, minWidth: 0 }}>
           <span className="lrow-i" style={{
             background: S.active ? 'var(--orange)' : routine ? 'var(--acc)' : 'var(--surface-3)',
@@ -142,7 +143,7 @@ export default function Home() {
           : routine?.ex.length ? <span className="tag acc">{t('Start')}</span>
           : routine ? <span className="tag acc">{t('Edit')}</span>
           : <Icon name="plus" className="chev" />}
-      </div>
+      </button>
     </div>
 
     {lastWorkout && !S.active && (
@@ -158,12 +159,12 @@ export default function Home() {
     {!S.routines.length && !S.active && (
       <div className="card">
         <div className="row" style={{ gap: 10, marginBottom: 6 }}>
-          <span className="lrow-i"><Icon name="sparkles" /></span>
+          <span className="lrow-i"><Icon name="dumbbell" /></span>
           <div className="big" style={{ fontSize: 22 }}>{t('Welcome!')}</div>
         </div>
         <div className="muted small" style={{ marginBottom: 12 }}>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</div>
         <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
-        <div style={{ height: 8 }} /><Button icon="sparkles" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
+        <div style={{ height: 8 }} /><Button icon="dumbbell" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
       </div>
     )}
 
@@ -177,9 +178,9 @@ export default function Home() {
       </div>
       {bw ? <>
         <div className="row" style={{ gap: 8, alignItems: 'baseline' }}>
-          <div className="big tappable" style={{ cursor: 'pointer' }} onClick={() => bwSheet({ date: bw.d || todayISO() })} title={t('Edit current weight')}>
+          <button type="button" className="big tappable body-weight-current" onClick={() => bwSheet({ date: bw.d || todayISO() })} title={t('Edit current weight')} aria-label={t('Edit current weight')}>
             {fmtNum(bw.w)} <span className="muted" style={{ fontSize: '1rem' }}>{S.unit}</span>
-          </div>
+          </button>
           {!!delta && (
             <span className="small row" style={{ gap: 2, fontWeight: 500, color: bwDeltaColor(delta, bw.w) }}>
               <Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} style={{ fontSize: 12 }} />
@@ -208,7 +209,7 @@ export default function Home() {
       </>
     )}
 
-    <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => calendarSheet()}>
+    <button type="button" className="card tappable home-streak-card" onClick={() => calendarSheet()}>
       <div className="row between">
         <div>
           <div className="row" style={{ gap: 7, fontSize: 22, fontWeight: 600, letterSpacing: '-.021em' }}>
@@ -219,6 +220,6 @@ export default function Home() {
         </div>
         <Icon name="calendar" className="chev" style={{ fontSize: 20 }} />
       </div>
-    </div>
+    </button>
   </div>
 }

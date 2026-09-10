@@ -276,7 +276,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <span className="wizard-kicker">{draft.planMode === 'weekly' ? t('Weekly plan') : t('Daily plan')}</span>
       <h1>{draft.planMode === 'weekly' ? t('Choose your training days') : t("Choose today's workout")}</h1>
       <p>{draft.planMode === 'weekly' ? t('Your exercises, sets, repetitions and starting loads adapt to the number of days you select.') : t('Tomorrow you can choose again. Your completed workouts stay in history.')}</p>
-      <div className="wizard-plan-fit"><Icon name="sparkles" /><span><strong>{t('Personalized for {0} · {1}', t(PROFILE_GOAL_LABELS[draft.goal]), t(EXPERIENCE_LABELS[draft.experience]))}</strong><small>{t('Built from your goal, experience, weight and training frequency.')} {t('Starting loads are estimates. Adjust them whenever technique or comfort requires it.')}</small></span></div>
+      <div className="wizard-plan-fit"><Icon name="target" /><span><strong>{t('Personalized for {0} · {1}', t(PROFILE_GOAL_LABELS[draft.goal]), t(EXPERIENCE_LABELS[draft.experience]))}</strong><small>{t('Built from your goal, experience, weight and training frequency.')} {t('Starting loads are estimates. Adjust them whenever technique or comfort requires it.')}</small></span></div>
       {draft.planMode === 'weekly' ? <>
         <div className="wizard-week" role="group" aria-label={t('Training days')}>
           {WEEK_DAYS.map(day => <button type="button" key={day} className={days.includes(day) ? 'on' : ''} aria-pressed={days.includes(day)} onClick={() => toggleDay(day)}><span>{t(DAYS[day])}</span><strong>{t(DAYN[day]).slice(0, 3)}</strong></button>)}
@@ -302,7 +302,13 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   return <main className="plan-wizard" aria-labelledby="wizard-title">
     <div className="wizard-shell">
       <div className="wizard-topbar">
-        <button type="button" className="iconbtn" disabled={step === 0} onClick={() => go(step - 1)} aria-label={t('Back')}><Icon name="chevronLeft" /></button>
+        <button
+          type="button"
+          className="iconbtn"
+          disabled={!editing && step === 0}
+          onClick={() => step === 0 ? onCancel?.() : go(step - 1)}
+          aria-label={editing && step === 0 ? t('Cancel') : t('Back')}
+        ><Icon name={editing && step === 0 ? 'xmark' : 'chevronLeft'} /></button>
         <div className="wizard-progress" role="progressbar" aria-valuemin="1" aria-valuemax={total} aria-valuenow={step + 1}><i style={{ width: `${((step + 1) / total) * 100}%` }} /></div>
         <span>{step + 1}/{total}</span>
       </div>
@@ -313,8 +319,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       </div>
       {error && <div className="wizard-error" role="alert"><Icon name="info" />{error}</div>}
       <div className="wizard-actions">
-        {editing && step === 0 && <Button variant="ghost" onClick={onCancel}>{t('Cancel')}</Button>}
-        {editing && <Button variant="ghost" onClick={saveProgress}>{t('Save')}</Button>}
+        {editing && step < total - 1 && <Button variant="ghost" onClick={saveProgress}>{t('Save')}</Button>}
         {step < total - 1
           ? <Button variant="primary" trailingIcon="chevronRight" onClick={() => go(step + 1)}>{t('Continue')}</Button>
           : <Button variant="primary" icon="check" onClick={finish}>{editing ? t('Save changes') : t('Finish setup')}</Button>}

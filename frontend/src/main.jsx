@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App.jsx'
+import App, { preloadCoreRoutes } from './App.jsx'
 import { MOBILE } from './lib/mobile.js'
 import './index.css'
 
@@ -38,6 +38,7 @@ if (!MOBILE && 'serviceWorker' in navigator && location.protocol === 'https:') {
       const nextAssetSignature = assetSignatureOf(nextDoc)
       if (!reloadedForUpdate && currentAssetSignature && nextAssetSignature && nextAssetSignature !== currentAssetSignature) {
         reloadedForUpdate = true
+        navigator.serviceWorker.controller?.postMessage({ type: 'CLEAR_RUNTIME_CACHE' })
         window.location.reload()
       }
     }
@@ -62,7 +63,12 @@ if (!MOBILE && 'serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('focus', checkForUpdate)
     window.addEventListener('online', checkForUpdate)
     document.addEventListener('visibilitychange', checkForUpdate)
-    navigator.serviceWorker.ready.then(checkForUpdate).catch(() => {})
+    navigator.serviceWorker.ready.then(() => {
+      checkForUpdate()
+      const preload = () => preloadCoreRoutes().catch(() => {})
+      if ('requestIdleCallback' in window) window.requestIdleCallback(preload, { timeout: 5000 })
+      else window.setTimeout(preload, 1500)
+    }).catch(() => {})
     window.addEventListener('beforeunload', () => {
       window.clearInterval(updateInterval)
       window.removeEventListener('focus', checkForUpdate)
