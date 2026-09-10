@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
+import { useUI } from '../store/useUI.js'
 import { DAYN, DAYS, exCount, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { isStarterRoutine, routineName } from '../lib/starter.js'
@@ -32,6 +33,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
   const update = useStore(s => s.update)
+  const setProfilePreview = useUI(s => s.setProfilePreview)
   const reduceMotion = useReducedMotion()
   const profile = normalizeProfile(S.profile, S.body)
   const lastWeight = currentProfileWeight(S)
@@ -79,6 +81,12 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' })
   }, [step])
+
+  useEffect(() => {
+    if (!editing) return
+    setProfilePreview(step === 1 ? { avatarId: draft.avatarId } : null)
+    return () => setProfilePreview(null)
+  }, [draft.avatarId, editing, setProfilePreview, step])
 
   const validate = () => {
     if (step === 0 && draft.name.trim().length < 2) return t('Enter your name to continue.')

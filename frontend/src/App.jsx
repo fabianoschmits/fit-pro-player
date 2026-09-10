@@ -115,16 +115,17 @@ function applyPrefs(theme, accent) {
   if (meta) meta.content = de.dataset.theme === 'light' ? '#eef2f6' : '#000000'
 }
 
-function ProfileHeader({ S }) {
+function ProfileHeader({ S, preview }) {
   const [messageIndex, setMessageIndex] = useState(0)
   const reduceMotion = useReducedMotion()
+  const profile = preview ? { ...S.profile, ...preview } : S.profile
   const goalProgressPercent = weightGoalProgressPercent(S)
   const progress = goalProgressPercent == null ? 0 : goalProgressPercent
   const currentWeight = currentProfileWeight(S)
-  const age = ageFromBirthDate(S.profile?.birthDate)
+  const age = ageFromBirthDate(profile?.birthDate)
   const stats = [
     { icon: 'calendar', value: t('{0} years', age ?? '--') },
-    { icon: 'figureStrength', value: `${heightText(S.profile?.heightCm) || '--'} m` },
+    { icon: 'figureStrength', value: `${heightText(profile?.heightCm) || '--'} m` },
     { icon: 'scale', value: `${currentWeight ? weightText(currentWeight) : '--'} ${S.unit}` },
   ]
   useEffect(() => {
@@ -138,12 +139,27 @@ function ProfileHeader({ S }) {
     }, 7000)
     return () => window.clearInterval(interval)
   }, [])
-  if (!S.onboardingDone || !S.profile?.name) return null
-  return <div className="card plan-profile-card app-plan-profile-header" aria-label={S.profile.name}>
+  if (!S.onboardingDone || !profile?.name) return null
+  return <div className="card plan-profile-card app-plan-profile-header" aria-label={profile.name}>
     <span className="profile-card-glow" aria-hidden="true" />
-    <span className="plan-profile-avatar" aria-hidden="true"><AvatarImage avatarId={S.profile.avatarId} /></span>
+    <span className="plan-profile-avatar" aria-hidden="true">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={profile.avatarId}
+          className="profile-avatar-drop"
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -34, scale: 1.03, rotate: -2, filter: 'blur(3px)' }}
+          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: [0, 8, -3, 0], scale: [1, 1.025, 0.995, 1], rotate: [0, -1.8, 1.2, 0], filter: 'blur(0px)' }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.98, filter: 'blur(3px)' }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.58, times: [0, 0.46, 0.72, 1], ease: [0.2, 0.8, 0.2, 1] }}
+        >
+          <AvatarImage avatarId={profile.avatarId} />
+          <span className="profile-avatar-dust left" />
+          <span className="profile-avatar-dust right" />
+        </motion.span>
+      </AnimatePresence>
+    </span>
     <span className="grow app-profile-copy">
-      <strong>{S.profile.name}</strong>
+      <strong>{profile.name}</strong>
       <span className="profile-message-stage" aria-live="polite">
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.small
@@ -180,6 +196,7 @@ function Shell() {
   const navigate = useNavigate()
   const loc = useLocation()
   const { S, user, ready } = useStore()
+  const profilePreview = useUI(s => s.profilePreview)
   const isGuest = useStore(s => s.isGuest())
   const authed = user || isGuest
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
@@ -213,7 +230,7 @@ function Shell() {
       <PageTransition>
         <ErrorBoundary>
           {!authed ? <Landing /> : (
-            <><ProfileHeader S={S} /><Routes>
+            <><ProfileHeader S={S} preview={profilePreview} /><Routes>
               <Route path="/home" element={<Home />} />
               <Route path="/plan" element={<Plan />} />
               <Route path="/plan/r/:id" element={<RoutineEdit />} />

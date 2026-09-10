@@ -60,6 +60,8 @@ export const useUI = create((set, get) => ({
   toastMsg: '',
   timer: null,         // rest countdown between sets — { left, total, endsAt }
   work: null,          // work countdown DURING a timed set (issue #16) — { left, total, endsAt, label }
+  profilePreview: null,
+  setProfilePreview(profilePreview) { set({ profilePreview }) },
 
   openSheet(render, { kind = 'sheet', locked = false } = {}) {
     const id = uid()
