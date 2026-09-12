@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
-import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW } from '../lib/history.js'
-import { fmtNum, fmtDate, todayISO, isoOf, weekKey, DAYS } from '../lib/format.js'
+import { exOr, exerciseName } from '../lib/exercises.js'
+import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, workoutVolume, setsDone, setsDoneActive } from '../lib/history.js'
+import { fmtNum, fmtDate, fmtDur, fmtVol, todayISO, isoOf, weekKey, DAYS, exCount, sentenceCase } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { planSetupProgress } from '../lib/ux.js'
-import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor, repeatLastWorkout, WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
+import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor, repeatWorkout, WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
@@ -13,213 +14,197 @@ import { glyphOf } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 
+function nextPlannedWorkout(S, from) {
+  for (let offset = 1; offset <= 14; offset++) {
+    const date = new Date(from)
+    date.setDate(from.getDate() + offset)
+    const iso = isoOf(date)
+    const routine = effectiveRoutine(S, iso)
+    if (routine?.ex?.length) return { date, iso, routine }
+  }
+  return null
+}
+
+function SessionMetrics({ workout, unit }) {
+  return <div className="home-now-metrics">
+    <span><small>{t('Duration')}</small><b>{fmtDur(Math.max(0, (workout.end || workout.start) - workout.start))}</b></span>
+    <span><small>{t('Sets')}</small><b>{setsDone(workout)}</b></span>
+    <span><small>{t('Volume')}</small><b>{fmtVol(workoutVolume(workout), unit)}</b></span>
+  </div>
+}
+
 export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const [weekOffset, setWeekOffset] = useState(0)
-  const [calOpen, setCalOpen] = useState(false)
-  const calRef = useRef(null)
-
-  useEffect(() => {
-    if (!calOpen) return
-    const handler = e => {
-      if (calRef.current && !calRef.current.contains(e.target)) setCalOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    document.addEventListener('touchstart', handler)
-    return () => { document.removeEventListener('mousedown', handler); document.removeEventListener('touchstart', handler) }
-  }, [calOpen])
 
   const today = new Date()
-  const routine = effectiveRoutine(S, todayISO())
-  const todayOvr = S.dayPlan[todayISO()] !== undefined
+  const isoToday = todayISO()
+  const routine = effectiveRoutine(S, isoToday)
+  const todayWorkout = [...S.workouts].reverse().find(workout => workout.d === isoToday) || null
+  const nextWorkout = nextPlannedWorkout(S, today)
   const bw = lastBW(S)
   const prevBW = S.bodyweight.length > 1 ? S.bodyweight[S.bodyweight.length - 2] : null
   const delta = bw && prevBW ? bw.w - prevBW.w : null
   const lastWorkout = S.workouts.length ? S.workouts[S.workouts.length - 1] : null
-  const recentWorkouts = [...S.workouts].reverse().slice(0, 3)
+  const recentWorkouts = [...S.workouts].reverse().slice(0, 2)
   const planProgress = planSetupProgress(S)
 
-  const monday = new Date(today); monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + weekOffset * 7)
-  const doneDays = new Set(S.workouts.map(w => w.d))
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + weekOffset * 7)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  const doneDays = new Set(S.workouts.map(workout => workout.d))
   const strip = []
   for (let i = 0; i < 7; i++) {
-    const d = new Date(monday); d.setDate(monday.getDate() + i)
-    const iso = isoOf(d)
-    const eff = effectiveRoutineId(S, iso), ovr = S.dayPlan[iso] !== undefined, done = doneDays.has(iso)
-    const dot = done ? ' done' : ovr && eff ? ' ovr' : eff ? ' plan' : ''
-    strip.push(<button type="button" key={i} className={'wday' + (iso === todayISO() ? ' today' : '')} onClick={() => dayOverrideSheet(iso)}
-      aria-label={d.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}>
-      <span className="lbl">{t(DAYS[d.getDay()])}</span><span className="num">{d.getDate()}</span><span className={'dot' + dot} /></button>)
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + i)
+    const iso = isoOf(date)
+    const effectiveId = effectiveRoutineId(S, iso)
+    const override = S.dayPlan[iso] !== undefined
+    const done = doneDays.has(iso)
+    const dot = done ? ' done' : override && effectiveId ? ' ovr' : effectiveId ? ' plan' : ''
+    strip.push(<button type="button" key={iso} className={'wday' + (iso === isoToday ? ' today' : '')} onClick={() => dayOverrideSheet(iso)}
+      aria-label={date.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}>
+      <span className="lbl">{t(DAYS[date.getDay()])}</span><span className="num">{date.getDate()}</span><span className={'dot' + dot} />
+    </button>)
   }
-  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
-  const wkLabel = weekOffset === 0 ? t('This week') : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} – ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
+  const weekLabel = weekOffset === 0
+    ? t('This week')
+    : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} - ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
+  const workoutsThisWeek = S.workouts.filter(workout => weekKey(workout.d) === weekKey(isoToday)).length
+  const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(key => S.week[key]).length
+  const bwPoints = S.bodyweight.slice(-30).map(entry => ({ t: entry.t || new Date(entry.d).getTime(), y: entry.w, d: entry.d, iso: entry.d }))
 
-  // Helper: build a week strip for a given offset relative to today's monday
-  const buildStrip = (offset) => {
-    const mon = new Date(today)
-    mon.setDate(today.getDate() - ((today.getDay() + 6) % 7) + offset * 7)
-    const sun = new Date(mon); sun.setDate(mon.getDate() + 6)
-    const label = `${mon.getDate()} ${mon.toLocaleDateString(dateLocale(), { month: 'short' })} – ${sun.getDate()} ${sun.toLocaleDateString(dateLocale(), { month: 'short' })}`
-    const days = []
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(mon); d.setDate(mon.getDate() + i)
-      const iso = isoOf(d)
-      const eff = effectiveRoutineId(S, iso), ovr = S.dayPlan[iso] !== undefined, done = doneDays.has(iso)
-      const dot = done ? ' done' : ovr && eff ? ' ovr' : eff ? ' plan' : ''
-      days.push(<button type="button" key={i} className={'wday' + (iso === todayISO() ? ' today' : '')} onClick={() => { dayOverrideSheet(iso); setCalOpen(false) }}
-        aria-label={d.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}>
-        <span className="lbl">{t(DAYS[d.getDay()])}</span><span className="num">{d.getDate()}</span><span className={'dot' + dot} /></button>)
-    }
-    return { label, days }
+  const active = S.active
+  const activeTotal = active?.entries.reduce((count, entry) => count + entry.sets.length, 0) || 0
+  const activeDone = setsDoneActive(active)
+  const activeIndex = active?.entries.length ? Math.min(active.cur || 0, active.entries.length - 1) : -1
+  const activeEntry = activeIndex >= 0 ? active.entries[activeIndex] : null
+  const matchingPrevious = routine?.id
+    ? [...S.workouts].reverse().find(workout => workout.routineId === routine.id || workout.name === routineName(routine))
+    : null
+  const routineMuscles = routine?.ex
+    ? [...new Set(routine.ex.map(entry => exOr(entry.id).tg || exOr(entry.id).bp).filter(Boolean))].slice(0, 3)
+    : []
+
+  const renderNow = () => {
+    if (active) return <section className="home-now home-now--active">
+      <div className="home-now-top">
+        <span className="home-now-kicker"><i />{t('{0} — in progress', active.name)}</span>
+        <span className="home-now-glyph"><Icon name="timer" /></span>
+      </div>
+      <h2>{active.name}</h2>
+      <div className="home-now-context">
+        {activeEntry ? <><b>{t('Exercise {0} / {1}', activeIndex + 1, active.entries.length)}</b><span>{exerciseName(exOr(activeEntry.id))}</span></> : <span>{t('Freestyle workout — add your first exercise.')}</span>}
+      </div>
+      <div className="home-now-progress"><i style={{ '--progress': activeTotal ? activeDone / activeTotal : 0 }} /></div>
+      <div className="home-now-progress-label"><span>{t('{0} sets', `${activeDone}/${activeTotal}`)}</span><span>{Math.round((activeTotal ? activeDone / activeTotal : 0) * 100)}%</span></div>
+      <Button variant="primary" icon={active.start ? 'play' : 'timer'} onClick={() => nav('/workout')}>{active.start ? t('Resume') : t('Start workout')}</Button>
+    </section>
+
+    if (todayWorkout) return <section className="home-now home-now--done">
+      <div className="home-now-top">
+        <span className="home-now-kicker"><i />{t('Workout complete!')}</span>
+        <span className="home-now-glyph"><Icon name="check" /></span>
+      </div>
+      <h2>{todayWorkout.name}</h2>
+      <SessionMetrics workout={todayWorkout} unit={S.unit} />
+      {nextWorkout && <div className="home-next-session"><span>{t('Next')}</span><b>{routineName(nextWorkout.routine)}</b><small>{fmtDate(nextWorkout.iso, true)}</small></div>}
+      <Button variant="primary" icon="history" onClick={() => workoutDetailSheet(todayWorkout)}>{t('Details')}</Button>
+    </section>
+
+    if (routine?.ex?.length) return <section className="home-now home-now--planned">
+      <div className="home-now-top">
+        <span className="home-now-kicker"><i />{t("Today's plan")}</span>
+        <span className="home-now-glyph"><Icon name={glyphOf(routine.emoji)} /></span>
+      </div>
+      <h2>{routineName(routine)}</h2>
+      <div className="home-now-context home-now-context--wrap">
+        <b>{exCount(routine.ex.length)}</b>
+        {routineMuscles.map(muscle => <span key={muscle}>{sentenceCase(t(muscle))}</span>)}
+      </div>
+      {matchingPrevious && matchingPrevious.end > matchingPrevious.start && <div className="home-last-session"><span>{t('Last time')}</span><b>{fmtDur(matchingPrevious.end - matchingPrevious.start)}</b><small>{fmtDate(matchingPrevious.d, true)}</small></div>}
+      <Button variant="primary" icon="play" onClick={() => startFlow(routine.id)}>{t('Start {0}', routineName(routine))}</Button>
+    </section>
+
+    if (routine) return <section className="home-now home-now--rest">
+      <div className="home-now-top"><span className="home-now-kicker"><i />{t("Today's plan")}</span><span className="home-now-glyph"><Icon name={glyphOf(routine.emoji)} /></span></div>
+      <h2>{routineName(routine)}</h2>
+      <p>{t('No exercises yet — add your first one.')}</p>
+      <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + routine.id)}>{t('Add exercise')}</Button>
+    </section>
+
+    if (!S.routines.length) return <section className="home-now home-now--setup">
+      <div className="home-now-top"><span className="home-now-kicker"><i />{t('Welcome!')}</span><span className="home-now-glyph"><Icon name="dumbbell" /></span></div>
+      <h2>{t('Build my own plan')}</h2>
+      <p>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</p>
+      <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
+      <Button variant="ghost" icon="dumbbell" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
+    </section>
+
+    return <section className="home-now home-now--rest">
+      <div className="home-now-top"><span className="home-now-kicker"><i />{t('Rest day')}</span><span className="home-now-glyph"><Icon name="moon" /></span></div>
+      <h2>{nextWorkout ? routineName(nextWorkout.routine) : t('Freestyle')}</h2>
+      <div className="home-now-context">
+        {nextWorkout ? <><b>{t('Next')}</b><span>{fmtDate(nextWorkout.iso, true)} · {exCount(nextWorkout.routine.ex.length)}</span></> : <span>{t('Freestyle workout — add your first exercise.')}</span>}
+      </div>
+      {lastWorkout && <Button variant="primary" icon="reset" onClick={() => repeatWorkout(lastWorkout)}>{t('Repeat {0}', lastWorkout.name)}</Button>}
+      <Button variant={lastWorkout ? 'ghost' : 'primary'} icon="shuffle" onClick={() => nav('/workout')}>{t('Start workout')}</Button>
+    </section>
   }
-  const expandedWeeks = calOpen ? [1, 2, 3].map(o => ({ offset: weekOffset + o, ...buildStrip(weekOffset + o) })) : []
 
-  const wThisWeek = S.workouts.filter(w => weekKey(w.d) === weekKey(todayISO())).length
-  const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(k => S.week[k]).length
-  const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d, iso: b.d }))
-
-  const onToday = () => {
-    if (S.active) nav('/workout')
-    else if (routine?.ex.length) startFlow(routine.id)
-    else if (routine) nav('/plan/r/' + routine.id)
-    else dayOverrideSheet(todayISO())
-  }
-
-  const onRepeat = () => {
-    if (!repeatLastWorkout()) nav('/workout')
-  }
-
-  return <div className="narrow">
-    <div className="hdr">
+  return <div className="narrow home-view">
+    <div className="hdr home-titlebar">
       <div><h1>{t('Today')}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
-      <button className="iconbtn" onClick={() => update(s => { s.theme = s.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
+      <button className="iconbtn" onClick={() => update(state => { state.theme = state.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
         <Icon name={S.theme === 'light' ? 'sun' : 'moon'} />
       </button>
     </div>
 
     {planProgress && <PlanProgress progress={planProgress} />}
+    {renderNow()}
 
-    <div className="card" ref={calRef}>
-      <div className="row between" style={{ marginBottom: 8 }}>
-        <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w - 1)} aria-label={t('Previous week')}><Icon name="chevronLeft" /></button>
-        <button
-          className="wk-label-btn"
-          onClick={() => setCalOpen(o => !o)}
-          aria-expanded={calOpen}
-          aria-label={t('Toggle month calendar')}
-        >
-          <span className="small muted" style={{ fontWeight: 500 }}>{wkLabel}</span>
-          <Icon name={calOpen ? 'chevronUp' : 'chevronDown'} style={{ fontSize: 11, opacity: 0.5 }} />
-        </button>
-        <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w + 1)} aria-label={t('Next week')}><Icon name="chevronRight" /></button>
-      </div>
-      <div className="week">{strip}</div>
-      <div className={`month-cal-wrap${calOpen ? ' open' : ''}`}>
-        <div className="month-cal">
-          {expandedWeeks.map(({ offset, label, days }) => (
-            <div key={offset} className="weeks-expand-item">
-              <div className="weeks-expand-lbl">{label}</div>
-              <div className="week">{days}</div>
-            </div>
-          ))}
+    <section className="home-week-block">
+      <div className="home-section-head">
+        <div><h2>{weekLabel}</h2><span>{workoutsThisWeek}{plannedPerWeek ? ` / ${plannedPerWeek}` : ''} {t('this week')} · {t('{0} week streak', streakWeeks(S))}</span></div>
+        <div className="home-week-actions">
+          <button className="iconbtn" onClick={() => setWeekOffset(offset => offset - 1)} aria-label={t('Previous week')}><Icon name="chevronLeft" /></button>
+          <button className="iconbtn" onClick={() => setWeekOffset(0)} aria-label={t('This week')} disabled={weekOffset === 0}><Icon name="dot" /></button>
+          <button className="iconbtn" onClick={() => setWeekOffset(offset => offset + 1)} aria-label={t('Next week')}><Icon name="chevronRight" /></button>
+          <button className="iconbtn" onClick={() => calendarSheet()} aria-label={t('Toggle month calendar')}><Icon name="calendar" /></button>
         </div>
       </div>
-      <button type="button" className="today-row" onClick={onToday}>
-        <div className="row" style={{ gap: 9, minWidth: 0 }}>
-          <span className="lrow-i" style={{
-            background: S.active ? 'var(--orange)' : routine ? 'var(--acc)' : 'var(--surface-3)',
-            color: !S.active && !routine ? 'var(--label-2)' : undefined,
-          }}>
-            <Icon name={S.active ? 'timer' : routine ? glyphOf(routine.emoji) : 'moon'} />
-          </span>
-          <div style={{ minWidth: 0 }}>
-            <div className="lbl2">{t('Today')}</div>
-            <div className="ttl">{S.active ? t('{0} — in progress', S.active.name) : routine ? routineName(routine) : t('Rest day')}{todayOvr && routine ? ' · ' + t('rescheduled') : ''}</div>
-          </div>
-        </div>
-        {S.active ? <span className="tag" style={{ color: 'var(--orange)', background: 'color-mix(in srgb,var(--orange) 16%,transparent)' }}>{t('Resume')}</span>
-          : routine?.ex.length ? <span className="tag acc">{t('Start')}</span>
-          : routine ? <span className="tag acc">{t('Edit')}</span>
-          : <Icon name="plus" className="chev" />}
-      </button>
-    </div>
+      <div className="week home-week-strip">{strip}</div>
+    </section>
 
-    {lastWorkout && !S.active && (
-      <div className="card">
-        <div className="row between" style={{ marginBottom: 10 }}>
-          <h2 style={{ margin: 0, fontSize: '1.05rem' }}>{t('Repeat last workout')}</h2>
-        </div>
-        <div className="muted small" style={{ marginBottom: 10 }}>{lastWorkout.name} · {fmtDate(lastWorkout.d, true)}</div>
-        <Button variant="primary" icon="reset" onClick={onRepeat}>{t('Repeat {0}', lastWorkout.name)}</Button>
-      </div>
-    )}
-
-    {!S.routines.length && !S.active && (
-      <div className="card">
-        <div className="row" style={{ gap: 10, marginBottom: 6 }}>
-          <span className="lrow-i"><Icon name="dumbbell" /></span>
-          <div className="big" style={{ fontSize: 22 }}>{t('Welcome!')}</div>
-        </div>
-        <div className="muted small" style={{ marginBottom: 12 }}>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</div>
-        <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
-        <div style={{ height: 8 }} /><Button icon="dumbbell" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
-      </div>
-    )}
-
-    <div className="card">
-      <div className="row between" style={{ marginBottom: 6 }}>
-        <h2 style={{ margin: 0 }}>{t('Body weight')}</h2>
-        <div className="row" style={{ gap: 8 }}>
-          <Button size="sm" icon="target" style={S.targetW ? { color: 'var(--yellow)' } : undefined} onClick={goalSheet}>{S.targetW ? fmtNum(S.targetW) : t('Goal')}</Button>
-          <Button size="sm" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button>
+    <section className="home-weight-block">
+      <div className="home-section-head">
+        <div><h2>{t('Body weight')}</h2>{bw && <span>{fmtDate(bw.d, true)}</span>}</div>
+        <div className="row home-weight-actions">
+          <Button size="sm" variant="ghost" icon="target" style={S.targetW ? { color: 'var(--yellow)' } : undefined} onClick={goalSheet}>{S.targetW ? fmtNum(S.targetW) : t('Goal')}</Button>
+          <Button size="sm" variant="tinted" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button>
         </div>
       </div>
       {bw ? <>
-        <div className="row" style={{ gap: 8, alignItems: 'baseline' }}>
-          <button type="button" className="big tappable body-weight-current" onClick={() => bwSheet({ date: bw.d || todayISO() })} title={t('Edit current weight')} aria-label={t('Edit current weight')}>
-            {fmtNum(bw.w)} <span className="muted" style={{ fontSize: '1rem' }}>{S.unit}</span>
+        <div className="home-weight-reading">
+          <button type="button" onClick={() => bwSheet({ date: bw.d || isoToday })} title={t('Edit current weight')} aria-label={t('Edit current weight')}>
+            <strong>{fmtNum(bw.w)}</strong><span>{S.unit}</span>
           </button>
-          {!!delta && (
-            <span className="small row" style={{ gap: 2, fontWeight: 500, color: bwDeltaColor(delta, bw.w) }}>
-              <Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} style={{ fontSize: 12 }} />
-              {fmtNum(Math.abs(delta))}
-            </span>
-          )}
-          <span className="dim small" style={{ marginLeft: 'auto' }}>{fmtDate(bw.d, true)}</span>
+          {!!delta && <span style={{ color: bwDeltaColor(delta, bw.w) }}><Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} />{fmtNum(Math.abs(delta))} {S.unit}</span>}
+          {S.targetW && <small><Icon name="target" />{Math.abs(S.targetW - bw.w) < 0.05 ? t('reached!') : t(S.targetW > bw.w ? '{0} to gain' : '{0} to lose', `${fmtNum(Math.abs(S.targetW - bw.w))} ${S.unit}`)}</small>}
         </div>
-        {S.targetW && (
-          <div className="small row" style={{ color: 'var(--yellow)', marginTop: 4, gap: 5 }}>
-            <Icon name="target" style={{ fontSize: 13 }} />
-            <span>{t('Goal')} {fmtNum(S.targetW)} {S.unit} · {Math.abs(S.targetW - bw.w) < 0.05 ? t('reached!') : t(S.targetW > bw.w ? '{0} to gain' : '{0} to lose', fmtNum(Math.abs(S.targetW - bw.w)) + ' ' + S.unit)}</span>
-          </div>
-        )}
-        <div className="chart" style={{ marginTop: 8 }}><LineChart points={bwPoints} h={130} unit={S.unit} goal={S.targetW} onPointEdit={(pt) => bwSheet({ date: pt.iso || pt.d || todayISO() })} /></div>
-      </> : <div className="muted small">{t("No entries yet — log your weight to start the curve. It's also asked before every workout.")}</div>}
-    </div>
+        <div className="chart home-weight-chart"><LineChart points={bwPoints} h={104} unit={S.unit} goal={S.targetW} onPointEdit={point => bwSheet({ date: point.iso || point.d || isoToday })} /></div>
+      </> : <div className="home-weight-empty"><span>{t("No entries yet — log your weight to start the curve. It's also asked before every workout.")}</span><Button size="sm" variant="primary" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button></div>}
+    </section>
 
-    {recentWorkouts.length > 0 && (
-      <>
-        <div className="row between" style={{ margin: '18px 0 10px' }}>
-          <h4 className="sec" style={{ margin: 0 }}>{t('Recent workouts')}</h4>
-          <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')}</Button>
-        </div>
-        <div className="list">{recentWorkouts.map(w => <WorkoutRow key={w.id} w={w} onClick={() => workoutDetailSheet(w)} />)}</div>
-      </>
-    )}
-
-    <button type="button" className="card tappable home-streak-card" onClick={() => calendarSheet()}>
-      <div className="row between">
-        <div>
-          <div className="row" style={{ gap: 7, fontSize: 22, fontWeight: 600, letterSpacing: '-.021em' }}>
-            <Icon name="flame" style={{ color: 'var(--orange)' }} />
-            {t('{0} week streak', streakWeeks(S))}
-          </div>
-          <div className="muted small" style={{ marginTop: 2 }}>{wThisWeek}{plannedPerWeek ? ' / ' + plannedPerWeek : ''} {t('this week')} · {t(S.workouts.length === 1 ? '{0} workout total' : '{0} workouts total', S.workouts.length)}</div>
-        </div>
-        <Icon name="calendar" className="chev" style={{ fontSize: 20 }} />
+    {recentWorkouts.length > 0 && <section className="home-recent-block">
+      <div className="home-section-head">
+        <div><h2>{t('Recent workouts')}</h2><span>{t(S.workouts.length === 1 ? '{0} workout total' : '{0} workouts total', S.workouts.length)}</span></div>
+        <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')}</Button>
       </div>
-    </button>
+      <div className="list">{recentWorkouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
+    </section>}
   </div>
 }

@@ -203,7 +203,7 @@ function ProfileHeader({ S, preview }) {
     <span className="profile-goal-wrap" aria-label={goalProgressPercent == null ? t('Goal') : `${goalProgressPercent}%`}>
       <span className="profile-goal-ring" style={{ '--profile-goal-progress': `${progress}%` }}>
         <img className="profile-goal-icon" src={progressDumbbell} alt="" />
-        <span className="profile-goal-percent">{goalProgressPercent == null ? '--%' : `${goalProgressPercent}%`}</span>
+        <span className="profile-goal-percent">{goalProgressPercent == null ? '--' : `${goalProgressPercent}%`}</span>
       </span>
     </span>
     <span className="profile-stat-stack">
@@ -224,6 +224,8 @@ function Shell() {
   const profilePreview = useUI(s => s.profilePreview)
   const isGuest = useStore(s => s.isGuest())
   const authed = user || isGuest
+  const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
+  const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => { applyPrefs(S.theme, S.accent) }, [S.theme, S.accent])
@@ -255,7 +257,7 @@ function Shell() {
       <PageTransition>
         <ErrorBoundary>
           {!authed ? <Suspense fallback={<RouteFallback />}><Landing /></Suspense> : (
-            <><ProfileHeader S={S} preview={profilePreview} /><Suspense fallback={<RouteFallback />}><Routes>
+            <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
                 <Route path="/plan" element={<Plan />} />
                 <Route path="/plan/r/:id" element={<RoutineEdit />} />

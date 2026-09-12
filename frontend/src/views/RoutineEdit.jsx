@@ -52,6 +52,19 @@ export default function RoutineEdit() {
     edit(list => { list.push({ id: ex.id, ...cfg }) })
     useUI.getState().toast(t('"{0}" added — tap to adjust', exerciseName(ex)))
   }, { routineId: id, quickAdd: true })
+  const duplicateRoutine = () => {
+    const copy = {
+      ...r,
+      id: uid(),
+      name: `${displayName} 2`,
+      ex: r.ex.map(entry => ({ ...entry })),
+    }
+    delete copy.starterKey
+    delete copy.starterCustomName
+    update(state => { state.routines.push(copy) })
+    useUI.getState().toast(t('Routine duplicated'))
+    nav('/plan/r/' + copy.id)
+  }
 
   const units = supersetUnits(r.ex)
   const unitFirst = new Set(units.filter(u => u.length > 1).map(u => u[0]))
@@ -101,7 +114,10 @@ export default function RoutineEdit() {
     })}</div> : <div className="empty routine-empty"><div className="ico"><Icon name="dumbbell" /></div>{t('No exercises yet — add your first one.')}</div>}
 
     {organizing && <div className="small dim row routine-organize-help"><Icon name="link" />{t('Tap the link button on an exercise to superset it with the one above — you’ll do them back-to-back.')}</div>}
-    <Button variant="primary" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
+    <div className="routine-builder-actions">
+      <Button variant="primary" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
+      <Button variant="tinted" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
+    </div>
 
     <div className="card routine-week-card">
       <div className="row between routine-card-title">

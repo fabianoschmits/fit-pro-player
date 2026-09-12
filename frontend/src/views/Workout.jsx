@@ -18,6 +18,7 @@ import { nextPrescription, applyPrescription } from '../lib/progression.js'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import { isWarmupRow } from '../lib/workout-model.js'
+import { applyPreviousSetValues, replaceSessionExercise } from '../lib/workout-session.js'
 
 /* ---------- start chooser (no active workout) ---------- */
 function StartChooser() {
@@ -87,7 +88,7 @@ function Elapsed({ start }) {
 }
 
 /* ---------- one exercise block (reps: weight×reps · time: a held duration · cardio: duration+speed) ---------- */
-function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext }) {
+function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext, onUseLast, onReplace }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
   const entry = S.active.entries[entryIdx]
@@ -96,6 +97,8 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
   const cardio = mode === 'cardio'
   const timed = mode === 'time'
   const allDone = entry.sets.length > 0 && entry.sets.every(s => s.done)
+  const nextPending = entry.sets.findIndex(s => !s.done)
+  const completedCount = entry.sets.filter(s => s.done).length
 
   // Auto-collapse when all sets are done; user can re-expand
   const [collapsed, setCollapsed] = useState(false)
@@ -107,6 +110,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
   }, [allDone])
 
   const last = lastEntryFor(S, entry.id)
+  const lastLabels = last ? last.sets.filter(s => !isWarmupRow(s)).map(s => setLabel(entry.id, s, last.target)) : []
   // The same number the "confirm your working weight" sheet calls your best, so the two
   // never disagree inside one session: heaviest logged set, or the working weight you kept.
   const best = cardio ? 0 : Math.max(bestWeightFor(S, entry.id), (S.exWeights[entry.id] || {}).w || 0)
@@ -153,22 +157,15 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
     </div>
   )
   return <>
-    <Media ex={ex} key={entry.id} compact={compact} minimizable />
-    <WorkSetOverlay entryIdx={entryIdx} />
-    {locked && (
-      <button type="button" className="exercise-start-card" onClick={onStartWorkout}>
-        <span className="exercise-start-card__label">{t('Start workout')}</span>
-        <span className="exercise-start-card__button"><Icon name="play" /></span>
-      </button>
-    )}
-    <div className="row between" style={{ marginBottom: 6 }}>
-      <div style={{ fontSize: compact ? 17 : 20, fontWeight: 600, letterSpacing: '-.02em', lineHeight: 1.2 }}>{exerciseName(ex)}</div>
+    <div className="workout-exercise-heading">
+      <div className="grow">
+        <div className="workout-exercise-name">{exerciseName(ex)}</div>
+        <div className="workout-exercise-count">{t('Sets')} {completedCount}/{entry.sets.length}</div>
+        {entry.replacedFrom && <div className="workout-exercise-replacement"><Icon name="shuffle" /><span>{t('Replaces {0}', exerciseName(exOr(entry.replacedFrom)))}</span></div>}
+      </div>
+      {onReplace && <Button size="xs" variant="ghost" icon="shuffle" disabled={locked} onClick={onReplace}>{t('Replace')}</Button>}
       <button className="iconbtn" aria-label={t('Details')} onClick={() => exerciseDetailSheet(ex)}><Icon name="info" /></button>
     </div>
-    {!compact && (onPairPrev || onPairNext) && <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-      {onPairPrev && <Button size="xs" variant="tinted" icon="link" title={t('Make superset with previous')} disabled={locked} onClick={onPairPrev}>{t('Make superset with previous')}</Button>}
-      {onPairNext && <Button size="xs" variant="tinted" icon="link" title={t('Make superset with next')} disabled={locked} onClick={onPairNext}>{t('Make superset with next')}</Button>}
-    </div>}
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
       {cardio && <span className="tag acc"><Icon name="figureRun" />{t('Cardio')}</span>}
       {/* You log the total; this is the split, so the set in front of you is unambiguous
@@ -178,12 +175,14 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
       {ex.eq && <span className="tag">{sentenceCase(t(ex.eq))}</span>}
       {best > 0 && <span className="tag nocap">{t('Best:')} {fmtNum(best)} {S.unit}</span>}
     </div>
-    {last && <div className="small dim" style={{ marginBottom: 4 }}>{t('Last time')} ({fmtDate(last.d)}): {last.sets.map(s => setLabel(entry.id, s, last.target)).join(', ')}</div>}
-    {plan && plan.why && plan.kind !== 'off' && <div className={'progline' + (plan.kind === 'deload' ? ' warn' : '')}>
-      <Icon name={plan.kind === 'up' ? 'arrowUp' : plan.kind === 'deload' ? 'arrowDown' : 'lightbulb'} />
-      <span>{t(...plan.why)}</span>
-    </div>}
-
+    <Media ex={ex} key={entry.id} compact={compact} minimizable />
+    <WorkSetOverlay entryIdx={entryIdx} />
+    {locked && onStartWorkout && (
+      <button type="button" className="exercise-start-card" onClick={onStartWorkout}>
+        <span className="exercise-start-card__label">{t('Start workout')}</span>
+        <span className="exercise-start-card__button"><Icon name="play" /></span>
+      </button>
+    )}
     {/* Collapsed completion banner */}
     {allDone && collapsed ? (
       <button className="ex-done-banner" onClick={() => setCollapsed(false)} aria-label={t('Expand sets')}>
@@ -193,6 +192,10 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
       </button>
     ) : (
       <div className={'card exercise-input-card' + (locked ? ' is-locked' : '')} style={{ marginTop: 10, marginBottom: 0 }}>
+        <div className="exercise-input-status">
+          <span>{nextPending >= 0 ? `${t('Sets')} ${nextPending + 1}/${entry.sets.length}` : t('Exercise complete')}</span>
+          <b>{Math.round((entry.sets.length ? completedCount / entry.sets.length : 0) * 100)}%</b>
+        </div>
         {/* the header carries the same eff3 sizing as the rows, or the labels drift off their columns */}
         <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}{timed && <span className="ck-sp" />}<span className="ck-sp" /></div>
         {entry.sets.map((s, i) => {
@@ -204,7 +207,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
           return <div key={i}>
             {isFirstWarmup && <div className="setph">{t('Warm-up')}</div>}
             {!warm && warmBefore && <div className="setsep" />}
-            <div className={'setrow' + (s.done ? ' done' : '') + (col3 ? ' eff3' : '')}>
+            <div className={'setrow' + (s.done ? ' done' : '') + (i === nextPending ? ' is-current' : '') + (col3 ? ' eff3' : '')} aria-current={i === nextPending ? 'step' : undefined}>
               <div className="n">{phaseNum}</div>
               {cell(s, i, col1, 'w')}
               {col2 && cell(s, i, col2, 'r')}
@@ -234,6 +237,21 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
         )}
       </div>
     )}
+    {last && <div className="workout-last-values">
+      <div className="grow">
+        <small>{t('Last time')} · {fmtDate(last.d)}</small>
+        <strong>{lastLabels.slice(0, 3).join(' · ')}{lastLabels.length > 3 ? ` · +${lastLabels.length - 3}` : ''}</strong>
+      </div>
+      <Button size="xs" variant="tinted" icon="reset" disabled={locked} onClick={onUseLast}>{t('Use last values')}</Button>
+    </div>}
+    {plan && plan.why && plan.kind !== 'off' && <div className={'progline' + (plan.kind === 'deload' ? ' warn' : '')}>
+      <Icon name={plan.kind === 'up' ? 'arrowUp' : plan.kind === 'deload' ? 'arrowDown' : 'lightbulb'} />
+      <span>{t(...plan.why)}</span>
+    </div>}
+    {!compact && (onPairPrev || onPairNext) && <div className="row workout-secondary-actions">
+      {onPairPrev && <Button size="xs" variant="ghost" icon="link" title={t('Make superset with previous')} disabled={locked} onClick={onPairPrev}>{t('Make superset with previous')}</Button>}
+      {onPairNext && <Button size="xs" variant="ghost" icon="link" title={t('Make superset with next')} disabled={locked} onClick={onPairNext}>{t('Make superset with next')}</Button>}
+    </div>}
   </>
 }
 
@@ -319,6 +337,64 @@ function ActiveWorkout() {
   })
   const onPairPrev = !isSuperset && cur > 0 ? () => pairAt(cur - 1, cur) : null
   const onPairNext = !isSuperset && cur < A.entries.length - 1 ? () => pairAt(cur, cur + 1) : null
+
+  const useLastValues = idx => {
+    const current = useStore.getState().S.active?.entries?.[idx]
+    if (!current) return
+    const previous = lastEntryFor(useStore.getState().S, current.id)
+    if (!previous) return
+    const mode = modeOf({ ...(current.target || {}), id: current.id })
+    mutEntry(idx, entry => { entry.sets = applyPreviousSetValues(entry.sets, previous.sets, mode) })
+    useUI.getState().toast(t('Previous values applied'))
+  }
+
+  const addExerciseFlow = () => exercisePicker(ex => {
+    const routine = S.routines.find(r => r.id === A.routineId)
+    const freestyle = !A.routineId
+    const seed = freestyle ? freestyleConfig(S, { id: ex.id, ...defaultConfig(ex.id) }) : null
+    exConfigSheet(ex, null, cfg => update(s => {
+      const full = { ...cfg, id: ex.id }
+      const plan = freestyle ? null : nextPrescription(s, full, s.routines.find(r => r.id === s.active.routineId))
+      const sets = buildSets(s, full, freestyle ? { preferLast: true } : undefined)
+      s.active.entries.push({ id: ex.id, target: { ...cfg }, plan, sets: freestyle ? sets : applyPrescription(sets, plan) })
+      s.active.cur = s.active.entries.length - 1
+    }), null, routine, seed)
+  })
+
+  const openReplacementPicker = idx => exercisePicker(ex => {
+    const live = useStore.getState().S
+    const previous = live.active?.entries?.[idx]
+    if (!previous) return
+    const workSets = (previous.sets || []).filter(set => !isWarmupRow(set))
+    const remaining = workSets.filter(set => !set.done).length
+    const seed = {
+      ...freestyleConfig(live, { id: ex.id, ...defaultConfig(ex.id) }),
+      sets: Math.max(1, remaining || workSets.length || 1),
+    }
+    exConfigSheet(ex, null, cfg => {
+      let replaced = false
+      update(s => {
+        if (!s.active?.entries?.[idx]) return
+        const full = { ...cfg, id: ex.id }
+        const replacement = {
+          id: ex.id,
+          target: { ...cfg },
+          plan: null,
+          sets: buildSets(s, full, { preferLast: true }),
+        }
+        const result = replaceSessionExercise(s.active.entries, idx, replacement)
+        s.active.entries = result.entries
+        cleanupSg(s.active.entries)
+        s.active.cur = result.replacementIndex
+        replaced = true
+      })
+      if (replaced) useUI.getState().toast(t('Exercise replaced'))
+    }, null, null, seed, t('Replace'))
+  }, { closeOnPick: true, title: t('Replace exercise'), excludeIds: [A.entries[idx]?.id].filter(Boolean) })
+
+  const replaceExercise = idx => {
+    if (A.entries[idx]) openReplacementPicker(idx)
+  }
 
   // Remove a whole exercise from the session. The confirmation always asks first; in a
   // superset it asks WHICH exercise of the group to remove.
@@ -484,19 +560,39 @@ function ActiveWorkout() {
     }
   }, [])
 
-  return <div className="narrow">
-    <div className="hdr" style={{ alignItems: 'center' }}>
-      <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { update(s => { s.active = null }); stopRest(); nav('/home') } })}><Icon name="xmark" /></button>
-      <div style={{ textAlign: 'center', minWidth: 0, flex: 1 }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{A.name}</div><div className="sub"><Elapsed start={A.start} /> · {t('{0} sets', done + '/' + total)}</div></div>
-      <button className="finish-hdr-btn" aria-label={t('Finish workout')} onClick={finishWorkout}>
-        <span className="finish-hdr-lbl">{t('Finalizar o treino')}</span>
-        <Icon name="check" />
-      </button>
+  return <div className="narrow active-workout">
+    <div className="workout-session-bar">
+      <div className="hdr workout-session-header">
+        <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { update(s => { s.active = null }); stopRest(); nav('/home') } })}><Icon name="xmark" /></button>
+        <div className="workout-session-title"><strong>{A.name}</strong><span><Elapsed start={A.start} /> · {t('{0} sets', done + '/' + total)}</span></div>
+        <button className="finish-hdr-btn" aria-label={t('Finish workout')} onClick={finishWorkout}>
+          <span className="finish-hdr-lbl">{t('Finish workout')}</span>
+          <Icon name="check" />
+        </button>
+      </div>
+      <div className="wprog"><i style={{ '--progress': total ? done / total : 0 }} /></div>
+      {A.entries.length > 0 && <div className="workout-exercise-rail" aria-label={t('Exercises')}>
+        {units.map((indices, index) => {
+          const entries = indices.map(entryIndex => A.entries[entryIndex])
+          const unitDone = entries.every(entry => entry.sets.length > 0 && entry.sets.every(set => set.done))
+          const unitSets = entries.reduce((count, entry) => count + entry.sets.length, 0)
+          const unitSetsDone = entries.reduce((count, entry) => count + entry.sets.filter(set => set.done).length, 0)
+          const label = entries.map(entry => exerciseName(exOr(entry.id))).join(' + ')
+          const targetIndex = indices.find(entryIndex => A.entries[entryIndex].sets.some(set => !set.done)) ?? indices[0]
+          return <button type="button" key={indices.join('-')} className={'workout-exercise-tab' + (index === unitIdx ? ' is-active' : '') + (unitDone ? ' is-done' : '')}
+            disabled={!workoutStarted && index !== 0} aria-current={index === unitIdx ? 'step' : undefined}
+            onClick={() => update(s => { s.active.cur = targetIndex })}>
+            <span>{unitDone ? <Icon name="check" /> : index + 1}</span>
+            <b>{label}</b>
+            <small>{unitSetsDone}/{unitSets}</small>
+          </button>
+        })}
+        <button type="button" className="workout-exercise-add" disabled={!workoutStarted} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>
+      </div>}
     </div>
-    <div className="wprog"><i style={{ '--progress': total ? done / total : 0 }} /></div>
 
     {A.entries.length ? <>
-      <div className="muted small" style={{ marginBottom: 6 }}>{isSuperset ? t('Superset {0} / {1}', unitIdx + 1, units.length) : t('Exercise {0} / {1}', unitIdx + 1, units.length)}</div>
+      <div className="workout-unit-kicker">{isSuperset ? t('Superset {0} / {1}', unitIdx + 1, units.length) : t('Exercise {0} / {1}', unitIdx + 1, units.length)}</div>
       {isSuperset ? (
         <div className="ss-card">
           <div className="ss-hd" style={{ justifyContent: 'space-between' }}>
@@ -506,39 +602,21 @@ function ActiveWorkout() {
           {unit.map((idx, k) => <div key={idx} ref={el => { exRefs.current[idx] = el }} className="ss-ex" data-exidx={idx}>
             {k > 0 && <div className="ss-amp">+</div>}
             <ExerciseBlock entryIdx={idx} compact
-              locked={!workoutStarted && idx === 0}
-              onStartWorkout={startWorkout}
-              onToggle={i => toggle(idx, i)} onField={(i, f, v) => setField(idx, i, f, v)} onAddSet={() => addSet(idx)} onRemoveSet={() => removeSet(idx)} onAddWarmup={() => addWarmup(idx)} onRemoveSetAt={i => removeSetAt(idx, i)} onStartTimed={i => startTimed(idx, i)} />
+              locked={!workoutStarted}
+              onStartWorkout={k === 0 ? startWorkout : null}
+              onToggle={i => toggle(idx, i)} onField={(i, f, v) => setField(idx, i, f, v)} onAddSet={() => addSet(idx)} onRemoveSet={() => removeSet(idx)} onAddWarmup={() => addWarmup(idx)} onRemoveSetAt={i => removeSetAt(idx, i)} onStartTimed={i => startTimed(idx, i)} onUseLast={() => useLastValues(idx)} onReplace={() => replaceExercise(idx)} />
           </div>)}
         </div>
       ) : (
         <ExerciseBlock entryIdx={cur}
-          locked={!workoutStarted && cur === 0}
+          locked={!workoutStarted}
           onStartWorkout={startWorkout}
-          onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onAddSet={() => addSet(cur)} onRemoveSet={() => removeSet(cur)} onAddWarmup={() => addWarmup(cur)} onRemoveSetAt={i => removeSetAt(cur, i)} onStartTimed={i => startTimed(cur, i)} onPairPrev={onPairPrev} onPairNext={onPairNext} />
+          onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onAddSet={() => addSet(cur)} onRemoveSet={() => removeSet(cur)} onAddWarmup={() => addWarmup(cur)} onRemoveSetAt={i => removeSetAt(cur, i)} onStartTimed={i => startTimed(cur, i)} onPairPrev={onPairPrev} onPairNext={onPairNext} onUseLast={() => useLastValues(cur)} onReplace={() => replaceExercise(cur)} />
       )}
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 
     <div style={{ height: 12 }} />
-    <div className="row">
-      <Button icon="chevronLeft" disabled={!workoutStarted || unitIdx <= 0} onClick={() => update(s => { s.active.cur = units[unitIdx - 1][0] })}>{t('Prev')}</Button>
-      <Button trailingIcon="chevronRight" disabled={!workoutStarted || unitIdx < 0 || unitIdx >= units.length - 1} onClick={() => update(s => { s.active.cur = units[unitIdx + 1][0] })}>{t('Next')}</Button>
-    </div>
-    <div style={{ height: 10 }} />
-    <Button disabled={!workoutStarted && A.entries.length > 0} onClick={() => exercisePicker(ex => {
-      const routine = S.routines.find(r => r.id === A.routineId)
-      const freestyle = !A.routineId
-      // Freestyle has no routine prescription to apply: show the last target in the config
-      // sheet and carry its completed rows forward. A planned session keeps its existing path.
-      const seed = freestyle ? freestyleConfig(S, { id: ex.id, ...defaultConfig(ex.id) }) : null
-      exConfigSheet(ex, null, cfg => update(s => {
-        const full = { ...cfg, id: ex.id }
-        const plan = freestyle ? null : nextPrescription(s, full, s.routines.find(r => r.id === s.active.routineId))
-        const sets = buildSets(s, full, freestyle ? { preferLast: true } : undefined)
-        s.active.entries.push({ id: ex.id, target: { ...cfg }, plan, sets: freestyle ? sets : applyPrescription(sets, plan) })
-        s.active.cur = s.active.entries.length - 1
-      }), null, routine, seed)
-    })} icon="plus">{t('Add exercise')}</Button>
+    {!A.entries.length && <Button variant="primary" onClick={addExerciseFlow} icon="plus">{t('Add exercise')}</Button>}
     {A.entries.length > 0 && <>
       <div style={{ height: 6 }} />
       <div style={{ display: 'flex', justifyContent: 'center' }}>

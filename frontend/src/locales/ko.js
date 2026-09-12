@@ -622,5 +622,13 @@ export default {
   "Total all-time volume: ": "전체 누적 중량: ",
   "That is equivalent to lifting {0} elephants!": "이것은 코끼리 {0}마리를 들어올린 것과 같습니다!",
   "That is equivalent to lifting {0} cars!": "이것은 자동차 {0}대를 들어올린 것과 같습니다!",
-  "Keep training to lift your first car!": "첫 번째 자동차를 들어올리기 위해 계속 훈련하세요!"
+  "Keep training to lift your first car!": "첫 번째 자동차를 들어올리기 위해 계속 훈련하세요!",
+  "Duplicate routine": "루틴 복제",
+  "Exercise replaced": "운동이 교체되었습니다",
+  "Previous values applied": "이전 값이 적용되었습니다",
+  "Replace": "교체",
+  "Replace exercise": "운동 교체",
+  "Routine duplicated": "루틴이 복제되었습니다",
+  "Replaces {0}": "교체 대상: {0}",
+  "Use last values": "이전 값 사용"
 }

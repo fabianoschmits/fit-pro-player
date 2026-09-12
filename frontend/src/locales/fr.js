@@ -622,5 +622,13 @@ export default {
   "Total all-time volume: ": "Volume historique total : ",
   "That is equivalent to lifting {0} elephants!": "Cela équivaut à soulever {0} éléphants !",
   "That is equivalent to lifting {0} cars!": "Cela équivaut à soulever {0} voitures !",
-  "Keep training to lift your first car!": "Continuez à vous entraîner pour soulever votre première voiture !"
+  "Keep training to lift your first car!": "Continuez à vous entraîner pour soulever votre première voiture !",
+  "Duplicate routine": "Dupliquer la routine",
+  "Exercise replaced": "Exercice remplacé",
+  "Previous values applied": "Valeurs précédentes appliquées",
+  "Replace": "Remplacer",
+  "Replace exercise": "Remplacer l’exercice",
+  "Routine duplicated": "Routine dupliquée",
+  "Replaces {0}": "Remplace : {0}",
+  "Use last values": "Utiliser les dernières valeurs"
 }

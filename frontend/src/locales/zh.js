@@ -622,5 +622,13 @@ export default {
   "Total all-time volume: ": "历史总重量：",
   "That is equivalent to lifting {0} elephants!": "这相当于举起了 {0} 头大象！",
   "That is equivalent to lifting {0} cars!": "这相当于举起了 {0} 辆汽车！",
-  "Keep training to lift your first car!": "继续训练，举起你的第一辆车吧！"
+  "Keep training to lift your first car!": "继续训练，举起你的第一辆车吧！",
+  "Duplicate routine": "复制训练计划",
+  "Exercise replaced": "动作已替换",
+  "Previous values applied": "已应用上次数据",
+  "Replace": "替换",
+  "Replace exercise": "替换动作",
+  "Routine duplicated": "训练计划已复制",
+  "Replaces {0}": "替代：{0}",
+  "Use last values": "使用上次数据"
 }

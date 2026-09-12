@@ -622,5 +622,13 @@ export default {
   "Total all-time volume: ": "कुल ऐतिहासिक वजन: ",
   "That is equivalent to lifting {0} elephants!": "यह {0} हाथियों को उठाने के बराबर है!",
   "That is equivalent to lifting {0} cars!": "यह {0} कारों को उठाने के बराबर है!",
-  "Keep training to lift your first car!": "अपनी पहली कार उठाने के लिए प्रशिक्षण जारी रखें!"
+  "Keep training to lift your first car!": "अपनी पहली कार उठाने के लिए प्रशिक्षण जारी रखें!",
+  "Duplicate routine": "रूटीन की कॉपी बनाएँ",
+  "Exercise replaced": "व्यायाम बदला गया",
+  "Previous values applied": "पिछले मान लागू किए गए",
+  "Replace": "बदलें",
+  "Replace exercise": "व्यायाम बदलें",
+  "Routine duplicated": "रूटीन की कॉपी बन गई",
+  "Replaces {0}": "इसके स्थान पर: {0}",
+  "Use last values": "पिछले मान इस्तेमाल करें"
 }

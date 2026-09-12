@@ -390,16 +390,57 @@ export default function Stats() {
   if (showE1) exOpts.push({ value: 'e1rm', label: t('Est. 1RM') })
   if (showEff) exOpts.push({ value: 'effort', label: t('Effort') })
 
-  return <>
-    <div className="tiles">
-      <div className="tile"><div className="l"><Icon name="dumbbell" />{t('Workouts')}</div><div className="v">{workouts.length}</div></div>
-      <div className="tile"><div className="l"><Icon name="calendar" />{t('This month')}</div><div className="v">{monthW}</div></div>
-      <div className="tile"><div className="l"><Icon name="flame" />{t('Week streak')}</div><div className="v">{streakWeeks(S)}</div></div>
-      <div className="tile"><div className="l"><Icon name="scale" />{t('Weight 30d')}</div><div className="v" style={{ fontSize: 20, whiteSpace: 'nowrap', color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</div></div>
+  return <div className="stats-view">
+    <div className="hdr stats-titlebar">
+      <div><h1>{t('Stats')}</h1><div className="sub">{t('Progress & history')}</div></div>
+      <button className="iconbtn" aria-label={t('History')} onClick={() => nav('/history')}><Icon name="history" /></button>
     </div>
+    <section className="stats-overview" aria-label={t('Stats')}>
+      <div><span>{t('Workouts')}</span><b>{workouts.length}</b></div>
+      <div><span>{t('This month')}</span><b>{monthW}</b></div>
+      <div><span>{t('Week streak')}</span><b>{streakWeeks(S)}</b></div>
+      <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</b></div>
+    </section>
 
     <div style={{ marginBottom: 16 }}>
       <MuscleBalance S={S} />
+    </div>
+
+    <TipOnce id="e1rm-tip">
+      <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
+    </TipOnce>
+    <div className="card stats-exercise-card">
+      <div className="stats-card-heading">
+        <div><h2>{t('Exercise progress')}</h2>{curEx && <span>{nameOf(curEx)}</span>}</div>
+        {exBest > 0 && <b>{t('Best:')} {fmtNum(onE1 ? e1Best?.est : exBest)} {onE1 ? S.unit : exUnit}</b>}
+      </div>
+      {exHist.length ? <>
+        <div className="stats-exercise-picker">
+          <h4 className="sec">{t('Exercise')}</h4>
+          <div className="sect-b">
+            <SelectRow title="" sheetTitle={t('Exercise progress')} value={curEx} onChange={setExId}
+              options={exHist.map(id => ({ value: id, label: nameOf(id) + (exCurrent[id].mx ? ' — ' + fmtNum(exCurrent[id].mx) + ' ' + exCurrent[id].unit : '') }))} />
+          </div>
+        </div>
+        {exOpts.length > 1 && <Segmented className="seg-range" value={onEff ? 'effort' : onE1 ? 'e1rm' : 'top'} onChange={setExMetric} options={exOpts} />}
+        <div className="chart">
+          {onEff
+            ? <LineChart points={effPts} h={150} unit={hd} color="var(--yellow)" invert={kind === 'rir'} />
+            : <LineChart points={onE1 ? e1Pts.map(point => ({ t: point.t, y: point.y, d: point.d })) : topPts} h={150} unit={exUnit} color="var(--blue)" />}
+        </div>
+        <div className="stats-exercise-history">{exList.map((point, index) => <div key={index}>
+          <span>{fmtDate(point.d, true)}</span><b>{point.sets.map(set => setLabel(curEx, set, point.target)).join(' · ')}</b>
+        </div>)}</div>
+        <div className="small dim stats-exercise-note">
+          {onEff ? t('Average effort per workout') : onE1 ? t('Estimated 1RM per workout') : curCardio ? t('Top speed per workout') : curTimed ? t('Longest hold per workout') : t('Best set weight per workout')}
+        </div>
+        {onE1 && <div className="small dim" style={{ marginTop: 4 }}>
+          {t('Best estimate from {0} on {1} — an estimate, not a tested max.', fmtNum(e1Best.w) + ' ' + S.unit + ' × ' + e1Best.r, fmtDate(e1Best.d, true))}
+        </div>}
+        {!onEff && !onE1 && showEff && <div className="small dim" style={{ marginTop: 4 }}>
+          {t('A fuller dot means less left in the tank — the same weight at a lower {0} is progress the line alone does not show.', hd)}
+        </div>}
+      </> : <div className="muted small">{t('Finish your first workout to see progress curves here.')}</div>}
     </div>
 
     <div className="card" style={{ marginBottom: 16 }}>
@@ -423,40 +464,6 @@ export default function Stats() {
         <EffortCard S={S} />
     </div>
 
-    <TipOnce id="e1rm-tip">
-      <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
-    </TipOnce>
-    <div className="card" style={{ marginTop: 16 }}>
-        <h2>{t('Exercise progress')}</h2>
-        {exHist.length ? <>
-          <div className="stats-exercise-picker" style={{ marginBottom: 10 }}>
-            <h4 className="sec">{t('Exercise')}</h4>
-            <div className="sect-b">
-              <SelectRow title="" sheetTitle={t('Exercise progress')} value={curEx} onChange={setExId}
-                options={exHist.map(id => ({ value: id, label: nameOf(id) + (exCurrent[id].mx ? ' ' + '—' + ' ' + fmtNum(exCurrent[id].mx) + ' ' + exCurrent[id].unit : '') }))} />
-            </div>
-          </div>
-          {exOpts.length > 1 && <Segmented className="seg-range" value={onEff ? 'effort' : onE1 ? 'e1rm' : 'top'} onChange={setExMetric} options={exOpts} />}
-          <div className="chart">
-            {onEff
-              ? <LineChart points={effPts} h={150} unit={hd} color="var(--yellow)" invert={kind === 'rir'} />
-              : <LineChart points={onE1 ? e1Pts.map(p => ({ t: p.t, y: p.y, d: p.d })) : topPts} h={150} unit={exUnit} color="var(--blue)" />}
-          </div>
-          <div style={{ marginTop: 8 }}>{exList.map((p, i) => <div key={i} className="row between small" style={{ padding: '6px 0', borderBottom: 'var(--hair) solid var(--sep)' }}>
-            <span className="muted">{fmtDate(p.d, true)}</span><span>{p.sets.map(s => setLabel(curEx, s, p.target)).join('  ')}</span></div>)}</div>
-          <div className="small dim" style={{ marginTop: 8 }}>
-            {onEff ? t('Average effort per workout') : onE1 ? t('Estimated 1RM per workout') : curCardio ? t('Top speed per workout') : curTimed ? t('Longest hold per workout') : t('Best set weight per workout')}
-            {onEff ? '' : <> · {t('Best:')}{' '}<b className="accent">{fmtNum(onE1 ? e1Best.est : exBest)} {onE1 ? S.unit : exUnit}</b></>}
-          </div>
-          {onE1 && <div className="small dim" style={{ marginTop: 4 }}>
-            {t('Best estimate from {0} on {1} — an estimate, not a tested max.', fmtNum(e1Best.w) + ' ' + S.unit + ' × ' + e1Best.r, fmtDate(e1Best.d, true))}
-          </div>}
-          {!onEff && !onE1 && showEff && <div className="small dim" style={{ marginTop: 4 }}>
-            {t('A fuller dot means less left in the tank — the same weight at a lower {0} is progress the line alone does not show.', hd)}
-          </div>}
-        </> : <div className="muted small">{t('Finish your first workout to see progress curves here.')}</div>}
-    </div>
-
     <div className="card" style={{ marginTop: 16 }}>
         <h2>{t('Total Volume Lifted')}</h2>
         <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
@@ -466,5 +473,5 @@ export default function Stats() {
           {elephants > 0 ? t('That is equivalent to lifting {0} elephants!', elephants) : cars > 0 ? t('That is equivalent to lifting {0} cars!', cars) : t('Keep training to lift your first car!')}
         </div>
     </div>
-  </>
+  </div>
 }

@@ -9,6 +9,9 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
       topW: entry.topW || null,
       target: entry.target || null,
     }
+    if (entry.sg) completed.sg = entry.sg
+    if (entry.replacedFrom) completed.replacedFrom = entry.replacedFrom
+    if (entry.replacedBy) completed.replacedBy = entry.replacedBy
     const snapshot = typeof snapshotFor === 'function' ? snapshotFor(entry) : null
     if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot) && Object.keys(snapshot).length) {
       completed.muscleSnapshot = { ...snapshot }

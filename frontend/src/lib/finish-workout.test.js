@@ -47,4 +47,19 @@ describe('completed workout boundary', () => {
     expect(completed.start).toBe(2000)
     expect(completed.end).toBe(2000)
   })
+
+  it('keeps superset and replacement context without changing ordinary records', () => {
+    const active = {
+      id: 'active-1', d: '2026-08-08', start: 1000,
+      entries: [
+        { id: 'bench', sg: 'pair-1', replacedBy: 'fly', sets: [{ done: true, w: 60, r: 8 }] },
+        { id: 'fly', sg: 'pair-1', replacedFrom: 'bench', sets: [{ done: true, w: 20, r: 12 }] },
+      ],
+    }
+
+    const completed = buildCompletedWorkout(active, { end: 2000 })
+
+    expect(completed.entries[0]).toMatchObject({ sg: 'pair-1', replacedBy: 'fly' })
+    expect(completed.entries[1]).toMatchObject({ sg: 'pair-1', replacedFrom: 'bench' })
+  })
 })

@@ -622,5 +622,13 @@ export default {
   "Total all-time volume: ": "Tüm zamanların toplam ağırlığı: ",
   "That is equivalent to lifting {0} elephants!": "Bu {0} fil kaldırmaya eşdeğer!",
   "That is equivalent to lifting {0} cars!": "Bu {0} araba kaldırmaya eşdeğer!",
-  "Keep training to lift your first car!": "İlk arabanı kaldırmak için eğitime devam et!"
+  "Keep training to lift your first car!": "İlk arabanı kaldırmak için eğitime devam et!",
+  "Duplicate routine": "Programı çoğalt",
+  "Exercise replaced": "Egzersiz değiştirildi",
+  "Previous values applied": "Önceki değerler uygulandı",
+  "Replace": "Değiştir",
+  "Replace exercise": "Egzersizi değiştir",
+  "Routine duplicated": "Program çoğaltıldı",
+  "Replaces {0}": "Şunun yerine: {0}",
+  "Use last values": "Son değerleri kullan"
 }

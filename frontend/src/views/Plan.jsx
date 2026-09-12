@@ -76,8 +76,6 @@ export default function Plan() {
         <Icon name="chevronRight" className="chev" />
       </button>
     })}</div>
-    <div style={{ height: 10 }} />
-    <Button variant="tinted" icon="plus" onClick={addRoutine}>{t('New routine')}</Button>
   </section>
 
   return <>

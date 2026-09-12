@@ -181,6 +181,19 @@ describe('Workout set completion flow', () => {
     expect(container.querySelector('[role="checkbox"]')?.disabled).toBe(false)
   })
 
+  it('locks an entire opening superset behind one start action', async () => {
+    await mount([
+      exercise('superset-a', [false, false], { sg: 'opening-pair' }),
+      exercise('superset-b', [false, false], { sg: 'opening-pair' }),
+    ])
+    mocks.S.active.start = null
+    await act(async () => { root.render(React.createElement(Workout)) })
+
+    const starts = [...container.querySelectorAll('button')].filter(button => button.textContent.includes('Começar treino'))
+    expect(starts).toHaveLength(1)
+    expect([...container.querySelectorAll('[role="checkbox"]')].every(checkbox => checkbox.disabled)).toBe(true)
+  })
+
   it('starts rest between sets but finishes immediately after the final set of the workout', async () => {
     await mount([exercise('plain-bench', [false, false, false])])
     await toggleSet(0)

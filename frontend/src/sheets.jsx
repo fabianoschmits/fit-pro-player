@@ -27,6 +27,7 @@ import { MOBILE, shareExport } from './lib/mobile.js'
 import { buildCompletedWorkout } from './lib/finish-workout.js'
 import { isWarmupRow } from './lib/workout-model.js'
 import { syncProfileWeightFromBodyweight } from './lib/profile.js'
+import { resetHistoricalSets } from './lib/workout-session.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -556,7 +557,7 @@ function usageMap(st) {
   st.workouts.forEach(w => w.entries.forEach(e => { u[e.id] = (u[e.id] || 0) + 1 }))
   return u
 }
-function ExercisePicker({ onPick, close, routineId, quickAdd }) {
+function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = false, title, excludeIds = [] }) {
   const st = useStore(s => s.S)
   const usage = usageMap(st)
   const selectedIds = new Set((st.routines.find(r => r.id === routineId)?.ex || []).map(e => e.id))
@@ -575,16 +576,22 @@ function ExercisePicker({ onPick, close, routineId, quickAdd }) {
   const eqOn = eqOpts.includes(eq) ? eq : ''
   const f = eqOn ? base.filter(e => e.eq === eqOn) : base
   const chosenCount = Object.keys(usage).length
+  const choose = (exercise, meta) => {
+    if (closeOnPick) close()
+    onPick(exercise, meta)
+  }
   return <>
     <div className="row between sheet-title-row">
-      <h3>{t('Add exercise')}</h3>
+      <h3>{title || t('Add exercise')}</h3>
       <Button size="sm" variant="tinted" icon="check" onClick={close}>{t('Done')}</Button>
     </div>
     <div className="muted small" style={{ marginBottom: quickAdd ? 6 : 0 }}>
       {quickAdd ? t('Tap to add with smart defaults — use the gear to configure first.') : null}
     </div>
-    <div className="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-      <input className="input" placeholder={t('Search {0} exercises…', all.length)} value={q} onChange={e => { setQ(e.target.value); setShown(50) }} /></div>
+    <div className="search exercise-picker-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
+      <input type="search" inputMode="search" enterKeyHint="search" autoComplete="off" className="input" aria-label={t('Search {0} exercises…', all.length)} placeholder={t('Search {0} exercises…', all.length)} value={q} onChange={e => { setQ(e.target.value); setShown(50) }} />
+      {q && <button type="button" className="exercise-picker-clear" aria-label={t('Clear')} onClick={() => { setQ(''); setShown(50) }}><Icon name="xmark" /></button>}
+    </div>
     <div className="chips" style={{ margin: eqOpts.length > 1 ? '10px 0 6px' : '10px 0' }}>
       {chosenCount > 0 && <button className={'chip' + (bp === '★' ? ' on' : '')} onClick={() => { setBp('★'); setEq(''); setShown(50) }}><Icon name="starFill" style={{ fontSize: 12, display: 'inline-block', marginRight: 4, verticalAlign: '-1px' }} />{t('Chosen')} ({chosenCount})</button>}
       <button className={'chip nocap' + (!bp ? ' on' : '')} onClick={() => { setBp(''); setEq(''); setShown(50) }}>{t('All')}</button>
@@ -595,15 +602,18 @@ function ExercisePicker({ onPick, close, routineId, quickAdd }) {
       {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(50) }}>{sentenceCase(t(x))}</button>)}
     </div>}
     <div className="list">
-      {bp !== '★' && <button type="button" className="item" onClick={() => customExSheet(null, ex => onPick(ex), q.trim())}>
+      {bp !== '★' && <button type="button" className="item" onClick={() => {
+        if (closeOnPick) close()
+        customExSheet(null, ex => onPick(ex), q.trim())
+      }}>
         <div className="thumb thumb-x"><Icon name="plus" /></div>
         <div className="grow"><div className="tt">{t('Create your own exercise')}</div><div className="ss">{t('name + body part, no animation')}</div></div><Icon name="plus" className="chev" />
       </button>}
       {f.slice(0, shown).map(e => {
-        const selected = selectedIds.has(e.id)
+        const selected = selectedIds.has(e.id) || excludeIds.includes(e.id)
         return <div key={e.id} className={'item picker-item' + (selected ? ' item-selected' : '')}>
           <button type="button" className="picker-item-main" disabled={selected}
-            onClick={() => onPick(e, quickAdd ? {} : undefined)}>
+            onClick={() => choose(e, quickAdd ? {} : undefined)}>
             <Thumb ex={e} /><span className="grow"><span className="tt">{exerciseName(e)}</span><span className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</span></span>
             {selected ? <span className="tag acc"><Icon name="check" />{t('already in')}</span>
               : <>{usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}<Icon name="plus" className="chev" /></>}
@@ -645,7 +655,7 @@ function ProgressionFields({ ex, mode, c, setC, routine, unit }) {
   </>
 }
 
-function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial }) {
+function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, saveLabel }) {
   const st = useStore(s => s.S)
   const cardio = isCardio(ex.id)
   const [c, setC] = useState(() => {
@@ -766,12 +776,12 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial }) {
     <ProgressionFields ex={ex} mode={mode} c={c} setC={setC} routine={routine} unit={st.unit} />
       </div>
     </details>
-    <Button variant="primary" onClick={save}>{existing ? t('Save') : t('Add to routine')}</Button>
+    <Button variant="primary" onClick={save}>{saveLabel || (existing ? t('Save') : t('Add to routine'))}</Button>
     {ex.custom && <><div style={{ height: 8 }} /><Button icon="pencil" onClick={() => { close(); customExSheet(ex) }}>{t('Edit or delete this exercise')}</Button></>}
     {onDelete && <><div style={{ height: 8 }} /><Button variant="danger" onClick={() => { close(); onDelete() }}>{t('Remove from routine')}</Button></>}
   </>
 }
-export const exConfigSheet = (ex, existing, onSave, onDelete, routine, initial) => ui().openSheet(close => <ExConfig ex={ex} existing={existing} initial={initial} onSave={onSave} onDelete={onDelete} routine={routine} close={close} />)
+export const exConfigSheet = (ex, existing, onSave, onDelete, routine, initial, saveLabel) => ui().openSheet(close => <ExConfig ex={ex} existing={existing} initial={initial} onSave={onSave} onDelete={onDelete} routine={routine} saveLabel={saveLabel} close={close} />)
 
 /* ============================ glyph picker ============================ */
 // Grouped by what the glyph means for a training day, so picking one is a scan
@@ -965,6 +975,8 @@ function WorkoutDetail({ w, close }) {
         </div>}
       </div>
     })}
+    <Button variant="primary" icon="reset" onClick={() => { close(); repeatWorkout(w) }}>{t('Repeat {0}', w.name)}</Button>
+    <div style={{ height: 8 }} />
     <Button variant="danger" onClick={() => confirmSheet({ title: t('Delete workout?'), message: t('This removes it from your history for good.'), confirmText: t('Delete'), danger: true, onConfirm: () => { update(s => { s.workouts = s.workouts.filter(x => x.id !== w.id) }); close(); toast(t('Workout deleted')) } })}>{t('Delete workout')}</Button>
   </>
 }
@@ -1016,13 +1028,13 @@ export const calendarSheet = start => ui().openSheet(close => <Calendar start={s
 export function WorkoutRow({ w, onClick }) {
   const st = useStore(s => s.S)
   const glyph = glyphOf((st.routines.find(r => r.id === w.routineId) || {}).emoji)
-  return <div className="item" onClick={onClick}>
+  return <button type="button" className="item workout-row" onClick={onClick}>
     <span className="lrow-i" style={{ width: 34, height: 34, borderRadius: 8, fontSize: 19 }}><Icon name={glyph} /></span>
     <div className="grow"><div className="tt">{w.name}</div>
       <div className="ss">{[fmtDate(w.d, true), ...durPart(w.end - w.start), t('{0} sets', setsDone(w)), fmtVol(w.vol, st.unit)].join(' · ')}</div></div>
     {w.prs && w.prs.length > 0 && <span className="pr"><Icon name="trophy" />{w.prs.length} {getLang() === 'pt' ? 'RP' : 'PR'}</span>}
     <Icon name="chevronRight" className="chev" />
-  </div>
+  </button>
 }
 
 /* ============================ workout lifecycle ============================ */
@@ -1039,11 +1051,47 @@ export function repeatLastWorkout() {
   const st = S()
   const last = st.workouts[st.workouts.length - 1]
   if (!last) return false
-  const rid = last.routineId
-  if (rid && st.routines.find(r => r.id === rid && r.ex.length)) { startFlow(rid); return true }
-  const byName = st.routines.find(r => r.name === last.name && r.ex.length)
-  if (byName) { startFlow(byName.id); return true }
-  return false
+  return repeatWorkout(last)
+}
+export function repeatWorkout(workout) {
+  if (!workout) return false
+  const st = S()
+  const begin = () => {
+    const current = S()
+    const launch = bw => beginWorkoutFromHistory(workout, bw)
+    if (shouldWeighBeforeWorkout(current)) bwSheet({ required: true, onDone: launch })
+    else launch(hasWeighedToday(current) ? lastBW(current)?.w : null)
+  }
+  if (st.active) {
+    confirmSheet({
+      title: t('Discard workout?'),
+      message: t('The sets you logged in this session will be lost.'),
+      confirmText: t('Repeat {0}', workout.name),
+      danger: true,
+      onConfirm: begin,
+    })
+  } else begin()
+  return true
+}
+function beginWorkoutFromHistory(workout, bw) {
+  const st = S()
+  const entries = (workout.entries || []).map(entry => {
+    const historicalSets = resetHistoricalSets(entry.sets || [])
+    const workSetCount = historicalSets.filter(set => !isWarmupRow(set)).length
+    const full = { ...defaultConfig(entry.id), ...(entry.target || {}), sets: Math.max(1, workSetCount || entry.target?.sets || 1), id: entry.id }
+    return {
+      id: entry.id,
+      sg: entry.sg,
+      target: { ...full },
+      plan: null,
+      sets: historicalSets.length ? historicalSets : buildSets(st, full, { preferLast: true }),
+    }
+  })
+  update(state => {
+    state.active = { id: uid(), d: todayISO(), start: null, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
+  })
+  useUI.getState().stopRest()
+  nav('/workout')
 }
 export function beginWorkout(routineId, bw) {
   const st = S()
@@ -1131,6 +1179,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     <h3 style={{ margin: '8px 0' }}>{t('Workout complete!')}</h3>
     <div className="finish-metrics" style={{ textAlign: 'left' }}>
       <div className="finish-metric"><div className="l">{t('Duration')}</div><div className="v">{fmtDur(w.end - w.start)}</div></div>
+      <div className="finish-metric"><div className="l">{t('Exercises')}</div><div className="v">{w.entries.length}</div></div>
       <div className="finish-metric"><div className="l">{t('Volume')}</div><div className="v">{fmtVol(w.vol, st.unit)}</div></div>
       <div className="finish-metric"><div className="l">{t('Sets')}</div><div className="v">{t('{0} sets · {1} work', setsDone(w), workSetsDone(w))}</div></div>
       <div className="finish-metric"><div className="l">{t('PRs')}</div><div className="v">{prs.length || '—'}</div></div>
@@ -1142,7 +1191,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     <h4 className="sec" style={{ textAlign: 'left' }}>{t('What you just trained')}</h4>
     <BodyMap load={loadOfWorkouts([w])} body={st.body} />
     <div style={{ height: 14 }} />
-    <Button variant="primary" onClick={() => { close(); nav('/home') }}>{t('Nice!')}</Button>
+    <Button variant="primary" icon="house" onClick={() => { close(); nav('/home') }}>{t('Home')}</Button>
   </div>
 }
 export function finishWorkout() {

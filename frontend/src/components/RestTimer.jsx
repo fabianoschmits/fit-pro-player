@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useUI } from '../store/useUI.js'
+import { useStore } from '../store/useStore.js'
+import { exOr, exerciseName } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
 import { Button } from './ui.jsx'
 
@@ -11,6 +13,7 @@ const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '
 // plus a "Done" that logs the time actually held.
 export default function RestTimer() {
   const timer = useUI(s => s.timer)
+  const active = useStore(s => s.S.active)
   const { addRest, stopRest } = useUI()
   const on = timer
   // Timed holds use the inline overlay below the exercise animation; only classic rest
@@ -21,11 +24,21 @@ export default function RestTimer() {
   }, [!!on])
   if (!on) return null
   const pct = (on.left / on.total) * 100
+  let upcoming = null
+  if (active?.entries?.length) {
+    const current = Math.min(active.cur || 0, active.entries.length - 1)
+    for (let offset = 0; offset < active.entries.length; offset++) {
+      const entryIndex = (current + offset) % active.entries.length
+      const entry = active.entries[entryIndex]
+      const setIndex = entry.sets.findIndex(set => !set.done)
+      if (setIndex >= 0) { upcoming = { entry, setIndex }; break }
+    }
+  }
 
   return (
     <div id="timer" className="rest">
       <div className="head">
-        <div className="rest-label">{t('Rest')}</div>
+        <div className="rest-label">{t('Rest')}{upcoming && <span>{exerciseName(exOr(upcoming.entry.id))} · {t('Sets')} {upcoming.setIndex + 1}</span>}</div>
         <div className="t">{clock(timer.left)}</div>
         <div className="bar"><i style={{ '--progress': pct / 100 }} /></div>
       </div>

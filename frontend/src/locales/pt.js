@@ -741,5 +741,13 @@ export default {
   "Total all-time volume: ": "Volume histórico total: ",
   "That is equivalent to lifting {0} elephants!": "Isso equivale a levantar {0} elefantes!",
   "That is equivalent to lifting {0} cars!": "Isso equivale a levantar {0} carros!",
-  "Keep training to lift your first car!": "Continue treinando para levantar seu primeiro carro!"
+  "Keep training to lift your first car!": "Continue treinando para levantar seu primeiro carro!",
+  "Duplicate routine": "Duplicar treino",
+  "Exercise replaced": "Exercício substituído",
+  "Previous values applied": "Valores anteriores aplicados",
+  "Replace": "Substituir",
+  "Replace exercise": "Substituir exercício",
+  "Routine duplicated": "Treino duplicado",
+  "Replaces {0}": "Substitui: {0}",
+  "Use last values": "Usar últimos valores"
 }
