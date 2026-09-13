@@ -6,7 +6,6 @@ import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { startTabShortLabel } from '../lib/ux.js'
-import { useScrollDirection } from '../hooks/useScrollDirection.js'
 import Icon from './Icon.jsx'
 
 const TABS = [
@@ -32,14 +31,14 @@ function isActive(cur, k) {
   return cur === k
 }
 
-function TabItem({ featured, active, visible, icon, label, recording, onClick, tabKey, tabRef }) {
+function TabItem({ featured, active, icon, label, recording, onClick, tabKey, tabRef }) {
   if (featured) {
     return (
       <button
         type="button"
         ref={tabRef}
         data-tab-key={tabKey}
-        className={'tab-item tab-item--start' + (active ? ' on' : '') + (recording ? ' rec' : '') + (!visible ? ' compact' : '')}
+        className={'tab-item tab-item--start' + (active ? ' on' : '') + (recording ? ' rec' : '')}
         onClick={onClick}
         aria-label={label}
         aria-current={active ? 'page' : undefined}
@@ -49,18 +48,7 @@ function TabItem({ featured, active, visible, icon, label, recording, onClick, t
             <Icon name={icon} className="tab-icn" />
           </span>
         </div>
-        <motion.span
-          className="tab-label"
-          initial={false}
-          animate={{
-            opacity: visible ? 1 : 0,
-            height: visible ? 'auto' : 0,
-            marginTop: visible ? 2 : 0,
-          }}
-          transition={SPRING}
-        >
-          {label}
-        </motion.span>
+        <span className="tab-label">{label}</span>
       </button>
     )
   }
@@ -70,15 +58,15 @@ function TabItem({ featured, active, visible, icon, label, recording, onClick, t
       type="button"
       ref={tabRef}
       data-tab-key={tabKey}
-      className={'tab-item' + (active ? ' on' : '') + (!visible ? ' compact' : '')}
+      className={'tab-item' + (active ? ' on' : '')}
       onClick={onClick}
       aria-label={label}
       aria-current={active ? 'page' : undefined}
     >
-      <div className={'tab-icon-slot' + (visible ? '' : ' tall')}>
+      <div className="tab-icon-slot">
         <motion.div
           className="tab-lift"
-          animate={{ y: active && visible ? -4 : 0 }}
+          animate={{ y: active ? -4 : 0 }}
           transition={SPRING}
         >
           <AnimatePresence>
@@ -102,19 +90,7 @@ function TabItem({ featured, active, visible, icon, label, recording, onClick, t
           </motion.span>
         </motion.div>
       </div>
-      <motion.span
-        className="tab-label"
-        initial={false}
-        animate={{
-          opacity: visible ? 1 : 0,
-          height: visible ? 'auto' : 0,
-          scale: 1,
-          marginTop: visible ? 2 : 0,
-        }}
-        transition={SPRING}
-      >
-        {label}
-      </motion.span>
+      <span className="tab-label">{label}</span>
     </button>
   )
 }
@@ -125,7 +101,6 @@ export default function TabBar({ onStart }) {
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
   const isGuest = useStore(s => s.isGuest())
-  const isVisible = useScrollDirection()
   const rowRef = useRef(null)
   const tabRefs = useRef(new Map())
   const [dragTab, setDragTab] = useState(null)
@@ -191,7 +166,7 @@ export default function TabBar({ onStart }) {
   }
 
   return (
-    <div id="tabbar" className={(isVisible ? '' : 'hidden ') + (!isVisible ? 'compact' : '')}>
+    <div id="tabbar">
       <nav className="tabbar-nav" aria-label={t('Main navigation')}>
         <div className="tabbar-bg" aria-hidden="true" />
         <LayoutGroup>
@@ -204,10 +179,9 @@ export default function TabBar({ onStart }) {
                 <TabItem
                 key={tab.k}
                 tabKey={tab.k}
-                tabRef={element => { if (element) tabRefs.current.set(tab.k, element); else tabRefs.current.delete(tab.k) }}
+                  tabRef={element => { if (element) tabRefs.current.set(tab.k, element); else tabRefs.current.delete(tab.k) }}
                   featured={!!tab.featured}
                   active={active}
-                  visible={isVisible}
                   icon={icon}
                   label={label}
                   recording={tab.k === 'start' && !!S.active}
