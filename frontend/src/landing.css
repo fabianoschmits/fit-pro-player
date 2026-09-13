@@ -120,6 +120,14 @@ body.landing-mode #tabbar {
   min-width: 0;
 }
 
+.landing-hero-logo {
+  width: min(230px, 58%);
+  height: auto;
+  display: block;
+  margin: 0 0 30px -6px;
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, .24));
+}
+
 .landing-eyebrow,
 .landing-section-index {
   color: var(--acc);
@@ -1438,7 +1446,6 @@ body.landing-mode #tabbar {
   align-items: end;
   gap: 64px;
   border: var(--hair) solid var(--surface-border);
-  border-left: 3px solid var(--acc);
   border-radius: var(--r-card);
   background: var(--surface);
   box-shadow: none;
@@ -1632,6 +1639,11 @@ body.landing-mode #tabbar {
   .landing-eyebrow {
     margin-bottom: 17px;
     font-size: 9px;
+  }
+
+  .landing-hero-logo {
+    width: min(185px, 55vw);
+    margin: 0 0 25px -5px;
   }
 
   .landing-hero h1 {

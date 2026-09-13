@@ -355,6 +355,7 @@ export default function Landing() {
 
       <section className="landing-hero" id="top">
         <div className="landing-hero-copy">
+          <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
           <div className="landing-eyebrow">SEU TREINO, SEM RUÍDO</div>
           <h1>Treine com contexto. Evolua com clareza.</h1>
           <p>Planejamento, execução, progresso e recuperação vivem no mesmo lugar — do primeiro exercício à decisão sobre o próximo treino.</p>

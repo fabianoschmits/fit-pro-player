@@ -75,6 +75,8 @@ describe('public landing page', () => {
     await act(async () => { root.render(<Landing />) })
 
     expect(container.querySelector('h1').textContent).toContain('Treine com contexto')
+    expect(container.querySelector('.landing-hero-copy').firstElementChild.classList.contains('landing-hero-logo')).toBe(true)
+    expect(container.querySelector('.landing-hero-logo').nextElementSibling.classList.contains('landing-eyebrow')).toBe(true)
     expect(container.querySelector('[data-avatar]').getAttribute('data-avatar')).toBe('avatar-27')
     expect(container.querySelectorAll('[data-exercise]').length).toBe(6)
     expect(container.querySelector('[data-points]').getAttribute('data-points')).toBe('9')
