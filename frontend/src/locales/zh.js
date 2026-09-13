@@ -110,6 +110,7 @@ export default {
   'Sick, missed a day or want a different session? Pick what to train instead.': '生病、错过一天或想换个训练？选择改练什么。',
   'Rest / skip this day': '休息 / 跳过这天',
   'Rest day': '休息日',
+  'Tap an exercise to preview it before choosing.': '点按练习可先预览，再进行选择。',
   'Rest today': '今天休息',
   'Next workout': '下次训练',
   'Start another workout': '开始其他训练',

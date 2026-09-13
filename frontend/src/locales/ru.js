@@ -110,6 +110,7 @@ export default {
   'Sick, missed a day or want a different session? Pick what to train instead.': 'Заболел, пропустил день или хочешь другую тренировку? Выбери, что делать вместо этого.',
   'Rest / skip this day': 'Отдых / пропустить день',
   'Rest day': 'День отдыха',
+  'Tap an exercise to preview it before choosing.': 'Нажмите на упражнение, чтобы посмотреть его перед выбором.',
   'Rest today': 'Сегодня отдых',
   'Next workout': 'Следующая тренировка',
   'Start another workout': 'Начать другую тренировку',

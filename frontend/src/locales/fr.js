@@ -110,6 +110,7 @@ export default {
   'Sick, missed a day or want a different session? Pick what to train instead.': 'Malade, jour manqué ou envie d’autre chose ? Choisis quoi entraîner à la place.',
   'Rest / skip this day': 'Repos / sauter ce jour',
   'Rest day': 'Jour de repos',
+  'Tap an exercise to preview it before choosing.': 'Touchez un exercice pour le prévisualiser avant de le choisir.',
   'Rest today': 'Repos aujourd’hui',
   'Next workout': 'Prochaine séance',
   'Start another workout': 'Commencer une autre séance',

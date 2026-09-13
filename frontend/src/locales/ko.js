@@ -110,6 +110,7 @@ export default {
   'Sick, missed a day or want a different session? Pick what to train instead.': '아프거나, 하루를 놓쳤거나, 다른 운동이 하고 싶나요? 대신 할 운동을 선택하세요.',
   'Rest / skip this day': '휴식 / 이 날 건너뛰기',
   'Rest day': '휴식일',
+  'Tap an exercise to preview it before choosing.': '운동을 선택하기 전에 탭하여 미리 보세요.',
   'Rest today': '오늘은 휴식',
   'Next workout': '다음 운동',
   'Start another workout': '다른 운동 시작',

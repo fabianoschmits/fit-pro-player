@@ -557,6 +557,32 @@ function usageMap(st) {
   st.workouts.forEach(w => w.entries.forEach(e => { u[e.id] = (u[e.id] || 0) + 1 }))
   return u
 }
+
+function ExercisePickerPreview({ exercise, selected, quickAdd, onChoose, onConfigure }) {
+  const root = useRef(null)
+  useEffect(() => {
+    const reveal = () => {
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      root.current?.scrollIntoView?.({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' })
+    }
+    const frame = window.requestAnimationFrame?.(reveal) ?? window.setTimeout(reveal, 0)
+    return () => {
+      if (window.cancelAnimationFrame) window.cancelAnimationFrame(frame)
+      else window.clearTimeout(frame)
+    }
+  }, [exercise.id])
+
+  return <div className="exercise-picker-preview" ref={root}>
+    <Media ex={exercise} compact />
+    <div className="exercise-picker-preview-actions">
+      {selected ? <span className="tag acc"><Icon name="check" />{t('already in')}</span> : <>
+        {quickAdd && <button type="button" className="iconbtn picker-cfg" aria-label={t('Configure before adding')} title={t('Configure before adding')} onClick={onConfigure}><Icon name="gear" /></button>}
+        <Button size="sm" variant="primary" icon={quickAdd ? 'plus' : 'check'} onClick={onChoose}>{quickAdd ? t('Add exercise') : t('Choose')}</Button>
+      </>}
+    </div>
+  </div>
+}
+
 function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = false, title, excludeIds = [] }) {
   const st = useStore(s => s.S)
   const usage = usageMap(st)
@@ -565,6 +591,7 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
   const [bp, setBp] = useState('')          // '' = all, '★' = chosen, else a body part
   const [eq, setEq] = useState('')          // '' = any equipment
   const [shown, setShown] = useState(50)
+  const [previewId, setPreviewId] = useState(null)
   const ql = q.toLowerCase().trim()
   const all = allExercises(st)
   let base = all.filter(e =>
@@ -577,6 +604,7 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
   const f = eqOn ? base.filter(e => e.eq === eqOn) : base
   const chosenCount = Object.keys(usage).length
   const choose = (exercise, meta) => {
+    setPreviewId(null)
     if (closeOnPick) close()
     onPick(exercise, meta)
   }
@@ -585,23 +613,21 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
       <h3>{title || t('Add exercise')}</h3>
       <Button size="sm" variant="tinted" icon="check" onClick={close}>{t('Done')}</Button>
     </div>
-    <div className="muted small" style={{ marginBottom: quickAdd ? 6 : 0 }}>
-      {quickAdd ? t('Tap to add with smart defaults — use the gear to configure first.') : null}
-    </div>
+    <div className="muted small exercise-picker-help">{t('Tap an exercise to preview it before choosing.')}</div>
     <div className="search exercise-picker-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
-      <input type="search" inputMode="search" enterKeyHint="search" autoComplete="off" className="input" aria-label={t('Search {0} exercises…', all.length)} placeholder={t('Search {0} exercises…', all.length)} value={q} onChange={e => { setQ(e.target.value); setShown(50) }} />
-      {q && <button type="button" className="exercise-picker-clear" aria-label={t('Clear')} onClick={() => { setQ(''); setShown(50) }}><Icon name="xmark" /></button>}
+      <input type="search" inputMode="search" enterKeyHint="search" autoComplete="off" className="input" aria-label={t('Search {0} exercises…', all.length)} placeholder={t('Search {0} exercises…', all.length)} value={q} onChange={e => { setQ(e.target.value); setShown(50); setPreviewId(null) }} />
+      {q && <button type="button" className="exercise-picker-clear" aria-label={t('Clear')} onClick={() => { setQ(''); setShown(50); setPreviewId(null) }}><Icon name="xmark" /></button>}
     </div>
     <div className="chips" style={{ margin: eqOpts.length > 1 ? '10px 0 6px' : '10px 0' }}>
-      {chosenCount > 0 && <button className={'chip' + (bp === '★' ? ' on' : '')} onClick={() => { setBp('★'); setEq(''); setShown(50) }}><Icon name="starFill" style={{ fontSize: 12, display: 'inline-block', marginRight: 4, verticalAlign: '-1px' }} />{t('Chosen')} ({chosenCount})</button>}
-      <button className={'chip nocap' + (!bp ? ' on' : '')} onClick={() => { setBp(''); setEq(''); setShown(50) }}>{t('All')}</button>
-      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(50) }}>{sentenceCase(t(b))}</button>)}
+      {chosenCount > 0 && <button className={'chip' + (bp === '★' ? ' on' : '')} onClick={() => { setBp('★'); setEq(''); setShown(50); setPreviewId(null) }}><Icon name="starFill" style={{ fontSize: 12, display: 'inline-block', marginRight: 4, verticalAlign: '-1px' }} />{t('Chosen')} ({chosenCount})</button>}
+      <button className={'chip nocap' + (!bp ? ' on' : '')} onClick={() => { setBp(''); setEq(''); setShown(50); setPreviewId(null) }}>{t('All')}</button>
+      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(50); setPreviewId(null) }}>{sentenceCase(t(b))}</button>)}
     </div>
     {eqOpts.length > 1 && <div className="chips" style={{ marginBottom: 10 }}>
-      <button className={'chip nocap' + (!eqOn ? ' on' : '')} onClick={() => { setEq(''); setShown(50) }}>{t('Any equipment')}</button>
-      {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(50) }}>{sentenceCase(t(x))}</button>)}
+      <button className={'chip nocap' + (!eqOn ? ' on' : '')} onClick={() => { setEq(''); setShown(50); setPreviewId(null) }}>{t('Any equipment')}</button>
+      {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(50); setPreviewId(null) }}>{sentenceCase(t(x))}</button>)}
     </div>}
-    <div className="list">
+    <div className="list exercise-picker-list">
       {bp !== '★' && <button type="button" className="item" onClick={() => {
         if (closeOnPick) close()
         customExSheet(null, ex => onPick(ex), q.trim())
@@ -611,14 +637,25 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
       </button>}
       {f.slice(0, shown).map(e => {
         const selected = selectedIds.has(e.id) || excludeIds.includes(e.id)
-        return <div key={e.id} className={'item picker-item' + (selected ? ' item-selected' : '')}>
-          <button type="button" className="picker-item-main" disabled={selected}
-            onClick={() => choose(e, quickAdd ? {} : undefined)}>
+        const previewing = previewId === e.id
+        const previewDomId = `exercise-picker-preview-${e.id}`
+        return <div key={e.id} className={'item picker-item' + (selected ? ' item-selected' : '') + (previewing ? ' is-previewing' : '')}>
+          <button type="button" className="picker-item-main" aria-expanded={previewing} aria-controls={previewing ? previewDomId : undefined}
+            onClick={() => setPreviewId(current => current === e.id ? null : e.id)}>
             <Thumb ex={e} /><span className="grow"><span className="tt">{exerciseName(e)}</span><span className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</span></span>
-            {selected ? <span className="tag acc"><Icon name="check" />{t('already in')}</span>
-              : <>{usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}<Icon name="plus" className="chev" /></>}
+            {selected && <span className="tag acc"><Icon name="check" />{t('already in')}</span>}
+            {!selected && usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}
+            <Icon name={previewing ? 'chevronUp' : 'chevronDown'} className="chev" />
           </button>
-          {quickAdd && !selected && <button className="iconbtn picker-cfg" aria-label={t('Configure before adding')} onClick={() => onPick(e, { configure: true })}><Icon name="gear" /></button>}
+          {previewing && <div id={previewDomId}>
+            <ExercisePickerPreview
+              exercise={e}
+              selected={selected}
+              quickAdd={quickAdd}
+              onChoose={() => choose(e, quickAdd ? {} : undefined)}
+              onConfigure={() => { setPreviewId(null); onPick(e, { configure: true }) }}
+            />
+          </div>}
         </div>
       })}
       {f.length === 0 && bp === '★' && <div className="empty">{t('Nothing chosen yet — add exercises and they’ll show up here.')}</div>}

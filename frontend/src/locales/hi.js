@@ -110,6 +110,7 @@ export default {
   'Sick, missed a day or want a different session? Pick what to train instead.': 'बीमार हैं, दिन छूट गया या कुछ और करना है? चुनें कि इसके बदले क्या ट्रेन करें।',
   'Rest / skip this day': 'आराम / यह दिन छोड़ें',
   'Rest day': 'आराम का दिन',
+  'Tap an exercise to preview it before choosing.': 'चुनने से पहले उसका पूर्वावलोकन देखने के लिए व्यायाम पर टैप करें।',
   'Rest today': 'आज आराम',
   'Next workout': 'अगला वर्कआउट',
   'Start another workout': 'दूसरा वर्कआउट शुरू करें',
