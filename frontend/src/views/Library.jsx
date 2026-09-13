@@ -21,7 +21,7 @@ export default function Library() {
   const eqOn = eqOpts.includes(eq) ? eq : ''
   const f = eqOn ? base.filter(e => e.eq === eqOn) : base
 
-  return <>
+  return <div className="library-view">
     <div className="hdr"><div><h1>{t('Exercises')}</h1><div className="sub">{t('{0} exercises in the catalogue', EXDB.length)}</div></div></div>
     <div style={{ marginBottom: 10 }}>
       <SearchField placeholder={t('Search…')} value={q}
@@ -35,7 +35,7 @@ export default function Library() {
       <button className={'chip nocap' + (!eqOn ? ' on' : '')} onClick={() => { setEq(''); setShown(40) }}>{t('Any equipment')}</button>
       {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(40) }}>{sentenceCase(t(x))}</button>)}
     </div>}
-    <div className="list">
+    <div className="list library-list">
       <button type="button" className="item" onClick={() => customExSheet(null, ex => exerciseDetailSheet(ex), q.trim())}>
         <div className="thumb thumb-x"><Icon name="plus" /></div>
         <div className="grow"><div className="tt">{t('Create your own exercise')}</div><div className="ss">{t('name + body part, no animation')}</div></div><Icon name="plus" className="chev" />
@@ -54,5 +54,5 @@ export default function Library() {
       {f.length === 0 && <div className="empty"><div className="ico"><Icon name="magnifier" /></div>{t('No match')}</div>}
     </div>
     {f.length > shown && <><div style={{ height: 10 }} /><Button onClick={() => setShown(s => s + 40)}>{t('Show more')}</Button></>}
-  </>
+  </div>
 }

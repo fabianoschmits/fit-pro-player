@@ -142,7 +142,7 @@ function MuscleBalance({ S }) {
   const max = worked.length ? load[worked[0]] : 0
   const sets = m => Math.round((load[m] || 0) * 10) / 10
 
-  return <div className="card">
+  return <div className="card stats-balance-card">
     <Segmented className="seg-range" value={view} onChange={setView}
       options={[{ value: 'balance', label: t('Muscle balance') }, { value: 'fatigue', label: t('Fatigue') }, { value: 'strength', label: t('Strength') }]} />
     {view === 'balance' ? <>
@@ -153,71 +153,89 @@ function MuscleBalance({ S }) {
       </div>
       <Segmented className="seg-range" value={win} onChange={v => { setWin(v); setSel(null) }}
         options={[{ value: 7, label: t('Week') }, { value: 30, label: '30d' }, { value: 90, label: '90d' }, { value: 0, label: t('All') }]} />
-      {inWin.length ? <>
-        <BodyMap className="tappable" load={load} body={S.body} selected={sel}
-          onMuscle={m => setSel(s => (s === m ? null : m))} />
-        <BodyMapLegend />
-        {sel && <div className="mrow" style={{ borderTop: 'var(--hair) solid var(--sep)', marginTop: 4, paddingTop: 10 }}>
-          <span className="nm"><b>{t(MUSCLE_NAME[sel])}</b></span>
-          <span className="v">{sets(sel) ? t('{0} sets', sets(sel)) : on ? t('no hard sets') : t('not trained')}</span>
-        </div>}
-        {!sel && top.map(m => <div key={m} className="mrow">
-          <span className="nm">{t(MUSCLE_NAME[m])}</span>
-          <span className="bar"><i style={{ width: Math.round(load[m] / max * 100) + '%', background: on ? 'var(--yellow)' : undefined }} /></span>
-          <span className="v">{t('{0} sets', sets(m))}</span>
-        </div>)}
-        {missed.length > 0 && <>
-          <h4 className="sec" style={{ marginTop: 12 }}>{on ? t('No hard sets in this period') : t('Not trained in this period')}</h4>
-          <div className="mchips">{missed.map(m => <span key={m} className="mchip miss">{sentenceCase(t(MUSCLE_NAME[m]))}</span>)}</div>
-        </>}
-        {!missed.length && worked.length > 0 &&
-          <div className="muted small" style={{ marginTop: 10 }}>{on
-            ? t('Every muscle group got at least one hard set in this period.')
-            : t('Every muscle group got some work in this period.')}</div>}
-      </> : <>
-        <BodyMap className="tappable" load={load} body={S.body} selected={sel}
-          onMuscle={m => setSel(s => (s === m ? null : m))} />
-        <BodyMapLegend />
-        <div className="muted small" style={{ marginTop: 10 }}>{t('No workouts in this period yet.')}</div>
-      </>}
+      {inWin.length ? <div className="stats-balance-content">
+        <div className="stats-bodymap-pane">
+          <BodyMap className="tappable" load={load} body={S.body} selected={sel}
+            onMuscle={m => setSel(s => (s === m ? null : m))} />
+          <BodyMapLegend />
+        </div>
+        <div className="stats-muscle-readings">
+          {sel && <div className="mrow" style={{ borderTop: 'var(--hair) solid var(--sep)', marginTop: 4, paddingTop: 10 }}>
+            <span className="nm"><b>{t(MUSCLE_NAME[sel])}</b></span>
+            <span className="v">{sets(sel) ? t('{0} sets', sets(sel)) : on ? t('no hard sets') : t('not trained')}</span>
+          </div>}
+          {!sel && top.map(m => <div key={m} className="mrow">
+            <span className="nm">{t(MUSCLE_NAME[m])}</span>
+            <span className="bar"><i style={{ width: Math.round(load[m] / max * 100) + '%', background: on ? 'var(--yellow)' : undefined }} /></span>
+            <span className="v">{t('{0} sets', sets(m))}</span>
+          </div>)}
+          {missed.length > 0 && <>
+            <h4 className="sec" style={{ marginTop: 12 }}>{on ? t('No hard sets in this period') : t('Not trained in this period')}</h4>
+            <div className="mchips">{missed.map(m => <span key={m} className="mchip miss">{sentenceCase(t(MUSCLE_NAME[m]))}</span>)}</div>
+          </>}
+          {!missed.length && worked.length > 0 &&
+            <div className="muted small" style={{ marginTop: 10 }}>{on
+              ? t('Every muscle group got at least one hard set in this period.')
+              : t('Every muscle group got some work in this period.')}</div>}
+        </div>
+      </div> : <div className="stats-balance-content">
+        <div className="stats-bodymap-pane">
+          <BodyMap className="tappable" load={load} body={S.body} selected={sel}
+            onMuscle={m => setSel(s => (s === m ? null : m))} />
+          <BodyMapLegend />
+        </div>
+        <div className="muted small stats-muscle-readings">{t('No workouts in this period yet.')}</div>
+      </div>}
     </> : view === 'fatigue' ? <>
       <h2>{t('Fatigue')}</h2>
-      <BodyMap className="tappable hm-fatigue" load={fatigue} thresholds={FATIGUE_LEVELS} body={S.body} selected={sel} onMuscle={toggleSel} />
-      <FatigueLegend />
-      <div className="muted small" style={{ marginTop: 10 }}>{t('Fatigue shows how recently each muscle was trained. High means rest.')}</div>
-      {sel && <div className="mrow" style={{ borderTop: 'var(--hair) solid var(--sep)', marginTop: 4, paddingTop: 10 }}>
-        <span className="nm"><b>{t(MUSCLE_NAME[sel])}</b></span>
-        <span className="v">{fatigueLabel(fatigue[sel])}</span>
-      </div>}
+      <div className="stats-balance-content">
+        <div className="stats-bodymap-pane">
+          <BodyMap className="tappable hm-fatigue" load={fatigue} thresholds={FATIGUE_LEVELS} body={S.body} selected={sel} onMuscle={toggleSel} />
+          <FatigueLegend />
+        </div>
+        <div className="stats-muscle-readings">
+          <div className="muted small">{t('Fatigue shows how recently each muscle was trained. High means rest.')}</div>
+          {sel && <div className="mrow" style={{ borderTop: 'var(--hair) solid var(--sep)', marginTop: 10, paddingTop: 10 }}>
+            <span className="nm"><b>{t(MUSCLE_NAME[sel])}</b></span>
+            <span className="v">{fatigueLabel(fatigue[sel])}</span>
+          </div>}
+        </div>
+      </div>
     </> : <>
       <h2>{t('Strength')}</h2>
-      <BodyMap className="tappable hm-strength" load={strength} thresholds={STRENGTH_LEVELS} body={S.body} selected={sel} onMuscle={toggleSel} />
-      <StrengthLegend />
-      <div className="muted small" style={{ marginTop: 10 }}>{t('Strength shows retained muscle strength. Train again to reset it.')}</div>
-      {sel && <>
-        <h4 className="sec" style={{ marginTop: 14 }}>{t('Exercises')} · {t(MUSCLE_NAME[sel])}</h4>
-        {muscleExercises.length ? muscleExercises.map(row => (
-          <div key={row.id} className="mrow" style={{ minHeight: 48, alignItems: 'stretch' }}>
-            <span className="nm" style={{ whiteSpace: 'normal', lineHeight: 1.35, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {row.name}
-                {row.primary === sel
-                  ? <span className="dim" style={{ fontSize: 11, marginLeft: 6 }}>{t('primary')}</span>
-                  : <span className="dim" style={{ fontSize: 11, marginLeft: 6 }}>{t('secondary')}</span>}
-              </span>
-              <span className="small dim" style={{ display: 'block', fontWeight: 400 }}>{t('Est. 1RM')}: {fmtNum(row.est)} {S.unit} · {fmtDate(row.estDate, true)}</span>
-            </span>
-            <span className="bar" style={{ alignSelf: 'center' }}><i style={{ width: '100%', background: 'linear-gradient(to right, var(--acc) ' + Math.round(row.decay * 100) + '%, var(--surface-2) ' + Math.round(row.decay * 100) + '%)' }} /></span>
-            <span className="v" style={{ alignSelf: 'center' }}>{fmtNum(row.current)} {S.unit}<span className="dim"> · {Math.round(row.decay * 100)}%</span></span>
-          </div>
-        )) : <div className="muted small">{t('No exercises with an estimated 1RM yet.')}</div>}
-      </>}
-      {!sel && <div className="muted small" style={{ marginTop: 10 }}>{t('Tap a muscle to see its exercises.')}</div>}
-      {detrained.map(slug => <div key={slug} className="mrow">
-        <span className="nm">{t(MUSCLE_NAME[slug])}</span>
-        <span className="bar"><i style={{ width: Math.round(strength[slug] * 100) + '%' }} /></span>
-        <span className="v">{t('{0} sets', vol90[slug] || 0)}</span>
-      </div>)}
+      <div className="stats-balance-content">
+        <div className="stats-bodymap-pane">
+          <BodyMap className="tappable hm-strength" load={strength} thresholds={STRENGTH_LEVELS} body={S.body} selected={sel} onMuscle={toggleSel} />
+          <StrengthLegend />
+        </div>
+        <div className="stats-muscle-readings">
+          <div className="muted small">{t('Strength shows retained muscle strength. Train again to reset it.')}</div>
+          {sel && <>
+            <h4 className="sec" style={{ marginTop: 14 }}>{t('Exercises')} · {t(MUSCLE_NAME[sel])}</h4>
+            {muscleExercises.length ? muscleExercises.map(row => (
+              <div key={row.id} className="mrow" style={{ minHeight: 48, alignItems: 'stretch' }}>
+                <span className="nm" style={{ whiteSpace: 'normal', lineHeight: 1.35, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {row.name}
+                    {row.primary === sel
+                      ? <span className="dim" style={{ fontSize: 11, marginLeft: 6 }}>{t('primary')}</span>
+                      : <span className="dim" style={{ fontSize: 11, marginLeft: 6 }}>{t('secondary')}</span>}
+                  </span>
+                  <span className="small dim" style={{ display: 'block', fontWeight: 400 }}>{t('Est. 1RM')}: {fmtNum(row.est)} {S.unit} · {fmtDate(row.estDate, true)}</span>
+                </span>
+                <span className="bar" style={{ alignSelf: 'center' }}><i style={{ width: '100%', background: 'linear-gradient(to right, var(--acc) ' + Math.round(row.decay * 100) + '%, var(--surface-2) ' + Math.round(row.decay * 100) + '%)' }} /></span>
+                <span className="v" style={{ alignSelf: 'center' }}>{fmtNum(row.current)} {S.unit}<span className="dim"> · {Math.round(row.decay * 100)}%</span></span>
+              </div>
+            )) : <div className="muted small">{t('No exercises with an estimated 1RM yet.')}</div>}
+          </>}
+          {!sel && <div className="muted small" style={{ marginTop: 10 }}>{t('Tap a muscle to see its exercises.')}</div>}
+          {detrained.map(slug => <div key={slug} className="mrow">
+            <span className="nm">{t(MUSCLE_NAME[slug])}</span>
+            <span className="bar"><i style={{ width: Math.round(strength[slug] * 100) + '%' }} /></span>
+            <span className="v">{t('{0} sets', vol90[slug] || 0)}</span>
+          </div>)}
+        </div>
+      </div>
     </>}
   </div>
 }
@@ -242,7 +260,7 @@ function EffortCard({ S }) {
   // Bins run hardest-first in both scales: RIR 0 and RPE 10 are the same set.
   const binLabel = b => kind === 'rpe' ? (b.tail ? '≤ 6' : String(10 - b.rir)) : (b.tail ? b.rir + '+' : String(b.rir))
 
-  return <div className="card">
+  return <div className="card stats-effort-card">
     <h2>{t('Effort')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('how close to failure')}</span></h2>
     <Segmented className="seg-range" value={win} onChange={setWin}
       options={[{ value: 30, label: '30d' }, { value: 90, label: '90d' }, { value: 365, label: '1Y' }, { value: 0, label: t('All') }]} />
@@ -305,8 +323,6 @@ export default function Stats() {
   }, [workouts])
 
   const totalVolume = useMemo(() => workouts.reduce((sum, w) => sum + workoutVolume(w), 0), [workouts])
-  const elephants = Math.floor(totalVolume / 4000)
-  const cars = Math.floor(totalVolume / 1500)
   const now = Date.now()
   const kind = displayScale(S)
   const hd = scaleName(kind)
@@ -402,9 +418,7 @@ export default function Stats() {
       <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</b></div>
     </section>
 
-    <div style={{ marginBottom: 16 }}>
-      <MuscleBalance S={S} />
-    </div>
+    <MuscleBalance S={S} />
 
     <TipOnce id="e1rm-tip">
       <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
@@ -443,7 +457,7 @@ export default function Stats() {
       </> : <div className="muted small">{t('Finish your first workout to see progress curves here.')}</div>}
     </div>
 
-    <div className="card" style={{ marginBottom: 16 }}>
+    <div className="card stats-weight-card">
         <div className="row between" style={{ marginBottom: 8 }}>
           <h2 style={{ margin: 0 }}>{t('Body weight')}</h2>
           <div className="row" style={{ gap: 8 }}>
@@ -457,20 +471,18 @@ export default function Stats() {
     </div>
 
     <div className="cols">
-        <div className="card">
+        <div className="card stats-activity-card">
           <h2>{t('Activity — last 12 months')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('by time trained')}</span></h2>
           <Heatmap S={S} onDay={iso => { const ws = workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso) }} />
         </div>
         <EffortCard S={S} />
     </div>
 
-    <div className="card" style={{ marginTop: 16 }}>
+    <div className="card stats-volume-card">
         <h2>{t('Total Volume Lifted')}</h2>
         <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
-        <div className="small dim" style={{ marginTop: 12, lineHeight: 1.5 }}>
+        <div className="small dim stats-volume-total">
           {t('Total all-time volume: ')} <b className="accent">{fmtNum(totalVolume)} {S.unit}</b>
-          <br />
-          {elephants > 0 ? t('That is equivalent to lifting {0} elephants!', elephants) : cars > 0 ? t('That is equivalent to lifting {0} cars!', cars) : t('Keep training to lift your first car!')}
         </div>
     </div>
   </div>

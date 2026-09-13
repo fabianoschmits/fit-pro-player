@@ -13,17 +13,17 @@ export default function History() {
     result.get(key).push(workout)
     return result
   }, new Map())
-  return <>
-    <div className="hdr"><button className="iconbtn" onClick={() => nav('/more')} aria-label={t('More')}><Icon name="chevronLeft" /></button>
-      <div style={{ flex: 1, marginLeft: 12 }}><h1>{t('History')}</h1><div className="sub">{t('{0} workouts', S.workouts.length)}</div></div></div>
+  return <div className="history-view">
+    <div className="hdr history-titlebar"><button className="iconbtn" onClick={() => nav('/more')} aria-label={t('More')}><Icon name="chevronLeft" /></button>
+      <div className="history-title-copy"><h1>{t('History')}</h1><div className="sub">{t('{0} workouts', S.workouts.length)}</div></div></div>
     {S.workouts.length ? <div className="history-groups">{[...groups].map(([month, workouts]) => {
       const date = new Date(`${month}-01T12:00:00`)
       const label = Number.isNaN(date.getTime()) ? month : date.toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' })
       return <section className="history-month" key={month}>
         <div className="history-month-heading"><h2>{label}</h2><span>{workouts.length}</span></div>
-        <div className="list">{workouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
+        <div className="list history-list">{workouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
       </section>
     })}</div>
       : <div className="empty"><div className="ico"><Icon name="history" /></div>{t('No workouts yet.')}</div>}
-  </>
+  </div>
 }

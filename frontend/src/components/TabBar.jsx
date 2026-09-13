@@ -78,7 +78,7 @@ function TabItem({ featured, active, visible, icon, label, recording, onClick, t
       <div className={'tab-icon-slot' + (visible ? '' : ' tall')}>
         <motion.div
           className="tab-lift"
-          animate={{ y: active && visible ? -18 : 0 }}
+          animate={{ y: active && visible ? -4 : 0 }}
           transition={SPRING}
         >
           <AnimatePresence>
@@ -95,7 +95,7 @@ function TabItem({ featured, active, visible, icon, label, recording, onClick, t
           </AnimatePresence>
           <motion.span
             className="tab-icn-wrap"
-            animate={{ color: active ? 'var(--on-acc)' : 'var(--label-3)' }}
+            animate={{ color: active ? 'var(--acc)' : 'var(--label-3)' }}
             transition={{ duration: 0.2 }}
           >
             <Icon name={icon} className={'tab-icn' + (active ? ' tab-icn--on' : '')} />
@@ -108,7 +108,7 @@ function TabItem({ featured, active, visible, icon, label, recording, onClick, t
         animate={{
           opacity: visible ? 1 : 0,
           height: visible ? 'auto' : 0,
-          scale: active ? 1.05 : 1,
+          scale: 1,
           marginTop: visible ? 2 : 0,
         }}
         transition={SPRING}

@@ -91,7 +91,7 @@ export default function RoutineEdit() {
       {r.ex.length > 1 && <Button size="sm" variant="tinted" onClick={() => setOrganizing(v => !v)}>{organizing ? t('Done') : t('Edit')}</Button>}
     </div>
 
-    {r.ex.length ? <div className="list">{r.ex.map((entry, i) => {
+    {r.ex.length ? <div className="list routine-exercise-list">{r.ex.map((entry, i) => {
       const ex = exOr(entry.id)
       const linkedPrev = i > 0 && entry.sg && r.ex[i - 1].sg === entry.sg
       return <div key={i}>
@@ -115,8 +115,8 @@ export default function RoutineEdit() {
 
     {organizing && <div className="small dim row routine-organize-help"><Icon name="link" />{t('Tap the link button on an exercise to superset it with the one above — you’ll do them back-to-back.')}</div>}
     <div className="routine-builder-actions">
-      <Button variant="primary" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
-      <Button variant="tinted" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
+      <Button variant="tinted" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
+      <Button variant="plain" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
     </div>
 
     <div className="card routine-week-card">

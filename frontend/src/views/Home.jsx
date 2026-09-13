@@ -10,7 +10,6 @@ import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadSta
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
-import { glyphOf } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 
@@ -36,7 +35,6 @@ function SessionMetrics({ workout, unit }) {
 export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const update = useStore(s => s.update)
   const [weekOffset, setWeekOffset] = useState(0)
 
   const today = new Date()
@@ -92,33 +90,34 @@ export default function Home() {
   const renderNow = () => {
     if (active) return <section className="home-now home-now--active">
       <div className="home-now-top">
-        <span className="home-now-kicker"><i />{t('{0} — in progress', active.name)}</span>
-        <span className="home-now-glyph"><Icon name="timer" /></span>
+        <span className="home-now-kicker">{t('{0} — in progress', active.name)}</span>
       </div>
       <h2>{active.name}</h2>
       <div className="home-now-context">
         {activeEntry ? <><b>{t('Exercise {0} / {1}', activeIndex + 1, active.entries.length)}</b><span>{exerciseName(exOr(activeEntry.id))}</span></> : <span>{t('Freestyle workout — add your first exercise.')}</span>}
       </div>
       <div className="home-now-progress"><i style={{ '--progress': activeTotal ? activeDone / activeTotal : 0 }} /></div>
-      <div className="home-now-progress-label"><span>{t('{0} sets', `${activeDone}/${activeTotal}`)}</span><span>{Math.round((activeTotal ? activeDone / activeTotal : 0) * 100)}%</span></div>
-      <Button variant="primary" icon={active.start ? 'play' : 'timer'} onClick={() => nav('/workout')}>{active.start ? t('Resume') : t('Start workout')}</Button>
+      <div className="home-now-progress-label"><span>{t('{0} sets', `${activeDone}/${activeTotal}`)}</span></div>
+      <div className="home-now-actions">
+        <Button variant="primary" icon={active.start ? 'play' : 'timer'} onClick={() => nav('/workout')}>{active.start ? t('Resume') : t('Start workout')}</Button>
+      </div>
     </section>
 
     if (todayWorkout) return <section className="home-now home-now--done">
       <div className="home-now-top">
-        <span className="home-now-kicker"><i />{t('Workout complete!')}</span>
-        <span className="home-now-glyph"><Icon name="check" /></span>
+        <span className="home-now-kicker">{t('Workout complete!')}</span>
       </div>
       <h2>{todayWorkout.name}</h2>
       <SessionMetrics workout={todayWorkout} unit={S.unit} />
       {nextWorkout && <div className="home-next-session"><span>{t('Next')}</span><b>{routineName(nextWorkout.routine)}</b><small>{fmtDate(nextWorkout.iso, true)}</small></div>}
-      <Button variant="primary" icon="history" onClick={() => workoutDetailSheet(todayWorkout)}>{t('Details')}</Button>
+      <div className="home-now-actions">
+        <Button variant="plain" size="sm" onClick={() => workoutDetailSheet(todayWorkout)}>{t('Details')}</Button>
+      </div>
     </section>
 
     if (routine?.ex?.length) return <section className="home-now home-now--planned">
       <div className="home-now-top">
-        <span className="home-now-kicker"><i />{t("Today's plan")}</span>
-        <span className="home-now-glyph"><Icon name={glyphOf(routine.emoji)} /></span>
+        <span className="home-now-kicker">{t("Today's plan")}</span>
       </div>
       <h2>{routineName(routine)}</h2>
       <div className="home-now-context home-now-context--wrap">
@@ -126,41 +125,46 @@ export default function Home() {
         {routineMuscles.map(muscle => <span key={muscle}>{sentenceCase(t(muscle))}</span>)}
       </div>
       {matchingPrevious && matchingPrevious.end > matchingPrevious.start && <div className="home-last-session"><span>{t('Last time')}</span><b>{fmtDur(matchingPrevious.end - matchingPrevious.start)}</b><small>{fmtDate(matchingPrevious.d, true)}</small></div>}
-      <Button variant="primary" icon="play" onClick={() => startFlow(routine.id)}>{t('Start {0}', routineName(routine))}</Button>
+      <div className="home-now-actions">
+        <Button variant="primary" icon="play" onClick={() => startFlow(routine.id)}>{t('Start {0}', routineName(routine))}</Button>
+      </div>
     </section>
 
     if (routine) return <section className="home-now home-now--rest">
-      <div className="home-now-top"><span className="home-now-kicker"><i />{t("Today's plan")}</span><span className="home-now-glyph"><Icon name={glyphOf(routine.emoji)} /></span></div>
+      <div className="home-now-top"><span className="home-now-kicker">{t("Today's plan")}</span></div>
       <h2>{routineName(routine)}</h2>
       <p>{t('No exercises yet — add your first one.')}</p>
-      <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + routine.id)}>{t('Add exercise')}</Button>
+      <div className="home-now-actions">
+        <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + routine.id)}>{t('Add exercise')}</Button>
+      </div>
     </section>
 
     if (!S.routines.length) return <section className="home-now home-now--setup">
-      <div className="home-now-top"><span className="home-now-kicker"><i />{t('Welcome!')}</span><span className="home-now-glyph"><Icon name="dumbbell" /></span></div>
+      <div className="home-now-top"><span className="home-now-kicker">{t('Welcome!')}</span></div>
       <h2>{t('Build my own plan')}</h2>
       <p>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</p>
-      <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
-      <Button variant="ghost" icon="dumbbell" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
+      <div className="home-now-actions">
+        <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
+        <Button variant="plain" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
+      </div>
     </section>
 
     return <section className="home-now home-now--rest">
-      <div className="home-now-top"><span className="home-now-kicker"><i />{t('Rest day')}</span><span className="home-now-glyph"><Icon name="moon" /></span></div>
+      <div className="home-now-top"><span className="home-now-kicker">{t('Rest today')}</span></div>
       <h2>{nextWorkout ? routineName(nextWorkout.routine) : t('Freestyle')}</h2>
-      <div className="home-now-context">
-        {nextWorkout ? <><b>{t('Next')}</b><span>{fmtDate(nextWorkout.iso, true)} · {exCount(nextWorkout.routine.ex.length)}</span></> : <span>{t('Freestyle workout — add your first exercise.')}</span>}
+      <div className="home-now-context home-now-context--rest">
+        {nextWorkout ? <span>{t('Next workout')} · {fmtDate(nextWorkout.iso, true)} · {exCount(nextWorkout.routine.ex.length)}</span> : <span>{t('Freestyle workout — add your first exercise.')}</span>}
       </div>
-      {lastWorkout && <Button variant="primary" icon="reset" onClick={() => repeatWorkout(lastWorkout)}>{t('Repeat {0}', lastWorkout.name)}</Button>}
-      <Button variant={lastWorkout ? 'ghost' : 'primary'} icon="shuffle" onClick={() => nav('/workout')}>{t('Start workout')}</Button>
+      <div className="home-now-actions home-now-actions--rest">
+        {lastWorkout && <Button size="sm" variant="primary" onClick={() => repeatWorkout(lastWorkout)}>{t('Repeat {0}', lastWorkout.name)}</Button>}
+        <Button size="sm" variant={lastWorkout ? 'plain' : 'primary'} onClick={() => nav('/workout')}>{lastWorkout ? t('Start another workout') : t('Start workout')}</Button>
+      </div>
     </section>
   }
 
   return <div className="narrow home-view">
     <div className="hdr home-titlebar">
       <div><h1>{t('Today')}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
-      <button className="iconbtn" onClick={() => update(state => { state.theme = state.theme === 'light' ? 'dark' : 'light' })} aria-label={t('Theme')} title={t('Theme')}>
-        <Icon name={S.theme === 'light' ? 'sun' : 'moon'} />
-      </button>
     </div>
 
     {planProgress && <PlanProgress progress={planProgress} />}
@@ -204,7 +208,7 @@ export default function Home() {
         <div><h2>{t('Recent workouts')}</h2><span>{t(S.workouts.length === 1 ? '{0} workout total' : '{0} workouts total', S.workouts.length)}</span></div>
         <Button size="sm" variant="ghost" trailingIcon="chevronRight" onClick={() => nav('/history')}>{t('All')}</Button>
       </div>
-      <div className="list">{recentWorkouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
+      <div className="list home-recent-list">{recentWorkouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
     </section>}
   </div>
 }

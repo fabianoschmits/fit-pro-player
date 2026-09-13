@@ -92,7 +92,7 @@ export default function Plan() {
           <h4 className="sec">{t('Week schedule')}</h4>
           <span className={'tag' + (scheduledDays ? ' acc' : '')}>{scheduledDays} / 7</span>
         </div>
-        <div className="card plan-week-card">
+        <div className="plan-week-card">
           <div className="plan-week-grid">
             {WEEK_DAYS.map(day => {
               const routine = S.routines.find(r => r.id === S.week[day])
@@ -133,7 +133,7 @@ export default function Plan() {
 
     <section className="plan-mode-section">
       <h4 className="sec">{t('Plan style')}</h4>
-      <div className="card plan-mode-card">
+      <div className="plan-mode-card">
         <div><strong>{t('Change plan mode')}</strong><small>{t('Your profile, routines and history are kept in both modes.')}</small></div>
         <div className="plan-mode-options">
           <button className={mode === 'weekly' ? 'on' : ''} aria-pressed={mode === 'weekly'} onClick={() => switchMode('weekly')}><Icon name="calendar" /><span>{t('Weekly plan')}</span>{mode === 'weekly' && <Icon name="check" />}</button>

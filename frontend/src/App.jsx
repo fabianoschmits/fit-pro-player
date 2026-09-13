@@ -165,7 +165,7 @@ function ProfileHeader({ S, preview }) {
     return () => window.clearInterval(interval)
   }, [])
   if (!S.onboardingDone || !profile?.name) return null
-  return <div className="card plan-profile-card app-plan-profile-header" aria-label={profile.name}>
+  return <div className="plan-profile-card app-plan-profile-header" aria-label={profile.name}>
     <span className="profile-card-glow" aria-hidden="true" />
     <span className="plan-profile-avatar" aria-hidden="true">
       <AnimatePresence mode="sync" initial={false}>
