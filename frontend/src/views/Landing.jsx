@@ -7,10 +7,12 @@ import { guestAllowed } from '../lib/guest.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
 import ExerciseGuideAnimation from '../components/ExerciseGuideAnimation.jsx'
+import AvatarImage from '../components/AvatarImage.jsx'
 import BodyMap from '../components/BodyMap.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
+import '../landing.css'
 
 const DAY = 86400000
 const SHOWCASE_EXERCISES = ['0025', '0043', '0032', '0198', '0334']
@@ -141,25 +143,60 @@ function RegisterSheet({ close }) {
   </>
 }
 
-function ExerciseCarousel({ paused, reduced }) {
-  const copies = [0, 1]
+function ExerciseShowcase({ paused, reduced }) {
   return (
     <div className="landing-exercise-marquee">
       <div className={'landing-exercise-track' + (paused || reduced ? ' is-paused' : '')}>
-        {copies.map(copy => (
-          <div className="landing-exercise-set" key={copy} aria-hidden={copy === 1 ? 'true' : undefined}>
-            {SHOWCASE_EXERCISES.map((exercise, index) => (
-              <article className="landing-exercise-card" key={`${copy}-${exercise.id}`}>
-                <div className="landing-exercise-media">
-                  <ExerciseGuideAnimation ex={exercise} playing={!paused && !reduced} />
-                </div>
-                <div className="landing-exercise-copy">
-                  <span className="landing-exercise-number">{String(index + 1).padStart(2, '0')}</span>
-                  <div><strong>{exerciseName(exercise)}</strong><span>{t(exercise.eq || exercise.bp)}</span></div>
-                </div>
-              </article>
-            ))}
+        <div className="landing-exercise-set">
+          {SHOWCASE_EXERCISES.map((exercise, index) => (
+            <article className="landing-exercise-card" key={exercise.id}>
+              <div className="landing-exercise-media">
+                <ExerciseGuideAnimation ex={exercise} playing={!paused && !reduced} />
+              </div>
+              <div className="landing-exercise-copy">
+                <span className="landing-exercise-number">{String(index + 1).padStart(2, '0')}</span>
+                <div><strong>{exerciseName(exercise)}</strong><span>{t(exercise.eq || exercise.bp)}</span></div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HomePreview() {
+  return (
+    <div className="landing-home-preview" aria-label="Prévia da tela inicial do aplicativo">
+      <div className="landing-home-preview-top">
+        <div><span>SEU DIA</span><strong>Hoje</strong></div>
+        <time dateTime="2026-09-13">DOM · 13 SET.</time>
+      </div>
+      <div className="landing-profile-preview">
+        <div className="landing-profile-avatar" aria-hidden="true">
+          <AvatarImage avatarId="avatar-27" loading="lazy" />
+        </div>
+        <div className="landing-profile-copy">
+          <strong>Alex</strong>
+          <p>Hoje o frango evolui.</p>
+          <span>34 anos · 1,78 m · 78,6 kg</span>
+          <div className="landing-profile-goal">
+            <div><small>META DE PESO</small><b>70%</b></div>
+            <i><b /></i>
           </div>
+        </div>
+      </div>
+      <div className="landing-today-preview">
+        <div className="landing-today-heading"><span>PLANO DE HOJE</span><small>6 EXERCÍCIOS</small></div>
+        <div className="landing-today-row">
+          <span className="landing-today-icon"><Icon name="figureStrength" /></span>
+          <div><strong>Dia de Peito</strong><small>Peitorais · última vez há 6 dias</small></div>
+          <span className="landing-today-action">Começar <Icon name="chevronRight" /></span>
+        </div>
+      </div>
+      <div className="landing-week-preview" aria-hidden="true">
+        {[['SEG', '07', true], ['TER', '08'], ['QUA', '09', true], ['QUI', '10'], ['SEX', '11', true], ['SÁB', '12'], ['DOM', '13', false, true]].map(([day, date, done, today]) => (
+          <span className={today ? 'is-today' : done ? 'is-done' : ''} key={day}><small>{day}</small><b>{date}</b><i /></span>
         ))}
       </div>
     </div>
@@ -185,14 +222,24 @@ function WeightPreview() {
   )
 }
 
-function StatsPreview({ paused, reduced, setPaused }) {
+function StatsPreview() {
   const [active, setActive] = useState(0)
+  const tabs = useRef([])
 
-  useEffect(() => {
-    if (paused || reduced) return undefined
-    const timer = setInterval(() => setActive(index => (index + 1) % STAT_VIEWS.length), 4200)
-    return () => clearInterval(timer)
-  }, [paused, reduced])
+  const selectTab = index => {
+    const next = (index + STAT_VIEWS.length) % STAT_VIEWS.length
+    setActive(next)
+    tabs.current[next]?.focus()
+  }
+
+  const onTabKeyDown = (event, index) => {
+    if (event.key === 'ArrowRight') selectTab(index + 1)
+    else if (event.key === 'ArrowLeft') selectTab(index - 1)
+    else if (event.key === 'Home') selectTab(0)
+    else if (event.key === 'End') selectTab(STAT_VIEWS.length - 1)
+    else return
+    event.preventDefault()
+  }
 
   const view = STAT_VIEWS[active]
   return (
@@ -203,18 +250,18 @@ function StatsPreview({ paused, reduced, setPaused }) {
           <h3>{view.title}</h3>
           <p>{view.subtitle}</p>
         </div>
-        <button className="landing-pause" disabled={reduced} onClick={() => setPaused(value => !value)}
-          aria-label={reduced ? 'Movimento reduzido pela preferência do sistema' : paused ? 'Continuar demonstração' : 'Pausar demonstração'}>
-          <Icon name={paused ? 'play' : 'pause'} />
-        </button>
+        <span className="landing-preview-live"><i /> DADOS CONECTADOS</span>
       </div>
       <div className="landing-stat-tabs" role="tablist" aria-label="Visualizações de estatísticas">
         {STAT_VIEWS.map((item, index) => (
-          <button key={item.id} role="tab" aria-selected={index === active} className={index === active ? 'is-active' : ''}
-            onClick={() => { setActive(index); setPaused(true) }}>{item.label}</button>
+          <button key={item.id} ref={element => { tabs.current[index] = element }} role="tab"
+            id={`landing-tab-${item.id}`} aria-controls={`landing-panel-${item.id}`} aria-selected={index === active}
+            tabIndex={index === active ? 0 : -1} className={index === active ? 'is-active' : ''}
+            onKeyDown={event => onTabKeyDown(event, index)} onClick={() => setActive(index)}>{item.label}</button>
         ))}
       </div>
-      <div className={'landing-stat-stage ' + (view.className || '')} key={view.id}>
+      <div className={'landing-stat-stage ' + (view.className || '')} key={view.id} role="tabpanel"
+        id={`landing-panel-${view.id}`} aria-labelledby={`landing-tab-${view.id}`}>
         <BodyMap load={view.load} thresholds={view.thresholds} body="male" decorative />
         <div className="landing-muscle-list">
           {view.rows.map(([label, value, level]) => (
@@ -226,7 +273,6 @@ function StatsPreview({ paused, reduced, setPaused }) {
           ))}
         </div>
       </div>
-      <div className="landing-loop-progress" aria-hidden="true"><i className={paused || reduced ? 'is-paused' : ''} key={`${view.id}-${paused}`} /></div>
     </div>
   )
 }
@@ -235,7 +281,6 @@ function WorkoutPreview({ playing }) {
   const exercise = SHOWCASE_EXERCISES[0]
   return (
     <div className="landing-phone" aria-label="Prévia de um treino em andamento">
-      <div className="landing-phone-status" aria-hidden="true"><b>9:41</b><span><i /><i /><i /></span></div>
       <div className="landing-phone-top"><span><i><Icon name="chevronLeft" /></i> Treino A</span><span>3 de 5</span></div>
       <div className="landing-phone-progress"><i /></div>
       <div className="landing-phone-title">
@@ -251,7 +296,6 @@ function WorkoutPreview({ playing }) {
         </div>
       ))}
       <div className="landing-rest"><span><Icon name="timer" /></span><div><small>DESCANSO</small><b>01:18</b></div><span className="landing-rest-control" aria-hidden="true"><Icon name="pause" /></span></div>
-      <div className="landing-home-indicator" aria-hidden="true" />
     </div>
   )
 }
@@ -295,8 +339,13 @@ export default function Landing() {
     <main className="landing-page">
       <header className="landing-nav-shell">
         <div className="landing-nav">
+          <a className="landing-nav-brand" href="#top" aria-label="Fit Pro Player — início">
+            <img src={BRAND_LOGO} alt="" />
+            <span>FIT PRO PLAYER</span>
+          </a>
           <nav aria-label="Seções da página">
-            <a href="#como-funciona">Exercícios</a>
+            <a href="#treino">Treino</a>
+            <a href="#exercicios">Exercícios</a>
             <a href="#progresso">Progresso</a>
             <a href="#estatisticas">Análise corporal</a>
           </nav>
@@ -306,41 +355,57 @@ export default function Landing() {
 
       <section className="landing-hero" id="top">
         <div className="landing-hero-copy">
-          <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" />
-          <div className="landing-eyebrow">TREINO, PROGRESSO E RECUPERAÇÃO</div>
-          <h1>Seu treino fica mais claro quando tudo está no mesmo lugar.</h1>
-          <p>Planeje a semana, registre cada série e entenda a sua evolução em um aplicativo feito para acompanhar você na academia.</p>
+          <div className="landing-eyebrow">SEU TREINO, SEM RUÍDO</div>
+          <h1>Treine com contexto. Evolua com clareza.</h1>
+          <p>Planejamento, execução, progresso e recuperação vivem no mesmo lugar — do primeiro exercício à decisão sobre o próximo treino.</p>
           <div className="landing-actions">
             <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>{primaryLabel}</Button>
-            <a className="landing-secondary-action" href="#como-funciona">Conhecer o aplicativo <Icon name="chevronRight" /></a>
+            <a className="landing-secondary-action" href="#treino">Conhecer o aplicativo <Icon name="chevronRight" /></a>
           </div>
           {!localEntry && <div className="landing-account-actions">
             {hasPasskey && <button onClick={openRegister}>Criar novo perfil</button>}
             {canGuest && <button onClick={enter}>Continuar sem conta</button>}
           </div>}
-          <div className="landing-trust">
-            <span><b>156</b> exercícios animados</span>
-            <span><b>100%</b> funcional offline</span>
-            <span><b>0</b> anúncios</span>
-          </div>
         </div>
         <div className="landing-hero-visual">
+          <div className="landing-demo-label"><span /> SUA ROTINA, EM CONTEXTO <b>PRÉVIA DO APP</b></div>
+          <HomePreview />
+        </div>
+        <div className="landing-trust">
+          <span><b>156</b><small>exercícios animados</small></span>
+          <span><b>100%</b><small>funcional offline</small></span>
+          <span><b>0</b><small>anúncios</small></span>
+        </div>
+      </section>
+
+      <section className="landing-section landing-workout-section" id="treino">
+        <div className="landing-workout-copy">
+          <span className="landing-section-index">TREINO GUIADO</span>
+          <h2>Da primeira à última série, sem perder o foco.</h2>
+          <p>Carga, repetições, descanso e histórico recente aparecem no momento em que você precisa. Nada compete com a execução.</p>
+          <ul>
+            <li><span>01</span><p><b>Continue de onde parou</b><small>As últimas cargas ficam prontas para consultar.</small></p></li>
+            <li><span>02</span><p><b>Registre no ritmo do treino</b><small>Controles diretos e descanso no mesmo fluxo.</small></p></li>
+            <li><span>03</span><p><b>Termine com o histórico pronto</b><small>Volume e desempenho são calculados na hora.</small></p></li>
+          </ul>
+        </div>
+        <div className="landing-workout-visual">
           <div className="landing-demo-label"><span /> TREINO EM ANDAMENTO <b>TERÇA · 09:41</b></div>
           <WorkoutPreview playing={!paused && !reduced} />
         </div>
       </section>
 
-      <section className="landing-section landing-exercises" id="como-funciona">
+      <section className="landing-section landing-exercises" id="exercicios">
         <div className="landing-section-head">
-          <div><span className="landing-section-index">EXERCÍCIOS</span><h2>Veja a execução. Sem sair do treino.</h2></div>
+          <div><span className="landing-section-index">BIBLIOTECA VISUAL</span><h2>O movimento certo, na hora que você precisa.</h2></div>
           <div className="landing-section-side">
-            <p>Cada movimento é mostrado dentro do próprio aplicativo, com animações rápidas para consultar entre uma série e outra.</p>
+            <p>Consulte a execução dentro do próprio treino. As animações são rápidas, objetivas e podem ser pausadas a qualquer momento.</p>
             <button className="landing-pause-text" disabled={reduced} onClick={() => setPaused(value => !value)}>
               <Icon name={paused ? 'play' : 'pause'} /> {reduced ? 'Movimento reduzido pelo sistema' : paused ? 'Continuar animações' : 'Pausar animações'}
             </button>
           </div>
         </div>
-        <ExerciseCarousel paused={paused} reduced={reduced} />
+        <ExerciseShowcase paused={paused} reduced={reduced} />
       </section>
 
       <section className="landing-section landing-progress-section" id="progresso">
@@ -368,7 +433,7 @@ export default function Landing() {
             <li><Icon name="bolt" /><span><b>Força</b> estima o quanto cada grupo muscular reteve.</span></li>
           </ul>
         </div>
-        <StatsPreview paused={paused} reduced={reduced} setPaused={setPaused} />
+        <StatsPreview />
       </section>
 
       <section className="landing-section landing-feature-section">
@@ -392,6 +457,7 @@ export default function Landing() {
       </section>
 
       <footer className="landing-footer">
+        <a className="landing-footer-brand" href="#top"><img src={BRAND_LOGO} alt="" /><span>FIT PRO PLAYER</span></a>
         <p>Treine com intenção. Acompanhe com clareza.</p>
         <span>Todos os direitos reservados.</span>
       </footer>

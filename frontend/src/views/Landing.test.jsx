@@ -32,6 +32,9 @@ vi.mock('../lib/exercises.js', () => {
 vi.mock('../components/ExerciseGuideAnimation.jsx', () => ({
   default: ({ ex, playing }) => React.createElement('div', { 'data-exercise': ex.id, 'data-playing': playing }),
 }))
+vi.mock('../components/AvatarImage.jsx', () => ({
+  default: ({ avatarId }) => React.createElement('img', { 'data-avatar': avatarId, alt: '' }),
+}))
 vi.mock('../components/BodyMap.jsx', () => ({
   default: props => React.createElement('div', { 'data-body': props.body, 'data-thresholds': !!props.thresholds }),
 }))
@@ -51,7 +54,7 @@ beforeEach(() => {
   globalThis.window = dom
   globalThis.document = dom.document
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.navigator })
-  for (const key of ['HTMLElement', 'HTMLIFrameElement', 'Node', 'Element', 'Event', 'MouseEvent']) globalThis[key] = dom[key]
+  for (const key of ['HTMLElement', 'HTMLIFrameElement', 'Node', 'Element', 'Event', 'MouseEvent', 'KeyboardEvent']) globalThis[key] = dom[key]
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   container = document.createElement('div')
   document.body.append(container)
@@ -71,8 +74,9 @@ describe('public landing page', () => {
   it('shows the product story and enters the standalone app explicitly', async () => {
     await act(async () => { root.render(<Landing />) })
 
-    expect(container.querySelector('h1').textContent).toContain('Seu treino fica mais claro')
-    expect(container.querySelectorAll('[data-exercise]').length).toBe(11)
+    expect(container.querySelector('h1').textContent).toContain('Treine com contexto')
+    expect(container.querySelector('[data-avatar]').getAttribute('data-avatar')).toBe('avatar-27')
+    expect(container.querySelectorAll('[data-exercise]').length).toBe(6)
     expect(container.querySelector('[data-points]').getAttribute('data-points')).toBe('9')
     expect(container.querySelector('[data-body]').getAttribute('data-body')).toBe('male')
     expect(button('Equilíbrio muscular').getAttribute('aria-selected')).toBe('true')
@@ -81,19 +85,20 @@ describe('public landing page', () => {
     expect(mocks.setGuest).toHaveBeenCalledWith(true)
   })
 
-  it('cycles the statistics preview and lets the visitor pause all ambient motion', async () => {
+  it('keeps statistics under visitor control and pauses the exercise previews', async () => {
     await act(async () => { root.render(<Landing />) })
 
-    await act(async () => { await vi.advanceTimersByTimeAsync(4200) })
+    await act(async () => { button('Fadiga').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
     expect(button('Fadiga').getAttribute('aria-selected')).toBe('true')
     expect(container.textContent).toContain('Recuperação em andamento')
+
+    await act(async () => { button('Fadiga').dispatchEvent(new dom.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })) })
+    expect(button('Força').getAttribute('aria-selected')).toBe('true')
+    expect(container.textContent).toContain('Força retida')
 
     await act(async () => { button('Pausar animações').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
     expect(button('Continuar animações')).toBeTruthy()
     expect(container.querySelector('.landing-exercise-track').classList.contains('is-paused')).toBe(true)
-
-    await act(async () => { await vi.advanceTimersByTimeAsync(8400) })
-    expect(button('Fadiga').getAttribute('aria-selected')).toBe('true')
   })
 
   it('builds a marked one-month weight-loss series', () => {
