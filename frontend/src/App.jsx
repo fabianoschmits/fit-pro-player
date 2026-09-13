@@ -29,6 +29,7 @@ const loadLibrary = () => import('./views/Library.jsx')
 const loadSettings = () => import('./views/Settings.jsx')
 const loadAdmin = () => import('./views/Admin.jsx')
 const loadMore = () => import('./views/More.jsx')
+const loadBodyProgress = () => import('./views/BodyProgress.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Landing = lazy(loadLanding)
@@ -42,12 +43,13 @@ const Library = lazy(loadLibrary)
 const Settings = lazy(loadSettings)
 const Admin = lazy(loadAdmin)
 const More = lazy(loadMore)
+const BodyProgress = lazy(loadBodyProgress)
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
   loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(),
-  loadLibrary(), loadSettings(), loadMore(), loadSheets(),
+  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadSheets(),
 ])
 
 const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))
@@ -269,6 +271,7 @@ function Shell() {
                 <Route path="/plan/r/:id" element={<RoutineEdit />} />
                 <Route path="/workout" element={<Workout />} />
                 <Route path="/stats" element={<Stats />} />
+                <Route path="/body-progress" element={<BodyProgress />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />

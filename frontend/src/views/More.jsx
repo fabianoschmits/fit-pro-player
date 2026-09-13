@@ -25,6 +25,8 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/settings')} />
       <Row icon="history" iconTint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')}
         accessory="chevron" onClick={() => nav('/history')} />
+      <Row icon="personCircle" iconTint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo"
+        accessory="chevron" onClick={() => nav('/body-progress')} />
     </Section>
 
     {(user?.admin) && <Section title={t('Admin')}>
