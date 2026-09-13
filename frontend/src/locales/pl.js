@@ -22,6 +22,7 @@ export default {
   'New': 'Nowa',
   'Log': 'Zapisz',
   'Goal': 'Cel',
+  'Weight goal': 'Cel wagowy',
   'Plan': 'Plan',
   'Today': 'Dziś',
   'Home': 'Start',

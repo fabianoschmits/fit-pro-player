@@ -22,6 +22,7 @@ export default {
   'New': 'नई',
   'Log': 'दर्ज करें',
   'Goal': 'लक्ष्य',
+  'Weight goal': 'वज़न का लक्ष्य',
   'Plan': 'योजना',
   'Today': 'आज',
   'Home': 'होम',

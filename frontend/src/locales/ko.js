@@ -22,6 +22,7 @@ export default {
   'New': '새로 만들기',
   'Log': '기록',
   'Goal': '목표',
+  'Weight goal': '목표 체중',
   'Plan': '계획',
   'Today': '오늘',
   'Home': '홈',

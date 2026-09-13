@@ -22,6 +22,7 @@ export default {
   'New': '新建',
   'Log': '记录',
   'Goal': '目标',
+  'Weight goal': '体重目标',
   'Plan': '计划',
   'Today': '今天',
   'Home': '首页',

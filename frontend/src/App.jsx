@@ -16,7 +16,6 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
-import progressDumbbell from './assets/progress-dumbbell.png'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import RestTimer from './components/RestTimer.jsx'
 const loadLanding = () => import('./views/Landing.jsx')
@@ -140,7 +139,7 @@ function RouteFallback() {
   return <div className="route-loading" role="status"><Icon name="dumbbell" /><span className="sr-only">{t('Loading…')}</span></div>
 }
 
-function ProfileHeader({ S, preview }) {
+export function ProfileHeader({ S, preview }) {
   const [messageIndex, setMessageIndex] = useState(0)
   const reduceMotion = useReducedMotion()
   const profile = preview ? { ...S.profile, ...preview } : S.profile
@@ -148,10 +147,10 @@ function ProfileHeader({ S, preview }) {
   const progress = goalProgressPercent == null ? 0 : goalProgressPercent
   const currentWeight = currentProfileWeight(S)
   const age = ageFromBirthDate(profile?.birthDate)
-  const stats = [
-    { icon: 'calendar', value: t('{0} years', age ?? '--') },
-    { icon: 'figureStrength', value: `${heightText(profile?.heightCm) || '--'} m` },
-    { icon: 'scale', value: `${currentWeight ? weightText(currentWeight) : '--'} ${S.unit}` },
+  const facts = [
+    t('{0} years', age ?? '--'),
+    `${heightText(profile?.heightCm) || '--'} m`,
+    `${currentWeight ? weightText(currentWeight) : '--'} ${S.unit}`,
   ]
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -165,56 +164,63 @@ function ProfileHeader({ S, preview }) {
     return () => window.clearInterval(interval)
   }, [])
   if (!S.onboardingDone || !profile?.name) return null
-  return <div className="plan-profile-card app-plan-profile-header" aria-label={profile.name}>
-    <span className="profile-card-glow" aria-hidden="true" />
-    <span className="plan-profile-avatar" aria-hidden="true">
-      <AnimatePresence mode="sync" initial={false}>
+  return <header className="profile-hero" aria-label={profile.name}>
+    <div className="profile-hero-avatar" aria-hidden="true">
+      <AnimatePresence mode="sync">
         <motion.span
           key={profile.avatarId}
-          className="profile-avatar-drop"
-          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -34, scale: 1.03, rotate: -2, filter: 'blur(3px)' }}
-          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: [0, 8, -3, 0], scale: [1, 1.025, 0.995, 1], rotate: [0, -1.8, 1.2, 0], filter: 'blur(0px)' }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 0, scale: 0.995, filter: 'blur(3px)' }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.58, times: [0, 0.46, 0.72, 1], ease: [0.2, 0.8, 0.2, 1] }}
+          className="profile-hero-avatar-enter"
+          initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.26, ease: [0.2, 0.8, 0.2, 1] }}
         >
           <AvatarImage avatarId={profile.avatarId} />
-          <span className="profile-avatar-dust left" />
-          <span className="profile-avatar-dust right" />
         </motion.span>
       </AnimatePresence>
-    </span>
-    <span className="grow app-profile-copy">
-      <strong>{profile.name}</strong>
-      <span className="profile-message-stage" aria-live="polite">
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.small
-            key={messageIndex}
-            className="profile-message"
-            initial={reduceMotion ? { opacity: 1 } : { x: 28, opacity: 0, filter: 'blur(4px)' }}
-            animate={reduceMotion ? { opacity: 1 } : { x: 0, opacity: 1, filter: 'blur(0px)' }}
-            exit={reduceMotion ? { opacity: 0 } : { x: -28, opacity: 0, filter: 'blur(4px)' }}
-            transition={reduceMotion ? { duration: 0 } : { type: 'spring', duration: 0.48, bounce: 0 }}
-          >
-            {PROFILE_MOTIVATION_MESSAGES[messageIndex]}
-          </motion.small>
-        </AnimatePresence>
-      </span>
-    </span>
-    <span className="profile-goal-wrap" aria-label={goalProgressPercent == null ? t('Goal') : `${goalProgressPercent}%`}>
-      <span className="profile-goal-ring" style={{ '--profile-goal-progress': `${progress}%` }}>
-        <img className="profile-goal-icon" src={progressDumbbell} alt="" />
-        <span className="profile-goal-percent">{goalProgressPercent == null ? '--' : `${goalProgressPercent}%`}</span>
-      </span>
-    </span>
-    <span className="profile-stat-stack">
-      {stats.map((stat, index) => (
-        <span className="profile-stat" key={index}>
-          <Icon name={stat.icon} />
-          <b>{stat.value}</b>
-        </span>
-      ))}
-    </span>
-  </div>
+    </div>
+    <div className="profile-hero-content">
+      <div className="profile-hero-copy">
+        <strong className="profile-hero-name">{profile.name}</strong>
+        <div className="profile-hero-message-stage" aria-live="polite">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={messageIndex}
+              className="profile-hero-message"
+              initial={reduceMotion ? { opacity: 1 } : { x: 6, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={reduceMotion ? { opacity: 0 } : { x: -3, opacity: 0 }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              {PROFILE_MOTIVATION_MESSAGES[messageIndex]}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+      </div>
+      <div className="profile-hero-facts">{facts.join(' · ')}</div>
+      <div className="profile-hero-goal">
+        <div className="profile-hero-goal-head" aria-hidden="true">
+          <span>{t('Weight goal')}</span>
+          <strong>{goalProgressPercent == null ? '--' : `${goalProgressPercent}%`}</strong>
+        </div>
+        <div
+          className="profile-hero-progress"
+          role="progressbar"
+          aria-label={t('Weight goal')}
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow={goalProgressPercent == null ? undefined : goalProgressPercent}
+          aria-valuetext={goalProgressPercent == null ? '--' : `${goalProgressPercent}%`}
+        >
+          <motion.span
+            initial={false}
+            animate={{ scaleX: progress / 100 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.28, ease: [0.2, 0.8, 0.2, 1] }}
+          />
+        </div>
+      </div>
+    </div>
+  </header>
 }
 
 function Shell() {

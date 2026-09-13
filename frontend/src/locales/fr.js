@@ -22,6 +22,7 @@ export default {
   'New': 'Nouvelle',
   'Log': 'Noter',
   'Goal': 'Objectif',
+  'Weight goal': 'Objectif de poids',
   'Plan': 'Plan',
   'Today': "Aujourd'hui",
   'Home': 'Accueil',

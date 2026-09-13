@@ -22,6 +22,7 @@ export default {
   'New': 'Yeni',
   'Log': 'Kaydet',
   'Goal': 'Hedef',
+  'Weight goal': 'Kilo hedefi',
   'Plan': 'Plan',
   'Today': 'Bugün',
   'Home': 'Ana sayfa',

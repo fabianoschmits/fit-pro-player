@@ -22,6 +22,7 @@ export default {
   'New': 'Nueva',
   'Log': 'Registrar',
   'Goal': 'Meta',
+  'Weight goal': 'Meta de peso',
   'Plan': 'Plan',
   'Today': 'Hoy',
   'Home': 'Inicio',

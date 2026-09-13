@@ -22,6 +22,7 @@ export default {
   'New': 'Новая',
   'Log': 'Записать',
   'Goal': 'Цель',
+  'Weight goal': 'Целевой вес',
   'Plan': 'План',
   'Today': 'Сегодня',
   'Home': 'Главная',
