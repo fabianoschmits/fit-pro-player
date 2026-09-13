@@ -63,4 +63,17 @@ describe('TabBar scroll stability', () => {
     expect(tabbar.innerHTML).toBe(before)
     expect(container.querySelectorAll('.tab-label')).toHaveLength(5)
   })
+
+  it('keeps Stats selected inside body progress', () => {
+    act(() => {
+      root.render(
+        <MemoryRouter initialEntries={['/body-progress']}>
+          <TabBar onStart={vi.fn()} />
+        </MemoryRouter>,
+      )
+    })
+
+    const stats = container.querySelector('[data-tab-key="stats"]')
+    expect(stats.getAttribute('aria-current')).toBe('page')
+  })
 })

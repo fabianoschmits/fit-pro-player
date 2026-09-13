@@ -61,4 +61,19 @@ describe('state migration for first-run profiles', () => {
 
     expect(restored.profile.startWeight).toBe(72.1)
   })
+
+  it('normalizes body progress records while restoring a backup', () => {
+    const restored = normalizeState({
+      ...DEF,
+      bodyMeasurements: [
+        { date: '2026-09-08', values: { chest: 101 } },
+        { date: '2026-09-12', values: { waist: 88 } },
+      ],
+      bodyMeasurementGoals: { chest: 105, unknown: 10 },
+    })
+
+    expect(restored.bodyMeasurements).toHaveLength(1)
+    expect(restored.bodyMeasurements[0].values).toEqual({ chest: 101, waist: 88 })
+    expect(restored.bodyMeasurementGoals).toEqual({ chest: 105 })
+  })
 })

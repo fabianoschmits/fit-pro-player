@@ -27,6 +27,7 @@ const PILL_SPRING = {
 
 function isActive(cur, k) {
   if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings' || cur === 'library'
+  if (k === 'stats') return cur === 'stats' || cur === 'body-progress'
   if (k === 'start') return cur === 'workout'
   return cur === k
 }

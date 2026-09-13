@@ -27,6 +27,7 @@ function useBodyPaths() {
 }
 
 function View({ view, levels, onMuscle, selected, decorative }) {
+  const selectedMuscles = new Set(Array.isArray(selected) ? selected : selected ? [selected] : [])
   return (
     <svg
       className="bm-v"
@@ -37,11 +38,11 @@ function View({ view, levels, onMuscle, selected, decorative }) {
       focusable="false"
     >
       {INERT.map(slug => (view.p[slug] || []).map((d, i) =>
-        <path key={slug + i} className="bm-sil" d={d} />))}
+        <path key={slug + i} className={'bm-sil' + (selectedMuscles.has(slug) ? ' sel' : '')} d={d} />))}
       {MUSCLES.map(slug => (view.p[slug] || []).map((d, i) =>
         <path
           key={slug + i}
-          className={'bm-m l' + (levels[slug] || 0) + (selected === slug ? ' sel' : '')}
+          className={'bm-m l' + (levels[slug] || 0) + (selectedMuscles.has(slug) ? ' sel' : '')}
           d={d}
           onClick={onMuscle ? () => onMuscle(slug) : undefined}
         >

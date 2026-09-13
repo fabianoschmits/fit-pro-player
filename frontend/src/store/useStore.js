@@ -7,13 +7,14 @@ import { guestAllowed } from '../lib/guest.js'
 import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
 import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from '../lib/starter.js'
 import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
+import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from '../lib/body-measurements.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
   profile: DEFAULT_PROFILE, planMode: 'weekly',
-  bodyweight: [], routines: [], week: {}, dayPlan: {},
+  bodyweight: [], bodyMeasurements: [], bodyMeasurementGoals: {}, routines: [], week: {}, dayPlan: {},
   exWeights: {}, workouts: [], active: null, customEx: [], mediaSize: 'mini',
   // effort: which per-set effort scale is logged — 'none' | 'rir' | 'rpe'. null, not 'none', so
   // that a profile which never chose (loaded state is overlaid on DEF, on every path: local,
@@ -31,7 +32,7 @@ const object = value => value && typeof value === 'object' && !Array.isArray(val
 // enter the new wizard prefilled, while untouched starter plans remain first-run installs.
 function legacyHasPersonalData(state) {
   if (state.onboardingDone || state.active) return true
-  if ((state.workouts || []).length || (state.bodyweight || []).length || (state.customEx || []).length) return true
+  if ((state.workouts || []).length || (state.bodyweight || []).length || (state.bodyMeasurements || []).length || (state.customEx || []).length) return true
   return (state.routines || []).some(routine => !isStarterRoutine(routine))
 }
 
@@ -43,6 +44,8 @@ export function normalizeState(source) {
   const raw = object(source)
   const state = Object.assign(clone(DEF), raw)
   state.bodyweight = Array.isArray(state.bodyweight) ? state.bodyweight : []
+  state.bodyMeasurements = normalizeBodyMeasurementCheckins(state.bodyMeasurements)
+  state.bodyMeasurementGoals = normalizeBodyMeasurementGoals(state.bodyMeasurementGoals)
   state.routines = Array.isArray(state.routines) ? state.routines : []
   state.workouts = Array.isArray(state.workouts) ? state.workouts : []
   state.customEx = Array.isArray(state.customEx) ? state.customEx : []
@@ -75,7 +78,7 @@ function loadState() {
 
 const hasData = st => !!(
   st?.onboardingDone || st?.active || st?.profile?.name
-  || (st?.workouts || []).length || (st?.bodyweight || []).length || (st?.customEx || []).length
+  || (st?.workouts || []).length || (st?.bodyweight || []).length || (st?.bodyMeasurements || []).length || (st?.customEx || []).length
   || (st?.routines || []).some(routine => !isStarterRoutine(routine))
 )
 

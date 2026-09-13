@@ -418,6 +418,12 @@ export default function Stats() {
       <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</b></div>
     </section>
 
+    <button type="button" className="card stats-body-progress-link" onClick={() => nav('/body-progress')}>
+      <span className="stats-body-progress-icon"><Icon name="ruler" /></span>
+      <span><strong>Evolução corporal</strong><small>Medidas semanais, histórico e comparação</small></span>
+      <Icon name="chevronRight" />
+    </button>
+
     <MuscleBalance S={S} />
 
     <TipOnce id="e1rm-tip">
