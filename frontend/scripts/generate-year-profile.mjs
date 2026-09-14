@@ -65,20 +65,35 @@ const LOADS = {
   '0431': [14, 30, 1], '0472': [0, 0, 1], '0687': [0, 0, 1],
 }
 
+// Synthetic anthropometry for a 178 cm man going from BMI 34.7 to 22.4 while
+// resistance training. These are a plausible illustrative trajectory, not a
+// clinical prediction for a real person. Central girths change earlier and more;
+// trained limbs change more slowly as lean tissue is partially preserved.
+// Model basis: Heymsfield et al. (PMID 18834550), CDC/NHANES protocol and adult
+// reference data. Values are relaxed circumferences taken at consistent landmarks.
 const MEASUREMENTS = {
-  neck: [45.5, 38], shoulders: [132, 120], chest: [126, 105],
-  'left-arm': [40.5, 38.5], 'right-arm': [41, 39.2],
-  'left-forearm': [32.5, 31.5], 'right-forearm': [33, 32],
-  waist: [121, 82], abdomen: [128, 86], hips: [118, 99],
-  'left-thigh': [68, 59], 'right-thigh': [69, 60],
-  'left-calf': [43, 39], 'right-calf': [43.5, 39.5],
+  neck: [43.5, 38.5], shoulders: [127, 118], chest: [119, 101.5],
+  'left-arm': [38.7, 34.3], 'right-arm': [39.4, 35],
+  'left-forearm': [31.7, 29.3], 'right-forearm': [32.2, 29.8],
+  waist: [116, 81], abdomen: [122, 84], hips: [112, 94],
+  'left-thigh': [66.5, 55.5], 'right-thigh': [67.3, 56.3],
+  'left-calf': [42.5, 38], 'right-calf': [43, 38.5],
+}
+
+const MEASUREMENT_EXPONENT = {
+  neck: .94, shoulders: .98, chest: .92,
+  'left-arm': 1.04, 'right-arm': 1.04,
+  'left-forearm': 1.08, 'right-forearm': 1.08,
+  waist: .82, abdomen: .8, hips: .92,
+  'left-thigh': 1.02, 'right-thigh': 1.02,
+  'left-calf': 1.08, 'right-calf': 1.08,
 }
 
 const MEASUREMENT_PHASE = Object.fromEntries(Object.keys(MEASUREMENTS).map((id, index) => [id, index * .71 + .3]))
 const MEASUREMENT_NOISE = {
-  neck: .12, shoulders: .25, chest: .25, 'left-arm': .12, 'right-arm': .12,
-  'left-forearm': .08, 'right-forearm': .08, waist: .35, abdomen: .4, hips: .28,
-  'left-thigh': .18, 'right-thigh': .18, 'left-calf': .1, 'right-calf': .1,
+  neck: .2, shoulders: .45, chest: .45, 'left-arm': .25, 'right-arm': .25,
+  'left-forearm': .18, 'right-forearm': .18, waist: .65, abdomen: .75, hips: .48,
+  'left-thigh': .4, 'right-thigh': .4, 'left-calf': .22, 'right-calf': .22,
 }
 
 function buildWeights(sourceWeights) {
@@ -180,7 +195,8 @@ function buildMeasurements(bodyweight, workouts) {
     const values = Object.fromEntries(Object.entries(MEASUREMENTS).map(([partId, [start, finish]]) => {
       const phase = MEASUREMENT_PHASE[partId]
       const noise = taper * MEASUREMENT_NOISE[partId] * (Math.sin(index * 1.21 + phase) + Math.cos(index * .43 + phase) * .45)
-      let value = start + (finish - start) * progress + noise
+      const regionProgress = Math.pow(progress, MEASUREMENT_EXPONENT[partId] || 1)
+      let value = start + (finish - start) * regionProgress + noise
       if (index === 0) value = start
       if (index === thursdays.length - 1) value = finish
       return [partId, round1(value)]
@@ -205,6 +221,16 @@ function validate(state) {
   if (state.bodyMeasurements.length !== 53) errors.push(`esperava 53 check-ins; recebeu ${state.bodyMeasurements.length}`)
   if (new Set(state.bodyMeasurements.map(item => item.week)).size !== 53) errors.push('as semanas de medição precisam ser únicas')
   if (state.bodyMeasurements.some(item => expectedParts.some(partId => !(item.values[partId] > 0)))) errors.push('todo check-in precisa conter as 14 circunferências')
+  expectedParts.forEach(partId => {
+    const values = state.bodyMeasurements.map(item => item.values[partId])
+    const [expectedStart, expectedFinish] = MEASUREMENTS[partId]
+    const changedWeeks = values.slice(1).filter((value, index) => value !== values[index]).length
+    if (values[0] !== expectedStart || values.at(-1) !== expectedFinish) errors.push(`${partId} não respeita os pontos antropométricos inicial/final`)
+    if (new Set(values).size < 20 || changedWeeks < 28) errors.push(`${partId} não apresenta evolução suficiente ao longo do ano`)
+  })
+  ;[['left-arm', 'right-arm'], ['left-forearm', 'right-forearm'], ['left-thigh', 'right-thigh'], ['left-calf', 'right-calf']].forEach(([left, right]) => {
+    if (state.bodyMeasurements.some(item => item.values[right] <= item.values[left])) errors.push(`a assimetria entre ${left}/${right} foi invertida`)
+  })
   if (state.bodyMeasurements.some(item => Object.hasOwn(item, 'weight'))) errors.push('check-ins não devem duplicar o peso corporal')
   if (state.workouts.length !== 260) errors.push(`esperava 260 treinos; recebeu ${state.workouts.length}`)
   if (state.workouts.some(workout => workout.entries.length < 6)) errors.push('todo treino precisa ter pelo menos seis exercícios')
@@ -258,12 +284,12 @@ function generate(source) {
     bodyweight,
     bodyMeasurements,
     bodyMeasurementGoals: {
-      neck: 38, shoulders: 122, chest: 105,
-      'left-arm': 39, 'right-arm': 39.5,
-      'left-forearm': 31.5, 'right-forearm': 32,
-      waist: 82, abdomen: 85, hips: 99,
-      'left-thigh': 59, 'right-thigh': 60,
-      'left-calf': 39, 'right-calf': 39.5,
+      neck: 38.5, shoulders: 118, chest: 101.5,
+      'left-arm': 34.3, 'right-arm': 35,
+      'left-forearm': 29.3, 'right-forearm': 29.8,
+      waist: 81, abdomen: 84, hips: 94,
+      'left-thigh': 55.5, 'right-thigh': 56.3,
+      'left-calf': 38, 'right-calf': 38.5,
     },
     exWeights,
     effort: 'rir',

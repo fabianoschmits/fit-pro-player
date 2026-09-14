@@ -103,6 +103,29 @@ describe('body progress page', () => {
     expect(container.textContent).toContain('-2 cm')
   })
 
+  it('compares the first check-in with the latest one by default', async () => {
+    const firstValues = Object.fromEntries(BODY_MEASUREMENT_PARTS.map((part, index) => [part.id, 100 + index]))
+    const middleValues = Object.fromEntries(BODY_MEASUREMENT_PARTS.map((part, index) => [part.id, 95 + index]))
+    const lastValues = Object.fromEntries(BODY_MEASUREMENT_PARTS.map((part, index) => [part.id, 90 + index]))
+    firstValues['left-arm'] = 37
+    middleValues['left-arm'] = 39
+    lastValues['left-arm'] = 40
+    mocks.S.bodyMeasurements = [
+      { date: '2026-08-24', values: firstValues },
+      { date: '2026-08-31', values: middleValues },
+      { date: '2026-09-07', values: lastValues },
+    ]
+    await render()
+    await click(button('Comparar'))
+
+    const selectors = [...container.querySelectorAll('.bp-date-selectors select')]
+    expect(selectors[0].value).toBe('body-2026-08-24')
+    expect(selectors[1].value).toBe('body-2026-09-07')
+    expect(container.querySelectorAll('.bp-compare-row:not(.header)')).toHaveLength(BODY_MEASUREMENT_PARTS.length)
+    expect(container.textContent).toContain('-10 cm')
+    expect(container.textContent).toContain('+3 cm')
+  })
+
   it('synchronizes the historical silhouette, date slider and exact chart series', async () => {
     mocks.S.bodyweight = [
       { d: '2026-08-31', w: 101 },

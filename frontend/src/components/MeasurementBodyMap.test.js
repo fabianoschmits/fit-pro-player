@@ -14,6 +14,30 @@ describe('measurement body-map proportions', () => {
     expect(finish.chest).toBeLessThan(start.chest)
   })
 
+  it('lets every recorded circumference family change the historical silhouette', () => {
+    const baseline = {
+      neck: 43.5, shoulders: 127, chest: 119,
+      'left-arm': 38.7, 'right-arm': 39.4,
+      'left-forearm': 31.7, 'right-forearm': 32.2,
+      waist: 116, abdomen: 122, hips: 112,
+      'left-thigh': 66.5, 'right-thigh': 67.3,
+      'left-calf': 42.5, 'right-calf': 43,
+    }
+    const finishValues = {
+      neck: 38.5, shoulders: 118, chest: 101.5,
+      'left-arm': 34.3, 'right-arm': 35,
+      'left-forearm': 29.3, 'right-forearm': 29.8,
+      waist: 81, abdomen: 84, hips: 94,
+      'left-thigh': 55.5, 'right-thigh': 56.3,
+      'left-calf': 38, 'right-calf': 38.5,
+    }
+    const start = measurementShapeScales(baseline, baseline, 'male')
+    const finish = measurementShapeScales(finishValues, baseline, 'male')
+
+    ;['neck', 'deltoids', 'chest', 'biceps', 'forearm', 'obliques', 'abs', 'gluteal', 'quadriceps', 'calves']
+      .forEach(region => expect(finish[region]).not.toBe(start[region]))
+  })
+
   it('keeps unrelated regions neutral when no circumference exists', () => {
     const scales = measurementShapeScales({ abdomen: 120 }, {}, 'male')
     expect(scales.abs).toBeGreaterThan(1)

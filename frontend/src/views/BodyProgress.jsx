@@ -504,13 +504,13 @@ function CheckinHistory({ S, checkins, onOpenEvolution }) {
 }
 
 function CompareView({ checkins }) {
-  const [fromId, setFromId] = useState(checkins.at(-2)?.id || checkins[0]?.id || '')
+  const [fromId, setFromId] = useState(checkins[0]?.id || '')
   const [toId, setToId] = useState(checkins.at(-1)?.id || '')
   const from = checkins.find(item => item.id === fromId) || checkins[0]
   const to = checkins.find(item => item.id === toId) || checkins.at(-1)
 
   useEffect(() => {
-    if (!checkins.some(item => item.id === fromId)) setFromId(checkins.at(-2)?.id || checkins[0]?.id || '')
+    if (!checkins.some(item => item.id === fromId)) setFromId(checkins[0]?.id || '')
     if (!checkins.some(item => item.id === toId)) setToId(checkins.at(-1)?.id || '')
   }, [checkins, fromId, toId])
 
