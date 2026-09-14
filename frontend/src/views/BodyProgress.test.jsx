@@ -63,7 +63,7 @@ afterEach(async () => {
 describe('body progress page', () => {
   it('starts empty and uses the configured real-body wrapper in both views', async () => {
     await render()
-    expect(container.textContent).toContain('0 de 14 medidas')
+    expect(container.textContent).toContain('0 de 14 circunferências')
     expect(container.textContent).not.toContain('101 cm')
     expect(mocks.mapProps.body).toBe('female')
     expect(mocks.mapProps.view).toBe('front')
@@ -100,5 +100,25 @@ describe('body progress page', () => {
     expect(container.textContent).toContain('Escolha dois momentos')
     expect(container.textContent).toContain('+2 cm')
     expect(container.textContent).toContain('-2 cm')
+  })
+
+  it('synchronizes the historical silhouette, date slider and exact chart series', async () => {
+    mocks.S.bodyweight = [
+      { d: '2026-08-31', w: 101 },
+      { d: '2026-09-07', w: 98 },
+    ]
+    mocks.S.bodyMeasurements = [
+      { date: '2026-08-31', values: { chest: 110, abdomen: 120 } },
+      { date: '2026-09-07', values: { chest: 106, abdomen: 114 } },
+    ]
+    await render()
+    await click(button('Evolução'))
+
+    expect(container.textContent).toContain('Evolução no tempo')
+    expect(container.querySelector('input[type="range"]')).not.toBeNull()
+    expect(mocks.mapProps.baselineValues).toMatchObject({ chest: 110, abdomen: 120 })
+    expect(mocks.mapProps.shapeValues).toMatchObject({ chest: 106, abdomen: 114 })
+    expect(container.textContent).toContain('2 de 2')
+    expect(container.textContent).toContain('2 registros')
   })
 })

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
-  bodyMeasurementDelta, bodyMeasurementHistory, bodyMeasurementWeekKey,
+  BODY_MEASUREMENT_BY_ID, bodyMeasurementDelta, bodyMeasurementHistory,
+  bodyMeasurementHistoryInPeriod, bodyMeasurementSnapshots, bodyMeasurementWeekKey,
   currentBodyMeasurementCheckin, latestBodyMeasurements, normalizeBodyMeasurementCheckins,
-  normalizeBodyMeasurementGoals, removeBodyMeasurement, upsertBodyMeasurement,
+  interpolateBodyMeasurementSnapshot, normalizeBodyMeasurementGoals,
+  removeBodyMeasurement, upsertBodyMeasurement,
 } from './body-measurements.js'
 
 describe('body measurement check-ins', () => {
@@ -47,5 +49,44 @@ describe('body measurement check-ins', () => {
   it('removes one value without deleting the rest of its check-in', () => {
     const checkins = [{ id: 'week', date: '2026-09-07', values: { chest: 100, waist: 88 } }]
     expect(removeBodyMeasurement(checkins, 'week', 'chest')[0].values).toEqual({ waist: 88 })
+  })
+
+  it('describes body entries as complete circumferences instead of individual muscles', () => {
+    expect(BODY_MEASUREMENT_BY_ID.chest.label).toBe('Tórax')
+    expect(BODY_MEASUREMENT_BY_ID.chest.circumferenceLabel).toBe('Circunferência do tórax')
+    expect(BODY_MEASUREMENT_BY_ID.abdomen.guide).toContain('ao redor de todo o abdômen')
+    expect(BODY_MEASUREMENT_BY_ID.hips.label).toBe('Quadris')
+  })
+
+  it('preserves the source of carried values and interpolates only the visual snapshot', () => {
+    const checkins = [
+      { date: '2026-08-03', values: { chest: 110, abdomen: 120 } },
+      { date: '2026-08-10', values: { chest: 106 } },
+    ]
+    const snapshots = bodyMeasurementSnapshots(checkins)
+    expect(snapshots[1].values).toEqual({ chest: 106, abdomen: 120 })
+    expect(snapshots[1].directValues).toEqual({ chest: 106 })
+    expect(snapshots[1].sources).toEqual({ chest: '2026-08-10', abdomen: '2026-08-03' })
+
+    const halfway = interpolateBodyMeasurementSnapshot(checkins, new Date('2026-08-06T12:00:00').getTime())
+    expect(halfway.values.chest).toBeCloseTo(108.3, 1)
+    expect(halfway.values.abdomen).toBe(120)
+  })
+
+  it('uses the selected period and historical date in the actual chart series', () => {
+    const checkins = [
+      { date: '2026-01-01', values: { waist: 110 } },
+      { date: '2026-06-01', values: { waist: 95 } },
+      { date: '2026-09-01', values: { waist: 88 } },
+    ]
+    expect(bodyMeasurementHistoryInPeriod(checkins, 'waist', 120).map(point => point.value)).toEqual([95, 88])
+    expect(bodyMeasurementHistoryInPeriod(checkins, 'waist', 365, new Date('2026-06-01T12:00:00').getTime()).map(point => point.value)).toEqual([110, 95])
+  })
+
+  it('does not leak a lone old measurement into a shorter historical period', () => {
+    const checkins = [{ date: '2025-01-08', values: { waist: 94 } }]
+    const through = new Date('2025-06-01T12:00:00').getTime()
+    expect(bodyMeasurementHistoryInPeriod(checkins, 'waist', 30, through)).toEqual([])
+    expect(bodyMeasurementHistoryInPeriod(checkins, 'waist', 0, through)).toHaveLength(1)
   })
 })

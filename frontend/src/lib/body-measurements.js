@@ -1,21 +1,23 @@
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export const BODY_MEASUREMENT_PARTS = [
-  { id: 'neck', label: 'Pescoço', shortLabel: 'Pescoço', muscles: ['neck', 'trapezius'], view: 'front', guide: 'Meça ao redor da base do pescoço, mantendo a fita nivelada.' },
-  { id: 'shoulders', label: 'Ombros', shortLabel: 'Ombros', muscles: ['deltoids', 'upper-back'], view: 'back', guide: 'Passe a fita pela parte mais larga dos ombros e mantenha os braços relaxados.' },
-  { id: 'chest', label: 'Peitoral', shortLabel: 'Peitoral', muscles: ['chest', 'serratus'], view: 'front', guide: 'Meça na altura dos mamilos, após uma expiração normal.' },
-  { id: 'left-arm', label: 'Braço esquerdo', shortLabel: 'Braço E', muscles: ['biceps', 'triceps'], view: 'front', side: 'left', pair: 'arms', guide: 'Meça a parte mais larga do braço, relaxado e sem contrair.' },
-  { id: 'right-arm', label: 'Braço direito', shortLabel: 'Braço D', muscles: ['biceps', 'triceps'], view: 'front', side: 'right', pair: 'arms', guide: 'Meça a parte mais larga do braço, relaxado e sem contrair.' },
-  { id: 'left-forearm', label: 'Antebraço esquerdo', shortLabel: 'Antebraço E', muscles: ['forearm'], view: 'front', side: 'left', pair: 'forearms', guide: 'Meça a circunferência mais larga do antebraço com a mão relaxada.' },
-  { id: 'right-forearm', label: 'Antebraço direito', shortLabel: 'Antebraço D', muscles: ['forearm'], view: 'front', side: 'right', pair: 'forearms', guide: 'Meça a circunferência mais larga do antebraço com a mão relaxada.' },
-  { id: 'waist', label: 'Cintura', shortLabel: 'Cintura', muscles: ['obliques', 'lower-back'], view: 'front', guide: 'Meça a parte mais estreita do tronco, sem prender a respiração.' },
-  { id: 'abdomen', label: 'Abdômen', shortLabel: 'Abdômen', muscles: ['abs'], view: 'front', guide: 'Passe a fita na altura do umbigo, sem comprimir a pele.' },
-  { id: 'hips', label: 'Quadril', shortLabel: 'Quadril', muscles: ['gluteal', 'hip-flexors'], view: 'back', guide: 'Meça ao redor da parte mais larga dos glúteos.' },
-  { id: 'left-thigh', label: 'Coxa esquerda', shortLabel: 'Coxa E', muscles: ['quadriceps', 'hamstring', 'adductors'], view: 'front', side: 'left', pair: 'thighs', guide: 'Meça a parte mais larga da coxa, com o peso distribuído nos dois pés.' },
-  { id: 'right-thigh', label: 'Coxa direita', shortLabel: 'Coxa D', muscles: ['quadriceps', 'hamstring', 'adductors'], view: 'front', side: 'right', pair: 'thighs', guide: 'Meça a parte mais larga da coxa, com o peso distribuído nos dois pés.' },
-  { id: 'left-calf', label: 'Panturrilha esquerda', shortLabel: 'Panturrilha E', muscles: ['calves', 'tibialis'], view: 'back', side: 'left', pair: 'calves', guide: 'Meça a parte mais larga da panturrilha em pé e com a perna relaxada.' },
-  { id: 'right-calf', label: 'Panturrilha direita', shortLabel: 'Panturrilha D', muscles: ['calves', 'tibialis'], view: 'back', side: 'right', pair: 'calves', guide: 'Meça a parte mais larga da panturrilha em pé e com a perna relaxada.' },
+  { id: 'neck', label: 'Pescoço', circumferenceLabel: 'Circunferência do pescoço', shortLabel: 'Pescoço', shapeKey: 'neck', muscles: ['neck', 'trapezius'], view: 'front', guide: 'Contorne a base do pescoço, logo abaixo da laringe, com a cabeça neutra e a fita nivelada.' },
+  { id: 'shoulders', label: 'Ombros', circumferenceLabel: 'Circunferência dos ombros', shortLabel: 'Ombros', shapeKey: 'shoulders', muscles: ['deltoids', 'upper-back'], view: 'back', guide: 'Passe a fita ao redor da maior circunferência dos deltoides, cruzando a parte superior do tórax e das costas, com os braços relaxados.' },
+  { id: 'chest', label: 'Tórax', circumferenceLabel: 'Circunferência do tórax', shortLabel: 'Tórax', shapeKey: 'chest', muscles: ['chest', 'serratus'], view: 'front', guide: 'Meça horizontalmente na linha dos mamilos ou no ponto mais cheio do busto, passando pelas escápulas, após uma expiração normal.' },
+  { id: 'left-arm', label: 'Braço esquerdo', circumferenceLabel: 'Circunferência do braço esquerdo', shortLabel: 'Braço E', shapeKey: 'arms', muscles: ['biceps', 'triceps'], view: 'front', side: 'left', pair: 'arms', guide: 'No ponto médio entre o ombro e o cotovelo, contorne o braço solto ao lado do corpo, sem contrair.' },
+  { id: 'right-arm', label: 'Braço direito', circumferenceLabel: 'Circunferência do braço direito', shortLabel: 'Braço D', shapeKey: 'arms', muscles: ['biceps', 'triceps'], view: 'front', side: 'right', pair: 'arms', guide: 'No ponto médio entre o ombro e o cotovelo, contorne o braço solto ao lado do corpo, sem contrair.' },
+  { id: 'left-forearm', label: 'Antebraço esquerdo', circumferenceLabel: 'Circunferência do antebraço esquerdo', shortLabel: 'Antebraço E', shapeKey: 'forearms', muscles: ['forearm'], view: 'front', side: 'left', pair: 'forearms', guide: 'Contorne a parte mais larga do antebraço, com o cotovelo estendido e a mão relaxada.' },
+  { id: 'right-forearm', label: 'Antebraço direito', circumferenceLabel: 'Circunferência do antebraço direito', shortLabel: 'Antebraço D', shapeKey: 'forearms', muscles: ['forearm'], view: 'front', side: 'right', pair: 'forearms', guide: 'Contorne a parte mais larga do antebraço, com o cotovelo estendido e a mão relaxada.' },
+  { id: 'waist', label: 'Cintura', circumferenceLabel: 'Circunferência da cintura', shortLabel: 'Cintura', shapeKey: 'waist', muscles: ['obliques', 'lower-back'], view: 'front', guide: 'Meça no ponto médio entre a última costela e o topo do quadril, após uma expiração normal, sem encolher a barriga.' },
+  { id: 'abdomen', label: 'Abdômen', circumferenceLabel: 'Circunferência do abdômen', shortLabel: 'Abdômen', shapeKey: 'abdomen', muscles: ['abs'], view: 'front', guide: 'Passe a fita horizontalmente ao redor de todo o abdômen, na altura do umbigo, sem prender a respiração nem comprimir a pele.' },
+  { id: 'hips', label: 'Quadris', circumferenceLabel: 'Circunferência dos quadris', shortLabel: 'Quadris', shapeKey: 'hips', muscles: ['gluteal', 'hip-flexors'], view: 'back', guide: 'Contorne a parte mais larga dos glúteos, com os pés juntos e o peso igualmente distribuído.' },
+  { id: 'left-thigh', label: 'Coxa esquerda', circumferenceLabel: 'Circunferência da coxa esquerda', shortLabel: 'Coxa E', shapeKey: 'thighs', muscles: ['quadriceps', 'hamstring', 'adductors'], view: 'front', side: 'left', pair: 'thighs', guide: 'No ponto médio entre a virilha e o topo da patela, contorne a coxa com a perna relaxada.' },
+  { id: 'right-thigh', label: 'Coxa direita', circumferenceLabel: 'Circunferência da coxa direita', shortLabel: 'Coxa D', shapeKey: 'thighs', muscles: ['quadriceps', 'hamstring', 'adductors'], view: 'front', side: 'right', pair: 'thighs', guide: 'No ponto médio entre a virilha e o topo da patela, contorne a coxa com a perna relaxada.' },
+  { id: 'left-calf', label: 'Panturrilha esquerda', circumferenceLabel: 'Circunferência da panturrilha esquerda', shortLabel: 'Panturrilha E', shapeKey: 'calves', muscles: ['calves', 'tibialis'], view: 'back', side: 'left', pair: 'calves', guide: 'Contorne a parte mais larga da panturrilha em pé, com o peso distribuído nos dois pés.' },
+  { id: 'right-calf', label: 'Panturrilha direita', circumferenceLabel: 'Circunferência da panturrilha direita', shortLabel: 'Panturrilha D', shapeKey: 'calves', muscles: ['calves', 'tibialis'], view: 'back', side: 'right', pair: 'calves', guide: 'Contorne a parte mais larga da panturrilha em pé, com o peso distribuído nos dois pés.' },
 ]
+
+export const BODY_MEASUREMENT_PROTOCOL = 'Use uma fita métrica flexível e inextensível, sempre nivelada, justa sem apertar a pele e nas mesmas condições de horário, hidratação e treino.'
 
 export const BODY_MEASUREMENT_BY_ID = Object.fromEntries(BODY_MEASUREMENT_PARTS.map(part => [part.id, part]))
 const VALID_PARTS = new Set(BODY_MEASUREMENT_PARTS.map(part => part.id))
@@ -116,6 +118,65 @@ export function latestBodyMeasurements(checkins, throughDate = '9999-12-31') {
     if (item.date <= throughDate) Object.assign(latest, item.values)
   })
   return latest
+}
+
+export function bodyMeasurementSnapshots(checkins) {
+  const latest = {}
+  const sources = {}
+  return normalizeBodyMeasurementCheckins(checkins).map(item => {
+    Object.entries(item.values).forEach(([partId, value]) => {
+      latest[partId] = value
+      sources[partId] = item.date
+    })
+    return {
+      ...item,
+      values: { ...latest },
+      sources: { ...sources },
+      directValues: { ...item.values },
+    }
+  })
+}
+
+export function interpolateBodyMeasurementSnapshot(checkins, timestamp) {
+  const snapshots = bodyMeasurementSnapshots(checkins)
+  if (!snapshots.length) return null
+  const times = snapshots.map(item => new Date(`${item.date}T12:00:00`).getTime())
+  const requested = Number.isFinite(Number(timestamp)) ? Number(timestamp) : times.at(-1)
+  const time = Math.min(times.at(-1), Math.max(times[0], requested))
+  let upperIndex = times.findIndex(value => value >= time)
+  if (upperIndex < 0) upperIndex = times.length - 1
+  const lowerIndex = Math.max(0, times[upperIndex] === time ? upperIndex : upperIndex - 1)
+  const lower = snapshots[lowerIndex]
+  const upper = snapshots[upperIndex]
+  const span = times[upperIndex] - times[lowerIndex]
+  const progress = span > 0 ? (time - times[lowerIndex]) / span : 0
+  const values = {}
+  const partIds = new Set([...Object.keys(lower.values), ...Object.keys(upper.values)])
+  partIds.forEach(partId => {
+    const from = lower.values[partId]
+    const to = upper.values[partId]
+    if (from != null && to != null) values[partId] = Math.round((from + (to - from) * progress) * 100) / 100
+    else if (from != null) values[partId] = from
+    else if (to != null) values[partId] = to
+  })
+  const nearestIndex = progress < 0.5 ? lowerIndex : upperIndex
+  return {
+    time,
+    progress,
+    lower,
+    upper,
+    nearest: snapshots[nearestIndex],
+    nearestIndex,
+    values,
+  }
+}
+
+export function bodyMeasurementHistoryInPeriod(checkins, partId, days = 0, throughTimestamp = Infinity) {
+  const history = bodyMeasurementHistory(checkins, partId).filter(point => point.t <= throughTimestamp)
+  if (!days || !history.length) return history
+  const anchor = Number.isFinite(throughTimestamp) ? throughTimestamp : history.at(-1).t
+  const cutoff = anchor - days * 86400000
+  return history.filter(point => point.t >= cutoff)
 }
 
 export function bodyMeasurementHistory(checkins, partId) {

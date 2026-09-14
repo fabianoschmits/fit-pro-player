@@ -1,60 +1,221 @@
+import { useEffect, useRef, useState } from 'react'
 import BodyMap from './BodyMap.jsx'
 import { BODY_MEASUREMENT_BY_ID, BODY_MEASUREMENT_PARTS } from '../lib/body-measurements.js'
 
-const HOTSPOTS = {
+const LANDMARKS = {
   front: {
-    neck: [50, 14], shoulders: [50, 22], chest: [50, 30],
-    'left-arm': [78, 35], 'right-arm': [22, 35],
-    'left-forearm': [84, 47], 'right-forearm': [16, 47],
-    waist: [50, 45], abdomen: [50, 53], hips: [50, 61],
-    'left-thigh': [62, 70], 'right-thigh': [38, 70],
-    'left-calf': [62, 87], 'right-calf': [38, 87],
+    neck: [.5, .145], shoulders: [.5, .19], chest: [.5, .245],
+    'left-arm': [.73, .3], 'right-arm': [.27, .3],
+    'left-forearm': [.8, .43], 'right-forearm': [.2, .43],
+    waist: [.5, .35], abdomen: [.5, .405], hips: [.5, .495],
+    'left-thigh': [.61, .62], 'right-thigh': [.39, .62],
+    'left-calf': [.61, .82], 'right-calf': [.39, .82],
   },
   back: {
-    neck: [50, 14], shoulders: [50, 23], chest: [50, 31],
-    'left-arm': [22, 36], 'right-arm': [78, 36],
-    'left-forearm': [16, 48], 'right-forearm': [84, 48],
-    waist: [50, 46], abdomen: [50, 53], hips: [50, 61],
-    'left-thigh': [38, 71], 'right-thigh': [62, 71],
-    'left-calf': [38, 87], 'right-calf': [62, 87],
+    neck: [.5, .145], shoulders: [.5, .19], chest: [.5, .255],
+    'left-arm': [.27, .3], 'right-arm': [.73, .3],
+    'left-forearm': [.2, .43], 'right-forearm': [.8, .43],
+    waist: [.5, .36], abdomen: [.5, .41], hips: [.5, .5],
+    'left-thigh': [.39, .62], 'right-thigh': [.61, .62],
+    'left-calf': [.39, .82], 'right-calf': [.61, .82],
   },
 }
 
-export default function MeasurementBodyMap({ body, view, selected, latestValues, weekValues, onSelect }) {
+const BODY_VIEWBOX = {
+  male: {
+    front: { x: 0, y: 95, width: 727, height: 1280 },
+    back: { x: 718, y: 95, width: 727, height: 1280 },
+  },
+  female: {
+    front: { x: 0, y: 0, width: 650, height: 1450 },
+    back: { x: 823, y: 0, width: 650, height: 1450 },
+  },
+}
+
+const REFERENCE_CM = {
+  male: {
+    neck: 38, shoulders: 112, chest: 98, 'left-arm': 33.5, 'right-arm': 33.5,
+    'left-forearm': 28.2, 'right-forearm': 28.2, waist: 84, abdomen: 88, hips: 96,
+    'left-thigh': 56, 'right-thigh': 56, 'left-calf': 36.5, 'right-calf': 36.5,
+  },
+  female: {
+    neck: 33.5, shoulders: 100, chest: 92, 'left-arm': 29, 'right-arm': 29,
+    'left-forearm': 24.5, 'right-forearm': 24.5, waist: 72, abdomen: 80, hips: 98,
+    'left-thigh': 56, 'right-thigh': 56, 'left-calf': 35.5, 'right-calf': 35.5,
+  },
+}
+
+const RING_RADIUS = {
+  neck: 5.5, shoulders: 25.5, chest: 20, 'left-arm': 4.7, 'right-arm': 4.7,
+  'left-forearm': 3.9, 'right-forearm': 3.9, waist: 14.8, abdomen: 17.3, hips: 19.3,
+  'left-thigh': 6.4, 'right-thigh': 6.4, 'left-calf': 4.8, 'right-calf': 4.8,
+}
+
+// A circumference crosses more than one anatomical surface. Keep the original
+// body-map geometry and highlight every drawable region the tape passes over,
+// including the matching rear muscles when the user switches to the back view.
+export const MEASUREMENT_MUSCLES = {
+  neck: ['neck', 'trapezius'],
+  shoulders: ['trapezius', 'deltoids', 'upper-back'],
+  chest: ['chest', 'serratus', 'upper-back'],
+  'left-arm': ['biceps', 'triceps'],
+  'right-arm': ['biceps', 'triceps'],
+  'left-forearm': ['forearm'],
+  'right-forearm': ['forearm'],
+  waist: ['obliques', 'lower-back'],
+  abdomen: ['abs', 'obliques', 'lower-back'],
+  hips: ['hip-flexors', 'gluteal'],
+  'left-thigh': ['quadriceps', 'hamstring', 'adductors'],
+  'right-thigh': ['quadriceps', 'hamstring', 'adductors'],
+  'left-calf': ['calves', 'tibialis'],
+  'right-calf': ['calves', 'tibialis'],
+}
+
+export const measurementMusclesFor = partId => MEASUREMENT_MUSCLES[partId] || []
+
+function landmarkStyle([u, v], box, size) {
+  if (!size?.width || !size?.height) return { '--hotspot-x': `${u * 100}%`, '--hotspot-y': `${v * 100}%` }
+  const viewAspect = box.width / box.height
+  const hostAspect = size.width / size.height
+  const renderWidth = hostAspect > viewAspect ? size.height * viewAspect : size.width
+  const renderHeight = hostAspect > viewAspect ? size.height : size.width / viewAspect
+  const x = (size.width - renderWidth) / 2 + u * renderWidth
+  const y = (size.height - renderHeight) / 2 + v * renderHeight
+  return { '--hotspot-x': `${x}px`, '--hotspot-y': `${y}px` }
+}
+
+const clamp = (min, value, max) => Math.min(max, Math.max(min, value))
+const mean = values => {
+  const valid = values.filter(value => Number.isFinite(value))
+  return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : 1
+}
+
+function scaleFor(values, baselineValues, body, partId) {
+  const value = Number(values?.[partId])
+  const reference = REFERENCE_CM[body]?.[partId] || REFERENCE_CM.male[partId]
+  if (!(value > 0)) return 1
+  const baseline = Number(baselineValues?.[partId])
+  const absoluteChange = value / reference - 1
+  const relativeChange = baseline > 0 ? value / baseline - 1 : 0
+  return clamp(.76, 1 + absoluteChange * 1.05 + relativeChange * .42, 1.34)
+}
+
+export function measurementShapeScales(values = {}, baselineValues = {}, body = 'male') {
+  const scale = id => scaleFor(values, baselineValues, body, id)
+  const arms = mean([scale('left-arm'), scale('right-arm')])
+  const forearms = mean([scale('left-forearm'), scale('right-forearm')])
+  const thighs = mean([scale('left-thigh'), scale('right-thigh')])
+  const calves = mean([scale('left-calf'), scale('right-calf')])
+  const waist = scale('waist')
+  const abdomen = scale('abdomen')
+  const hips = scale('hips')
+  const shoulders = scale('shoulders')
+  const chest = scale('chest')
+  return {
+    neck: scale('neck'),
+    trapezius: mean([scale('neck'), shoulders]),
+    deltoids: shoulders,
+    'upper-back': mean([shoulders, chest]),
+    chest,
+    serratus: mean([chest, waist]),
+    obliques: mean([waist, abdomen, abdomen]),
+    abs: abdomen,
+    'lower-back': mean([waist, abdomen]),
+    gluteal: hips,
+    'hip-flexors': hips,
+    biceps: arms,
+    triceps: arms,
+    forearm: forearms,
+    adductors: mean([hips, thighs]),
+    quadriceps: thighs,
+    hamstring: thighs,
+    calves,
+    tibialis: calves,
+  }
+}
+
+export default function MeasurementBodyMap({
+  body = 'male', view = 'front', selected, latestValues = {}, weekValues = {}, shapeValues,
+  baselineValues = {}, directValues, instant = false, onSelect,
+}) {
+  const values = shapeValues || { ...latestValues, ...weekValues }
+  const direct = directValues || weekValues
+  const shapeScales = measurementShapeScales(values, baselineValues, body)
   const selectedPart = BODY_MEASUREMENT_BY_ID[selected]
-  const mapLoad = {}
-  BODY_MEASUREMENT_PARTS.forEach(part => {
-    const level = weekValues[part.id] != null ? 2 : latestValues[part.id] != null ? 1 : 0
-    part.muscles.forEach(slug => { mapLoad[slug] = Math.max(mapLoad[slug] || 0, level) })
-  })
-  return <div className="measurement-map-stage">
+  const selectedValue = values[selected]
+  const selectedMuscles = measurementMusclesFor(selected)
+  const stageRef = useRef(null)
+  const [stageSize, setStageSize] = useState(null)
+  const box = BODY_VIEWBOX[body]?.[view] || BODY_VIEWBOX.male[view]
+
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!stage) return undefined
+    const measure = () => {
+      const rect = stage.getBoundingClientRect()
+      setStageSize(current => current?.width === rect.width && current?.height === rect.height
+        ? current
+        : { width: rect.width, height: rect.height })
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', measure)
+      return () => window.removeEventListener('resize', measure)
+    }
+    const observer = new ResizeObserver(measure)
+    observer.observe(stage)
+    return () => observer.disconnect()
+  }, [])
+
+  return <div ref={stageRef} className={`measurement-map-stage${instant ? ' is-scrubbing' : ''}`}>
     <BodyMap
       className="tappable measurement-bodymap"
       body={body}
       view={view}
-      load={mapLoad}
-      thresholds={[{ at: 0, level: 0 }, { at: 1, level: 1 }, { at: 2, level: 4 }]}
-      selected={selectedPart?.muscles || []}
+      load={{}}
       decorative
+      selected={selectedMuscles}
+      selectedSide={selectedPart?.side}
+      shapeScales={shapeScales}
+      shapeInstant={instant}
     />
-    <div className="measurement-hotspots" aria-label="Regiões para medir">
+    <svg className="measurement-rings" viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`} preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
       {BODY_MEASUREMENT_PARTS.map(part => {
-        const [x, y] = HOTSPOTS[view][part.id]
-        const measured = weekValues[part.id] != null
-        const known = latestValues[part.id] != null
+        const [u, v] = LANDMARKS[view][part.id]
+        const measured = direct[part.id] != null
+        const known = latestValues[part.id] != null || values[part.id] != null
+        const partScale = scaleFor(values, baselineValues, body, part.id)
+        return <ellipse
+          key={part.id}
+          className={`measurement-ring${selected === part.id ? ' selected' : ''}${measured ? ' direct' : known ? ' carried' : ' empty'}`}
+          cx={box.x + u * box.width}
+          cy={box.y + v * box.height}
+          rx={RING_RADIUS[part.id] / 100 * box.width * partScale}
+          ry={(part.side ? .007 : .009) * box.height}
+        />
+      })}
+    </svg>
+    <div className="measurement-hotspots" role="group" aria-label="Circunferências corporais">
+      {BODY_MEASUREMENT_PARTS.map(part => {
+        const landmark = LANDMARKS[view][part.id]
+        const measured = direct[part.id] != null
+        const known = latestValues[part.id] != null || values[part.id] != null
+        const displayed = values[part.id]
         return <button
           type="button"
           key={part.id}
           className={`measurement-hotspot${selected === part.id ? ' selected' : ''}${measured ? ' measured' : known ? ' known' : ''}`}
-          style={{ '--hotspot-x': `${x}%`, '--hotspot-y': `${y}%` }}
-          aria-label={`${part.label}${measured ? ', medida nesta semana' : ''}`}
+          style={landmarkStyle(landmark, box, stageSize)}
+          aria-label={`${part.circumferenceLabel}${displayed != null ? `, ${displayed} centímetros` : ', sem registro'}${measured ? ', medida neste check-in' : known ? ', valor anterior' : ''}`}
           aria-pressed={selected === part.id}
-          onClick={() => onSelect(part.id)}
+          onClick={() => onSelect?.(part.id)}
         >
           <span className="measurement-hotspot-dot" />
-          <span className="measurement-hotspot-label">{part.shortLabel}</span>
+          <span className="measurement-hotspot-label">{selectedPart?.id === part.id ? `${part.shortLabel}${selectedValue != null ? ` · ${fmtOne(selectedValue)} cm` : ''}` : part.shortLabel}</span>
         </button>
       })}
     </div>
   </div>
 }
+
+const fmtOne = value => String(Math.round(Number(value) * 10) / 10).replace('.', ',')

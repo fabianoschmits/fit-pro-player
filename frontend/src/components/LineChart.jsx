@@ -12,7 +12,7 @@ const W = 340   // viewBox width; the svg stretches to its container, height com
 // opts: { h, unit, color, axes, goal, invert }
 //   invert flips the y axis, for a scale that counts down as it gets harder (RIR). Without it
 //   a curve of reps-in-reserve reads upside down, with the hardest sets at the floor.
-export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit }) {
+export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit, selectedDate = null }) {
   const svgRef = useRef(null)
   const wrapRef = useRef(null)
   const tipRef = useRef(null)
@@ -91,7 +91,11 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
   const poly = pts.map(p => X(p.t).toFixed(1) + ',' + Y(p.y).toFixed(1)).join(' ')
   const last = pts[pts.length - 1]
   const gid = 'g' + Math.round(t0 % 1e7) + '_' + H
-  const hoverPts = (single ? [points[0]] : points).map(p => ({ x: X(p.t), y: Y(p.y), iso: p.d || isoOf(new Date(p.t)), v: p.y, note: p.note }))
+  const hoverPts = (single ? [points[0]] : points).map(p => {
+    const iso = p.d || isoOf(new Date(p.t))
+    return { x: X(p.t), y: Y(p.y), iso, v: p.y, note: p.note, selected: p.selected || (selectedDate && iso === selectedDate) }
+  })
+  const selectedPoint = hoverPts.find(point => point.selected)
   const marked = points.some(p => p.m != null)
 
   const onMove = e => {
@@ -122,6 +126,11 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
         </>}
         <polygon points={`${P.l},${H - P.b} ${poly} ${X(last.t).toFixed(1)},${H - P.b}`} fill={`url(#${gid})`} />
         <polyline points={poly} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {selectedPoint && <g className="chart-selected-point">
+          <line x1={selectedPoint.x} y1={P.t} x2={selectedPoint.x} y2={H - P.b} stroke={color} strokeWidth="1.2" strokeDasharray="3 3" opacity=".58" />
+          <circle cx={selectedPoint.x} cy={selectedPoint.y} r="7" fill="var(--surface)" stroke={color} strokeWidth="2" />
+          <circle cx={selectedPoint.x} cy={selectedPoint.y} r="2.5" fill={color} />
+        </g>}
         {marked && pts.map((p, i) => (p.m == null ? null :
           <circle key={'m' + i} cx={X(p.t)} cy={Y(p.y)} r={2.4 + p.m * 3} fill={color} opacity={0.3 + p.m * 0.7} />))}
         <circle cx={X(last.t)} cy={Y(last.y)} r="4" fill={color} />
