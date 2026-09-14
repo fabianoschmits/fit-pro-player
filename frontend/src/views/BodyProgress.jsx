@@ -32,6 +32,13 @@ const MODES = [
   { value: 'compare', label: 'Comparar' },
 ]
 
+const CHECKIN_HISTORY_PAGE_SIZE = 6
+const CHECKIN_DETAILS_MOTION = {
+  hidden: instant => instant ? { opacity: 1, y: 0, filter: 'blur(0px)' } : { opacity: 0, y: -6, filter: 'blur(2px)' },
+  visible: instant => ({ opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: instant ? 0 : 0.18, ease: [0.2, 0.8, 0.2, 1] } }),
+  exit: instant => ({ opacity: 0, y: instant ? 0 : -3, filter: instant ? 'blur(0px)' : 'blur(2px)', transition: { duration: instant ? 0 : 0.18, ease: [0.2, 0.8, 0.2, 1] } }),
+}
+
 const formatCm = value => value == null ? '—' : `${fmtNum(value)} cm`
 const formatDelta = value => value == null ? 'Sem comparação' : `${value > 0 ? '+' : ''}${fmtNum(value)} cm`
 const timestampOf = date => new Date(`${date}T12:00:00`).getTime()
@@ -276,18 +283,26 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   </div>
 }
 
-function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, view, setView }) {
+function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, view, setView, focusRequest }) {
   const update = useStore(state => state.update)
   const snapshots = useMemo(() => bodyMeasurementSnapshots(checkins), [checkins])
   const firstTime = snapshots.length ? timestampOf(snapshots[0].date) : null
   const lastTime = snapshots.length ? timestampOf(snapshots.at(-1).date) : null
-  const [scrubTime, setScrubTime] = useState(lastTime)
+  const initialTime = lastTime == null || focusRequest?.timestamp == null
+    ? lastTime : Math.min(lastTime, Math.max(firstTime, focusRequest.timestamp))
+  const [scrubTime, setScrubTime] = useState(initialTime)
   const [scrubbing, setScrubbing] = useState(false)
 
   useEffect(() => {
     if (lastTime == null) return
     setScrubTime(current => current == null ? lastTime : Math.min(lastTime, Math.max(firstTime, current)))
   }, [firstTime, lastTime])
+
+  useLayoutEffect(() => {
+    if (lastTime == null || focusRequest?.timestamp == null) return
+    setScrubTime(Math.min(lastTime, Math.max(firstTime, focusRequest.timestamp)))
+    setScrubbing(false)
+  }, [firstTime, focusRequest?.nonce, focusRequest?.timestamp, lastTime])
 
   if (!snapshots.length) return <section className="card bp-empty large"><Icon name="ruler" /><strong>Sua evolução começa no primeiro check-in</strong><span>Registre uma circunferência para criar a primeira forma corporal e liberar a linha do tempo.</span></section>
 
@@ -321,7 +336,7 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
   })
 
   return <div className="bp-evolution-layout">
-    <section className="card bp-evolution-map-card" aria-labelledby="bp-evolution-map-title">
+    <section id="bp-evolution-map" className="card bp-evolution-map-card" aria-labelledby="bp-evolution-map-title" tabIndex="-1">
       <div className="bp-card-head">
         <div><span className="bp-eyebrow">Forma corporal relativa</span><h2 id="bp-evolution-map-title">Evolução no tempo</h2></div>
         <Segmented className="seg-inline" value={view} onChange={setView} options={[{ value: 'front', label: 'Frente' }, { value: 'back', label: 'Costas' }]} />
@@ -368,6 +383,126 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
   </div>
 }
 
+function CheckinHistory({ S, checkins, onOpenEvolution }) {
+  const reducedMotion = useReducedMotion()
+  const today = todayISO()
+  const currentWeek = bodyMeasurementWeekKey(today)
+  const [expandedWeek, setExpandedWeek] = useState(null)
+  const [visibleCount, setVisibleCount] = useState(CHECKIN_HISTORY_PAGE_SIZE)
+  const [instantToggle, setInstantToggle] = useState(false)
+  const pastCheckins = useMemo(() => checkins
+    .filter(item => item.date <= today && item.week !== currentWeek)
+    .sort((a, b) => b.date.localeCompare(a.date)), [checkins, currentWeek, today])
+  const deltasByWeek = useMemo(() => {
+    const previousValues = {}
+    const result = {}
+    checkins.forEach(item => {
+      const deltas = {}
+      BODY_MEASUREMENT_PARTS.forEach(part => {
+        const value = item.values[part.id]
+        if (value == null) return
+        const previous = previousValues[part.id]
+        deltas[part.id] = previous == null ? null : Math.round((value - previous) * 10) / 10
+        previousValues[part.id] = value
+      })
+      result[item.week] = deltas
+    })
+    return result
+  }, [checkins])
+
+  useEffect(() => {
+    if (expandedWeek && !pastCheckins.some(item => item.week === expandedWeek)) setExpandedWeek(null)
+  }, [expandedWeek, pastCheckins])
+
+  const visibleCheckins = pastCheckins.slice(0, visibleCount)
+  const remaining = Math.max(0, pastCheckins.length - visibleCount)
+  const toggle = (event, week) => {
+    setInstantToggle(Boolean(reducedMotion) || event.detail === 0)
+    setExpandedWeek(current => current === week ? null : week)
+  }
+  const deltaLabel = delta => delta == null
+    ? 'Primeira medição'
+    : delta === 0 ? 'Sem alteração' : `${formatDelta(delta)} desde o registro anterior`
+
+  return <section className="card bp-checkin-history" aria-labelledby="bp-checkin-history-title">
+    <div className="bp-checkin-history-head">
+      <div><span className="bp-eyebrow">Histórico de medidas</span><h2 id="bp-checkin-history-title">Check-ins anteriores</h2><p>Abra uma semana para rever todas as circunferências registradas.</p></div>
+      <span>{pastCheckins.length} {pastCheckins.length === 1 ? 'registro' : 'registros'}</span>
+    </div>
+
+    {pastCheckins.length ? <>
+      <ol className="bp-checkin-list">
+        {visibleCheckins.map(item => {
+          const expanded = expandedWeek === item.week
+          const count = Object.keys(item.values).length
+          const panelId = `bp-checkin-${item.week}`
+          const triggerId = `${panelId}-trigger`
+          const directWeight = item.weight != null
+          const weight = directWeight ? { w: item.weight } : weightAtDate(S.bodyweight, item.date)
+          const deltas = deltasByWeek[item.week] || {}
+          return <motion.li
+            className={`bp-checkin-item${expanded ? ' expanded' : ''}${instantToggle ? ' instant' : ''}`}
+            data-checkin-date={item.date}
+            layout={!instantToggle && !reducedMotion ? 'position' : false}
+            transition={{ layout: { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] } }}
+            key={item.week}
+          >
+            <button
+              id={triggerId}
+              className="bp-checkin-summary"
+              type="button"
+              aria-expanded={expanded}
+              aria-controls={panelId}
+              onClick={event => toggle(event, item.week)}
+            >
+              <span className="sr-only">{expanded ? 'Recolher' : 'Expandir'} detalhes do check-in de </span>
+              <span className="bp-checkin-date"><strong>{fmtDate(item.date, true)}</strong><small>{weight ? `${directWeight ? 'Peso do check-in' : 'Último peso'} · ${fmtNum(weight.w)} ${S.unit || 'kg'}` : 'Peso não registrado'}</small></span>
+              <span className={`bp-checkin-status${count === BODY_MEASUREMENT_PARTS.length ? ' complete' : ''}`}>{count === BODY_MEASUREMENT_PARTS.length ? <Icon name="check" /> : null}{count === BODY_MEASUREMENT_PARTS.length ? `${count}/${BODY_MEASUREMENT_PARTS.length} medidas` : `Parcial · ${count}/${BODY_MEASUREMENT_PARTS.length}`}</span>
+              <span className="bp-checkin-quick" aria-hidden="true">
+                {['abdomen', 'waist', 'chest'].map(partId => <span key={partId}><small>{BODY_MEASUREMENT_BY_ID[partId].shortLabel}</small><strong>{formatCm(item.values[partId])}</strong></span>)}
+              </span>
+              <Icon name="chevronDown" className="bp-checkin-chevron" />
+            </button>
+
+            <AnimatePresence initial={false} custom={instantToggle}>
+              {expanded && <motion.div
+                id={panelId}
+                className="bp-checkin-details"
+                role="region"
+                aria-labelledby={triggerId}
+                custom={instantToggle}
+                variants={CHECKIN_DETAILS_MOTION}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <p className="bp-checkin-details-intro">Medidas feitas neste check-in, sem preenchimento automático de semanas anteriores.</p>
+                <dl className="bp-checkin-values">
+                  {BODY_MEASUREMENT_PARTS.map(part => {
+                    const value = item.values[part.id]
+                    return <div className={`bp-checkin-value${value == null ? ' missing' : ''}`} key={part.id}>
+                      <dt>{part.shortLabel}</dt>
+                      <dd><strong>{value == null ? 'Não registrada' : formatCm(value)}</strong><span>{value == null ? 'Sem medida nesta semana' : deltaLabel(deltas[part.id])}</span></dd>
+                    </div>
+                  })}
+                </dl>
+                <div className="bp-checkin-footer">
+                  <div>{item.notes ? <><strong>Observação</strong><span>{item.notes}</span></> : <span>Use este registro para rever a forma corporal daquele momento.</span>}</div>
+                  <Button variant="tinted" icon="history" trailingIcon="chevronRight" onClick={event => onOpenEvolution(item.date, event.detail > 0)} aria-label={`Abrir na evolução, check-in de ${fmtDate(item.date, true)}`}>Abrir na evolução</Button>
+                </div>
+              </motion.div>}
+            </AnimatePresence>
+          </motion.li>
+        })}
+      </ol>
+      {pastCheckins.length > CHECKIN_HISTORY_PAGE_SIZE && <div className="bp-checkin-more-row">
+        {remaining ? <Button variant="plain" icon="chevronDown" onClick={() => setVisibleCount(count => count + CHECKIN_HISTORY_PAGE_SIZE)}>Mostrar mais ({remaining})</Button>
+          : <Button variant="plain" icon="chevronUp" onClick={() => { setVisibleCount(CHECKIN_HISTORY_PAGE_SIZE); setExpandedWeek(null) }}>Recolher histórico</Button>}
+      </div>}
+    </> : <div className="bp-empty bp-checkin-empty"><Icon name="history" /><strong>Nenhum check-in anterior</strong><span>Depois da primeira semana, suas medidas antigas aparecerão aqui, da mais recente para a mais antiga.</span></div>}
+  </section>
+}
+
 function CompareView({ checkins }) {
   const [fromId, setFromId] = useState(checkins.at(-2)?.id || checkins[0]?.id || '')
   const [toId, setToId] = useState(checkins.at(-1)?.id || '')
@@ -412,10 +547,13 @@ function CompareView({ checkins }) {
 export default function BodyProgress() {
   const navigate = useNavigate()
   const S = useStore(state => state.S)
+  const reducedMotion = useReducedMotion()
+  const focusNonce = useRef(0)
   const [mode, setMode] = useState('checkin')
   const [view, setView] = useState('front')
   const [selected, setSelected] = useState('chest')
   const [period, setPeriod] = useState(90)
+  const [historyFocus, setHistoryFocus] = useState(null)
   const checkins = useMemo(() => normalizeBodyMeasurementCheckins(S.bodyMeasurements), [S.bodyMeasurements])
   const current = currentBodyMeasurementCheckin(checkins, todayISO())
   const done = Object.keys(current?.values || {}).length
@@ -428,22 +566,46 @@ export default function BodyProgress() {
     return () => document.body.classList.remove('body-progress-mode')
   }, [])
 
+  useEffect(() => {
+    if (mode !== 'history' || !historyFocus) return undefined
+    const frame = window.requestAnimationFrame(() => {
+      const target = document.getElementById('bp-evolution-map')
+      target?.focus?.({ preventScroll: true })
+      target?.scrollIntoView?.({ behavior: historyFocus.smooth ? 'smooth' : 'auto', block: 'start' })
+    })
+    return () => {
+      if (frame != null && typeof window.cancelAnimationFrame === 'function') window.cancelAnimationFrame(frame)
+    }
+  }, [historyFocus, mode])
+
   const continueCheckin = () => {
     if (!nextPending) return
     setSelected(nextPending.id)
     setView(nextPending.view)
+    setHistoryFocus(null)
     setMode('checkin')
     window.requestAnimationFrame(() => document.getElementById('body-measurement-value')?.focus())
+  }
+
+  const changeMode = nextMode => {
+    setHistoryFocus(null)
+    setMode(nextMode)
+  }
+
+  const openHistoricalCheckin = (date, pointerInitiated) => {
+    focusNonce.current += 1
+    setHistoryFocus({ timestamp: timestampOf(date), nonce: focusNonce.current, smooth: pointerInitiated && !reducedMotion })
+    setMode('history')
   }
 
   return <main className="body-progress-view">
     <header className="bp-header">
       <button className="iconbtn" type="button" onClick={() => navigate(-1)} aria-label={t('Back')}><Icon name="chevronLeft" /></button>
       <div><h1>Evolução corporal</h1><p>Circunferências semanais, forma corporal e progresso em um só lugar.</p></div>
-      <button className="bp-header-history" type="button" onClick={() => setMode('history')}><Icon name="history" /><span>Evolução</span></button>
+      <button className="bp-header-history" type="button" onClick={() => changeMode('history')}><Icon name="history" /><span>Evolução</span></button>
     </header>
 
-    <Segmented className="bp-mode-tabs" value={mode} onChange={setMode} options={MODES} />
+    <Segmented className="bp-mode-tabs" value={mode} onChange={changeMode} options={MODES} />
 
     {mode === 'checkin' && <section className={`card bp-week-card${done === total ? ' complete' : ''}`}>
       <ProgressRing value={percent} />
@@ -452,7 +614,8 @@ export default function BodyProgress() {
     </section>}
 
     {mode === 'checkin' && <CheckinView S={S} checkins={checkins} selected={selected} setSelected={setSelected} period={period} setPeriod={setPeriod} view={view} setView={setView} />}
-    {mode === 'history' && <EvolutionView S={S} checkins={checkins} selected={selected} setSelected={setSelected} period={period} setPeriod={setPeriod} view={view} setView={setView} />}
+    {mode === 'history' && <EvolutionView S={S} checkins={checkins} selected={selected} setSelected={setSelected} period={period} setPeriod={setPeriod} view={view} setView={setView} focusRequest={historyFocus} />}
     {mode === 'compare' && <CompareView checkins={checkins} />}
+    <CheckinHistory S={S} checkins={checkins} onOpenEvolution={openHistoricalCheckin} />
   </main>
 }

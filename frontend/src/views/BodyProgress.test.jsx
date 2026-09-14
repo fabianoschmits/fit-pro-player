@@ -3,6 +3,7 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import BodyProgress from './BodyProgress.jsx'
+import { BODY_MEASUREMENT_PARTS } from '../lib/body-measurements.js'
 
 const mocks = vi.hoisted(() => ({
   S: { body: 'female', bodyMeasurements: [], bodyMeasurementGoals: {} },
@@ -120,5 +121,61 @@ describe('body progress page', () => {
     expect(mocks.mapProps.shapeValues).toMatchObject({ chest: 106, abdomen: 114 })
     expect(container.textContent).toContain('2 de 2')
     expect(container.textContent).toContain('2 registros')
+  })
+
+  it('keeps the current week out of the check-in archive and reveals only direct old measurements', async () => {
+    mocks.S.bodyMeasurements = [
+      { date: '2026-08-24', values: { chest: 105, abdomen: 121 } },
+      { date: '2026-08-31', values: { chest: 100 } },
+      { date: '2026-09-07', values: { chest: 98, abdomen: 114 } },
+    ]
+    await render()
+
+    const archived = [...container.querySelectorAll('.bp-checkin-item')]
+    expect(archived.map(item => item.dataset.checkinDate)).toEqual(['2026-08-31', '2026-08-24'])
+    expect(container.querySelector('[data-checkin-date="2026-09-07"]')).toBeNull()
+
+    const latestOld = container.querySelector('[data-checkin-date="2026-08-31"]')
+    const summary = latestOld.querySelector('.bp-checkin-summary')
+    expect(summary.getAttribute('aria-expanded')).toBe('false')
+    await click(summary)
+
+    expect(summary.getAttribute('aria-expanded')).toBe('true')
+    expect(latestOld.querySelectorAll('.bp-checkin-value')).toHaveLength(BODY_MEASUREMENT_PARTS.length)
+    expect(latestOld.textContent).toContain('-5 cm desde o registro anterior')
+    expect(latestOld.textContent).toContain('Não registrada')
+    expect(latestOld.textContent).not.toContain('121 cm')
+  })
+
+  it('loads more archived weeks without making the annual history unwieldy', async () => {
+    mocks.S.bodyMeasurements = [
+      ...['2026-07-20', '2026-07-27', '2026-08-03', '2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31']
+        .map((date, index) => ({ date, values: { chest: 107 - index } })),
+      { date: '2026-09-07', values: { chest: 99 } },
+    ]
+    await render()
+
+    expect(container.querySelectorAll('.bp-checkin-item')).toHaveLength(6)
+    await click(button('Mostrar mais (1)'))
+    expect(container.querySelectorAll('.bp-checkin-item')).toHaveLength(7)
+    expect(button('Recolher histórico')).not.toBeUndefined()
+  })
+
+  it('opens an archived check-in at the matching point in body evolution', async () => {
+    mocks.S.bodyMeasurements = [
+      { date: '2026-08-24', values: { chest: 110, abdomen: 120 } },
+      { date: '2026-08-31', values: { chest: 106, abdomen: 114 } },
+      { date: '2026-09-07', values: { chest: 103, abdomen: 109 } },
+    ]
+    await render()
+
+    const oldest = container.querySelector('[data-checkin-date="2026-08-24"]')
+    await click(oldest.querySelector('.bp-checkin-summary'))
+    await click(button('Abrir na evolução'))
+
+    expect(container.textContent).toContain('Evolução no tempo')
+    expect(mocks.mapProps.shapeValues).toMatchObject({ chest: 110, abdomen: 120 })
+    expect(Number(container.querySelector('input[type="range"]').value)).toBe(new Date('2026-08-24T12:00:00').getTime())
+    expect(document.activeElement?.id).toBe('bp-evolution-map')
   })
 })
