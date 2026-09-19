@@ -90,22 +90,30 @@ const mean = values => {
   return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : 1
 }
 
-function scaleFor(values, baselineValues, body, partId) {
+function scaleFor(values, baselineValues, body, partId, fallbackScales = {}) {
   const value = Number(values?.[partId])
   const reference = REFERENCE_CM[body]?.[partId] || REFERENCE_CM.male[partId]
-  if (!(value > 0)) return 1
+  if (!(value > 0)) {
+    const fallback = Number(fallbackScales?.[partId])
+    return fallback > 0 ? clamp(.76, fallback, 1.34) : 1
+  }
   const baseline = Number(baselineValues?.[partId])
   const absoluteChange = value / reference - 1
   const relativeChange = baseline > 0 ? value / baseline - 1 : 0
   return clamp(.76, 1 + absoluteChange * 1.05 + relativeChange * .42, 1.34)
 }
 
-export function measurementShapeScales(values = {}, baselineValues = {}, body = 'male') {
-  const scale = id => scaleFor(values, baselineValues, body, id)
-  const arms = mean([scale('left-arm'), scale('right-arm')])
-  const forearms = mean([scale('left-forearm'), scale('right-forearm')])
-  const thighs = mean([scale('left-thigh'), scale('right-thigh')])
-  const calves = mean([scale('left-calf'), scale('right-calf')])
+export function measurementShapeScales(values = {}, baselineValues = {}, body = 'male', fallbackScales = {}) {
+  const scale = id => scaleFor(values, baselineValues, body, id, fallbackScales)
+  const leftArm = scale('left-arm')
+  const rightArm = scale('right-arm')
+  const leftForearm = scale('left-forearm')
+  const rightForearm = scale('right-forearm')
+  const leftThigh = scale('left-thigh')
+  const rightThigh = scale('right-thigh')
+  const leftCalf = scale('left-calf')
+  const rightCalf = scale('right-calf')
+  const sides = (left, right) => ({ left, right })
   const waist = scale('waist')
   const abdomen = scale('abdomen')
   const hips = scale('hips')
@@ -123,26 +131,29 @@ export function measurementShapeScales(values = {}, baselineValues = {}, body = 
     'lower-back': mean([waist, abdomen]),
     gluteal: hips,
     'hip-flexors': hips,
-    biceps: arms,
-    triceps: arms,
-    forearm: forearms,
-    adductors: mean([hips, thighs]),
-    quadriceps: thighs,
-    hamstring: thighs,
-    calves,
-    tibialis: calves,
+    biceps: sides(leftArm, rightArm),
+    triceps: sides(leftArm, rightArm),
+    forearm: sides(leftForearm, rightForearm),
+    adductors: sides(mean([hips, leftThigh]), mean([hips, rightThigh])),
+    quadriceps: sides(leftThigh, rightThigh),
+    hamstring: sides(leftThigh, rightThigh),
+    calves: sides(leftCalf, rightCalf),
+    tibialis: sides(leftCalf, rightCalf),
   }
 }
 
 export default function MeasurementBodyMap({
   body = 'male', view = 'front', selected, latestValues = {}, weekValues = {}, shapeValues,
-  baselineValues = {}, directValues, instant = false, onSelect,
+  baselineValues = {}, fallbackScales = {}, directValues, instant = false, onSelect,
 }) {
-  const values = shapeValues || { ...latestValues, ...weekValues }
+  // Geometry may use a weight-based visual fallback, but labels, rings and ARIA
+  // must only expose circumferences that the user actually recorded.
+  const displayValues = { ...latestValues, ...weekValues }
+  const values = shapeValues || displayValues
   const direct = directValues || weekValues
-  const shapeScales = measurementShapeScales(values, baselineValues, body)
+  const shapeScales = measurementShapeScales(values, baselineValues, body, fallbackScales)
   const selectedPart = BODY_MEASUREMENT_BY_ID[selected]
-  const selectedValue = values[selected]
+  const selectedValue = displayValues[selected]
   const selectedMuscles = measurementMusclesFor(selected)
   const stageRef = useRef(null)
   const [stageSize, setStageSize] = useState(null)
@@ -183,8 +194,8 @@ export default function MeasurementBodyMap({
       {BODY_MEASUREMENT_PARTS.map(part => {
         const [u, v] = LANDMARKS[view][part.id]
         const measured = direct[part.id] != null
-        const known = latestValues[part.id] != null || values[part.id] != null
-        const partScale = scaleFor(values, baselineValues, body, part.id)
+        const known = displayValues[part.id] != null
+        const partScale = scaleFor(values, baselineValues, body, part.id, fallbackScales)
         return <ellipse
           key={part.id}
           className={`measurement-ring${selected === part.id ? ' selected' : ''}${measured ? ' direct' : known ? ' carried' : ' empty'}`}
@@ -199,8 +210,8 @@ export default function MeasurementBodyMap({
       {BODY_MEASUREMENT_PARTS.map(part => {
         const landmark = LANDMARKS[view][part.id]
         const measured = direct[part.id] != null
-        const known = latestValues[part.id] != null || values[part.id] != null
-        const displayed = values[part.id]
+        const known = displayValues[part.id] != null
+        const displayed = displayValues[part.id]
         return <button
           type="button"
           key={part.id}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pathMatchesSelectedSide } from './BodyMap.jsx'
+import { pathMatchesSelectedSide, shapeScaleForPath } from './BodyMap.jsx'
 import { measurementMusclesFor, measurementShapeScales } from './MeasurementBodyMap.jsx'
 
 describe('measurement body-map proportions', () => {
@@ -35,14 +35,43 @@ describe('measurement body-map proportions', () => {
     const finish = measurementShapeScales(finishValues, baseline, 'male')
 
     ;['neck', 'deltoids', 'chest', 'biceps', 'forearm', 'obliques', 'abs', 'gluteal', 'quadriceps', 'calves']
-      .forEach(region => expect(finish[region]).not.toBe(start[region]))
+      .forEach(region => expect(finish[region]).not.toEqual(start[region]))
   })
 
   it('keeps unrelated regions neutral when no circumference exists', () => {
     const scales = measurementShapeScales({ abdomen: 120 }, {}, 'male')
     expect(scales.abs).toBeGreaterThan(1)
-    expect(scales.biceps).toBe(1)
-    expect(scales.calves).toBe(1)
+    expect(scales.biceps).toEqual({ left: 1, right: 1 })
+    expect(scales.calves).toEqual({ left: 1, right: 1 })
+  })
+
+  it('uses weight fallback only for unmeasured regions and lets real values win', () => {
+    const fallback = {
+      neck: 1.08, shoulders: 1.07, chest: 1.17,
+      'left-arm': 1.13, 'right-arm': 1.13,
+      'left-forearm': 1.08, 'right-forearm': 1.08,
+      waist: 1.3, abdomen: 1.34, hips: 1.19,
+      'left-thigh': 1.16, 'right-thigh': 1.16,
+      'left-calf': 1.1, 'right-calf': 1.1,
+    }
+    const estimated = measurementShapeScales({}, {}, 'male', fallback)
+    const withMeasuredAbdomen = measurementShapeScales({ abdomen: 88 }, {}, 'male', fallback)
+
+    expect(estimated.abs).toBe(1.34)
+    expect(estimated.biceps).toEqual({ left: 1.13, right: 1.13 })
+    expect(estimated.quadriceps).toEqual({ left: 1.16, right: 1.16 })
+    expect(withMeasuredAbdomen.abs).toBe(1)
+    expect(withMeasuredAbdomen.biceps).toEqual({ left: 1.13, right: 1.13 })
+  })
+
+  it('keeps left and right limb measurements visually independent', () => {
+    const fallback = { 'left-arm': 1.1, 'right-arm': 1.1 }
+    const scales = measurementShapeScales({ 'left-arm': 45 }, {}, 'male', fallback)
+
+    expect(scales.biceps.left).toBeGreaterThan(scales.biceps.right)
+    expect(shapeScaleForPath(scales, 'biceps', 0, 2, 'front')).toBe(scales.biceps.right)
+    expect(shapeScaleForPath(scales, 'biceps', 1, 2, 'front')).toBe(scales.biceps.left)
+    expect(shapeScaleForPath(scales, 'biceps', 0, 2, 'back')).toBe(scales.biceps.left)
   })
 
   it('clamps extreme values so the existing silhouette cannot invert or overflow', () => {

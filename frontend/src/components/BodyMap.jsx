@@ -29,16 +29,28 @@ function useBodyPaths() {
 const LOCAL_SHAPE_SLUGS = new Set(['biceps', 'triceps', 'forearm', 'quadriceps', 'hamstring', 'calves', 'tibialis', 'adductors'])
 const SIDE_AWARE_SLUGS = LOCAL_SHAPE_SLUGS
 
-export function pathMatchesSelectedSide(index, count, selectedSide, viewName) {
-  if (!selectedSide) return true
+export function anatomicalSideForPath(index, count, viewName) {
   const visualSide = index < count / 2 ? 'left' : 'right'
-  const anatomicalSide = viewName === 'front'
+  return viewName === 'front'
     ? (visualSide === 'left' ? 'right' : 'left')
     : visualSide
-  return anatomicalSide === selectedSide
 }
 
-function View({ view, viewName, levels, onMuscle, selected, selectedSide, decorative, shapeScales, shapeInstant }) {
+export function pathMatchesSelectedSide(index, count, selectedSide, viewName) {
+  if (!selectedSide) return true
+  return anatomicalSideForPath(index, count, viewName) === selectedSide
+}
+
+export function shapeScaleForPath(shapeScales, slug, index, count, viewName) {
+  const configured = shapeScales?.[slug]
+  const rawScale = configured && typeof configured === 'object'
+    ? configured[anatomicalSideForPath(index, count, viewName)]
+    : configured
+  const scale = Number(rawScale)
+  return Number.isFinite(scale) ? Math.min(1.4, Math.max(.72, scale)) : 1
+}
+
+export function BodyMapView({ view, viewName, levels, onMuscle, selected, selectedSide, decorative, shapeScales, shapeInstant }) {
   const selectedMuscles = new Set(Array.isArray(selected) ? selected : selected ? [selected] : [])
   const pathIsSelected = (slug, index, count) => selectedMuscles.has(slug)
     && (!SIDE_AWARE_SLUGS.has(slug) || pathMatchesSelectedSide(index, count, selectedSide, viewName))
@@ -51,8 +63,13 @@ function View({ view, viewName, levels, onMuscle, selected, selectedSide, decora
       aria-label={decorative ? undefined : t('Body diagram')}
       focusable="false"
     >
-      {INERT.map(slug => (view.p[slug] || []).map((d, i, paths) =>
-        <path key={slug + i} className={'bm-sil' + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')} d={d} />))}
+      {INERT.map(slug => {
+        const paths = view.p[slug] || []
+        const rendered = paths.map((d, i) => <path key={slug + i} className={'bm-sil' + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')} d={d} />)
+        if (slug !== 'neck' || !shapeScales) return rendered
+        const scale = shapeScaleForPath(shapeScales, slug, 0, 1, viewName)
+        return <g key={slug} className="bm-shape-group" style={{ transform: `scaleX(${scale})` }}>{rendered}</g>
+      })}
       {MUSCLES.map(slug => {
         const paths = view.p[slug] || []
         if (!shapeScales) return paths.map((d, i) => <path
@@ -63,9 +80,7 @@ function View({ view, viewName, levels, onMuscle, selected, selectedSide, decora
         >
           {!decorative && <title>{t(MUSCLE_NAME[slug])}</title>}
         </path>)
-        const rawScale = Number(shapeScales?.[slug])
-        const scale = Number.isFinite(rawScale) ? Math.min(1.4, Math.max(.72, rawScale)) : 1
-        const renderPath = (d, i, local = false) => <path
+        const renderPath = (d, i, local = false, scale = 1) => <path
           key={slug + i}
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '') + (local ? ' bm-shape-path' : '')}
           style={local ? { transform: `scaleX(${scale})` } : undefined}
@@ -74,7 +89,8 @@ function View({ view, viewName, levels, onMuscle, selected, selectedSide, decora
         >
           {!decorative && <title>{t(MUSCLE_NAME[slug])}</title>}
         </path>
-        if (LOCAL_SHAPE_SLUGS.has(slug)) return paths.map((d, i) => renderPath(d, i, true))
+        if (LOCAL_SHAPE_SLUGS.has(slug)) return paths.map((d, i) => renderPath(d, i, true, shapeScaleForPath(shapeScales, slug, i, paths.length, viewName)))
+        const scale = shapeScaleForPath(shapeScales, slug, 0, 1, viewName)
         return <g key={slug} className="bm-shape-group" style={{ transform: `scaleX(${scale})` }}>{paths.map((d, i) => renderPath(d, i))}</g>
       })}
     </svg>
@@ -100,7 +116,7 @@ export default function BodyMap({
     <div className={'bodymap ' + className}>
       {views
         ? views.map((bodyView, index) => (
-            <View
+            <BodyMapView
               key={view === 'both' ? (index ? 'back' : 'front') : view}
               view={bodyView}
               viewName={view === 'both' ? (index ? 'back' : 'front') : view}

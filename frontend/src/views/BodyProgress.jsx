@@ -7,10 +7,11 @@ import { fmtDate, fmtNum, todayISO } from '../lib/format.js'
 import {
   BODY_MEASUREMENT_BY_ID, BODY_MEASUREMENT_PARTS, BODY_MEASUREMENT_PROTOCOL,
   bodyMeasurementDelta, bodyMeasurementHistoryInPeriod,
-  bodyMeasurementSnapshots, bodyMeasurementWeekKey, currentBodyMeasurementCheckin,
-  interpolateBodyMeasurementSnapshot, latestBodyMeasurements,
-  normalizeBodyMeasurementCheckins, removeBodyMeasurement, upsertBodyMeasurement,
+  bodyMeasurementWeekKey, currentBodyMeasurementCheckin,
+  latestBodyMeasurements, normalizeBodyMeasurementCheckins, removeBodyMeasurement,
+  upsertBodyMeasurement,
 } from '../lib/body-measurements.js'
+import { bodyShapeFallbackScales } from '../lib/body-shape.js'
 import { t } from '../lib/i18n.js'
 import { confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
@@ -51,9 +52,124 @@ function nextWeekDate(today) {
 
 function weightAtDate(bodyweight, date) {
   return (Array.isArray(bodyweight) ? bodyweight : []).reduce((closest, entry) => {
-    if (!entry?.d || !(entry.w > 0) || entry.d > date) return closest
-    return !closest || entry.d > closest.d || (entry.d === closest.d && (entry.t || 0) > (closest.t || 0)) ? entry : closest
+    const weight = Number(entry?.w)
+    if (!entry?.d || !(weight > 0) || entry.d > date) return closest
+    const normalized = { ...entry, w: weight }
+    return !closest || entry.d > closest.d || (entry.d === closest.d && (entry.t || 0) > (closest.t || 0)) ? normalized : closest
   }, null)
+}
+
+const bodySex = S => ['male', 'female'].includes(S.profile?.sex)
+  ? S.profile.sex
+  : S.body === 'female' ? 'female' : 'male'
+
+const profileWeight = S => Number(S.profile?.startWeight) > 0
+  ? { d: null, w: Number(S.profile.startWeight), profile: true }
+  : null
+
+function normalizedBodyweight(bodyweight) {
+  const byDate = new Map()
+  ;(Array.isArray(bodyweight) ? bodyweight : []).forEach(entry => {
+    const weight = Number(entry?.w)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(entry?.d || '')) || !(weight > 0)) return
+    const previous = byDate.get(entry.d)
+    if (!previous || Number(entry.t || 0) >= Number(previous.t || 0)) byDate.set(entry.d, { ...entry, w: weight })
+  })
+  return [...byDate.values()].sort((a, b) => a.d.localeCompare(b.d))
+}
+
+function bodyShapeProfile(S, weight) {
+  return {
+    sex: bodySex(S),
+    heightCm: S.profile?.heightCm,
+    weight: weight?.w,
+    unit: S.unit || 'kg',
+  }
+}
+
+function firstMeasurementValues(checkins) {
+  const baseline = {}
+  checkins.forEach(item => Object.entries(item.values || {}).forEach(([partId, value]) => {
+    if (baseline[partId] == null) baseline[partId] = value
+  }))
+  return baseline
+}
+
+// Build one chronological shape stream from both weigh-ins and circumference
+// check-ins. Real measurements are carried only forward; no future value can
+// appear before the date on which it was entered.
+function bodyShapeTimeline(S, checkins) {
+  const weightsByDate = new Map(normalizedBodyweight(S.bodyweight).map(item => [item.d, item]))
+  const shapeCheckins = checkins.filter(item => Object.keys(item.values || {}).length || Number(item.weight) > 0)
+  shapeCheckins.forEach(item => {
+    if (Number(item.weight) > 0) weightsByDate.set(item.date, { d: item.date, w: Number(item.weight), checkin: true })
+  })
+  const weights = [...weightsByDate.values()].sort((a, b) => a.d.localeCompare(b.d))
+  const checkinsByDate = new Map(shapeCheckins.map(item => [item.date, item]))
+  const dates = [...new Set([...weights.map(item => item.d), ...shapeCheckins.map(item => item.date)])].sort()
+  const latestValues = {}
+  const sources = {}
+  let checkinIndex = 0
+
+  return dates.map(date => {
+    while (checkinIndex < shapeCheckins.length && shapeCheckins[checkinIndex].date <= date) {
+      const checkin = shapeCheckins[checkinIndex]
+      Object.entries(checkin.values || {}).forEach(([partId, value]) => {
+        latestValues[partId] = value
+        sources[partId] = checkin.date
+      })
+      checkinIndex += 1
+    }
+    const checkin = checkinsByDate.get(date)
+    // Profile weight is intentionally used only when there is no dated weight
+    // history; some import paths synchronize it to the newest value.
+    const weight = weightAtDate(weights, date) || (!weights.length ? profileWeight(S) : null)
+    return {
+      id: `body-shape-${date}`,
+      date,
+      values: { ...latestValues },
+      sources: { ...sources },
+      directValues: { ...(checkin?.values || {}) },
+      weight,
+      fallbackScales: bodyShapeFallbackScales(bodyShapeProfile(S, weight)),
+    }
+  })
+}
+
+function interpolateRecord(from = {}, to = {}, progress, allowFutureOnly = true) {
+  const result = {}
+  new Set([...Object.keys(from), ...Object.keys(to)]).forEach(key => {
+    const lower = Number(from[key])
+    const upper = Number(to[key])
+    if (Number.isFinite(lower) && Number.isFinite(upper)) result[key] = Math.round((lower + (upper - lower) * progress) * 10000) / 10000
+    else if (Number.isFinite(lower)) result[key] = lower
+    else if (!allowFutureOnly || progress >= 1) {
+      if (Number.isFinite(upper)) result[key] = upper
+    }
+  })
+  return result
+}
+
+function interpolateShapeTimeline(snapshots, timestamp) {
+  if (!snapshots.length) return null
+  const times = snapshots.map(item => timestampOf(item.date))
+  const requested = Number.isFinite(Number(timestamp)) ? Number(timestamp) : times.at(-1)
+  const time = Math.min(times.at(-1), Math.max(times[0], requested))
+  let upperIndex = times.findIndex(value => value >= time)
+  if (upperIndex < 0) upperIndex = times.length - 1
+  const lowerIndex = Math.max(0, times[upperIndex] === time ? upperIndex : upperIndex - 1)
+  const lower = snapshots[lowerIndex]
+  const upper = snapshots[upperIndex]
+  const span = times[upperIndex] - times[lowerIndex]
+  const progress = span > 0 ? (time - times[lowerIndex]) / span : 0
+  const nearestIndex = progress < .5 ? lowerIndex : upperIndex
+  return {
+    time,
+    nearest: snapshots[nearestIndex],
+    nearestIndex,
+    values: interpolateRecord(lower.values, upper.values, progress, true),
+    fallbackScales: interpolateRecord(lower.fallbackScales, upper.fallbackScales, progress, false),
+  }
 }
 
 function ProgressRing({ value }) {
@@ -113,7 +229,7 @@ function BodyHistoryScrubber({ snapshots, value, onChange, onScrubbingChange, we
 
   if (snapshots.length === 1) return <div className="bp-scrubber-single">
     <Icon name="calendar" />
-    <span><strong>{fmtDate(active.date, true)}</strong><small>O corpo começará a mudar quando houver outro check-in.</small></span>
+    <span><strong>{fmtDate(active.date, true)}</strong><small>{weight ? `${fmtNum(weight.w)} ${unit} · adicione outro registro para comparar` : 'O corpo começará a mudar quando houver outro check-in.'}</small></span>
   </div>
 
   const finish = raw => {
@@ -173,7 +289,13 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   const currentCheckin = currentBodyMeasurementCheckin(checkins, today)
   const weekValues = currentCheckin?.values || {}
   const latestValues = latestBodyMeasurements(checkins)
-  const baselineValues = bodyMeasurementSnapshots(checkins)[0]?.values || {}
+  const baselineValues = firstMeasurementValues(checkins)
+  const datedWeights = normalizedBodyweight(S.bodyweight)
+  const currentWeight = Number(currentCheckin?.weight) > 0
+    ? { d: currentCheckin.date, w: Number(currentCheckin.weight), checkin: true }
+    : weightAtDate(datedWeights, today) || (!datedWeights.length ? profileWeight(S) : null)
+  const fallbackScales = bodyShapeFallbackScales(bodyShapeProfile(S, currentWeight))
+  const silhouetteBody = bodySex(S)
   const part = BODY_MEASUREMENT_BY_ID[selected]
   const history = bodyMeasurementHistoryInPeriod(checkins, selected, period)
   const trend = bodyMeasurementDelta(checkins, selected, period)
@@ -218,7 +340,7 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
         <div><span className="bp-eyebrow">Guia da fita métrica</span><h2 id="bp-map-title">Circunferências corporais</h2></div>
         <Segmented className="seg-inline" value={view} onChange={setView} options={[{ value: 'front', label: 'Frente' }, { value: 'back', label: 'Costas' }]} />
       </div>
-      <MeasurementBodyMap body={S.body} view={view} selected={selected} latestValues={latestValues} weekValues={weekValues} shapeValues={latestValues} baselineValues={baselineValues} onSelect={selectPart} />
+      <MeasurementBodyMap body={silhouetteBody} view={view} selected={selected} latestValues={latestValues} weekValues={weekValues} shapeValues={latestValues} baselineValues={baselineValues} fallbackScales={fallbackScales} onSelect={selectPart} />
       <div className="bp-map-legend"><span><i className="selected" />Região selecionada</span><span><i className="current" />Nesta semana</span><span><i className="known" />Valor anterior</span><span><i />Sem registro</span></div>
       <p className="bp-map-help"><Icon name="info" /> Os músculos destacados mostram a região selecionada; o anel indica onde a fita deve contornar o corpo. Toque em outra região para medir.</p>
     </section>
@@ -285,7 +407,9 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
 
 function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, view, setView, focusRequest }) {
   const update = useStore(state => state.update)
-  const snapshots = useMemo(() => bodyMeasurementSnapshots(checkins), [checkins])
+  const snapshots = useMemo(() => bodyShapeTimeline(S, checkins), [
+    S.body, S.bodyweight, S.profile?.heightCm, S.profile?.sex, S.profile?.startWeight, S.unit, checkins,
+  ])
   const firstTime = snapshots.length ? timestampOf(snapshots[0].date) : null
   const lastTime = snapshots.length ? timestampOf(snapshots.at(-1).date) : null
   const initialTime = lastTime == null || focusRequest?.timestamp == null
@@ -306,10 +430,10 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
 
   if (!snapshots.length) return <section className="card bp-empty large"><Icon name="ruler" /><strong>Sua evolução começa no primeiro check-in</strong><span>Registre uma circunferência para criar a primeira forma corporal e liberar a linha do tempo.</span></section>
 
-  const interpolation = interpolateBodyMeasurementSnapshot(checkins, scrubTime)
+  const interpolation = interpolateShapeTimeline(snapshots, scrubTime)
   const active = interpolation.nearest
   const activeTime = timestampOf(active.date)
-  const baselineValues = snapshots[0].values
+  const baselineValues = firstMeasurementValues(checkins)
   const visibleHistory = bodyMeasurementHistoryInPeriod(checkins, selected, period, activeTime)
   const part = BODY_MEASUREMENT_BY_ID[selected]
   const selectedValue = active.values[selected]
@@ -321,7 +445,8 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
   const points = visibleHistory.map(point => ({
     t: point.t, y: point.value, d: point.date, selected: point.date === sourceDate,
   }))
-  const weight = weightAtDate(S.bodyweight, active.date)
+  const weight = active.weight
+  const silhouetteBody = bodySex(S)
 
   const selectPart = id => setSelected(id)
   const remove = point => confirmSheet({
@@ -342,13 +467,14 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
         <Segmented className="seg-inline" value={view} onChange={setView} options={[{ value: 'front', label: 'Frente' }, { value: 'back', label: 'Costas' }]} />
       </div>
       <MeasurementBodyMap
-        body={S.body} view={view} selected={selected} latestValues={active.values}
+        body={silhouetteBody} view={view} selected={selected} latestValues={active.values}
         weekValues={active.directValues} directValues={active.directValues}
         shapeValues={interpolation.values} baselineValues={baselineValues}
+        fallbackScales={interpolation.fallbackScales}
         instant={scrubbing} onSelect={selectPart}
       />
       <BodyHistoryScrubber snapshots={snapshots} value={scrubTime} onChange={setScrubTime} onScrubbingChange={setScrubbing} weight={weight} unit={S.unit} />
-      <p className="bp-relative-note"><Icon name="info" /> Representação proporcional das circunferências registradas. Ela mostra a mudança relativa e não reconstrói nem diagnostica a anatomia real.</p>
+      <p className="bp-relative-note"><Icon name="info" /> Medidas registradas sempre têm prioridade. Onde elas faltam, a largura usa apenas uma estimativa visual baseada em altura, peso e sexo — nunca exibida como centímetros reais.</p>
     </section>
 
     <div className="bp-evolution-side">
@@ -391,7 +517,7 @@ function CheckinHistory({ S, checkins, onOpenEvolution }) {
   const [visibleCount, setVisibleCount] = useState(CHECKIN_HISTORY_PAGE_SIZE)
   const [instantToggle, setInstantToggle] = useState(false)
   const pastCheckins = useMemo(() => checkins
-    .filter(item => item.date <= today && item.week !== currentWeek)
+    .filter(item => item.date <= today && item.week !== currentWeek && Object.keys(item.values || {}).length)
     .sort((a, b) => b.date.localeCompare(a.date)), [checkins, currentWeek, today])
   const deltasByWeek = useMemo(() => {
     const previousValues = {}
@@ -504,29 +630,30 @@ function CheckinHistory({ S, checkins, onOpenEvolution }) {
 }
 
 function CompareView({ checkins }) {
-  const [fromId, setFromId] = useState(checkins[0]?.id || '')
-  const [toId, setToId] = useState(checkins.at(-1)?.id || '')
-  const from = checkins.find(item => item.id === fromId) || checkins[0]
-  const to = checkins.find(item => item.id === toId) || checkins.at(-1)
+  const measuredCheckins = useMemo(() => checkins.filter(item => Object.keys(item.values || {}).length), [checkins])
+  const [fromId, setFromId] = useState(measuredCheckins[0]?.id || '')
+  const [toId, setToId] = useState(measuredCheckins.at(-1)?.id || '')
+  const from = measuredCheckins.find(item => item.id === fromId) || measuredCheckins[0]
+  const to = measuredCheckins.find(item => item.id === toId) || measuredCheckins.at(-1)
 
   useEffect(() => {
-    if (!checkins.some(item => item.id === fromId)) setFromId(checkins[0]?.id || '')
-    if (!checkins.some(item => item.id === toId)) setToId(checkins.at(-1)?.id || '')
-  }, [checkins, fromId, toId])
+    if (!measuredCheckins.some(item => item.id === fromId)) setFromId(measuredCheckins[0]?.id || '')
+    if (!measuredCheckins.some(item => item.id === toId)) setToId(measuredCheckins.at(-1)?.id || '')
+  }, [fromId, measuredCheckins, toId])
 
-  if (checkins.length < 2) return <section className="card bp-empty large"><Icon name="chartLine" /><strong>Faça pelo menos dois check-ins</strong><span>Quando houver duas semanas registradas, você poderá comparar todas as circunferências lado a lado.</span></section>
+  if (measuredCheckins.length < 2) return <section className="card bp-empty large"><Icon name="chartLine" /><strong>Faça pelo menos dois check-ins</strong><span>Quando houver duas semanas registradas, você poderá comparar todas as circunferências lado a lado.</span></section>
 
-  const fromValues = latestBodyMeasurements(checkins, from.date)
-  const toValues = latestBodyMeasurements(checkins, to.date)
+  const fromValues = latestBodyMeasurements(measuredCheckins, from.date)
+  const toValues = latestBodyMeasurements(measuredCheckins, to.date)
   const rows = BODY_MEASUREMENT_PARTS.filter(part => fromValues[part.id] != null || toValues[part.id] != null)
 
   return <div className="bp-compare-layout">
     <section className="card bp-compare-controls">
       <div className="bp-section-head"><div><span className="bp-eyebrow">Comparação corporal</span><h2>Escolha dois momentos</h2></div></div>
       <div className="bp-date-selectors">
-        <label><span>Início</span><select value={from.id} onChange={event => setFromId(event.target.value)}>{checkins.filter(item => item.date <= to.date).map(item => <option key={item.id} value={item.id}>{fmtDate(item.date, true)}</option>)}</select></label>
+        <label><span>Início</span><select value={from.id} onChange={event => setFromId(event.target.value)}>{measuredCheckins.filter(item => item.date <= to.date).map(item => <option key={item.id} value={item.id}>{fmtDate(item.date, true)}</option>)}</select></label>
         <Icon name="chevronRight" />
-        <label><span>Final</span><select value={to.id} onChange={event => setToId(event.target.value)}>{checkins.filter(item => item.date >= from.date).map(item => <option key={item.id} value={item.id}>{fmtDate(item.date, true)}</option>)}</select></label>
+        <label><span>Final</span><select value={to.id} onChange={event => setToId(event.target.value)}>{measuredCheckins.filter(item => item.date >= from.date).map(item => <option key={item.id} value={item.id}>{fmtDate(item.date, true)}</option>)}</select></label>
       </div>
     </section>
     <section className="card bp-compare-table-card">

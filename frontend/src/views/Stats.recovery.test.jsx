@@ -12,20 +12,31 @@ const DAY = 86400000
 const HOUR = 3600000
 const BASE_NOW = Date.UTC(2026, 0, 22, 12)
 
-const mocks = vi.hoisted(() => ({
-  maps: [],
-  mapMounts: 0,
-  S: {
-    unit: 'kg', body: 'male', effort: 'rir', targetW: null,
-    bodyweight: [], routines: [], workouts: [],
-    simpleMode: false,
-  },
-}))
+const mocks = vi.hoisted(() => {
+  let releaseBodyProgress
+  const bodyProgressLoaded = new Promise(resolve => { releaseBodyProgress = resolve })
+  return {
+    maps: [],
+    mapMounts: 0,
+    navigate: vi.fn(),
+    bodyProgressLoaded,
+    releaseBodyProgress,
+    S: {
+      unit: 'kg', body: 'male', effort: 'rir', targetW: null,
+      bodyweight: [], routines: [], workouts: [],
+      simpleMode: false,
+    },
+  }
+})
 
 vi.mock('../store/useStore.js', () => ({
   useStore: selector => selector({ S: mocks.S }),
 }))
-vi.mock('react-router-dom', () => ({ useNavigate: () => () => {} }))
+vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
+vi.mock('./BodyProgress.jsx', async () => {
+  await mocks.bodyProgressLoaded
+  return { default: () => React.createElement('main', null, 'Body progress') }
+})
 vi.mock('../sheets.jsx', () => ({
   bwSheet: () => {}, goalSheet: () => {}, calendarSheet: () => {}, workoutDetailSheet: () => {},
   WorkoutRow: () => React.createElement('div'), bwDeltaColor: () => 'inherit',
@@ -113,6 +124,7 @@ function resetFixture(workouts = lifecycleWorkouts()) {
   mocks.S.workouts = workouts
   mocks.maps.length = 0
   mocks.mapMounts = 0
+  mocks.navigate.mockReset()
 }
 
 function installDom() {
@@ -188,6 +200,16 @@ afterEach(async () => {
 })
 
 describe('Stats muscle recovery view runtime', () => {
+  it('loads the body-progress route before navigating from the overview card', async () => {
+    await mountStats()
+
+    await click(container.querySelector('.stats-body-progress-link'))
+    expect(mocks.navigate).not.toHaveBeenCalled()
+
+    mocks.releaseBodyProgress()
+    await vi.waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith('/body-progress'))
+  })
+
   it('dispatches real clicks through Balance, Fatigue, and Strength and preserves selection', async () => {
     await mountStats()
     expectPressed(viewButton(t('Muscle balance')))

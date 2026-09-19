@@ -73,6 +73,23 @@ describe('body progress page', () => {
     expect(mocks.mapProps.view).toBe('back')
   })
 
+  it('uses profile sex and weight as visual-only geometry when no tape measure exists', async () => {
+    mocks.S = {
+      body: 'female', unit: 'kg', bodyMeasurements: [], bodyMeasurementGoals: {},
+      profile: { sex: 'male', heightCm: 178, startWeight: 110 },
+      bodyweight: [{ d: '2026-09-13', w: 110, t: 1 }],
+    }
+    await render()
+
+    expect(mocks.mapProps.body).toBe('male')
+    expect(mocks.mapProps.latestValues).toEqual({})
+    expect(mocks.mapProps.fallbackScales.abdomen).toBeGreaterThan(1.2)
+    expect(mocks.mapProps.fallbackScales['left-arm']).toBeGreaterThan(1)
+    expect(mocks.mapProps.fallbackScales['left-thigh']).toBeGreaterThan(1)
+    expect(container.textContent).toContain('0 de 14 circunferências')
+    expect(container.textContent).not.toContain('110 cm')
+  })
+
   it('keeps map selection in sync and merges decimal measurements into the weekly check-in', async () => {
     await render()
     const input = container.querySelector('#body-measurement-value')
@@ -144,6 +161,73 @@ describe('body progress page', () => {
     expect(mocks.mapProps.shapeValues).toMatchObject({ chest: 106, abdomen: 114 })
     expect(container.textContent).toContain('2 de 2')
     expect(container.textContent).toContain('2 registros')
+  })
+
+  it('renders a causal body timeline from weight alone and changes every fallback region', async () => {
+    mocks.S = {
+      body: 'male', unit: 'kg', bodyMeasurements: [], bodyMeasurementGoals: {},
+      profile: { sex: 'male', heightCm: 178, startWeight: 71 },
+      bodyweight: [
+        { d: '2026-08-31', w: 110, t: 1 },
+        { d: '2026-09-07', w: 71, t: 2 },
+      ],
+    }
+    await render()
+    await click(button('Evolução'))
+
+    const slider = container.querySelector('input[type="range"]')
+    expect(slider).not.toBeNull()
+    expect(mocks.mapProps.latestValues).toEqual({})
+    const finish = { ...mocks.mapProps.fallbackScales }
+    expect(container.textContent).toContain('2 de 2')
+
+    await inputValue(slider, slider.min)
+    BODY_MEASUREMENT_PARTS.forEach(part => {
+      expect(mocks.mapProps.fallbackScales[part.id]).toBeGreaterThan(finish[part.id])
+    })
+    expect(container.querySelector('.bp-history-metrics').textContent).toContain('Medições reais0')
+    expect(container.textContent).toContain('1 de 2')
+  })
+
+  it('never exposes a circumference before its real measurement date', async () => {
+    mocks.S = {
+      body: 'male', unit: 'kg', bodyMeasurementGoals: {},
+      profile: { sex: 'male', heightCm: 178, startWeight: 100 },
+      bodyweight: [
+        { d: '2026-01-01', w: 110, t: 1 },
+        { d: '2026-01-15', w: 105, t: 2 },
+        { d: '2026-02-01', w: 100, t: 3 },
+      ],
+      bodyMeasurements: [{ date: '2026-02-01', values: { waist: 105 } }],
+    }
+    await render()
+    await click(button('Evolução'))
+
+    const slider = container.querySelector('input[type="range"]')
+    await inputValue(slider, String(new Date('2026-01-15T12:00:00').getTime()))
+    expect(mocks.mapProps.latestValues.waist).toBeUndefined()
+    expect(mocks.mapProps.shapeValues.waist).toBeUndefined()
+    expect(mocks.mapProps.fallbackScales.waist).toBeGreaterThan(1)
+
+    await inputValue(slider, slider.max)
+    expect(mocks.mapProps.latestValues.waist).toBe(105)
+    expect(mocks.mapProps.shapeValues.waist).toBe(105)
+  })
+
+  it('ignores weight-only records when choosing comparison dates', async () => {
+    mocks.S.bodyMeasurements = [
+      { date: '2026-08-17', weight: 110, values: {} },
+      { date: '2026-08-24', values: { chest: 110 } },
+      { date: '2026-08-31', weight: 104, values: {} },
+      { date: '2026-09-07', values: { chest: 101 } },
+    ]
+    await render()
+    await click(button('Comparar'))
+
+    const selectors = [...container.querySelectorAll('.bp-date-selectors select')]
+    expect(selectors[0].value).toBe('body-2026-08-24')
+    expect(selectors[1].value).toBe('body-2026-09-07')
+    expect(selectors[0].querySelectorAll('option')).toHaveLength(2)
   })
 
   it('keeps the current week out of the check-in archive and reveals only direct old measurements', async () => {

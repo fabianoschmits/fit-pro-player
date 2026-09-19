@@ -23,6 +23,10 @@ import { Button, Segmented, SelectRow } from '../components/ui.jsx'
 import TipOnce from '../components/TipOnce.jsx'
 import { isWarmupRow } from '../lib/workout-model.js'
 
+// Keep the current screen mounted until the lazy route is ready. On a cold PWA cache,
+// navigating first could leave only the dark route fallback visible while this chunk loaded.
+const loadBodyProgressRoute = () => import('./BodyProgress.jsx')
+
 // Which muscles the training in a window actually hit — and, the point of the card,
 // which ones it keeps missing. Shading is relative within the window (lib/muscles.js).
 function latestMuscleTraining(workouts) {
@@ -300,6 +304,7 @@ function EffortCard({ S }) {
 export default function Stats() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
+  const [openingBodyProgress, setOpeningBodyProgress] = useState(false)
   const [range, setRange] = useState(90)
   const [exId, setExId] = useState(null)
   const [exMetric, setExMetric] = useState('top')
@@ -406,6 +411,20 @@ export default function Stats() {
   if (showE1) exOpts.push({ value: 'e1rm', label: t('Est. 1RM') })
   if (showEff) exOpts.push({ value: 'effort', label: t('Effort') })
 
+  const openBodyProgress = async () => {
+    if (openingBodyProgress) return
+    setOpeningBodyProgress(true)
+    try {
+      await loadBodyProgressRoute()
+      nav('/body-progress')
+    } catch (error) {
+      console.error('Failed to load body progress route:', error)
+      setOpeningBodyProgress(false)
+    }
+  }
+
+  const warmBodyProgress = () => { loadBodyProgressRoute().catch(() => {}) }
+
   return <div className="stats-view">
     <div className="hdr stats-titlebar">
       <div><h1>{t('Stats')}</h1><div className="sub">{t('Progress & history')}</div></div>
@@ -418,7 +437,14 @@ export default function Stats() {
       <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</b></div>
     </section>
 
-    <button type="button" className="card stats-body-progress-link" onClick={() => nav('/body-progress')}>
+    <button
+      type="button"
+      className="card stats-body-progress-link"
+      aria-busy={openingBodyProgress || undefined}
+      onPointerEnter={warmBodyProgress}
+      onFocus={warmBodyProgress}
+      onClick={openBodyProgress}
+    >
       <span className="stats-body-progress-icon"><Icon name="ruler" /></span>
       <span><strong>Evolução corporal</strong><small>Medidas semanais, histórico e comparação</small></span>
       <Icon name="chevronRight" />
