@@ -236,7 +236,7 @@ function MuscleBalance({ S }) {
           {detrained.map(slug => <div key={slug} className="mrow">
             <span className="nm">{t(MUSCLE_NAME[slug])}</span>
             <span className="bar"><i style={{ width: Math.round(strength[slug] * 100) + '%' }} /></span>
-            <span className="v">{t('{0} sets', vol90[slug] || 0)}</span>
+            <span className="v">{t('{0} sets', fmtNum(vol90[slug] || 0))}</span>
           </div>)}
         </div>
       </div>

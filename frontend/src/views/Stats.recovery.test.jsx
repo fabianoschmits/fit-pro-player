@@ -6,6 +6,7 @@ import { MUSCLES, levelsOf } from '../lib/muscles.js'
 import { FATIGUE_STATES, STRENGTH_FLOOR } from '../lib/recovery.js'
 import { fatigueStateOf } from '../lib/recovery-view.js'
 import { t } from '../lib/i18n.js'
+import { fmtNum } from '../lib/format.js'
 import Stats from './Stats.jsx'
 
 const DAY = 86400000
@@ -296,5 +297,20 @@ describe('Stats muscle recovery view runtime', () => {
     expect(Object.values(strengthMap.load).every(value => value < 1)).toBe(true)
     expect(Math.min(...Object.values(strengthMap.load))).toBe(STRENGTH_FLOOR)
     expect(strengthMap.thresholds.at(-1)).toEqual({ at: 1, level: 4 })
+  })
+
+  it('formats fractional effective sets without exposing floating-point precision', async () => {
+    const secondarySets = entry('custom-secondary', [set(true), set(true), set(true)])
+    secondarySets.exercise = {
+      n: 'Secondary chest exercise',
+      muscleWeights: { chest: 0.4 },
+    }
+    resetFixture([workout('fractional-volume', BASE_NOW - 20 * DAY, [secondarySets])])
+
+    await mountStats()
+    await click(viewButton(t('Strength')))
+
+    expect(container.textContent).toContain(t('{0} sets', fmtNum(1.2)))
+    expect(container.textContent).not.toMatch(/1[.,]2000000000000002/)
   })
 })
