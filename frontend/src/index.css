@@ -766,6 +766,7 @@ h4.sec{
 
 /* --- switch --- */
 .sw{
+  position:relative;
   width:51px;height:31px;border-radius:99px;background:var(--surface-3);
   flex:none;padding:2px;display:flex;align-items:center;
   transition:background var(--med) var(--ease);
@@ -887,6 +888,7 @@ h4.sec{
   border-bottom:var(--hair) solid var(--sep-op);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
 }
+.sw::before{content:'';position:absolute;inset:-7px 0}
 .workout-session-header{align-items:center;margin:0 0 7px}
 .workout-session-title{display:flex;min-width:0;flex:1;flex-direction:column;align-items:center;text-align:center;gap:2px}
 .workout-session-title strong{width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;font-weight:700;line-height:1.2}
@@ -1173,7 +1175,7 @@ h4.sec{
   border:2px solid color-mix(in srgb,var(--green,#30d158) 50%,transparent);
   display:flex;align-items:center;justify-content:center;
   font-size:28px;color:var(--green,#30d158);
-  animation:scalein .35s cubic-bezier(.34,1.56,.64,1);
+  animation:scalein 180ms cubic-bezier(.2,.8,.2,1);
 }
 .work-set-overlay__done-title{
   text-align:center;font-size:20px;font-weight:700;letter-spacing:-.02em;
@@ -1182,7 +1184,7 @@ h4.sec{
 .work-set-overlay__done-sub{
   text-align:center;font-size:14px;color:var(--label-2);line-height:1.45;margin-bottom:20px;
 }
-@keyframes scalein{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes scalein{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* exercise-config sheet: three steppers side by side on narrow phones */
 .cfgrow{gap:8px}
@@ -1239,7 +1241,7 @@ h4.sec{
   border-radius:var(--r-xl) var(--r-xl) 0 0;
   padding:8px 16px calc(16px + var(--sab));
   max-height:90dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;scroll-padding-bottom:calc(20px + var(--sab));
-  animation:sheetup .34s var(--ease);
+  animation:sheetup 240ms var(--ease);
   overscroll-behavior:contain;touch-action:pan-y;
 }
 :root[data-theme="light"] .sheet{background:var(--bg)}
@@ -1269,7 +1271,7 @@ h4.sec{
   width:min(88vw,320px);background:var(--surface);border-radius:10px;padding:18px;
   border:var(--hair) solid var(--surface-border);
   box-shadow:0 16px 42px -18px rgba(0,0,0,.5);
-  animation:pop .28s var(--ease);
+  animation:pop var(--med) var(--ease);
 }
 @keyframes pop{from{transform:translate(-50%,-50%) scale(.94);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 @keyframes backin{from{opacity:0}to{opacity:1}}
@@ -1323,19 +1325,13 @@ h4.sec{
 .workout-entry-motion{
   margin:0 10px 10px;overflow:hidden;border-radius:8px;
   background:#000;box-shadow:inset 0 0 0 var(--hair) rgba(255,255,255,.09);
-  animation:workout-entry-motion-in 220ms cubic-bezier(.2,.8,.2,1) both;
   transform-origin:top center;
 }
 .workout-entry-motion .exercise-guide-motion{
   width:100%;height:auto;aspect-ratio:5/3.55;
 }
-@keyframes workout-entry-motion-in{
-  from{opacity:0;transform:translateY(-6px);filter:blur(4px)}
-  to{opacity:1;transform:translateY(0);filter:blur(0)}
-}
 @media (prefers-reduced-motion:reduce){
   .workout-entry-toggle .chev{transition:none}
-  .workout-entry-motion{animation:none}
 }
 
 /* --- RIR/RPE conversion table (effort help sheet) ---
@@ -1570,6 +1566,7 @@ h4.sec{
 /* --- accent swatches --- */
 .swatches{display:flex;gap:12px;flex-wrap:wrap}
 .swatch{width:32px;height:32px;border-radius:50%;flex:none;position:relative;transition:transform var(--fast)}
+.swatch::before{content:'';position:absolute;inset:-6px;border-radius:50%}
 .swatch:active{transform:scale(.9)}
 .swatch.on::after{content:'';position:absolute;inset:-4px;border-radius:50%;box-shadow:0 0 0 2px var(--label)}
 
@@ -1846,7 +1843,7 @@ h4.sec{
 
 .plan-progress{padding:12px 14px;margin-bottom:12px}
 .plan-progress-bar{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
-.plan-progress-bar i{display:block;height:100%;background:var(--acc);border-radius:2px;transition:width .3s var(--ease)}
+.plan-progress-bar i{display:block;width:100%;height:100%;background:var(--acc);border-radius:2px;transform:scaleX(var(--progress,0));transform-origin:left center;transition:transform var(--med) var(--ease)}
 
 .tip-banner{
   display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:8px;
@@ -1857,6 +1854,17 @@ h4.sec{
 .tip-body{flex:1;font-size:13px;line-height:1.4;color:var(--label-2)}
 .tip-dismiss{
   flex:none;font-size:13px;font-weight:600;color:var(--acc);background:none;padding:2px 0;
+}
+
+/* Comfortable targets on touch-sized layouts without making desktop controls feel oversized. */
+@media (max-width:760px){
+  button.iconbtn,.home-week-actions .iconbtn{width:44px;height:44px}
+  .hm-month-head .iconbtn{width:44px;height:44px}
+  .history-titlebar{grid-template-columns:44px minmax(0,1fr) 44px}
+  .history-titlebar::after{width:44px;height:44px}
+  .btn.sm,.btn.xs,.chip,.seg button,.seg-inline button{min-height:44px}
+  .helpbtn,.tip-dismiss{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  .picker-cfg,.exercise-picker-preview-actions .picker-cfg{width:44px;height:44px}
 }
 
 .stats-tabs{margin-bottom:14px}

@@ -9,6 +9,7 @@ import {
   generateAuthenticationOptions, verifyAuthenticationResponse
 } from '@simplewebauthn/server';
 import webpush from 'web-push';
+import { newerStateExists, stateTimestamp } from './state-version.js';
 
 const PORT = +(process.env.PORT || 3000);
 // Docker pins DATA_DIR to /data. A direct `npm start` keeps runtime files inside
@@ -239,15 +240,16 @@ function json(res, code, obj, extraHeaders) {
 }
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    let size = 0; const chunks = [];
+    let size = 0; let tooLarge = false; const chunks = [];
     req.on('data', d => {
       size += d.length;
-      if (size > MAX_BODY) { reject(new Error('body too large')); req.destroy(); return; }
-      chunks.push(d);
+      if (size > MAX_BODY) { tooLarge = true; return; }
+      if (!tooLarge) chunks.push(d);
     });
     req.on('end', () => {
+      if (tooLarge) return reject(Object.assign(new Error('body too large'), { status: 413 }));
       try { resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}); }
-      catch { reject(new Error('bad json')); }
+      catch { reject(Object.assign(new Error('bad json'), { status: 400 })); }
     });
     req.on('error', reject);
   });
@@ -568,9 +570,13 @@ const routes = {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
     const body = await readBody(req);
-    if (!body.state || typeof body.state !== 'object') return json(res, 400, { error: 'state required' });
+    if (!body.state || typeof body.state !== 'object' || Array.isArray(body.state)) return json(res, 400, { error: 'state required' });
+    const file = stateFile(user.id);
+    let stored = null;
+    try { stored = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { /* first sync */ }
+    if (newerStateExists(stored, body.state)) return json(res, 409, { error: 'newer state already stored', serverTs: stateTimestamp(stored) });
     delete body.state.active;              // in-progress workouts stay device-local
-    atomicWrite(stateFile(user.id), JSON.stringify(body.state));
+    atomicWrite(file, JSON.stringify(body.state));
     json(res, 200, { ok: true, ts: body.state._ts || null });
   },
 
@@ -774,6 +780,6 @@ http.createServer(async (req, res) => {
   try { await handler(req, res); }
   catch (e) {
     console.error(key, e);
-    if (!res.headersSent) json(res, 500, { error: 'server error' });
+    if (!res.headersSent) json(res, e.status || 500, { error: e.status ? e.message : 'server error' });
   }
 }).listen(PORT, () => console.log(`fitproplayer-api on :${PORT} (rpID=${RP_ID}, origin=${ORIGIN})`));

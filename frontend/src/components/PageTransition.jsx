@@ -12,10 +12,10 @@ export default function PageTransition({ children }) {
       <motion.div
         id="app"
         key={loc.pathname}
-        initial={reduced ? false : { opacity: 0, y: 10 }}
+        initial={reduced ? false : { opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={reduced ? undefined : { opacity: 0, y: -6 }}
-        transition={{ duration: reduced ? 0 : 0.32, ease: EASE }}
+        exit={reduced ? undefined : { opacity: 0 }}
+        transition={{ duration: reduced ? 0 : 0.12, ease: EASE }}
       >
         {children}
       </motion.div>

@@ -102,6 +102,6 @@ describe('ProfileHeader editorial hero', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(7000) })
 
     expect(random).toHaveBeenCalled()
-    expect(container.querySelector('.profile-hero-message-stage').getAttribute('aria-live')).toBe('polite')
+    expect(container.querySelector('.profile-hero-message-stage').hasAttribute('aria-live')).toBe(false)
   })
 })

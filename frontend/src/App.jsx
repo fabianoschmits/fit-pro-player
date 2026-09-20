@@ -184,7 +184,7 @@ export function ProfileHeader({ S, preview }) {
     <div className="profile-hero-content">
       <div className="profile-hero-copy">
         <strong className="profile-hero-name">{profile.name}</strong>
-        <div className="profile-hero-message-stage" aria-live="polite">
+        <div className="profile-hero-message-stage">
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
               key={messageIndex}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
@@ -16,14 +16,8 @@ const TABS = [
   { k: 'more', icon: 'more', to: '/more', label: () => t('More') },
 ]
 
-const SPRING = { type: 'spring', stiffness: 300, damping: 30 }
-const PILL_SPRING = {
-  type: 'spring',
-  stiffness: 400,
-  damping: 25,
-  mass: 1,
-  layout: { type: 'spring', stiffness: 350, damping: 25 },
-}
+const QUICK = { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] }
+const PILL = { duration: 0.18, ease: [0.2, 0.8, 0.2, 1], layout: QUICK }
 
 function isActive(cur, k) {
   if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings' || cur === 'library'
@@ -32,7 +26,7 @@ function isActive(cur, k) {
   return cur === k
 }
 
-function TabItem({ featured, active, icon, label, recording, onClick, tabKey, tabRef }) {
+function TabItem({ featured, active, icon, label, recording, onClick, tabKey, tabRef, reduced }) {
   if (featured) {
     return (
       <button
@@ -68,24 +62,24 @@ function TabItem({ featured, active, icon, label, recording, onClick, tabKey, ta
         <motion.div
           className="tab-lift"
           animate={{ y: active ? -4 : 0 }}
-          transition={SPRING}
+          transition={reduced ? { duration: 0 } : QUICK}
         >
           <AnimatePresence>
             {active && (
               <motion.span
                 layoutId="active-pill"
                 className="tab-active-pill"
-                initial={{ opacity: 0, scaleX: 1.5, scaleY: 0.6 }}
+                initial={reduced ? false : { opacity: 0, scale: 0.94 }}
                 animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
-                exit={{ opacity: 0, scaleX: 0.5, scaleY: 1.5 }}
-                transition={PILL_SPRING}
+                exit={reduced ? undefined : { opacity: 0, scale: 0.96 }}
+                transition={reduced ? { duration: 0 } : PILL}
               />
             )}
           </AnimatePresence>
           <motion.span
             className="tab-icn-wrap"
             animate={{ color: active ? 'var(--acc)' : 'var(--label-3)' }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: reduced ? 0 : 0.16 }}
           >
             <Icon name={icon} className={'tab-icn' + (active ? ' tab-icn--on' : '')} />
           </motion.span>
@@ -105,6 +99,7 @@ export default function TabBar({ onStart }) {
   const rowRef = useRef(null)
   const tabRefs = useRef(new Map())
   const [dragTab, setDragTab] = useState(null)
+  const reduced = useReducedMotion()
 
   useEffect(() => {
     const row = rowRef.current
@@ -187,6 +182,7 @@ export default function TabBar({ onStart }) {
                   label={label}
                   recording={tab.k === 'start' && !!S.active}
                   onClick={() => onTab(tab)}
+                  reduced={reduced}
                 />
               )
             })}

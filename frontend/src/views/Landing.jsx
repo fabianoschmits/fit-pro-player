@@ -131,10 +131,10 @@ function RegisterSheet({ close }) {
     <div className="muted small" style={{ marginBottom: 14 }}>
       Escolha um nome e confirme com {t(BIO)}. A chave de acesso fica protegida no seu dispositivo.
     </div>
-    <input ref={inputRef} className="input" placeholder="Seu nome" maxLength={40} value={name} onChange={event => setName(event.target.value)} />
+    <input ref={inputRef} className="input" aria-label="Seu nome" placeholder="Seu nome" maxLength={40} value={name} onChange={event => setName(event.target.value)} />
     {inviteOnly && <>
       <div style={{ height: 10 }} />
-      <input className="input" placeholder="Código de convite" maxLength={40} value={code}
+      <input className="input" aria-label="Código de convite" placeholder="Código de convite" maxLength={40} value={code}
         onChange={event => setCode(event.target.value.toUpperCase())}
         style={{ letterSpacing: '.14em', fontWeight: 600, textAlign: 'center' }} />
     </>}

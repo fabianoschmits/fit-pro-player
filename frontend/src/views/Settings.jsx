@@ -47,11 +47,12 @@ export default function Settings() {
   }
   const doImport = ev => {
     const f = ev.target.files[0]; if (!f) return
+    if (f.size > 5 * 1024 * 1024) { toast(t('Import failed: {0}', 'file is larger than 5 MB')); return }
     const rd = new FileReader()
     rd.onload = () => {
       try {
         const data = JSON.parse(rd.result)
-        if (!data.workouts || !data.routines) throw new Error('not a Fit Pro Player backup')
+        if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.workouts) || !Array.isArray(data.routines)) throw new Error('not a Fit Pro Player backup')
         confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => { replaceState(data, true); toast(t('Backup imported')) } })
       } catch (e) { toast(t('Import failed: {0}', e.message)) }
     }
@@ -372,10 +373,10 @@ function RegisterInline({ close, setUser, pushState, pullState, toast }) {
   return <>
     <h3>{t('Create your profile')}</h3>
     <div className="muted small" style={{ marginBottom: 14 }}>{t('Pick a name, then confirm with your device.')}</div>
-    <TextField ref={nameRef} placeholder={t('Your name')} maxLength={40} />
+    <TextField ref={nameRef} aria-label={t('Your name')} placeholder={t('Your name')} maxLength={40} />
     {inviteOnly && <>
       <div style={{ height: 10 }} />
-      <input className="input" placeholder={t('Invite code')} maxLength={40} value={code}
+      <input className="input" aria-label={t('Invite code')} placeholder={t('Invite code')} maxLength={40} value={code}
         onChange={e => setCode(e.target.value.toUpperCase())} style={{ letterSpacing: '.14em', fontWeight: 600, textAlign: 'center' }} />
       <div className="dim small" style={{ marginTop: 6 }}>{t('This app is invite-only — enter the code you were given.')}</div>
     </>}

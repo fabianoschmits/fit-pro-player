@@ -11,7 +11,7 @@ export default function TipOnce({ id, children }) {
     <div className="tip-banner" role="note">
       <Icon name="info" className="tip-ico" />
       <div className="tip-body">{children}</div>
-      <button className="tip-dismiss" onClick={() => update(s => { s.seenTips = { ...(s.seenTips || {}), [id]: true } })}>
+      <button type="button" className="tip-dismiss" onClick={() => update(s => { s.seenTips = { ...(s.seenTips || {}), [id]: true } })}>
         {t('Got it')}
       </button>
     </div>

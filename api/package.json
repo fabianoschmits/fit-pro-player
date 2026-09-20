@@ -9,7 +9,8 @@
   "main": "server.js",
   "license": "UNLICENSED",
   "scripts": {
-    "start": "node --env-file-if-exists=../.env server.js"
+    "start": "node --env-file-if-exists=../.env server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@simplewebauthn/server": "^13.1.1",

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText } from './lib/exercises.js'
@@ -510,12 +511,12 @@ function CustomExForm({ existing, prefill, onDone, close }) {
   return <>
     <h3>{existing ? t('Edit custom exercise') : t('Create your own exercise')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{t('Name it and pick a body part — it behaves like any other exercise, just without an animation.')}</div>
-    <input className="input" placeholder={t('Exercise name')} value={n} onChange={e => setN(e.target.value)} />
+    <input className="input" aria-label={t('Exercise name')} placeholder={t('Exercise name')} value={n} onChange={e => setN(e.target.value)} />
     <div className="chips" style={{ margin: '12px 0' }}>
       {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => setBp(b)}>{sentenceCase(t(b))}</button>)}
     </div>
     {bp === 'cardio' && <div className="small dim row" style={{ marginBottom: 10, gap: 5 }}><Icon name="figureRun" style={{ fontSize: 13 }} />{t('Cardio exercises log time + speed instead of weight × reps.')}</div>}
-    <textarea className="input" rows={4} maxLength={1000} placeholder={t('Description (optional) — setup, cues, anything you want to remember')}
+    <textarea className="input" rows={4} maxLength={1000} aria-label={t('Description (optional) — setup, cues, anything you want to remember')} placeholder={t('Description (optional) — setup, cues, anything you want to remember')}
       value={desc} onChange={e => setDesc(e.target.value)} />
     <div style={{ height: 14 }} />
     <Button variant="primary" onClick={save}>{existing ? t('Save') : t('Create exercise')}</Button>
@@ -703,6 +704,7 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
     }
     return cfg
   })
+  const reduced = useReducedMotion()
   // Cardio keeps its own duration+speed form; the reps/time choice (issue #16) is offered for
   // everything else, which is where the gap was — planks, hangs, wall sits, loaded carries.
   const mode = cardio ? 'cardio' : modeOf({ ...c, id: ex.id })
@@ -752,7 +754,10 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
       <Segmented className="seg-range" value={mode} onChange={setMode}
         options={[{ value: 'reps', label: t('Reps') }, { value: 'time', label: t('Time') }]} />
     </div>}
-    <div className="row cfgrow" style={{ marginBottom: mode === 'time' ? 8 : 18 }}>
+    <AnimatePresence initial={false} mode="wait">
+    <motion.div key={mode} className="row cfgrow" style={{ marginBottom: mode === 'time' ? 8 : 18 }}
+      initial={reduced ? false : { opacity: 0 }} animate={{ opacity: 1 }} exit={reduced ? undefined : { opacity: 0 }}
+      transition={{ duration: reduced ? 0 : 0.12 }}>
       {cardio ? <>
         <Stepper label={t('Intervals')} value={c.sets} step={1} decimal={false} onChange={v => setC(x => ({ ...x, sets: v }))} />
         <Stepper label={t('Minutes')} value={c.min} step={1} decimal={false} onChange={v => setC(x => ({ ...x, min: v }))} />
@@ -768,7 +773,8 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
             until there is a belt to describe — see the added-weight row below. */}
         {!bw && <Stepper label={t('Weight ({0})', st.unit)} value={c.weight} step={2.5} onChange={v => setC(x => ({ ...x, weight: v }))} />}
       </>}
-    </div>
+    </motion.div>
+    </AnimatePresence>
     {mode === 'time' && !bw && <div className="small dim" style={{ marginBottom: 18 }}>
       {t('A timer runs while you hold the set. Leave the weight at 0 for bodyweight holds.')}
     </div>}
@@ -983,6 +989,7 @@ export const dayAssignSheet = day => ui().openSheet(close => <DayAssign day={day
 function WorkoutDetail({ w, close }) {
   const st = useStore(s => s.S)
   const [openEntry, setOpenEntry] = useState(null)
+  const reduced = useReducedMotion()
   return <>
     <h3>{w.name}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
@@ -1007,9 +1014,15 @@ function WorkoutDetail({ w, close }) {
               : <div className="ss">{t('no sets')}</div>}</div>
           {hasAnimation && <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="chev" />}
         </button>
-        {expanded && <div className="workout-entry-motion">
-          <ExerciseGuideAnimation ex={ex} playing />
-        </div>}
+        <AnimatePresence initial={false}>
+          {expanded && <motion.div className="workout-entry-motion"
+            initial={reduced ? false : { height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={reduced ? undefined : { height: 0, opacity: 0 }}
+            transition={{ duration: reduced ? 0 : 0.18, ease: [0.2, 0.8, 0.2, 1] }}>
+            <ExerciseGuideAnimation ex={ex} playing />
+          </motion.div>}
+        </AnimatePresence>
       </div>
     })}
     <Button variant="primary" icon="reset" onClick={() => { close(); repeatWorkout(w) }}>{t('Repeat {0}', w.name)}</Button>

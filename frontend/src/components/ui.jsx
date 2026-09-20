@@ -65,9 +65,9 @@ export function SearchField({ value, onChange, onClear, ...rest }) {
   return (
     <div className="searchf">
       <Icon name="magnifier" className="lead" />
-      <input className="field" value={value} onChange={onChange} {...rest} />
+      <input className="field" value={value} onChange={onChange} aria-label={rest['aria-label'] || rest.placeholder} {...rest} />
       {!!value && (
-        <button className="clear" onClick={onClear} aria-label={t('Clear')}>
+        <button type="button" className="clear" onClick={onClear} aria-label={t('Clear')}>
           <Icon name="xmark" />
         </button>
       )}
@@ -80,6 +80,7 @@ export function SearchField({ value, onChange, onClear, ...rest }) {
 export function Switch({ checked, onChange, disabled }) {
   return (
     <button
+      type="button"
       role="switch"
       aria-checked={!!checked}
       disabled={disabled}
@@ -101,6 +102,7 @@ export function Segmented({ options, value, onChange, className = '' }) {
       <span className="seg-sel" aria-hidden="true" />
       {options.map(o => (
         <button
+          type="button"
           key={o.value}
           className={o.value === value ? 'on' : ''}
           aria-pressed={o.value === value}
@@ -120,12 +122,12 @@ export function Stepper({ value, step = 1, onChange, decimal = true, className =
   const set = v => onChange(Math.max(0, Math.round((v || 0) * 100) / 100))
   const inner = (
     <div className={'stp ' + className}>
-      <button onClick={() => set((+value || 0) - step)} aria-label={t('Decrease')}><Icon name="minus" /></button>
+      <button type="button" onClick={() => set((+value || 0) - step)} aria-label={t('Decrease')}><Icon name="minus" /></button>
       <span className="val">
         <NumberField value={value} decimal={decimal} onChange={onChange} />
         {unit && <i>{unit}</i>}
       </span>
-      <button onClick={() => set((+value || 0) + step)} aria-label={t('Increase')}><Icon name="plus" /></button>
+      <button type="button" onClick={() => set((+value || 0) + step)} aria-label={t('Increase')}><Icon name="plus" /></button>
     </div>
   )
   if (!label) return inner
@@ -216,6 +218,7 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
 export function Check({ checked, onChange, className = '', size, playMode = false, disabled = false, ariaLabel }) {
   return (
     <button
+      type="button"
       role="checkbox"
       aria-checked={!!checked}
       aria-label={ariaLabel}
@@ -247,7 +250,7 @@ export function Section({ title, footer, children, className = '' }) {
 export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none', onClick, danger, children, className = '' }) {
   const Tag = onClick ? 'button' : 'div'
   return (
-    <Tag className={'lrow' + (onClick ? ' tap' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick}>
+    <Tag {...(onClick ? { type: 'button' } : {})} className={'lrow' + (onClick ? ' tap' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick}>
       {icon && <span className="lrow-i" style={iconTint ? { '--tint': iconTint } : null}><Icon name={icon} /></span>}
       {title && <span className="lrow-m">
         <span className="lrow-t">{title}</span>
@@ -276,7 +279,7 @@ export function SelectRow({ icon, iconTint, title, value, options, onChange, she
         <h3>{sheetTitle || title}</h3>
         <div className="sect-b">
           {options.map(o => (
-            <button key={o.value} className="lrow tap" onClick={() => { close(); onChange(o.value) }}>
+            <button type="button" key={o.value} className="lrow tap" onClick={() => { close(); onChange(o.value) }}>
               <span className="lrow-m"><span className="lrow-t">{o.label}</span>
                 {o.subtitle && <span className="lrow-s">{o.subtitle}</span>}</span>
               {o.value === value && <Icon name="check" className="lrow-k" />}
@@ -306,7 +309,7 @@ function require_ui() {
 
 export function Button({ variant = 'plain', size, icon, trailingIcon, children, className = '', ...rest }) {
   return (
-    <button className={`btn ${variant}${size ? ' ' + size : ''} ${className}`} {...rest}>
+    <button type="button" className={`btn ${variant}${size ? ' ' + size : ''} ${className}`} {...rest}>
       {icon && <Icon name={icon} />}
       {children && <span>{children}</span>}
       {trailingIcon && <Icon name={trailingIcon} />}

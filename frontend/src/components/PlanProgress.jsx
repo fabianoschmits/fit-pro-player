@@ -12,7 +12,7 @@ export default function PlanProgress({ progress }) {
         <span className="small" style={{ fontWeight: 600, color: 'var(--acc)' }}>{label}</span>
       </div>
       <div className="plan-progress-bar" aria-hidden="true">
-        <i style={{ width: pct + '%' }} />
+        <i style={{ '--progress': pct / 100 }} />
       </div>
     </div>
   )

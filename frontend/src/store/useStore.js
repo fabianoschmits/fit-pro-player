@@ -8,6 +8,7 @@ import { MOBILE, nativeLoad, nativeSave, syncReminder } from '../lib/mobile.js'
 import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from '../lib/starter.js'
 import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
 import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from '../lib/body-measurements.js'
+import { createStatePushQueue, nextStateTimestamp } from '../lib/sync-state.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
@@ -85,6 +86,8 @@ const hasData = st => !!(
 export const useStore = create((set, get) => {
   let pushTm = null
   let saveTm = null
+  const markDirty = () => { try { localStorage.setItem('gym_dirty', '1') } catch { /* best effort */ } }
+  const markClean = () => { try { localStorage.removeItem('gym_dirty') } catch { /* best effort */ } }
 
   // Mobile build: mirror the state into a file in the app's data directory (survives WebView
   // storage eviction) and keep the native reminder schedule in step with the weekly plan.
@@ -94,16 +97,39 @@ export const useStore = create((set, get) => {
   }
 
   const persist = (S, push = true) => {
-    S._ts = Date.now()
+    S._ts = nextStateTimestamp(get().S?._ts)
     registerCustom(S.customEx)
-    localStorage.setItem(KEY, JSON.stringify(S))
+    try { localStorage.setItem(KEY, JSON.stringify(S)) } catch { /* keep the in-memory copy usable */ }
     set({ S })
     if (MOBILE) nativePersist()
     if (push && get().user) {
+      markDirty()
       clearTimeout(pushTm)
       pushTm = setTimeout(() => get().pushState(), 1500)
     }
   }
+
+  const pushLatest = createStatePushQueue({
+    getState: () => get().S,
+    isEnabled: () => !!get().user,
+    markDirty,
+    markClean,
+    send: async state => {
+      try {
+        await api('/api/data', { method: 'PUT', body: JSON.stringify({ state }) })
+      } catch (error) {
+        if (error.status !== 409 || !Number.isFinite(+error.data?.serverTs)) throw error
+
+        // A newer server snapshot can be from another device or an older request that
+        // finished late. Re-stamp this explicit local change above it and retry once.
+        const current = clone(get().S)
+        current._ts = Math.max(Date.now(), +error.data.serverTs + 1)
+        try { localStorage.setItem(KEY, JSON.stringify(current)) } catch { /* keep in memory */ }
+        set({ S: current })
+        await api('/api/data', { method: 'PUT', body: JSON.stringify({ state: current }) })
+      }
+    }
+  })
 
   // A setting changed right before switching away/closing the tab must not get lost mid-debounce
   // (e.g. setting the reminder time then immediately backgrounding to test it). On mobile the
@@ -167,8 +193,7 @@ export const useStore = create((set, get) => {
     async pushState() {
       if (!get().user) return
       clearTimeout(pushTm)
-      try { await api('/api/data', { method: 'PUT', body: JSON.stringify({ state: get().S }) }); localStorage.removeItem('gym_dirty') }
-      catch (e) { localStorage.setItem('gym_dirty', '1') }
+      await pushLatest()
     },
     async pullState() {
       try {
