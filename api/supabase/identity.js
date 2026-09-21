@@ -79,33 +79,15 @@ export function createIdentityRepository({ publicClient = null, adminClient = nu
     const currentLegacyId = legacyId(legacyUser)
     const user = await verifyAccessToken(accessToken)
     const client = requireClient(adminClient)
-    const byLegacy = await client.from('legacy_identity_links').select('*').eq('legacy_user_id', currentLegacyId).maybeSingle()
-    checkError(byLegacy?.error, 'identity-link-failed')
-    const bySupabase = await client.from('legacy_identity_links').select('*').eq('supabase_user_id', user.id).maybeSingle()
-    checkError(bySupabase?.error, 'identity-link-failed')
-    if (byLegacy?.data || bySupabase?.data) {
-      const samePair = byLegacy?.data?.supabase_user_id === user.id && bySupabase?.data?.legacy_user_id === currentLegacyId
-      if (!samePair) throw failure('identity-link-conflict')
-      return readSnapshot(user)
-    }
+    if (typeof client.rpc !== 'function') throw failure('identity-link-failed')
     let response
     try {
-      response = await client.from('legacy_identity_links').insert({
-        legacy_user_id: currentLegacyId,
-        supabase_user_id: user.id,
-        status: 'active',
-      }).select('*').single()
+      response = await client.rpc('link_legacy_identity', {
+        p_legacy_user_id: currentLegacyId,
+        p_supabase_user_id: user.id,
+      })
     } catch (error) {
-      if (error?.code !== '23505') throw failure('identity-link-failed')
       response = { error }
-    }
-    if (response?.error?.code === '23505') {
-      const committedByLegacy = await client.from('legacy_identity_links').select('*').eq('legacy_user_id', currentLegacyId).maybeSingle()
-      const committedBySupabase = await client.from('legacy_identity_links').select('*').eq('supabase_user_id', user.id).maybeSingle()
-      const samePair = committedByLegacy?.data?.supabase_user_id === user.id
-        && committedBySupabase?.data?.legacy_user_id === currentLegacyId
-      if (samePair) return readSnapshot(user)
-      throw failure('identity-link-conflict')
     }
     checkError(response?.error, 'identity-link-failed')
     if (!response?.data) throw failure('identity-link-failed')

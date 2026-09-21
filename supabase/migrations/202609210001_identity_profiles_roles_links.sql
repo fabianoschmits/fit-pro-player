@@ -50,6 +50,65 @@ create trigger legacy_identity_links_set_updated_at
 before update on public.legacy_identity_links
 for each row execute function public.set_identity_updated_at();
 
+create or replace function public.link_legacy_identity(
+  p_legacy_user_id text,
+  p_supabase_user_id uuid
+)
+returns public.legacy_identity_links
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  normalized_legacy_user_id text := btrim(p_legacy_user_id);
+  linked public.legacy_identity_links;
+begin
+  if normalized_legacy_user_id is null
+    or normalized_legacy_user_id = ''
+    or char_length(normalized_legacy_user_id) > 120
+    or p_supabase_user_id is null then
+    raise exception 'invalid identity-link input'
+      using errcode = '22023';
+  end if;
+
+  begin
+    insert into public.legacy_identity_links (legacy_user_id, supabase_user_id, status)
+    values (normalized_legacy_user_id, p_supabase_user_id, 'active')
+    returning * into linked;
+
+    return linked;
+  exception
+    when unique_violation then
+      select * into linked
+      from public.legacy_identity_links
+      where legacy_user_id = normalized_legacy_user_id;
+
+      if found then
+        if linked.supabase_user_id = p_supabase_user_id then
+          return linked;
+        end if;
+
+        raise exception 'identity link conflict'
+          using errcode = '23505';
+      end if;
+
+      select * into linked
+      from public.legacy_identity_links
+      where supabase_user_id = p_supabase_user_id;
+
+      if found and linked.legacy_user_id = normalized_legacy_user_id then
+        return linked;
+      end if;
+
+      raise exception 'identity link conflict'
+        using errcode = '23505';
+  end;
+end;
+$$;
+
+revoke all on function public.link_legacy_identity(text, uuid) from public;
+grant execute on function public.link_legacy_identity(text, uuid) to service_role;
+
 create or replace function public.protect_profile_server_fields()
 returns trigger
 language plpgsql

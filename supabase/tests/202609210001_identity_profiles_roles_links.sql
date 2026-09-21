@@ -1,6 +1,6 @@
 begin;
 
-select plan(53);
+select plan(59);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'user_roles', 'user_roles table exists');
@@ -26,6 +26,19 @@ select col_has_default('public', 'user_roles', 'created_at', 'roles created_at h
 select col_has_default('public', 'legacy_identity_links', 'linked_at', 'identity links linked_at has a default');
 select col_has_default('public', 'legacy_identity_links', 'updated_at', 'identity links updated_at has a default');
 select has_trigger('public', 'legacy_identity_links', 'legacy_identity_links_set_updated_at', 'identity links update their timestamp server-side');
+select has_function('public', 'link_legacy_identity', ARRAY['text', 'uuid'], 'identity linking has a dedicated RPC function');
+select ok(
+  (select prosecdef from pg_proc where oid = 'public.link_legacy_identity(text, uuid)'::regprocedure),
+  'identity linking RPC runs as a security definer'
+);
+select ok(
+  has_function_privilege('service_role', 'public.link_legacy_identity(text, uuid)', 'EXECUTE'),
+  'only the service role can execute the identity linking RPC'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.link_legacy_identity(text, uuid)', 'EXECUTE'),
+  'authenticated clients cannot execute the identity linking RPC'
+);
 
 select has_check('public', 'user_roles', 'user_roles_role_check', 'roles are restricted to the approved enum values');
 select has_check('public', 'legacy_identity_links', 'legacy_identity_links_status_check', 'identity link status is constrained');
@@ -89,6 +102,17 @@ insert into public.legacy_identity_links (legacy_user_id, supabase_user_id)
 values
   ('legacy-professional', '00000000-0000-0000-0000-000000000001'),
   ('legacy-student', '00000000-0000-0000-0000-000000000002');
+
+select lives_ok(
+  $$select * from public.link_legacy_identity('legacy-student', '00000000-0000-0000-0000-000000000002'::uuid)$$,
+  'identity linking RPC is idempotent for the same pair'
+);
+select throws_ok(
+  $$select * from public.link_legacy_identity('legacy-student', '00000000-0000-0000-0000-000000000001'::uuid)$$,
+  '23505',
+  null,
+  'identity linking RPC rejects a conflicting pair atomically'
+);
 
 create temporary table link_update_before on commit drop as
 select supabase_user_id, updated_at

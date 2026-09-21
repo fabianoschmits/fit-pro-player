@@ -41,6 +41,27 @@ function clients({ user = { id: USER_ID, email: 'user@example.test', user_metada
   const tables = { profiles: profile ? [profile] : [], user_roles: roles, legacy_identity_links: link ? [link] : [] }
   const admin = {
     auth: { async getUser() { return result(user) } },
+    rpc(name, args) {
+      calls.push(['rpc', name, args])
+      if (rpcLink) return Promise.resolve(result(rpcLink))
+      const byLegacy = tables.legacy_identity_links.find(row => row.legacy_user_id === args.p_legacy_user_id)
+      const bySupabase = tables.legacy_identity_links.find(row => row.supabase_user_id === args.p_supabase_user_id)
+      if (byLegacy || bySupabase) {
+        const samePair = byLegacy?.supabase_user_id === args.p_supabase_user_id
+          && bySupabase?.legacy_user_id === args.p_legacy_user_id
+        return Promise.resolve(samePair
+          ? result(byLegacy)
+          : result(null, { code: '23505' }))
+      }
+      const linked = {
+        legacy_user_id: args.p_legacy_user_id,
+        supabase_user_id: args.p_supabase_user_id,
+        status: 'active',
+        linked_at: '2026-01-01T00:00:00Z',
+      }
+      tables.legacy_identity_links.push(linked)
+      return Promise.resolve(result(linked))
+    },
     from(table) {
       calls.push(['from', table])
       return fakeQuery(tables[table] ?? [])
@@ -92,30 +113,40 @@ test('linkLegacyIdentity creates the first link and is idempotent for the same p
   assert.equal(fake.calls.filter(call => call[1] === 'legacy_identity_links').length >= 2, true)
 })
 
+test('linkLegacyIdentity delegates the identity write to the atomic Supabase RPC', async () => {
+  const fake = clients({
+    profile: { id: USER_ID, display_name: 'Stored Name', avatar_ref: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+    roles: [{ user_id: USER_ID, role: 'student', created_at: '2026-01-01T00:00:00Z' }],
+    rpcLink: { legacy_user_id: legacyUser.id, supabase_user_id: USER_ID, status: 'active', linked_at: '2026-01-01T00:00:00Z' },
+  })
+
+  await createIdentityRepository(fake).linkLegacyIdentity({ accessToken: 'token', legacyUser })
+
+  assert.deepEqual(fake.calls.find(call => call[0] === 'rpc'), [
+    'rpc',
+    'link_legacy_identity',
+    { p_legacy_user_id: legacyUser.id, p_supabase_user_id: USER_ID },
+  ])
+})
+
 test('linkLegacyIdentity accepts only a marked server-session identity context', async () => {
   const fake = clients({ profile: { id: USER_ID, display_name: 'Stored Name', avatar_ref: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
   const repo = createIdentityRepository(fake)
   await assert.rejects(() => repo.linkLegacyIdentity({ accessToken: 'token', legacyUser: { id: 'legacy-student' } }), error => error.code === 'invalid-legacy-context')
 })
 
-test('same-pair unique conflict is resolved by rereading the committed link', async () => {
-  const link = { legacy_user_id: 'legacy-student', supabase_user_id: USER_ID, status: 'active', linked_at: '2026-01-01T00:00:00Z' }
+test('linkLegacyIdentity maps an atomic RPC conflict to the stable conflict error', async () => {
   const base = clients({ profile: { id: USER_ID, display_name: 'Stored Name', avatar_ref: null, created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' } })
-  let inserted = false
   const admin = {
     ...base.adminClient,
-    from(table) {
-      if (table !== 'legacy_identity_links') return base.adminClient.from(table)
-      return {
-        select() { return this },
-        eq(column, value) { this.column = column; this.value = value; return this },
-        async maybeSingle() { return result(inserted ? link : null) },
-        insert() { inserted = true; return { select() { return { async single() { return result(null, { code: '23505' }) } } } } },
-      }
+    rpc() {
+      return Promise.resolve(result(null, { code: '23505' }))
     },
   }
-  const snapshot = await createIdentityRepository({ ...base, adminClient: admin }).linkLegacyIdentity({ accessToken: 'token', legacyUser })
-  assert.equal(snapshot.legacyLink.supabaseUserId, USER_ID)
+  await assert.rejects(
+    () => createIdentityRepository({ ...base, adminClient: admin }).linkLegacyIdentity({ accessToken: 'token', legacyUser }),
+    error => error.code === 'identity-link-conflict',
+  )
 })
 
 test('linkLegacyIdentity rejects malformed legacy users and conflicting links', async () => {
@@ -123,7 +154,7 @@ test('linkLegacyIdentity rejects malformed legacy users and conflicting links', 
   const repo = createIdentityRepository(fake)
   await assert.rejects(() => repo.linkLegacyIdentity({ accessToken: 'token', legacyUser: { id: ' ' } }), error => error.code === 'invalid-legacy-context')
 
-  const conflict = createIdentityRepository({ ...fake, adminClient: { ...fake.adminClient, from(table) { if (table === 'legacy_identity_links') return { select() { return this }, eq() { return this }, async maybeSingle() { return result(null) }, insert() { return { select() { return { async single() { return result(null, { code: '23505' }) } } } } } }; return fake.adminClient.from(table) } } })
+  const conflict = createIdentityRepository({ ...fake, adminClient: { ...fake.adminClient, rpc() { return Promise.resolve(result(null, { code: '23505' })) } } })
   await assert.rejects(() => conflict.linkLegacyIdentity({ accessToken: 'token', legacyUser }), error => error.code === 'identity-link-conflict')
 
   const legacyConflict = createIdentityRepository(clients({ user: { id: USER_ID }, link: { legacy_user_id: legacyUser.id, supabase_user_id: OTHER_USER_ID, linked_at: '2026-01-01T00:00:00Z' } }))
