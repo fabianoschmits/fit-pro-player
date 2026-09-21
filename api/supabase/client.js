@@ -64,7 +64,7 @@ export function createSupabasePublicClient(envOrOptions = process.env, options) 
 
   if (!config.enabled) return null;
 
-  return createSafeClient({ url: config.url, key: config.anonKey });
+  return createSafeClient({ url: config.url, key: config.publishableKey });
 }
 
 export function createSupabaseAdminClient(envOrOptions = process.env, options) {
@@ -76,5 +76,5 @@ export function createSupabaseAdminClient(envOrOptions = process.env, options) {
 
   if (!config.hasServerCredentials) return null;
 
-  return createSafeClient({ url: config.url, key: config.serviceRoleKey });
+  return createSafeClient({ url: config.url, key: config.secretKey });
 }

@@ -212,8 +212,8 @@ Realtime não será requisito inicial. Polling, sincronização ao abrir o app e
 
 Variáveis futuras, sem valores reais nesta fase:
 
-- frontend: `SUPABASE_URL`, `SUPABASE_ANON_KEY`;
-- backend seguro: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` quando necessário;
+- frontend: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`;
+- backend seguro: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` quando necessário;
 - deploy: variáveis separadas por ambiente;
 - desenvolvimento, preview/staging e produção: projetos/dados Supabase separados.
 

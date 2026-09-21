@@ -8,12 +8,12 @@ import {
 
 const publicEnv = {
   SUPABASE_URL: 'https://example.supabase.co',
-  SUPABASE_ANON_KEY: 'public-key',
+  SUPABASE_PUBLISHABLE_KEY: 'public-key',
 };
 
 const serverEnv = {
   ...publicEnv,
-  SUPABASE_SERVICE_ROLE_KEY: 'service-role-secret',
+  SUPABASE_SECRET_KEY: 'server-secret',
 };
 
 test('factories fail closed when Supabase configuration is absent', () => {
@@ -39,8 +39,8 @@ test('admin factory creates a privileged client only with complete server config
   assert.equal(client.auth.persistSession, false);
   assert.equal(client.auth.autoRefreshToken, false);
   assert.equal(client.auth.detectSessionInUrl, false);
-  assert.doesNotMatch(JSON.stringify(client), /service-role-secret/);
-  assert.doesNotMatch(String(client), /service-role-secret/);
+  assert.doesNotMatch(JSON.stringify(client), /server-secret/);
+  assert.doesNotMatch(String(client), /server-secret/);
 });
 
 test('factories fail closed for malformed or incomplete configuration', () => {
@@ -53,7 +53,7 @@ test('factories fail closed for malformed or incomplete configuration', () => {
   assert.equal(createSupabaseAdminClient(malformedEnv), null);
   assert.equal(createSupabaseAdminClient({
     ...publicEnv,
-    SUPABASE_SERVICE_ROLE_KEY: '   ',
+    SUPABASE_SECRET_KEY: '   ',
   }), null);
 });
 
@@ -62,7 +62,7 @@ test('admin factory refuses browser-like runtimes without revealing the service 
     () => createSupabaseAdminClient(serverEnv, { runtime: { window: {} } }),
     error => {
       assert.match(error.message, /server-only/i);
-      assert.doesNotMatch(error.message, /service-role-secret/);
+      assert.doesNotMatch(error.message, /server-secret/);
       return true;
     },
   );

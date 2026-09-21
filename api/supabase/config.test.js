@@ -7,8 +7,8 @@ test('Supabase configuration is disabled when the environment is empty', () => {
   assert.deepEqual(readSupabaseConfig({}), {
     enabled: false,
     url: null,
-    anonKey: null,
-    serviceRoleKey: null,
+    publishableKey: null,
+    secretKey: null,
     hasServerCredentials: false,
   });
 });
@@ -16,26 +16,26 @@ test('Supabase configuration is disabled when the environment is empty', () => {
 test('Supabase configuration accepts complete public configuration', () => {
   assert.deepEqual(readSupabaseConfig({
     SUPABASE_URL: ' https://example.supabase.co ',
-    SUPABASE_ANON_KEY: ' public-key ',
+    SUPABASE_PUBLISHABLE_KEY: ' public-key ',
   }), {
     enabled: true,
     url: 'https://example.supabase.co',
-    anonKey: 'public-key',
-    serviceRoleKey: null,
+    publishableKey: 'public-key',
+    secretKey: null,
     hasServerCredentials: false,
   });
 });
 
-test('Supabase configuration accepts optional server credentials', () => {
+test('Supabase configuration accepts backend-only secret credentials', () => {
   assert.deepEqual(readSupabaseConfig({
     SUPABASE_URL: 'https://example.supabase.co',
-    SUPABASE_ANON_KEY: 'public-key',
-    SUPABASE_SERVICE_ROLE_KEY: ' service-key ',
+    SUPABASE_PUBLISHABLE_KEY: 'public-key',
+    SUPABASE_SECRET_KEY: ' service-key ',
   }), {
     enabled: true,
     url: 'https://example.supabase.co',
-    anonKey: 'public-key',
-    serviceRoleKey: 'service-key',
+    publishableKey: 'public-key',
+    secretKey: 'service-key',
     hasServerCredentials: true,
   });
 });
@@ -43,22 +43,22 @@ test('Supabase configuration accepts optional server credentials', () => {
 test('Supabase configuration fails closed for malformed URLs', () => {
   assert.deepEqual(readSupabaseConfig({
     SUPABASE_URL: 'not a URL',
-    SUPABASE_ANON_KEY: 'public-key',
+    SUPABASE_PUBLISHABLE_KEY: 'public-key',
   }), {
     enabled: false,
     url: null,
-    anonKey: null,
-    serviceRoleKey: null,
+    publishableKey: null,
+    secretKey: null,
     hasServerCredentials: false,
   });
 });
 
 test('Supabase configuration stays disabled when the public key has no URL', () => {
-  assert.deepEqual(readSupabaseConfig({ SUPABASE_ANON_KEY: 'public-key' }), {
+  assert.deepEqual(readSupabaseConfig({ SUPABASE_PUBLISHABLE_KEY: 'public-key' }), {
     enabled: false,
     url: null,
-    anonKey: null,
-    serviceRoleKey: null,
+    publishableKey: null,
+    secretKey: null,
     hasServerCredentials: false,
   });
 });
@@ -67,8 +67,8 @@ test('Supabase configuration stays disabled when the URL has no public key', () 
   assert.deepEqual(readSupabaseConfig({ SUPABASE_URL: 'https://example.supabase.co' }), {
     enabled: false,
     url: null,
-    anonKey: null,
-    serviceRoleKey: null,
+    publishableKey: null,
+    secretKey: null,
     hasServerCredentials: false,
   });
 });

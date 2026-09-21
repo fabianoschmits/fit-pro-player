@@ -62,7 +62,7 @@ Files to create:
 
 Files to modify:
 
-- `.env.example` — document public `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` and backend-only variables without values.
+- `.env.example` — document public `VITE_SUPABASE_URL`/`VITE_SUPABASE_PUBLISHABLE_KEY` and backend-only variables without values.
 - `.gitignore` — explicitly ignore local Supabase secrets and generated local state while preserving migration files.
 - `api/package.json` and `api/package-lock.json` — add the pinned Supabase server dependency only when Task 3 is implemented.
 - `api/server.js` — mount additive account routes and preserve all existing auth/data/admin routes unchanged.
@@ -82,8 +82,8 @@ The following names and shapes are fixed for the plan:
 readSupabaseConfig(env) -> {
   enabled: boolean,
   url: string | null,
-  anonKey: string | null,
-  serviceRoleKey: string | null,
+  publishableKey: string | null,
+  secretKey: string | null,
   hasServerCredentials: boolean
 }
 
@@ -100,7 +100,7 @@ linkLegacyIdentity({ accessToken, legacyUser }) -> Promise<{ profile, roles, leg
 requestProfessionalRole({ accessToken }) -> Promise<UserRole>
 
 // frontend/src/lib/supabase-config.js
-getPublicSupabaseConfig(env) -> { enabled: boolean, url: string | null, anonKey: string | null }
+getPublicSupabaseConfig(env) -> { enabled: boolean, url: string | null, publishableKey: string | null }
 ```
 
 Any implementation may split internals further, but later tasks must consume these boundaries rather than importing Supabase clients throughout the application.
@@ -119,10 +119,10 @@ Any implementation may split internals further, but later tasks must consume the
 
 **Interfaces:**
 - Produces `readSupabaseConfig(env)` for the backend and `getPublicSupabaseConfig(env)` for Vite.
-- Backend accepts `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and optional `SUPABASE_SERVICE_ROLE_KEY`.
-- Frontend accepts only `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`; it never reads or forwards a service-role variable.
+- Backend accepts `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and optional `SUPABASE_SECRET_KEY`.
+- Frontend accepts only `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`; it never reads or forwards a secret variable.
 
-- [ ] **Step 1: Write failing configuration tests.** Cover empty env (`enabled: false`), complete public env, complete server env, malformed URL, public key without URL, and a client env object containing `SUPABASE_SERVICE_ROLE_KEY` that must be ignored and rejected by the test helper.
+- [ ] **Step 1: Write failing configuration tests.** Cover empty env (`enabled: false`), complete public env, complete server env, malformed URL, public key without URL, and a client env object containing `SUPABASE_SECRET_KEY` that must be ignored and rejected by the test helper.
 - [ ] **Step 2: Run focused tests.** Run `npm --prefix api test -- --test-name-pattern "Supabase configuration"` and `npm --prefix frontend test -- src/lib/supabase-config.test.js`. Expected: new tests fail because the modules do not exist.
 - [ ] **Step 3: Implement the minimal pure parsers.** Trim values, validate `http(s)` URL syntax, return nulls instead of throwing for absent optional configuration, and keep service-role detection server-only.
 - [ ] **Step 4: Rerun focused tests.** Expected: all configuration tests pass; no browser boot code is changed yet.
@@ -278,7 +278,7 @@ Any implementation may split internals further, but later tasks must consume the
 - `npm run check:supabase` fails if service-role names or private Supabase env exposure appear under `frontend/`, if migrations are absent from the expected path, or if the Phase 1 migration contains forbidden future-domain tables.
 - The final verification does not require a remote Supabase project.
 
-- [ ] **Step 1: Write failing static-boundary tests.** Detect `SUPABASE_SERVICE_ROLE_KEY` under frontend source/build inputs, missing migration/config files, and accidental Phase 2+ table names in the Phase 1 migration.
+- [ ] **Step 1: Write failing static-boundary tests.** Detect private Supabase secret names under frontend source/build inputs, missing migration/config files, and accidental Phase 2+ table names in the Phase 1 migration.
 - [ ] **Step 2: Run the checks and confirm failures before the checker exists.** Expected: command unavailable or tests fail.
 - [ ] **Step 3: Implement the repository checker with explicit allowlists.** Scan tracked source/config files only, ignore `node_modules`, allow backend env parsing, and report file/line for violations.
 - [ ] **Step 4: Run local migration reset/tests.** When local Docker/CLI is available, run `npx supabase db reset` and `npx supabase test db`; otherwise record the environment limitation and still run SQL structure/static checks.
@@ -293,12 +293,12 @@ No command in the plan contacts a remote project or requires credentials. Once c
 ```text
 # Frontend public build inputs
 VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 
 # Backend-only
 SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SECRET_KEY=
 ```
 
 Expected local verification commands after implementation:

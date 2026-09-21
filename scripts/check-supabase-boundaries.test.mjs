@@ -22,7 +22,7 @@ test('rejects private Supabase environment names in frontend tracked inputs', ()
     ...requiredFiles,
     'frontend/src/leak.js',
   ], {
-    'frontend/src/leak.js': 'const key = import.meta.env.SUPABASE_SERVICE_ROLE_KEY\n',
+    'frontend/src/leak.js': 'const key = import.meta.env.VITE_SUPABASE_SECRET_KEY\n',
   })
 
   assert.match(violations.join('\n'), /frontend\/src\/leak\.js:1/)
@@ -93,8 +93,8 @@ test('allows public frontend configuration and backend-only private env parsing'
     'api/supabase/config.js',
   ], {
     'frontend/src/config.js':
-      'const url = import.meta.env.VITE_SUPABASE_URL\nconst key = import.meta.env.VITE_SUPABASE_ANON_KEY\n',
-    'api/supabase/config.js': 'const key = env.SUPABASE_SERVICE_ROLE_KEY\n',
+      'const url = import.meta.env.VITE_SUPABASE_URL\nconst key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY\n',
+    'api/supabase/config.js': 'const key = env.SUPABASE_SECRET_KEY\n',
   })
 
   assert.deepEqual(violations, [])

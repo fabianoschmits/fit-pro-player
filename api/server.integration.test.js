@@ -108,7 +108,7 @@ test('account endpoints preserve legacy auth and fail closed when Supabase is un
   const child = spawn(process.execPath, ['server.js'], {
     cwd: path.dirname(fileURLToPath(import.meta.url)),
     env: { ...process.env, DATA_DIR: dataDir, PORT: String(port), ORIGIN: base, RP_ID: '127.0.0.1',
-      SUPABASE_URL: '', SUPABASE_ANON_KEY: '', SUPABASE_SERVICE_ROLE_KEY: '' },
+      SUPABASE_URL: '', SUPABASE_PUBLISHABLE_KEY: '', SUPABASE_SECRET_KEY: '' },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let stderr = ''

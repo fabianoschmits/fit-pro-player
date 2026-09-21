@@ -16,12 +16,12 @@ function validHttpUrl(value) {
 
 export function getPublicSupabaseConfig(env = {}) {
   const url = validHttpUrl(trimmed(env.VITE_SUPABASE_URL));
-  const anonKey = trimmed(env.VITE_SUPABASE_ANON_KEY);
-  const enabled = Boolean(url && anonKey);
+  const publishableKey = trimmed(env.VITE_SUPABASE_PUBLISHABLE_KEY);
+  const enabled = Boolean(url && publishableKey);
 
   return {
     enabled,
     url: enabled ? url : null,
-    anonKey: enabled ? anonKey : null,
+    publishableKey: enabled ? publishableKey : null,
   };
 }

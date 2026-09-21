@@ -29,7 +29,7 @@ export const FORBIDDEN_FUTURE_TABLES = [
   'analytics',
 ]
 
-const FRONTEND_PRIVATE_ENV_PATTERN = /\bservice_role\b|\bSUPABASE_SERVICE_ROLE_KEY\b|\bVITE_SUPABASE_(?:SERVICE_ROLE_KEY|SECRET|DB_PASSWORD|ACCESS_TOKEN)\b/i
+const FRONTEND_PRIVATE_ENV_PATTERN = /\bservice_role\b|\bSUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY)\b|\bVITE_SUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY|DB_PASSWORD|ACCESS_TOKEN)\b/i
 const TABLE_PATTERN = /\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?<schema>[a-z_][\w]*|"[^"]+")\s*\.\s*)?(?<table>[a-z_][\w]*|"[^"]+")/gi
 
 const slashPath = (value) => value.replaceAll('\\', '/')
