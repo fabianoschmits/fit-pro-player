@@ -1,0 +1,98 @@
+import {
+  normalizeAuthenticatedUser,
+  normalizeLegacyIdentityLink,
+  normalizeProfile,
+  normalizeRole,
+} from './contracts.js'
+
+function failure(code, message = code) {
+  const error = new Error(message)
+  error.code = code
+  return error
+}
+
+function requireClient(client) {
+  if (!client) throw failure('supabase-unavailable')
+  return client
+}
+
+function legacyId(legacyUser) {
+  if (!legacyUser || typeof legacyUser.id !== 'string' || !legacyUser.id.trim() || legacyUser.id.length > 120) {
+    throw failure('invalid-legacy-user')
+  }
+  return legacyUser.id.trim()
+}
+
+function checkError(error, fallback) {
+  if (!error) return
+  if (error.code === '23505') throw failure('identity-link-conflict')
+  throw failure(fallback)
+}
+
+export function createIdentityRepository({ publicClient = null, adminClient = null } = {}) {
+  const verifyAccessToken = async accessToken => {
+    if (typeof accessToken !== 'string' || !accessToken.trim()) throw failure('invalid-access-token')
+    const client = requireClient(publicClient)
+    const response = await client.auth.getUser(accessToken)
+    if (response?.error || !response?.data?.user) throw failure('invalid-access-token')
+    try { return normalizeAuthenticatedUser(response.data.user) }
+    catch { throw failure('invalid-access-token') }
+  }
+
+  const readSnapshot = async user => {
+    const client = requireClient(adminClient)
+    const profileResponse = await client.from('profiles').select('*').eq('id', user.id).maybeSingle()
+    checkError(profileResponse?.error, 'account-read-failed')
+    if (!profileResponse?.data) throw failure('account-not-found')
+    const rolesResponse = await client.from('user_roles').select('*').eq('user_id', user.id)
+    checkError(rolesResponse?.error, 'account-read-failed')
+    const linkResponse = await client.from('legacy_identity_links').select('*').eq('supabase_user_id', user.id).maybeSingle()
+    checkError(linkResponse?.error, 'account-read-failed')
+    return {
+      profile: normalizeProfile(profileResponse.data),
+      roles: (rolesResponse?.data ?? []).map(normalizeRole),
+      legacyLink: linkResponse?.data ? normalizeLegacyIdentityLink(linkResponse.data) : null,
+    }
+  }
+
+  const getAccountSnapshot = async ({ accessToken, legacyUser } = {}) => {
+    const user = await verifyAccessToken(accessToken)
+    if (legacyUser !== undefined) legacyId(legacyUser)
+    return readSnapshot(user)
+  }
+
+  const linkLegacyIdentity = async ({ accessToken, legacyUser } = {}) => {
+    const currentLegacyId = legacyId(legacyUser)
+    const user = await verifyAccessToken(accessToken)
+    const client = requireClient(adminClient)
+    const byLegacy = await client.from('legacy_identity_links').select('*').eq('legacy_user_id', currentLegacyId).maybeSingle()
+    checkError(byLegacy?.error, 'identity-link-failed')
+    const bySupabase = await client.from('legacy_identity_links').select('*').eq('supabase_user_id', user.id).maybeSingle()
+    checkError(bySupabase?.error, 'identity-link-failed')
+    if (byLegacy?.data || bySupabase?.data) {
+      const samePair = byLegacy?.data?.supabase_user_id === user.id && bySupabase?.data?.legacy_user_id === currentLegacyId
+      if (!samePair) throw failure('identity-link-conflict')
+      return readSnapshot(user)
+    }
+    const response = await client.from('legacy_identity_links').insert({
+      legacy_user_id: currentLegacyId,
+      supabase_user_id: user.id,
+      status: 'active',
+    }).select('*').single()
+    checkError(response?.error, 'identity-link-failed')
+    if (!response?.data) throw failure('identity-link-failed')
+    return readSnapshot(user)
+  }
+
+  const requestProfessionalRole = async ({ accessToken, role } = {}) => {
+    if (role !== undefined && role !== 'professional') throw failure('invalid-role-request')
+    const user = await verifyAccessToken(accessToken)
+    const client = requireClient(adminClient)
+    const response = await client.from('user_roles').insert({ user_id: user.id, role: 'professional' }).select('*').single()
+    checkError(response?.error, 'role-request-failed')
+    if (!response?.data) throw failure('role-request-failed')
+    return normalizeRole(response.data)
+  }
+
+  return { verifyAccessToken, getAccountSnapshot, linkLegacyIdentity, requestProfessionalRole }
+}
