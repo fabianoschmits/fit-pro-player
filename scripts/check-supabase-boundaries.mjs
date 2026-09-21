@@ -30,7 +30,7 @@ export const FORBIDDEN_FUTURE_TABLES = [
 ]
 
 const FRONTEND_PRIVATE_ENV_PATTERN = /\bservice_role\b|\bSUPABASE_SERVICE_ROLE_KEY\b|\bVITE_SUPABASE_(?:SERVICE_ROLE_KEY|SECRET|DB_PASSWORD|ACCESS_TOKEN)\b/i
-const TABLE_PATTERN = /\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?<schema>[a-z_][\w]*)\s*\.\s*)?(?<table>[a-z_][\w]*)/gi
+const TABLE_PATTERN = /\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?<schema>[a-z_][\w]*|"[^"]+")\s*\.\s*)?(?<table>[a-z_][\w]*|"[^"]+")/gi
 
 const slashPath = (value) => value.replaceAll('\\', '/')
 
@@ -52,6 +52,7 @@ const readText = (rootDir, file, fileContents) => {
 }
 
 const lineNumberAt = (text, index) => text.slice(0, index).split('\n').length
+const unquoteIdentifier = (identifier) => identifier.replace(/^"|"$/g, '')
 
 /**
  * Return human-readable violations for the tracked repository boundary.
@@ -69,7 +70,7 @@ export function checkSupabaseBoundaries({
   const violations = []
 
   for (const requiredFile of REQUIRED_FILES) {
-    if (!files.includes(requiredFile) && (hasExplicitFiles || !existsSync(join(normalizedRoot, ...requiredFile.split('/'))))) {
+    if (!existsSync(join(normalizedRoot, ...requiredFile.split('/')))) {
       violations.push(`missing required file: ${requiredFile}`)
     }
   }
@@ -94,7 +95,7 @@ export function checkSupabaseBoundaries({
     if (migration !== null) {
       const forbidden = new Set(FORBIDDEN_FUTURE_TABLES)
       for (const match of migration.matchAll(TABLE_PATTERN)) {
-        const table = match.groups?.table?.toLowerCase()
+        const table = unquoteIdentifier(match.groups?.table ?? '').toLowerCase()
         if (forbidden.has(table)) {
           const line = lineNumberAt(migration, match.index ?? 0)
           violations.push(`${PHASE_1_MIGRATION}:${line}: forbidden future-domain table "${table}"`)

@@ -1,5 +1,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import { checkSupabaseBoundaries } from './check-supabase-boundaries.mjs'
 
 const requiredFiles = [
@@ -8,8 +11,8 @@ const requiredFiles = [
   'supabase/tests/202609210001_identity_profiles_roles_links.sql',
 ]
 
-const runCheck = (files, contents = {}) => checkSupabaseBoundaries({
-  rootDir: process.cwd(),
+const runCheck = (files, contents = {}, rootDir = process.cwd()) => checkSupabaseBoundaries({
+  rootDir,
   trackedFiles: files,
   fileContents: contents,
 })
@@ -27,14 +30,34 @@ test('rejects private Supabase environment names in frontend tracked inputs', ()
 })
 
 test('rejects missing reproducibility files', () => {
-  const violations = runCheck([
-    'supabase/config.toml',
-    'supabase/migrations/202609210001_identity_profiles_roles_links.sql',
-  ])
+  const rootDir = mkdtempSync(join(tmpdir(), 'supabase-boundaries-'))
 
-  assert.deepEqual(violations, [
-    'missing required file: supabase/tests/202609210001_identity_profiles_roles_links.sql',
-  ])
+  try {
+    const violations = runCheck([
+      'supabase/config.toml',
+      'supabase/migrations/202609210001_identity_profiles_roles_links.sql',
+    ], {}, rootDir)
+
+    assert.deepEqual(violations, [
+      'missing required file: supabase/config.toml',
+      'missing required file: supabase/migrations/202609210001_identity_profiles_roles_links.sql',
+      'missing required file: supabase/tests/202609210001_identity_profiles_roles_links.sql',
+    ])
+  } finally {
+    rmSync(rootDir, { recursive: true, force: true })
+  }
+})
+
+test('rejects required files that are tracked but missing physically', () => {
+  const rootDir = mkdtempSync(join(tmpdir(), 'supabase-boundaries-'))
+
+  try {
+    const violations = runCheck(requiredFiles, {}, rootDir)
+
+    assert.deepEqual(violations, requiredFiles.map((file) => `missing required file: ${file}`))
+  } finally {
+    rmSync(rootDir, { recursive: true, force: true })
+  }
 })
 
 test('rejects future-domain tables in the Phase 1 migration', () => {
@@ -49,6 +72,18 @@ test('rejects future-domain tables in the Phase 1 migration', () => {
 
   assert.match(violations.join('\n'), /professional_profiles/)
   assert.match(violations.join('\n'), /migration.*2|:2/i)
+})
+
+test('rejects quoted future-domain table identifiers in the Phase 1 migration', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+  ], {
+    'supabase/migrations/202609210001_identity_profiles_roles_links.sql':
+      'CREATE TABLE public."programs" (id uuid);\n',
+  })
+
+  assert.match(violations.join('\n'), /programs/)
+  assert.match(violations.join('\n'), /migration.*1|:1/i)
 })
 
 test('allows public frontend configuration and backend-only private env parsing', () => {
