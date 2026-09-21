@@ -35,6 +35,21 @@ create table public.legacy_identity_links (
 create index user_roles_user_id_idx on public.user_roles (user_id);
 create index legacy_identity_links_status_idx on public.legacy_identity_links (status);
 
+revoke all on schema public from public, anon, authenticated;
+grant usage on schema public to authenticated, service_role;
+
+revoke all on table public.profiles from public, anon, authenticated;
+revoke all on table public.user_roles from public, anon, authenticated;
+revoke all on table public.legacy_identity_links from public, anon, authenticated;
+
+grant select, update on table public.profiles to authenticated;
+grant select on table public.user_roles to authenticated;
+grant select on table public.legacy_identity_links to authenticated;
+
+grant select, insert, update, delete on table public.profiles to service_role;
+grant select, insert, update, delete on table public.user_roles to service_role;
+grant select, insert, update, delete on table public.legacy_identity_links to service_role;
+
 create or replace function public.set_identity_updated_at()
 returns trigger
 language plpgsql
@@ -45,6 +60,8 @@ begin
   return new;
 end;
 $$;
+
+revoke all on function public.set_identity_updated_at() from public;
 
 create trigger legacy_identity_links_set_updated_at
 before update on public.legacy_identity_links

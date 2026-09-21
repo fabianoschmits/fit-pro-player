@@ -36,8 +36,8 @@ describe('Supabase configuration', () => {
     const config = getPublicSupabaseConfig({
       VITE_SUPABASE_URL: 'https://example.supabase.co',
       VITE_SUPABASE_PUBLISHABLE_KEY: 'public-key',
-      SUPABASE_SECRET_KEY: 'must-not-be-read',
-      VITE_SUPABASE_SECRET_KEY: 'must-not-be-read-either',
+      INTERNAL_API_SECRET: 'must-not-be-read',
+      VITE_INTERNAL_API_SECRET: 'must-not-be-read-either',
     });
 
     expect(config).toEqual({

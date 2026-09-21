@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { checkSupabaseBoundaries } from './check-supabase-boundaries.mjs'
 
@@ -98,4 +98,21 @@ test('allows public frontend configuration and backend-only private env parsing'
   })
 
   assert.deepEqual(violations, [])
+})
+
+test('migration declares least-privilege schema, table, and RPC grants', () => {
+  const migration = readFileSync(resolve(
+    process.cwd(),
+    'supabase/migrations/202609210001_identity_profiles_roles_links.sql',
+  ), 'utf8')
+
+  assert.match(migration, /revoke all on schema public from public, anon, authenticated;/i)
+  assert.match(migration, /grant usage on schema public to authenticated, service_role;/i)
+  for (const table of ['profiles', 'user_roles', 'legacy_identity_links']) {
+    assert.match(migration, new RegExp(`revoke all on table public\\.${table} from public, anon, authenticated;`, 'i'))
+    assert.match(migration, new RegExp(`grant (?:select, update on table public\\.profiles|select on table public\\.${table}) to authenticated;`, 'i'))
+    assert.match(migration, new RegExp(`grant select, insert, update, delete on table public\\.${table} to service_role;`, 'i'))
+  }
+  assert.doesNotMatch(migration, /grant .* on table .* to anon\s*;/i)
+  assert.match(migration, /grant execute on function public\.link_legacy_identity\(text, uuid\) to service_role;/i)
 })
