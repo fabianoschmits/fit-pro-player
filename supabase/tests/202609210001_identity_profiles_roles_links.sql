@@ -1,6 +1,6 @@
 begin;
 
-select plan(50);
+select plan(53);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'user_roles', 'user_roles table exists');
@@ -24,6 +24,8 @@ select col_has_default('public', 'profiles', 'created_at', 'profiles created_at 
 select col_has_default('public', 'profiles', 'updated_at', 'profiles updated_at has a default');
 select col_has_default('public', 'user_roles', 'created_at', 'roles created_at has a default');
 select col_has_default('public', 'legacy_identity_links', 'linked_at', 'identity links linked_at has a default');
+select col_has_default('public', 'legacy_identity_links', 'updated_at', 'identity links updated_at has a default');
+select has_trigger('public', 'legacy_identity_links', 'legacy_identity_links_set_updated_at', 'identity links update their timestamp server-side');
 
 select has_check('public', 'user_roles', 'user_roles_role_check', 'roles are restricted to the approved enum values');
 select has_check('public', 'legacy_identity_links', 'legacy_identity_links_status_check', 'identity link status is constrained');
@@ -87,6 +89,23 @@ insert into public.legacy_identity_links (legacy_user_id, supabase_user_id)
 values
   ('legacy-professional', '00000000-0000-0000-0000-000000000001'),
   ('legacy-student', '00000000-0000-0000-0000-000000000002');
+
+create temporary table link_update_before on commit drop as
+select supabase_user_id, updated_at
+from public.legacy_identity_links
+where supabase_user_id = '00000000-0000-0000-0000-000000000002';
+
+update public.legacy_identity_links
+set status = 'revoked'
+where supabase_user_id = '00000000-0000-0000-0000-000000000002';
+
+select ok(
+  (select link.updated_at > before_update.updated_at
+   from public.legacy_identity_links link
+   join link_update_before before_update using (supabase_user_id)
+   where link.supabase_user_id = '00000000-0000-0000-0000-000000000002'),
+  'an identity-link update receives a server-controlled updated_at'
+);
 
 create temporary table profile_update_before on commit drop as
 select id, updated_at

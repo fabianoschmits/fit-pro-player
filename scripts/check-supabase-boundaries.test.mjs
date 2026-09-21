@@ -1,0 +1,66 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { checkSupabaseBoundaries } from './check-supabase-boundaries.mjs'
+
+const requiredFiles = [
+  'supabase/config.toml',
+  'supabase/migrations/202609210001_identity_profiles_roles_links.sql',
+  'supabase/tests/202609210001_identity_profiles_roles_links.sql',
+]
+
+const runCheck = (files, contents = {}) => checkSupabaseBoundaries({
+  rootDir: process.cwd(),
+  trackedFiles: files,
+  fileContents: contents,
+})
+
+test('rejects private Supabase environment names in frontend tracked inputs', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/leak.js',
+  ], {
+    'frontend/src/leak.js': 'const key = import.meta.env.SUPABASE_SERVICE_ROLE_KEY\n',
+  })
+
+  assert.match(violations.join('\n'), /frontend\/src\/leak\.js:1/)
+  assert.match(violations.join('\n'), /service-role|private/i)
+})
+
+test('rejects missing reproducibility files', () => {
+  const violations = runCheck([
+    'supabase/config.toml',
+    'supabase/migrations/202609210001_identity_profiles_roles_links.sql',
+  ])
+
+  assert.deepEqual(violations, [
+    'missing required file: supabase/tests/202609210001_identity_profiles_roles_links.sql',
+  ])
+})
+
+test('rejects future-domain tables in the Phase 1 migration', () => {
+  const violations = runCheck([
+    'supabase/config.toml',
+    'supabase/tests/202609210001_identity_profiles_roles_links.sql',
+    'supabase/migrations/202609210001_identity_profiles_roles_links.sql',
+  ], {
+    'supabase/migrations/202609210001_identity_profiles_roles_links.sql':
+      'create table public.profiles (id uuid);\ncreate table public.professional_profiles (id uuid);\n',
+  })
+
+  assert.match(violations.join('\n'), /professional_profiles/)
+  assert.match(violations.join('\n'), /migration.*2|:2/i)
+})
+
+test('allows public frontend configuration and backend-only private env parsing', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/config.js',
+    'api/supabase/config.js',
+  ], {
+    'frontend/src/config.js':
+      'const url = import.meta.env.VITE_SUPABASE_URL\nconst key = import.meta.env.VITE_SUPABASE_ANON_KEY\n',
+    'api/supabase/config.js': 'const key = env.SUPABASE_SERVICE_ROLE_KEY\n',
+  })
+
+  assert.deepEqual(violations, [])
+})
