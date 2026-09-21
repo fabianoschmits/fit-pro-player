@@ -34,6 +34,8 @@ let container
 
 const click = async element => act(async () => element.dispatchEvent(new MouseEvent('click', { bubbles: true })))
 const button = text => [...container.querySelectorAll('button')].find(element => element.textContent.trim() === text)
+const partButton = label => [...container.querySelectorAll('.bp-part-selector button')]
+  .find(element => element.getAttribute('aria-label')?.startsWith(label))
 const render = async () => act(async () => root.render(<BodyProgress />))
 const inputValue = async (element, value) => act(async () => {
   const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
@@ -68,6 +70,9 @@ describe('body progress page', () => {
     expect(container.textContent).not.toContain('101 cm')
     expect(mocks.mapProps.body).toBe('female')
     expect(mocks.mapProps.view).toBe('front')
+    expect(mocks.mapProps.selected).toBeNull()
+    expect(container.querySelector('#body-measurement-value')).toBeNull()
+    expect(container.textContent).toContain('Selecione uma região do corpo')
 
     await click(button('Costas'))
     expect(mocks.mapProps.view).toBe('back')
@@ -92,6 +97,7 @@ describe('body progress page', () => {
 
   it('keeps map selection in sync and merges decimal measurements into the weekly check-in', async () => {
     await render()
+    await click(partButton('Circunferência do tórax'))
     const input = container.querySelector('#body-measurement-value')
     await inputValue(input, '101,5')
     await click(button('Salvar medida'))
@@ -154,6 +160,10 @@ describe('body progress page', () => {
     ]
     await render()
     await click(button('Evolução'))
+    expect(mocks.mapProps.selected).toBeNull()
+    expect(container.querySelector('.bp-history-metrics')).toBeNull()
+    expect(container.textContent).toContain('Selecione uma região do corpo')
+    await click(partButton('Circunferência do tórax'))
 
     expect(container.textContent).toContain('Evolução no tempo')
     expect(container.querySelector('input[type="range"]')).not.toBeNull()
@@ -174,6 +184,7 @@ describe('body progress page', () => {
     }
     await render()
     await click(button('Evolução'))
+    await click(partButton('Circunferência do tórax'))
 
     const slider = container.querySelector('input[type="range"]')
     expect(slider).not.toBeNull()
@@ -202,6 +213,7 @@ describe('body progress page', () => {
     }
     await render()
     await click(button('Evolução'))
+    await click(partButton('Circunferência da cintura'))
 
     const slider = container.querySelector('input[type="range"]')
     await inputValue(slider, String(new Date('2026-01-15T12:00:00').getTime()))

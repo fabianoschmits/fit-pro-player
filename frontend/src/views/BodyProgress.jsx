@@ -203,6 +203,16 @@ function PartSelector({ selected, latestValues, weekValues, onSelect, compact = 
   </div>
 }
 
+function PartSelectionPrompt({ history = false }) {
+  return <div className="bp-empty">
+    <Icon name="ruler" />
+    <strong>Selecione uma região do corpo</strong>
+    <span>{history
+      ? 'Escolha uma circunferência no corpo ou na lista para consultar sua evolução.'
+      : 'Toque em uma região no corpo ou escolha uma circunferência na lista para começar.'}</span>
+  </div>
+}
+
 function BodyHistoryScrubber({ snapshots, value, onChange, onScrubbingChange, weight, unit = 'kg' }) {
   const railRef = useRef(null)
   const [railWidth, setRailWidth] = useState(0)
@@ -298,8 +308,8 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   const silhouetteBody = bodySex(S)
   const part = BODY_MEASUREMENT_BY_ID[selected]
   const history = bodyMeasurementHistoryInPeriod(checkins, selected, period)
-  const trend = bodyMeasurementDelta(checkins, selected, period)
-  const pair = part.pair ? BODY_MEASUREMENT_PARTS.filter(item => item.pair === part.pair) : []
+  const trend = part ? bodyMeasurementDelta(checkins, selected, period) : { delta: null }
+  const pair = part?.pair ? BODY_MEASUREMENT_PARTS.filter(item => item.pair === part.pair) : []
   const [draft, setDraft] = useState(null)
   const [goalDraft, setGoalDraft] = useState(null)
   const [savedPart, setSavedPart] = useState(null)
@@ -316,12 +326,13 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   const selectPart = id => setSelected(id)
   const saveMeasurement = event => {
     event.preventDefault()
-    if (!(draft > 0) || draft > 400) return
+    if (!part || !(draft > 0) || draft > 400) return
     update(state => { state.bodyMeasurements = upsertBodyMeasurement(state.bodyMeasurements, { date: today, partId: selected, value: draft }) })
     setSavedPart(selected)
     useUI.getState().toast(`${part.circumferenceLabel}: ${formatCm(draft)} · ${t('Saved')}`)
   }
   const saveGoal = () => {
+    if (!part) return
     update(state => {
       state.bodyMeasurementGoals = { ...(state.bodyMeasurementGoals || {}) }
       if (goalDraft > 0 && goalDraft <= 400) state.bodyMeasurementGoals[selected] = Math.round(goalDraft * 10) / 10
@@ -342,11 +353,14 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
       </div>
       <MeasurementBodyMap body={silhouetteBody} view={view} selected={selected} latestValues={latestValues} weekValues={weekValues} shapeValues={latestValues} baselineValues={baselineValues} fallbackScales={fallbackScales} onSelect={selectPart} />
       <div className="bp-map-legend"><span><i className="selected" />Região selecionada</span><span><i className="current" />Nesta semana</span><span><i className="known" />Valor anterior</span><span><i />Sem registro</span></div>
-      <p className="bp-map-help"><Icon name="info" /> Os músculos destacados mostram a região selecionada; o anel indica onde a fita deve contornar o corpo. Toque em outra região para medir.</p>
+      <p className="bp-map-help"><Icon name="info" /> {part
+        ? 'Os músculos destacados mostram a região selecionada; o anel indica onde a fita deve contornar o corpo. Toque em outra região para medir.'
+        : 'Toque em uma região para ver o ponto da fita e registrar a circunferência.'}</p>
     </section>
 
     <div className="bp-workspace-side">
       <section className="card bp-editor-card" aria-live="polite">
+        {part ? <>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={selected}
@@ -395,6 +409,7 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
           <div className="bp-section-head responsive"><div><span className="bp-eyebrow">Histórico em centímetros</span><h3>{part.circumferenceLabel}</h3></div><Segmented className="seg-inline" value={period} onChange={setPeriod} options={PERIODS} /></div>
           <LineChart points={points} h={138} unit="cm" goal={goal} />
         </div>
+        </> : <PartSelectionPrompt />}
       </section>
 
       <section className="card bp-parts-card">
@@ -434,11 +449,11 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
   const active = interpolation.nearest
   const activeTime = timestampOf(active.date)
   const baselineValues = firstMeasurementValues(checkins)
-  const visibleHistory = bodyMeasurementHistoryInPeriod(checkins, selected, period, activeTime)
   const part = BODY_MEASUREMENT_BY_ID[selected]
-  const selectedValue = active.values[selected]
-  const sourceDate = active.sources[selected]
-  const direct = active.directValues[selected] != null
+  const visibleHistory = part ? bodyMeasurementHistoryInPeriod(checkins, selected, period, activeTime) : []
+  const selectedValue = part ? active.values[selected] : null
+  const sourceDate = part ? active.sources[selected] : null
+  const direct = !!part && active.directValues[selected] != null
   const firstValue = visibleHistory[0]?.value
   const delta = selectedValue != null && firstValue != null && sourceDate !== visibleHistory[0]?.date
     ? Math.round((selectedValue - firstValue) * 10) / 10 : null
@@ -478,7 +493,7 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
     </section>
 
     <div className="bp-evolution-side">
-      <section className="card bp-history-chart-card">
+      {part ? <section className="card bp-history-chart-card">
         <div className="bp-section-head responsive">
           <div><span className="bp-eyebrow">Região analisada</span><h2>{part.circumferenceLabel}</h2><small>{direct ? `Medida diretamente em ${fmtDate(active.date)}` : sourceDate ? `Último valor disponível: ${fmtDate(sourceDate)}` : 'Sem medida até esta data'}</small></div>
           <Segmented className="seg-inline" value={period} onChange={setPeriod} options={PERIODS} />
@@ -490,21 +505,21 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
           <div><span>Medições reais</span><strong>{visibleHistory.length}</strong></div>
         </div>
         <LineChart points={points} h={210} unit="cm" goal={S.bodyMeasurementGoals?.[selected] ?? null} selectedDate={sourceDate} />
-      </section>
+      </section> : <section className="card bp-history-chart-card"><PartSelectionPrompt history /></section>}
 
       <section className="card bp-history-parts">
         <div className="bp-section-head"><div><span className="bp-eyebrow">Circunferências</span><h2>Escolha o que analisar</h2></div></div>
         <PartSelector compact selected={selected} latestValues={active.values} weekValues={active.directValues} onSelect={selectPart} />
       </section>
 
-      <section className="card bp-timeline-card">
+      {part && <section className="card bp-timeline-card">
         <div className="bp-section-head"><div><span className="bp-eyebrow">Medições reais no período</span><h2>{visibleHistory.length ? `${visibleHistory.length} registros` : 'Nenhum registro'}</h2></div></div>
         {visibleHistory.length ? <div className="bp-timeline">{[...visibleHistory].reverse().map((point, index, reversed) => {
           const previous = reversed[index + 1]
           const pointDelta = previous ? Math.round((point.value - previous.value) * 10) / 10 : null
           return <div key={point.id} className={`bp-timeline-row${point.date === sourceDate ? ' selected' : ''}`}><span className="bp-timeline-dot" /><div><strong>{fmtDate(point.date, true)}</strong><span>{pointDelta == null ? 'Primeiro registro deste período' : `${formatDelta(pointDelta)} desde a medição anterior`}</span></div><b>{formatCm(point.value)}</b><button type="button" onClick={() => remove(point)} aria-label={`Excluir circunferência de ${fmtDate(point.date)}`}><Icon name="trash" /></button></div>
         })}</div> : <div className="bp-empty"><Icon name="chartLine" /><strong>Sem medição desta região</strong><span>Escolha outra circunferência ou volte para o check-in.</span></div>}
-      </section>
+      </section>}
     </div>
   </div>
 }
@@ -678,7 +693,7 @@ export default function BodyProgress() {
   const focusNonce = useRef(0)
   const [mode, setMode] = useState('checkin')
   const [view, setView] = useState('front')
-  const [selected, setSelected] = useState('chest')
+  const [selected, setSelected] = useState(null)
   const [period, setPeriod] = useState(90)
   const [historyFocus, setHistoryFocus] = useState(null)
   const checkins = useMemo(() => normalizeBodyMeasurementCheckins(S.bodyMeasurements), [S.bodyMeasurements])
