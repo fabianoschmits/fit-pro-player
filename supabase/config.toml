@@ -1,9 +1,8 @@
 # Local-only Supabase configuration for Fit Pro Player.
 #
-# This file intentionally contains no project reference, access token, or
-# deployment credential. Link a project only through an explicitly authorized
-# deployment workflow.
-project_id = "fitproplayer"
+# This file intentionally contains no remote project reference, access token,
+# or deployment credential. Link a project only through an explicitly
+# authorized deployment workflow.
 
 [api]
 enabled = true
