@@ -943,7 +943,7 @@ h4.sec{
 .active-workout .setrow{padding-block:6px}
 .active-workout .setrow .stp .num{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
 .workout-secondary-actions{justify-content:center;flex-wrap:wrap;gap:6px;margin-top:8px}
-.workout-primary-action{position:sticky;bottom:calc(8px + var(--sab));z-index:5;display:flex;justify-content:center;padding:10px 0 calc(4px + var(--sab));background:linear-gradient(180deg,transparent,var(--bg) 26%)}
+.workout-primary-action{position:sticky;bottom:calc(66px + var(--sab));z-index:5;display:flex;justify-content:center;padding:10px 0 calc(4px + var(--sab));background:linear-gradient(180deg,transparent,var(--bg) 26%)}
 .workout-primary-action .btn{width:min(100%,420px);min-height:var(--control-min);box-shadow:0 8px 24px color-mix(in srgb,var(--bg) 55%,transparent)}
 .active-workout .exmedia:not(.compact)>.exercise-guide-motion{height:clamp(124px,18dvh,156px);max-height:156px;aspect-ratio:auto}
 .active-workout .exmedia:not(.compact)>img,.active-workout .exmedia:not(.compact)>.exercise-muscle-static{height:clamp(124px,18dvh,156px)}
