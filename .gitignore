@@ -7,6 +7,7 @@ data/
 
 # Local config and deployment metadata
 .env
+.env.*
 .env.*.local
 !.env.example
 !frontend/.env.development

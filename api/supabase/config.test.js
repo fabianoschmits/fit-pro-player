@@ -62,3 +62,13 @@ test('Supabase configuration stays disabled when the public key has no URL', () 
     hasServerCredentials: false,
   });
 });
+
+test('Supabase configuration stays disabled when the URL has no public key', () => {
+  assert.deepEqual(readSupabaseConfig({ SUPABASE_URL: 'https://example.supabase.co' }), {
+    enabled: false,
+    url: null,
+    anonKey: null,
+    serviceRoleKey: null,
+    hasServerCredentials: false,
+  });
+});
