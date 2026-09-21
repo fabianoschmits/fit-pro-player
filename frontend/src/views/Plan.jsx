@@ -13,6 +13,7 @@ import { Button } from '../components/ui.jsx'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 import PlanWizard from '../components/PlanWizard.jsx'
+import AppHeader from '../components/AppHeader.jsx'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 const DEFAULT_DAYS = [1, 3, 5]
@@ -79,10 +80,11 @@ export default function Plan() {
   </section>
 
   return <>
-    <div className="hdr">
-      <div><h1>{t('Plan')}</h1><div className="sub">{mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')}</div></div>
-      <button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>
-    </div>
+    <AppHeader
+      title={t('Plan')}
+      subtitle={mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')}
+      action={<button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>}
+    />
 
     {planProgress && <PlanProgress progress={planProgress} />}
 

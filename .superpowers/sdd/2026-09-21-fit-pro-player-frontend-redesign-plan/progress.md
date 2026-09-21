@@ -13,3 +13,4 @@ Pre-flight shared interfaces:
 
 
 Task 2: complete (commits c9b2c74..c9b2c74, tests: npm --prefix frontend test -> 51 files, 488 tests passed)
+Task 4/5/6: complete (commits cbc213e..2747114, tests: focused 27 passed; frontend suite 51 files, 489 tests passed)

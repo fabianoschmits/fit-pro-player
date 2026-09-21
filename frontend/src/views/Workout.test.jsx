@@ -130,6 +130,13 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
+  it('keeps the workout completion action in a dedicated mobile action region', async () => {
+    await mount([exercise('plain-bench', [false, false])])
+
+    expect(container.querySelector('.workout-primary-action')).toBeTruthy()
+    expect(container.querySelector('.workout-primary-action button')?.textContent).toContain('Terminar')
+  })
+
   it('shows only freestyle and today-plan actions on rest days', async () => {
     await mountState({
       unit: 'kg', restSec: 90, sound: false, effort: 'none', mediaSize: 'full',
