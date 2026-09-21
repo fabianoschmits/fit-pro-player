@@ -30,3 +30,4 @@ node_modules/
 *.log
 .DS_Store
 .superpowers/sdd/
+.worktrees/
