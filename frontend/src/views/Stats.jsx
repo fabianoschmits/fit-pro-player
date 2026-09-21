@@ -20,6 +20,7 @@ import {
   effortHistogram, isHardSet, HARD_RIR
 } from '../lib/effort.js'
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
+import AppHeader from '../components/AppHeader.jsx'
 import TipOnce from '../components/TipOnce.jsx'
 import { isWarmupRow } from '../lib/workout-model.js'
 
@@ -407,10 +408,8 @@ export default function Stats() {
   if (showEff) exOpts.push({ value: 'effort', label: t('Effort') })
 
   return <div className="stats-view">
-    <div className="hdr stats-titlebar">
-      <div><h1>{t('Stats')}</h1><div className="sub">{t('Progress & history')}</div></div>
-      <button className="iconbtn" aria-label={t('History')} onClick={() => nav('/history')}><Icon name="history" /></button>
-    </div>
+    <AppHeader title={t('Stats')} subtitle={t('Progress & history')} className="stats-titlebar"
+      action={<button className="iconbtn" aria-label={t('History')} onClick={() => nav('/history')}><Icon name="history" /></button>} />
     <section className="stats-overview" aria-label={t('Stats')}>
       <div><span>{t('Workouts')}</span><b>{workouts.length}</b></div>
       <div><span>{t('This month')}</span><b>{monthW}</b></div>

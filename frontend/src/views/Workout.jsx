@@ -624,13 +624,15 @@ function ActiveWorkout() {
       </div>
     </>}
     <div style={{ height: 10 }} />
-    {(() => {
-      const exDone = A.entries.filter(e => e.sets.length && e.sets.every(s => s.done)).length
-      const allDone = A.entries.length > 0 && exDone === A.entries.length
-      return <button className={allDone ? 'btn primary' : 'btn ghost dim'} onClick={finishWorkout}>
-        {allDone ? t('Finish workout') : t('Finish workout early · {0} exercises', exDone + '/' + A.entries.length)}
-      </button>
-    })()}
+    <div className="workout-primary-action">
+      {(() => {
+        const exDone = A.entries.filter(e => e.sets.length && e.sets.every(s => s.done)).length
+        const allDone = A.entries.length > 0 && exDone === A.entries.length
+        return <button className={allDone ? 'btn primary' : 'btn ghost dim'} onClick={finishWorkout}>
+          {allDone ? t('Finish workout') : t('Finish workout early · {0} exercises', exDone + '/' + A.entries.length)}
+        </button>
+      })()}
+    </div>
     <div style={{ height: 40 }} />
   </div>
 }

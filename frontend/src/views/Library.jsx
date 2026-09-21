@@ -8,6 +8,7 @@ import { Thumb } from '../components/Media.jsx'
 import { exerciseDetailSheet, addToRoutineSheet, customExSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button, SearchField } from '../components/ui.jsx'
+import AppHeader from '../components/AppHeader.jsx'
 
 export default function Library() {
   const S = useStore(s => s.S)
@@ -22,7 +23,7 @@ export default function Library() {
   const f = eqOn ? base.filter(e => e.eq === eqOn) : base
 
   return <div className="library-view">
-    <div className="hdr"><div><h1>{t('Exercises')}</h1><div className="sub">{t('{0} exercises in the catalogue', EXDB.length)}</div></div></div>
+    <AppHeader title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)} backTo="/more" />
     <div style={{ marginBottom: 10 }}>
       <SearchField placeholder={t('Search…')} value={q}
         onChange={e => { setQ(e.target.value); setShown(40) }} onClear={() => { setQ(''); setShown(40) }} />

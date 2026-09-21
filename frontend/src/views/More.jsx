@@ -6,15 +6,14 @@ import { Section, Row } from '../components/ui.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
 import { EXDB } from '../lib/exercises.js'
+import AppHeader from '../components/AppHeader.jsx'
 
 export default function More() {
   const nav = useNavigate()
   const user = useStore(s => s.user)
 
   return <div className="narrow">
-    <div className="hdr">
-      <div><h1>{t('More')}</h1><div className="sub">{t('Settings, history & account')}</div></div>
-    </div>
+    <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
 
     <Section title={t('Your app')}>
       <Row icon="list" iconTint="var(--blue)" title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)}

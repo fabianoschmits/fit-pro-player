@@ -29,3 +29,4 @@ frontend/icons/
 node_modules/
 *.log
 .DS_Store
+.superpowers/sdd/
