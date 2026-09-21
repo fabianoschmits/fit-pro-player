@@ -46,10 +46,6 @@ begin
 end;
 $$;
 
-create trigger profiles_set_updated_at
-before update on public.profiles
-for each row execute function public.set_identity_updated_at();
-
 create trigger legacy_identity_links_set_updated_at
 before update on public.legacy_identity_links
 for each row execute function public.set_identity_updated_at();
@@ -61,12 +57,12 @@ set search_path = public, pg_temp
 as $$
 begin
   if new.id is distinct from old.id
-    or new.created_at is distinct from old.created_at
-    or new.updated_at is distinct from old.updated_at then
+    or new.created_at is distinct from old.created_at then
     raise exception 'profile server-managed fields cannot be changed'
       using errcode = '42501';
   end if;
 
+  new.updated_at = clock_timestamp();
   return new;
 end;
 $$;

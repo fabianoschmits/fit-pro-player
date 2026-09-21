@@ -1,6 +1,6 @@
 begin;
 
-select plan(48);
+select plan(50);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'user_roles', 'user_roles table exists');
@@ -88,6 +88,11 @@ values
   ('legacy-professional', '00000000-0000-0000-0000-000000000001'),
   ('legacy-student', '00000000-0000-0000-0000-000000000002');
 
+create temporary table profile_update_before on commit drop as
+select id, updated_at
+from public.profiles
+where id = '00000000-0000-0000-0000-000000000002';
+
 select is(
   (select count(*)::integer from public.profiles),
   2,
@@ -116,6 +121,13 @@ select is(
   'Updated Student',
   'the permitted profile update is persisted'
 );
+select ok(
+  (select profile.updated_at > before_update.updated_at
+   from public.profiles profile
+   join profile_update_before before_update using (id)
+   where profile.id = '00000000-0000-0000-0000-000000000002'),
+  'an allowed profile update receives a server-controlled updated_at'
+);
 select throws_ok(
   $$update public.profiles set id = '00000000-0000-0000-0000-000000000001' where id = '00000000-0000-0000-0000-000000000002'$$,
   '42501',
@@ -128,11 +140,15 @@ select throws_ok(
   null,
   'a user cannot change the profile creation timestamp'
 );
-select throws_ok(
-  $$update public.profiles set updated_at = now() where id = '00000000-0000-0000-0000-000000000002'$$,
-  '42501',
-  null,
-  'a user cannot change the profile update timestamp'
+select lives_ok(
+  $$update public.profiles set updated_at = '2000-01-01T00:00:00Z' where id = '00000000-0000-0000-0000-000000000002'$$,
+  'a client cannot control the profile update timestamp'
+);
+select ok(
+  (select updated_at <> '2000-01-01T00:00:00Z'::timestamptz
+   from public.profiles
+   where id = '00000000-0000-0000-0000-000000000002'),
+  'the profile update timestamp is overwritten server-side'
 );
 
 select is(
