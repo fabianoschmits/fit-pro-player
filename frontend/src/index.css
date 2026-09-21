@@ -1756,9 +1756,8 @@ h4.sec{
 .stats-weight-card,.stats-activity-card,.stats-effort-card{margin-bottom:14px}
 .stats-volume-card{margin-top:2px}
 .stats-volume-total{margin-top:10px;line-height:1.45}
-.history-titlebar{display:grid;grid-template-columns:36px minmax(0,1fr) 36px;align-items:center}
-.history-titlebar::after{content:"";width:36px;height:36px}
-.history-title-copy{text-align:center;min-width:0}.history-title-copy h1,.history-title-copy .sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-titlebar{display:flex;align-items:center}
+.history-titlebar .app-header-main{flex:1}
 .history-month{margin-bottom:20px}.history-month-heading{display:flex;align-items:center;justify-content:space-between;margin:0 3px 7px;padding-bottom:0;border-bottom:0}
 .history-month-heading h2{font-size:13px;font-weight:650;text-transform:capitalize}.history-month-heading span{color:var(--label-3);font-size:10px}
 .history-list{gap:0;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:8px;background:var(--surface)}
@@ -1878,8 +1877,6 @@ h4.sec{
 @media (max-width:760px){
   button.iconbtn,.home-week-actions .iconbtn{width:44px;height:44px}
   .hm-month-head .iconbtn{width:44px;height:44px}
-  .history-titlebar{grid-template-columns:44px minmax(0,1fr) 44px}
-  .history-titlebar::after{width:44px;height:44px}
   .btn.sm,.btn.xs,.chip,.seg button,.seg-inline button{min-height:44px}
   .helpbtn,.tip-dismiss{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .picker-cfg,.exercise-picker-preview-actions .picker-cfg{width:44px;height:44px}

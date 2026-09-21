@@ -624,7 +624,7 @@ function ActiveWorkout() {
       </div>
     </>}
     <div style={{ height: 10 }} />
-    <div className="workout-primary-action" data-bottom-navigation-offset="66px">
+    <div className="workout-primary-action">
       {(() => {
         const exDone = A.entries.filter(e => e.sets.length && e.sets.every(s => s.done)).length
         const allDone = A.entries.length > 0 && exDone === A.entries.length

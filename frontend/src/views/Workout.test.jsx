@@ -134,7 +134,6 @@ describe('Workout set completion flow', () => {
     await mount([exercise('plain-bench', [false, false])])
 
     expect(container.querySelector('.workout-primary-action')).toBeTruthy()
-    expect(container.querySelector('.workout-primary-action')?.getAttribute('data-bottom-navigation-offset')).toBe('66px')
     expect(container.querySelector('.workout-primary-action button')?.textContent).toContain('Terminar')
   })
 
