@@ -5,6 +5,8 @@ import {
   normalizeRole,
 } from './contracts.js'
 
+const LEGACY_CONTEXT = Symbol('fpp.server-session-legacy-identity')
+
 function failure(code, message = code) {
   const error = new Error(message)
   error.code = code
@@ -16,11 +18,21 @@ function requireClient(client) {
   return client
 }
 
-function legacyId(legacyUser) {
-  if (!legacyUser || typeof legacyUser.id !== 'string' || !legacyUser.id.trim() || legacyUser.id.length > 120) {
-    throw failure('invalid-legacy-user')
+export function createLegacyIdentityContext(sessionUser) {
+  if (!sessionUser || typeof sessionUser.id !== 'string' || !sessionUser.id.trim() || sessionUser.id.length > 120) {
+    throw failure('invalid-legacy-context')
   }
-  return legacyUser.id.trim()
+  return Object.freeze({
+    id: sessionUser.id.trim(),
+    name: typeof sessionUser.name === 'string' ? sessionUser.name : null,
+    admin: sessionUser.admin === true,
+    [LEGACY_CONTEXT]: true,
+  })
+}
+
+function legacyId(legacyContext) {
+  if (!legacyContext?.[LEGACY_CONTEXT]) throw failure('invalid-legacy-context')
+  return legacyContext.id
 }
 
 function checkError(error, fallback) {
@@ -33,7 +45,9 @@ export function createIdentityRepository({ publicClient = null, adminClient = nu
   const verifyAccessToken = async accessToken => {
     if (typeof accessToken !== 'string' || !accessToken.trim()) throw failure('invalid-access-token')
     const client = requireClient(publicClient)
-    const response = await client.auth.getUser(accessToken)
+    let response
+    try { response = await client.auth.getUser(accessToken) }
+    catch { throw failure('invalid-access-token') }
     if (response?.error || !response?.data?.user) throw failure('invalid-access-token')
     try { return normalizeAuthenticatedUser(response.data.user) }
     catch { throw failure('invalid-access-token') }
@@ -74,11 +88,25 @@ export function createIdentityRepository({ publicClient = null, adminClient = nu
       if (!samePair) throw failure('identity-link-conflict')
       return readSnapshot(user)
     }
-    const response = await client.from('legacy_identity_links').insert({
-      legacy_user_id: currentLegacyId,
-      supabase_user_id: user.id,
-      status: 'active',
-    }).select('*').single()
+    let response
+    try {
+      response = await client.from('legacy_identity_links').insert({
+        legacy_user_id: currentLegacyId,
+        supabase_user_id: user.id,
+        status: 'active',
+      }).select('*').single()
+    } catch (error) {
+      if (error?.code !== '23505') throw failure('identity-link-failed')
+      response = { error }
+    }
+    if (response?.error?.code === '23505') {
+      const committedByLegacy = await client.from('legacy_identity_links').select('*').eq('legacy_user_id', currentLegacyId).maybeSingle()
+      const committedBySupabase = await client.from('legacy_identity_links').select('*').eq('supabase_user_id', user.id).maybeSingle()
+      const samePair = committedByLegacy?.data?.supabase_user_id === user.id
+        && committedBySupabase?.data?.legacy_user_id === currentLegacyId
+      if (samePair) return readSnapshot(user)
+      throw failure('identity-link-conflict')
+    }
     checkError(response?.error, 'identity-link-failed')
     if (!response?.data) throw failure('identity-link-failed')
     return readSnapshot(user)
@@ -89,6 +117,7 @@ export function createIdentityRepository({ publicClient = null, adminClient = nu
     const user = await verifyAccessToken(accessToken)
     const client = requireClient(adminClient)
     const response = await client.from('user_roles').insert({ user_id: user.id, role: 'professional' }).select('*').single()
+    if (response?.error?.code === '23505') throw failure('role-already-present')
     checkError(response?.error, 'role-request-failed')
     if (!response?.data) throw failure('role-request-failed')
     return normalizeRole(response.data)
