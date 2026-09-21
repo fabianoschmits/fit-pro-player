@@ -635,5 +635,11 @@ export default {
   "Replace exercise": "Заменить упражнение",
   "Routine duplicated": "Тренировка дублирована",
   "Replaces {0}": "Заменяет: {0}",
-  "Use last values": "Использовать прошлые значения"
+  "Use last values": "Использовать прошлые значения",
+  "Sync conflict": "Конфликт синхронизации",
+  "Another device has different data. Both copies are protected until you choose which one to keep.": "На другом устройстве есть отличающиеся данные. Обе копии защищены, пока вы не выберете одну из них.",
+  "Use cloud data": "Использовать данные из облака",
+  "Keep this device": "Сохранить данные этого устройства",
+  "This will replace one saved copy. Continue?": "Одна сохранённая копия будет заменена. Продолжить?",
+  "Could not sync your data — you are still signed in.": "Не удалось синхронизировать данные — вы по-прежнему вошли в систему."
 }

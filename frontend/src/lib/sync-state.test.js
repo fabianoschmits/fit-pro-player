@@ -47,4 +47,72 @@ describe('createStatePushQueue', () => {
     expect(markDirty).toHaveBeenCalledTimes(1)
     expect(markClean).not.toHaveBeenCalled()
   })
+
+  it('retries a transient failure and sends the latest snapshot', async () => {
+    let state = { _ts: 1, value: 'old' }
+    const sent = []
+    const wait = vi.fn(async () => { state = { _ts: 2, value: 'new' } })
+    const send = vi.fn(async snapshot => {
+      sent.push(snapshot.value)
+      if (sent.length === 1) throw Object.assign(new Error('temporary'), { status: 503 })
+    })
+    const markDirty = vi.fn()
+    const markClean = vi.fn()
+    const push = createStatePushQueue({
+      getState: () => state,
+      isEnabled: () => true,
+      send,
+      markDirty,
+      markClean,
+      shouldRetry: error => error.status >= 500,
+      retryDelays: [250],
+      wait,
+    })
+
+    await expect(push()).resolves.toBe(true)
+    expect(sent).toEqual(['old', 'new'])
+    expect(wait).toHaveBeenCalledWith(250)
+    expect(markDirty).toHaveBeenCalledTimes(1)
+    expect(markClean).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retry a conflict and exposes the error to the dirty marker', async () => {
+    const conflict = Object.assign(new Error('conflict'), { status: 409 })
+    const markDirty = vi.fn()
+    const send = vi.fn().mockRejectedValue(conflict)
+    const push = createStatePushQueue({
+      getState: () => ({ _ts: 1 }),
+      isEnabled: () => true,
+      send,
+      markDirty,
+      markClean: vi.fn(),
+      shouldRetry: error => error.status !== 409,
+      retryDelays: [1, 2],
+      wait: vi.fn(),
+    })
+
+    await expect(push()).resolves.toBe(false)
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(markDirty).toHaveBeenCalledWith(conflict)
+  })
+
+  it('keeps changes dirty while disabled and can sync them on a later call', async () => {
+    let enabled = false
+    const markClean = vi.fn()
+    const send = vi.fn()
+    const push = createStatePushQueue({
+      getState: () => ({ _ts: 1 }),
+      isEnabled: () => enabled,
+      send,
+      markDirty: vi.fn(),
+      markClean,
+    })
+
+    await expect(push()).resolves.toBe(false)
+    expect(send).not.toHaveBeenCalled()
+    enabled = true
+    await expect(push()).resolves.toBe(true)
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(markClean).toHaveBeenCalledTimes(1)
+  })
 })

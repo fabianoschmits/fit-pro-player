@@ -113,8 +113,10 @@ function RegisterSheet({ close }) {
       setUser(user)
       close()
       if (hasData(useStore.getState().S)) {
-        await pushState()
-        useUI.getState().toast('Perfil criado — os dados deste dispositivo foram transferidos')
+        const synced = await pushState()
+        useUI.getState().toast(synced
+          ? 'Perfil criado — os dados deste dispositivo foram transferidos'
+          : 'Perfil criado, mas os dados continuam protegidos neste dispositivo porque a sincronização falhou')
       } else {
         await pullState()
         useUI.getState().toast(`Bem-vindo, ${user.name}`)

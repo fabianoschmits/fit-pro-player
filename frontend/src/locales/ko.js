@@ -635,5 +635,11 @@ export default {
   "Replace exercise": "운동 교체",
   "Routine duplicated": "루틴이 복제되었습니다",
   "Replaces {0}": "교체 대상: {0}",
-  "Use last values": "이전 값 사용"
+  "Use last values": "이전 값 사용",
+  "Sync conflict": "동기화 충돌",
+  "Another device has different data. Both copies are protected until you choose which one to keep.": "다른 기기에 서로 다른 데이터가 있습니다. 유지할 복사본을 선택할 때까지 두 복사본 모두 보호됩니다.",
+  "Use cloud data": "클라우드 데이터 사용",
+  "Keep this device": "이 기기의 데이터 유지",
+  "This will replace one saved copy. Continue?": "저장된 복사본 하나를 교체합니다. 계속할까요?",
+  "Could not sync your data — you are still signed in.": "데이터를 동기화하지 못했습니다. 로그인 상태는 유지됩니다."
 }

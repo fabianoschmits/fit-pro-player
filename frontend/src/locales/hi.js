@@ -635,5 +635,11 @@ export default {
   "Replace exercise": "व्यायाम बदलें",
   "Routine duplicated": "रूटीन की कॉपी बन गई",
   "Replaces {0}": "इसके स्थान पर: {0}",
-  "Use last values": "पिछले मान इस्तेमाल करें"
+  "Use last values": "पिछले मान इस्तेमाल करें",
+  "Sync conflict": "सिंक टकराव",
+  "Another device has different data. Both copies are protected until you choose which one to keep.": "दूसरे डिवाइस पर अलग डेटा है। आपके चुनाव तक दोनों प्रतियां सुरक्षित रहेंगी।",
+  "Use cloud data": "क्लाउड डेटा इस्तेमाल करें",
+  "Keep this device": "इस डिवाइस का डेटा रखें",
+  "This will replace one saved copy. Continue?": "यह एक सहेजी हुई प्रति बदल देगा। जारी रखें?",
+  "Could not sync your data — you are still signed in.": "डेटा सिंक नहीं हुआ — आप अभी भी साइन इन हैं।"
 }

@@ -6,11 +6,15 @@ const CACHE = 'fit-pro-player-rt-v11'
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => {
-    const oldRuntimeCache = keys.some(k => k.startsWith('fit-pro-player-rt-') && k !== CACHE)
-    return Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    // Keep one previous shell until the new worker has populated its runtime cache. If an
+    // update activates just as the connection drops, caches.match can still serve the old
+    // index and its hashed assets instead of leaving the installed PWA blank.
+    const runtime = keys.filter(k => k.startsWith('fit-pro-player-rt-'))
+    const version = key => Number(key.match(/-v(\d+)$/)?.[1] || 0)
+    const previous = runtime.filter(k => k !== CACHE).sort((a, b) => version(b) - version(a))[0]
+    const keep = new Set([CACHE, previous].filter(Boolean))
+    return Promise.all(runtime.filter(k => !keep.has(k)).map(k => caches.delete(k)))
       .then(() => self.clients.claim())
-      .then(() => oldRuntimeCache ? self.clients.matchAll({ type: 'window' }) : [])
-      .then(clients => Promise.all(clients.map(client => client.navigate(client.url))))
   }))
 })
 self.addEventListener('push', e => {
@@ -33,11 +37,6 @@ self.addEventListener('notificationclick', e => {
 
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting()
-  if (e.data?.type === 'CLEAR_RUNTIME_CACHE') {
-    e.waitUntil(caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k.startsWith('fit-pro-player-rt-')).map(k => caches.delete(k)))
-    ))
-  }
 })
 
 self.addEventListener('fetch', e => {

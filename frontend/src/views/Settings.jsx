@@ -11,6 +11,7 @@ import { t, LANGS, DEFAULT_LANG, INSTR_LANGS } from '../lib/i18n.js'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { MOBILE, shareExport, syncReminder } from '../lib/mobile.js'
 import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
+import { MAX_BACKUP_BYTES, validateBackup } from '../lib/backup-state.js'
 import TipOnce from '../components/TipOnce.jsx'
 import Icon from '../components/Icon.jsx'
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField } from '../components/ui.jsx'
@@ -19,6 +20,7 @@ export default function Settings() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
+  const syncConflict = useStore(s => s.syncConflict)
   const update = useStore(s => s.update)
   const replaceState = useStore(s => s.replaceState)
   const setUser = useStore(s => s.setUser)
@@ -26,6 +28,7 @@ export default function Settings() {
   const pushState = useStore(s => s.pushState)
   const signOut = useStore(s => s.signOut)
   const signOutAll = useStore(s => s.signOutAll)
+  const resolveSyncConflict = useStore(s => s.resolveSyncConflict)
   const resetDemo = useStore(s => s.resetDemo)
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
@@ -46,16 +49,16 @@ export default function Settings() {
     toast(t('Backup exported'))
   }
   const doImport = ev => {
-    const f = ev.target.files[0]; if (!f) return
-    if (f.size > 5 * 1024 * 1024) { toast(t('Import failed: {0}', 'file is larger than 5 MB')); return }
+    const f = ev.target.files[0]; ev.target.value = ''; if (!f) return
+    if (f.size > MAX_BACKUP_BYTES) { toast(t('Import failed: {0}', 'file is larger than 5 MB')); return }
     const rd = new FileReader()
     rd.onload = () => {
       try {
-        const data = JSON.parse(rd.result)
-        if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.workouts) || !Array.isArray(data.routines)) throw new Error('not a Fit Pro Player backup')
+        const data = validateBackup(JSON.parse(rd.result))
         confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => { replaceState(data, true); toast(t('Backup imported')) } })
       } catch (e) { toast(t('Import failed: {0}', e.message)) }
     }
+    rd.onerror = () => toast(t('Could not read that file'))
     rd.readAsText(f)
   }
   const signInHere = async () => {
@@ -73,6 +76,15 @@ export default function Settings() {
     onConfirm: async () => {
       try { await signOutAll(); nav('/home'); toast(t('Signed out on all devices')) }
       catch (e) { toast(t('Could not sign out everywhere — you are still signed in.')) }
+    },
+  })
+  const chooseSyncCopy = strategy => confirmSheet({
+    title: strategy === 'cloud' ? t('Use cloud data') : t('Keep this device'),
+    message: t('This will replace one saved copy. Continue?'),
+    confirmText: t('Replace'), danger: true,
+    onConfirm: async () => {
+      try { await resolveSyncConflict(strategy); toast(t('Done')) }
+      catch { toast(t('Could not sync your data — you are still signed in.')) }
     },
   })
 
@@ -94,8 +106,21 @@ export default function Settings() {
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
       </> : user ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={t('Signed in with passkey — data syncs to this profile.')} />
+        {syncConflict && <>
+          <Row icon="shield" iconTint="var(--red)" danger title={t('Sync conflict')}
+            subtitle={t('Another device has different data. Both copies are protected until you choose which one to keep.')} />
+          <Row icon="download" iconTint="var(--blue)" title={t('Use cloud data')} accessory="chevron" onClick={() => chooseSyncCopy('cloud')} />
+          <Row icon="upload" iconTint="var(--acc)" title={t('Keep this device')} accessory="chevron" onClick={() => chooseSyncCopy('local')} />
+        </>}
         {user.admin && <Row icon="wrench" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
-        <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({ title: t('Sign out?'), message: t('Your data is synced to your profile first, then cleared from this device.'), confirmText: t('Sign out'), danger: true, onConfirm: () => { signOut(); nav('/home') } })} />
+        <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
+          title: t('Sign out?'), message: t('Your data is synced to your profile first, then cleared from this device.'),
+          confirmText: t('Sign out'), danger: true,
+          onConfirm: async () => {
+            try { await signOut(); nav('/home') }
+            catch { toast(t('Could not sync your data — you are still signed in.')) }
+          },
+        })} />
         <Row icon="shield" iconTint="var(--red)" title={t('Sign out everywhere')} subtitle={t('Ends this profile’s sessions on all your devices.')} danger onClick={signOutEverywhere} />
       </> : webauthnOK() ? <>
         <Row icon="lock" iconTint="var(--acc)" title={t('Create passkey profile')} subtitle={t('Keeps your data safe and separate per person.')} accessory="chevron" onClick={registerHere} />
@@ -296,7 +321,7 @@ function MobileReminderCard({ S, update, toast }) {
   )
 }
 
-function PushCard({ S, update, toast }) {
+export function PushCard({ S, update, toast }) {
   const [on, setOn] = useState(false)
   const [busy, setBusy] = useState(false)
   const supported = pushSupported()
@@ -366,7 +391,10 @@ function RegisterInline({ close, setUser, pushState, pullState, toast }) {
     if (inviteOnly && !code.trim()) { toast(t('An invite code is required')); return }
     try {
       const u = await passkeyRegister(n, code.trim()); setUser(u); close()
-      if (hasData(useStore.getState().S)) { await pushState(); toast(t('Profile created — data moved into it')) }
+      if (hasData(useStore.getState().S)) {
+        const synced = await pushState()
+        toast(synced ? t('Profile created — data moved into it') : t('Could not sync your data — you are still signed in.'))
+      }
       else { await pullState(); toast(t('Welcome, {0}', u.name)) }
     } catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(e.message || t('Registration failed')) }
   }

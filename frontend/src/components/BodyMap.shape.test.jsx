@@ -43,4 +43,29 @@ describe('body-map shape rendering', () => {
     expect(arms[0].style.transform).toBe('scaleX(0.9)')
     expect(arms[1].style.transform).toBe('scaleX(1.3)')
   })
+
+  it('exposes one keyboard control per muscle instead of every SVG fragment', () => {
+    const picked = []
+    const view = {
+      vb: '0 0 100 200',
+      p: { biceps: ['M10 50h10v20H10z', 'M80 50h10v20H80z'] },
+    }
+    act(() => root.render(<BodyMapView
+      view={view}
+      viewName="front"
+      levels={{}}
+      selected="biceps"
+      onMuscle={slug => picked.push(slug)}
+    />))
+
+    const paths = [...container.querySelectorAll('.bm-m')]
+    expect(paths[0].getAttribute('role')).toBe('button')
+    expect(paths[0].getAttribute('tabindex')).toBe('0')
+    expect(paths[0].getAttribute('aria-pressed')).toBe('true')
+    expect(paths[1].getAttribute('aria-hidden')).toBe('true')
+    expect(container.querySelectorAll('title')).toHaveLength(0)
+
+    act(() => paths[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
+    expect(picked).toEqual(['biceps'])
+  })
 })

@@ -635,5 +635,11 @@ export default {
   "Replace exercise": "替换动作",
   "Routine duplicated": "训练计划已复制",
   "Replaces {0}": "替代：{0}",
-  "Use last values": "使用上次数据"
+  "Use last values": "使用上次数据",
+  "Sync conflict": "同步冲突",
+  "Another device has different data. Both copies are protected until you choose which one to keep.": "另一台设备上有不同的数据。在你选择保留哪一份之前，两份副本都会受到保护。",
+  "Use cloud data": "使用云端数据",
+  "Keep this device": "保留此设备的数据",
+  "This will replace one saved copy. Continue?": "这将替换一份已保存的副本。继续吗？",
+  "Could not sync your data — you are still signed in.": "无法同步数据——你仍处于登录状态。"
 }

@@ -9,7 +9,7 @@ import {
   generateAuthenticationOptions, verifyAuthenticationResponse
 } from '@simplewebauthn/server';
 import webpush from 'web-push';
-import { newerStateExists, stateTimestamp } from './state-version.js';
+import { stateTimestamp, stateVersionConflict } from './state-version.js';
 
 const PORT = +(process.env.PORT || 3000);
 // Docker pins DATA_DIR to /data. A direct `npm start` keeps runtime files inside
@@ -248,7 +248,13 @@ function readBody(req) {
     });
     req.on('end', () => {
       if (tooLarge) return reject(Object.assign(new Error('body too large'), { status: 413 }));
-      try { resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}); }
+      try {
+        const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {};
+        if (!body || typeof body !== 'object' || Array.isArray(body)) {
+          return reject(Object.assign(new Error('json object required'), { status: 400 }));
+        }
+        resolve(body);
+      }
       catch { reject(Object.assign(new Error('bad json'), { status: 400 })); }
     });
     req.on('error', reject);
@@ -574,8 +580,8 @@ const routes = {
     const file = stateFile(user.id);
     let stored = null;
     try { stored = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { /* first sync */ }
-    if (newerStateExists(stored, body.state)) return json(res, 409, { error: 'newer state already stored', serverTs: stateTimestamp(stored) });
     delete body.state.active;              // in-progress workouts stay device-local
+    if (stateVersionConflict(stored, body.state)) return json(res, 409, { error: 'newer or different state already stored', serverTs: stateTimestamp(stored) });
     atomicWrite(file, JSON.stringify(body.state));
     json(res, 200, { ok: true, ts: body.state._ts || null });
   },
@@ -779,7 +785,7 @@ http.createServer(async (req, res) => {
   }
   try { await handler(req, res); }
   catch (e) {
-    console.error(key, e);
+    if (!e.status || e.status >= 500) console.error(key, e);
     if (!res.headersSent) json(res, e.status || 500, { error: e.status ? e.message : 'server error' });
   }
 }).listen(PORT, () => console.log(`fitproplayer-api on :${PORT} (rpID=${RP_ID}, origin=${ORIGIN})`));

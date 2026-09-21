@@ -54,14 +54,24 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
   const selectedMuscles = new Set(Array.isArray(selected) ? selected : selected ? [selected] : [])
   const pathIsSelected = (slug, index, count) => selectedMuscles.has(slug)
     && (!SIDE_AWARE_SLUGS.has(slug) || pathMatchesSelectedSide(index, count, selectedSide, viewName))
+  const keyMuscle = (event, slug) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onMuscle(slug)
+  }
+  const pathA11y = (slug, index) => onMuscle && index === 0 ? {
+    role: 'button', tabIndex: 0, 'aria-label': t(MUSCLE_NAME[slug]),
+    'aria-pressed': selectedMuscles.has(slug),
+    onKeyDown: event => keyMuscle(event, slug),
+  } : { 'aria-hidden': 'true' }
   return (
     <svg
       className={`bm-v${shapeInstant ? ' bm-shape-instant' : ''}`}
       viewBox={view.vb}
-      role={decorative ? undefined : 'img'}
+      role={decorative ? undefined : onMuscle ? 'group' : 'img'}
       aria-hidden={decorative ? 'true' : undefined}
       aria-label={decorative ? undefined : t('Body diagram')}
-      focusable="false"
+      focusable={onMuscle ? undefined : 'false'}
     >
       {INERT.map(slug => {
         const paths = view.p[slug] || []
@@ -77,18 +87,16 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')}
           d={d}
           onClick={onMuscle ? () => onMuscle(slug) : undefined}
-        >
-          {!decorative && <title>{t(MUSCLE_NAME[slug])}</title>}
-        </path>)
+          {...pathA11y(slug, i)}
+        />)
         const renderPath = (d, i, local = false, scale = 1) => <path
           key={slug + i}
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '') + (local ? ' bm-shape-path' : '')}
           style={local ? { transform: `scaleX(${scale})` } : undefined}
           d={d}
           onClick={onMuscle ? () => onMuscle(slug) : undefined}
-        >
-          {!decorative && <title>{t(MUSCLE_NAME[slug])}</title>}
-        </path>
+          {...pathA11y(slug, i)}
+        />
         if (LOCAL_SHAPE_SLUGS.has(slug)) return paths.map((d, i) => renderPath(d, i, true, shapeScaleForPath(shapeScales, slug, i, paths.length, viewName)))
         const scale = shapeScaleForPath(shapeScales, slug, 0, 1, viewName)
         return <g key={slug} className="bm-shape-group" style={{ transform: `scaleX(${scale})` }}>{paths.map((d, i) => renderPath(d, i))}</g>

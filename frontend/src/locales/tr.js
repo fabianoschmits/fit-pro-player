@@ -635,5 +635,11 @@ export default {
   "Replace exercise": "Egzersizi değiştir",
   "Routine duplicated": "Program çoğaltıldı",
   "Replaces {0}": "Şunun yerine: {0}",
-  "Use last values": "Son değerleri kullan"
+  "Use last values": "Son değerleri kullan",
+  "Sync conflict": "Senkronizasyon çakışması",
+  "Another device has different data. Both copies are protected until you choose which one to keep.": "Başka bir cihazda farklı veriler var. Hangisini tutacağını seçene kadar iki kopya da korunur.",
+  "Use cloud data": "Bulut verilerini kullan",
+  "Keep this device": "Bu cihazın verilerini koru",
+  "This will replace one saved copy. Continue?": "Kayıtlı kopyalardan biri değiştirilecek. Devam edilsin mi?",
+  "Could not sync your data — you are still signed in.": "Verilerin senkronize edilemedi — oturumun hâlâ açık."
 }

@@ -86,8 +86,30 @@ const hasData = st => !!(
 export const useStore = create((set, get) => {
   let pushTm = null
   let saveTm = null
-  const markDirty = () => { try { localStorage.setItem('gym_dirty', '1') } catch { /* best effort */ } }
-  const markClean = () => { try { localStorage.removeItem('gym_dirty') } catch { /* best effort */ } }
+  let retryTm = null
+  const setSyncConflict = value => {
+    try {
+      if (value) localStorage.setItem('gym_sync_conflict', '1')
+      else localStorage.removeItem('gym_sync_conflict')
+    } catch { /* best effort */ }
+    set({ syncConflict: value })
+  }
+  const markDirty = error => {
+    try { localStorage.setItem('gym_dirty', '1') } catch { /* best effort */ }
+    if (error?.status === 409) {
+      clearTimeout(retryTm)
+      setSyncConflict(true)
+    } else if (error && error.status !== 401 && navigator.onLine !== false) {
+      clearTimeout(retryTm)
+      retryTm = setTimeout(() => get().pushState(), 30000)
+    }
+  }
+  const markClean = () => {
+    clearTimeout(retryTm)
+    retryTm = null
+    try { localStorage.removeItem('gym_dirty') } catch { /* best effort */ }
+    setSyncConflict(false)
+  }
 
   // Mobile build: mirror the state into a file in the app's data directory (survives WebView
   // storage eviction) and keep the native reminder schedule in step with the weekly plan.
@@ -104,31 +126,21 @@ export const useStore = create((set, get) => {
     if (MOBILE) nativePersist()
     if (push && get().user) {
       markDirty()
-      clearTimeout(pushTm)
-      pushTm = setTimeout(() => get().pushState(), 1500)
+      if (!get().syncConflict) {
+        clearTimeout(pushTm)
+        pushTm = setTimeout(() => get().pushState(), 1500)
+      }
     }
   }
 
   const pushLatest = createStatePushQueue({
     getState: () => get().S,
-    isEnabled: () => !!get().user,
+    isEnabled: () => !!get().user && !get().syncConflict,
     markDirty,
     markClean,
-    send: async state => {
-      try {
-        await api('/api/data', { method: 'PUT', body: JSON.stringify({ state }) })
-      } catch (error) {
-        if (error.status !== 409 || !Number.isFinite(+error.data?.serverTs)) throw error
-
-        // A newer server snapshot can be from another device or an older request that
-        // finished late. Re-stamp this explicit local change above it and retry once.
-        const current = clone(get().S)
-        current._ts = Math.max(Date.now(), +error.data.serverTs + 1)
-        try { localStorage.setItem(KEY, JSON.stringify(current)) } catch { /* keep in memory */ }
-        set({ S: current })
-        await api('/api/data', { method: 'PUT', body: JSON.stringify({ state: current }) })
-      }
-    }
+    send: state => api('/api/data', { method: 'PUT', body: JSON.stringify({ state }) }),
+    shouldRetry: error => error?.status !== 401 && error?.status !== 409 && navigator.onLine !== false,
+    retryDelays: [250, 1000, 3000],
   })
 
   // A setting changed right before switching away/closing the tab must not get lost mid-debounce
@@ -136,7 +148,10 @@ export const useStore = create((set, get) => {
   // same applies to the file mirror — backgrounding is often the last thing before the OS
   // kills the app.
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'hidden') return
+    if (document.visibilityState !== 'hidden') {
+      if (localStorage.getItem('gym_dirty') === '1' && get().user && !get().syncConflict) get().pushState()
+      return
+    }
     if (MOBILE && saveTm) {
       clearTimeout(saveTm)
       saveTm = null
@@ -149,18 +164,32 @@ export const useStore = create((set, get) => {
     }
   })
 
+  // A failed upload deliberately leaves gym_dirty behind. Reconnection is the earliest safe
+  // moment to resume it; no user action should be required after a tunnel or Wi-Fi interruption.
+  window.addEventListener('online', () => {
+    if (localStorage.getItem('gym_dirty') === '1' && get().user && !get().syncConflict) get().pushState()
+  })
+  window.addEventListener('focus', () => {
+    if (localStorage.getItem('gym_dirty') === '1' && get().user && !get().syncConflict) get().pushState()
+  })
+
   // Everything a sign-out leaves behind on this device, whichever way it was triggered.
   const clearLocalSession = () => {
     get().setUser(null)
     localStorage.removeItem('gym_guest')
     localStorage.removeItem('gym_dirty')
+    localStorage.removeItem('gym_sync_conflict')
     localStorage.removeItem(KEY)
+    clearTimeout(retryTm)
+    retryTm = null
+    set({ syncConflict: false })
     persist(normalizeState(DEF), false)
   }
 
   return {
     S: (() => { const s = loadState(); registerCustom(s.customEx); return s })(),
     user: (() => { try { return JSON.parse(localStorage.getItem('gym_user')) || null } catch { return null } })(),
+    syncConflict: (() => { try { return localStorage.getItem('gym_sync_conflict') === '1' } catch { return false } })(),
     ready: false,
 
     // Mutate a draft of S via producer fn, then persist + schedule sync.
@@ -191,9 +220,10 @@ export const useStore = create((set, get) => {
     },
 
     async pushState() {
-      if (!get().user) return
+      if (!get().user || get().syncConflict) return false
       clearTimeout(pushTm)
-      await pushLatest()
+      pushTm = null
+      return pushLatest()
     },
     async pullState() {
       try {
@@ -210,7 +240,10 @@ export const useStore = create((set, get) => {
     },
 
     async signOut() {
-      try { await get().pushState(); await api('/api/logout', { method: 'POST', body: '{}' }) } catch (e) { /* */ }
+      if (hasData(get().S) && !(await get().pushState())) {
+        throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
+      }
+      await api('/api/logout', { method: 'POST', body: '{}' })
       clearLocalSession()
     },
 
@@ -220,9 +253,38 @@ export const useStore = create((set, get) => {
     // the sessions elsewhere are all still valid, and wiping this device's copy of the data
     // would sign the user out of the one place the bump didn't reach. Caller reports the error.
     async signOutAll() {
-      await get().pushState()   // never throws — stores gym_dirty and moves on when offline
+      if (hasData(get().S) && !(await get().pushState())) {
+        throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
+      }
       await api('/api/logout/all', { method: 'POST', body: '{}' })
       clearLocalSession()
+    },
+
+    // A whole-state sync cannot safely guess how to merge two devices. Keep both copies intact
+    // and let the owner explicitly choose which one wins.
+    async resolveSyncConflict(strategy) {
+      const { state: cloudState } = await api('/api/data')
+      if (strategy === 'cloud') {
+        if (!cloudState) throw new Error('No cloud data was found.')
+        const active = get().S.active
+        const next = normalizeState(cloudState)
+        if (active) next.active = active
+        setSyncConflict(false)
+        markClean()
+        persist(next, false)
+        return true
+      }
+      if (strategy !== 'local') throw new Error('Unknown conflict resolution.')
+
+      const current = clone(get().S)
+      current._ts = Math.max(Date.now(), Number(current._ts) + 1 || 1, Number(cloudState?._ts) + 1 || 1)
+      try { localStorage.setItem(KEY, JSON.stringify(current)) } catch { /* keep in memory */ }
+      registerCustom(current.customEx)
+      set({ S: current })
+      if (MOBILE) nativePersist()
+      setSyncConflict(false)
+      markDirty()
+      return pushLatest()
     },
 
     // Demo build only: drop the seeded example profile back in (Settings → "Reset demo data").

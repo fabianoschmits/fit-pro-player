@@ -27,7 +27,6 @@ if (!MOBILE && 'serviceWorker' in navigator && location.protocol === 'https:') {
 
   navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(registration => {
     const activateWaiting = () => {
-      registration.waiting?.postMessage({ type: 'CLEAR_RUNTIME_CACHE' })
       registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
     }
     const checkAppShell = async () => {
@@ -38,7 +37,6 @@ if (!MOBILE && 'serviceWorker' in navigator && location.protocol === 'https:') {
       const nextAssetSignature = assetSignatureOf(nextDoc)
       if (!reloadedForUpdate && currentAssetSignature && nextAssetSignature && nextAssetSignature !== currentAssetSignature) {
         reloadedForUpdate = true
-        navigator.serviceWorker.controller?.postMessage({ type: 'CLEAR_RUNTIME_CACHE' })
         window.location.reload()
       }
     }

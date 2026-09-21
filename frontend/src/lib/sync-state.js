@@ -5,25 +5,39 @@ export function nextStateTimestamp(previous, now = Date.now()) {
   return Math.max(now, (Number(previous) || 0) + 1)
 }
 
-export function createStatePushQueue({ getState, isEnabled, send, markDirty, markClean }) {
+export function createStatePushQueue({
+  getState, isEnabled, send, markDirty, markClean,
+  shouldRetry = () => false,
+  retryDelays = [],
+  wait = ms => new Promise(resolve => window.setTimeout(resolve, ms)),
+}) {
   let running = null
   let queued = false
 
   const drain = async () => {
     let ok = true
+    let retry = 0
     do {
       queued = false
-      if (!isEnabled()) break
+      if (!isEnabled()) return false
 
       const snapshot = getState()
       const sentTs = snapshot?._ts || 0
       try {
         await send(snapshot)
-      } catch {
-        markDirty()
+      } catch (error) {
+        markDirty(error)
         ok = false
+        if (isEnabled() && retry < retryDelays.length && shouldRetry(error)) {
+          await wait(retryDelays[retry++])
+          queued = true
+          continue
+        }
         break
       }
+
+      retry = 0
+      ok = true
 
       if ((getState()?._ts || 0) === sentTs) markClean()
       else {

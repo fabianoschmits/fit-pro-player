@@ -635,5 +635,11 @@ export default {
   "Replace exercise": "Remplacer l’exercice",
   "Routine duplicated": "Routine dupliquée",
   "Replaces {0}": "Remplace : {0}",
-  "Use last values": "Utiliser les dernières valeurs"
+  "Use last values": "Utiliser les dernières valeurs",
+  "Sync conflict": "Conflit de synchronisation",
+  "Another device has different data. Both copies are protected until you choose which one to keep.": "Un autre appareil contient des données différentes. Les deux copies restent protégées jusqu’à ton choix.",
+  "Use cloud data": "Utiliser les données du cloud",
+  "Keep this device": "Garder les données de cet appareil",
+  "This will replace one saved copy. Continue?": "Cela remplacera une copie enregistrée. Continuer ?",
+  "Could not sync your data — you are still signed in.": "Impossible de synchroniser tes données — tu es toujours connecté."
 }
