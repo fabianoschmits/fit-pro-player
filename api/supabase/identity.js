@@ -105,5 +105,41 @@ export function createIdentityRepository({ publicClient = null, adminClient = nu
     return normalizeRole(response.data)
   }
 
-  return { verifyAccessToken, getAccountSnapshot, linkLegacyIdentity, requestProfessionalRole }
+  const getBootstrapIdentity = async ({ legacyUser } = {}) => {
+    const currentLegacyId = legacyId(legacyUser)
+    const client = requireClient(adminClient)
+    let linkResponse
+    try {
+      linkResponse = await client.from('legacy_identity_links').select('*').eq('legacy_user_id', currentLegacyId).maybeSingle()
+    } catch {
+      throw failure('identity-resolution-failed')
+    }
+    if (linkResponse?.error) throw failure('identity-resolution-failed')
+    if (!linkResponse?.data || linkResponse.data.status !== 'active') throw failure('identity-not-linked')
+
+    let supabaseUserId
+    try {
+      supabaseUserId = normalizeAuthenticatedUser({ id: linkResponse.data.supabase_user_id }).id
+    } catch {
+      throw failure('identity-not-linked')
+    }
+
+    let authResponse
+    try {
+      if (typeof client.auth?.admin?.getUserById !== 'function') throw new Error('admin-user-read-unavailable')
+      authResponse = await client.auth.admin.getUserById(supabaseUserId)
+    } catch {
+      throw failure('identity-resolution-failed')
+    }
+    if (authResponse?.error || !authResponse?.data?.user) throw failure('identity-not-linked')
+
+    try {
+      if (normalizeAuthenticatedUser(authResponse.data.user).id !== supabaseUserId) throw new Error('identity-mismatch')
+    } catch {
+      throw failure('identity-not-linked')
+    }
+    return { supabaseUserId }
+  }
+
+  return { verifyAccessToken, getAccountSnapshot, linkLegacyIdentity, requestProfessionalRole, getBootstrapIdentity }
 }

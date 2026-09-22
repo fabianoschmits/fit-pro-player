@@ -47,6 +47,11 @@ function createSafeClient(config) {
     getUser: (...args) => rawClient.auth.getUser(...args),
     getSession: (...args) => rawClient.auth.getSession(...args),
   };
+  if (config.admin) {
+    auth.admin = {
+      getUserById: (...args) => rawClient.auth.admin.getUserById(...args),
+    };
+  }
 
   return {
     auth,
@@ -76,5 +81,5 @@ export function createSupabaseAdminClient(envOrOptions = process.env, options) {
 
   if (!config.hasServerCredentials) return null;
 
-  return createSafeClient({ url: config.url, key: config.secretKey });
+  return createSafeClient({ url: config.url, key: config.secretKey, admin: true });
 }

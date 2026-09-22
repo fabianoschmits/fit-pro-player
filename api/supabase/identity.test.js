@@ -40,7 +40,10 @@ function clients({ user = { id: USER_ID, email: 'user@example.test', user_metada
   const calls = []
   const tables = { profiles: profile ? [profile] : [], user_roles: roles, legacy_identity_links: link ? [link] : [] }
   const admin = {
-    auth: { async getUser() { return result(user) } },
+    auth: {
+      async getUser() { return result(user) },
+      admin: { async getUserById(id) { return result({ user: id === user?.id ? user : null }) } },
+    },
     rpc(name, args) {
       calls.push(['rpc', name, args])
       if (rpcLink) return Promise.resolve(result(rpcLink))
@@ -93,6 +96,34 @@ test('verifyAccessToken returns a validated identity and rejects token failures'
 test('repository is unavailable without injected Supabase clients', async () => {
   const repo = createIdentityRepository({})
   await assert.rejects(() => repo.verifyAccessToken('token'), error => error.code === 'supabase-unavailable')
+})
+
+test('bootstrap identity only resolves the active valid link owned by the server session', async () => {
+  const activeLink = {
+    legacy_user_id: legacyUser.id,
+    supabase_user_id: USER_ID,
+    status: 'active',
+    linked_at: '2026-01-01T00:00:00Z',
+  }
+  const valid = createIdentityRepository(clients({ link: activeLink }))
+  assert.deepEqual(await valid.getBootstrapIdentity({ legacyUser }), { supabaseUserId: USER_ID })
+
+  const missing = createIdentityRepository(clients())
+  await assert.rejects(() => missing.getBootstrapIdentity({ legacyUser }), error => error.code === 'identity-not-linked')
+
+  const revoked = createIdentityRepository(clients({ link: { ...activeLink, status: 'revoked' } }))
+  await assert.rejects(() => revoked.getBootstrapIdentity({ legacyUser }), error => error.code === 'identity-not-linked')
+
+  const malformed = createIdentityRepository(clients({ link: { ...activeLink, supabase_user_id: 'not-a-uuid' } }))
+  await assert.rejects(() => malformed.getBootstrapIdentity({ legacyUser }), error => error.code === 'identity-not-linked')
+
+  const noAuthUser = createIdentityRepository(clients({ user: { id: OTHER_USER_ID }, link: activeLink }))
+  await assert.rejects(() => noAuthUser.getBootstrapIdentity({ legacyUser }), error => error.code === 'identity-not-linked')
+
+  await assert.rejects(
+    () => valid.getBootstrapIdentity({ legacyUser: { id: legacyUser.id } }),
+    error => error.code === 'invalid-legacy-context',
+  )
 })
 
 test('account snapshot preserves stored display name and automatic student role', async () => {

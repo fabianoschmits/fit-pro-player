@@ -41,6 +41,8 @@ test('admin factory creates a privileged client only with complete server config
   assert.equal(client.auth.detectSessionInUrl, false);
   assert.doesNotMatch(JSON.stringify(client), /server-secret/);
   assert.doesNotMatch(String(client), /server-secret/);
+  assert.equal(typeof client.auth.admin.getUserById, 'function');
+  assert.deepEqual(Object.keys(client.auth.admin), ['getUserById']);
 });
 
 test('factories fail closed for malformed or incomplete configuration', () => {
