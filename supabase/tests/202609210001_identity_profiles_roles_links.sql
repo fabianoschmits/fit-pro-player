@@ -1,6 +1,6 @@
 begin;
 
-select plan(59);
+select plan(63);
 
 select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'user_roles', 'user_roles table exists');
