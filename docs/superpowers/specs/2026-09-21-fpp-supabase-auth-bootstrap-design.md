@@ -52,17 +52,23 @@ Erros estáveis: 401 not signed in; 409 identity_not_linked; 429 too many reques
 
 ## 6. JWT e claims
 
-Algoritmo aprovado para implementação: ES256, condicionado à confirmação de que o projeto Supabase aceita a chave pública ou JWKS importada para esse issuer. RS256 é apenas fallback de compatibilidade; HS256 não será usado.
+O caminho validado é um JWT autoemitido pelo backend FPP com uma chave privada importada no sistema de JWT Signing Keys do projeto. Ele não é um token de sessão emitido pelo Supabase Auth e não usa o fluxo de Third-Party Auth/OIDC. O Data API recebe o JWT no `Authorization: Bearer` e usa o claim `role` para selecionar o papel PostgreSQL; RLS continua sendo a autoridade.
 
-Header mínimo: typ JWT, alg ES256 e kid configurado.
+Algoritmo aprovado para implementação: ES256. O JWKS público do projeto atualmente anuncia uma chave EC ES256; a documentação oficial recomenda P-256/ES256 e documenta importação de uma chave privada ES256. RS256 permanece somente como fallback caso uma validação de compatibilidade futura o exija; HS256 não será usado.
 
-Claims mínimos: iss com a URL Auth do projeto; aud authenticated; sub exatamente igual ao supabase_user_id do vínculo; role authenticated; iat; exp.
+Header final obrigatório: `typ: JWT`, `alg: ES256`, `kid: <kid importado>`. O `kid` deve ser exatamente o mesmo valor registrado na importação.
 
-Não incluir capabilities, email, phone, app_metadata, user_metadata, session_id ou claims de produto sem necessidade comprovada. O frontend não poderá escolher alg, kid, sub, role, aud, iss ou exp.
+Claims mínimos do FPP: `sub`, `role` e `exp`.
 
-A implementação usará biblioteca criptográfica mantida, preferencialmente jose, sem implementar JWT ou ECDSA manualmente.
+- `sub` é opcional no exemplo oficial de impersonação, mas é obrigatório no FPP: deve ser um UUID existente em `auth.users.id` e exatamente igual a `legacy_identity_links.supabase_user_id`.
+- `role` é obrigatório e será sempre `authenticated`, um papel PostgreSQL existente.
+- `exp` é obrigatório e deve estar no futuro; tokens curtos são recomendados.
+- `iat` é aceito, mas não é necessário para o caminho de imported signing key e ficará fora do conjunto mínimo.
+- `iss` e `aud` não são necessários para este JWT customizado: não serão emitidos nem configurados como variáveis. A lista de claims obrigatórios da página de referência de tokens do Supabase Auth não será copiada para este fluxo.
 
-Validação técnica: a documentação oficial do Supabase descreve sub, role, aud, iss, iat e exp como claims relevantes para identidade e RLS; aceita JWT externo assinado por chave importada; e documenta accessToken dinâmico no cliente. Esses pontos deverão ser confirmados contra a configuração real antes do deploy.
+Claims adicionais são permitidos pelo formato JWT, mas não têm função no contrato FPP e serão omitidos: `email`, `phone`, `app_metadata`, `user_metadata`, `session_id`, capabilities e claims de produto. O frontend não poderá escolher qualquer header, claim ou expiração. Valores inventados de `iss`/`aud` não serão usados; se forem adicionados no futuro, terão de ser validados em um experimento autorizado antes de entrarem no contrato.
+
+A implementação usará biblioteca criptográfica mantida, preferencialmente `jose`, sem implementar JWT ou ECDSA manualmente.
 
 ## 7. Signing key e ambiente
 
@@ -70,12 +76,11 @@ Variáveis propostas:
 
 - FPP_SUPABASE_JWT_PRIVATE_KEY: PEM ou JWK privado, backend-only.
 - FPP_SUPABASE_JWT_KEY_ID: kid configurado no Supabase.
-- FPP_SUPABASE_JWT_ISSUER: issuer esperado, sem override do cliente.
-- FPP_SUPABASE_JWT_AUDIENCE: authenticated, validado contra allowlist fixa.
+- Não haverá variáveis de issuer ou audience: esses claims não fazem parte do contrato mínimo.
 
-A chave privada será distinta por ambiente, ficará em secret manager ou ambiente seguro e não terá valor real no .env.example. Startup deverá falhar fechado quando chave, kid ou issuer forem ausentes ou incompatíveis.
+A chave privada será distinta por ambiente, ficará em secret manager ou ambiente seguro e não terá valor real no `.env.example`. Startup deverá falhar fechado quando chave ou kid forem ausentes ou incompatíveis.
 
-A chave pública ou JWKS será registrada no Supabase por operação explicitamente autorizada. Rotação futura usará chave standby, sobreposição, validação e revogação; rotação automática fica fora desta fase.
+A chave pública/JWKS será registrada no Supabase por operação explicitamente autorizada. O estado de signing keys do projeto não foi alterado nesta validação; a operação futura de importar e ativar a chave exige stop gate separado. A rotação usará standby, sobreposição, validação e revogação; rotação automática fica fora desta fase. Ativar/rotacionar uma chave faz o Supabase Auth passar a assinar novos tokens de sessão com ela, sem invalidar imediatamente tokens antigos não expirados; portanto a ativação pode afetar todo o ecossistema Auth e não é uma etapa implícita da implementação do endpoint.
 
 ## 8. Backend boundary
 
@@ -105,9 +110,11 @@ Não haverá refresh token Supabase no browser, blacklist complexa ou retry infi
 
 Logout e logout-all continuarão usando o fluxo existente. O frontend limpa o bearer imediatamente; bootstrap posterior exige novamente o cookie FPP válido. Logout-all invalida a versão da sessão e impede novos bootstraps.
 
-O cookie SameSite=Strict é apenas uma camada. O endpoint aceitará somente POST, validará Origin quando presente, validará Referer quando Origin não estiver presente sob a política aplicável, recusará CORS wildcard com credentials, exigirá Content-Type JSON quando houver corpo e responderá sem cache.
+O cookie SameSite=Strict é apenas uma camada. O endpoint aceitará somente POST, validará `Origin` quando presente e `Referer` quando `Origin` não estiver presente, recusará CORS wildcard com credentials, exigirá `Content-Type: application/json` quando houver corpo e responderá sem cache.
 
-A política para Capacitor será definida a partir da origem nativa real sem enfraquecer a proteção web. POST sozinho não será considerado proteção CSRF suficiente.
+Validação estrutural do repositório: Vite usa proxy same-origin no desenvolvimento; `vercel.json` hospeda somente o frontend e não declara hostname de produção; PWA usa o mesmo origin HTTPS da página instalada. `frontend/capacitor.config.json` não define `server.url`, `hostname`, `androidScheme` ou `iosScheme`; portanto não há origem customizada versionada. O runtime nativo padrão deve ser tratado como Android `http://localhost` e iOS `capacitor://localhost`, mas a primeira implementação deve registrar os valores observados em dispositivo/emulador antes de fechar a allowlist. Não há backend CORS explícito hoje.
+
+A allowlist será explícita por ambiente: origin de desenvolvimento efetivamente usado, hostname(s) de produção configurados no deploy e origins nativos confirmados. Referer deve ser comparado por origin, nunca por prefixo ingênuo. Para requests nativos em que Origin/Referer realmente estejam ausentes, a exceção deverá ser deliberada e limitada ao contexto nativo identificável por uma camada de transporte autenticada; request web sem ambos será recusado. Não será usado `Access-Control-Allow-Origin: *`.
 
 ## 12. RLS e capabilities
 
@@ -119,7 +126,7 @@ Por padrão, a Fase 1B não exigirá migration PostgreSQL: reutilizará legacy_i
 
 ## 13. Testes obrigatórios
 
-Backend: sessão válida mais vínculo active emite token; sub corresponde ao vínculo; role é authenticated; claims, expiração, issuer e audience são validados; sessão ausente retorna 401; vínculo ausente ou revoked retorna 409; A nunca recebe token de B; logout e logout-all bloqueiam novo bootstrap; corpo não escolhe identidade; chave ausente falha fechado; logs não vazam segredo; rate limit funciona.
+Backend: sessão válida mais vínculo active emite token; sub corresponde ao vínculo; role é authenticated; claims mínimos e expiração são validados; sessão ausente retorna 401; vínculo ausente ou revoked retorna 409; A nunca recebe token de B; logout e logout-all bloqueiam novo bootstrap; corpo não escolhe identidade; chave ausente falha fechado; logs não vazam segredo; rate limit funciona.
 
 Frontend: memória vazia faz bootstrap; token válido é reutilizado; expiração renova uma vez; reload recupera novo token pelo cookie FPP; chamadas concorrentes compartilham Promise; 401 limpa token; logout impede reinstalação antiga; nenhum token aparece em localStorage, sessionStorage, IndexedDB ou gym_state_v1; cliente usa public key e accessToken dinâmico.
 
@@ -127,7 +134,13 @@ Integração/RLS: JWT válido produz auth.uid() correto; RLS permite dados próp
 
 ## 14. Deploy, observabilidade e exclusões
 
-Antes da implementação será necessário confirmar no projeto real a disponibilidade de JWT Signing Keys ou imported signing key, algoritmo, issuer, audience e endpoint JWKS. Nenhuma alteração remota será feita nesta fase.
+Validação read-only de 2026-09-22: `npx supabase --version` retornou `2.117.0`; `npx supabase projects list` encontrou o projeto ativo e saudável pelo ref correto, porém o repositório local continua sem link. O JWKS público retornou HTTP 200 e anunciou uma chave pública EC `ES256` com `key_ops=verify` e um `kid` público. Isso confirma o sistema assimétrico e ES256 em uso/aceito pelo projeto, mas não expõe nem altera private key. O detalhe completo de estados current/standby/previous/revoked não foi inferido do JWKS e continua dependente da tela/API de gerenciamento autorizada.
+
+O projeto atualmente mantém configuração local `jwt_expiry = 3600` no `supabase/config.toml`; isso não é o TTL do bearer FPP, que permanece 5 minutos com renovação quando faltarem 30 segundos. A documentação oficial recomenda tokens curtos. A operação futura de importação/ativação continua bloqueada até stop gate.
+
+O cliente declarado pelo backend é `@supabase/supabase-js` `2.116.0` no `api/package.json`/lockfile; ele ainda não está instalado em `api/node_modules` e o frontend ainda não declara a dependência. A opção oficial `createClient(..., { accessToken: async () => ... })` é suportada pela API documentada e deverá ser usada na implementação. Ela injeta o bearer nas chamadas do cliente, inclusive Data API; o callback pode ser chamado repetidamente e concorrentemente, portanto a abstração FPP deverá manter single-flight e memória de expiração. Realtime futuro deve ser validado separadamente antes de ser considerado coberto.
+
+Antes da implementação será necessário confirmar no projeto real a configuração final da chave importada e registrar o `kid` sem expor material privado. Nenhuma alteração remota foi feita nesta fase.
 
 Eventos permitidos: bootstrap.success, bootstrap.not_signed_in, bootstrap.identity_not_linked, bootstrap.rate_limited, bootstrap.config_unavailable, bootstrap.signing_failed e bootstrap.origin_denied. Registrar somente categoria, ambiente, resultado, duração e correlation id.
 
