@@ -119,6 +119,8 @@ select supabase_user_id, updated_at
 from public.legacy_identity_links
 where supabase_user_id = '00000000-0000-0000-0000-000000000002';
 
+grant select on link_update_before to authenticated;
+
 update public.legacy_identity_links
 set status = 'revoked'
 where supabase_user_id = '00000000-0000-0000-0000-000000000002';
@@ -135,6 +137,8 @@ create temporary table profile_update_before on commit drop as
 select id, updated_at
 from public.profiles
 where id = '00000000-0000-0000-0000-000000000002';
+
+grant select on profile_update_before to authenticated;
 
 select is(
   (select count(*)::integer from public.profiles),
