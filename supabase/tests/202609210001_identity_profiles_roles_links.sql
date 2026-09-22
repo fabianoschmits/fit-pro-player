@@ -214,13 +214,23 @@ select throws_ok(
   null,
   'a user cannot insert an elevated role'
 );
-update public.user_roles set role = 'admin' where user_id = '00000000-0000-0000-0000-000000000002';
+select throws_ok(
+  $$update public.user_roles set role = 'admin' where user_id = '00000000-0000-0000-0000-000000000002'$$,
+  '42501',
+  null,
+  'a user cannot update their role'
+);
 select is(
   (select role::text from public.user_roles where user_id = '00000000-0000-0000-0000-000000000002'),
   'student',
   'a user cannot update their role'
 );
-delete from public.user_roles where user_id = '00000000-0000-0000-0000-000000000002';
+select throws_ok(
+  $$delete from public.user_roles where user_id = '00000000-0000-0000-0000-000000000002$$,
+  '42501',
+  null,
+  'a user cannot delete their role'
+);
 select is(
   (select count(*)::integer from public.user_roles where user_id = '00000000-0000-0000-0000-000000000002'),
   1,
@@ -243,13 +253,23 @@ select throws_ok(
   null,
   'a user cannot create an identity link'
 );
-update public.legacy_identity_links set legacy_user_id = 'legacy-rewritten' where supabase_user_id = '00000000-0000-0000-0000-000000000002';
+select throws_ok(
+  $$update public.legacy_identity_links set legacy_user_id = 'legacy-rewritten' where supabase_user_id = '00000000-0000-0000-0000-000000000002'$$,
+  '42501',
+  null,
+  'a user cannot rewrite an identity link'
+);
 select is(
   (select legacy_user_id from public.legacy_identity_links where supabase_user_id = '00000000-0000-0000-0000-000000000002'),
   'legacy-student',
   'a user cannot rewrite an identity link'
 );
-delete from public.legacy_identity_links where supabase_user_id = '00000000-0000-0000-0000-000000000002';
+select throws_ok(
+  $$delete from public.legacy_identity_links where supabase_user_id = '00000000-0000-0000-0000-000000000002$$,
+  '42501',
+  null,
+  'a user cannot delete an identity link'
+);
 select is(
   (select count(*)::integer from public.legacy_identity_links where supabase_user_id = '00000000-0000-0000-0000-000000000002'),
   1,
