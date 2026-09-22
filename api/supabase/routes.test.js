@@ -168,6 +168,6 @@ test('bootstrap route validates body before signer or repository and redacts unk
     repository: { async getBootstrapIdentity() { throw new Error(sensitive) } },
   })
   await unknown.run()
-  assert.deepEqual(unknown.writes, [{ status: 500, payload: { error: 'unknown' }, extraHeaders: undefined }])
+  assert.deepEqual(unknown.writes, [{ status: 500, payload: { error: 'account unavailable' }, extraHeaders: undefined }])
   assert.equal(JSON.stringify(unknown.writes).includes(sensitive), false)
 })

@@ -45,7 +45,7 @@ describe('FPP Supabase client', () => {
           autoRefreshToken: false,
           detectSessionInUrl: false,
         },
-        accessToken,
+        accessToken: expect.any(Function),
       },
     )
   })
@@ -73,7 +73,7 @@ describe('FPP Supabase client', () => {
     expect(getFppSupabaseClient()).toBe(client)
     expect(supabaseMocks.createClient).toHaveBeenCalledTimes(1)
 
-    clearFppSupabaseAuth()
+    await clearFppSupabaseAuth()
   })
 
   it('returns null from the singleton getter when Vite public configuration is absent', async () => {
@@ -83,7 +83,29 @@ describe('FPP Supabase client', () => {
     expect(supabaseMocks.createClient).not.toHaveBeenCalled()
   })
 
+  it('purges Realtime bearer state and ignores an in-flight callback after clear', async () => {
+    vi.doUnmock('@supabase/supabase-js')
+    vi.resetModules()
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://project.supabase.co')
+    vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'public-publishable-key')
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ access_token: 'broker-token' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    }))
+    const { clearFppSupabaseAuth, getFppSupabaseClient } = await import('./supabase-client.js')
+    const client = getFppSupabaseClient()
+
+    await client.realtime.setAuth()
+    expect(client.realtime.accessTokenValue).toBe('broker-token')
+    await clearFppSupabaseAuth()
+    await Promise.resolve()
+
+    expect(client.realtime.accessTokenValue).toBeNull()
+    expect(client.realtime.channels).toHaveLength(0)
+  })
+
   it('bootstraps a new bearer after a reload while the FPP cookie survives and reaches an authenticated endpoint', async () => {
+    vi.restoreAllMocks()
     vi.doUnmock('@supabase/supabase-js')
     vi.resetModules()
 
@@ -92,7 +114,10 @@ describe('FPP Supabase client', () => {
     const authorizations = []
     const server = createServer((request, response) => {
       if (request.method === 'POST' && request.url === '/login') {
-        response.writeHead(204, { 'Set-Cookie': 'gymsid=authenticated-session; HttpOnly; SameSite=Lax' })
+        response.writeHead(204, {
+          'Set-Cookie': 'gymsid=authenticated-session; HttpOnly; SameSite=Lax',
+          'X-FPP-Test-Set-Cookie': 'gymsid=authenticated-session',
+        })
         response.end()
         return
       }
@@ -130,7 +155,9 @@ describe('FPP Supabase client', () => {
       const headers = new Headers(options.headers)
       if (cookie) headers.set('Cookie', cookie)
       const response = await fetch(`${url}${path}`, { ...options, headers })
-      const setCookie = response.headers.get('set-cookie')
+      const setCookie = response.headers.get('x-fpp-test-set-cookie')
+        || response.headers.getSetCookie?.()[0]
+        || response.headers.get('set-cookie')
       if (setCookie) cookie = setCookie.split(';', 1)[0]
       return response
     }

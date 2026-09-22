@@ -236,13 +236,27 @@ function frontendBoundaryViolations(file, source) {
     }
   }
 
+  const sensitiveBindings = new Set()
+  for (let index = 0; index < tokens.length - 3; index += 1) {
+    if (!['const', 'let', 'var'].includes(tokens[index]?.value)) continue
+    const binding = tokens[index + 1]
+    if (binding?.kind !== 'identifier' || !tokenIs(tokens[index + 2], '=')) continue
+    const end = tokens.findIndex((token, candidate) => candidate > index + 2 && tokenIs(token, ';'))
+    const statement = tokens.slice(index + 3, end === -1 ? tokens.length : end)
+    if (statement.some((token) => isSensitiveName(token) || sensitiveBindings.has(token.value))) {
+      sensitiveBindings.add(binding.value)
+    }
+  }
+
   const bearerHeaders = []
   for (let index = 0; index < tokens.length; index += 1) {
-    if (isAuthorizationKey(tokens[index]) && tokenIs(tokens[index + 1], ':') && isBearerValue(tokens[index + 2])) {
+    if (isAuthorizationKey(tokens[index]) && tokenIs(tokens[index + 1], ':')
+      && (isBearerValue(tokens[index + 2]) || sensitiveBindings.has(tokens[index + 2]?.value))) {
       bearerHeaders.push(index + 2)
     }
     if (tokenIs(tokens[index], '.') && tokenIs(tokens[index + 1], 'set') && tokenIs(tokens[index + 2], '(')
-      && isAuthorizationKey(tokens[index + 3]) && tokenIs(tokens[index + 4], ',') && isBearerValue(tokens[index + 5])) {
+      && isAuthorizationKey(tokens[index + 3]) && tokenIs(tokens[index + 4], ',')
+      && (isBearerValue(tokens[index + 5]) || sensitiveBindings.has(tokens[index + 5]?.value))) {
       bearerHeaders.push(index + 5)
     }
   }
@@ -254,19 +268,6 @@ function frontendBoundaryViolations(file, source) {
       add(tokens[bearerIndex], 'frontend manual bearer helper is outside the approved account endpoint allowlist')
     } else {
       add(tokens[bearerIndex], 'frontend contains Authorization Bearer outside the approved manual account endpoint allowlist')
-    }
-  }
-
-  const sensitiveBindings = new Set()
-  for (let index = 0; index < tokens.length - 3; index += 1) {
-    if (!['const', 'let', 'var'].includes(tokens[index]?.value)) continue
-    const binding = tokens[index + 1]
-    if (binding?.kind !== 'identifier' || !tokenIs(tokens[index + 2], '=')) continue
-    const end = tokens.findIndex((token, candidate) => candidate > index + 2 && tokenIs(token, ';'))
-    const statement = tokens.slice(index + 3, end === -1 ? tokens.length : end)
-    if (statement.some((token) => tokenText(token) === 'gym_state_v1' || tokenText(token) === 'supabaseAccessToken')
-      && statement.some((token) => isSensitiveTokenIdentifier(token))) {
-      sensitiveBindings.add(binding.value)
     }
   }
 
@@ -289,6 +290,13 @@ function frontendBoundaryViolations(file, source) {
   }
 
   const storageRoots = new Set(['localStorage', 'sessionStorage', 'indexedDB'])
+  const indexedDbStoreBindings = new Set()
+  for (let index = 0; index < tokens.length - 5; index += 1) {
+    if (!['const', 'let', 'var'].includes(tokens[index]?.value)) continue
+    const binding = tokens[index + 1]
+    if (binding?.kind !== 'identifier' || !tokenIs(tokens[index + 2], '=') || !tokens.slice(index + 3, index + 10).some((token) => tokenIs(token, 'objectStore'))) continue
+    indexedDbStoreBindings.add(binding.value)
+  }
   for (let index = 0; index < tokens.length; index += 1) {
     if (!storageRoots.has(tokens[index]?.value)) continue
 
@@ -318,6 +326,15 @@ function frontendBoundaryViolations(file, source) {
       if (value.some((token) => isSensitiveName(token) || sensitiveBindings.has(token.value))) {
         add(tokens[index], 'frontend contains explicit bearer persistence')
       }
+    }
+  }
+
+  for (let index = 0; index < tokens.length - 4; index += 1) {
+    if (!tokenIs(tokens[index + 1], '.') || !['put', 'add'].includes(tokens[index + 2]?.value) || !tokenIs(tokens[index + 3], '(')) continue
+    if (!(indexedDbStoreBindings.has(tokens[index]?.value) || tokenIs(tokens[index]?.value, 'objectStore'))) continue
+    const end = matchingToken(tokens, index + 3, '(', ')')
+    if (tokensBetween(tokens, index + 3, end).some((token) => isSensitiveName(token) || sensitiveBindings.has(token.value))) {
+      add(tokens[index], 'frontend contains explicit bearer persistence')
     }
   }
 
@@ -351,7 +368,7 @@ function frontendBoundaryViolations(file, source) {
     if (!recognizedMethod || !tokenIs(tokens[callStart], '(')) continue
     const end = matchingToken(tokens, callStart, '(', ')')
     const args = tokensBetween(tokens, callStart, end)
-    if (args.some((token) => isSensitiveName(token))) add(tokens[index], 'frontend contains bearer material in a URL mutation')
+    if (args.some((token) => isSensitiveName(token) || sensitiveBindings.has(token.value))) add(tokens[index], 'frontend contains bearer material in a URL mutation')
   }
 
   for (let index = 0; index < tokens.length - 4; index += 1) {
@@ -369,7 +386,15 @@ function frontendBoundaryViolations(file, source) {
     const valueStart = directLocation ? index + 4 : index + 6
     const end = tokens.findIndex((token, candidate) => candidate >= valueStart && tokenIs(token, ';'))
     const value = tokens.slice(valueStart, end === -1 ? tokens.length : end)
-    if (value.some((token) => isSensitiveName(token))) add(tokens[index], 'frontend contains bearer material in a URL mutation')
+    if (value.some((token) => isSensitiveName(token) || sensitiveBindings.has(token.value))) add(tokens[index], 'frontend contains bearer material in a URL mutation')
+  }
+
+  for (let index = 0; index < tokens.length - 4; index += 1) {
+    if (!tokenIs(tokens[index], 'console') || !tokenIs(tokens[index + 1], '.') || !tokenIs(tokens[index + 2], 'log') || !tokenIs(tokens[index + 3], '(')) continue
+    const end = matchingToken(tokens, index + 3, '(', ')')
+    if (tokensBetween(tokens, index + 3, end).some((token) => isSensitiveName(token) || sensitiveBindings.has(token.value))) {
+      add(tokens[index], 'frontend logs bearer material')
+    }
   }
 
   return violations

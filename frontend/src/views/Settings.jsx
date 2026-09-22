@@ -390,7 +390,7 @@ function SupabaseAccountSheet({ close, setStatus, toast }) {
     setBusy(true)
     try {
       await linkSupabaseIdentity(accessToken)
-      clearFppSupabaseAuth()
+      await clearFppSupabaseAuth()
       setStatus('linked')
       toast(t('Supabase account linked'))
       close()

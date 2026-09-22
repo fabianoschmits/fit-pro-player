@@ -245,7 +245,7 @@ export const useStore = create((set, get) => {
         throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
       }
       await api('/api/logout', { method: 'POST', body: '{}' })
-      clearFppSupabaseAuth()
+      await clearFppSupabaseAuth()
       clearLocalSession()
     },
 
@@ -259,7 +259,7 @@ export const useStore = create((set, get) => {
         throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
       }
       await api('/api/logout/all', { method: 'POST', body: '{}' })
-      clearFppSupabaseAuth()
+      await clearFppSupabaseAuth()
       clearLocalSession()
     },
 

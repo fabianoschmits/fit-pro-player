@@ -35,7 +35,7 @@ function bootstrapFailure(json, res, error) {
   if (['identity-resolution-failed', 'supabase-unavailable', 'supabase-jwt-config-unavailable', 'supabase-jwt-signing-unavailable'].includes(error?.code)) {
     return json(res, 503, { error: 'supabase auth bootstrap unavailable' })
   }
-  return json(res, 500, { error: 'unknown' })
+  return json(res, 500, { error: 'account unavailable' })
 }
 
 function requestHasBody(req) {
