@@ -116,3 +116,14 @@ test('migration declares least-privilege schema, table, and RPC grants', () => {
   assert.doesNotMatch(migration, /grant .* on table .* to anon\s*;/i)
   assert.match(migration, /grant execute on function public\.link_legacy_identity\(text, uuid\) to service_role;/i)
 })
+
+test('corrective migration removes default RPC execute grants from client roles', () => {
+  const migration = readFileSync(resolve(
+    process.cwd(),
+    'supabase/migrations/202609210002_link_legacy_identity_acl.sql',
+  ), 'utf8')
+
+  assert.match(migration, /revoke execute on function public\.link_legacy_identity\(text, uuid\) from public, anon, authenticated;/i)
+  assert.match(migration, /grant execute on function public\.link_legacy_identity\(text, uuid\) to service_role;/i)
+  assert.doesNotMatch(migration, /grant execute on function public\.link_legacy_identity\(text, uuid\) to (?:public|anon|authenticated);/i)
+})
