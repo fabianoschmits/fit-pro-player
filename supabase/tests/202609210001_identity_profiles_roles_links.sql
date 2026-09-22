@@ -182,7 +182,7 @@ select throws_ok(
   'a user cannot change the profile id'
 );
 select throws_ok(
-  $$update public.profiles set created_at = now() where id = '00000000-0000-0000-0000-000000000002'$$,
+  $$update public.profiles set created_at = created_at + interval '1 day' where id = '00000000-0000-0000-0000-000000000002'$$,
   '42501',
   null,
   'a user cannot change the profile creation timestamp'
@@ -226,7 +226,7 @@ select is(
   'a user cannot update their role'
 );
 select throws_ok(
-  $$delete from public.user_roles where user_id = '00000000-0000-0000-0000-000000000002$$,
+  $$delete from public.user_roles where user_id = '00000000-0000-0000-0000-000000000002'$$,
   '42501',
   null,
   'a user cannot delete their role'
@@ -265,7 +265,7 @@ select is(
   'a user cannot rewrite an identity link'
 );
 select throws_ok(
-  $$delete from public.legacy_identity_links where supabase_user_id = '00000000-0000-0000-0000-000000000002$$,
+  $$delete from public.legacy_identity_links where supabase_user_id = '00000000-0000-0000-0000-000000000002'$$,
   '42501',
   null,
   'a user cannot delete an identity link'
