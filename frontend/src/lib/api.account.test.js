@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { linkSupabaseIdentity, requestSupabaseProfessionalRole } from './api.js'
+import { clearSupabaseAccessToken, getSupabaseAccessToken, linkSupabaseIdentity, requestSupabaseProfessionalRole } from './api.js'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -36,5 +36,22 @@ describe('Supabase account bridge', () => {
 
     await expect(linkSupabaseIdentity('')).rejects.toThrow('Supabase access token is required')
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('bootstraps a Supabase bearer with the same-origin FPP cookie and no authorization header', async () => {
+    const exp = Math.floor(Date.now() / 1_000) + 300
+    const accessToken = `eyJhbGciOiJFUzI1NiJ9.${btoa(JSON.stringify({ exp })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')}.signature`
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ access_token: accessToken }), { status: 200 }))
+
+    clearSupabaseAccessToken()
+    await expect(getSupabaseAccessToken()).resolves.toBe(accessToken)
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/account/supabase-token', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
+    clearSupabaseAccessToken()
   })
 })

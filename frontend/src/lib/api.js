@@ -1,4 +1,6 @@
 // Backend + WebAuthn helpers (ported from the vanilla app).
+import { createSupabaseTokenBroker } from './supabase-token-broker.js'
+
 export const IS_APPLE = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
 export const IS_ANDROID = /Android/.test(navigator.userAgent)
 export const BIO = IS_APPLE ? 'Face ID / Touch ID' : IS_ANDROID ? 'fingerprint or face unlock' : 'your fingerprint, face or PIN'
@@ -16,6 +18,17 @@ export async function api(path, opts) {
   }
   return data
 }
+
+export const supabaseTokenBroker = createSupabaseTokenBroker({
+  requestBootstrap: () => api('/api/account/supabase-token', {
+    method: 'POST',
+    credentials: 'same-origin',
+    body: '{}',
+  }),
+})
+
+export const getSupabaseAccessToken = () => supabaseTokenBroker.getAccessToken()
+export const clearSupabaseAccessToken = () => supabaseTokenBroker.clear()
 
 function accountRequest(path, accessToken) {
   if (typeof accessToken !== 'string' || !accessToken.trim()) {
