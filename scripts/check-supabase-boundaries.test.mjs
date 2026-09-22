@@ -29,6 +29,70 @@ test('rejects private Supabase environment names in frontend tracked inputs', ()
   assert.match(violations.join('\n'), /service-role|private/i)
 })
 
+test('rejects server-only Supabase signing environment names in frontend tracked inputs', () => {
+  const privateEnvNames = [
+    'FPP_SUPABASE_JWT_PRIVATE_KEY',
+    'FPP_SUPABASE_JWT_KEY_ID',
+    'VITE_FPP_SUPABASE_JWT_PRIVATE_KEY',
+    'SUPABASE_SECRET_KEY',
+  ]
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/leak.js',
+  ], {
+    'frontend/src/leak.js': privateEnvNames
+      .map((name) => `const value = import.meta.env.${name}`)
+      .join('\n'),
+  })
+
+  for (const name of privateEnvNames) {
+    assert.match(violations.join('\n'), new RegExp(name))
+  }
+})
+
+test('rejects explicit frontend bearer persistence', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/leak.js',
+  ], {
+    'frontend/src/leak.js': [
+      "localStorage.setItem('supabase-token', accessToken)",
+      "sessionStorage.setItem('supabase-token', accessToken)",
+      "indexedDB.put('supabase-token', accessToken)",
+    ].join('\n'),
+  })
+
+  assert.equal(violations.filter((violation) => /persistence/i.test(violation)).length, 3)
+})
+
+test('rejects frontend bearer headers outside the manual identity-link contract', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/lib/api.js',
+    'frontend/src/leak.js',
+    'api/supabase/config.js',
+  ], {
+    'frontend/src/lib/api.js': [
+      'function accountRequest(path, accessToken) {',
+      '  return api(path, { headers: { Authorization: `Bearer ${accessToken.trim()}` } })',
+      '}',
+      'export function linkSupabaseIdentity(accessToken) {',
+      "  return accountRequest('/api/account/identity-link', accessToken)",
+      '}',
+    ].join('\n'),
+    'frontend/src/leak.js': 'fetch(\'/api/private\', { headers: { Authorization: `Bearer ${accessToken}` } })\n',
+    'api/supabase/config.js': [
+      'const signingKey = env.FPP_SUPABASE_JWT_PRIVATE_KEY',
+      'const keyId = env.FPP_SUPABASE_JWT_KEY_ID',
+      'const adminKey = env.SUPABASE_SECRET_KEY',
+    ].join('\n'),
+  })
+
+  assert.deepEqual(violations, [
+    'frontend/src/leak.js:1: frontend contains Authorization Bearer outside the manual identity-link contract',
+  ])
+})
+
 test('rejects missing reproducibility files', () => {
   const rootDir = mkdtempSync(join(tmpdir(), 'supabase-boundaries-'))
 

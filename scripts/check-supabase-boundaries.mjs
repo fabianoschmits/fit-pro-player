@@ -29,7 +29,15 @@ export const FORBIDDEN_FUTURE_TABLES = [
   'analytics',
 ]
 
-const FRONTEND_PRIVATE_ENV_PATTERN = /\bservice_role\b|\bSUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY)\b|\bVITE_SUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY|DB_PASSWORD|ACCESS_TOKEN)\b/i
+const FRONTEND_PRIVATE_ENV_PATTERN = /\b(?:service_role|SUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY)|VITE_SUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY|DB_PASSWORD|ACCESS_TOKEN)|(?:VITE_)?FPP_SUPABASE_JWT_(?:PRIVATE_KEY|KEY_ID))\b/gi
+const FRONTEND_BEARER_HEADER_PATTERN = /\bauthorization\s*:\s*(?:['"`]\s*)?bearer\b/gi
+const FRONTEND_TOKEN_PERSISTENCE_PATTERNS = [
+  /\b(?:localStorage|sessionStorage)\s*\.\s*(?:setItem|set|put|add)\s*\([^)]*\b(?:access[_-]?token|bearer|jwt|supabase[_-]?(?:access[_-]?token|token|bearer))\b[^)]*\)/gi,
+  /\b(?:indexedDB|IDBObjectStore|objectStore)\b[\s\S]{0,240}?\b(?:put|add|set)\s*\([^)]*\b(?:access[_-]?token|bearer|jwt|supabase[_-]?(?:access[_-]?token|token|bearer))\b[^)]*\)/gi,
+  /\bgym_state_v1\b[\s\S]{0,240}?\b(?:access[_-]?token|bearer|jwt|supabase[_-]?(?:access[_-]?token|token|bearer))\b/gi,
+  /\b(?:URLSearchParams|location(?:\.href)?|window\.location)\b[\s\S]{0,240}?\b(?:access[_-]?token|bearer|jwt|supabase[_-]?(?:access[_-]?token|token|bearer))\b/gi,
+]
+const MANUAL_IDENTITY_LINK_FILE = 'frontend/src/lib/api.js'
 const TABLE_PATTERN = /\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?<schema>[a-z_][\w]*|"[^"]+")\s*\.\s*)?(?<table>[a-z_][\w]*|"[^"]+")/gi
 
 const slashPath = (value) => value.replaceAll('\\', '/')
@@ -53,6 +61,14 @@ const readText = (rootDir, file, fileContents) => {
 
 const lineNumberAt = (text, index) => text.slice(0, index).split('\n').length
 const unquoteIdentifier = (identifier) => identifier.replace(/^"|"$/g, '')
+const findMatches = (text, pattern) => [...text.matchAll(new RegExp(pattern.source, pattern.flags))]
+
+const isManualIdentityLinkBearer = (file, text, bearerMatches) => (
+  file === MANUAL_IDENTITY_LINK_FILE
+  && bearerMatches.length === 1
+  && /\bfunction\s+accountRequest\b/.test(text)
+  && /\baccountRequest\(\s*['"]\/api\/account\/identity-link['"]/.test(text)
+)
 
 /**
  * Return human-readable violations for the tracked repository boundary.
@@ -83,10 +99,24 @@ export function checkSupabaseBoundaries({
     const text = readText(normalizedRoot, file, fileContents)
     if (text === null) continue
 
-    const match = text.match(FRONTEND_PRIVATE_ENV_PATTERN)
-    if (match) {
+    for (const match of findMatches(text, FRONTEND_PRIVATE_ENV_PATTERN)) {
       const line = lineNumberAt(text, match.index ?? 0)
       violations.push(`${file}:${line}: frontend contains private Supabase/service-role reference "${match[0]}"`)
+    }
+
+    for (const pattern of FRONTEND_TOKEN_PERSISTENCE_PATTERNS) {
+      for (const match of findMatches(text, pattern)) {
+        const line = lineNumberAt(text, match.index ?? 0)
+        violations.push(`${file}:${line}: frontend contains explicit bearer persistence "${match[0].trim()}"`)
+      }
+    }
+
+    const bearerMatches = findMatches(text, FRONTEND_BEARER_HEADER_PATTERN)
+    if (!isManualIdentityLinkBearer(file, text, bearerMatches)) {
+      for (const match of bearerMatches) {
+        const line = lineNumberAt(text, match.index ?? 0)
+        violations.push(`${file}:${line}: frontend contains Authorization Bearer outside the manual identity-link contract`)
+      }
     }
   }
 
