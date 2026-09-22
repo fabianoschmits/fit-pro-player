@@ -40,8 +40,8 @@ select ok(
   'authenticated clients cannot execute the identity linking RPC'
 );
 
-select has_check('public', 'user_roles', 'user_roles_role_check', 'roles are restricted to the approved enum values');
-select has_check('public', 'legacy_identity_links', 'legacy_identity_links_status_check', 'identity link status is constrained');
+select col_has_check('public', 'user_roles', 'user_roles_role_check', 'roles are restricted to the approved enum values');
+select col_has_check('public', 'legacy_identity_links', 'legacy_identity_links_status_check', 'identity link status is constrained');
 
 select is(
   (select count(*)::integer from public.profiles where id = '00000000-0000-0000-0000-000000000002'),
