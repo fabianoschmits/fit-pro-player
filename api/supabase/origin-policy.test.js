@@ -13,6 +13,8 @@ test('origin policy accepts only an explicitly allowed normalized web origin', (
   assert.equal(policy.check(request({ referer: 'https://app.fitpro.test/account?bootstrap=1' })), true)
   assert.equal(policy.check(request({ origin: 'https://app.fitpro.test.evil.test' })), false)
   assert.equal(policy.check(request({ origin: 'null' })), false)
+  assert.equal(policy.check(request({ origin: 'https://app.fitpro.test/a/..' })), false)
+  assert.equal(policy.check(request({ origin: 'https://app.fitpro.test/%2e%2e' })), false)
 })
 
 test('origin policy rejects malformed referers and web requests without an origin signal', () => {

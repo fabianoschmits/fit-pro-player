@@ -32,10 +32,37 @@ function bootstrapFailure(json, res, error) {
   if (['identity-not-linked', 'identity-revoked', 'identity-inconsistent'].includes(error?.code)) {
     return json(res, 409, { error: 'identity_not_linked' })
   }
-  if (['supabase-jwt-config-unavailable', 'supabase-jwt-signing-unavailable'].includes(error?.code)) {
+  if (['identity-resolution-failed', 'supabase-unavailable', 'supabase-jwt-config-unavailable', 'supabase-jwt-signing-unavailable'].includes(error?.code)) {
     return json(res, 503, { error: 'supabase auth bootstrap unavailable' })
   }
   return json(res, 500, { error: 'unknown' })
+}
+
+function requestHasBody(req) {
+  const headers = req?.headers || {}
+  if (headers['transfer-encoding']) return true
+  if (headers['content-length'] !== undefined) {
+    const length = Number(headers['content-length'])
+    return !Number.isFinite(length) || length > 0
+  }
+  return false
+}
+
+function hasJsonContentType(req) {
+  const contentType = req?.headers?.['content-type']
+  return typeof contentType === 'string' && /^application\/json(?:\s*;|$)/i.test(contentType.trim())
+}
+
+function bootstrapParserFailure(json, res, error) {
+  if (error?.status === 413) {
+    json(res, 413, { error: 'bootstrap request too large' })
+    return true
+  }
+  if (error?.status === 400) {
+    json(res, 400, { error: 'invalid bootstrap request' })
+    return true
+  }
+  return null
 }
 
 function emptyBootstrapBody(body) {
@@ -93,11 +120,14 @@ export function createSupabaseRoutes({ repository, readSession, readBody, json, 
 
       const legacyUser = readSession(req)
       if (!legacyUser) return json(res, 401, { error: 'not signed in' })
-      if (!signer?.signForUser) return json(res, 503, { error: 'supabase auth bootstrap unavailable' })
 
       try {
+        if (requestHasBody(req) && !hasJsonContentType(req)) {
+          return json(res, 400, { error: 'invalid bootstrap request' })
+        }
         const body = await readBody(req)
         if (!emptyBootstrapBody(body)) return json(res, 400, { error: 'invalid bootstrap request' })
+        if (!signer?.signForUser) return json(res, 503, { error: 'supabase auth bootstrap unavailable' })
         const identity = await repository.getBootstrapIdentity({ legacyUser: legacyContext(legacyUser) })
         const signed = await signer.signForUser({ supabaseUserId: identity?.supabaseUserId })
         return json(res, 200, {
@@ -106,7 +136,10 @@ export function createSupabaseRoutes({ repository, readSession, readBody, json, 
           expires_in: signed.expiresIn,
           expires_at: signed.expiresAt,
         }, { 'Cache-Control': 'no-store' })
-      } catch (error) { return bootstrapFailure(json, res, error) }
+      } catch (error) {
+        if (bootstrapParserFailure(json, res, error)) return
+        return bootstrapFailure(json, res, error)
+      }
     },
   }
 }

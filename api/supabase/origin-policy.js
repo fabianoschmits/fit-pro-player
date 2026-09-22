@@ -18,6 +18,11 @@ function normalizedUrl(value, { native = false, referer = false } = {}) {
   return null
 }
 
+function isPathlessRawOrigin(value) {
+  return typeof value === 'string'
+    && /^[a-z][a-z\d+.-]*:\/\/[^/?#]+$/i.test(value.trim())
+}
+
 function configuredOrigins(values, options) {
   return new Set((Array.isArray(values) ? values : [])
     .map(value => normalizedUrl(value, options))
@@ -31,6 +36,7 @@ export function createOriginPolicy({ allowedOrigins = [], nativeOrigins = [] } =
   const check = req => {
     const headers = req?.headers || {}
     if (headers.origin !== undefined) {
+      if (!isPathlessRawOrigin(headers.origin)) return false
       const origin = normalizedUrl(headers.origin, { native: true })
       return Boolean(origin && (webOrigins.has(origin) || configuredNativeOrigins.has(origin)))
     }

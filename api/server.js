@@ -59,10 +59,20 @@ const bootstrapOriginPolicy = createOriginPolicy({
   allowedOrigins: [ORIGIN, ...configuredBootstrapOrigins],
   nativeOrigins: configuredBootstrapOrigins,
 });
+const hasJwtPrivateKey = typeof process.env.FPP_SUPABASE_JWT_PRIVATE_KEY === 'string'
+  && process.env.FPP_SUPABASE_JWT_PRIVATE_KEY.trim();
+const hasJwtKeyId = typeof process.env.FPP_SUPABASE_JWT_KEY_ID === 'string'
+  && process.env.FPP_SUPABASE_JWT_KEY_ID.trim();
 let supabaseJwtSigner = null;
-try {
-  supabaseJwtSigner = createSupabaseJwtSigner({ config: readSupabaseJwtConfig(process.env) });
-} catch {}
+if (hasJwtPrivateKey || hasJwtKeyId) {
+  try {
+    supabaseJwtSigner = createSupabaseJwtSigner({ config: readSupabaseJwtConfig(process.env) });
+  } catch (error) {
+    const startupError = new Error('supabase auth bootstrap configuration unavailable')
+    startupError.code = error?.code || 'supabase-jwt-config-unavailable'
+    throw startupError
+  }
+}
 
 const dbFile = path.join(DATA, 'db.json');
 let db = { users: [], creds: [], subs: [], invites: [] };

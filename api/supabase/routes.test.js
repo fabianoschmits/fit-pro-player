@@ -8,22 +8,23 @@ const SUPABASE_USER_ID = '00000000-0000-0000-0000-000000000001'
 const legacyUser = { id: 'legacy-user', name: 'Legacy User', admin: false }
 const allowedOrigin = 'https://app.fitpro.test'
 
-function bootstrapRoute({ session = legacyUser, body = {}, repository = {}, signer = null, headers = { origin: allowedOrigin } } = {}) {
+function bootstrapRoute({ session = legacyUser, body = {}, repository = {}, signer, headers = { origin: allowedOrigin }, readBody = async () => body } = {}) {
   const writes = []
+  const selectedSigner = arguments.length === 0 ? undefined : signer
   const routes = createSupabaseRoutes({
     repository: {
       async getBootstrapIdentity() { return { supabaseUserId: SUPABASE_USER_ID } },
       ...repository,
     },
-    signer: signer || {
+    signer: selectedSigner === undefined ? {
       async signForUser() {
         return { token: 'signed-access-token', expiresIn: 300, expiresAt: '2026-09-22T12:05:00.000Z' }
       },
-    },
+    } : selectedSigner,
     originPolicy: createOriginPolicy({ allowedOrigins: [allowedOrigin] }),
     readSession: () => session,
-    readBody: async () => body,
-    json: (res, status, payload, extraHeaders) => writes.push({ status, payload, extraHeaders }),
+    readBody,
+    json: (res, status, payload, extraHeaders) => { writes.push({ status, payload, extraHeaders }) },
   })
   return { run: () => routes['POST /api/account/supabase-token']({ headers }, {}), writes }
 }
@@ -104,4 +105,69 @@ test('bootstrap route fails closed when the signer is unavailable', async () => 
   })
   await run()
   assert.deepEqual(writes, [{ status: 503, payload: { error: 'supabase auth bootstrap unavailable' }, extraHeaders: undefined }])
+})
+
+test('bootstrap route maps operational identity failures to bootstrap unavailable', async () => {
+  for (const code of ['identity-resolution-failed', 'supabase-unavailable']) {
+    const error = Object.assign(new Error('internal identity details'), { code })
+    const { run, writes } = bootstrapRoute({
+      repository: { async getBootstrapIdentity() { throw error } },
+    })
+    await run()
+    assert.deepEqual(writes, [{ status: 503, payload: { error: 'supabase auth bootstrap unavailable' }, extraHeaders: undefined }], code)
+  }
+})
+
+test('bootstrap route preserves intentional parser status and rejects non-JSON bodies', async () => {
+  const malformed = bootstrapRoute({
+    readBody: async () => { throw Object.assign(new Error('bad json'), { status: 400 }) },
+  })
+  await malformed.run()
+  assert.deepEqual(malformed.writes, [{ status: 400, payload: { error: 'invalid bootstrap request' }, extraHeaders: undefined }])
+
+  const oversized = bootstrapRoute({
+    readBody: async () => { throw Object.assign(new Error('body too large'), { status: 413 }) },
+  })
+  await oversized.run()
+  assert.deepEqual(oversized.writes, [{ status: 413, payload: { error: 'bootstrap request too large' }, extraHeaders: undefined }])
+
+  const wrongContentType = bootstrapRoute({
+    body: {},
+    headers: { origin: allowedOrigin, 'content-type': 'text/plain', 'content-length': '2' },
+  })
+  await wrongContentType.run()
+  assert.deepEqual(wrongContentType.writes, [{ status: 400, payload: { error: 'invalid bootstrap request' }, extraHeaders: undefined }])
+
+  const missingContentType = bootstrapRoute({
+    body: {},
+    headers: { origin: allowedOrigin, 'content-length': '2' },
+  })
+  await missingContentType.run()
+  assert.deepEqual(missingContentType.writes, [{ status: 400, payload: { error: 'invalid bootstrap request' }, extraHeaders: undefined }])
+
+  for (const body of [null, []]) {
+    const parsedValue = bootstrapRoute({ body })
+    await parsedValue.run()
+    assert.deepEqual(parsedValue.writes, [{ status: 400, payload: { error: 'invalid bootstrap request' }, extraHeaders: undefined }])
+  }
+})
+
+test('bootstrap route validates body before signer or repository and redacts unknown failures', async () => {
+  const calls = []
+  const invalidBody = bootstrapRoute({
+    body: { role: 'admin' },
+    signer: null,
+    repository: { async getBootstrapIdentity() { calls.push('repository') } },
+  })
+  await invalidBody.run()
+  assert.deepEqual(invalidBody.writes, [{ status: 400, payload: { error: 'invalid bootstrap request' }, extraHeaders: undefined }])
+  assert.deepEqual(calls, [])
+
+  const sensitive = 'cookie Authorization Bearer payload private-key'
+  const unknown = bootstrapRoute({
+    repository: { async getBootstrapIdentity() { throw new Error(sensitive) } },
+  })
+  await unknown.run()
+  assert.deepEqual(unknown.writes, [{ status: 500, payload: { error: 'unknown' }, extraHeaders: undefined }])
+  assert.equal(JSON.stringify(unknown.writes).includes(sensitive), false)
 })

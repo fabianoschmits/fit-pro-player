@@ -33,6 +33,43 @@ const waitForHealth = async base => {
   throw lastError || new Error('API did not start')
 }
 
+const waitForExit = child => new Promise((resolve, reject) => {
+  child.once('error', reject)
+  child.once('exit', (code, signal) => resolve({ code, signal }))
+})
+
+test('API rejects partial or incompatible bootstrap signing configuration at startup', async () => {
+  const cases = [
+    { name: 'partial', privateKey: 'partial-private-marker', keyId: '' },
+    { name: 'incompatible', privateKey: 'incompatible-private-marker', keyId: 'configured-kid' },
+  ]
+
+  for (const current of cases) {
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), `fitproplayer-startup-${current.name}-`))
+    const port = await listenPort()
+    const child = spawn(process.execPath, ['server.js'], {
+      cwd: path.dirname(fileURLToPath(import.meta.url)),
+      env: {
+        ...process.env,
+        DATA_DIR: dataDir,
+        PORT: String(port),
+        ORIGIN: `http://127.0.0.1:${port}`,
+        RP_ID: '127.0.0.1',
+        FPP_SUPABASE_JWT_PRIVATE_KEY: current.privateKey,
+        FPP_SUPABASE_JWT_KEY_ID: current.keyId,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    let stderr = ''
+    child.stderr.on('data', chunk => { stderr += chunk })
+    const result = await waitForExit(child)
+    assert.notEqual(result.code, 0, current.name)
+    assert.equal(stderr.includes(current.privateKey), false, current.name)
+    fs.rmSync(dataDir, { recursive: true, force: true })
+  }
+
+})
+
 test('API rejects malformed bodies and prevents stale or divergent state writes', async t => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fitproplayer-api-'))
   const secret = crypto.randomBytes(32).toString('hex')
@@ -108,7 +145,8 @@ test('account endpoints preserve legacy auth and fail closed when Supabase is un
   const child = spawn(process.execPath, ['server.js'], {
     cwd: path.dirname(fileURLToPath(import.meta.url)),
     env: { ...process.env, DATA_DIR: dataDir, PORT: String(port), ORIGIN: base, RP_ID: '127.0.0.1',
-      SUPABASE_URL: '', SUPABASE_PUBLISHABLE_KEY: '', SUPABASE_SECRET_KEY: '', AUTH_RATE_MAX: '10' },
+      SUPABASE_URL: '', SUPABASE_PUBLISHABLE_KEY: '', SUPABASE_SECRET_KEY: '',
+      FPP_SUPABASE_JWT_PRIVATE_KEY: '', FPP_SUPABASE_JWT_KEY_ID: '', AUTH_RATE_MAX: '10' },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let stderr = ''
