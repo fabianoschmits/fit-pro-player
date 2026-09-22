@@ -4,15 +4,15 @@
 
 ## 1. Objetivo e decisões
 
-A Fase 2 cria a fundação do perfil profissional do FPP Professional. Um usuário com capability `professional` poderá criar, consultar e editar o próprio perfil profissional. Usuários autenticados poderão consultar perfis existentes para uso futuro em convites, vínculos e identificação do profissional.
+A Fase 2 cria a fundação do perfil profissional do FPP Professional. Um usuário com capability `professional` poderá criar, consultar e editar o próprio perfil profissional. A tabela ficará preparada para exposição contextual futura, mas nesta fase cada usuário autenticado só poderá consultar o próprio perfil; não haverá enumeração global de profissionais.
 
 Decisões congeladas:
 
 - uma única entidade: `public.professional_profiles`;
 - nenhum `professional_profiles_public` nesta fase;
-- a tabela conterá somente dados profissionais apropriados para exposição a usuários autenticados;
+- a tabela conterá somente dados profissionais apropriados para exposição futura a usuários autorizados, sem transformar isso em permissão de leitura global nesta fase;
 - `anon` e `public` não terão acesso;
-- leitura autenticada será pública entre usuários autenticados;
+- `SELECT` direto ficará limitado ao proprietário; acesso contextual de outros usuários será definido somente na Fase 3;
 - escrita ficará limitada ao próprio usuário com role `professional`;
 - `service_role` não será usado na edição normal;
 - dados administrativos, documentos, evidências, moderação, finanças e auditoria futura ficarão fora desta tabela;
@@ -30,18 +30,18 @@ Tabela: `public.professional_profiles`.
 
 | Campo | Tipo conceitual | Obrigatório | Exposição | Semântica |
 |---|---|---:|---|---|
-| `user_id` | `uuid` | sim | autenticados | PK/FK para `auth.users`; não editável |
-| `professional_name` | `text` | sim | autenticados | nome profissional ou marca |
-| `bio` | `text` | não | autenticados | apresentação curta |
-| `specialties` | `text[]` | não | autenticados | slugs limitados de especialidades |
-| `city_region` | `text` | não | autenticados | cidade ou região declarada |
-| `registration_type` | `text` | não | autenticados | tipo declarado, como `CREF` |
-| `registration_number` | `text` | não | autenticados | número declarado |
-| `verification_status` | enum | sim | autenticados | estado controlado pelo sistema |
-| `created_at` | `timestamptz` | sim | autenticados | controlado pelo banco |
-| `updated_at` | `timestamptz` | sim | autenticados | controlado pelo trigger |
+| `user_id` | `uuid` | sim | exposição futura autorizada; SELECT direto somente do proprietário | PK/FK para `auth.users`; não editável |
+| `professional_name` | `text` | sim | exposição futura autorizada; SELECT direto somente do proprietário | nome profissional ou marca |
+| `bio` | `text` | não | exposição futura autorizada; SELECT direto somente do proprietário | apresentação curta |
+| `specialties` | `text[]` | não | exposição futura autorizada; SELECT direto somente do proprietário | slugs limitados de especialidades |
+| `city_region` | `text` | não | exposição futura autorizada; SELECT direto somente do proprietário | cidade ou região declarada |
+| `registration_type` | `text` | não | exposição futura autorizada; SELECT direto somente do proprietário | tipo declarado, como `CREF` |
+| `registration_number` | `text` | não | exposição futura autorizada; SELECT direto somente do proprietário | número declarado |
+| `verification_status` | enum | sim | exposição futura autorizada; SELECT direto somente do proprietário | estado controlado pelo sistema |
+| `created_at` | `timestamptz` | sim | exposição futura autorizada; SELECT direto somente do proprietário | controlado pelo banco |
+| `updated_at` | `timestamptz` | sim | exposição futura autorizada; SELECT direto somente do proprietário | controlado pelo trigger |
 
-Não haverá `display_name` nem `avatar_ref` na tabela. A proposta original perdeu esses dois campos para evitar fontes concorrentes.
+Não haverá `display_name` nem `avatar_ref` na tabela. A proposta original perdeu esses dois campos para evitar fontes concorrentes. `profiles.display_name` é a identidade geral da pessoa; `professional_profiles.professional_name` é o nome profissional ou de marca. O campo persistido canônico do avatar continua sendo `profiles.avatar_ref`; `avatarId` é apenas o vocabulário do frontend/resolvedor de assets existente, não uma segunda coluna ou sistema de avatar.
 
 Limites previstos:
 
@@ -54,7 +54,7 @@ Limites previstos:
 
 ## 4. Avatar
 
-Será reutilizado `profiles.avatar_ref` e o mecanismo atual de `avatarId`/assets locais. O frontend combinará os dados do perfil geral com o perfil profissional para renderização. Não haverá Storage, upload ou coluna de avatar concorrente nesta fase.
+Será reutilizado `profiles.avatar_ref` e o mecanismo atual de `avatarId`/assets locais. O frontend combinará os dados do perfil geral com o perfil profissional para renderização: lê `profiles.avatar_ref`, mapeia esse valor para a referência `avatarId`/asset já existente e não persiste um novo campo. Não haverá Storage, upload ou coluna de avatar concorrente nesta fase.
 
 ## 5. Especialidades
 
@@ -71,17 +71,17 @@ O banco limitará quantidade, tamanho e duplicação, mas não congelará uma li
 
 `registration_type` e `registration_number` representam informação declarada, não validação oficial. A UI deverá separar “registro informado” de “registro verificado”.
 
-`verification_status` será preparado para `unverified`, `pending`, `verified` e `rejected`, iniciando em `unverified`. Não haverá processo oficial de verificação nesta fase.
+`verification_status` será preparado para `unverified`, `pending`, `verified` e `rejected`, iniciando sempre em `unverified`. O profissional não poderá inserir ou alterar esse campo; uma futura alteração administrativa deverá ser um fluxo explícito, privilegiado e auditado. Não haverá processo oficial de verificação nesta fase.
 
-O cliente não poderá inserir ou alterar o status para qualquer valor diferente de `unverified`. Uma futura alteração administrativa deverá ser um fluxo explícito e auditado.
+O cliente não poderá inserir nem alterar o status, inclusive para `unverified`; o default do banco estabelecerá `unverified` na criação. Uma futura alteração administrativa deverá ser um fluxo privilegiado, explícito e auditado.
 
 ## 7. Estados derivados
 
 Não haverá flags persistidas:
 
-- **Sem perfil:** não existe linha para o usuário;
-- **Incompleto:** existe linha, mas `professional_name` está vazio ou `profiles.display_name` não fornece identificação geral utilizável;
-- **Completo:** existe linha, `professional_name` é válido e `profiles.display_name` está disponível.
+- **`NO_PROFILE`:** não existe linha para o usuário;
+- **`INCOMPLETE`:** existe linha, mas `professional_name` está vazio ou `profiles.display_name` não fornece identificação geral utilizável;
+- **`COMPLETE`:** existe linha, `professional_name` é válido e `profiles.display_name` está disponível.
 
 Bio, cidade, specialties e registro permanecem opcionais. Perfil completo significa apto para identificação em futura experiência de convite, não cria convite nem vínculo.
 
@@ -96,22 +96,25 @@ Grants previstos:
 
 Policies previstas:
 
-1. `SELECT` para `authenticated`, permitindo leitura de perfis profissionais existentes;
+1. `SELECT` para `authenticated`, somente quando `user_id = auth.uid()`; isso impede a enumeração e a leitura direta do perfil de outro usuário na Fase 2;
 2. `INSERT` somente quando `user_id = auth.uid()`, existir role `professional` e `verification_status = 'unverified'`;
-3. `UPDATE` somente no próprio registro, com `user_id = auth.uid()` antes e depois;
+3. `UPDATE` somente no próprio registro, com `user_id = auth.uid()` antes e depois, e enquanto o usuário mantiver a role `professional`;
 4. nenhuma policy de `DELETE` para cliente.
 
-Todos os campos desta tabela serão deliberadamente públicos para usuários autenticados. Se um futuro dado não puder ser público, nascerá em outra tabela restrita, não será adicionado aqui.
+Os campos foram escolhidos para serem potencialmente exponíveis em uma futura experiência autorizada, mas não são globalmente enumeráveis nem diretamente legíveis por outros usuários nesta fase. A Fase 3 deverá conceder somente acesso contextual, por policy, RPC seguro, endpoint backend ou projeção mínima. Se um futuro dado não puder ser exposto nem nesse contexto, nascerá em outra tabela restrita.
 
 ## 9. Campos controlados pelo sistema
 
-Trigger de proteção deverá rejeitar alteração de:
+Trigger de proteção, seguindo o padrão seguro já estabelecido no projeto, deverá rejeitar alteração de:
 
 - `user_id`;
 - `created_at`;
-- `verification_status` por operações do cliente.
+- `verification_status` por operações do cliente;
+- `updated_at` fornecido pelo cliente.
 
-O trigger também atualizará `updated_at` com timestamp do servidor. Constraints, trigger e policies serão testados no banco; frontend não será mecanismo de segurança.
+O trigger também atualizará `updated_at` com timestamp do servidor, sem aceitar esse valor do cliente. `user_id`, `verification_status` e `created_at` são controlados pelo sistema; `verification_status` nasce como `unverified` e só um futuro fluxo privilegiado poderá mudá-lo. Constraints, trigger e policies serão testados no banco; frontend não será mecanismo de segurança.
+
+Se o usuário perder ou tiver removida a role `professional`, a linha existente será preservada: não haverá `DELETE` automático nem limpeza destrutiva. As policies e o backend deverão impedir novas operações profissionais enquanto a capability estiver ausente; restauração, desativação ou eventual solicitação de eliminação serão decisões explícitas de fases futuras.
 
 ## 10. UX mobile-first
 
@@ -144,11 +147,11 @@ Não alterará migrations 001–003, `profiles`, `user_roles`, Auth, WebAuthn ou
 
 ### pgTAP
 
-Provará: criação pelo Professional A; leitura própria; edição própria; leitura do perfil de B; negação de edição de B; negação de criação por Student; leitura por Student autenticado; negação para `anon`; negação de auto-verificação; proteção de `user_id`, `created_at` e `updated_at`; negação de DELETE; RLS habilitada; grants mínimos; estados derivados.
+Provará: criação pelo Professional A; leitura própria; negação de leitura do perfil de B por A; negação de leitura direta por Student autenticado; negação de edição de B; negação de criação por Student; negação para `anon`; negação de auto-verificação; proteção de `user_id`, `created_at`, `verification_status` e `updated_at`; negação de DELETE; retenção da linha após perda de role; RLS habilitada; grants mínimos; estados derivados.
 
 ### Backend
 
-Testará normalização, limites, capability professional, rejeição de auto-verificação, erros de RLS, leitura autenticada do contrato público e regressão da Fase 1.
+Testará normalização, limites, capability professional, rejeição de auto-verificação, erros de RLS, ausência de enumeração, leitura do próprio contrato e regressão da Fase 1.
 
 ### Frontend
 
@@ -156,7 +159,7 @@ Testará acesso condicional, estados sem/incompleto/completo, formulário, previ
 
 ## 13. Riscos
 
-- A leitura autenticada direta exige que a tabela permaneça limitada a dados profissionais públicos.
+- O acesso futuro de convidados deve ser contextual e mínimo; um `SELECT` amplo não poderá ser reaberto apenas porque os campos são potencialmente exponíveis.
 - `registration_number` pode ser confundido com verificado se a UI não diferenciar os conceitos.
 - Mudanças futuras em `profiles.display_name` precisam ser refletidas sem duplicar dados.
 - `text[]` é simples e evolutivo, mas não suporta metadados ricos sem uma futura entidade.
@@ -164,7 +167,7 @@ Testará acesso condicional, estados sem/incompleto/completo, formulário, previ
 
 ## 14. Exclusões explícitas
 
-Ficam fora: convites, relacionamentos, lista de alunos, programas, templates, assignments, execuções, dashboard, CREF oficial, Storage, documentos, moderação, finanças, notificações, analytics, Realtime, sync offline profissional, migração de `gym_state_v1` e alterações no motor de treinos, histórico, PWA, WebAuthn ou modo anônimo.
+Ficam fora: convites, relacionamentos, lista de alunos, programas, templates, assignments, execuções, dashboard, CREF oficial, Storage, documentos, moderação, finanças, notificações, analytics, Realtime, sync offline profissional, migração de `gym_state_v1` e alterações no motor de treinos, histórico, PWA, WebAuthn ou modo anônimo. Em particular, a Fase 3 definirá como o fluxo de convite terá acesso contextual mínimo — policy, RPC seguro, endpoint backend ou projeção — sem conceder `SELECT` amplo nesta tabela.
 
 ## 15. Critério de transição
 
