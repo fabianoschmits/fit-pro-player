@@ -20,7 +20,7 @@ function normalizedUrl(value, { native = false, referer = false } = {}) {
 
 function isPathlessRawOrigin(value) {
   return typeof value === 'string'
-    && /^[a-z][a-z\d+.-]*:\/\/[^/?#]+$/i.test(value.trim())
+    && /^[a-z][a-z\d+.-]*:\/\/[^/?#\\]+$/i.test(value.trim())
 }
 
 function configuredOrigins(values, options) {

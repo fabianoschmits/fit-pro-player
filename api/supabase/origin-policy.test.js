@@ -37,3 +37,16 @@ test('origin policy keeps Capacitor origins denied until explicitly configured',
   assert.equal(configured.check(request({ origin: 'capacitor://localhost' })), true)
   assert.equal(configured.check(request({ origin: 'capacitor://localhost.evil.test' })), false)
 })
+
+test('origin policy rejects raw backslash path syntax without weakening Referer extraction', () => {
+  const policy = createOriginPolicy({ allowedOrigins: [allowedOrigin] })
+
+  for (const origin of [
+    String.raw`https://app.fitpro.test\a\..`,
+    String.raw`https://app.fitpro.test\..`,
+    String.raw`https://app.fitpro.test\path`,
+  ]) {
+    assert.equal(policy.check(request({ origin })), false, origin)
+  }
+  assert.equal(policy.check(request({ referer: 'https://app.fitpro.test/a/..' })), true)
+})
