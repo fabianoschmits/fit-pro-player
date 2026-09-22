@@ -97,11 +97,13 @@ describe('FPP Supabase client', () => {
 
     await client.realtime.setAuth()
     expect(client.realtime.accessTokenValue).toBe('broker-token')
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1)
     await clearFppSupabaseAuth()
     await Promise.resolve()
 
     expect(client.realtime.accessTokenValue).toBeNull()
     expect(client.realtime.channels).toHaveLength(0)
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1)
   })
 
   it('bootstraps a new bearer after a reload while the FPP cookie survives and reaches an authenticated endpoint', async () => {

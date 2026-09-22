@@ -248,6 +248,7 @@ test('rejects aliased bearer sinks, real IndexedDB stores, URL aliases, and logs
   const fixtures = [
     ['frontend/src/aliased-header.js', 'const bearer = accessToken; fetch("/x", { headers: { Authorization: bearer } })'],
     ['frontend/src/indexeddb-store.js', 'const objectStore = transaction.objectStore("tokens"); objectStore.put(accessToken);'],
+    ['frontend/src/indexeddb-chain.js', 'transaction.objectStore("tokens").put(accessToken);'],
     ['frontend/src/url-alias.js', 'const nextUrl = "/callback?access_token=" + accessToken; location.href = nextUrl;'],
     ['frontend/src/log-token.js', 'console.log(accessToken)'],
   ]

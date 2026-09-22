@@ -329,6 +329,17 @@ function frontendBoundaryViolations(file, source) {
     }
   }
 
+  for (let index = 0; index < tokens.length - 5; index += 1) {
+    if (!tokenIs(tokens[index], 'objectStore')) continue
+    let close = index + 1
+    while (close < tokens.length && !tokenIs(tokens[close], ')')) close += 1
+    if (!tokenIs(tokens[close + 1], '.') || !['put', 'add'].includes(tokens[close + 2]?.value) || !tokenIs(tokens[close + 3], '(')) continue
+    const end = matchingToken(tokens, close + 3, '(', ')')
+    if (tokensBetween(tokens, close + 3, end).some((token) => isSensitiveName(token) || sensitiveBindings.has(token.value))) {
+      add(tokens[index], 'frontend contains explicit bearer persistence')
+    }
+  }
+
   for (let index = 0; index < tokens.length - 4; index += 1) {
     if (!tokenIs(tokens[index + 1], '.') || !['put', 'add'].includes(tokens[index + 2]?.value) || !tokenIs(tokens[index + 3], '(')) continue
     if (!(indexedDbStoreBindings.has(tokens[index]?.value) || tokenIs(tokens[index]?.value, 'objectStore'))) continue

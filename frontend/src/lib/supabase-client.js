@@ -20,9 +20,10 @@ export function createFppSupabaseClient({ url, publishableKey, accessToken }) {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
-      detectSessionInUrl: false,
+    detectSessionInUrl: false,
     },
     accessToken: async () => {
+      if (generation !== clientGeneration) return null
       const token = await accessToken()
       return generation === clientGeneration ? token : null
     },
