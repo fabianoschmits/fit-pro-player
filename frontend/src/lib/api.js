@@ -17,6 +17,28 @@ export async function api(path, opts) {
   return data
 }
 
+function accountRequest(path, accessToken) {
+  if (typeof accessToken !== 'string' || !accessToken.trim()) {
+    return Promise.reject(new Error('Supabase access token is required'))
+  }
+  return api(path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken.trim()}`,
+    },
+    body: '{}',
+  })
+}
+
+export function linkSupabaseIdentity(accessToken) {
+  return accountRequest('/api/account/identity-link', accessToken)
+}
+
+export function requestSupabaseProfessionalRole(accessToken) {
+  return accountRequest('/api/account/roles/professional', accessToken)
+}
+
 const bufToB64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 const b64uToBuf = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)).buffer
 

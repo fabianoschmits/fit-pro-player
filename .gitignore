@@ -8,11 +8,20 @@ data/
 # Local config and deployment metadata
 .env
 .env.*
+.env.*.local
 !.env.example
 !frontend/.env.development
 !frontend/.env.mobile
 !frontend/.env.vercel
 .vercel/
+
+# Local Supabase state and credentials; keep supabase/config.toml and migrations tracked.
+.supabase/
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+supabase/.env.*
+supabase/*secret*
 
 # Signing keys and certificates must never enter source control
 *.jks

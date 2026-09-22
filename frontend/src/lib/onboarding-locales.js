@@ -63,6 +63,9 @@ const KEYS = [
   'Exercise complete', 'Exercise done!', 'Expand sets', 'Finalizar o treino', 'set', 'sets',
   'Guest mode', 'Hold it!', 'Language, units, backup & preferences', 'Next set',
   'Rest up — start the next set when ready', 'Set complete!', 'Skip rest', 'Toggle month calendar',
+  'Link Supabase account', 'Connect an already authenticated account to this profile.',
+  'Supabase access token', 'Paste the access token from your authenticated Supabase session.',
+  'Link account', 'Supabase account linked', 'Could not link Supabase account',
 ]
 
 const BASE = Object.fromEntries(KEYS.map(key => [key, key]))
@@ -184,6 +187,13 @@ const PT = {
   'Day cleared': 'Dia limpo',
   'Clear this day': 'Limpar este dia',
   'Starter plan loaded': 'Treinos prontos carregados',
+  'Link Supabase account': 'Vincular conta Supabase',
+  'Connect an already authenticated account to this profile.': 'Conecte uma conta já autenticada a este perfil.',
+  'Supabase access token': 'Token de acesso do Supabase',
+  'Paste the access token from your authenticated Supabase session.': 'Cole o token de acesso da sua sessão autenticada do Supabase.',
+  'Link account': 'Vincular conta',
+  'Supabase account linked': 'Conta Supabase vinculada',
+  'Could not link Supabase account': 'Não foi possível vincular a conta Supabase',
 }
 
 export function onboardingLocale(lang) {

@@ -1,9 +1,12 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../lib/api.js', () => ({ api: vi.fn() }))
+vi.mock('../lib/api.js', async () => ({
+  ...(await vi.importActual('../lib/api.js')),
+  api: vi.fn(),
+}))
 
-import { api } from '../lib/api.js'
+import { api, linkSupabaseIdentity } from '../lib/api.js'
 import { DEF, normalizeState, useStore } from './useStore.js'
 
 const personalState = () => normalizeState({
@@ -23,6 +26,8 @@ beforeEach(() => {
   useStore.setState({ S: personalState(), user: { id: 'u1', name: 'Ana' }, syncConflict: false })
 })
 
+afterEach(() => vi.restoreAllMocks())
+
 describe('account sync safety', () => {
   it('refuses to clear local data when a sync conflict is unresolved', async () => {
     localStorage.setItem('gym_dirty', '1')
@@ -39,12 +44,29 @@ describe('account sync safety', () => {
 
   it('syncs before logout and only then clears the local session', async () => {
     api.mockResolvedValue({ ok: true })
+    localStorage.setItem('gym_user', JSON.stringify({ id: 'u1', name: 'Ana' }))
 
     await expect(useStore.getState().signOut()).resolves.toBeUndefined()
 
     expect(api.mock.calls.map(call => call[0])).toEqual(['/api/data', '/api/logout'])
     expect(useStore.getState().user).toBeNull()
     expect(useStore.getState().S.workouts).toEqual([])
+    expect(localStorage.getItem('gym_user')).toBeNull()
+    expect(localStorage.getItem('gym_dirty')).toBeNull()
+  })
+
+  it('keeps local state intact while the account-link request runs', async () => {
+    const active = { id: 'active', entries: [{ exerciseId: 'squat', sets: [{ done: true }] }] }
+    const local = { ...personalState(), active, _ts: 20 }
+    useStore.setState({ S: local, user: { id: 'u1', name: 'Ana' }, syncConflict: false })
+    localStorage.setItem('gym_state_v1', JSON.stringify(local))
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ account: { id: 'supabase-user' } }), { status: 200 }))
+
+    await expect(linkSupabaseIdentity('supabase-access-token')).resolves.toEqual({ account: { id: 'supabase-user' } })
+
+    expect(useStore.getState().S).toEqual(local)
+    expect(useStore.getState().S.active).toEqual(active)
+    expect(JSON.parse(localStorage.getItem('gym_state_v1'))).toEqual(local)
     expect(localStorage.getItem('gym_dirty')).toBeNull()
   })
 

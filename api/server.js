@@ -10,6 +10,9 @@ import {
 } from '@simplewebauthn/server';
 import webpush from 'web-push';
 import { stateTimestamp, stateVersionConflict } from './state-version.js';
+import { createSupabasePublicClient, createSupabaseAdminClient } from './supabase/client.js';
+import { createIdentityRepository } from './supabase/identity.js';
+import { createSupabaseRoutes } from './supabase/routes.js';
 
 const PORT = +(process.env.PORT || 3000);
 // Docker pins DATA_DIR to /data. A direct `npm start` keeps runtime files inside
@@ -42,6 +45,11 @@ fs.mkdirSync(DATA, { recursive: true });
 const secretFile = path.join(DATA, 'secret');
 if (!fs.existsSync(secretFile)) fs.writeFileSync(secretFile, crypto.randomBytes(32).toString('hex'), { mode: 0o600 });
 const SECRET = fs.readFileSync(secretFile, 'utf8').trim();
+
+const identityRepository = createIdentityRepository({
+  publicClient: createSupabasePublicClient(),
+  adminClient: createSupabaseAdminClient(),
+});
 
 const dbFile = path.join(DATA, 'db.json');
 let db = { users: [], creds: [], subs: [], invites: [] };
@@ -261,6 +269,8 @@ function readBody(req) {
   });
 }
 const b64uToBuf = s => Buffer.from(s, 'base64url');
+
+const supabaseRoutes = createSupabaseRoutes({ repository: identityRepository, readSession, readBody, json });
 
 /* ---------- authentication rate limit (in-memory, per client) ---------- */
 const AUTH_RATE_WINDOW = 60000;
@@ -778,7 +788,7 @@ const routes = {
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const key = req.method + ' ' + url.pathname;
-  const handler = routes[key];
+  const handler = supabaseRoutes[key] || routes[key];
   if (!handler) return json(res, 404, { error: 'not found' });
   if (req.method === 'POST' && /^\/api\/(register|login)\//.test(url.pathname) && !takeAuthRate(req)) {
     return json(res, 429, { error: 'too many authentication attempts — try again shortly' }, { 'Retry-After': '60' });

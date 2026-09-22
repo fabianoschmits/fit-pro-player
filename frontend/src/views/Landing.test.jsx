@@ -6,21 +6,24 @@ import Landing, { buildWeightPreviewPoints } from './Landing.jsx'
 
 const mocks = vi.hoisted(() => ({
   setGuest: vi.fn(),
+  setUser: vi.fn(),
+  pullState: vi.fn(),
   openSheet: vi.fn(),
+  standalone: true,
 }))
 
 vi.mock('../store/useStore.js', () => ({
   hasData: () => false,
   useStore: selector => selector
     ? selector({ config: null, S: {} })
-    : { setUser: vi.fn(), pullState: vi.fn(), setGuest: mocks.setGuest },
+    : { setUser: mocks.setUser, pullState: mocks.pullState, setGuest: mocks.setGuest },
 }))
 vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ toast: vi.fn(), openSheet: mocks.openSheet }) } }))
 vi.mock('../lib/api.js', () => ({
   BIO: 'your fingerprint, face or PIN', webauthnOK: () => true,
   passkeyLogin: vi.fn(), passkeyRegister: vi.fn(),
 }))
-vi.mock('../lib/demo.js', () => ({ DEMO: false, STANDALONE: true }))
+vi.mock('../lib/demo.js', () => ({ DEMO: false, get STANDALONE() { return mocks.standalone } }))
 vi.mock('../lib/i18n.js', () => ({ t: value => value === 'your fingerprint, face or PIN' ? 'biometria ou PIN' : value }))
 vi.mock('../lib/exercises.js', () => {
   const ids = ['0025', '0043', '0032', '0198', '0334']
@@ -49,6 +52,7 @@ let container
 
 beforeEach(() => {
   vi.useFakeTimers()
+  mocks.standalone = true
   dom = new Window({ url: 'http://localhost/' })
   dom.matchMedia = () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })
   globalThis.window = dom
@@ -82,9 +86,24 @@ describe('public landing page', () => {
     expect(container.querySelector('[data-points]').getAttribute('data-points')).toBe('9')
     expect(container.querySelector('[data-body]').getAttribute('data-body')).toBe('male')
     expect(button('Equilíbrio muscular').getAttribute('aria-selected')).toBe('true')
+    expect(container.textContent).not.toContain('Supabase')
 
     await act(async () => { button('Começar agora').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
     expect(mocks.setGuest).toHaveBeenCalledWith(true)
+  })
+
+  it('keeps legacy passkey login available when Supabase configuration is absent', async () => {
+    mocks.standalone = false
+    const { passkeyLogin } = await import('../lib/api.js')
+    passkeyLogin.mockResolvedValue({ id: 'legacy-user', name: 'Ana' })
+
+    await act(async () => { root.render(<Landing />) })
+    expect(button('Entrar com chave de acesso')).toBeTruthy()
+
+    await act(async () => { button('Entrar com chave de acesso').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
+    expect(passkeyLogin).toHaveBeenCalledTimes(1)
+    expect(mocks.setUser).toHaveBeenCalledWith({ id: 'legacy-user', name: 'Ana' })
+    expect(mocks.pullState).toHaveBeenCalledTimes(1)
   })
 
   it('keeps statistics under visitor control and pauses the exercise previews', async () => {
