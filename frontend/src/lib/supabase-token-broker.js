@@ -39,7 +39,10 @@ export function createSupabaseTokenBroker({ requestBootstrap, clock = Date.now }
 
       const request = Promise.resolve(bootstrap)
         .then(response => {
-          const nextAccessToken = response.access_token
+          const nextAccessToken = response?.access_token
+          if (typeof nextAccessToken !== 'string' || !nextAccessToken.trim()) {
+            throw new Error('Invalid Supabase access token')
+          }
           if (requestGeneration === generation) {
             accessToken = nextAccessToken
             expiresAt = expiryFromAccessToken(nextAccessToken)
@@ -47,7 +50,7 @@ export function createSupabaseTokenBroker({ requestBootstrap, clock = Date.now }
           return nextAccessToken
         })
         .catch(error => {
-          if (error?.status === 401 || error?.status === 403) clear()
+          if (requestGeneration === generation && (error?.status === 401 || error?.status === 403)) clear()
           throw error
         })
         .finally(() => {

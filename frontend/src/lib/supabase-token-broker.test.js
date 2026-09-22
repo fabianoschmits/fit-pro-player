@@ -110,6 +110,74 @@ describe('Supabase token broker', () => {
     expect(requestBootstrap).toHaveBeenCalledTimes(3)
   })
 
+  it.each([401, 403])('ignores a stale %i after a newer generation installed a token', async status => {
+    const now = Date.UTC(2026, 8, 22, 12, 0, 0)
+    const staleToken = jwtWithExpiry((now + 300_000) / 1_000)
+    const freshToken = jwtWithExpiry((now + 600_000) / 1_000)
+    const denied = Object.assign(new Error('not signed in'), { status })
+    const resolveBootstraps = []
+    const requestBootstrap = vi.fn(() => new Promise((resolve, reject) => { resolveBootstraps.push({ resolve, reject }) }))
+    const broker = createSupabaseTokenBroker({ requestBootstrap, clock: () => now })
+
+    const staleRequest = broker.getAccessToken()
+    broker.clear()
+    const freshRequest = broker.getAccessToken()
+    resolveBootstraps[1].resolve({ access_token: freshToken })
+    await expect(freshRequest).resolves.toBe(freshToken)
+    resolveBootstraps[0].reject(denied)
+    await expect(staleRequest).rejects.toBe(denied)
+
+    await expect(broker.getAccessToken()).resolves.toBe(freshToken)
+    expect(requestBootstrap).toHaveBeenCalledTimes(2)
+    expect(staleToken).not.toBe(freshToken)
+  })
+
+  it.each([401, 403])('does not let a stale %i clear a newer request in flight', async status => {
+    const now = Date.UTC(2026, 8, 22, 12, 0, 0)
+    const freshToken = jwtWithExpiry((now + 600_000) / 1_000)
+    const denied = Object.assign(new Error('not signed in'), { status })
+    const resolveBootstraps = []
+    const requestBootstrap = vi.fn(() => new Promise((resolve, reject) => { resolveBootstraps.push({ resolve, reject }) }))
+    const broker = createSupabaseTokenBroker({ requestBootstrap, clock: () => now })
+
+    const staleRequest = broker.getAccessToken()
+    broker.clear()
+    const freshRequest = broker.getAccessToken()
+    resolveBootstraps[0].reject(denied)
+    await expect(staleRequest).rejects.toBe(denied)
+    resolveBootstraps[1].resolve({ access_token: freshToken })
+    await expect(freshRequest).resolves.toBe(freshToken)
+
+    await expect(broker.getAccessToken()).resolves.toBe(freshToken)
+    expect(requestBootstrap).toHaveBeenCalledTimes(2)
+  })
+
+  it('rejects a bootstrap response with no access token', async () => {
+    const now = Date.UTC(2026, 8, 22, 12, 0, 0)
+    const accessToken = jwtWithExpiry((now + 300_000) / 1_000)
+    const requestBootstrap = vi.fn()
+      .mockResolvedValueOnce({})
+      .mockResolvedValueOnce({ access_token: accessToken })
+    const broker = createSupabaseTokenBroker({ requestBootstrap, clock: () => now })
+
+    await expect(broker.getAccessToken()).rejects.toThrow('Invalid Supabase access token')
+    await expect(broker.getAccessToken()).resolves.toBe(accessToken)
+    expect(requestBootstrap).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(['', 42])('rejects a bootstrap response with an %s access token', async invalidToken => {
+    const now = Date.UTC(2026, 8, 22, 12, 0, 0)
+    const accessToken = jwtWithExpiry((now + 300_000) / 1_000)
+    const requestBootstrap = vi.fn()
+      .mockResolvedValueOnce({ access_token: invalidToken })
+      .mockResolvedValueOnce({ access_token: accessToken })
+    const broker = createSupabaseTokenBroker({ requestBootstrap, clock: () => now })
+
+    await expect(broker.getAccessToken()).rejects.toThrow('Invalid Supabase access token')
+    await expect(broker.getAccessToken()).resolves.toBe(accessToken)
+    expect(requestBootstrap).toHaveBeenCalledTimes(2)
+  })
+
   it('releases a failed bootstrap for a later caller', async () => {
     const now = Date.UTC(2026, 8, 22, 12, 0, 0)
     const accessToken = jwtWithExpiry((now + 300_000) / 1_000)
