@@ -15,10 +15,10 @@ select fk_ok('public', 'legacy_identity_links', 'supabase_user_id', 'auth', 'use
 
 select has_type('public', 'user_role', 'the approved user role enum exists');
 select has_type('public', 'identity_link_status', 'the identity link status enum exists');
-select has_unique('public', 'profiles', ARRAY['id'], 'profile ids are unique');
-select has_unique('public', 'user_roles', ARRAY['user_id', 'role'], 'a user cannot receive the same role twice');
-select has_unique('public', 'legacy_identity_links', ARRAY['legacy_user_id'], 'a legacy identity links once');
-select has_unique('public', 'legacy_identity_links', ARRAY['supabase_user_id'], 'a Supabase identity links once');
+select col_is_unique('public', 'profiles', ARRAY['id'], 'profile ids are unique');
+select col_is_unique('public', 'user_roles', ARRAY['user_id', 'role'], 'a user cannot receive the same role twice');
+select col_is_unique('public', 'legacy_identity_links', ARRAY['legacy_user_id'], 'a legacy identity links once');
+select col_is_unique('public', 'legacy_identity_links', ARRAY['supabase_user_id'], 'a Supabase identity links once');
 
 select col_has_default('public', 'profiles', 'created_at', 'profiles created_at has a default');
 select col_has_default('public', 'profiles', 'updated_at', 'profiles updated_at has a default');
