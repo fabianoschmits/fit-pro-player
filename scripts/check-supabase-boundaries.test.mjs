@@ -130,6 +130,29 @@ test('rejects the manual bearer helper when reused for a third endpoint', () => 
   assert.match(violations.join('\n'), /allowlist|endpoint|manual/i)
 })
 
+test('rejects composed accountRequest routes and helper aliases', () => {
+  const composed = runCheck([
+    ...requiredFiles,
+    'frontend/src/lib/api.js',
+  ], {
+    'frontend/src/lib/api.js': sharedManualBearerFixture(
+      "accountRequest('/api/account/identity-link' + '/other', accessToken)",
+    ),
+  })
+  assert.match(composed.join('\n'), /allowlist|endpoint|manual/i)
+
+  const aliased = runCheck([
+    ...requiredFiles,
+    'frontend/src/lib/api.js',
+  ], {
+    'frontend/src/lib/api.js': sharedManualBearerFixture([
+      'const send = accountRequest',
+      "send('/api/account/other', accessToken)",
+    ].join('\n')),
+  })
+  assert.match(aliased.join('\n'), /allowlist|endpoint|manual/i)
+})
+
 test('rejects ordinary bearer header syntax and URL mutation APIs', () => {
   const fixtures = [
     [
@@ -172,12 +195,53 @@ test('rejects property, bracket, and indirect state persistence of bearer materi
         "localStorage.setItem(KEY, JSON.stringify(state))",
       ].join('\n'),
     ],
+    [
+      'frontend/src/staged-state-storage.js',
+      [
+        'const state = { gym_state_v1: {} };',
+        'state.gym_state_v1.supabaseAccessToken = accessToken;',
+        'localStorage.setItem(KEY, JSON.stringify(state));',
+      ].join('\n'),
+    ],
   ]
 
   for (const [file, source] of fixtures) {
     const violations = runCheck([...requiredFiles, file], { [file]: source })
     assert.match(violations.join('\n'), /persistence/i, file)
   }
+})
+
+test('rejects direct location URL writes carrying bearer material', () => {
+  const fixtures = [
+    "window.location.href = '/callback?access_token=' + accessToken;",
+    "location.search = '?access_token=' + accessToken;",
+    "location.hash = '#access_token=' + accessToken;",
+  ]
+
+  for (const [index, source] of fixtures.entries()) {
+    const violations = runCheck([
+      ...requiredFiles,
+      `frontend/src/location-write-${index}.js`,
+    ], {
+      [`frontend/src/location-write-${index}.js`]: source,
+    })
+    assert.match(violations.join('\n'), /URL|url|bearer/i, source)
+  }
+})
+
+test('does not classify cache or Headers set calls as URL mutations', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/non-url-set.js',
+  ], {
+    'frontend/src/non-url-set.js': [
+      "const cache = new Map(); cache.set('access_token', accessToken);",
+      "headers.set('Authorization', `Bearer ${accessToken}`);",
+    ].join('\n'),
+  })
+
+  assert.equal(violations.filter((violation) => /URL mutation/i.test(violation)).length, 0)
+  assert.match(violations.join('\n'), /Authorization Bearer/i)
 })
 
 test('ignores bearer wording in harmless frontend prose and comments', () => {

@@ -79,7 +79,7 @@ function tokenizeJavaScript(source) {
   let index = 0
   let line = 1
 
-  const add = (kind, start, value) => tokens.push({ kind, start, line, value })
+  const add = (kind, start, value, quote) => tokens.push({ kind, start, line, value, quote })
   const advance = (end) => {
     line += (source.slice(index, end).match(/\n/g) || []).length
     index = end
@@ -119,7 +119,7 @@ function tokenizeJavaScript(source) {
         value += source[end]
         end += 1
       }
-      add('literal', start, value)
+      add('literal', start, value, quote)
       advance(Math.min(end + 1, source.length))
       continue
     }
@@ -179,21 +179,38 @@ function enclosingFunction(ranges, tokenIndex) {
   return ranges.find((range) => tokenIndex > range.bodyStart && tokenIndex < range.end)
 }
 
+const approvedAccountRoute = (call) => (
+  call[0]?.kind === 'literal'
+  && (call[0].quote === '\'' || call[0].quote === '"')
+  && tokenIs(call[1], ',')
+  && MANUAL_BEARER_ENDPOINTS.has(tokenText(call[0]))
+)
+
+function accountRequestReferences(tokens) {
+  const calls = []
+  const invalidReferences = []
+  for (let index = 0; index < tokens.length - 1; index += 1) {
+    if (!tokenIs(tokens[index], 'accountRequest')) continue
+    if (tokens[index - 1]?.value === 'function') continue
+    if (!tokenIs(tokens[index + 1], '(')) {
+      invalidReferences.push(tokens[index])
+      continue
+    }
+    const end = matchingToken(tokens, index + 1, '(', ')')
+    const call = tokensBetween(tokens, index + 1, end)
+    calls.push({ token: tokens[index], call })
+    if (!approvedAccountRoute(call)) invalidReferences.push(tokens[index])
+  }
+  return { calls, invalidReferences }
+}
+
 function manualBearerAllowed(file, tokens, bearerIndex, bearerCount, ranges) {
   if (file !== MANUAL_IDENTITY_LINK_FILE || bearerCount !== 1) return false
   const range = enclosingFunction(ranges, bearerIndex)
   if (range?.name !== 'accountRequest') return false
 
-  const calls = []
-  for (let index = 0; index < tokens.length - 1; index += 1) {
-    if (!tokenIs(tokens[index], 'accountRequest') || !tokenIs(tokens[index + 1], '(')) continue
-    if (tokens[index - 1]?.value === 'function') continue
-    const end = matchingToken(tokens, index + 1, '(', ')')
-    calls.push(tokensBetween(tokens, index + 1, end))
-  }
-
-  return calls.length > 0
-    && calls.every((call) => call.length > 0 && MANUAL_BEARER_ENDPOINTS.has(tokenText(call[0])))
+  const { calls, invalidReferences } = accountRequestReferences(tokens)
+  return calls.length > 0 && invalidReferences.length === 0
 }
 
 function frontendBoundaryViolations(file, source) {
@@ -201,6 +218,13 @@ function frontendBoundaryViolations(file, source) {
   const ranges = functionRanges(tokens)
   const violations = []
   const add = (token, message) => violations.push(`${file}:${token.line}: ${message}`)
+
+  const accountReferences = file === MANUAL_IDENTITY_LINK_FILE
+    ? accountRequestReferences(tokens)
+    : { invalidReferences: [] }
+  for (const token of accountReferences.invalidReferences) {
+    add(token, 'frontend manual bearer helper is outside the approved account endpoint allowlist')
+  }
 
   for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index]
@@ -253,6 +277,17 @@ function frontendBoundaryViolations(file, source) {
     sensitiveBindings.add(tokens[index].value)
   }
 
+  for (let index = 0; index < tokens.length - 6; index += 1) {
+    if (tokens[index]?.kind !== 'identifier'
+      || !tokenIs(tokens[index + 1], '.')
+      || !tokenIs(tokens[index + 2], 'gym_state_v1')
+      || !tokenIs(tokens[index + 3], '.')
+      || !tokenMatches(tokens[index + 4], /supabaseAccessToken|access[_-]?token/i)
+      || !tokenIs(tokens[index + 5], '=')
+      || !isSensitiveTokenIdentifier(tokens[index + 6])) continue
+    sensitiveBindings.add(tokens[index].value)
+  }
+
   const storageRoots = new Set(['localStorage', 'sessionStorage', 'indexedDB'])
   for (let index = 0; index < tokens.length; index += 1) {
     if (!storageRoots.has(tokens[index]?.value)) continue
@@ -286,15 +321,55 @@ function frontendBoundaryViolations(file, source) {
     }
   }
 
+  const urlReceiverBindings = new Set()
+  for (let index = 0; index < tokens.length - 4; index += 1) {
+    if (tokens[index]?.kind === 'identifier' && tokenIs(tokens[index + 1], '=')
+      && tokenIs(tokens[index + 2], 'new')
+      && (tokenIs(tokens[index + 3], 'URL') || tokenIs(tokens[index + 3], 'URLSearchParams'))) {
+      urlReceiverBindings.add(tokens[index].value)
+    }
+  }
+
   for (let index = 0; index < tokens.length - 3; index += 1) {
-    const receiver = tokens[index]?.value
-    const method = tokens[index + 2]?.value
-    if (!tokenIs(tokens[index + 1], '.') || !['replaceState', 'pushState', 'assign', 'replace', 'set', 'append'].includes(method)) continue
-    if (!(receiver === 'history' || receiver === 'location' || receiver === 'window' || method === 'set' || method === 'append')) continue
-    if (!tokenIs(tokens[index + 3], '(')) continue
-    const end = matchingToken(tokens, index + 3, '(', ')')
-    const args = tokensBetween(tokens, index + 3, end)
+    let receiver
+    let method
+    let callStart
+    if (tokenIs(tokens[index + 1], '.')) {
+      receiver = tokens[index]?.value
+      method = tokens[index + 2]?.value
+      callStart = index + 3
+      if (receiver === 'window' && (tokenIs(tokens[index + 2], 'history') || tokenIs(tokens[index + 2], 'location'))
+        && tokenIs(tokens[index + 3], '.')) {
+        receiver = tokens[index + 2].value
+        method = tokens[index + 4]?.value
+        callStart = index + 5
+      }
+    }
+    const recognizedMethod = (receiver === 'history' && ['replaceState', 'pushState'].includes(method))
+      || (receiver === 'location' && ['assign', 'replace'].includes(method))
+      || (urlReceiverBindings.has(receiver) && ['set', 'append'].includes(method))
+    if (!recognizedMethod || !tokenIs(tokens[callStart], '(')) continue
+    const end = matchingToken(tokens, callStart, '(', ')')
+    const args = tokensBetween(tokens, callStart, end)
     if (args.some((token) => isSensitiveName(token))) add(tokens[index], 'frontend contains bearer material in a URL mutation')
+  }
+
+  for (let index = 0; index < tokens.length - 4; index += 1) {
+    const directLocation = tokenIs(tokens[index], 'location')
+      && tokenIs(tokens[index + 1], '.')
+      && ['href', 'search', 'hash'].includes(tokens[index + 2]?.value)
+      && tokenIs(tokens[index + 3], '=')
+    const windowLocation = tokenIs(tokens[index], 'window')
+      && tokenIs(tokens[index + 1], '.')
+      && tokenIs(tokens[index + 2], 'location')
+      && tokenIs(tokens[index + 3], '.')
+      && ['href', 'search', 'hash'].includes(tokens[index + 4]?.value)
+      && tokenIs(tokens[index + 5], '=')
+    if (!directLocation && !windowLocation) continue
+    const valueStart = directLocation ? index + 4 : index + 6
+    const end = tokens.findIndex((token, candidate) => candidate >= valueStart && tokenIs(token, ';'))
+    const value = tokens.slice(valueStart, end === -1 ? tokens.length : end)
+    if (value.some((token) => isSensitiveName(token))) add(tokens[index], 'frontend contains bearer material in a URL mutation')
   }
 
   return violations
