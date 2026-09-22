@@ -28,7 +28,25 @@ function sendFailure(json, res, error) {
   json(res, status, { error: message })
 }
 
-export function createSupabaseRoutes({ repository, readSession, readBody, json }) {
+function bootstrapFailure(json, res, error) {
+  if (['identity-not-linked', 'identity-revoked', 'identity-inconsistent'].includes(error?.code)) {
+    return json(res, 409, { error: 'identity_not_linked' })
+  }
+  if (['supabase-jwt-config-unavailable', 'supabase-jwt-signing-unavailable'].includes(error?.code)) {
+    return json(res, 503, { error: 'supabase auth bootstrap unavailable' })
+  }
+  return json(res, 500, { error: 'unknown' })
+}
+
+function emptyBootstrapBody(body) {
+  return Boolean(body)
+    && typeof body === 'object'
+    && !Array.isArray(body)
+    && Object.getPrototypeOf(body) === Object.prototype
+    && Object.keys(body).length === 0
+}
+
+export function createSupabaseRoutes({ repository, readSession, readBody, json, signer = null, originPolicy = null }) {
   const authenticated = req => {
     const accessToken = bearerToken(req)
     if (!accessToken) return null
@@ -68,6 +86,27 @@ export function createSupabaseRoutes({ repository, readSession, readBody, json }
         const role = await repository.requestProfessionalRole({ accessToken: auth.accessToken })
         json(res, 200, { role })
       } catch (error) { sendFailure(json, res, error) }
+    },
+
+    'POST /api/account/supabase-token': async (req, res) => {
+      if (!originPolicy?.check(req)) return json(res, 403, { error: 'invalid origin' })
+
+      const legacyUser = readSession(req)
+      if (!legacyUser) return json(res, 401, { error: 'not signed in' })
+      if (!signer?.signForUser) return json(res, 503, { error: 'supabase auth bootstrap unavailable' })
+
+      try {
+        const body = await readBody(req)
+        if (!emptyBootstrapBody(body)) return json(res, 400, { error: 'invalid bootstrap request' })
+        const identity = await repository.getBootstrapIdentity({ legacyUser: legacyContext(legacyUser) })
+        const signed = await signer.signForUser({ supabaseUserId: identity?.supabaseUserId })
+        return json(res, 200, {
+          access_token: signed.token,
+          token_type: 'Bearer',
+          expires_in: signed.expiresIn,
+          expires_at: signed.expiresAt,
+        }, { 'Cache-Control': 'no-store' })
+      } catch (error) { return bootstrapFailure(json, res, error) }
     },
   }
 }

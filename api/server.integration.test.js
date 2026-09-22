@@ -108,7 +108,7 @@ test('account endpoints preserve legacy auth and fail closed when Supabase is un
   const child = spawn(process.execPath, ['server.js'], {
     cwd: path.dirname(fileURLToPath(import.meta.url)),
     env: { ...process.env, DATA_DIR: dataDir, PORT: String(port), ORIGIN: base, RP_ID: '127.0.0.1',
-      SUPABASE_URL: '', SUPABASE_PUBLISHABLE_KEY: '', SUPABASE_SECRET_KEY: '' },
+      SUPABASE_URL: '', SUPABASE_PUBLISHABLE_KEY: '', SUPABASE_SECRET_KEY: '', AUTH_RATE_MAX: '10' },
     stdio: ['ignore', 'pipe', 'pipe'],
   })
   let stderr = ''
@@ -132,6 +132,14 @@ test('account endpoints preserve legacy auth and fail closed when Supabase is un
   assert.deepEqual(await (await get('/api/account')).json(), { error: 'not signed in' })
   assert.equal((await post('/api/account/identity-link', {}, { Cookie: cookie })).status, 401)
   assert.equal((await post('/api/account/roles/professional')).status, 401)
+
+  const bootstrapHeaders = { Origin: base }
+  for (let attempt = 0; attempt < 10; attempt++) {
+    assert.equal((await post('/api/account/supabase-token', {}, bootstrapHeaders)).status, 401)
+  }
+  const rateLimitedBootstrap = await post('/api/account/supabase-token', {}, bootstrapHeaders)
+  assert.equal(rateLimitedBootstrap.status, 429)
+  assert.equal((await rateLimitedBootstrap.json()).error, 'too many authentication attempts — try again shortly')
 
   const unavailable = await get('/api/account', { Cookie: cookie, Authorization: 'Bearer token' })
   assert.equal(unavailable.status, 503)
