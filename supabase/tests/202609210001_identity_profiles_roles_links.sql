@@ -15,7 +15,7 @@ select fk_ok('public', 'legacy_identity_links', 'supabase_user_id', 'auth', 'use
 
 select has_type('public', 'user_role', 'the approved user role enum exists');
 select has_type('public', 'identity_link_status', 'the identity link status enum exists');
-select col_is_unique('public', 'profiles', ARRAY['id'], 'profile ids are unique');
+select col_is_pk('public', 'profiles', 'id', 'profile ids are unique');
 select col_is_unique('public', 'user_roles', ARRAY['user_id', 'role'], 'a user cannot receive the same role twice');
 select col_is_unique('public', 'legacy_identity_links', ARRAY['legacy_user_id'], 'a legacy identity links once');
 select col_is_unique('public', 'legacy_identity_links', ARRAY['supabase_user_id'], 'a Supabase identity links once');
@@ -40,8 +40,8 @@ select ok(
   'authenticated clients cannot execute the identity linking RPC'
 );
 
-select col_has_check('public', 'user_roles', 'user_roles_role_check', 'roles are restricted to the approved enum values');
-select col_has_check('public', 'legacy_identity_links', 'legacy_identity_links_status_check', 'identity link status is constrained');
+select has_check('public', 'user_roles', 'roles are restricted to the approved enum values');
+select has_check('public', 'legacy_identity_links', 'identity link status is constrained');
 
 select is(
   (select count(*)::integer from public.profiles where id = '00000000-0000-0000-0000-000000000002'),
