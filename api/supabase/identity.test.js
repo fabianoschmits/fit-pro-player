@@ -36,13 +36,18 @@ function fakeQuery(rows = []) {
   return query
 }
 
-function clients({ user = { id: USER_ID, email: 'user@example.test', user_metadata: { display_name: 'Ignored' } }, profile, roles = [], link, rpcLink } = {}) {
+function clients({ user = { id: USER_ID, email: 'user@example.test', user_metadata: { display_name: 'Ignored' } }, profile, roles = [], link, links, rpcLink, authLookup } = {}) {
   const calls = []
-  const tables = { profiles: profile ? [profile] : [], user_roles: roles, legacy_identity_links: link ? [link] : [] }
+  const tables = { profiles: profile ? [profile] : [], user_roles: roles, legacy_identity_links: links ?? (link ? [link] : []) }
   const admin = {
     auth: {
       async getUser() { return result(user) },
-      admin: { async getUserById(id) { return result({ user: id === user?.id ? user : null }) } },
+      admin: {
+        async getUserById(id) {
+          if (authLookup) return typeof authLookup === 'function' ? authLookup(id) : authLookup
+          return result({ user: id === user?.id ? user : null })
+        },
+      },
     },
     rpc(name, args) {
       calls.push(['rpc', name, args])
@@ -124,6 +129,50 @@ test('bootstrap identity only resolves the active valid link owned by the server
     () => valid.getBootstrapIdentity({ legacyUser: { id: legacyUser.id } }),
     error => error.code === 'invalid-legacy-context',
   )
+})
+
+test('bootstrap identity maps an explicit Auth user-not-found response to identity-not-linked', async () => {
+  const authNotFound = createIdentityRepository(clients({
+    link: {
+      legacy_user_id: legacyUser.id,
+      supabase_user_id: USER_ID,
+      status: 'active',
+      linked_at: '2026-01-01T00:00:00Z',
+    },
+    authLookup: result({ user: null }, { code: 'user_not_found', status: 404 }),
+  }))
+
+  await assert.rejects(() => authNotFound.getBootstrapIdentity({ legacyUser }), error => error.code === 'identity-not-linked')
+})
+
+test('bootstrap identity classifies non-not-found Auth failures as resolution failures', async () => {
+  const authUnavailable = createIdentityRepository(clients({
+    link: {
+      legacy_user_id: legacyUser.id,
+      supabase_user_id: USER_ID,
+      status: 'active',
+      linked_at: '2026-01-01T00:00:00Z',
+    },
+    authLookup: result({ user: null }, { code: 'service_unavailable', status: 503 }),
+  }))
+
+  await assert.rejects(() => authUnavailable.getBootstrapIdentity({ legacyUser }), error => error.code === 'identity-resolution-failed')
+})
+
+test('bootstrap identity isolates A from B when both active links exist', async () => {
+  const legacyA = createLegacyIdentityContext({ id: 'legacy-a', name: 'A', admin: false })
+  const legacyB = createLegacyIdentityContext({ id: 'legacy-b', name: 'B', admin: false })
+  const repository = createIdentityRepository(clients({
+    links: [
+      { legacy_user_id: legacyB.id, supabase_user_id: OTHER_USER_ID, status: 'active', linked_at: '2026-01-01T00:00:00Z' },
+      { legacy_user_id: legacyA.id, supabase_user_id: USER_ID, status: 'active', linked_at: '2026-01-01T00:00:00Z' },
+    ],
+    user: { id: USER_ID },
+    authLookup: id => result({ user: { id } }),
+  }))
+
+  assert.deepEqual(await repository.getBootstrapIdentity({ legacyUser: legacyA }), { supabaseUserId: USER_ID })
+  assert.deepEqual(await repository.getBootstrapIdentity({ legacyUser: legacyB }), { supabaseUserId: OTHER_USER_ID })
 })
 
 test('account snapshot preserves stored display name and automatic student role', async () => {

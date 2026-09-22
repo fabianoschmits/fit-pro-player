@@ -131,7 +131,11 @@ export function createIdentityRepository({ publicClient = null, adminClient = nu
     } catch {
       throw failure('identity-resolution-failed')
     }
-    if (authResponse?.error || !authResponse?.data?.user) throw failure('identity-not-linked')
+    if (authResponse?.error) {
+      const notFound = authResponse.error.code === 'user_not_found' && authResponse.error.status === 404
+      throw failure(notFound ? 'identity-not-linked' : 'identity-resolution-failed')
+    }
+    if (!authResponse?.data?.user) throw failure('identity-not-linked')
 
     try {
       if (normalizeAuthenticatedUser(authResponse.data.user).id !== supabaseUserId) throw new Error('identity-mismatch')
