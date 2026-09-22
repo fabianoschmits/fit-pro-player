@@ -10,12 +10,15 @@ before activation or rotation until that approval exists.
 ## Prepare the signing material
 
 1. Use the organization's approved secure environment to generate an EC P-256
-   signing key compatible with ES256. Prefer a non-exportable key store when
-   available.
-2. Store the non-public signing material only in the approved secret manager
-   with least-privilege access, audit logging, backup, and a documented
-   recovery owner. Do not place it in source control, examples, application
-   logs, issue trackers, or client configuration.
+   signing key compatible with ES256. The implemented signer accepts either
+   importable PKCS#8 PEM private-key material or a private P-256 JWK with
+   `kty=EC`, `crv=P-256`, and optional `alg=ES256`.
+2. Store the importable non-public signing material only in the approved secret
+   manager with least-privilege access, audit logging, backup, and a documented
+   recovery owner. Inject it server-side as the existing configuration value;
+   if a temporary file is required by an operator tool, restrict its mode and
+   remove it immediately after import. Do not place it in source control,
+   examples, application logs, issue trackers, or client configuration.
 3. Record the assigned key identifier in the approved secret manager alongside
    the server-only configuration names `FPP_SUPABASE_JWT_PRIVATE_KEY` and
    `FPP_SUPABASE_JWT_KEY_ID`. Keep `FPP_SUPABASE_BOOTSTRAP_ORIGINS` as an
@@ -34,6 +37,10 @@ before activation or rotation until that approval exists.
    incorrect identifier, and an incorrect algorithm fail closed.
 4. Validate each configured web origin and each real Capacitor origin without
    a wildcard. Keep unvalidated native origins disabled.
+
+Non-exportable KMS/HSM storage is a future option only after an external
+signing adapter and a compatible hosted-key workflow are implemented and
+approved. It is not a supported input for the current FPP signer.
 
 ## Activation, rotation, and rollback
 

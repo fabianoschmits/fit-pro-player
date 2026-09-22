@@ -88,6 +88,7 @@ describe('FPP Supabase client', () => {
     vi.resetModules()
 
     let bootstrapPosts = 0
+    const emittedTokens = []
     const authorizations = []
     const server = createServer((request, response) => {
       if (request.method === 'POST' && request.url === '/login') {
@@ -103,8 +104,10 @@ describe('FPP Supabase client', () => {
           return
         }
         bootstrapPosts += 1
+        const accessToken = accessTokenFor(bootstrapPosts)
+        emittedTokens.push(accessToken)
         response.writeHead(200, { 'Content-Type': 'application/json' })
-        response.end(JSON.stringify({ access_token: accessTokenFor(bootstrapPosts) }))
+        response.end(JSON.stringify({ access_token: accessToken }))
         return
       }
 
@@ -149,7 +152,7 @@ describe('FPP Supabase client', () => {
 
       await expect(firstClient.from('workouts').select('id')).resolves.toMatchObject({ data: [{ id: 'workout-1' }], error: null })
       expect(bootstrapPosts).toBe(1)
-      expect(authorizations).toEqual([`Bearer ${accessTokenFor(1)}`])
+      expect(authorizations).toEqual(emittedTokens.slice(0, 1).map(token => `Bearer ${token}`))
 
       firstClient = null
 
@@ -164,7 +167,7 @@ describe('FPP Supabase client', () => {
 
       await expect(secondClient.from('workouts').select('id')).resolves.toMatchObject({ data: [{ id: 'workout-1' }], error: null })
       expect(bootstrapPosts).toBe(2)
-      expect(authorizations).toEqual([`Bearer ${accessTokenFor(1)}`, `Bearer ${accessTokenFor(2)}`])
+      expect(authorizations).toEqual(emittedTokens.map(token => `Bearer ${token}`))
       expect(cookie).toBe('gymsid=authenticated-session')
     } finally {
       await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()))

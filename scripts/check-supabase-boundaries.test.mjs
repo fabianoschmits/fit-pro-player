@@ -65,7 +65,7 @@ test('rejects explicit frontend bearer persistence', () => {
   assert.equal(violations.filter((violation) => /persistence/i.test(violation)).length, 3)
 })
 
-test('rejects frontend bearer headers outside the manual identity-link contract', () => {
+test('rejects frontend bearer headers outside the manual account endpoint allowlist', () => {
   const violations = runCheck([
     ...requiredFiles,
     'frontend/src/lib/api.js',
@@ -89,8 +89,109 @@ test('rejects frontend bearer headers outside the manual identity-link contract'
   })
 
   assert.deepEqual(violations, [
-    'frontend/src/leak.js:1: frontend contains Authorization Bearer outside the manual identity-link contract',
+    'frontend/src/leak.js:1: frontend contains Authorization Bearer outside the approved manual account endpoint allowlist',
   ])
+})
+
+const sharedManualBearerFixture = (extraCall = '') => [
+  'function accountRequest(path, accessToken) {',
+  '  return api(path, { headers: { Authorization: `Bearer ${accessToken.trim()}` } })',
+  '}',
+  'export function linkSupabaseIdentity(accessToken) {',
+  "  return accountRequest('/api/account/identity-link', accessToken)",
+  '}',
+  'export function requestSupabaseProfessionalRole(accessToken) {',
+  "  return accountRequest('/api/account/roles/professional', accessToken)",
+  '}',
+  extraCall,
+].join('\n')
+
+test('allows the two existing manual bearer endpoints in a structural allowlist', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/lib/api.js',
+  ], {
+    'frontend/src/lib/api.js': sharedManualBearerFixture(),
+  })
+
+  assert.deepEqual(violations, [])
+})
+
+test('rejects the manual bearer helper when reused for a third endpoint', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/lib/api.js',
+  ], {
+    'frontend/src/lib/api.js': sharedManualBearerFixture(
+      "accountRequest('/api/account/other', accessToken)",
+    ),
+  })
+
+  assert.match(violations.join('\n'), /allowlist|endpoint|manual/i)
+})
+
+test('rejects ordinary bearer header syntax and URL mutation APIs', () => {
+  const fixtures = [
+    [
+      'frontend/src/quoted-header.js',
+      "fetch('/private', { headers: { 'Authorization': `Bearer ${accessToken}` } })",
+      /Authorization Bearer/i,
+    ],
+    [
+      'frontend/src/header-set.js',
+      "headers.set('Authorization', `Bearer ${accessToken}`)",
+      /Authorization Bearer/i,
+    ],
+    [
+      'frontend/src/url-mutation.js',
+      "history.replaceState({}, '', '/callback?access_token=' + accessToken)",
+      /URL|url|bearer/i,
+    ],
+  ]
+
+  for (const [file, source, expected] of fixtures) {
+    const violations = runCheck([...requiredFiles, file], { [file]: source })
+    assert.match(violations.join('\n'), expected, file)
+  }
+})
+
+test('rejects property, bracket, and indirect state persistence of bearer material', () => {
+  const fixtures = [
+    [
+      'frontend/src/property-storage.js',
+      'localStorage.supabaseToken = accessToken',
+    ],
+    [
+      'frontend/src/bracket-storage.js',
+      "localStorage['setItem']('supabase-token', accessToken)",
+    ],
+    [
+      'frontend/src/state-storage.js',
+      [
+        "const state = { gym_state_v1: { supabaseAccessToken: accessToken } }",
+        "localStorage.setItem(KEY, JSON.stringify(state))",
+      ].join('\n'),
+    ],
+  ]
+
+  for (const [file, source] of fixtures) {
+    const violations = runCheck([...requiredFiles, file], { [file]: source })
+    assert.match(violations.join('\n'), /persistence/i, file)
+  }
+})
+
+test('ignores bearer wording in harmless frontend prose and comments', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/help.js',
+  ], {
+    'frontend/src/help.js': [
+      '// Never send Authorization: Bearer credentials from this screen.',
+      'const help = "Store no access_token in the URL or browser storage."',
+    ].join('\n'),
+  })
+
+  assert.deepEqual(violations, [])
 })
 
 test('rejects missing reproducibility files', () => {
