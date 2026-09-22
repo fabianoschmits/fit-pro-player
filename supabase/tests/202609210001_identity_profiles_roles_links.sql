@@ -7,11 +7,11 @@ select has_table('public', 'user_roles', 'user_roles table exists');
 select has_table('public', 'legacy_identity_links', 'legacy_identity_links table exists');
 
 select col_is_pk('public', 'profiles', 'id', 'profiles uses auth user id as primary key');
-select col_is_fk('public', 'profiles', 'id', 'auth', 'users', 'id', 'profiles id references auth.users');
+select fk_ok('public', 'profiles', 'id', 'auth', 'users', 'id', 'profiles id references auth.users');
 select col_is_pk('public', 'user_roles', 'id', 'user_roles has a surrogate primary key');
-select col_is_fk('public', 'user_roles', 'user_id', 'auth', 'users', 'id', 'user_roles user_id references auth.users');
+select fk_ok('public', 'user_roles', 'user_id', 'auth', 'users', 'id', 'user_roles user_id references auth.users');
 select col_is_pk('public', 'legacy_identity_links', 'id', 'identity links have a surrogate primary key');
-select col_is_fk('public', 'legacy_identity_links', 'supabase_user_id', 'auth', 'users', 'id', 'identity links reference auth.users');
+select fk_ok('public', 'legacy_identity_links', 'supabase_user_id', 'auth', 'users', 'id', 'identity links reference auth.users');
 
 select has_type('public', 'user_role', 'the approved user role enum exists');
 select has_type('public', 'identity_link_status', 'the identity link status enum exists');
