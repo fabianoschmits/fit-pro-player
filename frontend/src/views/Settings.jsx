@@ -6,6 +6,7 @@ import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
 import { api, webauthnOK, passkeyLogin, passkeyRegister, linkSupabaseIdentity, IS_ANDROID } from '../lib/api.js'
 import { getPublicSupabaseConfig } from '../lib/supabase-config.js'
+import { clearFppSupabaseAuth } from '../lib/supabase-client.js'
 import { pushSupported, enablePush, disablePush, sendTestPush } from '../lib/push.js'
 import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, LANGS, DEFAULT_LANG, INSTR_LANGS } from '../lib/i18n.js'
@@ -389,6 +390,7 @@ function SupabaseAccountSheet({ close, setStatus, toast }) {
     setBusy(true)
     try {
       await linkSupabaseIdentity(accessToken)
+      clearFppSupabaseAuth()
       setStatus('linked')
       toast(t('Supabase account linked'))
       close()

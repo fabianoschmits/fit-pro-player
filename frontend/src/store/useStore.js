@@ -9,6 +9,7 @@ import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from
 import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
 import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from '../lib/body-measurements.js'
 import { createStatePushQueue, nextStateTimestamp } from '../lib/sync-state.js'
+import { clearFppSupabaseAuth } from '../lib/supabase-client.js'
 
 const KEY = 'gym_state_v1'
 export const DEF = {
@@ -244,6 +245,7 @@ export const useStore = create((set, get) => {
         throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
       }
       await api('/api/logout', { method: 'POST', body: '{}' })
+      clearFppSupabaseAuth()
       clearLocalSession()
     },
 
@@ -257,6 +259,7 @@ export const useStore = create((set, get) => {
         throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
       }
       await api('/api/logout/all', { method: 'POST', body: '{}' })
+      clearFppSupabaseAuth()
       clearLocalSession()
     },
 

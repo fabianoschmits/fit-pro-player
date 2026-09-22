@@ -20,6 +20,14 @@ const personalState = () => normalizeState({
   workouts: [{ id: 'w1', d: '2026-09-20', entries: [] }],
 })
 
+const supabaseAuthMocks = vi.hoisted(() => ({
+  clear: vi.fn(),
+}))
+
+vi.mock('../lib/supabase-client.js', () => ({
+  clearFppSupabaseAuth: supabaseAuthMocks.clear,
+}))
+
 beforeEach(() => {
   vi.clearAllMocks()
   localStorage.clear()
@@ -53,6 +61,33 @@ describe('account sync safety', () => {
     expect(useStore.getState().S.workouts).toEqual([])
     expect(localStorage.getItem('gym_user')).toBeNull()
     expect(localStorage.getItem('gym_dirty')).toBeNull()
+  })
+
+  it('invalidates the Supabase bearer only after normal logout succeeds', async () => {
+    api.mockResolvedValue({ ok: true })
+
+    await expect(useStore.getState().signOut()).resolves.toBeUndefined()
+
+    expect(supabaseAuthMocks.clear).toHaveBeenCalledTimes(1)
+    expect(api.mock.calls.map(call => call[0])).toEqual(['/api/data', '/api/logout'])
+  })
+
+  it('invalidates the Supabase bearer only after logout everywhere succeeds', async () => {
+    api.mockResolvedValue({ ok: true })
+
+    await expect(useStore.getState().signOutAll()).resolves.toBeUndefined()
+
+    expect(supabaseAuthMocks.clear).toHaveBeenCalledTimes(1)
+    expect(api.mock.calls.map(call => call[0])).toEqual(['/api/data', '/api/logout/all'])
+  })
+
+  it('retains the Supabase bearer when logout everywhere is rejected', async () => {
+    useStore.setState({ S: normalizeState(DEF) })
+    api.mockRejectedValue(new Error('network unavailable'))
+
+    await expect(useStore.getState().signOutAll()).rejects.toThrow('network unavailable')
+
+    expect(supabaseAuthMocks.clear).not.toHaveBeenCalled()
   })
 
   it('keeps local state intact while the account-link request runs', async () => {
