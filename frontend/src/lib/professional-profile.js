@@ -38,6 +38,10 @@ export function createProfessionalProfileRepository({ client } = {}) {
     if (!client?.from) throw new Error('supabase-unavailable')
     return client
   }
+  const requireRpc = () => {
+    if (!client?.rpc) throw new Error('supabase-unavailable')
+    return client
+  }
   const own = async userId => {
     const response = await requireClient().from('professional_profiles').select('*').eq('user_id', userId).maybeSingle()
     if (response?.error) throw new Error('professional-profile-read-failed')
@@ -55,5 +59,19 @@ export function createProfessionalProfileRepository({ client } = {}) {
     if (response?.error) throw new Error(response.error.code === '42501' ? 'professional-profile-forbidden' : 'professional-profile-save-failed')
     return normalizeProfessionalProfile(response.data)
   }
-  return Object.freeze({ own, role, save })
+  const provision = async (userId, profile) => {
+    const normalized = normalizeProfessionalProfile({ ...profile, user_id: userId })
+    if (!normalized.professionalName) throw new Error('professional-name-required')
+    const response = await requireRpc().rpc('provision_professional_profile', {
+      p_professional_name: normalized.professionalName,
+      p_bio: normalized.bio,
+      p_specialties: normalized.specialties,
+      p_city_region: normalized.cityRegion,
+      p_registration_type: normalized.registrationType,
+      p_registration_number: normalized.registrationNumber,
+    })
+    if (response?.error) throw new Error('professional-profile-provision-failed')
+    return normalizeProfessionalProfile(response.data)
+  }
+  return Object.freeze({ own, role, save, provision })
 }

@@ -21,8 +21,9 @@ function createFakeClient({ session = null, getSession } = {}) {
     resetPasswordForEmail: vi.fn().mockResolvedValue({ data: {}, error: null }),
     updateUser: vi.fn().mockResolvedValue({ data: { user }, error: null }),
     signOut: vi.fn().mockResolvedValue({ error: null }),
+    rpc: vi.fn().mockResolvedValue({ data: { verification_status: 'unverified' }, error: null }),
   };
-  return { auth, emit: (event, nextSession) => listener(event, nextSession) };
+  return { auth, rpc: auth.rpc, emit: (event, nextSession) => listener(event, nextSession) };
 }
 
 let dom;
@@ -141,6 +142,44 @@ describe('AuthProvider', () => {
     await act(async () => { await latest.signOut(); });
     expect(latest.status).toBe('authenticated');
     expect(latest.user.id).toBe(user.id);
+  });
+
+  it('passes the selected account type as public signup metadata', async () => {
+    const client = createFakeClient();
+    await renderProvider(client);
+
+    await act(async () => {
+      await latest.signUp({ email: 'pro@example.com', password: 'long-enough-password', displayName: 'Ana', accountType: 'professional' });
+    });
+
+    expect(client.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({
+      email: 'pro@example.com',
+      password: 'long-enough-password',
+      options: expect.objectContaining({ data: { display_name: 'Ana', account_type: 'professional' } }),
+    }));
+  });
+
+  it('does not finish an immediate professional signup before the protected RPC succeeds', async () => {
+    const professionalUser = { ...user, user_metadata: { display_name: 'Ana', account_type: 'professional' } };
+    const client = createFakeClient();
+    client.auth.signUp.mockResolvedValue({ data: { session: { user: professionalUser } }, error: null });
+    await renderProvider(client);
+
+    await act(async () => {
+      await expect(latest.signUp({ email: user.email, password: 'long-enough-password', displayName: 'Ana', accountType: 'professional' }))
+        .resolves.toEqual({ kind: 'authenticated' });
+    });
+
+    expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', { p_professional_name: 'Ana' });
+  });
+
+  it('provisions professional metadata through the protected Supabase RPC after session bootstrap', async () => {
+    const professionalUser = { ...user, user_metadata: { display_name: 'Ana', account_type: 'professional' } };
+    const client = createFakeClient({ session: { user: professionalUser } });
+    await renderProvider(client);
+    await act(async () => Promise.resolve());
+
+    expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', { p_professional_name: 'Ana' });
   });
 });
 

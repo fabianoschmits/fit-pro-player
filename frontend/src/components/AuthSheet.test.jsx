@@ -87,6 +87,23 @@ describe('AuthSheet', () => {
     expect(input('Confirm password')).toBeTruthy();
   });
 
+  it('lets signup choose a professional account without assigning roles in the browser', async () => {
+    await render('sign_up');
+    const accountType = container.querySelector('select[aria-label="Account type"]');
+    expect(accountType).toBeTruthy();
+    await act(async () => {
+      accountType.value = 'professional';
+      accountType.dispatchEvent(new dom.Event('change', { bubbles: true }));
+    });
+    await setValue(input('Name'), 'Ana');
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('New password'), 'long-enough-password');
+    await setValue(input('Confirm password'), 'long-enough-password');
+    await click(button('Create account'));
+
+    expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'professional' }));
+  });
+
   it('disables the active submit while the matching Auth operation is pending', async () => {
     mocks.auth = auth({ operation: 'signing_up' });
     await render('sign_up');

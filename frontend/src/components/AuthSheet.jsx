@@ -32,7 +32,7 @@ export function openAuthSheet(initialMode = 'entry') {
 export function AuthSheet({ close, initialMode = 'entry' }) {
   const auth = useAuth();
   const [mode, setMode] = useState(() => initial(initialMode));
-  const [values, setValues] = useState({ name: '', email: '', password: '', confirmation: '' });
+  const [values, setValues] = useState({ name: '', email: '', password: '', confirmation: '', accountType: 'student' });
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const alertRef = useRef(null);
@@ -68,7 +68,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
 
     let result;
     if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
-    if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password });
+    if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType });
     if (mode === 'forgot_password') result = await auth.sendPasswordRecovery(values.email);
     if (mode === 'reset_password') result = await auth.updatePassword(values.password);
 
@@ -107,6 +107,11 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     <h3>{t(title)}</h3>
     {isSignUp && <>
       <label>{t('Name')}<input className="input" aria-label={t('Name')} autoComplete="name" required value={values.name} onChange={change('name')} /></label>
+      <div style={{ height: 10 }} />
+      <label>{t('Account type')}<select className="input" aria-label={t('Account type')} value={values.accountType} onChange={change('accountType')}>
+        <option value="student">{t('Training account')}</option>
+        <option value="professional">{t('Professional account')}</option>
+      </select></label>
       <div style={{ height: 10 }} />
     </>}
     {!isReset && <>

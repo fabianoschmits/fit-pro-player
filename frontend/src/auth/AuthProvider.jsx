@@ -16,6 +16,15 @@ function publicUser(user) {
   };
 }
 
+async function provisionProfessional(client, sessionUser) {
+  if (sessionUser?.user_metadata?.account_type !== 'professional' || typeof client?.rpc !== 'function') return;
+  const professionalName = String(sessionUser.user_metadata?.display_name || sessionUser.email?.split('@')[0] || '').trim();
+  const { error } = await client.rpc('provision_professional_profile', {
+    p_professional_name: professionalName,
+  });
+  if (error) throw error;
+}
+
 function callbackUrl(locationLike) {
   if (locationLike instanceof URL) return new URL(locationLike.href);
   if (typeof locationLike === 'string') return new URL(locationLike);
@@ -51,6 +60,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
   }));
   const revision = useRef(0);
   const fingerprint = useRef(null);
+  const professionalProvisioning = useRef(new Set());
 
   useEffect(() => {
     if (!client) {
@@ -59,6 +69,18 @@ export function AuthProvider({ children, client: injectedClient, location: injec
     }
 
     let disposed = false;
+    const provisionOnce = async sessionUser => {
+      if (sessionUser?.user_metadata?.account_type !== 'professional' || typeof client.rpc !== 'function') return;
+      const userId = sessionUser.id;
+      if (!userId || professionalProvisioning.current.has(userId)) return;
+      professionalProvisioning.current.add(userId);
+      try {
+        await provisionProfessional(client, sessionUser);
+      } catch (error) {
+        professionalProvisioning.current.delete(userId);
+        throw error;
+      }
+    };
     const applySession = (event, session, { recovery = false } = {}) => {
       const user = publicUser(session?.user);
       const nextRecovery = recovery || event === 'PASSWORD_RECOVERY' ? 'required' : undefined;
@@ -72,6 +94,9 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         error: null,
         ...(nextRecovery ? { recovery: nextRecovery } : {}),
       }));
+      void provisionOnce(session?.user).catch(error => {
+        if (!disposed) setState(current => ({ ...current, error: toAuthError(error, 'professional_onboarding') }));
+      });
     };
     const applyError = (error, operation) => {
       setState(current => ({ ...current, status: 'anonymous', user: null, error: toAuthError(error, operation) }));
@@ -172,14 +197,23 @@ export function AuthProvider({ children, client: injectedClient, location: injec
     return {
       ...state,
       configured,
-      signUp: async ({ email, password, displayName }) => {
+      signUp: async ({ email, password, displayName, accountType = 'student' }) => {
         const result = await execute('signing_up', () => client.auth.signUp({
           email,
           password,
-          options: { data: { display_name: displayName }, emailRedirectTo: buildAuthRedirectUrl(location, 'confirm') },
+          options: { data: { display_name: displayName, account_type: accountType === 'professional' ? 'professional' : 'student' }, emailRedirectTo: buildAuthRedirectUrl(location, 'confirm') },
         }));
         if (result.kind !== 'success') return result;
-        if (result.data?.session) return { kind: 'authenticated' };
+        if (result.data?.session) {
+          try {
+            await provisionProfessional(client, result.data.session.user);
+          } catch (error) {
+            const mapped = toAuthError(error, 'professional_onboarding');
+            setState(current => ({ ...current, error: mapped }));
+            return { kind: 'error', error: mapped };
+          }
+          return { kind: 'authenticated' };
+        }
         return { kind: 'confirmation_required' };
       },
       signIn: ({ email, password }) => execute('signing_in', () => client.auth.signInWithPassword({ email, password })),

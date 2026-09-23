@@ -66,6 +66,7 @@ const KEYS = [
   'Link Supabase account', 'Connect an already authenticated account to this profile.',
   'Supabase access token', 'Paste the access token from your authenticated Supabase session.',
   'Link account', 'Supabase account linked', 'Could not link Supabase account',
+  'Account type', 'Training account', 'Professional account',
 ]
 
 const BASE = Object.fromEntries(KEYS.map(key => [key, key]))
@@ -194,6 +195,9 @@ const PT = {
   'Link account': 'Vincular conta',
   'Supabase account linked': 'Conta Supabase vinculada',
   'Could not link Supabase account': 'Não foi possível vincular a conta Supabase',
+  'Account type': 'Tipo de conta',
+  'Training account': 'Conta de treino',
+  'Professional account': 'Conta profissional',
 }
 
 export function onboardingLocale(lang) {

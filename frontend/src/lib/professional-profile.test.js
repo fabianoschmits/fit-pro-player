@@ -23,4 +23,14 @@ describe('professional profile repository', () => {
     expect(saved.verificationStatus).toBe('unverified')
     expect(calls).toEqual(['user_roles', 'professional_profiles'])
   })
+
+  it('provisions a professional account through the protected RPC', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { user_id: 'user', professional_name: 'Ana', verification_status: 'unverified' }, error: null })
+    const repository = createProfessionalProfileRepository({ client: { rpc } })
+
+    const profile = await repository.provision('user', { professionalName: 'Ana' })
+
+    expect(profile).toMatchObject({ userId: 'user', professionalName: 'Ana', verificationStatus: 'unverified' })
+    expect(rpc).toHaveBeenCalledWith('provision_professional_profile', expect.objectContaining({ p_professional_name: 'Ana' }))
+  })
 })
