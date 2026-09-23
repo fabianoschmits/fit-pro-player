@@ -13,7 +13,7 @@ needed for legacy migration, and never expose secrets to the frontend.
 
 - [x] C — Add additive account snapshot schema, owner-only RLS, CAS RPC, and database tests.
 - [x] D — Add authenticated account sync service with explicit result states, offline safety, conflict handling, and generation guards.
-- [ ] E — Add first-association and conflict decisions without silent overwrite.
+- [x] E — Add first-association and conflict decisions without silent overwrite.
 - [ ] F — Add explicit legacy WebAuthn-to-Supabase bridge without changing normal Supabase login.
 - [ ] G — Complete structural Capacitor session/deep-link/account integration without manual token storage.
 - [ ] H — Remove `/api/data` from normal Supabase account flows while retaining required legacy consumers.
