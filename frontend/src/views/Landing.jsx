@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, hasData } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
+import { useAuth } from '../auth/AuthProvider.jsx'
 import { webauthnOK, passkeyLogin, passkeyRegister, BIO } from '../lib/api.js'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { guestAllowed } from '../lib/guest.js'
@@ -12,6 +13,7 @@ import BodyMap from '../components/BodyMap.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
+import { openAuthSheet } from '../components/AuthSheet.jsx'
 import '../landing.css'
 
 const DAY = 86400000
@@ -303,6 +305,7 @@ function WorkoutPreview({ playing }) {
 }
 
 export default function Landing() {
+  const auth = useAuth()
   const { setUser, pullState, setGuest } = useStore()
   const config = useStore(state => state.config)
   const canGuest = guestAllowed(config)
@@ -365,8 +368,9 @@ export default function Landing() {
             <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>{primaryLabel}</Button>
             <a className="landing-secondary-action" href="#treino">Conhecer o aplicativo <Icon name="chevronRight" /></a>
           </div>
-          {!localEntry && <div className="landing-account-actions">
-            {hasPasskey && <button onClick={openRegister}>Criar novo perfil</button>}
+           {!localEntry && <div className="landing-account-actions">
+             {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
+             {hasPasskey && <button onClick={openRegister}>Criar novo perfil</button>}
             {canGuest && <button onClick={enter}>Continuar sem conta</button>}
           </div>}
         </div>

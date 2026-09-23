@@ -5,8 +5,7 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
-import { api, webauthnOK, passkeyLogin, passkeyRegister, linkSupabaseIdentity, IS_ANDROID } from '../lib/api.js'
-import { getPublicSupabaseConfig } from '../lib/supabase-config.js'
+import { api, webauthnOK, passkeyLogin, passkeyRegister, IS_ANDROID } from '../lib/api.js'
 import { pushSupported, enablePush, disablePush, sendTestPush } from '../lib/push.js'
 import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, LANGS, DEFAULT_LANG, INSTR_LANGS } from '../lib/i18n.js'
@@ -18,6 +17,7 @@ import TipOnce from '../components/TipOnce.jsx'
 import Icon from '../components/Icon.jsx'
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
+import { openAuthSheet } from '../components/AuthSheet.jsx'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -35,11 +35,10 @@ export default function Settings() {
   const resolveSyncConflict = useStore(s => s.resolveSyncConflict)
   const resetDemo = useStore(s => s.resetDemo)
   const toast = useUI(s => s.toast)
-  const [accountLinkStatus, setAccountLinkStatus] = useState(null)
   const fileRef = useRef(null)
   const importRef = useRef(null)
   const wakeOK = wakeLockSupported()
-  const supabaseConfigured = getPublicSupabaseConfig(import.meta.env || {}).enabled
+  const supabaseConfigured = auth.configured
 
   const doExport = async () => {
     const json = JSON.stringify(S, null, 2)
@@ -116,9 +115,6 @@ export default function Settings() {
         })} />
       </> : user ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={t('Signed in with passkey — data syncs to this profile.')} />
-        {supabaseConfigured && <Row icon="link" iconTint="var(--teal)" title={t('Link Supabase account')}
-          subtitle={accountLinkStatus === 'linked' ? t('Supabase account linked') : t('Connect an already authenticated account to this profile.')}
-          accessory="chevron" onClick={() => useUI.getState().openSheet(close => <SupabaseAccountSheet close={close} setStatus={setAccountLinkStatus} toast={toast} />)} />}
         {syncConflict && <>
           <Row icon="shield" iconTint="var(--red)" danger title={t('Sync conflict')}
             subtitle={t('Another device has different data. Both copies are protected until you choose which one to keep.')} />
@@ -135,6 +131,9 @@ export default function Settings() {
           },
         })} />
         <Row icon="shield" iconTint="var(--red)" title={t('Sign out everywhere')} subtitle={t('Ends this profile’s sessions on all your devices.')} danger onClick={signOutEverywhere} />
+      </> : supabaseConfigured ? <>
+        <Row icon="lock" iconTint="var(--teal)" title={t('Protect your training')} subtitle={t('Create an account to sign in on another device. Your training stays on this device.')}
+          accessory="chevron" onClick={() => openAuthSheet('entry')} />
       </> : webauthnOK() ? <>
         <Row icon="lock" iconTint="var(--acc)" title={t('Create passkey profile')} subtitle={t('Keeps your data safe and separate per person.')} accessory="chevron" onClick={registerHere} />
         <Row icon="person" iconTint="var(--blue)" title={t('Sign in with passkey')} accessory="chevron" onClick={signInHere} />
@@ -387,34 +386,6 @@ export function PushCard({ S, update, toast }) {
       )}
     </Section>
     {on && <div style={{ marginTop: -12, marginBottom: 22 }}><Button size="sm" icon="bell" onClick={test}>{t('Send test notification')}</Button></div>}
-  </>
-}
-
-function SupabaseAccountSheet({ close, setStatus, toast }) {
-  const [accessToken, setAccessToken] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const link = async () => {
-    setBusy(true)
-    try {
-      await linkSupabaseIdentity(accessToken)
-      setStatus('linked')
-      toast(t('Supabase account linked'))
-      close()
-    } catch (error) {
-      toast(error.message || t('Could not link Supabase account'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return <>
-    <h3>{t('Link Supabase account')}</h3>
-    <div className="muted small" style={{ marginBottom: 14 }}>{t('Paste the access token from your authenticated Supabase session.')}</div>
-    <input className="input" type="password" aria-label={t('Supabase access token')} value={accessToken}
-      onChange={event => setAccessToken(event.target.value)} autoComplete="off" />
-    <div style={{ height: 12 }} />
-    <Button variant="primary" disabled={busy || !accessToken.trim()} onClick={link}>{t('Link account')}</Button>
   </>
 }
 

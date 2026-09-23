@@ -9,7 +9,9 @@ const mocks = vi.hoisted(() => ({
   setUser: vi.fn(),
   pullState: vi.fn(),
   openSheet: vi.fn(),
+  openAuthSheet: vi.fn(),
   standalone: true,
+  auth: { configured: false },
 }))
 
 vi.mock('../store/useStore.js', () => ({
@@ -19,6 +21,8 @@ vi.mock('../store/useStore.js', () => ({
     : { setUser: mocks.setUser, pullState: mocks.pullState, setGuest: mocks.setGuest },
 }))
 vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ toast: vi.fn(), openSheet: mocks.openSheet }) } }))
+vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
+vi.mock('../components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }))
 vi.mock('../lib/api.js', () => ({
   BIO: 'your fingerprint, face or PIN', webauthnOK: () => true,
   passkeyLogin: vi.fn(), passkeyRegister: vi.fn(),
@@ -53,6 +57,7 @@ let container
 beforeEach(() => {
   vi.useFakeTimers()
   mocks.standalone = true
+  mocks.auth = { configured: false }
   dom = new Window({ url: 'http://localhost/' })
   dom.matchMedia = () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })
   globalThis.window = dom
@@ -104,6 +109,17 @@ describe('public landing page', () => {
     expect(passkeyLogin).toHaveBeenCalledTimes(1)
     expect(mocks.setUser).toHaveBeenCalledWith({ id: 'legacy-user', name: 'Ana' })
     expect(mocks.pullState).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers non-blocking account protection on a configured web app', async () => {
+    mocks.standalone = false
+    mocks.auth = { configured: true }
+
+    await act(async () => { root.render(<Landing />) })
+
+    expect(button('Protect your training')).toBeTruthy()
+    await act(async () => { button('Protect your training').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
+    expect(mocks.openAuthSheet).toHaveBeenCalledWith('entry')
   })
 
   it('keeps statistics under visitor control and pauses the exercise previews', async () => {

@@ -10,13 +10,14 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ status: 'authenti
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('../store/useStore.js', async () => {
   const actual = await vi.importActual('../store/useStore.js');
-  const state = { S: actual.DEF, user: { id: 'legacy-user', name: 'Legacy' }, syncConflict: false, update: vi.fn(), replaceState: vi.fn(), setUser: vi.fn(), pullState: vi.fn(), pushState: vi.fn(), signOut: mocks.storeSignOut, signOutAll: vi.fn(), resolveSyncConflict: vi.fn(), resetDemo: vi.fn() };
+  const state = { S: actual.DEF, user: { id: 'legacy-user', name: 'Legacy', admin: true }, syncConflict: false, update: vi.fn(), replaceState: vi.fn(), setUser: vi.fn(), pullState: vi.fn(), pushState: vi.fn(), signOut: mocks.storeSignOut, signOutAll: vi.fn(), resolveSyncConflict: vi.fn(), resetDemo: vi.fn() };
   return { ...actual, useStore: selector => selector(state) };
 });
 vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: vi.fn() }) }));
 vi.mock('../sheets.jsx', async () => ({ ...(await vi.importActual('../sheets.jsx')), confirmSheet: options => { mocks.confirm = options } }));
 
 import Settings from './Settings.jsx';
+import More from './More.jsx';
 
 let dom;
 let root;
@@ -40,5 +41,14 @@ describe('Settings Supabase logout', () => {
     await act(async () => mocks.confirm.onConfirm());
     expect(mocks.authSignOut).toHaveBeenCalledTimes(1);
     expect(mocks.storeSignOut).not.toHaveBeenCalled();
+  });
+
+  it('uses the Supabase email as the account identity without exposing legacy admin UI', async () => {
+    await act(async () => root.render(<More />));
+
+    expect(container.textContent).toContain('ana@example.com');
+    expect(container.textContent).toContain('Conectado à sua conta');
+    expect(container.textContent).not.toContain('Signed in with passkey');
+    expect(container.textContent).not.toContain('Admin dashboard');
   });
 });

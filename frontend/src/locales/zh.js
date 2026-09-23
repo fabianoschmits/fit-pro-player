@@ -641,5 +641,6 @@ export default {
   "Use cloud data": "使用云端数据",
   "Keep this device": "保留此设备的数据",
   "This will replace one saved copy. Continue?": "这将替换一份已保存的副本。继续吗？",
-  "Could not sync your data — you are still signed in.": "无法同步数据——你仍处于登录状态。"
+  "Could not sync your data — you are still signed in.": "无法同步数据——你仍处于登录状态。",
+  "Protect your training": "保护你的训练", "Create an account to sign in on another device. Your training stays on this device.": "创建账户以便在其他设备上登录。你的训练仍保留在此设备上。", "Sign in": "登录", "Create account": "创建账户", "Email": "电子邮箱", "Password": "密码", "Name": "姓名", "New password": "新密码", "Confirm password": "确认密码", "Email or password is incorrect.": "电子邮箱或密码不正确。", "An account already uses this email.": "已有账户使用此电子邮箱。", "Choose a stronger password.": "请选择更强的密码。", "Check your connection and try again.": "请检查网络连接后重试。", "Account sign-in is unavailable right now.": "账户登录暂时不可用。", "Confirm your email before signing in.": "请在登录前确认电子邮箱。", "This recovery link has expired. Request a new one.": "此恢复链接已过期。请申请新的链接。", "This recovery link is invalid. Request a new one.": "此恢复链接无效。请申请新的链接。", "Passwords do not match.": "两次密码不一致。", "Check your email to confirm your account.": "请查收电子邮箱以确认账户。", "If an account exists for this email, we sent recovery instructions.": "如果此电子邮箱存在账户，我们已发送恢复说明。", "Recover your password": "恢复密码", "Reset password": "重设密码", "Send recovery email": "发送恢复邮件", "Forgot password?": "忘记密码？", "Already have an account? Sign in": "已有账户？登录", "Need an account? Create one": "需要账户？创建一个", "Signed in to your account": "已登录你的账户"
 }
