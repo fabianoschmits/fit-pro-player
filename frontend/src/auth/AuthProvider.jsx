@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js';
+import { MOBILE } from '../lib/mobile.js';
+import { parseCapacitorAuthUrl } from '../lib/capacitor-auth.js';
 import { toAuthError } from './auth-errors.js';
 
 const AuthContext = createContext(null);
@@ -118,6 +120,33 @@ export function AuthProvider({ children, client: injectedClient, location: injec
       data?.subscription?.unsubscribe?.();
     };
   }, [client, location]);
+
+  useEffect(() => {
+    if (!client || !MOBILE) return undefined;
+    let disposed = false;
+    let listener = null;
+    import('@capacitor/app').then(({ App }) => App.addListener('appUrlOpen', async ({ url }) => {
+      const callback = parseCapacitorAuthUrl(url);
+      if (disposed || !callback) return;
+      const callbackRevision = ++revision.current;
+      try {
+        const { data: result, error } = await client.auth.exchangeCodeForSession(callback.code);
+        if (disposed || callbackRevision !== revision.current) return;
+        if (error) throw error;
+        const user = publicUser(result?.session?.user);
+        setState(current => ({
+          ...current,
+          status: user ? 'authenticated' : 'anonymous',
+          user,
+          recovery: callback.flow === 'recovery' ? 'required' : current.recovery,
+          error: null,
+        }));
+      } catch (error) {
+        if (!disposed && callbackRevision === revision.current) setState(current => ({ ...current, error: toAuthError(error, callback.flow) }));
+      }
+    })).then(handle => { listener = handle; }).catch(() => {});
+    return () => { disposed = true; listener?.remove?.(); };
+  }, [client]);
 
   const value = useMemo(() => {
     const unavailable = () => ({ kind: 'error', error: 'auth_unavailable' });
