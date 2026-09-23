@@ -32,6 +32,7 @@ const loadSettings = () => import('./views/Settings.jsx')
 const loadAdmin = () => import('./views/Admin.jsx')
 const loadMore = () => import('./views/More.jsx')
 const loadBodyProgress = () => import('./views/BodyProgress.jsx')
+const loadProfessionalProfile = () => import('./views/ProfessionalProfile.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Landing = lazy(loadLanding)
@@ -46,6 +47,7 @@ const Settings = lazy(loadSettings)
 const Admin = lazy(loadAdmin)
 const More = lazy(loadMore)
 const BodyProgress = lazy(loadBodyProgress)
+const ProfessionalProfile = lazy(loadProfessionalProfile)
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
@@ -295,6 +297,7 @@ function Shell() {
                 <Route path="/workout" element={<Workout />} />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/body-progress" element={<BodyProgress />} />
+                <Route path="/professional-profile" element={<ProfessionalProfile />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />

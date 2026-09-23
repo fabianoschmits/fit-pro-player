@@ -30,6 +30,8 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/history')} />
       <Row icon="personCircle" iconTint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo"
         accessory="chevron" onClick={() => nav('/body-progress')} />
+      {account && <Row icon="personCircle" iconTint="var(--purple)" title="Perfil profissional" subtitle="Nome, especialidades e registro informado"
+        accessory="chevron" onClick={() => nav('/professional-profile')} />}
     </Section>
 
     {(user?.admin && !account) && <Section title={t('Admin')}>
