@@ -181,6 +181,19 @@ describe('AuthProvider', () => {
 
     expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', { p_professional_name: 'Ana' });
   });
+
+  it('keeps professional intent through an email-confirmation reload', async () => {
+    const professionalUser = { ...user, user_metadata: { display_name: 'Ana', account_type: 'professional' } };
+    const client = createFakeClient();
+    client.auth.exchangeCodeForSession.mockResolvedValue({ data: { session: { user: professionalUser } }, error: null });
+
+    await renderProvider(client, new URL('https://app.example/?auth_flow=confirm&code=abc'));
+    await act(async () => Promise.resolve());
+
+    expect(client.auth.exchangeCodeForSession).toHaveBeenCalledWith('abc');
+    await vi.waitFor(() => expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', { p_professional_name: 'Ana' }));
+    expect(latest.status).toBe('authenticated');
+  });
 });
 
 describe('buildAuthRedirectUrl', () => {

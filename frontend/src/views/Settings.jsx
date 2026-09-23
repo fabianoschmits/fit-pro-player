@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, DEF } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
-import { webauthnOK, passkeyLogin, IS_ANDROID } from '../lib/api.js'
-import { pushSupported, enablePush, disablePush, sendTestPush } from '../lib/push.js'
+const IS_ANDROID = /Android/.test(navigator.userAgent)
 import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, LANGS, DEFAULT_LANG, INSTR_LANGS } from '../lib/i18n.js'
 import { DEMO, STANDALONE } from '../lib/demo.js'
@@ -15,7 +14,7 @@ import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
 import { MAX_BACKUP_BYTES, validateBackup } from '../lib/backup-state.js'
 import TipOnce from '../components/TipOnce.jsx'
 import Icon from '../components/Icon.jsx'
-import { Section, Row, SelectRow, Switch, Segmented, Button } from '../components/ui.jsx'
+import { Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
 
@@ -23,16 +22,8 @@ export default function Settings() {
   const nav = useNavigate()
   const auth = useAuth()
   const S = useStore(s => s.S)
-  const user = useStore(s => s.user)
-  const syncConflict = useStore(s => s.syncConflict)
   const update = useStore(s => s.update)
   const replaceState = useStore(s => s.replaceState)
-  const setUser = useStore(s => s.setUser)
-  const pullState = useStore(s => s.pullState)
-  const pushState = useStore(s => s.pushState)
-  const signOut = useStore(s => s.signOut)
-  const signOutAll = useStore(s => s.signOutAll)
-  const resolveSyncConflict = useStore(s => s.resolveSyncConflict)
   const resetDemo = useStore(s => s.resetDemo)
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
@@ -66,31 +57,6 @@ export default function Settings() {
     rd.onerror = () => toast(t('Could not read that file'))
     rd.readAsText(f)
   }
-  const signInHere = async () => {
-    try { const u = await passkeyLogin(); setUser(u); await pullState(); toast(t('Welcome back, {0}', u.name)) }
-    catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(e.message || t('Sign-in failed')) }
-  }
-  // Ends the profile's sessions on every device — this one included, so on success it lands in
-  // the same place as the plain sign-out above (home, local data cleared). On failure nothing
-  // local is touched: still signed in here, and say so rather than leaving a half-signed-out app.
-  const signOutEverywhere = () => confirmSheet({
-    title: t('Sign out everywhere?'),
-    message: t('Signs this profile out on every device, including this one. Your passkeys keep working — sign in with them again anytime.'),
-    confirmText: t('Sign out everywhere'), danger: true,
-    onConfirm: async () => {
-      try { await signOutAll(); nav('/home'); toast(t('Signed out on all devices')) }
-      catch (e) { toast(t('Could not sign out everywhere — you are still signed in.')) }
-    },
-  })
-  const chooseSyncCopy = strategy => confirmSheet({
-    title: strategy === 'cloud' ? t('Use cloud data') : t('Keep this device'),
-    message: t('This will replace one saved copy. Continue?'),
-    confirmText: t('Replace'), danger: true,
-    onConfirm: async () => {
-      try { await resolveSyncConflict(strategy); toast(t('Done')) }
-      catch { toast(t('Could not sync your data — you are still signed in.')) }
-    },
-  })
 
   return <div className="narrow">
     <AppHeader title={t('Settings')} backTo="/more" />
@@ -116,34 +82,12 @@ export default function Settings() {
             else toast(t('Could not sync your data — you are still signed in.'))
           },
         })} />
-      </> : user ? <>
-        <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={t('Signed in with passkey — data syncs to this profile.')} />
-        {syncConflict && <>
-          <Row icon="shield" iconTint="var(--red)" danger title={t('Sync conflict')}
-            subtitle={t('Another device has different data. Both copies are protected until you choose which one to keep.')} />
-          <Row icon="download" iconTint="var(--blue)" title={t('Use cloud data')} accessory="chevron" onClick={() => chooseSyncCopy('cloud')} />
-          <Row icon="upload" iconTint="var(--acc)" title={t('Keep this device')} accessory="chevron" onClick={() => chooseSyncCopy('local')} />
-        </>}
-        {user.admin && <Row icon="wrench" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
-        <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
-          title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
-          confirmText: t('Sign out'), danger: true,
-          onConfirm: async () => {
-            try { await signOut(); nav('/home') }
-            catch { toast(t('Could not sync your data — you are still signed in.')) }
-          },
-        })} />
-        <Row icon="shield" iconTint="var(--red)" title={t('Sign out everywhere')} subtitle={t('Ends this profile’s sessions on all your devices.')} danger onClick={signOutEverywhere} />
       </> : supabaseConfigured ? <>
         <Row icon="lock" iconTint="var(--teal)" title={t('Protect your training')} subtitle={t('Create an account to sign in on another device. Your training stays on this device.')}
           accessory="chevron" onClick={() => openAuthSheet('entry')} />
-      </> : webauthnOK() ? <>
-        <Row icon="person" iconTint="var(--blue)" title={t('Sign in with passkey')} accessory="chevron" onClick={signInHere} />
-      </> : (
-        <Row icon="lock" iconTint="var(--grey)" title={t('Passkeys not supported in this browser.')} />
-      )}
+      </> : <Row icon="lock" iconTint="var(--grey)" title={t('Guest mode — data lives only in this browser.')} />}
     </Section>
-    {!user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
+    {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
 
     <Section title={t('Personal profile')}>
       <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
@@ -204,10 +148,10 @@ export default function Settings() {
       </Row>
     </Section>
 
-    {(user || MOBILE) && <NotificationsCard S={S} update={update} toast={toast} />}
+    {MOBILE && <NotificationsCard S={S} update={update} toast={toast} />}
 
     {/* ---------- appearance ---------- */}
-    <Section title={t('Appearance')} footer={user ? t('synced with your profile') : undefined}>
+    <Section title={t('Appearance')}>
       <Row icon="moon" iconTint="var(--indigo)" title={t('Theme')}>
         <Segmented
           className="seg-inline"
@@ -255,7 +199,7 @@ export default function Settings() {
     {!MOBILE && <Section title={t('Tip')}>
       <Row icon="lightbulb" iconTint="var(--yellow)"
         title={IS_ANDROID ? t('In Chrome: ⋮ menu → Add to Home screen') : t('In Safari: Share → Add to Home Screen')}
-        subtitle={t('to install Fit Pro Player as a full-screen app.') + ' ' + (user ? t('Your data syncs with your profile — sign in anywhere to see it.') : t('Guest data stays on this device — export a backup now and then!'))} />
+        subtitle={t('to install Fit Pro Player as a full-screen app.') + ' ' + (auth.user ? t('Your data syncs with your profile — sign in anywhere to see it.') : t('Guest data stays on this device — export a backup now and then!'))} />
     </Section>}
 
     <div className="dim small" style={{ textAlign: 'center', marginTop: 4, lineHeight: 1.6 }}>
@@ -302,8 +246,7 @@ function effortHelpSheet() {
 }
 
 function NotificationsCard({ S, update, toast }) {
-  if (MOBILE) return <MobileReminderCard S={S} update={update} toast={toast} />
-  return <PushCard S={S} update={update} toast={toast} />
+  return <MobileReminderCard S={S} update={update} toast={toast} />
 }
 
 // Mobile build: the reminder is a native local notification scheduled on planned weekdays —
@@ -333,60 +276,4 @@ function MobileReminderCard({ S, update, toast }) {
       )}
     </Section>
   )
-}
-
-export function PushCard({ S, update, toast }) {
-  const [on, setOn] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const supported = pushSupported()
-
-  useEffect(() => {
-    if (!supported) return
-    navigator.serviceWorker.ready.then(reg => reg.pushManager.getSubscription()).then(sub => setOn(!!sub)).catch(() => {})
-  }, [supported])
-
-  const toggle = async v => {
-    setBusy(true)
-    try {
-      if (!v) { await disablePush(); setOn(false); toast(t('Notifications off')) }
-      else { await enablePush(); setOn(true); toast(t('Notifications on')) }
-    } catch (e) { toast(e.message || t('Could not change notification settings')) }
-    setBusy(false)
-  }
-  const test = async () => {
-    try { await sendTestPush(); toast(t('Test sent — should arrive any second')) }
-    catch (e) { toast(e.message || t('Test failed')) }
-  }
-
-  if (!supported) return (
-    <Section title={t('Notifications')}>
-      <Row icon="bellSlash" iconTint="var(--grey)" title={t('Not supported in this browser.')} />
-    </Section>
-  )
-
-  return <>
-    <Section
-      title={t('Notifications')}
-      footer={on && S.reminder?.on
-        ? t("Only sent on days you have a routine planned and haven't logged a workout yet.") +
-          (S.reminder?.tz ? ' ' + t('Timezone: {0} (auto-detected, updates if you travel).', S.reminder.tz) : '')
-        : null}
-    >
-      <Row icon="bell" iconTint="var(--red)" title={t('Push notifications')} subtitle={t('Rest-timer alerts, even if Fit Pro Player is closed.')}>
-        <Switch checked={on} disabled={busy} onChange={toggle} />
-      </Row>
-      {on && (
-        <Row icon="calendar" iconTint="var(--orange)" title={t('Workout day reminder')}>
-          <Switch checked={!!S.reminder?.on} onChange={() => update(s => { s.reminder = { ...(s.reminder || DEF.reminder), on: !s.reminder?.on, tz: localTZ() } })} />
-        </Row>
-      )}
-      {on && S.reminder?.on && (
-        <Row icon="clock" iconTint="var(--purple)" title={t('Reminder time')}>
-          <input type="time" className="timef" value={S.reminder?.time || DEF.reminder.time}
-            onChange={e => update(s => { s.reminder = { ...(s.reminder || DEF.reminder), time: e.target.value, tz: localTZ() } })} />
-        </Row>
-      )}
-    </Section>
-    {on && <div style={{ marginTop: -12, marginBottom: 22 }}><Button size="sm" icon="bell" onClick={test}>{t('Send test notification')}</Button></div>}
-  </>
 }

@@ -4,85 +4,62 @@
 
 Planeje treinos, acompanhe cargas, registre o peso corporal e visualize sua evolução.
 
-[Aplicação na Vercel](https://fit-pro-player.vercel.app)
+[Fit Pro Player](https://www.fitpp.com.br)
 
 </div>
 
-## Modos de uso
+## Arquitetura
 
-O Fit Pro Player oferece dois modos, ambos sem telemetria:
+O Fit Pro Player é uma PWA React hospedada na Vercel e integrada diretamente ao Supabase:
 
-- **Vercel / PWA local-first:** começa vazio e salva os dados somente no navegador. Não exige conta ou backend. Exporte backups JSON regularmente, especialmente antes de limpar os dados do navegador.
-- **Servidor próprio:** frontend + API Node em Docker, com perfis por passkey, sincronização entre dispositivos, painel administrativo e Web Push. Os dados ficam em `./data`.
+- Supabase Auth cria e autentica contas comuns e profissionais.
+- PostgreSQL, RLS e RPCs protegem perfis, funções e sincronização.
+- O frontend mantém cache local isolado por conta e suporta uso anônimo no navegador.
+- Edge Functions, Storage e Realtime permanecem opcionais e só serão adicionados quando houver necessidade real.
 
-O modo público da Vercel é intencionalmente local-first. A API original usa arquivos persistentes e timers de processo; funções efêmeras não são um local seguro para guardar contas e treinos.
+Não existe backend Node, API `/api`, Docker ou armazenamento JSON de produção neste projeto.
 
-## Executar nesta máquina (Windows)
+## Desenvolvimento local
 
 Requisitos: Node.js 22+ e npm.
 
 ```powershell
-Copy-Item .env.example .env
-npm install
+Copy-Item .env.example frontend/.env.local
+# preencha apenas VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY
 npm run setup
 npm run dev
 ```
-
-Abra [http://localhost:8080](http://localhost:8080). A API é iniciada em `127.0.0.1:3000` e o Vite encaminha `/api`. O catálogo oferece somente os 156 exercícios que já possuem sequências PNG próprias, validadas e incorporadas ao aplicativo. Os demais registros da base permanecem preservados como pendentes para não quebrar planos e históricos existentes, mas não aparecem em novas seleções até receberem animações correspondentes. A animação pausa fora da tela ou em uma aba oculta e não inicia automaticamente quando o sistema solicita movimento reduzido.
-
-A ordem inicial prioriza movimentos frequentes como supino, agachamento, levantamento terra, puxada alta, desenvolvimento e remada, seguidos pelos demais exercícios disponíveis.
 
 Comandos úteis:
 
 ```powershell
 npm test
 npm run build
-npm run build:vercel
+npm run check:supabase
 npm run audit
 ```
 
-## Executar com Docker
+Para o modo demo/local, o frontend também pode ser executado sem variáveis Supabase. Nesse modo os dados ficam no dispositivo e podem ser exportados em JSON.
 
-Inicie o Docker Desktop e rode:
+## Deploy
 
-```powershell
-Copy-Item .env.example .env
-docker compose up -d --build
-```
+O projeto é publicado na Vercel. Configure no projeto Vercel apenas:
 
-Abra [http://localhost:8080](http://localhost:8080). Para usar passkeys em outro dispositivo, publique o serviço em um domínio HTTPS e ajuste `RP_ID` e `ORIGIN` no `.env`; consulte [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md).
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Dados persistentes ficam em `./data`. Faça backup dessa pasta e nunca a envie ao Git.
-
-## Implantar na Vercel
-
-O arquivo `vercel.json` já configura build, pasta de saída e cabeçalhos de segurança. Pela CLI:
-
-```powershell
-vercel
-vercel --prod
-```
-
-O build usa `frontend/.env.vercel`, ativa o modo local-first e incorpora as sequências PNG e os mapas musculares no próprio app. Nenhum segredo é necessário.
+Chaves privadas do Supabase não pertencem ao frontend e não são lidas pelo Vite. Migrations versionadas em `supabase/migrations` são aplicadas separadamente ao projeto Supabase.
 
 ## Estrutura
 
-- `frontend/`: React 19, Vite, Zustand, PWA e projetos Capacitor.
-- `api/`: API Node para o modo self-hosted, passkeys e armazenamento JSON.
-- `web/`: nginx para servir o frontend e encaminhar `/api` no Docker.
-- `mcp/`: servidor MCP opcional e somente leitura para dados self-hosted.
-- `docs/`: implantação própria e builds móveis.
+- `frontend/`: React, Vite, Zustand, PWA e projetos Capacitor.
+- `supabase/`: migrations, testes SQL e validações de fronteira.
+- `docs/MOBILE.md`: notas para builds móveis.
 
-## Segurança e privacidade
+## Segurança
 
-- Sem analytics ou telemetria.
-- Cookies de sessão `HttpOnly`, `SameSite=Strict` e `Secure` em HTTPS.
-- Limite de requisições nos endpoints de autenticação.
-- CSP, proteção contra framing, política de permissões e `nosniff` na Vercel e no nginx.
-- `.env`, dados de usuários, certificados e chaves de assinatura são ignorados pelo Git.
-
-Veja [SECURITY.md](SECURITY.md) para comunicar vulnerabilidades.
+Nunca versione `.env`, credenciais, tokens, chaves privadas, dados de usuários ou artefatos de deploy. Consulte [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
 
 ## Direitos
 
-Código, identidade visual e animações de exercícios do Fit Pro Player são proprietários. Todos os direitos reservados. Componentes externos utilizados pelo aplicativo continuam sujeitos aos termos de seus respectivos autores.
+Código, identidade visual e animações de exercícios do Fit Pro Player são proprietários. Todos os direitos reservados.

@@ -94,7 +94,6 @@ export default function TabBar({ onStart }) {
   const nav = useNavigate()
   const loc = useLocation()
   const S = useStore(s => s.S)
-  const user = useStore(s => s.user)
   const isGuest = useStore(s => s.isGuest())
   const rowRef = useRef(null)
   const tabRefs = useRef(new Map())
@@ -146,7 +145,7 @@ export default function TabBar({ onStart }) {
 
   const cur = loc.pathname.split('/')[1] || 'home'
 
-  if ((!user && !isGuest) || !S.onboardingDone) return null
+  if (!isGuest || !S.onboardingDone) return null
 
   const startWorkout = () => {
     if (S.active) { nav('/workout'); return }

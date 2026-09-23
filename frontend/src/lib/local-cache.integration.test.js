@@ -9,14 +9,14 @@ const state = (id, active = null) => ({ ...DEF, workouts: [{ id, d: '2026-09-23'
 
 beforeEach(() => {
   localStorage.clear()
-  useStore.setState({ S: { ...DEF }, user: null, ready: false, syncConflict: false })
+  useStore.setState({ S: { ...DEF }, ready: false })
 })
 
 describe('local cache compatibility', () => {
   it('preserves anonymous data before and after an account session', async () => {
     localStorage.setItem('gym_state_v1', JSON.stringify(state('anonymous')))
-    await useStore.getState().boot({ legacySessionEnabled: false, supabaseUserId: USER_A })
-    await useStore.getState().boot({ legacySessionEnabled: false, supabaseUserId: null })
+    await useStore.getState().boot({ supabaseUserId: USER_A })
+    await useStore.getState().boot({ supabaseUserId: null })
     expect(useStore.getState().S.workouts[0].id).toBe('anonymous')
     expect(JSON.parse(localStorage.getItem('gym_state_v1')).workouts[0].id).toBe('anonymous')
   })
@@ -24,14 +24,14 @@ describe('local cache compatibility', () => {
   it('reads an existing account cache offline without a network dependency', async () => {
     writeScopedState(resolveLocalScope(USER_A), state('A'), localStorage)
     Object.defineProperty(navigator, 'onLine', { configurable: true, value: false })
-    await useStore.getState().boot({ legacySessionEnabled: false, supabaseUserId: USER_A })
+    await useStore.getState().boot({ supabaseUserId: USER_A })
     expect(useStore.getState().S.workouts[0].id).toBe('A')
   })
 
   it('preserves an active workout while switching away from the account', async () => {
     writeScopedState(resolveLocalScope(USER_A), state('A', { id: 'active-A', entries: [] }), localStorage)
-    await useStore.getState().boot({ legacySessionEnabled: false, supabaseUserId: USER_A })
-    await useStore.getState().boot({ legacySessionEnabled: false, supabaseUserId: null })
+    await useStore.getState().boot({ supabaseUserId: USER_A })
+    await useStore.getState().boot({ supabaseUserId: null })
     const saved = JSON.parse(localStorage.getItem(`fpp_account_cache_v1:${USER_A}`))
     expect(saved.state.active.id).toBe('active-A')
     expect(useStore.getState().S.workouts).toEqual([])

@@ -35,7 +35,6 @@ const loadStats = () => import('./views/Stats.jsx')
 const loadHistory = () => import('./views/History.jsx')
 const loadLibrary = () => import('./views/Library.jsx')
 const loadSettings = () => import('./views/Settings.jsx')
-const loadAdmin = () => import('./views/Admin.jsx')
 const loadMore = () => import('./views/More.jsx')
 const loadBodyProgress = () => import('./views/BodyProgress.jsx')
 const loadProfessionalProfile = () => import('./views/ProfessionalProfile.jsx')
@@ -49,7 +48,6 @@ const Stats = lazy(loadStats)
 const History = lazy(loadHistory)
 const Library = lazy(loadLibrary)
 const Settings = lazy(loadSettings)
-const Admin = lazy(loadAdmin)
 const More = lazy(loadMore)
 const BodyProgress = lazy(loadBodyProgress)
 const ProfessionalProfile = lazy(loadProfessionalProfile)
@@ -241,23 +239,19 @@ function Shell() {
   const recoveryShown = useRef(false)
   const associationShown = useRef(null)
   const boot = useStore(s => s.boot)
-  const { S, user, ready } = useStore()
+  const { S, ready } = useStore()
   const profilePreview = useUI(s => s.profilePreview)
   const isGuest = useStore(s => s.isGuest())
   const authenticated = auth.status === 'authenticated'
-  const onlineIdentity = authenticated ? auth.user : user
-  const authed = !!onlineIdentity || isGuest
+  const authed = authenticated || isGuest
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => {
     if (auth.status === 'initializing') return
-    boot({
-      legacySessionEnabled: auth.status === 'anonymous' && !auth.suppressLegacyResume,
-      supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null,
-    })
-  }, [auth.status, auth.suppressLegacyResume, boot])
+    boot({ supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null })
+  }, [auth.status, boot])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current === auth.user.id) return
     const client = getBrowserSupabaseClient()
@@ -355,7 +349,6 @@ function Shell() {
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes></Suspense></>
           )}

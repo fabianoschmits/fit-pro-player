@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from '../store/useStore.js'
-import { useUI } from '../store/useUI.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { webauthnOK, passkeyLogin, BIO } from '../lib/api.js'
 import { DEMO, STANDALONE } from '../lib/demo.js'
-import { guestAllowed } from '../lib/guest.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
 import ExerciseGuideAnimation from '../components/ExerciseGuideAnimation.jsx'
@@ -254,10 +251,8 @@ function WorkoutPreview({ playing }) {
 
 export default function Landing() {
   const auth = useAuth()
-  const { setUser, pullState, setGuest } = useStore()
-  const config = useStore(state => state.config)
-  const canGuest = guestAllowed(config)
-  const hasPasskey = webauthnOK()
+  const { setGuest } = useStore()
+  const canGuest = true
   const reduced = useReducedMotion()
   const [paused, setPaused] = useState(false)
   const localEntry = STANDALONE || DEMO
@@ -267,29 +262,16 @@ export default function Landing() {
     return () => document.body.classList.remove('landing-mode')
   }, [])
 
-  const signIn = async () => {
-    try {
-      const user = await passkeyLogin()
-      setUser(user)
-      await pullState()
-      useUI.getState().toast(`Bem-vindo de volta, ${user.name}`)
-    } catch (error) {
-      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
-        useUI.getState().toast(error.message || 'Não foi possível entrar')
-      }
-    }
-  }
-
   const enter = () => setGuest(true)
-  const entryUnavailable = auth.configured ? false : !localEntry && !hasPasskey && !canGuest
+  const entryUnavailable = auth.configured ? false : !localEntry && !canGuest
   const primaryAction = auth.configured
     ? () => openAuthSheet('entry')
-    : localEntry || (!hasPasskey && canGuest) ? enter : signIn
+    : enter
   const primaryLabel = auth.configured
     ? 'Entrar ou criar conta'
     : localEntry
       ? (DEMO ? 'Abrir demonstração' : 'Começar agora')
-      : hasPasskey ? 'Entrar com chave de acesso' : canGuest ? 'Usar neste dispositivo' : 'Chave de acesso indisponível'
+      : 'Usar neste dispositivo'
 
   return (
     <main className="landing-page">
@@ -409,7 +391,7 @@ export default function Landing() {
         <div><span className="landing-section-index">COMECE PELO PRÓXIMO TREINO</span><h2>Menos tempo organizando. Mais clareza para evoluir.</h2><p>Abra o Fit Pro Player e monte a sua primeira rotina em poucos minutos.</p></div>
         <div className="landing-final-actions">
           <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>{primaryLabel}</Button>
-          <span>{localEntry ? 'Os dados ficam salvos neste navegador.' : `Protegido com ${t(BIO)}, sem senha.`}</span>
+          <span>{localEntry ? 'Os dados ficam salvos neste navegador.' : 'Protegido pela sua conta Supabase.'}</span>
         </div>
       </section>
 

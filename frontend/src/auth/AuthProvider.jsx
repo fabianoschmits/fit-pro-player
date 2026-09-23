@@ -158,6 +158,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         const { data: result, error } = await client.auth.exchangeCodeForSession(callback.code);
         if (disposed || callbackRevision !== revision.current) return;
         if (error) throw error;
+        await provisionProfessional(client, result?.session?.user);
         const user = publicUser(result?.session?.user);
         setState(current => ({
           ...current,

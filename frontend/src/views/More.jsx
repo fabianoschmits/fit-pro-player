@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom'
-import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { t } from '../lib/i18n.js'
 import Icon from '../components/Icon.jsx'
@@ -11,10 +10,8 @@ import AppHeader from '../components/AppHeader.jsx'
 
 export default function More() {
   const nav = useNavigate()
-  const user = useStore(s => s.user)
   const auth = useAuth()
   const account = auth.status === 'authenticated' ? auth.user : null
-  const identity = account || user
 
   return <div className="narrow">
     <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
@@ -34,13 +31,9 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/professional-profile')} />}
     </Section>
 
-    {(user?.admin && !account) && <Section title={t('Admin')}>
-      <Row icon="shield" iconTint="var(--purple)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />
-    </Section>}
-
     <Section title={t('About')}>
-      <Row icon="personCircle" iconTint="var(--teal)" title={account?.email || (identity ? identity.name : (MOBILE || STANDALONE ? t('Guest mode') : DEMO ? t('Demo') : t('Guest mode')))}
-        subtitle={account ? t('Signed in to your account') : identity ? t('Signed in with passkey') : t('Guest data stays on this device — export a backup now and then!')} />
+      <Row icon="personCircle" iconTint="var(--teal)" title={account?.email || (MOBILE || STANDALONE ? t('Guest mode') : DEMO ? t('Demo') : t('Guest mode'))}
+        subtitle={account ? t('Signed in to your account') : t('Guest data stays on this device — export a backup now and then!')} />
     </Section>
   </div>
 }

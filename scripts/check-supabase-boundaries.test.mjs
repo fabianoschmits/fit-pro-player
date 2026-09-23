@@ -140,15 +140,13 @@ test('rejects quoted future-domain table identifiers in the Phase 1 migration', 
   assert.match(violations.join('\n'), /migration.*1|:1/i)
 })
 
-test('allows public frontend configuration and backend-only private env parsing', () => {
+test('allows public frontend configuration without private env names', () => {
   const violations = runCheck([
     ...requiredFiles,
     'frontend/src/config.js',
-    'api/supabase/config.js',
   ], {
     'frontend/src/config.js':
       'const url = import.meta.env.VITE_SUPABASE_URL\nconst key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY\n',
-    'api/supabase/config.js': 'const key = env.SUPABASE_SECRET_KEY\n',
   })
 
   assert.deepEqual(violations, [])

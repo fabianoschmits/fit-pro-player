@@ -1,7 +1,7 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
    Media (img/gif) cache-first; everything else network-first with offline fallback.
    Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v11'
+const CACHE = 'fit-pro-player-rt-v12'
 
 self.addEventListener('install', () => self.skipWaiting())
 self.addEventListener('activate', e => {
@@ -17,24 +17,6 @@ self.addEventListener('activate', e => {
       .then(() => self.clients.claim())
   }))
 })
-self.addEventListener('push', e => {
-  const data = e.data ? e.data.json() : {}
-  e.waitUntil(self.registration.showNotification(data.title || 'Fit Pro Player', {
-    body: data.body || '',
-    icon: 'icon-512.png',
-    badge: 'icon-180.png',
-    tag: data.tag || 'fitproplayer',
-    renotify: true
-  }))
-})
-self.addEventListener('notificationclick', e => {
-  e.notification.close()
-  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(clients => {
-    const c = clients.find(c => 'focus' in c)
-    return c ? c.focus() : self.clients.openWindow('./')
-  }))
-})
-
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting()
 })
@@ -44,8 +26,6 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
   const sameOrigin = url.origin === location.origin
   if (!sameOrigin) return
-  if (sameOrigin && url.pathname.startsWith('/api/')) return    // never cache auth/data
-
   const isMedia = url.pathname.includes('/img/') || url.pathname.includes('/gif/')
   if (isMedia) {
     e.respondWith(caches.open(CACHE).then(c => c.match(e.request).then(hit =>

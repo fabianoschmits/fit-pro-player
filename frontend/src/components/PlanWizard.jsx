@@ -31,7 +31,6 @@ function Choice({ selected, icon, title, copy, onClick }) {
 
 export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const S = useStore(s => s.S)
-  const user = useStore(s => s.user)
   const update = useStore(s => s.update)
   const setProfilePreview = useUI(s => s.setProfilePreview)
   const reduceMotion = useReducedMotion()
@@ -42,7 +41,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const [direction, setDirection] = useState(1)
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(() => ({
-    name: formatPersonName(profile.name || user?.name || ''),
+    name: formatPersonName(profile.name || ''),
     avatarId: profile.avatarId,
     birthDate: profile.birthDate || defaultBirthDate(),
     sex: profile.sex || (S.body === 'female' ? 'female' : 'male'),

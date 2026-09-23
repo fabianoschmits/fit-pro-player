@@ -61,13 +61,13 @@ describe('App Auth boot coordination', () => {
 
     mocks.auth = { status: 'authenticated', suppressLegacyResume: false, user: { id: 'supabase-user' } };
     await act(async () => root.render(<App />));
-    expect(mocks.boot).toHaveBeenCalledWith({ legacySessionEnabled: false, supabaseUserId: 'supabase-user' });
+    expect(mocks.boot).toHaveBeenCalledWith({ supabaseUserId: 'supabase-user' });
   });
 
-  it('retains the legacy path only for an anonymous non-suppressed session', async () => {
+  it('boots the anonymous local scope after Supabase reports no session', async () => {
     mocks.auth = { status: 'anonymous', suppressLegacyResume: false, user: null };
     await act(async () => root.render(<App />));
-    expect(mocks.boot).toHaveBeenCalledWith({ legacySessionEnabled: true, supabaseUserId: null });
+    expect(mocks.boot).toHaveBeenCalledWith({ supabaseUserId: null });
   });
 
   it('opens one reset sheet for duplicate recovery events without changing the URL', async () => {
