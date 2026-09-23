@@ -7,6 +7,7 @@ describe('Supabase configuration', () => {
     expect(getPublicSupabaseConfig({})).toEqual({
       enabled: false,
       url: null,
+      origin: null,
       publishableKey: null,
     });
   });
@@ -18,6 +19,7 @@ describe('Supabase configuration', () => {
     })).toEqual({
       enabled: true,
       url: 'https://example.supabase.co',
+      origin: 'https://example.supabase.co',
       publishableKey: 'public-key',
     });
   });
@@ -26,10 +28,10 @@ describe('Supabase configuration', () => {
     expect(getPublicSupabaseConfig({
       VITE_SUPABASE_URL: 'not a URL',
       VITE_SUPABASE_PUBLISHABLE_KEY: 'public-key',
-    })).toEqual({ enabled: false, url: null, publishableKey: null });
+    })).toEqual({ enabled: false, url: null, origin: null, publishableKey: null });
 
     expect(getPublicSupabaseConfig({ VITE_SUPABASE_URL: 'https://example.supabase.co' }))
-      .toEqual({ enabled: false, url: null, publishableKey: null });
+      .toEqual({ enabled: false, url: null, origin: null, publishableKey: null });
   });
 
   it('ignores backend-only secret variables at the public boundary', () => {
@@ -43,6 +45,7 @@ describe('Supabase configuration', () => {
     expect(config).toEqual({
       enabled: true,
       url: 'https://example.supabase.co',
+      origin: 'https://example.supabase.co',
       publishableKey: 'public-key',
     });
     expect('secretKey' in config).toBe(false);

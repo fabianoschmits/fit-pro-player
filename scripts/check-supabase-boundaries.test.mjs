@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
-import { checkSupabaseBoundaries } from './check-supabase-boundaries.mjs'
+import { checkSupabaseBoundaries, checkVercelCsp } from './check-supabase-boundaries.mjs'
 
 const requiredFiles = [
   'supabase/config.toml',
@@ -15,6 +15,60 @@ const runCheck = (files, contents = {}, rootDir = process.cwd()) => checkSupabas
   rootDir,
   trackedFiles: files,
   fileContents: contents,
+})
+
+const vercelFixture = (connectSrc) => JSON.stringify({
+  headers: [{
+    source: '/(.*)',
+    headers: [{
+      key: 'Content-Security-Policy',
+      value: `default-src 'self'; connect-src ${connectSrc}; object-src 'none'`,
+    }],
+  }],
+})
+
+const requiredSupabaseOrigin = 'https://bgqavxoxwgheloeubbpf.supabase.co'
+
+test('accepts a CSP connect-src boundary with self and the exact Supabase origin', () => {
+  assert.deepEqual(checkVercelCsp({
+    text: vercelFixture(`'self' ${requiredSupabaseOrigin}`),
+    requiredSupabaseOrigin,
+  }), [])
+})
+
+test('rejects CSP connect-src wildcards, WebSocket, and unrelated origins', () => {
+  for (const source of [
+    `'self' ${requiredSupabaseOrigin} *`,
+    `'self' ${requiredSupabaseOrigin} https://*.supabase.co`,
+    `'self' ${requiredSupabaseOrigin} wss://bgqavxoxwgheloeubbpf.supabase.co`,
+    `'self' ${requiredSupabaseOrigin} https://unrelated.example.com`,
+  ]) {
+    const violations = checkVercelCsp({ text: vercelFixture(source), requiredSupabaseOrigin })
+    assert.match(violations.join('\n'), /connect-src/i)
+  }
+})
+
+test('rejects direct Supabase token persistence in gym state', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/auth/leak.js',
+  ], {
+    'frontend/src/auth/leak.js': "localStorage.setItem('gym_state_v1', JSON.stringify({ access_token: token }))\n",
+  })
+
+  assert.match(violations.join('\n'), /gym_state_v1/i)
+  assert.match(violations.join('\n'), /access_token/i)
+})
+
+test('allows the SDK client with no custom storage adapter', () => {
+  const violations = runCheck([
+    ...requiredFiles,
+    'frontend/src/lib/supabase-client.js',
+  ], {
+    'frontend/src/lib/supabase-client.js': "createClient(url, publishableKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false, flowType: 'pkce' } })\n",
+  })
+
+  assert.deepEqual(violations, [])
 })
 
 test('rejects private Supabase environment names in frontend tracked inputs', () => {

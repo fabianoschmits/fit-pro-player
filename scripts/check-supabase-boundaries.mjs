@@ -31,6 +31,16 @@ export const FORBIDDEN_FUTURE_TABLES = [
 
 const FRONTEND_PRIVATE_ENV_PATTERN = /\bservice_role\b|\bSUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY)\b|\bVITE_SUPABASE_(?:SERVICE_ROLE_KEY|SECRET_KEY|DB_PASSWORD|ACCESS_TOKEN)\b/i
 const TABLE_PATTERN = /\bcreate\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?<schema>[a-z_][\w]*|"[^"]+")\s*\.\s*)?(?<table>[a-z_][\w]*|"[^"]+")/gi
+const REQUIRED_SUPABASE_ORIGIN = 'https://bgqavxoxwgheloeubbpf.supabase.co'
+const TOKEN_PATTERN = /\b(?:access_token|refresh_token)\b/i
+const TOKEN_SINKS = [
+  ['gym_state_v1', /gym_state_v1/i],
+  ['custom cache', /\b(?:caches|cacheStorage)\b/i],
+  ['sessionStorage', /\bsessionStorage\b/i],
+  ['IndexedDB', /\bindexedDB\b/i],
+  ['console', /\bconsole\s*\./i],
+  ['URL mutation', /\b(?:history\s*\.\s*(?:pushState|replaceState)|location\s*\.\s*(?:assign|replace|href)|(?:URLSearchParams|searchParams)\s*\.\s*(?:set|append))\b/i],
+]
 
 const slashPath = (value) => value.replaceAll('\\', '/')
 
@@ -53,6 +63,66 @@ const readText = (rootDir, file, fileContents) => {
 
 const lineNumberAt = (text, index) => text.slice(0, index).split('\n').length
 const unquoteIdentifier = (identifier) => identifier.replace(/^"|"$/g, '')
+
+export function checkVercelCsp({ text, requiredSupabaseOrigin = REQUIRED_SUPABASE_ORIGIN }) {
+  const violations = []
+  let vercelConfig
+
+  try {
+    vercelConfig = JSON.parse(text)
+  } catch {
+    return ['vercel.json: invalid JSON; cannot verify Content-Security-Policy']
+  }
+
+  const csp = vercelConfig.headers
+    ?.flatMap((rule) => rule.headers ?? [])
+    .find((header) => header.key?.toLowerCase() === 'content-security-policy')
+    ?.value
+
+  if (typeof csp !== 'string') {
+    return ['vercel.json: missing Content-Security-Policy header']
+  }
+
+  const connectSrc = csp.match(/(?:^|;)\s*connect-src\s+([^;]+)/i)?.[1]
+  if (!connectSrc) {
+    return ['vercel.json: Content-Security-Policy is missing connect-src']
+  }
+
+  const sources = connectSrc.trim().split(/\s+/)
+  if (!sources.includes("'self'")) {
+    violations.push("vercel.json: connect-src must include 'self'")
+  }
+  if (!sources.includes(requiredSupabaseOrigin)) {
+    violations.push(`vercel.json: connect-src must include ${requiredSupabaseOrigin}`)
+  }
+
+  for (const source of sources) {
+    if (source === "'self'" || source === requiredSupabaseOrigin) continue
+    if (source === '*' || source.includes('*')) {
+      violations.push(`vercel.json: connect-src must not allow wildcard source ${source}`)
+    } else if (source.toLowerCase().startsWith('wss:')) {
+      violations.push(`vercel.json: connect-src must not allow WebSocket source ${source}`)
+    } else {
+      violations.push(`vercel.json: connect-src must not allow unrelated source ${source}`)
+    }
+  }
+
+  return violations
+}
+
+const manualTokenSinkViolation = (file, text) => {
+  const tokenMatch = text.match(TOKEN_PATTERN)
+  if (!tokenMatch) return null
+
+  for (const [sink, pattern] of TOKEN_SINKS) {
+    const sinkMatch = text.match(pattern)
+    if (sinkMatch) {
+      return `${file}:${lineNumberAt(text, Math.min(tokenMatch.index ?? 0, sinkMatch.index ?? 0))}: frontend writes Supabase token ${tokenMatch[0]} to ${sink}`
+    }
+  }
+
+  return null
+}
 
 /**
  * Return human-readable violations for the tracked repository boundary.
@@ -87,6 +157,18 @@ export function checkSupabaseBoundaries({
     if (match) {
       const line = lineNumberAt(text, match.index ?? 0)
       violations.push(`${file}:${line}: frontend contains private Supabase/service-role reference "${match[0]}"`)
+    }
+
+    const tokenViolation = manualTokenSinkViolation(file, text)
+    if (tokenViolation) violations.push(tokenViolation)
+  }
+
+  if (files.includes('vercel.json') || (!hasExplicitFiles && existsSync(join(normalizedRoot, 'vercel.json')))) {
+    const vercelText = readText(normalizedRoot, 'vercel.json', fileContents)
+    if (vercelText === null) {
+      violations.push('missing required file: vercel.json')
+    } else {
+      violations.push(...checkVercelCsp({ text: vercelText }))
     }
   }
 
