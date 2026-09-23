@@ -1,5 +1,6 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
+import { readFileSync } from 'node:fs';
 import { Window } from 'happy-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -88,5 +89,12 @@ describe('App Auth boot coordination', () => {
     await act(async () => root.render(<App />));
     await act(async () => { await vi.dynamicImportSettled(); });
     expect(container.querySelector('.landing-page')).toBeTruthy();
+  });
+
+  it('keeps the anonymous landing outside the lazy route boundary', () => {
+    const source = readFileSync(new URL('./App.jsx', import.meta.url), 'utf8');
+
+    expect(source).toContain("import Landing from './views/Landing.jsx'");
+    expect(source).not.toContain('const Landing = lazy(loadLanding)');
   });
 });

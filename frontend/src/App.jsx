@@ -26,7 +26,7 @@ import { ANONYMOUS_SCOPE, resolveLocalScope } from './lib/local-state-scope.js'
 import { readScopedState } from './lib/account-cache.js'
 import { openAccountAssociation } from './components/AccountAssociationSheet.jsx'
 import RestTimer from './components/RestTimer.jsx'
-const loadLanding = () => import('./views/Landing.jsx')
+import Landing from './views/Landing.jsx'
 const loadHome = () => import('./views/Home.jsx')
 const loadPlan = () => import('./views/Plan.jsx')
 const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
@@ -41,7 +41,6 @@ const loadBodyProgress = () => import('./views/BodyProgress.jsx')
 const loadProfessionalProfile = () => import('./views/ProfessionalProfile.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
-const Landing = lazy(loadLanding)
 const Home = lazy(loadHome)
 const Plan = lazy(loadPlan)
 const RoutineEdit = lazy(loadRoutineEdit)
