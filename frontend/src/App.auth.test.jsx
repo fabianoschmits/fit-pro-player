@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('./auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('./components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }));
+vi.mock('./views/Landing.jsx', () => ({ default: () => <main className="landing-page" /> }));
 vi.mock('./store/useStore.js', () => ({
   useStore: selector => {
     const state = {
@@ -85,6 +86,7 @@ describe('App Auth boot coordination', () => {
     mocks.auth = { status: 'anonymous', suppressLegacyResume: false, user: null, recovery: 'idle', error };
 
     await act(async () => root.render(<App />));
-    await vi.waitFor(() => expect(container.querySelector('.landing-page')).toBeTruthy());
+    await act(async () => { await vi.dynamicImportSettled(); });
+    expect(container.querySelector('.landing-page')).toBeTruthy();
   });
 });
