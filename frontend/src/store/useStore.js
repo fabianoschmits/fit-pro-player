@@ -173,16 +173,20 @@ export const useStore = create((set, get) => {
     if (localStorage.getItem('gym_dirty') === '1' && get().user && !get().syncConflict) get().pushState()
   })
 
-  // Everything a sign-out leaves behind on this device, whichever way it was triggered.
-  const clearLocalSession = () => {
+  // Clears only the legacy identity and pending legacy-sync context. Training state remains local.
+  const clearLegacySessionContext = () => {
     get().setUser(null)
     localStorage.removeItem('gym_guest')
     localStorage.removeItem('gym_dirty')
     localStorage.removeItem('gym_sync_conflict')
-    localStorage.removeItem(KEY)
     clearTimeout(retryTm)
     retryTm = null
     set({ syncConflict: false })
+  }
+
+  const clearLocalSession = () => {
+    clearLegacySessionContext()
+    localStorage.removeItem(KEY)
     persist(normalizeState(DEF), false)
   }
 
@@ -296,7 +300,9 @@ export const useStore = create((set, get) => {
     },
 
     // Boot: ask the server who we are, then pull.
-    async boot() {
+    clearLegacySessionContext,
+
+    async boot({ legacySessionEnabled = true } = {}) {
       // Public static deployment: show the product landing page first. Entering the app
       // creates the local guest marker; returning visitors keep going straight to their data.
       if (STANDALONE) {
@@ -325,6 +331,11 @@ export const useStore = create((set, get) => {
           localStorage.setItem(DEMO_SEEDED, '1')
           await get().resetDemo()
         }
+        set({ ready: true })
+        return
+      }
+      if (!legacySessionEnabled) {
+        clearLegacySessionContext()
         set({ ready: true })
         return
       }

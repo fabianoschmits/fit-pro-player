@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from './store/useStore.js'
+import { useAuth } from './auth/AuthProvider.jsx'
 import { useUI } from './store/useUI.js'
 import { bindUI } from './components/ui.jsx'
 import { ACCENTS } from './lib/format.js'
@@ -228,14 +229,22 @@ export function ProfileHeader({ S, preview }) {
 function Shell() {
   const navigate = useNavigate()
   const loc = useLocation()
+  const auth = useAuth()
+  const boot = useStore(s => s.boot)
   const { S, user, ready } = useStore()
   const profilePreview = useUI(s => s.profilePreview)
   const isGuest = useStore(s => s.isGuest())
-  const authed = user || isGuest
+  const authenticated = auth.status === 'authenticated'
+  const onlineIdentity = authenticated ? auth.user : user
+  const authed = !!onlineIdentity || isGuest
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
+  useEffect(() => {
+    if (auth.status === 'initializing') return
+    boot({ legacySessionEnabled: auth.status === 'anonymous' && !auth.suppressLegacyResume })
+  }, [auth.status, auth.suppressLegacyResume, boot])
   useEffect(() => { applyPrefs(S.theme, S.accent) }, [S.theme, S.accent])
   useEffect(() => { setLang(S.lang || DEFAULT_LANG) }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || DEFAULT_LANG) === 'pt' ? 'pt-BR' : (S.lang || DEFAULT_LANG) }, [langV, S.lang])
@@ -291,8 +300,6 @@ function Shell() {
 }
 
 export default function App() {
-  const boot = useStore(s => s.boot)
-  useEffect(() => { boot() }, [boot])
   // Android system back — sheet, then page, then press-again-to-exit (see lib/back.js)
   useEffect(() => {
     let stop = null, gone = false

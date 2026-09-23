@@ -29,6 +29,24 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe('account sync safety', () => {
+  it('suppresses legacy bootstrap without touching the serialized training state', async () => {
+    const active = { id: 'active', entries: [] }
+    const before = { ...personalState(), active }
+    const serialized = JSON.stringify(before)
+    localStorage.setItem('gym_user', JSON.stringify({ id: 'legacy', name: 'Ana' }))
+    localStorage.setItem('gym_state_v1', serialized)
+    localStorage.setItem('gym_dirty', '1')
+
+    await useStore.getState().boot({ legacySessionEnabled: false })
+
+    expect(api).not.toHaveBeenCalled()
+    expect(useStore.getState().user).toBeNull()
+    expect(useStore.getState().ready).toBe(true)
+    expect(localStorage.getItem('gym_user')).toBeNull()
+    expect(localStorage.getItem('gym_state_v1')).toBe(serialized)
+    expect(localStorage.getItem('gym_dirty')).toBeNull()
+  })
+
   it('refuses to clear local data when a sync conflict is unresolved', async () => {
     localStorage.setItem('gym_dirty', '1')
     localStorage.setItem('gym_sync_conflict', '1')
