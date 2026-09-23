@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { useStore } from './store/useStore.js'
+import { normalizeState, useStore } from './store/useStore.js'
 import { useAuth } from './auth/AuthProvider.jsx'
 import { openAuthSheet } from './components/AuthSheet.jsx'
 import { useUI } from './store/useUI.js'
@@ -19,6 +19,12 @@ import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
+import { getBrowserSupabaseClient } from './lib/supabase-client.js'
+import { createAccountSyncService } from './lib/account-sync.js'
+import { applyAssociationChoice, classifyAssociation } from './lib/account-association.js'
+import { ANONYMOUS_SCOPE, resolveLocalScope } from './lib/local-state-scope.js'
+import { readScopedState } from './lib/account-cache.js'
+import { openAccountAssociation } from './components/AccountAssociationSheet.jsx'
 import RestTimer from './components/RestTimer.jsx'
 const loadLanding = () => import('./views/Landing.jsx')
 const loadHome = () => import('./views/Home.jsx')
@@ -234,6 +240,7 @@ function Shell() {
   const loc = useLocation()
   const auth = useAuth()
   const recoveryShown = useRef(false)
+  const associationShown = useRef(null)
   const boot = useStore(s => s.boot)
   const { S, user, ready } = useStore()
   const profilePreview = useUI(s => s.profilePreview)
@@ -252,6 +259,34 @@ function Shell() {
       supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null,
     })
   }, [auth.status, auth.suppressLegacyResume, boot])
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current === auth.user.id) return
+    const client = getBrowserSupabaseClient()
+    if (!client) return
+    let disposed = false
+    const accountScope = resolveLocalScope(auth.user.id)
+    const service = createAccountSyncService({ client, scope: accountScope })
+    const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, S).state
+    service.fetchRemoteSnapshot().then(result => {
+      if (disposed || result.state === 'ERROR' || result.state === 'OFFLINE') return
+      const decision = classifyAssociation({ anonymousState, accountState: S, remoteSnapshot: result.snapshot, accountRevision: 0 })
+      if (!decision.requiresDecision) { associationShown.current = auth.user.id; return }
+      associationShown.current = auth.user.id
+      openAccountAssociation({ conflict: decision.case === 'CONFLICT', onChoice: async choice => {
+        const applied = applyAssociationChoice(choice, { anonymousState, accountState: S, remoteSnapshot: result.snapshot })
+        if (applied.kind === 'keep-separate') return
+        if (applied.kind === 'invalid') throw new Error('Não há dados válidos para essa escolha.')
+        const next = normalizeState(applied.state)
+        useStore.getState().replaceState(next, false)
+        if (applied.upload) {
+          const uploaded = await service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision })
+          if (uploaded.state === 'CONFLICT') throw new Error('A nuvem mudou enquanto associávamos os dados. Revise as duas cópias.')
+          if (uploaded.state !== 'IN_SYNC') throw new Error('Não foi possível salvar a associação agora.')
+        }
+      }})
+    }).catch(() => {})
+    return () => { disposed = true }
+  }, [auth.status, auth.user?.id, ready, S])
   useEffect(() => {
     if (auth.recovery !== 'required') {
       recoveryShown.current = false
