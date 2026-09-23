@@ -132,6 +132,16 @@ describe('AuthProvider', () => {
     await renderProvider(null);
     expect(latest).toMatchObject({ status: 'anonymous', configured: false, user: null });
   });
+
+  it('keeps the authenticated scope eligible when Supabase sign-out fails', async () => {
+    const client = createFakeClient({ session: { user } });
+    client.auth.signOut.mockResolvedValue({ error: { code: 'network_error' } });
+    await renderProvider(client);
+    await act(async () => Promise.resolve());
+    await act(async () => { await latest.signOut(); });
+    expect(latest.status).toBe('authenticated');
+    expect(latest.user.id).toBe(user.id);
+  });
 });
 
 describe('buildAuthRedirectUrl', () => {

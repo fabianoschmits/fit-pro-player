@@ -245,7 +245,10 @@ function Shell() {
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => {
     if (auth.status === 'initializing') return
-    boot({ legacySessionEnabled: auth.status === 'anonymous' && !auth.suppressLegacyResume })
+    boot({
+      legacySessionEnabled: auth.status === 'anonymous' && !auth.suppressLegacyResume,
+      supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null,
+    })
   }, [auth.status, auth.suppressLegacyResume, boot])
   useEffect(() => {
     if (auth.recovery !== 'required') {
