@@ -37,3 +37,14 @@ Docker, Vercel production, and final domain validation remain DEFERRED.
 
 - Record architectural rulings and deferred gates here as work proceeds.
 - Do not create separate Phase C–I branches or approval gates.
+
+## Execution record
+
+- Phase A/B base preserved at `7f74547b07ca15ccc4c49e6828e34ebc4b9f33ee`.
+- Phases C–I implemented on this single branch with logical commits.
+- Pre-production project identity confirmed by ref; migrations 001–003 were already applied.
+- Migrations 004 and 005 passed dry-run, additive/destructive scan, and were applied to pre-production.
+- Remote read-back confirmed both tables, owner policies, RLS, SECURITY DEFINER routines, and least-privilege direct DML grants.
+- pgTAP execution was deferred because Docker/Podman is unavailable; pgTAP files and static migration/security checks are present.
+- Hosted email E2E, Android/iOS physical validation, physical WebAuthn, Docker, and Vercel production remain `DEFERRED`.
+- No production deploy, merge, branch deletion, or Auth email configuration change was performed.
