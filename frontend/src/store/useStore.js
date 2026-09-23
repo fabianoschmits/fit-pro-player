@@ -129,7 +129,7 @@ export const useStore = create((set, get) => {
     writeScopedState(scope, S, localStorage)
     set({ S })
     if (MOBILE) nativePersist(scope, generation)
-    if (push && get().user) {
+    if (push && get().user && activeScope.kind !== 'account') {
       markDirty()
       if (!get().syncConflict) {
         clearTimeout(pushTm)
@@ -140,7 +140,7 @@ export const useStore = create((set, get) => {
 
   const pushLatest = createStatePushQueue({
     getState: () => get().S,
-    isEnabled: () => !!get().user && !get().syncConflict,
+    isEnabled: () => !!get().user && activeScope.kind !== 'account' && !get().syncConflict,
     markDirty,
     markClean,
     send: state => api('/api/data', { method: 'PUT', body: JSON.stringify({ state }) }),
@@ -191,7 +191,6 @@ export const useStore = create((set, get) => {
 
   const clearLocalSession = () => {
     clearLegacySessionContext()
-    localStorage.removeItem(KEY)
     persist(normalizeState(DEF), false)
   }
 
@@ -243,12 +242,13 @@ export const useStore = create((set, get) => {
     },
 
     async pushState() {
-      if (!get().user || get().syncConflict) return false
+      if (!get().user || activeScope.kind === 'account' || get().syncConflict) return false
       clearTimeout(pushTm)
       pushTm = null
       return pushLatest()
     },
     async pullState() {
+      if (activeScope.kind === 'account') return false
       try {
         const { state } = await api('/api/data')
         const S = get().S
