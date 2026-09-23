@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { Window } from 'happy-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ authSignOut: vi.fn().mockResolvedValue({ kind: 'success' }), storeSignOut: vi.fn(), confirm: null, navigate: vi.fn(), passkeyLogin: vi.fn(), auth: null, user: null }));
+const mocks = vi.hoisted(() => ({ authSignOut: vi.fn().mockResolvedValue({ kind: 'success' }), storeSignOut: vi.fn(), confirm: null, navigate: vi.fn(), passkeyLogin: vi.fn(), toast: vi.fn(), auth: null, user: null }));
 
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('../lib/api.js', () => ({ api: vi.fn(), webauthnOK: () => true, passkeyLogin: mocks.passkeyLogin, IS_ANDROID: false }));
@@ -14,7 +14,7 @@ vi.mock('../store/useStore.js', async () => {
   const state = { S: actual.DEF, user: mocks.user, syncConflict: false, update: vi.fn(), replaceState: vi.fn(), setUser: vi.fn(), pullState: vi.fn(), pushState: vi.fn(), signOut: mocks.storeSignOut, signOutAll: vi.fn(), resolveSyncConflict: vi.fn(), resetDemo: vi.fn() };
   return { ...actual, useStore: selector => selector(state) };
 });
-vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: vi.fn() }) }));
+vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }));
 vi.mock('../sheets.jsx', async () => ({ ...(await vi.importActual('../sheets.jsx')), confirmSheet: options => { mocks.confirm = options } }));
 
 import Settings from './Settings.jsx';
@@ -28,7 +28,7 @@ beforeEach(() => {
   dom = new Window({ url: 'https://app.example/#/settings' });
   globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
-  mocks.authSignOut.mockClear(); mocks.storeSignOut.mockClear(); mocks.navigate.mockClear(); mocks.confirm = null;
+  mocks.authSignOut.mockReset(); mocks.authSignOut.mockResolvedValue({ kind: 'success' }); mocks.storeSignOut.mockClear(); mocks.navigate.mockClear(); mocks.toast.mockClear(); mocks.confirm = null;
   mocks.passkeyLogin.mockClear();
   mocks.auth = { status: 'authenticated', configured: true, user: { id: 'supabase-user', email: 'ana@example.com' }, signOut: mocks.authSignOut };
   mocks.user = { id: 'legacy-user', name: 'Legacy', admin: true };
@@ -45,6 +45,18 @@ describe('Settings Supabase logout', () => {
     await act(async () => mocks.confirm.onConfirm());
     expect(mocks.authSignOut).toHaveBeenCalledTimes(1);
     expect(mocks.storeSignOut).not.toHaveBeenCalled();
+  });
+
+  it('keeps the user on the account when Supabase sign-out fails', async () => {
+    mocks.authSignOut.mockResolvedValue({ kind: 'error' });
+    await act(async () => root.render(<Settings />));
+    const signOut = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Terminar sessão'));
+    await act(async () => signOut.click());
+    await act(async () => mocks.confirm.onConfirm());
+
+    expect(mocks.navigate).not.toHaveBeenCalled();
+    expect(mocks.storeSignOut).not.toHaveBeenCalled();
+    expect(mocks.toast).toHaveBeenCalled();
   });
 
   it('uses the Supabase email as the account identity without exposing legacy admin UI', async () => {

@@ -110,7 +110,11 @@ export default function Settings() {
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
           title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
           confirmText: t('Sign out'), danger: true,
-          onConfirm: async () => { await auth.signOut(); nav('/home') },
+          onConfirm: async () => {
+            const result = await auth.signOut()
+            if (result.kind === 'success') nav('/home')
+            else toast(t('Could not sync your data — you are still signed in.'))
+          },
         })} />
       </> : user ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={t('Signed in with passkey — data syncs to this profile.')} />
