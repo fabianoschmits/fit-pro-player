@@ -35,7 +35,7 @@ describe('Settings Supabase logout', () => {
     await act(async () => root.render(<Settings />));
     expect(container.textContent).toContain('ana@example.com');
     expect(container.textContent).toContain('dados de convidado ficam neste dispositivo')
-    const signOut = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Sign out'));
+    const signOut = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Terminar sessão'));
     await act(async () => signOut.click());
     await act(async () => mocks.confirm.onConfirm());
     expect(mocks.authSignOut).toHaveBeenCalledTimes(1);
