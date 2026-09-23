@@ -8,6 +8,10 @@ function stateOnly(value) {
   return Object.fromEntries(Object.entries(value).filter(([key]) => !FORBIDDEN.has(key.toLowerCase())).map(([key, child]) => [key, stateOnly(child)]))
 }
 
+export function serializeStateOnly(state) {
+  return JSON.stringify(stateOnly(state))
+}
+
 export function emptyStateForScope(_scope, defaultState) {
   return typeof structuredClone === 'function' ? structuredClone(defaultState) : JSON.parse(JSON.stringify(defaultState))
 }
@@ -31,7 +35,9 @@ export function writeScopedState(scope, state, storage) {
   const payload = scope.kind === 'anonymous'
     ? stateOnly(state)
     : { ownerId: scope.userId, schemaVersion: ACCOUNT_CACHE_SCHEMA_VERSION, state: stateOnly(state) }
-  const serialized = JSON.stringify(payload)
+  const serialized = scope.kind === 'anonymous'
+    ? serializeStateOnly(state)
+    : JSON.stringify({ ...payload, state: JSON.parse(serializeStateOnly(state)) })
   try {
     storage.setItem(storageKeyForScope(scope), serialized)
     return true

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readScopedState, writeScopedState } from './account-cache.js'
+import { readScopedState, serializeStateOnly, writeScopedState } from './account-cache.js'
 import { resolveLocalScope } from './local-state-scope.js'
 
 const USER_A = '72d8d4df-efce-4ea3-9d6b-5d5c4651b9c2'
@@ -28,5 +28,21 @@ describe('account cache envelope', () => {
   it('returns an empty state for missing data', () => {
     const result = readScopedState(resolveLocalScope(USER_A), memoryStorage(), empty)
     expect(result).toEqual({ status: 'missing', state: empty })
+  })
+
+  it('treats a future schema version as invalid', () => {
+    const storage = memoryStorage({ [`fpp_account_cache_v1:${USER_A}`]: JSON.stringify({ ownerId: USER_A, schemaVersion: 99, state: { workouts: [{ id: 'future' }] } }) })
+    expect(readScopedState(resolveLocalScope(USER_A), storage, empty).status).toBe('invalid')
+  })
+
+  it('does not replace a valid value when storage quota rejects a write', () => {
+    const existing = JSON.stringify({ ownerId: USER_A, schemaVersion: 1, state: { workouts: [{ id: 'old' }] } })
+    const storage = { getItem: () => existing, setItem: () => { throw new Error('quota') } }
+    expect(writeScopedState(resolveLocalScope(USER_A), { workouts: [{ id: 'new' }] }, storage)).toBe(false)
+    expect(storage.getItem(`fpp_account_cache_v1:${USER_A}`)).toBe(existing)
+  })
+
+  it('serializes application state without session material', () => {
+    expect(serializeStateOnly({ access_token: 'x', password: 'x', workouts: [] })).not.toMatch(/access_token|password/i)
   })
 })
