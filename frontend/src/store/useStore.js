@@ -9,8 +9,9 @@ import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from
 import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
 import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from '../lib/body-measurements.js'
 import { createStatePushQueue, nextStateTimestamp } from '../lib/sync-state.js'
+import { ANONYMOUS_SCOPE, resolveLocalScope } from '../lib/local-state-scope.js'
+import { readScopedState, writeScopedState } from '../lib/account-cache.js'
 
-const KEY = 'gym_state_v1'
 export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
@@ -68,13 +69,8 @@ export function normalizeState(source) {
   return state
 }
 
-function loadState() {
-  let state = null
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) state = JSON.parse(raw)
-  } catch (e) { /* ignore */ }
-  return normalizeState(state || DEF)
+function loadState(scope = ANONYMOUS_SCOPE) {
+  return normalizeState(readScopedState(scope, localStorage, DEF).state)
 }
 
 const hasData = st => !!(
@@ -84,6 +80,8 @@ const hasData = st => !!(
 )
 
 export const useStore = create((set, get) => {
+  let activeScope = ANONYMOUS_SCOPE
+  let scopeGeneration = 0
   let pushTm = null
   let saveTm = null
   let retryTm = null
@@ -113,17 +111,24 @@ export const useStore = create((set, get) => {
 
   // Mobile build: mirror the state into a file in the app's data directory (survives WebView
   // storage eviction) and keep the native reminder schedule in step with the weekly plan.
-  const nativePersist = () => {
+  const nativePersist = (scope = activeScope, generation = scopeGeneration) => {
     clearTimeout(saveTm)
-    saveTm = setTimeout(() => { saveTm = null; nativeSave(get().S); syncReminder(get().S) }, 800)
+    saveTm = setTimeout(() => {
+      saveTm = null
+      if (generation !== scopeGeneration || scope !== activeScope) return
+      nativeSave(scope, get().S)
+      syncReminder(get().S)
+    }, 800)
   }
 
   const persist = (S, push = true) => {
+    const scope = activeScope
+    const generation = scopeGeneration
     S._ts = nextStateTimestamp(get().S?._ts)
     registerCustom(S.customEx)
-    try { localStorage.setItem(KEY, JSON.stringify(S)) } catch { /* keep the in-memory copy usable */ }
+    writeScopedState(scope, S, localStorage)
     set({ S })
-    if (MOBILE) nativePersist()
+    if (MOBILE) nativePersist(scope, generation)
     if (push && get().user) {
       markDirty()
       if (!get().syncConflict) {
@@ -155,7 +160,7 @@ export const useStore = create((set, get) => {
     if (MOBILE && saveTm) {
       clearTimeout(saveTm)
       saveTm = null
-      nativeSave(get().S)
+      nativeSave(activeScope, get().S)
     }
     if (pushTm) {
       clearTimeout(pushTm)
@@ -195,6 +200,20 @@ export const useStore = create((set, get) => {
     user: (() => { try { return JSON.parse(localStorage.getItem('gym_user')) || null } catch { return null } })(),
     syncConflict: (() => { try { return localStorage.getItem('gym_sync_conflict') === '1' } catch { return false } })(),
     ready: false,
+    getActiveLocalScope: () => activeScope,
+
+    async activateLocalScope(userId) {
+      const scope = resolveLocalScope(userId)
+      const generation = ++scopeGeneration
+      activeScope = scope
+      set({ S: normalizeState(readScopedState(scope, localStorage, DEF).state), ready: false })
+      if (MOBILE) {
+        const nativeState = await nativeLoad(scope)
+        if (generation !== scopeGeneration || scope !== activeScope) return false
+        if (nativeState) set({ S: normalizeState(nativeState) })
+      }
+      return true
+    },
 
     // Mutate a draft of S via producer fn, then persist + schedule sync.
     update(mut, push = true) {
@@ -282,7 +301,7 @@ export const useStore = create((set, get) => {
 
       const current = clone(get().S)
       current._ts = Math.max(Date.now(), Number(current._ts) + 1 || 1, Number(cloudState?._ts) + 1 || 1)
-      try { localStorage.setItem(KEY, JSON.stringify(current)) } catch { /* keep in memory */ }
+      writeScopedState(activeScope, current, localStorage)
       registerCustom(current.customEx)
       set({ S: current })
       if (MOBILE) nativePersist()
@@ -302,7 +321,8 @@ export const useStore = create((set, get) => {
     // Boot: ask the server who we are, then pull.
     clearLegacySessionContext,
 
-    async boot({ legacySessionEnabled = true } = {}) {
+    async boot({ legacySessionEnabled = true, supabaseUserId = null } = {}) {
+      await get().activateLocalScope(supabaseUserId)
       // Public static deployment: show the product landing page first. Entering the app
       // creates the local guest marker; returning visitors keep going straight to their data.
       if (STANDALONE) {
@@ -312,12 +332,12 @@ export const useStore = create((set, get) => {
       // Mobile build: no backend either — restore from the file mirror (the durable copy;
       // localStorage may have been evicted since the last run) and go straight in.
       if (MOBILE) {
-        const saved = await nativeLoad()
+        const saved = await nativeLoad(activeScope)
         const S = get().S
         if (saved && (!hasData(S) || (saved._ts || 0) >= (S._ts || 0))) {
           persist(normalizeState(saved), false)
         } else if (hasData(S)) {
-          nativeSave(S)   // first run after an update from a file-less version: seed the mirror
+          nativeSave(activeScope, S)   // first run after an update from a file-less version: seed the mirror
         }
         get().setGuest(true)
         syncReminder(get().S)
