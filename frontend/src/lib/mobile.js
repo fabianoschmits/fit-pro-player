@@ -10,23 +10,22 @@
 // Like the demo build, MOBILE is replaced at build time, so all of this folds away in
 // web bundles; the Capacitor plugins are only ever imported behind it.
 import { t } from './i18n-core.js'
+import { ANONYMOUS_SCOPE, nativePathForScope } from './local-state-scope.js'
 
 export const MOBILE = import.meta.env.VITE_MOBILE === '1'
 
-const FILE = 'fitproplayer-state.json'
-
-export async function nativeLoad() {
+export async function nativeLoad(scope = ANONYMOUS_SCOPE) {
   try {
     const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
-    const r = await Filesystem.readFile({ path: FILE, directory: Directory.Data, encoding: Encoding.UTF8 })
+    const r = await Filesystem.readFile({ path: nativePathForScope(scope), directory: Directory.Data, encoding: Encoding.UTF8 })
     return JSON.parse(r.data)
   } catch (e) { return null }   // first launch, or unreadable — localStorage copy takes over
 }
 
-export async function nativeSave(state) {
+export async function nativeSave(scope = ANONYMOUS_SCOPE, state) {
   try {
     const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
-    await Filesystem.writeFile({ path: FILE, directory: Directory.Data, data: JSON.stringify(state), encoding: Encoding.UTF8 })
+    await Filesystem.writeFile({ path: nativePathForScope(scope), directory: Directory.Data, data: JSON.stringify(state), encoding: Encoding.UTF8 })
   } catch (e) { /* keep the localStorage copy */ }
 }
 

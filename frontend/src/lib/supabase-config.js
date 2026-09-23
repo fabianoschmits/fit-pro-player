@@ -22,6 +22,7 @@ export function getPublicSupabaseConfig(env = {}) {
   return {
     enabled,
     url: enabled ? url : null,
+    origin: enabled ? new URL(url).origin : null,
     publishableKey: enabled ? publishableKey : null,
   };
 }

@@ -63,17 +63,18 @@ test('API rejects malformed bodies and prevents stale or divergent state writes'
   const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url')
   const authHeaders = { 'Content-Type': 'application/json', Cookie: `gymsid=${payload}.${signature}` }
   const request = (pathname, body, headers = authHeaders) => fetch(base + pathname, { method: 'POST', headers, body })
+  const putRaw = body => fetch(base + '/api/data', { method: 'PUT', headers: authHeaders, body })
   const put = state => fetch(base + '/api/data', { method: 'PUT', headers: authHeaders, body: JSON.stringify({ state }) })
 
-  const malformed = await request('/api/register/options', '{')
+  const malformed = await putRaw('{')
   assert.equal(malformed.status, 400)
   assert.equal((await malformed.json()).error, 'bad json')
 
-  const primitive = await request('/api/register/options', 'null')
+  const primitive = await putRaw('null')
   assert.equal(primitive.status, 400)
   assert.equal((await primitive.json()).error, 'json object required')
 
-  const tooLarge = await request('/api/register/options', JSON.stringify({ value: 'x'.repeat(5 * 1024 * 1024) }))
+  const tooLarge = await putRaw(JSON.stringify({ value: 'x'.repeat(5 * 1024 * 1024) }))
   assert.equal(tooLarge.status, 413)
 
   assert.equal((await put({ _ts: 200, value: 'newest', active: { entries: [] } })).status, 200)
@@ -93,6 +94,40 @@ test('API rejects malformed bodies and prevents stale or divergent state writes'
   assert.equal(state._ts, 201)
   assert.ok(state.value === 'alpha' || state.value === 'beta')
   assert.equal('active' in state, false)
+  assert.equal(stderr, '')
+})
+
+test('passkey registration retired', async t => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fitproplayer-register-retired-'))
+  fs.writeFileSync(path.join(dataDir, 'secret'), crypto.randomBytes(32).toString('hex'))
+  fs.writeFileSync(path.join(dataDir, 'db.json'), JSON.stringify({ users: [], creds: [], subs: [], invites: [] }))
+
+  const port = await listenPort()
+  const base = `http://127.0.0.1:${port}`
+  const child = spawn(process.execPath, ['server.js'], {
+    cwd: path.dirname(fileURLToPath(import.meta.url)),
+    env: { ...process.env, DATA_DIR: dataDir, PORT: String(port), ORIGIN: base, RP_ID: '127.0.0.1' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  let stderr = ''
+  child.stderr.on('data', chunk => { stderr += chunk })
+  t.after(async () => {
+    if (child.exitCode === null) { child.kill(); await once(child, 'exit') }
+    fs.rmSync(dataDir, { recursive: true, force: true })
+  })
+  try { await waitForHealth(base) }
+  catch (error) { throw new Error(`API did not start: ${error.message}\n${stderr}`) }
+
+  const request = (pathname, body) => fetch(base + pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
+  const retired = await request('/api/register/options', JSON.stringify({ name: 'Ana' }))
+  assert.equal(retired.status, 410)
+  assert.deepEqual(await retired.json(), { error: 'passkey registration retired' })
+
+  const login = await request('/api/login/options', '{}')
+  assert.equal(login.status, 200)
+  const loginPayload = await login.json()
+  assert.equal(typeof loginPayload.cid, 'string')
+  assert.ok(loginPayload.options)
   assert.equal(stderr, '')
 })
 

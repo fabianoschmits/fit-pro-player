@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useStore, DEF, hasData } from '../store/useStore.js'
+import { useStore, DEF } from '../store/useStore.js'
+import { useAuth } from '../auth/AuthProvider.jsx'
 import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
-import { api, webauthnOK, passkeyLogin, passkeyRegister, linkSupabaseIdentity, IS_ANDROID } from '../lib/api.js'
-import { getPublicSupabaseConfig } from '../lib/supabase-config.js'
+import { webauthnOK, passkeyLogin, IS_ANDROID } from '../lib/api.js'
 import { pushSupported, enablePush, disablePush, sendTestPush } from '../lib/push.js'
 import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, LANGS, DEFAULT_LANG, INSTR_LANGS } from '../lib/i18n.js'
@@ -15,11 +15,13 @@ import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
 import { MAX_BACKUP_BYTES, validateBackup } from '../lib/backup-state.js'
 import TipOnce from '../components/TipOnce.jsx'
 import Icon from '../components/Icon.jsx'
-import { Section, Row, SelectRow, Switch, Segmented, Button, TextField } from '../components/ui.jsx'
+import { Section, Row, SelectRow, Switch, Segmented, Button } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
+import { openAuthSheet } from '../components/AuthSheet.jsx'
 
 export default function Settings() {
   const nav = useNavigate()
+  const auth = useAuth()
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
   const syncConflict = useStore(s => s.syncConflict)
@@ -33,11 +35,10 @@ export default function Settings() {
   const resolveSyncConflict = useStore(s => s.resolveSyncConflict)
   const resetDemo = useStore(s => s.resetDemo)
   const toast = useUI(s => s.toast)
-  const [accountLinkStatus, setAccountLinkStatus] = useState(null)
   const fileRef = useRef(null)
   const importRef = useRef(null)
   const wakeOK = wakeLockSupported()
-  const supabaseConfigured = getPublicSupabaseConfig(import.meta.env || {}).enabled
+  const supabaseConfigured = auth.configured
 
   const doExport = async () => {
     const json = JSON.stringify(S, null, 2)
@@ -69,7 +70,6 @@ export default function Settings() {
     try { const u = await passkeyLogin(); setUser(u); await pullState(); toast(t('Welcome back, {0}', u.name)) }
     catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(e.message || t('Sign-in failed')) }
   }
-  const registerHere = () => useUI.getState().openSheet(close => <RegisterInline close={close} setUser={setUser} pushState={pushState} pullState={pullState} toast={toast} />)
   // Ends the profile's sessions on every device — this one included, so on success it lands in
   // the same place as the plain sign-out above (home, local data cleared). On failure nothing
   // local is touched: still signed in here, and say so rather than leaving a half-signed-out app.
@@ -105,11 +105,19 @@ export default function Settings() {
         <Row icon="dumbbell" iconTint="var(--acc)" title={t('You’re in the demo')} subtitle={t('Example data, stored only in this browser — change anything you like.')} />
         <Row icon="reset" iconTint="var(--blue)" title={t('Reset demo data')} accessory="chevron"
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
+      </> : auth.status === 'authenticated' ? <>
+        <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
+        <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
+          title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
+          confirmText: t('Sign out'), danger: true,
+          onConfirm: async () => {
+            const result = await auth.signOut()
+            if (result.kind === 'success') nav('/home')
+            else toast(t('Could not sync your data — you are still signed in.'))
+          },
+        })} />
       </> : user ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={t('Signed in with passkey — data syncs to this profile.')} />
-        {supabaseConfigured && <Row icon="link" iconTint="var(--teal)" title={t('Link Supabase account')}
-          subtitle={accountLinkStatus === 'linked' ? t('Supabase account linked') : t('Connect an already authenticated account to this profile.')}
-          accessory="chevron" onClick={() => useUI.getState().openSheet(close => <SupabaseAccountSheet close={close} setStatus={setAccountLinkStatus} toast={toast} />)} />}
         {syncConflict && <>
           <Row icon="shield" iconTint="var(--red)" danger title={t('Sync conflict')}
             subtitle={t('Another device has different data. Both copies are protected until you choose which one to keep.')} />
@@ -118,7 +126,7 @@ export default function Settings() {
         </>}
         {user.admin && <Row icon="wrench" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
-          title: t('Sign out?'), message: t('Your data is synced to your profile first, then cleared from this device.'),
+          title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
           confirmText: t('Sign out'), danger: true,
           onConfirm: async () => {
             try { await signOut(); nav('/home') }
@@ -126,8 +134,10 @@ export default function Settings() {
           },
         })} />
         <Row icon="shield" iconTint="var(--red)" title={t('Sign out everywhere')} subtitle={t('Ends this profile’s sessions on all your devices.')} danger onClick={signOutEverywhere} />
+      </> : supabaseConfigured ? <>
+        <Row icon="lock" iconTint="var(--teal)" title={t('Protect your training')} subtitle={t('Create an account to sign in on another device. Your training stays on this device.')}
+          accessory="chevron" onClick={() => openAuthSheet('entry')} />
       </> : webauthnOK() ? <>
-        <Row icon="lock" iconTint="var(--acc)" title={t('Create passkey profile')} subtitle={t('Keeps your data safe and separate per person.')} accessory="chevron" onClick={registerHere} />
         <Row icon="person" iconTint="var(--blue)" title={t('Sign in with passkey')} accessory="chevron" onClick={signInHere} />
       </> : (
         <Row icon="lock" iconTint="var(--grey)" title={t('Passkeys not supported in this browser.')} />
@@ -378,68 +388,5 @@ export function PushCard({ S, update, toast }) {
       )}
     </Section>
     {on && <div style={{ marginTop: -12, marginBottom: 22 }}><Button size="sm" icon="bell" onClick={test}>{t('Send test notification')}</Button></div>}
-  </>
-}
-
-function SupabaseAccountSheet({ close, setStatus, toast }) {
-  const [accessToken, setAccessToken] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const link = async () => {
-    setBusy(true)
-    try {
-      await linkSupabaseIdentity(accessToken)
-      setStatus('linked')
-      toast(t('Supabase account linked'))
-      close()
-    } catch (error) {
-      toast(error.message || t('Could not link Supabase account'))
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return <>
-    <h3>{t('Link Supabase account')}</h3>
-    <div className="muted small" style={{ marginBottom: 14 }}>{t('Paste the access token from your authenticated Supabase session.')}</div>
-    <input className="input" type="password" aria-label={t('Supabase access token')} value={accessToken}
-      onChange={event => setAccessToken(event.target.value)} autoComplete="off" />
-    <div style={{ height: 12 }} />
-    <Button variant="primary" disabled={busy || !accessToken.trim()} onClick={link}>{t('Link account')}</Button>
-  </>
-}
-
-// The same registration as the sign-in screen's, reached from Settings instead. It asks for
-// the invite code on the same terms: an invite-only instance rejects a registration without
-// one, so a form that cannot collect it is a form that cannot succeed.
-function RegisterInline({ close, setUser, pushState, pullState, toast }) {
-  const nameRef = useRef(null)
-  const [code, setCode] = useState('')
-  const [inviteOnly, setInviteOnly] = useState(false)
-  useEffect(() => { api('/api/config').then(c => setInviteOnly(!!c.invite_only)).catch(() => {}) }, [])
-  const go = async () => {
-    const n = (nameRef.current.value || '').trim()
-    if (!n) { toast(t('Enter a name')); return }
-    if (inviteOnly && !code.trim()) { toast(t('An invite code is required')); return }
-    try {
-      const u = await passkeyRegister(n, code.trim()); setUser(u); close()
-      if (hasData(useStore.getState().S)) {
-        const synced = await pushState()
-        toast(synced ? t('Profile created — data moved into it') : t('Could not sync your data — you are still signed in.'))
-      }
-      else { await pullState(); toast(t('Welcome, {0}', u.name)) }
-    } catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast(e.message || t('Registration failed')) }
-  }
-  return <>
-    <h3>{t('Create your profile')}</h3>
-    <div className="muted small" style={{ marginBottom: 14 }}>{t('Pick a name, then confirm with your device.')}</div>
-    <TextField ref={nameRef} aria-label={t('Your name')} placeholder={t('Your name')} maxLength={40} />
-    {inviteOnly && <>
-      <div style={{ height: 10 }} />
-      <input className="input" aria-label={t('Invite code')} placeholder={t('Invite code')} maxLength={40} value={code}
-        onChange={e => setCode(e.target.value.toUpperCase())} style={{ letterSpacing: '.14em', fontWeight: 600, textAlign: 'center' }} />
-      <div className="dim small" style={{ marginTop: 6 }}>{t('This app is invite-only — enter the code you were given.')}</div>
-    </>}
-    <div style={{ height: 12 }} /><Button variant="primary" onClick={go}>{t('Create passkey')}</Button>
   </>
 }
