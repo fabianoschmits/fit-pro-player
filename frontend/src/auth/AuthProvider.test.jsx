@@ -106,6 +106,28 @@ describe('AuthProvider', () => {
     expect(latest.error).toBe('recovery_link_expired');
   });
 
+  it('clears recovery only after a successful password update', async () => {
+    const client = createFakeClient();
+    await renderProvider(client, new URL('https://app.example/?auth_flow=recovery&code=abc'));
+    await act(async () => Promise.resolve());
+
+    await act(async () => { await latest.updatePassword('new-secure-password'); });
+
+    expect(client.auth.updateUser).toHaveBeenCalledWith({ password: 'new-secure-password' });
+    expect(latest.recovery).toBe('idle');
+  });
+
+  it('keeps recovery available when the password update fails', async () => {
+    const client = createFakeClient();
+    client.auth.updateUser.mockResolvedValue({ data: {}, error: { code: 'weak_password' } });
+    await renderProvider(client, new URL('https://app.example/?auth_flow=recovery&code=abc'));
+    await act(async () => Promise.resolve());
+
+    await act(async () => { await latest.updatePassword('new-secure-password'); });
+
+    expect(latest.recovery).toBe('required');
+  });
+
   it('keeps an unconfigured app anonymous without calling an Auth method', async () => {
     await renderProvider(null);
     expect(latest).toMatchObject({ status: 'anonymous', configured: false, user: null });

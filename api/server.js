@@ -415,25 +415,7 @@ const routes = {
   },
 
   'POST /api/register/options': async (req, res) => {
-    const body = await readBody(req);
-    const name = String(body.name || '').trim().slice(0, 40);
-    if (!name) return json(res, 400, { error: 'name required' });
-    const code = String(body.code || '').trim().toUpperCase();
-    if (INVITE_ONLY && !db.invites.some(i => i.code === code && !i.usedBy && !i.revoked)) {
-      // The rejected code itself is never recorded — a near-miss guess in the log is a liability.
-      audit(req, 'auth.register.denied', { ok: false, name, msg: 'invite-rejected' });
-      return json(res, 403, { error: 'a valid invite code is required' });
-    }
-    const uid = crypto.randomBytes(12).toString('base64url');
-    const options = await generateRegistrationOptions({
-      rpName: RP_NAME, rpID: RP_ID,
-      userID: Buffer.from(uid), userName: name, userDisplayName: name,
-      attestationType: 'none',
-      authenticatorSelection: { residentKey: 'required', userVerification: 'preferred' },
-      excludeCredentials: []
-    });
-    const cid = putChallenge({ challenge: options.challenge, name, uid, code });
-    json(res, 200, { cid, options });
+    return json(res, 410, { error: 'passkey registration retired' });
   },
 
   'POST /api/register/verify': async (req, res) => {

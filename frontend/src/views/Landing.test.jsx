@@ -25,7 +25,7 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }))
 vi.mock('../lib/api.js', () => ({
   BIO: 'your fingerprint, face or PIN', webauthnOK: () => true,
-  passkeyLogin: vi.fn(), passkeyRegister: vi.fn(),
+  passkeyLogin: vi.fn(),
 }))
 vi.mock('../lib/demo.js', () => ({ DEMO: false, get STANDALONE() { return mocks.standalone } }))
 vi.mock('../lib/i18n.js', () => ({ t: value => value === 'your fingerprint, face or PIN' ? 'biometria ou PIN' : value }))
@@ -109,6 +109,26 @@ describe('public landing page', () => {
     expect(passkeyLogin).toHaveBeenCalledTimes(1)
     expect(mocks.setUser).toHaveBeenCalledWith({ id: 'legacy-user', name: 'Ana' })
     expect(mocks.pullState).toHaveBeenCalledTimes(1)
+  })
+
+  it('removes passkey registration from the landing', async () => {
+    mocks.standalone = false
+    mocks.auth = { configured: true, status: 'authenticated', user: { id: 'supabase-user' } }
+
+    await act(async () => { root.render(<Landing />) })
+
+    expect(container.textContent).not.toContain('Criar novo perfil')
+    expect(container.textContent).not.toContain('Create passkey profile')
+  })
+
+  it('does not auto-run legacy actions for a Supabase session', async () => {
+    mocks.standalone = false
+    mocks.auth = { configured: true, status: 'authenticated', user: { id: 'supabase-user' } }
+    const { passkeyLogin } = await import('../lib/api.js')
+
+    await act(async () => { root.render(<Landing />) })
+
+    expect(passkeyLogin).not.toHaveBeenCalled()
   })
 
   it('offers non-blocking account protection on a configured web app', async () => {

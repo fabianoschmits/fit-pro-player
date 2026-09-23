@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from './store/useStore.js'
 import { useAuth } from './auth/AuthProvider.jsx'
+import { openAuthSheet } from './components/AuthSheet.jsx'
 import { useUI } from './store/useUI.js'
 import { bindUI } from './components/ui.jsx'
 import { ACCENTS } from './lib/format.js'
@@ -230,6 +231,7 @@ function Shell() {
   const navigate = useNavigate()
   const loc = useLocation()
   const auth = useAuth()
+  const recoveryShown = useRef(false)
   const boot = useStore(s => s.boot)
   const { S, user, ready } = useStore()
   const profilePreview = useUI(s => s.profilePreview)
@@ -245,6 +247,15 @@ function Shell() {
     if (auth.status === 'initializing') return
     boot({ legacySessionEnabled: auth.status === 'anonymous' && !auth.suppressLegacyResume })
   }, [auth.status, auth.suppressLegacyResume, boot])
+  useEffect(() => {
+    if (auth.recovery !== 'required') {
+      recoveryShown.current = false
+      return
+    }
+    if (recoveryShown.current) return
+    recoveryShown.current = true
+    openAuthSheet('reset_password')
+  }, [auth.recovery])
   useEffect(() => { applyPrefs(S.theme, S.accent) }, [S.theme, S.accent])
   useEffect(() => { setLang(S.lang || DEFAULT_LANG) }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || DEFAULT_LANG) === 'pt' ? 'pt-BR' : (S.lang || DEFAULT_LANG) }, [langV, S.lang])

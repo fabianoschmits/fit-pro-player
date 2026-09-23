@@ -6,15 +6,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   auth: { status: 'initializing', suppressLegacyResume: false, user: null },
   boot: vi.fn(),
+  openAuthSheet: vi.fn(),
+  ready: false,
 }));
 
 vi.mock('./auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
+vi.mock('./components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }));
 vi.mock('./store/useStore.js', () => ({
   useStore: selector => {
     const state = {
     S: { theme: 'dark', accent: 'lime', lang: 'pt', onboardingDone: true, active: null, keepAwake: false },
     user: null,
-    ready: false,
+    ready: mocks.ready,
     boot: mocks.boot,
     isGuest: () => false,
     }
@@ -29,7 +32,7 @@ let root;
 let container;
 
 beforeEach(() => {
-  dom = new Window({ url: 'https://app.example/' });
+  dom = new Window({ url: 'https://app.example/#/home' });
   globalThis.window = dom;
   globalThis.document = dom.document;
   globalThis.history = dom.history;
@@ -40,6 +43,8 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.auth = { status: 'initializing', suppressLegacyResume: false, user: null };
   mocks.boot.mockReset();
+  mocks.openAuthSheet.mockReset();
+  mocks.ready = false;
 });
 
 afterEach(async () => {
@@ -61,5 +66,25 @@ describe('App Auth boot coordination', () => {
     mocks.auth = { status: 'anonymous', suppressLegacyResume: false, user: null };
     await act(async () => root.render(<App />));
     expect(mocks.boot).toHaveBeenCalledWith({ legacySessionEnabled: true });
+  });
+
+  it('opens one reset sheet for duplicate recovery events without changing the URL', async () => {
+    mocks.auth = { status: 'authenticated', suppressLegacyResume: false, user: { id: 'supabase-user' }, recovery: 'required' };
+    const startUrl = window.location.href;
+
+    await act(async () => root.render(<App />));
+    await act(async () => root.render(<App />));
+
+    expect(mocks.openAuthSheet).toHaveBeenCalledTimes(1);
+    expect(mocks.openAuthSheet).toHaveBeenCalledWith('reset_password');
+    expect(window.location.href).toBe(startUrl);
+  });
+
+  it.each(['recovery_link_invalid', 'recovery_link_expired'])('keeps the anonymous landing reachable after a %s callback reload', async error => {
+    mocks.ready = true;
+    mocks.auth = { status: 'anonymous', suppressLegacyResume: false, user: null, recovery: 'idle', error };
+
+    await act(async () => root.render(<App />));
+    await vi.waitFor(() => expect(container.querySelector('.landing-page')).toBeTruthy());
   });
 });

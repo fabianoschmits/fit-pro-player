@@ -161,6 +161,23 @@ describe('AuthSheet', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    ['recovery_link_invalid', 'This recovery link is invalid. Request a new one.'],
+    ['recovery_link_expired', 'This recovery link has expired. Request a new one.'],
+  ])('keeps reset open and focuses the mapped %s error', async (error, message) => {
+    mocks.auth = auth({ updatePassword: vi.fn().mockResolvedValue({ kind: 'error', error }) });
+    await render('reset_password');
+    await setValue(input('New password'), 'long-enough-password');
+    await setValue(input('Confirm password'), 'long-enough-password');
+
+    await click(button('Reset password'));
+
+    const alert = container.querySelector('[role="alert"]');
+    expect(alert.textContent).toBe(message);
+    expect(document.activeElement).toBe(alert);
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('opens the shared sheet in the requested mode', () => {
     openAuthSheet('forgot_password');
 

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useStore, hasData } from '../store/useStore.js'
+import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
-import { webauthnOK, passkeyLogin, passkeyRegister, BIO } from '../lib/api.js'
+import { webauthnOK, passkeyLogin, BIO } from '../lib/api.js'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { guestAllowed } from '../lib/guest.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
@@ -93,58 +93,6 @@ function useReducedMotion() {
     return () => query.removeEventListener?.('change', sync)
   }, [])
   return reduced
-}
-
-function RegisterSheet({ close }) {
-  const { setUser, pushState, pullState, loadConfig } = useStore()
-  const config = useStore(state => state.config)
-  const [name, setName] = useState('')
-  const [code, setCode] = useState('')
-  const inviteOnly = !!config?.invite_only
-  const inputRef = useRef(null)
-
-  useEffect(() => { window.setTimeout(() => inputRef.current?.focus(), 250) }, [])
-  useEffect(() => { loadConfig() }, [loadConfig])
-
-  const register = async () => {
-    const trimmedName = name.trim()
-    if (!trimmedName) { useUI.getState().toast('Digite um nome'); return }
-    if (inviteOnly && !code.trim()) { useUI.getState().toast('O código de convite é obrigatório'); return }
-    try {
-      const user = await passkeyRegister(trimmedName, code.trim())
-      setUser(user)
-      close()
-      if (hasData(useStore.getState().S)) {
-        const synced = await pushState()
-        useUI.getState().toast(synced
-          ? 'Perfil criado — os dados deste dispositivo foram transferidos'
-          : 'Perfil criado, mas os dados continuam protegidos neste dispositivo porque a sincronização falhou')
-      } else {
-        await pullState()
-        useUI.getState().toast(`Bem-vindo, ${user.name}`)
-      }
-    } catch (error) {
-      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
-        useUI.getState().toast(error.message || 'Não foi possível criar o perfil')
-      }
-    }
-  }
-
-  return <>
-    <h3>Crie seu perfil</h3>
-    <div className="muted small" style={{ marginBottom: 14 }}>
-      Escolha um nome e confirme com {t(BIO)}. A chave de acesso fica protegida no seu dispositivo.
-    </div>
-    <input ref={inputRef} className="input" aria-label="Seu nome" placeholder="Seu nome" maxLength={40} value={name} onChange={event => setName(event.target.value)} />
-    {inviteOnly && <>
-      <div style={{ height: 10 }} />
-      <input className="input" aria-label="Código de convite" placeholder="Código de convite" maxLength={40} value={code}
-        onChange={event => setCode(event.target.value.toUpperCase())}
-        style={{ letterSpacing: '.14em', fontWeight: 600, textAlign: 'center' }} />
-    </>}
-    <div style={{ height: 12 }} />
-    <Button variant="primary" onClick={register}>Criar chave de acesso</Button>
-  </>
 }
 
 function ExerciseShowcase({ paused, reduced }) {
@@ -333,7 +281,6 @@ export default function Landing() {
   }
 
   const enter = () => setGuest(true)
-  const openRegister = () => useUI.getState().openSheet(close => <RegisterSheet close={close} />)
   const entryUnavailable = !localEntry && !hasPasskey && !canGuest
   const primaryAction = localEntry || (!hasPasskey && canGuest) ? enter : signIn
   const primaryLabel = localEntry
@@ -370,7 +317,6 @@ export default function Landing() {
           </div>
            {!localEntry && <div className="landing-account-actions">
              {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
-             {hasPasskey && <button onClick={openRegister}>Criar novo perfil</button>}
             {canGuest && <button onClick={enter}>Continuar sem conta</button>}
           </div>}
         </div>

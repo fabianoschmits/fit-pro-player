@@ -157,7 +157,11 @@ export function AuthProvider({ children, client: injectedClient, location: injec
       sendPasswordRecovery: email => execute('sending_recovery', () => client.auth.resetPasswordForEmail(email, {
         redirectTo: buildAuthRedirectUrl(location, 'recovery'),
       })),
-      updatePassword: password => execute('resetting_password', () => client.auth.updateUser({ password })),
+      updatePassword: async password => {
+        const result = await execute('resetting_password', () => client.auth.updateUser({ password }))
+        if (result.kind === 'success') setState(current => ({ ...current, recovery: 'idle' }))
+        return result
+      },
       signOut: async () => {
         const result = await execute('signing_out', () => client.auth.signOut());
         if (result.kind === 'success') setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
