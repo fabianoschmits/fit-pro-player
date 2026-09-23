@@ -281,11 +281,15 @@ export default function Landing() {
   }
 
   const enter = () => setGuest(true)
-  const entryUnavailable = !localEntry && !hasPasskey && !canGuest
-  const primaryAction = localEntry || (!hasPasskey && canGuest) ? enter : signIn
-  const primaryLabel = localEntry
-    ? (DEMO ? 'Abrir demonstração' : 'Começar agora')
-    : hasPasskey ? 'Entrar com chave de acesso' : canGuest ? 'Usar neste dispositivo' : 'Chave de acesso indisponível'
+  const entryUnavailable = auth.configured ? false : !localEntry && !hasPasskey && !canGuest
+  const primaryAction = auth.configured
+    ? () => openAuthSheet('entry')
+    : localEntry || (!hasPasskey && canGuest) ? enter : signIn
+  const primaryLabel = auth.configured
+    ? 'Entrar ou criar conta'
+    : localEntry
+      ? (DEMO ? 'Abrir demonstração' : 'Começar agora')
+      : hasPasskey ? 'Entrar com chave de acesso' : canGuest ? 'Usar neste dispositivo' : 'Chave de acesso indisponível'
 
   return (
     <main className="landing-page">

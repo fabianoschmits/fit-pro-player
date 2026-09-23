@@ -142,6 +142,17 @@ describe('public landing page', () => {
     expect(mocks.openAuthSheet).toHaveBeenCalledWith('entry')
   })
 
+  it('prioritizes Supabase account entry over legacy passkeys on the configured web app', async () => {
+    mocks.standalone = false
+    mocks.auth = { configured: true }
+
+    await act(async () => { root.render(<Landing />) })
+    expect(button('Entrar ou criar conta')).toBeTruthy()
+
+    await act(async () => { button('Entrar ou criar conta').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
+    expect(mocks.openAuthSheet).toHaveBeenCalledWith('entry')
+  })
+
   it('keeps statistics under visitor control and pauses the exercise previews', async () => {
     await act(async () => { root.render(<Landing />) })
 
