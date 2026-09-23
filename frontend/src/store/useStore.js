@@ -11,6 +11,7 @@ import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from 
 import { createStatePushQueue, nextStateTimestamp } from '../lib/sync-state.js'
 import { ANONYMOUS_SCOPE, resolveLocalScope } from '../lib/local-state-scope.js'
 import { readScopedState, writeScopedState } from '../lib/account-cache.js'
+import { readSyncMetadata, writeSyncMetadata } from '../lib/account-sync.js'
 
 export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
@@ -127,6 +128,10 @@ export const useStore = create((set, get) => {
     S._ts = nextStateTimestamp(get().S?._ts)
     registerCustom(S.customEx)
     writeScopedState(scope, S, localStorage)
+    if (scope.kind === 'account') {
+      const sync = readSyncMetadata(scope, localStorage)
+      writeSyncMetadata(scope, { ...sync, dirty: true }, localStorage)
+    }
     set({ S })
     if (MOBILE) nativePersist(scope, generation)
     if (push && get().user && activeScope.kind !== 'account') {

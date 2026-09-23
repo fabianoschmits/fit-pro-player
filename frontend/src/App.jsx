@@ -20,7 +20,7 @@ import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
-import { createAccountSyncService } from './lib/account-sync.js'
+import { createAccountSyncService, readSyncMetadata, REMOTE_SYNC_STATE } from './lib/account-sync.js'
 import { applyAssociationChoice, classifyAssociation } from './lib/account-association.js'
 import { ANONYMOUS_SCOPE, resolveLocalScope } from './lib/local-state-scope.js'
 import { readScopedState } from './lib/account-cache.js'
@@ -269,7 +269,7 @@ function Shell() {
     const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, S).state
     service.fetchRemoteSnapshot().then(result => {
       if (disposed || result.state === 'ERROR' || result.state === 'OFFLINE') return
-      const decision = classifyAssociation({ anonymousState, accountState: S, remoteSnapshot: result.snapshot, accountRevision: 0 })
+      const decision = classifyAssociation({ anonymousState, accountState: S, remoteSnapshot: result.snapshot, accountRevision: readSyncMetadata(accountScope).revision })
       if (!decision.requiresDecision) { associationShown.current = auth.user.id; return }
       associationShown.current = auth.user.id
       openAccountAssociation({ conflict: decision.case === 'CONFLICT', onChoice: async choice => {
@@ -286,6 +286,25 @@ function Shell() {
       }})
     }).catch(() => {})
     return () => { disposed = true }
+  }, [auth.status, auth.user?.id, ready, S])
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current !== auth.user.id) return undefined
+    const client = getBrowserSupabaseClient()
+    if (!client) return undefined
+    let disposed = false
+    const timer = window.setTimeout(async () => {
+      const scope = resolveLocalScope(auth.user.id)
+      const service = createAccountSyncService({ client, scope })
+      const result = await service.sync({ state: S })
+      if (disposed) return
+      if (result.state === REMOTE_SYNC_STATE.REMOTE_ABSENT && S.onboardingDone) {
+        await service.uploadSnapshot({ state: S, expectedRevision: 0 })
+      } else if (result.state === REMOTE_SYNC_STATE.LOCAL_AHEAD) {
+        const uploaded = await service.uploadSnapshot({ state: S, expectedRevision: result.snapshot.revision })
+        if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) useUI.getState().toast('A nuvem mudou. Revise as cópias antes de continuar.')
+      }
+    }, 900)
+    return () => { disposed = true; window.clearTimeout(timer) }
   }, [auth.status, auth.user?.id, ready, S])
   useEffect(() => {
     if (auth.recovery !== 'required') {
