@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+vi.mock('../lib/api.js', () => ({ api: vi.fn() }))
 import { DEF, useStore } from './useStore.js'
 import { resolveLocalScope } from '../lib/local-state-scope.js'
 import { writeScopedState } from '../lib/account-cache.js'
@@ -37,5 +38,13 @@ describe('local account cache isolation', () => {
     expect(useStore.getState().S.workouts[0].id).toBe('B')
     await useStore.getState().boot({ legacySessionEnabled: false, supabaseUserId: USER_A })
     expect(useStore.getState().S.workouts[0].id).toBe('A')
+  })
+
+  it('stops an obsolete boot after its scope activation is rejected', async () => {
+    const activate = vi.fn().mockResolvedValue(false)
+    useStore.setState({ activateLocalScope: activate })
+    await useStore.getState().boot({ legacySessionEnabled: true, supabaseUserId: USER_A })
+    expect(activate).toHaveBeenCalledWith(USER_A)
+    expect(useStore.getState().ready).toBe(false)
   })
 })

@@ -322,7 +322,7 @@ export const useStore = create((set, get) => {
     clearLegacySessionContext,
 
     async boot({ legacySessionEnabled = true, supabaseUserId = null } = {}) {
-      await get().activateLocalScope(supabaseUserId)
+      if (!(await get().activateLocalScope(supabaseUserId))) return
       // Public static deployment: show the product landing page first. Entering the app
       // creates the local guest marker; returning visitors keep going straight to their data.
       if (STANDALONE) {
