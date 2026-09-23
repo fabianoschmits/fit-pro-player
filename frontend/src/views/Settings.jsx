@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, DEF, hasData } from '../store/useStore.js'
+import { useAuth } from '../auth/AuthProvider.jsx'
 import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO, localTZ } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
@@ -20,6 +21,7 @@ import AppHeader from '../components/AppHeader.jsx'
 
 export default function Settings() {
   const nav = useNavigate()
+  const auth = useAuth()
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
   const syncConflict = useStore(s => s.syncConflict)
@@ -105,6 +107,13 @@ export default function Settings() {
         <Row icon="dumbbell" iconTint="var(--acc)" title={t('You’re in the demo')} subtitle={t('Example data, stored only in this browser — change anything you like.')} />
         <Row icon="reset" iconTint="var(--blue)" title={t('Reset demo data')} accessory="chevron"
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
+      </> : auth.status === 'authenticated' ? <>
+        <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
+        <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
+          title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
+          confirmText: t('Sign out'), danger: true,
+          onConfirm: async () => { await auth.signOut(); nav('/home') },
+        })} />
       </> : user ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={user.name} subtitle={t('Signed in with passkey — data syncs to this profile.')} />
         {supabaseConfigured && <Row icon="link" iconTint="var(--teal)" title={t('Link Supabase account')}
@@ -118,7 +127,7 @@ export default function Settings() {
         </>}
         {user.admin && <Row icon="wrench" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
-          title: t('Sign out?'), message: t('Your data is synced to your profile first, then cleared from this device.'),
+          title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
           confirmText: t('Sign out'), danger: true,
           onConfirm: async () => {
             try { await signOut(); nav('/home') }

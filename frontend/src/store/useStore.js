@@ -248,7 +248,7 @@ export const useStore = create((set, get) => {
         throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
       }
       await api('/api/logout', { method: 'POST', body: '{}' })
-      clearLocalSession()
+      clearLegacySessionContext()
     },
 
     // "Sign out everywhere": the server bumps this profile's session version, which kills every
@@ -261,7 +261,7 @@ export const useStore = create((set, get) => {
         throw new Error('Could not sync your data. You are still signed in and your data remains on this device.')
       }
       await api('/api/logout/all', { method: 'POST', body: '{}' })
-      clearLocalSession()
+      clearLegacySessionContext()
     },
 
     // A whole-state sync cannot safely guess how to merge two devices. Keep both copies intact

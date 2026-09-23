@@ -60,17 +60,34 @@ describe('account sync safety', () => {
     expect(api).not.toHaveBeenCalled()
   })
 
-  it('syncs before logout and only then clears the local session', async () => {
+  it('syncs before logout and clears only the legacy session context', async () => {
     api.mockResolvedValue({ ok: true })
     localStorage.setItem('gym_user', JSON.stringify({ id: 'u1', name: 'Ana' }))
+    const before = JSON.stringify({ ...personalState(), active: { id: 'active', entries: [] } })
+    useStore.setState({ S: JSON.parse(before) })
+    localStorage.setItem('gym_state_v1', before)
 
     await expect(useStore.getState().signOut()).resolves.toBeUndefined()
 
     expect(api.mock.calls.map(call => call[0])).toEqual(['/api/data', '/api/logout'])
     expect(useStore.getState().user).toBeNull()
-    expect(useStore.getState().S.workouts).toEqual([])
+    expect(JSON.stringify(useStore.getState().S)).toBe(before)
+    expect(localStorage.getItem('gym_state_v1')).toBe(before)
     expect(localStorage.getItem('gym_user')).toBeNull()
     expect(localStorage.getItem('gym_dirty')).toBeNull()
+  })
+
+  it('preserves workouts after sign out everywhere', async () => {
+    api.mockResolvedValue({ ok: true })
+    const before = JSON.stringify({ ...personalState(), active: { id: 'active', entries: [] } })
+    useStore.setState({ S: JSON.parse(before) })
+    localStorage.setItem('gym_state_v1', before)
+
+    await expect(useStore.getState().signOutAll()).resolves.toBeUndefined()
+
+    expect(useStore.getState().user).toBeNull()
+    expect(JSON.stringify(useStore.getState().S)).toBe(before)
+    expect(localStorage.getItem('gym_state_v1')).toBe(before)
   })
 
   it('keeps local state intact while the account-link request runs', async () => {
