@@ -83,5 +83,16 @@ The legacy Node API remains available for self-hosted/WebAuthn compatibility, bu
 
 - Professional verification or credential approval.
 - Invitations, students, programs, assignments, billing, documents, Storage, Realtime, or analytics.
-- Legacy WebAuthn removal.
 - Production deployment changes before the implementation passes local and Supabase validation.
+
+## Follow-up cleanup after readiness
+
+After the Supabase account architecture is implemented and the complete validation checklist is green, perform a separate usage audit before removing legacy pieces. The cleanup must identify real consumers first and remove only code that is no longer reachable:
+
+- legacy WebAuthn registration/login and signed-cookie session paths;
+- legacy `/api/me`, `/api/data`, logout, push, and administrative routes;
+- legacy local account/session state and compatibility branches;
+- identity-link bridges that no longer have a supported migration consumer;
+- unused frontend auth labels, screens, imports, tests, environment variables, and deployment documentation.
+
+The cleanup is not part of this onboarding implementation. It requires its own RED tests for absence/non-use, a production usage check, a rollback-safe commit, and explicit confirmation that no existing user data or supported migration path still depends on the removed code.
