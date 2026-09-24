@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import TabBar from './TabBar.jsx'
 
 const mocks = vi.hoisted(() => ({
+  auth: { status: 'anonymous' },
   state: {
     S: { onboardingDone: true, active: null, routines: [], week: {}, dayPlan: {} },
     user: null,
@@ -16,11 +17,13 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../store/useStore.js', () => ({
   useStore: selector => selector(mocks.state),
 }))
+vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 
 let container
 let root
 
 beforeEach(() => {
+  mocks.auth = { status: 'anonymous' }
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
@@ -75,5 +78,19 @@ describe('TabBar scroll stability', () => {
 
     const stats = container.querySelector('[data-tab-key="stats"]')
     expect(stats.getAttribute('aria-current')).toBe('page')
+  })
+
+  it('shows the complete menu for an authenticated Supabase account', () => {
+    mocks.state.isGuest = () => false
+    mocks.auth = { status: 'authenticated' }
+    act(() => {
+      root.render(
+        <MemoryRouter initialEntries={['/home']}>
+          <TabBar onStart={vi.fn()} />
+        </MemoryRouter>,
+      )
+    })
+
+    expect(container.querySelectorAll('.tab-label')).toHaveLength(5)
   })
 })

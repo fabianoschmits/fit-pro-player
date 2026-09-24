@@ -8,7 +8,7 @@ import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from 
 import { nextStateTimestamp } from '../lib/sync-state.js'
 import { ANONYMOUS_SCOPE, resolveLocalScope } from '../lib/local-state-scope.js'
 import { readScopedState, writeScopedState } from '../lib/account-cache.js'
-import { readSyncMetadata, writeSyncMetadata } from '../lib/account-sync.js'
+import { readSyncMetadata, syncMetadataKey, writeSyncMetadata } from '../lib/account-sync.js'
 
 export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
@@ -166,6 +166,25 @@ export const useStore = create((set, get) => {
       localStorage.removeItem(appEntryKey(activeScope))
       if (activeScope.kind === 'anonymous') localStorage.removeItem('gym_guest')
       set({})
+    },
+    clearAnonymousState() {
+      get().clearLocalScope(null)
+      localStorage.removeItem('gym_guest')
+      localStorage.removeItem('fpp_app_entered:anonymous')
+      localStorage.removeItem('gym_dirty')
+      localStorage.removeItem('gym_sync_conflict')
+      set({})
+    },
+    clearLocalScope(userId = null) {
+      const scope = resolveLocalScope(userId)
+      writeScopedState(scope, normalizeState(DEF), localStorage)
+      const metadataKey = syncMetadataKey(scope)
+      if (metadataKey) localStorage.removeItem(metadataKey)
+      localStorage.removeItem(appEntryKey(scope))
+      if (scope.kind === 'anonymous') localStorage.removeItem('gym_guest')
+      if (scope === activeScope || (scope.kind === activeScope.kind && scope.userId === activeScope.userId)) {
+        set({ S: normalizeState(DEF) })
+      }
     },
 
     // Demo build only: drop the seeded example profile back in (Settings → "Reset demo data").

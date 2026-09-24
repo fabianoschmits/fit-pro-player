@@ -4,13 +4,13 @@ import { createRoot } from 'react-dom/client';
 import { Window } from 'happy-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ authSignOut: vi.fn().mockResolvedValue({ kind: 'success' }), confirm: null, navigate: vi.fn(), toast: vi.fn(), auth: null }));
+const mocks = vi.hoisted(() => ({ authSignOut: vi.fn().mockResolvedValue({ kind: 'success' }), authDeleteAccount: vi.fn().mockResolvedValue({ kind: 'success' }), confirm: null, navigate: vi.fn(), toast: vi.fn(), auth: null }));
 
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('../store/useStore.js', async () => {
   const actual = await vi.importActual('../store/useStore.js');
-  const state = { S: actual.DEF, update: vi.fn(), replaceState: vi.fn(), leaveApp: vi.fn(), resetDemo: vi.fn() };
+  const state = { S: actual.DEF, update: vi.fn(), replaceState: vi.fn(), leaveApp: vi.fn(), clearAnonymousState: vi.fn(), clearLocalScope: vi.fn(), resetDemo: vi.fn() };
   return { ...actual, useStore: selector => selector(state) };
 });
 vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }));
@@ -28,7 +28,8 @@ beforeEach(() => {
   globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   container = document.createElement('div'); document.body.append(container); root = createRoot(container);
   mocks.authSignOut.mockReset(); mocks.authSignOut.mockResolvedValue({ kind: 'success' }); mocks.navigate.mockClear(); mocks.toast.mockClear(); mocks.confirm = null;
-  mocks.auth = { status: 'authenticated', configured: true, user: { id: 'supabase-user', email: 'ana@example.com' }, signOut: mocks.authSignOut };
+  mocks.authDeleteAccount.mockReset(); mocks.authDeleteAccount.mockResolvedValue({ kind: 'success' });
+  mocks.auth = { status: 'authenticated', configured: true, user: { id: 'supabase-user', email: 'ana@example.com' }, signOut: mocks.authSignOut, deleteAccount: mocks.authDeleteAccount };
 });
 afterEach(async () => { await act(async () => root.unmount()); dom.close(); });
 
@@ -40,6 +41,27 @@ describe('Settings Supabase logout', () => {
     await act(async () => mocks.confirm.onConfirm());
 
     expect(mocks.navigate).toHaveBeenCalledWith('/');
+  });
+
+  it('deletes the authenticated account before clearing local data', async () => {
+    await act(async () => root.render(<Settings />));
+    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Restaurar tudo'));
+    await act(async () => reset.click());
+    await act(async () => mocks.confirm.onConfirm());
+
+    expect(mocks.authDeleteAccount).toHaveBeenCalledTimes(1);
+    expect(mocks.navigate).toHaveBeenCalledWith('/');
+  });
+
+  it('keeps authenticated data when account deletion fails', async () => {
+    mocks.authDeleteAccount.mockResolvedValue({ kind: 'error', error: 'network_unavailable' });
+    await act(async () => root.render(<Settings />));
+    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Restaurar tudo'));
+    await act(async () => reset.click());
+    await act(async () => mocks.confirm.onConfirm());
+
+    expect(mocks.navigate).not.toHaveBeenCalledWith('/');
+    expect(mocks.toast).toHaveBeenCalled();
   });
 
   it('routes an authenticated Supabase account through Auth only and keeps the local-data guarantee visible', async () => {

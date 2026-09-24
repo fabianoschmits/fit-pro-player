@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider.jsx';
 import { t } from '../lib/i18n.js';
 import { useUI } from '../store/useUI.js';
+import { useStore } from '../store/useStore.js';
 import { Button } from './ui.jsx';
 
 const ERROR_COPY = {
@@ -31,8 +32,9 @@ export function openAuthSheet(initialMode = 'entry') {
 
 export function AuthSheet({ close, initialMode = 'entry' }) {
   const auth = useAuth();
+  const offlineName = useStore(s => s.S?.profile?.name || '');
   const [mode, setMode] = useState(() => initial(initialMode));
-  const [values, setValues] = useState({ name: '', email: '', password: '', confirmation: '', accountType: 'student' });
+  const [values, setValues] = useState(() => ({ name: offlineName, email: '', password: '', confirmation: '', accountType: 'student' }));
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const alertRef = useRef(null);
@@ -43,6 +45,10 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     setError('');
     setNotice('');
   }, [initialMode]);
+
+  useEffect(() => {
+    if (offlineName && !values.name) setValues(current => ({ ...current, name: offlineName }));
+  }, [offlineName, values.name]);
 
   useEffect(() => {
     if (error) alertRef.current?.focus();

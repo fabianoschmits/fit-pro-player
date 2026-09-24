@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ASSOCIATION_CASE, ASSOCIATION_CHOICE, applyAssociationChoice, classifyAssociation } from './account-association.js'
+import { ASSOCIATION_CASE, ASSOCIATION_CHOICE, applyAssociationChoice, canAutoAdoptAnonymous, classifyAssociation } from './account-association.js'
 
 const empty = { routines: [] }
 const anonymous = { onboardingDone: true, routines: [{ id: 'local' }] }
@@ -16,6 +16,12 @@ describe('account association decisions', () => {
   it('does not prompt for an empty account or an already synchronized account', () => {
     expect(classifyAssociation({ anonymousState: empty, accountState: empty }).requiresDecision).toBe(false)
     expect(classifyAssociation({ anonymousState: empty, accountState: account, remoteSnapshot: remote, accountRevision: 4 }).case).toBe(ASSOCIATION_CASE.SAME)
+  })
+
+  it('allows automatic adoption only for an anonymous-only account with no cloud state', () => {
+    expect(canAutoAdoptAnonymous({ anonymousState: anonymous, accountState: empty, remoteSnapshot: null })).toBe(true)
+    expect(canAutoAdoptAnonymous({ anonymousState: anonymous, accountState: account, remoteSnapshot: null })).toBe(false)
+    expect(canAutoAdoptAnonymous({ anonymousState: anonymous, accountState: empty, remoteSnapshot: remote })).toBe(false)
   })
 
   it('makes use-device, use-cloud and keep-separate explicit and non-destructive', () => {

@@ -231,6 +231,16 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         if (result.kind === 'success') setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
         return result;
       },
+      deleteAccount: async () => {
+        if (globalThis.navigator?.onLine === false) return { kind: 'error', error: 'network_unavailable' };
+        const result = await execute('deleting_account', () => client.rpc('delete_my_account'));
+        if (result.kind !== 'success') return result;
+        await client.auth.signOut({ scope: 'local' });
+        setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
+        // The server-side delete already succeeded. Clear the local Auth session even if
+        // Supabase reports a best-effort sign-out transport error afterward.
+        return { kind: 'success' };
+      },
     };
   }, [client, configured, location, state]);
 

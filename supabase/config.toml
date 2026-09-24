@@ -7,7 +7,7 @@
 [api]
 enabled = true
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
@@ -34,8 +34,13 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000"]
+site_url = "https://www.fitpp.com.br"
+additional_redirect_urls = [
+  "https://www.fitpp.com.br/?auth_flow=confirm",
+  "https://www.fitpp.com.br/?auth_flow=recovery",
+  "http://127.0.0.1:8080/?auth_flow=confirm",
+  "http://127.0.0.1:8080/?auth_flow=recovery",
+]
 jwt_expiry = 3600
 enable_signup = true
 enable_anonymous_sign_ins = false

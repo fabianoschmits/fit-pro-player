@@ -7,6 +7,8 @@ export const REQUIRED_FILES = [
   'supabase/config.toml',
   'supabase/migrations/202609210001_identity_profiles_roles_links.sql',
   'supabase/tests/202609210001_identity_profiles_roles_links.sql',
+  'supabase/migrations/202609240007_account_lifecycle.sql',
+  'supabase/tests/202609240007_account_lifecycle.sql',
 ]
 
 const PHASE_1_MIGRATION = REQUIRED_FILES[1]

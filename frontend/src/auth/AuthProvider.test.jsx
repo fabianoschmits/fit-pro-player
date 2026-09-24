@@ -144,6 +144,34 @@ describe('AuthProvider', () => {
     expect(latest.user.id).toBe(user.id);
   });
 
+  it('deletes the authenticated account through the protected RPC before clearing the local session', async () => {
+    const client = createFakeClient({ session: { user } });
+    client.rpc.mockImplementation(async name => name === 'delete_my_account' ? { data: null, error: null } : { data: {}, error: null });
+    await renderProvider(client);
+    await act(async () => Promise.resolve());
+
+    await act(async () => { await expect(latest.deleteAccount()).resolves.toEqual({ kind: 'success' }); });
+
+    expect(client.rpc).toHaveBeenCalledWith('delete_my_account');
+    expect(client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+    expect(latest.status).toBe('anonymous');
+    expect(latest.user).toBeNull();
+  });
+
+  it('keeps the account session when remote deletion fails', async () => {
+    const client = createFakeClient({ session: { user } });
+    client.rpc.mockImplementation(async name => name === 'delete_my_account'
+      ? { data: null, error: { code: 'network_error' } }
+      : { data: {}, error: null });
+    await renderProvider(client);
+    await act(async () => Promise.resolve());
+
+    await act(async () => { await expect(latest.deleteAccount()).resolves.toMatchObject({ kind: 'error' }); });
+
+    expect(client.auth.signOut).not.toHaveBeenCalled();
+    expect(latest.status).toBe('authenticated');
+  });
+
   it('passes the selected account type as public signup metadata', async () => {
     const client = createFakeClient();
     await renderProvider(client);

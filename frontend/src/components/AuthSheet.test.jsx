@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('../lib/i18n.js', () => ({ t: value => value }));
 vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ openSheet: mocks.openSheet }) } }));
+vi.mock('../store/useStore.js', () => ({ useStore: selector => selector({ S: { profile: { name: 'Offline Ana' } } }) }));
 
 import { AuthSheet, openAuthSheet } from './AuthSheet.jsx';
 
@@ -82,6 +83,7 @@ describe('AuthSheet', () => {
     await render('sign_up');
 
     expect(input('Name')).toBeTruthy();
+    expect(input('Name').value).toBe('Offline Ana');
     expect(input('Email').getAttribute('autocomplete')).toBe('email');
     expect(input('New password').getAttribute('autocomplete')).toBe('new-password');
     expect(input('Confirm password')).toBeTruthy();

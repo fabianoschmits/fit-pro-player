@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
+import { useAuth } from '../auth/AuthProvider.jsx'
 import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
@@ -95,6 +96,7 @@ export default function TabBar({ onStart }) {
   const loc = useLocation()
   const S = useStore(s => s.S)
   const isGuest = useStore(s => s.isGuest())
+  const authenticated = useAuth().status === 'authenticated'
   const rowRef = useRef(null)
   const tabRefs = useRef(new Map())
   const [dragTab, setDragTab] = useState(null)
@@ -145,7 +147,7 @@ export default function TabBar({ onStart }) {
 
   const cur = loc.pathname.split('/')[1] || 'home'
 
-  if (!isGuest || !S.onboardingDone) return null
+  if (!(authenticated || isGuest) || !S.onboardingDone) return null
 
   const startWorkout = () => {
     if (S.active) { nav('/workout'); return }

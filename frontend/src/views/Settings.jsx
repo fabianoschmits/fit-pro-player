@@ -25,6 +25,8 @@ export default function Settings() {
   const update = useStore(s => s.update)
   const replaceState = useStore(s => s.replaceState)
   const leaveApp = useStore(s => s.leaveApp || s.setGuest)
+  const clearAnonymousState = useStore(s => s.clearAnonymousState)
+  const clearLocalScope = useStore(s => s.clearLocalScope)
   const resetDemo = useStore(s => s.resetDemo)
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
@@ -189,7 +191,23 @@ export default function Settings() {
         accessory="chevron" onClick={() => importRef.current.click()} />
       <Row icon="upload" iconTint="var(--blue)" title={t('Import backup')} accessory="chevron" onClick={() => fileRef.current.click()} />
       <Row icon="download" iconTint="var(--blue)" title={t('Export backup (JSON)')} accessory="chevron" onClick={doExport} />
-      <Row icon="trash" iconTint="var(--red)" title={t('Reset everything')} danger onClick={() => confirmSheet({ title: t('Reset everything?'), message: t('Deletes your plan, workouts and body weight on this device. This cannot be undone.'), confirmText: t('Delete everything'), danger: true, onConfirm: () => { replaceState(JSON.parse(JSON.stringify(DEF)), true); leaveApp(); nav('/'); toast(t('All data reset')) } })} />
+      <Row icon="trash" iconTint="var(--red)" title={t('Reset everything')} danger onClick={() => confirmSheet({
+        title: t('Reset everything?'),
+        message: t('Deletes your plan, workouts and body weight on this device. This cannot be undone.'),
+        confirmText: t('Delete everything'),
+        danger: true,
+        onConfirm: async () => {
+          if (auth.status === 'authenticated') {
+            const result = await auth.deleteAccount()
+            if (result.kind !== 'success') { toast(t('Could not sync your data — you are still signed in.')); return }
+          }
+          if (auth.status === 'authenticated') clearLocalScope(auth.user.id)
+          else clearAnonymousState?.()
+          leaveApp?.()
+          nav('/')
+          toast(t('All data reset'))
+        },
+      })} />
     </Section>
     <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={doImport} />
     {/* Reset after reading so picking the same file twice still fires onChange. */}

@@ -35,6 +35,19 @@ describe('local account cache isolation', () => {
     expect(localStorage.getItem('gym_guest')).toBeNull()
   })
 
+  it('clears only anonymous cache data after account adoption', async () => {
+    localStorage.setItem('gym_state_v1', JSON.stringify(stateWithWorkout('anonymous')))
+    localStorage.setItem('gym_guest', '1')
+    localStorage.setItem('fpp_app_entered:anonymous', '1')
+    await useStore.getState().boot({ supabaseUserId: USER_A })
+    useStore.getState().clearAnonymousState()
+
+    expect(JSON.parse(localStorage.getItem('gym_state_v1')).workouts).toEqual([])
+    expect(localStorage.getItem('gym_guest')).toBeNull()
+    expect(localStorage.getItem('fpp_app_entered:anonymous')).toBeNull()
+    expect(localStorage.getItem(`fpp_account_cache_v1:${USER_A}`)).toBeNull()
+  })
+
   it('authenticated boot does not consume anonymous state when account cache is missing', async () => {
     localStorage.setItem('gym_state_v1', JSON.stringify(stateWithWorkout('anonymous')))
     await useStore.getState().boot({ supabaseUserId: USER_A })

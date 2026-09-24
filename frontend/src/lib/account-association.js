@@ -37,6 +37,10 @@ export function classifyAssociation({ anonymousState, accountState, remoteSnapsh
   return { case: ASSOCIATION_CASE.CONFLICT, requiresDecision: true }
 }
 
+export function canAutoAdoptAnonymous({ anonymousState, accountState, remoteSnapshot } = {}) {
+  return classifyAssociation({ anonymousState, accountState, remoteSnapshot }).case === ASSOCIATION_CASE.ANONYMOUS_ONLY
+}
+
 export function applyAssociationChoice(choice, { anonymousState, accountState, remoteSnapshot } = {}) {
   if (choice === ASSOCIATION_CHOICE.CANCEL || choice === ASSOCIATION_CHOICE.KEEP_SEPARATE) {
     return { kind: 'keep-separate', state: accountState, upload: false }

@@ -20,8 +20,8 @@ import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
-import { createAccountSyncService, readSyncMetadata, REMOTE_SYNC_STATE } from './lib/account-sync.js'
-import { applyAssociationChoice, classifyAssociation } from './lib/account-association.js'
+import { createAccountSyncService, readSyncMetadata, writeSyncMetadata, REMOTE_SYNC_STATE } from './lib/account-sync.js'
+import { applyAssociationChoice, canAutoAdoptAnonymous, classifyAssociation } from './lib/account-association.js'
 import { ANONYMOUS_SCOPE, resolveLocalScope } from './lib/local-state-scope.js'
 import { readScopedState } from './lib/account-cache.js'
 import { openAccountAssociation } from './components/AccountAssociationSheet.jsx'
@@ -238,6 +238,7 @@ function Shell() {
   const auth = useAuth()
   const recoveryShown = useRef(false)
   const associationShown = useRef(null)
+  const associationInFlight = useRef(null)
   const boot = useStore(s => s.boot)
   const { S, ready } = useStore()
   const profilePreview = useUI(s => s.profilePreview)
@@ -254,20 +255,19 @@ function Shell() {
     boot({ supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null })
   }, [auth.status, boot])
   useEffect(() => {
-    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current === auth.user.id) return
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current === auth.user.id || associationInFlight.current === auth.user.id) return
     const client = getBrowserSupabaseClient()
     if (!client) return
     let disposed = false
+    associationInFlight.current = auth.user.id
     const accountScope = resolveLocalScope(auth.user.id)
     const service = createAccountSyncService({ client, scope: accountScope })
-    const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, S).state
-    service.fetchRemoteSnapshot().then(result => {
-      if (disposed || result.state === 'ERROR' || result.state === 'OFFLINE') return
-      const decision = classifyAssociation({ anonymousState, accountState: S, remoteSnapshot: result.snapshot, accountRevision: readSyncMetadata(accountScope).revision })
-      if (!decision.requiresDecision) { associationShown.current = auth.user.id; return }
+    const accountState = useStore.getState().S
+    const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, accountState).state
+    const showAssociation = (remoteSnapshot, conflict = false) => {
       associationShown.current = auth.user.id
-      openAccountAssociation({ conflict: decision.case === 'CONFLICT', onChoice: async choice => {
-        const applied = applyAssociationChoice(choice, { anonymousState, accountState: S, remoteSnapshot: result.snapshot })
+      openAccountAssociation({ conflict, onChoice: async choice => {
+        const applied = applyAssociationChoice(choice, { anonymousState, accountState, remoteSnapshot })
         if (applied.kind === 'keep-separate') return
         if (applied.kind === 'invalid') throw new Error('Não há dados válidos para essa escolha.')
         const next = normalizeState(applied.state)
@@ -278,9 +278,31 @@ function Shell() {
           if (uploaded.state !== 'IN_SYNC') throw new Error('Não foi possível salvar a associação agora.')
         }
       }})
-    }).catch(() => {})
-    return () => { disposed = true }
-  }, [auth.status, auth.user?.id, ready, S])
+    }
+    service.fetchRemoteSnapshot().then(result => {
+      if (disposed || result.state === 'ERROR' || result.state === 'OFFLINE') return
+      const decision = classifyAssociation({ anonymousState, accountState, remoteSnapshot: result.snapshot, accountRevision: readSyncMetadata(accountScope).revision })
+      if (canAutoAdoptAnonymous({ anonymousState, accountState, remoteSnapshot: result.snapshot })) {
+        const applied = applyAssociationChoice('use-device', { anonymousState, accountState, remoteSnapshot: result.snapshot })
+        const next = normalizeState(applied.state)
+        useStore.getState().replaceState(next, false)
+        return service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision }).then(uploaded => {
+          if (uploaded.state === REMOTE_SYNC_STATE.IN_SYNC) {
+            useStore.getState().clearAnonymousState()
+            associationShown.current = auth.user.id
+            return
+          }
+          if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) showAssociation(result.snapshot, true)
+          else throw new Error('Não foi possível associar os dados do dispositivo agora.')
+        })
+      }
+      if (!decision.requiresDecision) { associationShown.current = auth.user.id; return }
+      showAssociation(result.snapshot, decision.case === 'CONFLICT')
+    }).catch(() => {}).finally(() => {
+      if (associationInFlight.current === auth.user.id) associationInFlight.current = null
+    })
+    return () => { disposed = true; if (associationInFlight.current === auth.user.id) associationInFlight.current = null }
+  }, [auth.status, auth.user?.id, ready])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current !== auth.user.id) return undefined
     const client = getBrowserSupabaseClient()
@@ -291,8 +313,11 @@ function Shell() {
       const service = createAccountSyncService({ client, scope })
       const result = await service.sync({ state: S })
       if (disposed) return
-      if (result.state === REMOTE_SYNC_STATE.REMOTE_ABSENT && S.onboardingDone) {
+      if (result.state === REMOTE_SYNC_STATE.REMOTE_ABSENT) {
         await service.uploadSnapshot({ state: S, expectedRevision: 0 })
+      } else if (result.state === REMOTE_SYNC_STATE.REMOTE_AHEAD && result.snapshot) {
+        useStore.getState().replaceState(normalizeState(result.snapshot.payload), false)
+        writeSyncMetadata(scope, { revision: result.snapshot.revision, dirty: false })
       } else if (result.state === REMOTE_SYNC_STATE.LOCAL_AHEAD) {
         const uploaded = await service.uploadSnapshot({ state: S, expectedRevision: result.snapshot.revision })
         if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) useUI.getState().toast('A nuvem mudou. Revise as cópias antes de continuar.')
