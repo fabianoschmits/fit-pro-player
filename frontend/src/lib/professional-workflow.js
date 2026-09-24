@@ -6,6 +6,29 @@ const toProfile = value => value ? ({
   verificationStatus: value.verification_status,
 }) : null
 
+const toClientSummary = value => ({
+  studentUserId: value?.student_user_id || null,
+  displayName: value?.display_name || 'Aluno',
+  avatarRef: value?.avatar_ref || null,
+  relationshipCreatedAt: value?.relationship_created_at || null,
+  activeAssignmentId: value?.active_assignment_id || null,
+  programId: value?.program_id || null,
+  programTitle: value?.program_title || null,
+  versionId: value?.version_id || null,
+  versionNumber: value?.version_number || null,
+  lastExecutionAt: value?.last_execution_at || null,
+  lastExecutionStatus: value?.last_execution_status || null,
+})
+
+const toClientDetail = value => value ? ({
+  studentUserId: value.student_user_id || null,
+  displayName: value.display_name || 'Aluno',
+  avatarRef: value.avatar_ref || null,
+  relationshipCreatedAt: value.relationship_created_at || null,
+  assignments: value.assignments || [],
+  executions: value.executions || [],
+}) : null
+
 export function createProfessionalWorkflowRepository({ client } = {}) {
   const rpc = async (name, args) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
@@ -49,5 +72,10 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
     return data
   }
   const executions = () => read('workout_executions', q => q.select('*').order('started_at', { ascending: false }))
-  return Object.freeze({ toProfile, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, programs, versions, version, createProgram, publishVersion, assignments, assignedPrograms, assign, executions })
+  const clientSummaries = () => rpc('professional_client_summaries', {}).then(rows => (rows || []).map(toClientSummary))
+  const clientDetail = studentUserId => rpc('professional_client_detail', { p_student_user_id: studentUserId }).then(rows => toClientDetail(rows?.[0]))
+  const publishProgramVersion = (programId, weeklyPlan) => rpc('publish_program_version', { p_program_id: programId, p_weekly_plan: weeklyPlan })
+  const assignProgramVersion = ({ programId, versionId, studentUserId }) => rpc('assign_program_version', { p_program_id: programId, p_version_id: versionId, p_student_user_id: studentUserId })
+  const studentOverview = () => rpc('student_program_overview', {})
+  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, programs, versions, version, createProgram, publishVersion, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview })
 }
