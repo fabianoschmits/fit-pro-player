@@ -26,3 +26,11 @@ export function studentStats(student = {}) {
 export function statusLabel(status) {
   return ({ pending: 'Pendente', active: 'Ativo', revoked: 'Revogado', completed: 'Concluído', in_progress: 'Em andamento', abandoned: 'Abandonado' })[status] || 'Desconhecido'
 }
+
+export function withTimeout(promise, milliseconds = 10000) {
+  let timer
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('request-timeout')), milliseconds) }),
+  ]).finally(() => clearTimeout(timer))
+}

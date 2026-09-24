@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FILTERS, filterStudents, inviteLink, normalizeInviteCode, statusLabel, studentStats } from './professional-ux.js'
+import { FILTERS, filterStudents, inviteLink, normalizeInviteCode, statusLabel, studentStats, withTimeout } from './professional-ux.js'
 
 describe('professional UX contracts', () => {
   it('normalizes invite codes and creates the same deep link for every share action', () => {
@@ -18,5 +18,9 @@ describe('professional UX contracts', () => {
     expect(studentStats({ programTitle: 'Força', lastExecutionStatus: 'completed', lastExecutionAt: '2026-09-24T10:00:00Z' })).toMatchObject({ hasProgram: true, lastStatus: 'completed' })
     expect(statusLabel('active')).toBe('Ativo')
     expect(statusLabel('revoked')).toBe('Revogado')
+  })
+
+  it('fails a stuck workspace request instead of leaving the page loading forever', async () => {
+    await expect(withTimeout(new Promise(() => {}), 1)).rejects.toThrow('request-timeout')
   })
 })
