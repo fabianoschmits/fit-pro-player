@@ -1,3 +1,5 @@
+import { normalizeWeeklyPlan } from './professional-program.js'
+
 const DAYS = [
   ['sunday', 0], ['monday', 1], ['tuesday', 2], ['wednesday', 3],
   ['thursday', 4], ['friday', 5], ['saturday', 6],
@@ -10,7 +12,8 @@ const dayNumber = key => {
 }
 
 export function assignedPlanToState(state, version, assignment) {
-  const plan = version?.weekly_plan && typeof version.weekly_plan === 'object' ? version.weekly_plan : {}
+  const rawPlan = version?.weekly_plan && typeof version.weekly_plan === 'object' ? version.weekly_plan : {}
+  const plan = normalizeWeeklyPlan(rawPlan)
   const routines = []
   const week = {}
   Object.entries(plan).forEach(([dayKey, entries], index) => {
@@ -18,7 +21,7 @@ export function assignedPlanToState(state, version, assignment) {
     if (day == null || !Array.isArray(entries) || !entries.length) return
     const routine = {
       id: `assigned:${version.id}:${day}:${index}`,
-      name: String(entries.name || entries.title || `Treino recebido · ${dayKey}`),
+      name: String(rawPlan[dayKey]?.title || rawPlan[dayKey]?.name || `Treino recebido · ${dayKey}`),
       emoji: 'dumbbell',
       assigned: true,
       assignmentId: assignment?.id || null,

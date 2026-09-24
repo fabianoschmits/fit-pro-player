@@ -12,4 +12,10 @@ describe('assigned program priority', () => {
     expect(next.workouts).toEqual([{ id: 'old' }])
     expect(hasAssignedProgram(next)).toBe(true)
   })
+
+  it('accepts professional plans stored as day objects with exercises', () => {
+    const next = assignedPlanToState({ routines: [], week: {}, dayPlan: {}, workouts: [] }, { id: 'v2', version_number: 2, weekly_plan: { friday: { title: 'Força', exercises: [{ exerciseId: '1254', sets: 4, reps: 6 }] } } }, { id: 'assignment-2', program_id: 'program-2' })
+    expect(next.week[5]).toContain('assigned:v2:5')
+    expect(next.routines.find(item => item.assigned).name).toBe('Força')
+  })
 })
