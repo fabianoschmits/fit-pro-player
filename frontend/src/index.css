@@ -1927,6 +1927,21 @@ h4.sec{
 .professional-program-editor,.professional-client-detail{display:flex;flex-direction:column;gap:12px}
 .professional-program-editor h3,.professional-client-detail h3{margin:0}
 .professional-program-editor label{display:flex;flex-direction:column;gap:5px;min-width:80px;font-size:12px;color:var(--label-2)}
+.professional-exercise-modal-layer{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:16px;background:color-mix(in srgb,#000 64%,transparent)}
+.professional-exercise-modal{width:min(100%,680px);max-height:min(88dvh,760px);display:flex;flex-direction:column;gap:12px;padding:18px;border:var(--hair) solid var(--sep);border-radius:var(--r-xl);background:var(--surface);box-shadow:var(--shadow-2);overflow:hidden}
+.professional-exercise-modal-header{flex:none;align-items:flex-start}
+.professional-exercise-modal-header h3{margin:0}
+.professional-exercise-picker-list{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto;padding-right:2px}
+.professional-exercise-picker-item{display:flex;flex-direction:column;gap:8px;flex:none}
+.professional-exercise-picker-item.is-selected{border-color:color-mix(in srgb,var(--acc) 58%,var(--sep));background:color-mix(in srgb,var(--acc) 8%,var(--surface))}
+.professional-exercise-picker-main{align-items:center;gap:12px}
+.professional-exercise-picker-main strong{display:block}
+.professional-exercise-picker-main small{display:block;margin-top:4px;text-transform:capitalize}
+.professional-exercise-picker-main .row-actions{align-items:center;flex:none}
+.exercise-animation-toggle{width:44px;height:44px;display:grid;place-items:center;border-radius:50%;border:var(--hair) solid var(--sep);background:var(--surface-2);color:var(--label);font-size:22px;line-height:1;transition:transform var(--fast) var(--ease),background var(--fast) var(--ease)}
+.exercise-animation-toggle[aria-expanded="true"]{transform:rotate(180deg);background:color-mix(in srgb,var(--acc) 14%,var(--surface-2))}
+.professional-exercise-animation{display:grid;place-items:center;min-height:92px;padding:8px;border-radius:var(--r-md);background:var(--surface-2)}
+.professional-exercise-animation .exercise-guide-motion{width:180px;height:120px}
 .program-fields{align-items:flex-end;flex-wrap:wrap}
 .program-fields .field{width:78px}
 .professional-client-detail select{width:100%;min-height:44px;border-radius:var(--r-sm);padding:0 12px;color:var(--label);background:var(--surface-2);border:var(--hair) solid var(--sep)}
@@ -1938,4 +1953,8 @@ h4.sec{
   .professional-dashboard .seg{margin-left:-8px;margin-right:-8px;padding-left:8px;padding-right:8px}
   .program-fields{display:grid;grid-template-columns:repeat(3,1fr);align-items:end}
   .program-fields .btn{grid-column:1/-1;width:100%}
+  .professional-exercise-modal-layer{padding:8px;align-items:end}
+  .professional-exercise-modal{max-height:92dvh;padding:14px;border-radius:var(--r-xl) var(--r-xl) var(--r-md) var(--r-md)}
+  .professional-exercise-picker-main{align-items:flex-start}
+  .professional-exercise-picker-main .row-actions{gap:6px}
 }

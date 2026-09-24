@@ -10,7 +10,7 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title }) => <h1>{title}</h1> }))
-vi.mock('../lib/exercises.js', () => ({ EXDB: [{ id: '1', n: 'Agachamento' }] }))
+vi.mock('../lib/exercises.js', () => ({ PROFESSIONAL_EXERCISES: [{ id: '1', n: 'Agachamento' }] }))
 import ProfessionalPrograms from './ProfessionalPrograms.jsx'
 
 let dom, root, container
