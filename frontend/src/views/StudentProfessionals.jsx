@@ -23,8 +23,17 @@ export default function StudentProfessionals() {
       setError('Entre na sua conta para acessar seus profissionais.')
       return
     }
-    refresh()
+    let settled = false
+    const request = refresh()
+    const guard = window.setTimeout(() => {
+      if (!settled) {
+        setBusy(false)
+        setError('A conexão demorou mais que o esperado.')
+      }
+    }, 12000)
+    Promise.resolve(request).finally(() => { settled = true; window.clearTimeout(guard) })
     if (params.get('code')) repo.previewInvite(params.get('code')).then(rows => setPreview(rows?.[0] || null)).catch(() => setError('Convite inválido ou expirado.'))
+    return () => { settled = true; window.clearTimeout(guard) }
   }, [auth.status, auth.user?.id])
   const previewInvite = async () => { setError(''); try { const rows = await repo.previewInvite(code); setPreview(rows?.[0] || null); if (!rows?.length) setError('Convite inválido ou expirado.') } catch { setError('Não foi possível consultar o convite.') } }
   const accept = async () => { try { await repo.acceptInvite(code); setMessage('Vínculo aceito.'); setPreview(null); await refresh() } catch { setError('Não foi possível aceitar este convite.') } }
