@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { Window } from 'happy-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'student-1' } }, repo: { relationships: vi.fn().mockResolvedValue([]), assignments: vi.fn().mockResolvedValue([]), studentOverview: vi.fn().mockResolvedValue({}) } }))
+const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'student-1' } }, repo: { relationships: vi.fn().mockResolvedValue([]), assignments: vi.fn().mockResolvedValue([]), studentOverview: vi.fn().mockResolvedValue({}), revokeRelationship: vi.fn() } }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
@@ -24,5 +24,14 @@ describe('student professionals page', () => {
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
     expect(container.textContent).toContain('Adicionar profissional')
     expect(container.textContent).toContain('Você ainda não possui profissionais vinculados.')
+  })
+
+  it('requires confirmation before unlinking a professional', async () => {
+    mocks.repo.relationships.mockResolvedValue([{ id: 'r1', status: 'active', accepted_at: '2026-09-24T00:00:00Z' }])
+    await act(async () => root.render(<MemoryRouter initialEntries={['/student/professionals']}><StudentProfessionals /></MemoryRouter>))
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Desvincular').click())
+    expect(container.textContent).toContain('Desvincular este profissional?')
+    expect(mocks.repo.revokeRelationship).not.toHaveBeenCalled()
   })
 })
