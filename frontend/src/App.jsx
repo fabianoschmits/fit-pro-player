@@ -44,8 +44,8 @@ const loadProfessionalInvites = () => import('./views/ProfessionalInvites.jsx')
 const loadInviteLanding = () => import('./views/InviteLanding.jsx')
 const loadProfessionalStudents = () => import('./views/ProfessionalStudents.jsx')
 const loadProfessionalStudentPage = () => import('./views/ProfessionalStudentPage.jsx')
+const loadProfessionalPrograms = () => import('./views/ProfessionalPrograms.jsx')
 const loadStudentProfessionals = () => import('./views/StudentProfessionals.jsx')
-const loadStudentConnections = () => import('./views/StudentConnections.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Home = lazy(loadHome)
@@ -64,14 +64,14 @@ const ProfessionalInvites = lazy(loadProfessionalInvites)
 const InviteLanding = lazy(loadInviteLanding)
 const ProfessionalStudents = lazy(loadProfessionalStudents)
 const ProfessionalStudentPage = lazy(loadProfessionalStudentPage)
+const ProfessionalPrograms = lazy(loadProfessionalPrograms)
 const StudentProfessionals = lazy(loadStudentProfessionals)
-const StudentConnections = lazy(loadStudentConnections)
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
   loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(),
-  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadStudentProfessionals(), loadStudentConnections(), loadSheets(),
+  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadProfessionalPrograms(), loadStudentProfessionals(), loadSheets(),
 ])
 
 const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))
@@ -422,8 +422,9 @@ function Shell() {
                 <Route path="/professional/invites" element={<ProfessionalInvites />} />
                 <Route path="/professional/students" element={<ProfessionalStudents />} />
                 <Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} />
+                <Route path="/professional/programs" element={<ProfessionalPrograms />} />
                 <Route path="/invite/:code" element={<InviteLanding />} />
-                <Route path="/connect" element={<StudentConnections />} />
+                <Route path="/connect" element={<Navigate to="/student/professionals" replace />} />
                 <Route path="/student/professionals" element={<StudentProfessionals />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />

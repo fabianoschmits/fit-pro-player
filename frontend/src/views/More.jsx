@@ -38,7 +38,7 @@ export default function More() {
       {professional && <Row icon="personCircle" iconTint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas"
         accessory="chevron" onClick={() => nav('/professional')} />}
       {account && <Row icon="personCircle" iconTint="var(--teal)" title="Meus profissionais" subtitle="Vínculos e convites recebidos"
-        accessory="chevron" onClick={() => nav('/connect')} />}
+        accessory="chevron" onClick={() => nav('/student/professionals')} />}
     </Section>
 
     <Section title={t('About')}>

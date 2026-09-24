@@ -1901,6 +1901,9 @@ h4.sec{
 .professional-student-card{display:flex;flex-direction:column;gap:8px;color:var(--label);text-decoration:none}
 .professional-student-card>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .professional-student-card small{display:block;margin-top:4px}
+.professional-program-list{display:grid;gap:10px}
+.professional-program-card{display:flex;flex-direction:column;gap:10px}
+.professional-program-card small{display:block;margin-top:4px}
 .student-professionals-page{display:flex;flex-direction:column;gap:12px}
 .student-professionals-page .card small{display:block;margin-top:4px}
 .history-row{display:flex;align-items:center;justify-content:space-between;gap:10px}

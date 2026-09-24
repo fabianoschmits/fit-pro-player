@@ -54,6 +54,19 @@ Chaves privadas do Supabase não pertencem ao frontend e não são lidas pelo Vi
 
 - `frontend/`: React, Vite, Zustand, PWA e projetos Capacitor.
 - `supabase/`: migrations, testes SQL e validações de fronteira.
+
+## Workspaces profissionais
+
+Contas profissionais continuam podendo treinar normalmente e recebem uma workspace separada:
+
+- `/professional`: visão geral;
+- `/professional/students`: alunos com vínculo ativo;
+- `/professional/students/:studentId`: resumo, treino, histórico e vínculo;
+- `/professional/invites`: criação, compartilhamento e revogação de convites;
+- `/professional/programs`: programas e versões;
+- `/student/professionals`: profissionais vinculados e aceite de convites.
+
+`/connect` permanece apenas como redirect compatível para `/student/professionals`. Profissionais administram somente alunos vinculados; não administram contas, senhas, emails ou roles.
 - `docs/MOBILE.md`: notas para builds móveis.
 
 ## Segurança

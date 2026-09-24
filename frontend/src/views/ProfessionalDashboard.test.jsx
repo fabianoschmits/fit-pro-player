@@ -35,12 +35,12 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional dashboard', () => {
-  it('organizes the client area around real client summaries', async () => {
+  it('shows a focused overview and links to the dedicated client workspace', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional']}><ProfessionalDashboard /></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    expect(container.textContent).toContain('Clientes')
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Clientes').click())
+    expect(container.textContent).toContain('Alunos')
     expect(container.textContent).toContain('Ana')
-    expect(container.textContent).toContain('Programas')
+    expect(container.textContent).toContain('Convites')
+    expect(container.querySelector('a[href="/professional/students"]')).toBeTruthy()
   })
 })
