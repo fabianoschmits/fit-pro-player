@@ -34,4 +34,12 @@ describe('student professionals page', () => {
     expect(container.textContent).toContain('Desvincular este profissional?')
     expect(mocks.repo.revokeRelationship).not.toHaveBeenCalled()
   })
+
+  it('does not leave the page loading without an authenticated user', async () => {
+    mocks.auth = { status: 'anonymous', user: null }
+    await act(async () => root.render(<MemoryRouter initialEntries={['/student/professionals']}><StudentProfessionals /></MemoryRouter>))
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+    expect(container.textContent).toContain('Entre na sua conta para acessar seus profissionais.')
+    expect(container.textContent).not.toContain('Carregando…')
+  })
 })

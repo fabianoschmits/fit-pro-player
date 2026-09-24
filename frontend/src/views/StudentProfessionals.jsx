@@ -16,7 +16,16 @@ export default function StudentProfessionals() {
   const auth = useAuth(); const [params] = useSearchParams(); const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const [code, setCode] = useState(params.get('code') || ''); const [preview, setPreview] = useState(null); const [relations, setRelations] = useState([]); const [assignments, setAssignments] = useState([]); const [overview, setOverview] = useState({}); const [busy, setBusy] = useState(true); const [message, setMessage] = useState(''); const [error, setError] = useState(''); const [confirmRelationshipId, setConfirmRelationshipId] = useState('')
   const refresh = () => { setBusy(true); setError(''); return withTimeout(Promise.all([repo.relationships(auth.user.id), repo.assignments(), repo.studentOverview()]), 10000).then(async ([nextRelations, nextAssignments, nextOverview]) => { setRelations(nextRelations); setAssignments(nextAssignments); setOverview(nextOverview || {}); const latest = nextAssignments.filter(item => item.status === 'active').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]; if (latest) { const version = await withTimeout(repo.version(latest.version_id), 10000); const current = useStore.getState().S; if (version && current.assignedProgram?.versionId !== version.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest)) } }).catch(cause => setError(cause?.message === 'request-timeout' ? 'A conexão demorou mais que o esperado.' : 'Não foi possível carregar seus profissionais.')).finally(() => setBusy(false)) }
-  useEffect(() => { if (auth.user?.id) { refresh(); if (params.get('code')) repo.previewInvite(params.get('code')).then(rows => setPreview(rows?.[0] || null)).catch(() => setError('Convite inválido ou expirado.')) } }, [auth.user?.id])
+  useEffect(() => {
+    if (auth.status === 'initializing') return
+    if (!auth.user?.id) {
+      setBusy(false)
+      setError('Entre na sua conta para acessar seus profissionais.')
+      return
+    }
+    refresh()
+    if (params.get('code')) repo.previewInvite(params.get('code')).then(rows => setPreview(rows?.[0] || null)).catch(() => setError('Convite inválido ou expirado.'))
+  }, [auth.status, auth.user?.id])
   const previewInvite = async () => { setError(''); try { const rows = await repo.previewInvite(code); setPreview(rows?.[0] || null); if (!rows?.length) setError('Convite inválido ou expirado.') } catch { setError('Não foi possível consultar o convite.') } }
   const accept = async () => { try { await repo.acceptInvite(code); setMessage('Vínculo aceito.'); setPreview(null); await refresh() } catch { setError('Não foi possível aceitar este convite.') } }
   const start = async item => { const assignment = assignments.find(entry => entry.status === 'active'); if (!assignment) return; try { const execution = await createProfessionalExecutionRepository({ client: getBrowserSupabaseClient() }).startAssignedExecution({ assignmentId: assignment.id, versionId: assignment.version_id, studentUserId: auth.user.id, dayKey: item.day }); const dayNumber = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 }[item.day]; startFlow(useStore.getState().S.week?.[dayNumber] || null, execution.id); setMessage('Treino iniciado.'); await refresh() } catch { setError('Não foi possível iniciar o treino.') } }
