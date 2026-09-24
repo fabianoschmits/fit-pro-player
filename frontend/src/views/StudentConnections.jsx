@@ -3,11 +3,13 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
+import { createProfessionalExecutionRepository } from '../lib/professional-execution.js'
 import { Button, Section, TextField } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import StudentProgramOverview from '../components/StudentProgramOverview.jsx'
 import { assignedPlanToState } from '../lib/assigned-program.js'
 import { useStore } from '../store/useStore.js'
+import { startFlow } from '../sheets.jsx'
 
 export default function StudentConnections() {
   const auth = useAuth(); const [params] = useSearchParams(); const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
@@ -28,8 +30,10 @@ export default function StudentConnections() {
     const assignment = assignments.find(entry => entry.status === 'active')
     if (!assignment) return
     try {
-      const { error: startError } = await getBrowserSupabaseClient().from('workout_executions').insert({ assignment_id: assignment.id, version_id: assignment.version_id, student_user_id: auth.user.id, day_key: item.day, payload: { source: 'professional-program' }, status: 'in_progress' })
-      if (startError) throw startError
+      const execution = await createProfessionalExecutionRepository({ client: getBrowserSupabaseClient() }).startAssignedExecution({ assignmentId: assignment.id, versionId: assignment.version_id, studentUserId: auth.user.id, dayKey: item.day })
+      const dayNumber = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 }[item.day]
+      const routineId = useStore.getState().S.week?.[dayNumber] || null
+      startFlow(routineId, execution.id)
       setMessage('Treino iniciado.'); refresh()
     } catch { setError('Não foi possível iniciar o treino.') }
   }

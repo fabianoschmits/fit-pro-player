@@ -29,6 +29,8 @@ import { buildCompletedWorkout } from './lib/finish-workout.js'
 import { isWarmupRow } from './lib/workout-model.js'
 import { syncProfileWeightFromBodyweight } from './lib/profile.js'
 import { resetHistoricalSets } from './lib/workout-session.js'
+import { getBrowserSupabaseClient } from './lib/supabase-client.js'
+import { createProfessionalExecutionRepository } from './lib/professional-execution.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -1087,13 +1089,13 @@ export function WorkoutRow({ w, onClick }) {
 }
 
 /* ============================ workout lifecycle ============================ */
-export function startFlow(routineId) {
+export function startFlow(routineId, professionalExecutionId = null) {
   const st = S()
   if (shouldWeighBeforeWorkout(st)) {
-    bwSheet({ required: true, onDone: bw => beginWorkout(routineId, bw) })
+    bwSheet({ required: true, onDone: bw => beginWorkout(routineId, bw, professionalExecutionId) })
   } else {
     const bw = hasWeighedToday(st) ? lastBW(st)?.w : null
-    beginWorkout(routineId, bw ?? null)
+    beginWorkout(routineId, bw ?? null, professionalExecutionId)
   }
 }
 export function repeatLastWorkout() {
@@ -1142,7 +1144,7 @@ function beginWorkoutFromHistory(workout, bw) {
   useUI.getState().stopRest()
   nav('/workout')
 }
-export function beginWorkout(routineId, bw) {
+export function beginWorkout(routineId, bw, professionalExecutionId = null) {
   const st = S()
   const r = routineId ? st.routines.find(x => x.id === routineId) : null
   // The prescription is applied as the session is built, so you walk up to the bar with the
@@ -1153,7 +1155,7 @@ export function beginWorkout(routineId, bw) {
     return { id: cfg.id, sg: cfg.sg, target: { ...cfg }, plan, sets: applyPrescription(buildSets(st, cfg), plan) }
   })
   update(s => {
-    s.active = { id: uid(), d: todayISO(), start: null, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries }
+    s.active = { id: uid(), d: todayISO(), start: null, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId }
   })
   useUI.getState().stopRest()
   nav('/workout')
@@ -1276,6 +1278,7 @@ function doFinishWorkout() {
     snapshotFor: e => EXIDX[e.id]?.custom ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
   })
   w.vol = workoutVolume(w)
+  const professionalExecutionId = A.professionalExecutionId
   update(s => {
     w.entries.forEach(e => {
       const mx = Math.max(0, ...e.sets.filter(x => x.done && !isWarmupRow(x)).map(x => x.w || 0), e.topW || 0)
@@ -1285,6 +1288,11 @@ function doFinishWorkout() {
     s.active = null
   })
   useUI.getState().stopRest()
+  if (professionalExecutionId) {
+    createProfessionalExecutionRepository({ client: getBrowserSupabaseClient() })
+      .completeAssignedExecution({ executionId: professionalExecutionId, payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, completedAt: w.end } })
+      .catch(() => toast(t('Workout saved locally; sync will retry later.')))
+  }
   beep(snd(), 880, 0.15); beep(snd(), 1100, 0.15, 0.18); beep(snd(), 1320, 0.3, 0.36)
   ui().openSheet(close => <FinishSummary w={w} prs={prs} e1prs={e1prs} close={close} />, { kind: 'center', locked: true })
 }
