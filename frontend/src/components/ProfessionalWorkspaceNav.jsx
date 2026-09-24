@@ -5,6 +5,7 @@ const LINKS = [
   ['Alunos', '/professional/students'],
   ['Convites', '/professional/invites'],
   ['Programas', '/professional/programs'],
+  ['Perfil', '/professional/profile'],
 ]
 
 export default function ProfessionalWorkspaceNav() {
