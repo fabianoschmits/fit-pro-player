@@ -90,7 +90,10 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       setNotice(t('If an account exists for this email, we sent recovery instructions.'));
       return;
     }
-    if (mode === 'reset_password' || mode === 'sign_in' || mode === 'sign_up') close();
+    if (mode === 'reset_password' || mode === 'sign_in' || mode === 'sign_up') {
+      if (mode === 'sign_in' || mode === 'sign_up') useStore.getState?.().enterApp?.();
+      close();
+    }
   };
 
   if (mode === 'entry') {

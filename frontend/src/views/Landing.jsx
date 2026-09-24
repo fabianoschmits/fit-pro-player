@@ -279,7 +279,7 @@ export default function Landing({ invitePath = false }) {
 
   return (
     <main className="landing-page">
-      {invitePath && <div className="landing-invite-banner" role="status"><strong>Você recebeu um convite profissional.</strong><span>Entre ou crie sua conta para conferir o profissional antes de aceitar.</span><Button variant="primary" onClick={() => openAuthSheet('entry')}>Ver convite</Button></div>}
+      {invitePath && <div className="landing-invite-banner" role="status"><strong>Você recebeu um convite profissional.</strong><span>Crie sua conta ou entre para conferir o profissional e aceitar o vínculo.</span><Button variant="primary" onClick={() => openAuthSheet('sign_up')}>Criar conta e ver convite</Button></div>}
       <header className="landing-nav-shell">
         <div className="landing-nav">
           <a className="landing-nav-brand" href="#top" aria-label="Fit Pro Player — início">

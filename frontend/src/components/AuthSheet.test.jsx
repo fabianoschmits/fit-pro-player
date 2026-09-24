@@ -7,12 +7,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   auth: null,
   openSheet: vi.fn(),
+  enterApp: vi.fn(),
 }));
 
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('../lib/i18n.js', () => ({ t: value => value }));
 vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ openSheet: mocks.openSheet }) } }));
-vi.mock('../store/useStore.js', () => ({ useStore: selector => selector({ S: { profile: { name: 'Offline Ana' } } }) }));
+vi.mock('../store/useStore.js', () => {
+  const useStore = selector => selector({ S: { profile: { name: 'Offline Ana' } } });
+  useStore.getState = () => ({ enterApp: mocks.enterApp });
+  return { useStore };
+});
 
 import { AuthSheet, openAuthSheet } from './AuthSheet.jsx';
 
@@ -62,6 +67,7 @@ beforeEach(() => {
   close = vi.fn();
   mocks.auth = auth();
   mocks.openSheet.mockReset();
+  mocks.enterApp.mockReset();
 });
 
 afterEach(async () => {
@@ -104,6 +110,15 @@ describe('AuthSheet', () => {
     await click(button('Create account'));
 
     expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'professional' }));
+  });
+
+  it('enters the app immediately after sign-in', async () => {
+    await render('sign_in');
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    await click(button('Sign in'));
+    expect(mocks.enterApp).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('disables the active submit while the matching Auth operation is pending', async () => {

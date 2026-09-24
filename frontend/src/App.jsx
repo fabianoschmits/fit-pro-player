@@ -264,6 +264,8 @@ function Shell() {
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
   const invitePath = loc.pathname.startsWith('/invite/')
+  const inviteAcceptedPath = new URLSearchParams(loc.search).get('invite') === 'accepted'
+  const inviteAuthenticated = invitePath && authenticated && ready
   const pendingInviteCode = loc.pathname.match(/^\/invite\/([^/]+)/)?.[1] || ''
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
@@ -277,7 +279,8 @@ function Shell() {
   }, [ready, authenticated, appEntered, loc.pathname, navigate])
   useEffect(() => {
     if (auth.status === 'initializing') return
-    boot({ supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null })
+    const result = boot({ supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null })
+    if (auth.status === 'authenticated') Promise.resolve(result).then(() => useStore.getState?.().enterApp?.())
   }, [auth.status, boot])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current === auth.user.id || associationInFlight.current === auth.user.id) return
@@ -394,12 +397,12 @@ function Shell() {
   // First entry is a single, resumable setup inside Plan. Until it is complete, other routes
   // cannot accidentally surface an empty dashboard or the retired Home overlay.
   useEffect(() => {
-    if (ready && !appEntered && loc.pathname !== '/') {
+    if (ready && !appEntered && !invitePath && loc.pathname !== '/') {
       navigate('/', { replace: true })
       return
     }
-    if (ready && authed && !S.onboardingDone && loc.pathname !== '/plan') navigate('/plan', { replace: true })
-  }, [S.onboardingDone, appEntered, authed, loc.pathname, navigate, ready])
+    if (ready && authed && !invitePath && !inviteAcceptedPath && !S.onboardingDone && loc.pathname !== '/plan') navigate('/plan', { replace: true })
+  }, [S.onboardingDone, appEntered, authed, inviteAcceptedPath, invitePath, loc.pathname, navigate, ready])
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
 
@@ -418,7 +421,7 @@ function Shell() {
           re-mounts the boundary, so the tab bar is always a way out */}
       <PageTransition>
         <ErrorBoundary>
-          {!authed ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
+          {!(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
             <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
                 <Route path="/plan" element={<Plan />} />

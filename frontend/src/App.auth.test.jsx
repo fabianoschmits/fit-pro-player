@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   auth: { status: 'initializing', suppressLegacyResume: false, user: null },
   boot: vi.fn(),
+  enterApp: vi.fn(),
   openAuthSheet: vi.fn(),
   ready: false,
 }));
@@ -15,7 +16,7 @@ vi.mock('./auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('./components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }));
 vi.mock('./views/Landing.jsx', () => ({ default: () => <main className="landing-page" /> }));
 vi.mock('./store/useStore.js', () => ({
-  useStore: selector => {
+  useStore: Object.assign(selector => {
     const state = {
     S: { theme: 'dark', accent: 'lime', lang: 'pt', onboardingDone: true, active: null, keepAwake: false },
     user: null,
@@ -24,8 +25,8 @@ vi.mock('./store/useStore.js', () => ({
     isGuest: () => false,
     }
     return selector ? selector(state) : state
-  },
-}));
+  }, { getState: () => ({ enterApp: mocks.enterApp }) }),
+  }));
 
 import App from './App.jsx';
 
@@ -45,6 +46,7 @@ beforeEach(() => {
   root = createRoot(container);
   mocks.auth = { status: 'initializing', suppressLegacyResume: false, user: null };
   mocks.boot.mockReset();
+  mocks.enterApp.mockReset();
   mocks.openAuthSheet.mockReset();
   mocks.ready = false;
 });
@@ -62,6 +64,8 @@ describe('App Auth boot coordination', () => {
     mocks.auth = { status: 'authenticated', suppressLegacyResume: false, user: { id: 'supabase-user' } };
     await act(async () => root.render(<App />));
     expect(mocks.boot).toHaveBeenCalledWith({ supabaseUserId: 'supabase-user' });
+    await act(async () => { await Promise.resolve() });
+    expect(mocks.enterApp).toHaveBeenCalledTimes(1);
   });
 
   it('boots the anonymous local scope after Supabase reports no session', async () => {
