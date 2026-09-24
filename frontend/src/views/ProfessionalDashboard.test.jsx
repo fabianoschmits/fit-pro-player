@@ -2,6 +2,7 @@
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Window } from 'happy-dom'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -35,7 +36,7 @@ afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional dashboard', () => {
   it('organizes the client area around real client summaries', async () => {
-    await act(async () => root.render(<ProfessionalDashboard />))
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional']}><ProfessionalDashboard /></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
     expect(container.textContent).toContain('Clientes')
     await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Clientes').click())

@@ -7,6 +7,7 @@ import { Button, Section, TextArea, TextField } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import ProfessionalProgramEditor from '../components/ProfessionalProgramEditor.jsx'
 import ProfessionalClientDetail from '../components/ProfessionalClientDetail.jsx'
+import ProfessionalWorkspaceNav from '../components/ProfessionalWorkspaceNav.jsx'
 
 const TABS = ['overview', 'clients', 'programs', 'invites']
 const TAB_LABELS = { overview: 'Visão geral', clients: 'Clientes', programs: 'Programas', invites: 'Convites e atividade' }
@@ -61,6 +62,7 @@ export default function ProfessionalDashboard() {
   if (auth.status !== 'authenticated' || !professional) return <div className="narrow"><Section><p>Esta área está disponível apenas para contas profissionais.</p></Section></div>
   return <div className="narrow professional-dashboard">
     <AppHeader title="Área profissional" subtitle="Clientes, programas e acompanhamento" />
+    <ProfessionalWorkspaceNav />
     {error && <p role="alert" className="error">{error}</p>}
     {busy ? <p role="status">Carregando…</p> : <>
       <div className="seg" role="tablist" aria-label="Área profissional">

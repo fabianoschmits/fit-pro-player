@@ -1890,6 +1890,9 @@ h4.sec{
 
 /* Professional management: dense enough for desktop, stacked and touch-safe on mobile. */
 .professional-dashboard .seg{margin-bottom:16px;overflow-x:auto}
+.professional-workspace-nav{display:flex;gap:6px;overflow-x:auto;margin:0 0 16px;padding:4px;border:var(--hair) solid var(--sep);border-radius:var(--r-md);background:var(--surface-2);scrollbar-width:none}
+.professional-workspace-nav a{flex:1 0 auto;min-height:40px;display:flex;align-items:center;justify-content:center;padding:0 12px;border-radius:var(--r-sm);color:var(--label-2);font-size:13px;font-weight:650;text-decoration:none;white-space:nowrap}
+.professional-workspace-nav a[aria-current="page"]{color:var(--label);background:var(--surface);box-shadow:var(--shadow-1)}
 .professional-dashboard .seg button{white-space:nowrap}
 .dashboard-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .dashboard-stats .card{display:flex;flex-direction:column;gap:4px;min-height:72px}
