@@ -1887,3 +1887,28 @@ h4.sec{
 .picker-cfg{width:34px;height:34px;border-radius:8px;font-size:16px;color:var(--label-2);flex:none}
 
 #app *,#modal-root *,#toast{letter-spacing:0}
+
+/* Professional management: dense enough for desktop, stacked and touch-safe on mobile. */
+.professional-dashboard .seg{margin-bottom:16px;overflow-x:auto}
+.professional-dashboard .seg button{white-space:nowrap}
+.dashboard-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dashboard-stats .card{display:flex;flex-direction:column;gap:4px;min-height:72px}
+.dashboard-stats strong{font-size:24px;color:var(--acc)}
+.dashboard-stats span{font-size:12px;color:var(--label-2)}
+.client-card{display:flex;width:100%;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;border:1px solid transparent}
+.client-card.on{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 10%,var(--surface))}
+.professional-program-editor,.professional-client-detail{display:flex;flex-direction:column;gap:12px}
+.professional-program-editor h3,.professional-client-detail h3{margin:0}
+.professional-program-editor label{display:flex;flex-direction:column;gap:5px;min-width:80px;font-size:12px;color:var(--label-2)}
+.program-fields{align-items:flex-end;flex-wrap:wrap}
+.program-fields .field{width:78px}
+.professional-client-detail select{width:100%;min-height:44px;border-radius:var(--r-sm);padding:0 12px;color:var(--label);background:var(--surface-2);border:var(--hair) solid var(--sep)}
+.student-program-overview{display:flex;flex-direction:column;gap:12px}
+.student-program-overview h3{margin:0 0 5px}
+.student-program-overview .card small{display:block;margin-top:4px}
+@media (max-width:560px){
+  .dashboard-stats{grid-template-columns:1fr}
+  .professional-dashboard .seg{margin-left:-8px;margin-right:-8px;padding-left:8px;padding-right:8px}
+  .program-fields{display:grid;grid-template-columns:repeat(3,1fr);align-items:end}
+  .program-fields .btn{grid-column:1/-1;width:100%}
+}
