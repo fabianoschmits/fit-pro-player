@@ -1894,6 +1894,16 @@ h4.sec{
 .professional-workspace-nav a{flex:1 0 auto;min-height:40px;display:flex;align-items:center;justify-content:center;padding:0 12px;border-radius:var(--r-sm);color:var(--label-2);font-size:13px;font-weight:650;text-decoration:none;white-space:nowrap}
 .professional-workspace-nav a[aria-current="page"]{color:var(--label);background:var(--surface);box-shadow:var(--shadow-1)}
 .professional-page,.invite-landing{display:flex;flex-direction:column;gap:12px}
+.professional-page-toolbar{display:flex;flex-direction:column;gap:10px}
+.professional-page-toolbar .seg.compact{margin:0;display:flex;overflow:auto}
+.professional-page-toolbar .seg.compact button{white-space:nowrap}
+.professional-student-list{display:grid;gap:10px}
+.professional-student-card{display:flex;flex-direction:column;gap:8px;color:var(--label);text-decoration:none}
+.professional-student-card>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.professional-student-card small{display:block;margin-top:4px}
+.student-professionals-page{display:flex;flex-direction:column;gap:12px}
+.student-professionals-page .card small{display:block;margin-top:4px}
+.history-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .professional-invite-list{display:grid;gap:10px}
 .professional-invite-card{display:flex;flex-direction:column;gap:8px}
 .invite-code{font:700 22px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em}
