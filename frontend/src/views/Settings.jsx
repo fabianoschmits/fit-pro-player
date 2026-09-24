@@ -17,6 +17,12 @@ import Icon from '../components/Icon.jsx'
 import { Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
+import { openAccountAssociation } from '../components/AccountAssociationSheet.jsx'
+import { createAccountSyncService, readSyncMetadata, writeSyncMetadata, REMOTE_SYNC_STATE } from '../lib/account-sync.js'
+import { applyAssociationChoice } from '../lib/account-association.js'
+import { resolveLocalScope, ANONYMOUS_SCOPE } from '../lib/local-state-scope.js'
+import { readScopedState } from '../lib/account-cache.js'
+import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -33,6 +39,33 @@ export default function Settings() {
   const importRef = useRef(null)
   const wakeOK = wakeLockSupported()
   const supabaseConfigured = auth.configured
+
+  const openManualSync = async () => {
+    if (auth.status !== 'authenticated' || !auth.user?.id) return
+    const client = getBrowserSupabaseClient()
+    const scope = resolveLocalScope(auth.user.id)
+    const service = createAccountSyncService({ client, scope })
+    const result = await service.fetchRemoteSnapshot()
+    if (result.state === REMOTE_SYNC_STATE.OFFLINE) { toast('Sem conexão. Tente novamente quando estiver online.'); return }
+    if (result.state === REMOTE_SYNC_STATE.ERROR) { toast('Não foi possível consultar a nuvem.'); return }
+    const remoteSnapshot = result.snapshot
+    const accountState = useStore.getState().S
+    const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, DEF).state
+    openAccountAssociation({ conflict: Boolean(remoteSnapshot), onChoice: async choice => {
+      const applied = applyAssociationChoice(choice, { anonymousState, accountState, remoteSnapshot })
+      if (applied.kind === 'keep-separate') return
+      if (applied.kind === 'invalid') throw new Error('Não há dados válidos para essa escolha.')
+      const next = applied.state
+      useStore.getState().replaceState(next, false)
+      if (applied.upload) {
+        const uploaded = await service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision })
+        if (uploaded.state !== REMOTE_SYNC_STATE.IN_SYNC) throw new Error('Não foi possível salvar os dados escolhidos.')
+      } else if (remoteSnapshot) {
+        writeSyncMetadata(scope, { revision: remoteSnapshot.revision, dirty: false })
+      }
+      toast('Sincronização atualizada')
+    }})
+  }
 
   const doExport = async () => {
     const json = JSON.stringify(S, null, 2)
@@ -76,6 +109,8 @@ export default function Settings() {
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
       </> : auth.status === 'authenticated' ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
+        <Row icon="shuffle" iconTint="var(--blue)" title="Sincronização da conta" subtitle="Atualização automática. Escolha manualmente apenas se quiser trocar a cópia usada."
+          accessory="chevron" onClick={openManualSync} />
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
           title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
           confirmText: t('Sign out'), danger: true,

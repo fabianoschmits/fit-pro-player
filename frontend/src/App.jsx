@@ -24,7 +24,6 @@ import { createAccountSyncService, readSyncMetadata, writeSyncMetadata, REMOTE_S
 import { applyAssociationChoice, canAutoAdoptAnonymous, classifyAssociation } from './lib/account-association.js'
 import { ANONYMOUS_SCOPE, resolveLocalScope } from './lib/local-state-scope.js'
 import { readScopedState } from './lib/account-cache.js'
-import { openAccountAssociation } from './components/AccountAssociationSheet.jsx'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 const loadHome = () => import('./views/Home.jsx')
@@ -268,40 +267,47 @@ function Shell() {
     const service = createAccountSyncService({ client, scope: accountScope })
     const accountState = useStore.getState().S
     const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, accountState).state
-    const showAssociation = (remoteSnapshot, conflict = false) => {
-      associationShown.current = auth.user.id
-      openAccountAssociation({ conflict, onChoice: async choice => {
-        const applied = applyAssociationChoice(choice, { anonymousState, accountState, remoteSnapshot })
-        if (applied.kind === 'keep-separate') return
-        if (applied.kind === 'invalid') throw new Error('Não há dados válidos para essa escolha.')
-        const next = normalizeState(applied.state)
-        useStore.getState().replaceState(next, false)
-        if (applied.upload) {
-          const uploaded = await service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision })
-          if (uploaded.state === 'CONFLICT') throw new Error('A nuvem mudou enquanto associávamos os dados. Revise as duas cópias.')
-          if (uploaded.state !== 'IN_SYNC') throw new Error('Não foi possível salvar a associação agora.')
+    const settleAutomatically = async remoteSnapshot => {
+      const metadata = readSyncMetadata(accountScope)
+      const localIsNewer = metadata.dirty || metadata.revision > (remoteSnapshot?.revision || 0)
+      if (localIsNewer) {
+        const uploaded = await service.uploadSnapshot({ state: accountState, expectedRevision: remoteSnapshot?.revision || 0 })
+        if (uploaded.state === REMOTE_SYNC_STATE.IN_SYNC) {
+          if (hasAnonymousData) useStore.getState().clearAnonymousState()
+          return
         }
-      }})
+        // A second device won the race. The newest confirmed cloud revision is the
+        // deterministic winner; the user can still force a copy from Settings.
+      }
+      if (remoteSnapshot?.payload) {
+        useStore.getState().replaceState(normalizeState(remoteSnapshot.payload), false)
+        writeSyncMetadata(accountScope, { revision: remoteSnapshot.revision, dirty: false })
+        if (hasAnonymousData) useStore.getState().clearAnonymousState()
+      }
     }
-    service.fetchRemoteSnapshot().then(result => {
+    const hasAnonymousData = Boolean(anonymousState?.onboardingDone || anonymousState?.active || anonymousState?.profile?.name || anonymousState?.workouts?.length || anonymousState?.bodyweight?.length || anonymousState?.bodyMeasurements?.length || anonymousState?.customEx?.length || anonymousState?.customEx?.length)
+    service.fetchRemoteSnapshot().then(async result => {
       if (disposed || result.state === 'ERROR' || result.state === 'OFFLINE') return
       const decision = classifyAssociation({ anonymousState, accountState, remoteSnapshot: result.snapshot, accountRevision: readSyncMetadata(accountScope).revision })
       if (canAutoAdoptAnonymous({ anonymousState, accountState, remoteSnapshot: result.snapshot })) {
         const applied = applyAssociationChoice('use-device', { anonymousState, accountState, remoteSnapshot: result.snapshot })
         const next = normalizeState(applied.state)
         useStore.getState().replaceState(next, false)
-        return service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision }).then(uploaded => {
+        return service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision }).then(async uploaded => {
           if (uploaded.state === REMOTE_SYNC_STATE.IN_SYNC) {
             useStore.getState().clearAnonymousState()
             associationShown.current = auth.user.id
             return
           }
-          if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) showAssociation(result.snapshot, true)
-          else throw new Error('Não foi possível associar os dados do dispositivo agora.')
+          if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) await settleAutomatically(result.snapshot)
+          else if (uploaded.state !== REMOTE_SYNC_STATE.IN_SYNC) throw new Error('Não foi possível associar os dados do dispositivo agora.')
         })
       }
       if (!decision.requiresDecision) { associationShown.current = auth.user.id; return }
-      showAssociation(result.snapshot, decision.case === 'CONFLICT')
+      // Account reconnects are non-interactive. The last confirmed state wins:
+      // local dirty state is uploaded, otherwise the newer cloud revision is restored.
+      await settleAutomatically(result.snapshot)
+      associationShown.current = auth.user.id
     }).catch(() => {}).finally(() => {
       if (associationInFlight.current === auth.user.id) associationInFlight.current = null
     })
@@ -324,7 +330,10 @@ function Shell() {
         writeSyncMetadata(scope, { revision: result.snapshot.revision, dirty: false })
       } else if (result.state === REMOTE_SYNC_STATE.LOCAL_AHEAD) {
         const uploaded = await service.uploadSnapshot({ state: S, expectedRevision: result.snapshot.revision })
-        if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) useUI.getState().toast('A nuvem mudou. Revise as cópias antes de continuar.')
+        if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT && result.snapshot) {
+          useStore.getState().replaceState(normalizeState(result.snapshot.payload), false)
+          writeSyncMetadata(scope, { revision: result.snapshot.revision, dirty: false })
+        }
       }
     }, 900)
     return () => { disposed = true; window.clearTimeout(timer) }
