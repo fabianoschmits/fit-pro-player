@@ -1,0 +1,50 @@
+const toProfile = value => value ? ({
+  userId: value.professional_user_id,
+  professionalName: value.professional_name,
+  bio: value.bio,
+  specialties: value.specialties || [],
+  verificationStatus: value.verification_status,
+}) : null
+
+export function createProfessionalWorkflowRepository({ client } = {}) {
+  const rpc = async (name, args) => {
+    if (!client?.rpc) throw new Error('supabase-unavailable')
+    const { data, error } = await client.rpc(name, args)
+    if (error) throw error
+    return data
+  }
+  const read = async (table, query) => {
+    if (!client?.from) throw new Error('supabase-unavailable')
+    const response = await query(client.from(table))
+    if (response?.error) throw response.error
+    return response.data || []
+  }
+  const relationships = userId => read('professional_student_relationships', q => q.select('*').or(`professional_user_id.eq.${userId},student_user_id.eq.${userId}`).order('created_at', { ascending: false }))
+  const invites = () => read('professional_invites', q => q.select('id,kind,code,status,created_at,accepted_at').order('created_at', { ascending: false }))
+  const createInvite = kind => rpc('create_professional_invite', { p_kind: kind || 'code' })
+  const previewInvite = code => rpc('preview_professional_invite', { p_code: code })
+  const acceptInvite = code => rpc('accept_professional_invite', { p_code: code })
+  const revokeRelationship = id => rpc('revoke_professional_relationship', { p_relationship_id: id })
+  const programs = () => read('programs', q => q.select('*').order('updated_at', { ascending: false }))
+  const versions = programId => read('program_versions', q => q.select('*').eq('program_id', programId).order('version_number', { ascending: false }))
+  const createProgram = async (userId, title, description = '') => {
+    const { data, error } = await client.from('programs').insert({ professional_user_id: userId, title: title.trim(), description: description.trim() || null }).select('*').single()
+    if (error) throw error
+    return data
+  }
+  const publishVersion = async (programId, weeklyPlan) => {
+    const current = await read('program_versions', q => q.select('version_number').eq('program_id', programId).order('version_number', { ascending: false }).limit(1))
+    const versionNumber = Number(current[0]?.version_number || 0) + 1
+    const { data, error } = await client.from('program_versions').insert({ program_id: programId, version_number: versionNumber, weekly_plan: weeklyPlan, published_at: new Date().toISOString() }).select('*').single()
+    if (error) throw error
+    return data
+  }
+  const assignments = () => read('program_assignments', q => q.select('*').order('created_at', { ascending: false }))
+  const assign = async ({ programId, versionId, professionalUserId, studentUserId }) => {
+    const { data, error } = await client.from('program_assignments').insert({ program_id: programId, version_id: versionId, professional_user_id: professionalUserId, student_user_id: studentUserId }).select('*').single()
+    if (error) throw error
+    return data
+  }
+  const executions = () => read('workout_executions', q => q.select('*').order('started_at', { ascending: false }))
+  return Object.freeze({ toProfile, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, programs, versions, createProgram, publishVersion, assignments, assign, executions })
+}

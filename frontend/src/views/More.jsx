@@ -29,6 +29,10 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/body-progress')} />
       {account && <Row icon="personCircle" iconTint="var(--purple)" title="Perfil profissional" subtitle="Nome, especialidades e registro informado"
         accessory="chevron" onClick={() => nav('/professional-profile')} />}
+      {account && <Row icon="personCircle" iconTint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas"
+        accessory="chevron" onClick={() => nav('/professional')} />}
+      {account && <Row icon="personCircle" iconTint="var(--teal)" title="Meus profissionais" subtitle="Vínculos e convites recebidos"
+        accessory="chevron" onClick={() => nav('/connect')} />}
     </Section>
 
     <Section title={t('About')}>

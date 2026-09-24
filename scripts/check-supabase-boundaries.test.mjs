@@ -11,6 +11,8 @@ const requiredFiles = [
   'supabase/tests/202609210001_identity_profiles_roles_links.sql',
   'supabase/migrations/202609240007_account_lifecycle.sql',
   'supabase/tests/202609240007_account_lifecycle.sql',
+  'supabase/migrations/202609240008_professional_workflow.sql',
+  'supabase/tests/202609240008_professional_workflow.sql',
 ]
 
 const runCheck = (files, contents = {}, rootDir = process.cwd()) => checkSupabaseBoundaries({
@@ -100,6 +102,8 @@ test('rejects missing reproducibility files', () => {
       'missing required file: supabase/tests/202609210001_identity_profiles_roles_links.sql',
       'missing required file: supabase/migrations/202609240007_account_lifecycle.sql',
       'missing required file: supabase/tests/202609240007_account_lifecycle.sql',
+      'missing required file: supabase/migrations/202609240008_professional_workflow.sql',
+      'missing required file: supabase/tests/202609240008_professional_workflow.sql',
     ])
   } finally {
     rmSync(rootDir, { recursive: true, force: true })

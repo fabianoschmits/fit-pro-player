@@ -1,0 +1,14 @@
+select has_table('public', 'professional_student_relationships', 'professional/student relationships exist');
+select has_table('public', 'professional_invites', 'professional invites exist');
+select has_table('public', 'programs', 'program identities exist');
+select has_table('public', 'program_versions', 'immutable program versions exist');
+select has_table('public', 'program_assignments', 'program assignments exist');
+select has_table('public', 'workout_executions', 'workout executions exist');
+select ok((select relrowsecurity from pg_class where oid = 'public.professional_student_relationships'::regclass), 'relationships have RLS');
+select ok((select relrowsecurity from pg_class where oid = 'public.programs'::regclass), 'programs have RLS');
+select function_privilege('public.accept_professional_invite(text)', 'authenticated', 'EXECUTE', true, 'students can accept invites through RPC');
+select function_privilege('public.accept_professional_invite(text)', 'anon', 'EXECUTE', false, 'anonymous users cannot accept invites');
+select function_privilege('public.create_professional_invite(public.invite_kind)', 'authenticated', 'EXECUTE', true, 'professionals can create invites through RPC');
+select function_privilege('public.create_professional_invite(public.invite_kind)', 'anon', 'EXECUTE', false, 'anonymous users cannot create invites');
+select function_security_definer('public.accept_professional_invite(text)', 'invite acceptance is SECURITY DEFINER');
+select function_security_definer('public.create_professional_invite(public.invite_kind)', 'invite creation is SECURITY DEFINER');

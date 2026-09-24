@@ -38,6 +38,8 @@ const loadSettings = () => import('./views/Settings.jsx')
 const loadMore = () => import('./views/More.jsx')
 const loadBodyProgress = () => import('./views/BodyProgress.jsx')
 const loadProfessionalProfile = () => import('./views/ProfessionalProfile.jsx')
+const loadProfessionalDashboard = () => import('./views/ProfessionalDashboard.jsx')
+const loadStudentConnections = () => import('./views/StudentConnections.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Home = lazy(loadHome)
@@ -51,12 +53,14 @@ const Settings = lazy(loadSettings)
 const More = lazy(loadMore)
 const BodyProgress = lazy(loadBodyProgress)
 const ProfessionalProfile = lazy(loadProfessionalProfile)
+const ProfessionalDashboard = lazy(loadProfessionalDashboard)
+const StudentConnections = lazy(loadStudentConnections)
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
   loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(),
-  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadSheets(),
+  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadProfessionalDashboard(), loadStudentConnections(), loadSheets(),
 ])
 
 const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))
@@ -375,6 +379,8 @@ function Shell() {
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/body-progress" element={<BodyProgress />} />
                 <Route path="/professional-profile" element={<ProfessionalProfile />} />
+                <Route path="/professional" element={<ProfessionalDashboard />} />
+                <Route path="/connect" element={<StudentConnections />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />
