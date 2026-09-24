@@ -17,7 +17,13 @@ export default function StudentProfessionals() {
   const [code, setCode] = useState(params.get('code') || ''); const [preview, setPreview] = useState(null); const [relations, setRelations] = useState([]); const [assignments, setAssignments] = useState([]); const [overview, setOverview] = useState({}); const [busy, setBusy] = useState(true); const [message, setMessage] = useState(''); const [error, setError] = useState(''); const [confirmRelationshipId, setConfirmRelationshipId] = useState('')
   const refresh = () => { setBusy(true); setError(''); return withTimeout(Promise.all([repo.relationships(auth.user.id), repo.assignments(), repo.studentOverview()]), 10000).then(async ([nextRelations, nextAssignments, nextOverview]) => { setRelations(nextRelations); setAssignments(nextAssignments); setOverview(nextOverview || {}); const latest = nextAssignments.filter(item => item.status === 'active').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]; if (latest) { const version = await withTimeout(repo.version(latest.version_id), 10000); const current = useStore.getState().S; if (version && current.assignedProgram?.versionId !== version.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest)) } }).catch(cause => setError(cause?.message === 'request-timeout' ? 'A conexão demorou mais que o esperado.' : 'Não foi possível carregar seus profissionais.')).finally(() => setBusy(false)) }
   useEffect(() => {
-    if (auth.status === 'initializing') return
+    if (auth.status === 'initializing') {
+      const guard = window.setTimeout(() => {
+        setBusy(false)
+        setError('Não foi possível confirmar sua sessão. Tente novamente.')
+      }, 12000)
+      return () => window.clearTimeout(guard)
+    }
     if (!auth.user?.id) {
       setBusy(false)
       setError('Entre na sua conta para acessar seus profissionais.')

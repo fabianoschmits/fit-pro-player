@@ -42,4 +42,14 @@ describe('student professionals page', () => {
     expect(container.textContent).toContain('Entre na sua conta para acessar seus profissionais.')
     expect(container.textContent).not.toContain('Carregando…')
   })
+
+  it('fails the loading state when session bootstrap is stuck', async () => {
+    mocks.auth = { status: 'initializing', user: null }
+    const originalSetTimeout = window.setTimeout
+    window.setTimeout = callback => { callback(); return 1 }
+    await act(async () => root.render(<MemoryRouter initialEntries={['/student/professionals']}><StudentProfessionals /></MemoryRouter>))
+    expect(container.textContent).toContain('Não foi possível confirmar sua sessão. Tente novamente.')
+    expect(container.textContent).not.toContain('Carregando…')
+    window.setTimeout = originalSetTimeout
+  })
 })
