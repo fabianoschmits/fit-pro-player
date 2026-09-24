@@ -264,8 +264,17 @@ function Shell() {
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
   const invitePath = loc.pathname.startsWith('/invite/')
+  const pendingInviteCode = loc.pathname.match(/^\/invite\/([^/]+)/)?.[1] || ''
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
+  useEffect(() => {
+    if (pendingInviteCode) sessionStorage.setItem('fpp-pending-invite', pendingInviteCode)
+  }, [pendingInviteCode])
+  useEffect(() => {
+    if (!ready || !authenticated || !appEntered || loc.pathname.startsWith('/invite/')) return
+    const pending = sessionStorage.getItem('fpp-pending-invite')
+    if (pending) navigate(`/invite/${encodeURIComponent(pending)}`, { replace: true })
+  }, [ready, authenticated, appEntered, loc.pathname, navigate])
   useEffect(() => {
     if (auth.status === 'initializing') return
     boot({ supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null })
