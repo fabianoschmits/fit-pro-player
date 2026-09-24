@@ -15,8 +15,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../store/useStore.js', () => ({
   hasData: () => false,
   useStore: selector => selector
-    ? selector({ S: {} })
-    : { setGuest: mocks.setGuest },
+    ? selector({ S: {}, enterApp: mocks.setGuest, setGuest: mocks.setGuest })
+    : { enterApp: mocks.setGuest, setGuest: mocks.setGuest },
 }))
 vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ toast: vi.fn(), openSheet: mocks.openSheet }) } }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))

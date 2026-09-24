@@ -119,10 +119,13 @@ export const useStore = create((set, get) => {
   })
 
   const clearLocalSessionContext = () => {
-    localStorage.removeItem('gym_guest')
     localStorage.removeItem('gym_dirty')
     localStorage.removeItem('gym_sync_conflict')
   }
+
+  const appEntryKey = scope => scope.kind === 'account'
+    ? `fpp_app_entered:${scope.userId}`
+    : 'fpp_app_entered:anonymous'
 
   return {
     S: (() => { const s = loadState(); registerCustom(s.customEx); return s })(),
@@ -152,6 +155,18 @@ export const useStore = create((set, get) => {
 
     isGuest: () => localStorage.getItem('gym_guest') === '1',
     setGuest(v) { if (v) localStorage.setItem('gym_guest', '1'); else localStorage.removeItem('gym_guest'); set({}) },
+    isAppEntered: () => localStorage.getItem(appEntryKey(activeScope)) === '1'
+      || (activeScope.kind === 'anonymous' && localStorage.getItem('gym_guest') === '1' && hasData(get().S)),
+    enterApp() {
+      localStorage.setItem(appEntryKey(activeScope), '1')
+      if (activeScope.kind === 'anonymous') localStorage.setItem('gym_guest', '1')
+      set({})
+    },
+    leaveApp() {
+      localStorage.removeItem(appEntryKey(activeScope))
+      if (activeScope.kind === 'anonymous') localStorage.removeItem('gym_guest')
+      set({})
+    },
 
     // Demo build only: drop the seeded example profile back in (Settings → "Reset demo data").
     // Dynamic import so the generator never ships in a self-hosted bundle.
@@ -196,7 +211,6 @@ export const useStore = create((set, get) => {
         return
       }
       clearLocalSessionContext()
-      get().setGuest(true)
       set({ ready: true })
     }
   }

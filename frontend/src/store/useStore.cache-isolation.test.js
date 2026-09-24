@@ -19,6 +19,20 @@ describe('local account cache isolation', () => {
     localStorage.setItem('gym_state_v1', JSON.stringify(stateWithWorkout('anonymous')))
     await useStore.getState().boot({ supabaseUserId: null })
     expect(useStore.getState().S.workouts[0].id).toBe('anonymous')
+    expect(useStore.getState().isAppEntered()).toBe(false)
+  })
+
+  it('requires an explicit entry before opening the app and can leave it again', async () => {
+    await useStore.getState().boot({ supabaseUserId: null })
+    expect(useStore.getState().isAppEntered()).toBe(false)
+
+    useStore.getState().enterApp()
+    expect(useStore.getState().isAppEntered()).toBe(true)
+    expect(localStorage.getItem('gym_guest')).toBe('1')
+
+    useStore.getState().leaveApp()
+    expect(useStore.getState().isAppEntered()).toBe(false)
+    expect(localStorage.getItem('gym_guest')).toBeNull()
   })
 
   it('authenticated boot does not consume anonymous state when account cache is missing', async () => {
@@ -37,6 +51,19 @@ describe('local account cache isolation', () => {
     expect(useStore.getState().S.workouts[0].id).toBe('B')
     await useStore.getState().boot({ supabaseUserId: USER_A })
     expect(useStore.getState().S.workouts[0].id).toBe('A')
+  })
+
+  it('keeps explicit app entry isolated between accounts', async () => {
+    await useStore.getState().boot({ supabaseUserId: USER_A })
+    useStore.getState().enterApp()
+    expect(useStore.getState().isAppEntered()).toBe(true)
+
+    await useStore.getState().boot({ supabaseUserId: USER_B })
+    expect(useStore.getState().isAppEntered()).toBe(false)
+    useStore.getState().enterApp()
+
+    await useStore.getState().boot({ supabaseUserId: USER_A })
+    expect(useStore.getState().isAppEntered()).toBe(true)
   })
 
   it('stops an obsolete boot after its scope activation is rejected', async () => {

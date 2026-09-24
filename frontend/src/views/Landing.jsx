@@ -251,7 +251,7 @@ function WorkoutPreview({ playing }) {
 
 export default function Landing() {
   const auth = useAuth()
-  const { setGuest } = useStore()
+  const enterApp = useStore(s => s.enterApp || s.setGuest)
   const canGuest = true
   const reduced = useReducedMotion()
   const [paused, setPaused] = useState(false)
@@ -262,12 +262,16 @@ export default function Landing() {
     return () => document.body.classList.remove('landing-mode')
   }, [])
 
-  const enter = () => setGuest(true)
+  const enter = () => enterApp(true)
   const entryUnavailable = auth.configured ? false : !localEntry && !canGuest
-  const primaryAction = auth.configured
+  const primaryAction = auth.status === 'authenticated'
+    ? enter
+    : auth.configured
     ? () => openAuthSheet('entry')
     : enter
-  const primaryLabel = auth.configured
+  const primaryLabel = auth.status === 'authenticated'
+    ? 'Entrar no app'
+    : auth.configured
     ? 'Entrar ou criar conta'
     : localEntry
       ? (DEMO ? 'Abrir demonstração' : 'Começar agora')

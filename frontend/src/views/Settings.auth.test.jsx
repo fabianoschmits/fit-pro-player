@@ -10,7 +10,7 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('../store/useStore.js', async () => {
   const actual = await vi.importActual('../store/useStore.js');
-  const state = { S: actual.DEF, update: vi.fn(), replaceState: vi.fn(), resetDemo: vi.fn() };
+  const state = { S: actual.DEF, update: vi.fn(), replaceState: vi.fn(), leaveApp: vi.fn(), resetDemo: vi.fn() };
   return { ...actual, useStore: selector => selector(state) };
 });
 vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }));
@@ -33,6 +33,15 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.close(); });
 
 describe('Settings Supabase logout', () => {
+  it('returns to the public landing after resetting all local account data', async () => {
+    await act(async () => root.render(<Settings />));
+    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Restaurar tudo'));
+    await act(async () => reset.click());
+    await act(async () => mocks.confirm.onConfirm());
+
+    expect(mocks.navigate).toHaveBeenCalledWith('/');
+  });
+
   it('routes an authenticated Supabase account through Auth only and keeps the local-data guarantee visible', async () => {
     await act(async () => root.render(<Settings />));
     expect(container.textContent).toContain('ana@example.com');

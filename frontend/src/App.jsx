@@ -242,8 +242,9 @@ function Shell() {
   const { S, ready } = useStore()
   const profilePreview = useUI(s => s.profilePreview)
   const isGuest = useStore(s => s.isGuest())
+  const appEntered = useStore(s => s.isAppEntered ? s.isAppEntered() : s.isGuest())
   const authenticated = auth.status === 'authenticated'
-  const authed = authenticated || isGuest
+  const authed = (authenticated || isGuest) && appEntered
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
@@ -316,8 +317,12 @@ function Shell() {
   // First entry is a single, resumable setup inside Plan. Until it is complete, other routes
   // cannot accidentally surface an empty dashboard or the retired Home overlay.
   useEffect(() => {
+    if (ready && !appEntered && loc.pathname !== '/') {
+      navigate('/', { replace: true })
+      return
+    }
     if (ready && authed && !S.onboardingDone && loc.pathname !== '/plan') navigate('/plan', { replace: true })
-  }, [S.onboardingDone, authed, loc.pathname, navigate, ready])
+  }, [S.onboardingDone, appEntered, authed, loc.pathname, navigate, ready])
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
 
