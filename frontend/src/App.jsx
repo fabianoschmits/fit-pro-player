@@ -40,6 +40,8 @@ const loadMore = () => import('./views/More.jsx')
 const loadBodyProgress = () => import('./views/BodyProgress.jsx')
 const loadProfessionalProfile = () => import('./views/ProfessionalProfile.jsx')
 const loadProfessionalDashboard = () => import('./views/ProfessionalDashboard.jsx')
+const loadProfessionalInvites = () => import('./views/ProfessionalInvites.jsx')
+const loadInviteLanding = () => import('./views/InviteLanding.jsx')
 const loadStudentConnections = () => import('./views/StudentConnections.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
@@ -55,13 +57,15 @@ const More = lazy(loadMore)
 const BodyProgress = lazy(loadBodyProgress)
 const ProfessionalProfile = lazy(loadProfessionalProfile)
 const ProfessionalDashboard = lazy(loadProfessionalDashboard)
+const ProfessionalInvites = lazy(loadProfessionalInvites)
+const InviteLanding = lazy(loadInviteLanding)
 const StudentConnections = lazy(loadStudentConnections)
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
   loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(),
-  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadProfessionalDashboard(), loadStudentConnections(), loadSheets(),
+  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadStudentConnections(), loadSheets(),
 ])
 
 const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))
@@ -253,6 +257,7 @@ function Shell() {
   const authed = (authenticated || isGuest) && appEntered
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
+  const invitePath = loc.pathname.startsWith('/invite/')
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => {
@@ -398,7 +403,7 @@ function Shell() {
           re-mounts the boundary, so the tab bar is always a way out */}
       <PageTransition>
         <ErrorBoundary>
-          {!authed ? <Suspense fallback={<RouteFallback />}><Landing /></Suspense> : (
+          {!authed ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
             <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
                 <Route path="/plan" element={<Plan />} />
@@ -408,7 +413,10 @@ function Shell() {
                 <Route path="/body-progress" element={<BodyProgress />} />
                 <Route path="/professional-profile" element={<ProfessionalProfile />} />
                 <Route path="/professional" element={<ProfessionalDashboard />} />
+                <Route path="/professional/invites" element={<ProfessionalInvites />} />
+                <Route path="/invite/:code" element={<InviteLanding />} />
                 <Route path="/connect" element={<StudentConnections />} />
+                <Route path="/student/professionals" element={<StudentConnections />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />

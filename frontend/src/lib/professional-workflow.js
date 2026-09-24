@@ -49,6 +49,7 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const previewInvite = code => rpc('preview_professional_invite', { p_code: code })
   const acceptInvite = code => rpc('accept_professional_invite', { p_code: code })
   const revokeRelationship = id => rpc('revoke_professional_relationship', { p_relationship_id: id })
+  const revokeInvite = id => rpc('revoke_professional_invite', { p_invite_id: id })
   const programs = () => read('programs', q => q.select('*').order('updated_at', { ascending: false }))
   const versions = programId => read('program_versions', q => q.select('*').eq('program_id', programId).order('version_number', { ascending: false }))
   const version = versionId => read('program_versions', q => q.select('*').eq('id', versionId)).then(rows => rows[0] || null)
@@ -77,5 +78,5 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const publishProgramVersion = (programId, weeklyPlan) => rpc('publish_program_version', { p_program_id: programId, p_weekly_plan: weeklyPlan })
   const assignProgramVersion = ({ programId, versionId, studentUserId }) => rpc('assign_program_version', { p_program_id: programId, p_version_id: versionId, p_student_user_id: studentUserId })
   const studentOverview = () => rpc('student_program_overview', {})
-  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, programs, versions, version, createProgram, publishVersion, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview })
+  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, publishVersion, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview })
 }

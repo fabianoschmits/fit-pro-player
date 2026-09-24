@@ -1893,6 +1893,17 @@ h4.sec{
 .professional-workspace-nav{display:flex;gap:6px;overflow-x:auto;margin:0 0 16px;padding:4px;border:var(--hair) solid var(--sep);border-radius:var(--r-md);background:var(--surface-2);scrollbar-width:none}
 .professional-workspace-nav a{flex:1 0 auto;min-height:40px;display:flex;align-items:center;justify-content:center;padding:0 12px;border-radius:var(--r-sm);color:var(--label-2);font-size:13px;font-weight:650;text-decoration:none;white-space:nowrap}
 .professional-workspace-nav a[aria-current="page"]{color:var(--label);background:var(--surface);box-shadow:var(--shadow-1)}
+.professional-page,.invite-landing{display:flex;flex-direction:column;gap:12px}
+.professional-invite-list{display:grid;gap:10px}
+.professional-invite-card{display:flex;flex-direction:column;gap:8px}
+.invite-code{font:700 22px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em}
+.status-pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;background:var(--surface-3);color:var(--label-2);font-size:12px;font-weight:650}
+.danger-confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:var(--hair) solid var(--sep)}
+.invite-preview-card{display:flex;flex-direction:column;gap:8px}
+.invite-preview-card h2{margin:0}
+.landing-invite-banner{position:fixed;z-index:10;top:10px;left:50%;transform:translateX(-50%);width:min(92vw,560px);display:flex;align-items:center;gap:10px;padding:12px 14px;border:var(--hair) solid var(--sep);border-radius:var(--r-md);background:var(--surface);box-shadow:var(--shadow-2)}
+.landing-invite-banner span{flex:1;color:var(--label-2);font-size:13px}
+@media (max-width:600px){.landing-invite-banner{align-items:flex-start;flex-wrap:wrap}.landing-invite-banner span{flex-basis:100%}.landing-invite-banner .btn{width:100%}}
 .professional-dashboard .seg button{white-space:nowrap}
 .dashboard-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .dashboard-stats .card{display:flex;flex-direction:column;gap:4px;min-height:72px}

@@ -249,7 +249,7 @@ function WorkoutPreview({ playing }) {
   )
 }
 
-export default function Landing() {
+export default function Landing({ invitePath = false }) {
   const auth = useAuth()
   const enterApp = useStore(s => s.enterApp || s.setGuest)
   const canGuest = true
@@ -279,6 +279,7 @@ export default function Landing() {
 
   return (
     <main className="landing-page">
+      {invitePath && <div className="landing-invite-banner" role="status"><strong>Você recebeu um convite profissional.</strong><span>Entre ou crie sua conta para conferir o profissional antes de aceitar.</span><Button variant="primary" onClick={() => openAuthSheet('entry')}>Ver convite</Button></div>}
       <header className="landing-nav-shell">
         <div className="landing-nav">
           <a className="landing-nav-brand" href="#top" aria-label="Fit Pro Player — início">

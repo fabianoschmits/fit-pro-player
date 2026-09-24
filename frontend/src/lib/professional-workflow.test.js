@@ -32,4 +32,11 @@ describe('professional management repository', () => {
     expect(await repository.studentOverview()).toMatchObject({ program: { title: 'Força' } })
     expect(rpc).toHaveBeenCalledWith('student_program_overview', {})
   })
+
+  it('revokes a pending invite through its owner-scoped RPC', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { id: 'invite-1', status: 'revoked' }, error: null })
+    const repository = createProfessionalWorkflowRepository({ client: { rpc } })
+    await repository.revokeInvite('invite-1')
+    expect(rpc).toHaveBeenCalledWith('revoke_professional_invite', { p_invite_id: 'invite-1' })
+  })
 })
