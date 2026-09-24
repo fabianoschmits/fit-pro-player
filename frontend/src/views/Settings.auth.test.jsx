@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ authSignOut: vi.fn().mockResolvedValue({ kind: 'success' }), authDeleteAccount: vi.fn().mockResolvedValue({ kind: 'success' }), confirm: null, navigate: vi.fn(), toast: vi.fn(), auth: null }));
 
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
+vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }));
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('../store/useStore.js', async () => {
   const actual = await vi.importActual('../store/useStore.js');
@@ -34,6 +35,17 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.close(); });
 
 describe('Settings Supabase logout', () => {
+  it('offers professional onboarding to an authenticated account without the professional capability', async () => {
+    await act(async () => root.render(<Settings />));
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) });
+
+    const becomeProfessional = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Tornar-se profissional'));
+    expect(becomeProfessional).toBeTruthy();
+    await act(async () => becomeProfessional.click());
+
+    expect(mocks.navigate).toHaveBeenCalledWith('/professional-profile?onboarding=1');
+  });
+
   it('returns to the public landing after resetting all local account data', async () => {
     await act(async () => root.render(<Settings />));
     const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Restaurar tudo'));

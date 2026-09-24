@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, DEF } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -23,6 +23,7 @@ import { applyAssociationChoice } from '../lib/account-association.js'
 import { resolveLocalScope, ANONYMOUS_SCOPE } from '../lib/local-state-scope.js'
 import { readScopedState } from '../lib/account-cache.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
+import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -39,6 +40,14 @@ export default function Settings() {
   const importRef = useRef(null)
   const wakeOK = wakeLockSupported()
   const supabaseConfigured = auth.configured
+  const professionalRepository = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
+  const [professional, setProfessional] = useState(null)
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || !auth.user?.id) { setProfessional(null); return undefined }
+    let active = true
+    professionalRepository.professionalRole(auth.user.id).then(role => { if (active) setProfessional(role) }).catch(() => { if (active) setProfessional(false) })
+    return () => { active = false }
+  }, [auth.status, auth.user?.id, professionalRepository])
 
   const openManualSync = async () => {
     if (auth.status !== 'authenticated' || !auth.user?.id) return
@@ -131,6 +140,7 @@ export default function Settings() {
       <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
         subtitle={t('Name, birth date, body, measurements and training goal')}
         accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
+      {auth.status === 'authenticated' && professional === false && <Row icon="personCircle" iconTint="var(--purple)" title="Tornar-se profissional" subtitle="Crie seu perfil para enviar treinos e convites" accessory="chevron" onClick={() => nav('/professional-profile?onboarding=1')} />}
     </Section>
 
     {/* ---------- general ---------- */}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalProfileRepository } from '../lib/professional-profile.js'
@@ -10,11 +10,12 @@ const EMPTY = { professionalName: '', bio: '', specialties: [], cityRegion: '', 
 
 export default function ProfessionalProfile() {
   const nav = useNavigate()
+  const [params] = useSearchParams()
   const auth = useAuth()
   const client = useMemo(() => getBrowserSupabaseClient(), [])
   const repository = useMemo(() => createProfessionalProfileRepository({ client }), [client])
   const [profile, setProfile] = useState(EMPTY)
-  const [mode, setMode] = useState('view')
+  const [mode, setMode] = useState(() => params.get('onboarding') === '1' ? 'onboarding' : 'view')
   const [capability, setCapability] = useState(null)
   const [busy, setBusy] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -40,10 +41,31 @@ export default function ProfessionalProfile() {
     } catch (cause) { setError(cause.message === 'professional-profile-forbidden' ? 'Sua conta não possui a capability profissional.' : 'Não foi possível salvar agora. Verifique sua conexão.') }
     finally { setSaving(false) }
   }
+  const provision = async () => {
+    setSaving(true); setError('')
+    try {
+      const next = await repository.provision(auth.user.id, profile)
+      setProfile({ ...EMPTY, ...next }); setCapability(true); setMode('view'); nav('/professional-profile', { replace: true })
+    } catch (cause) { setError(cause.message === 'professional-name-required' ? 'Informe seu nome profissional.' : 'Não foi possível criar o perfil profissional. Verifique sua conexão.') }
+    finally { setSaving(false) }
+  }
 
   if (auth.status !== 'authenticated') return <div className="narrow"><AppHeader title="Perfil profissional" backTo="/more" /><Section><p>Entre em uma conta para acessar o perfil profissional.</p></Section></div>
   if (busy) return <div className="narrow"><AppHeader title="Perfil profissional" backTo="/more" /><p role="status">Carregando…</p></div>
-  if (!capability) return <div className="narrow"><AppHeader title="Perfil profissional" backTo="/more" /><Section><p>Esta área exige a capability profissional. Seu perfil de treino continua disponível.</p></Section></div>
+  if (!capability) return <div className="narrow">
+    <AppHeader title="Tornar-se profissional" backTo="/settings" />
+    <Section title="Crie seu perfil profissional">
+      <p className="muted small">Ative a área profissional para enviar treinos, gerar convites e acompanhar seus alunos.</p>
+      {error && <p role="alert" className="error">{error}</p>}
+      <label>Nome profissional<TextField value={profile.professionalName} onChange={event => update('professionalName', event.target.value)} maxLength={120} /></label>
+      <label>Bio<TextArea value={profile.bio || ''} onChange={event => update('bio', event.target.value)} maxLength={2000} rows={5} /></label>
+      <label>Especialidades<TextField value={(profile.specialties || []).join(', ')} onChange={event => update('specialties', event.target.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8))} /></label>
+      <label>Cidade/região<TextField value={profile.cityRegion || ''} onChange={event => update('cityRegion', event.target.value)} maxLength={120} /></label>
+      <label>Tipo de registro<TextField value={profile.registrationType || ''} onChange={event => update('registrationType', event.target.value)} maxLength={40} /></label>
+      <label>Número do registro<TextField value={profile.registrationNumber || ''} onChange={event => update('registrationNumber', event.target.value)} maxLength={80} /></label>
+      <Button disabled={saving} onClick={provision}>{saving ? 'Criando…' : 'Criar perfil profissional'}</Button>
+    </Section>
+  </div>
 
   const preview = mode === 'preview'
   return <div className="narrow">
