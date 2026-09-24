@@ -11,6 +11,8 @@ export const REQUIRED_FILES = [
   'supabase/tests/202609240007_account_lifecycle.sql',
   'supabase/migrations/202609240008_professional_workflow.sql',
   'supabase/tests/202609240008_professional_workflow.sql',
+  'supabase/migrations/202609240011_assigned_program_read_acl.sql',
+  'supabase/tests/202609240011_assigned_program_read_acl.sql',
 ]
 
 const PHASE_1_MIGRATION = REQUIRED_FILES[1]

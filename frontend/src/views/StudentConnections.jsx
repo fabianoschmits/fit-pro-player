@@ -5,11 +5,21 @@ import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import { Button, Section, TextField } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
+import { assignedPlanToState } from '../lib/assigned-program.js'
+import { useStore } from '../store/useStore.js'
 
 export default function StudentConnections() {
   const auth = useAuth(); const [params] = useSearchParams(); const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const [code, setCode] = useState(params.get('code') || ''); const [preview, setPreview] = useState(null); const [relations, setRelations] = useState([]); const [assignments, setAssignments] = useState([]); const [executions, setExecutions] = useState([]); const [message, setMessage] = useState(''); const [error, setError] = useState('')
-  const refresh = () => Promise.all([repo.relationships(auth.user.id), repo.assignments(), repo.executions()]).then(([nextRelations, nextAssignments, nextExecutions]) => { setRelations(nextRelations); setAssignments(nextAssignments); setExecutions(nextExecutions) }).catch(() => setError('Não foi possível carregar seus profissionais.'))
+  const refresh = () => Promise.all([repo.relationships(auth.user.id), repo.assignments(), repo.executions()]).then(async ([nextRelations, nextAssignments, nextExecutions]) => {
+    setRelations(nextRelations); setAssignments(nextAssignments); setExecutions(nextExecutions)
+    const latest = nextAssignments.filter(item => item.status === 'active').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]
+    if (latest) {
+      const version = await repo.version(latest.version_id)
+      const current = useStore.getState().S
+      if (version && current.assignedProgram?.versionId !== version.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
+    }
+  }).catch(() => setError('Não foi possível carregar seus profissionais.'))
   useEffect(() => { if (auth.user?.id) { refresh(); if (params.get('code')) repo.previewInvite(params.get('code')).then(rows => setPreview(rows?.[0] || null)).catch(() => setError('Convite inválido ou expirado.')) } }, [auth.user?.id])
   const previewInvite = async () => { try { const rows = await repo.previewInvite(code); setPreview(rows?.[0] || null); if (!rows?.length) setError('Convite inválido ou expirado.') } catch { setError('Não foi possível consultar o convite.') } }
   const accept = async () => { try { await repo.acceptInvite(code); setMessage('Vínculo aceito.'); setPreview(null); refresh() } catch { setError('Não foi possível aceitar este convite.') } }

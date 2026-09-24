@@ -10,7 +10,7 @@
     "setup": "npm ci --prefix frontend",
     "dev": "npm --prefix frontend run dev",
     "test": "npm --prefix frontend test",
-    "check:supabase": "node --test scripts/check-supabase-boundaries.test.mjs scripts/check-account-snapshot-migration.test.mjs scripts/check-professional-profile-migration.test.mjs scripts/check-professional-onboarding-migration.test.mjs scripts/check-account-lifecycle-migration.test.mjs scripts/check-professional-workflow-migration.test.mjs && node scripts/check-supabase-boundaries.mjs",
+    "check:supabase": "node --test scripts/check-supabase-boundaries.test.mjs scripts/check-account-snapshot-migration.test.mjs scripts/check-professional-profile-migration.test.mjs scripts/check-professional-onboarding-migration.test.mjs scripts/check-account-lifecycle-migration.test.mjs scripts/check-professional-workflow-migration.test.mjs scripts/check-assigned-program-migration.test.mjs && node scripts/check-supabase-boundaries.mjs",
     "build": "npm --prefix frontend run build",
     "build:vercel": "npm --prefix frontend run build:vercel",
     "audit": "npm audit --prefix frontend --audit-level=high"

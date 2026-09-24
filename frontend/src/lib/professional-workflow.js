@@ -20,6 +20,7 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
     return response.data || []
   }
   const relationships = userId => read('professional_student_relationships', q => q.select('*').or(`professional_user_id.eq.${userId},student_user_id.eq.${userId}`).order('created_at', { ascending: false }))
+  const professionalRole = userId => read('user_roles', q => q.select('role').eq('user_id', userId)).then(rows => rows.some(row => row.role === 'professional'))
   const invites = () => read('professional_invites', q => q.select('id,kind,code,status,created_at,accepted_at').order('created_at', { ascending: false }))
   const createInvite = kind => rpc('create_professional_invite', { p_kind: kind || 'code' })
   const previewInvite = code => rpc('preview_professional_invite', { p_code: code })
@@ -27,6 +28,7 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const revokeRelationship = id => rpc('revoke_professional_relationship', { p_relationship_id: id })
   const programs = () => read('programs', q => q.select('*').order('updated_at', { ascending: false }))
   const versions = programId => read('program_versions', q => q.select('*').eq('program_id', programId).order('version_number', { ascending: false }))
+  const version = versionId => read('program_versions', q => q.select('*').eq('id', versionId)).then(rows => rows[0] || null)
   const createProgram = async (userId, title, description = '') => {
     const { data, error } = await client.from('programs').insert({ professional_user_id: userId, title: title.trim(), description: description.trim() || null }).select('*').single()
     if (error) throw error
@@ -40,11 +42,12 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
     return data
   }
   const assignments = () => read('program_assignments', q => q.select('*').order('created_at', { ascending: false }))
+  const assignedPrograms = studentId => read('program_assignments', q => q.select('*').eq('student_user_id', studentId).eq('status', 'active').order('created_at', { ascending: false }))
   const assign = async ({ programId, versionId, professionalUserId, studentUserId }) => {
     const { data, error } = await client.from('program_assignments').insert({ program_id: programId, version_id: versionId, professional_user_id: professionalUserId, student_user_id: studentUserId }).select('*').single()
     if (error) throw error
     return data
   }
   const executions = () => read('workout_executions', q => q.select('*').order('started_at', { ascending: false }))
-  return Object.freeze({ toProfile, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, programs, versions, createProgram, publishVersion, assignments, assign, executions })
+  return Object.freeze({ toProfile, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, programs, versions, version, createProgram, publishVersion, assignments, assignedPrograms, assign, executions })
 }

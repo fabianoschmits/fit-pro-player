@@ -7,11 +7,17 @@ import { DEMO, STANDALONE } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
 import { EXDB } from '../lib/exercises.js'
 import AppHeader from '../components/AppHeader.jsx'
+import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
+import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
+import { useEffect, useMemo, useState } from 'react'
 
 export default function More() {
   const nav = useNavigate()
   const auth = useAuth()
   const account = auth.status === 'authenticated' ? auth.user : null
+  const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
+  const [professional, setProfessional] = useState(false)
+  useEffect(() => { if (account?.id) repo.professionalRole(account.id).then(setProfessional).catch(() => setProfessional(false)); else setProfessional(false) }, [account?.id, repo])
 
   return <div className="narrow">
     <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
@@ -27,9 +33,9 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/history')} />
       <Row icon="personCircle" iconTint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo"
         accessory="chevron" onClick={() => nav('/body-progress')} />
-      {account && <Row icon="personCircle" iconTint="var(--purple)" title="Perfil profissional" subtitle="Nome, especialidades e registro informado"
+      {professional && <Row icon="personCircle" iconTint="var(--purple)" title="Perfil profissional" subtitle="Nome, especialidades e registro informado"
         accessory="chevron" onClick={() => nav('/professional-profile')} />}
-      {account && <Row icon="personCircle" iconTint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas"
+      {professional && <Row icon="personCircle" iconTint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas"
         accessory="chevron" onClick={() => nav('/professional')} />}
       {account && <Row icon="personCircle" iconTint="var(--teal)" title="Meus profissionais" subtitle="Vínculos e convites recebidos"
         accessory="chevron" onClick={() => nav('/connect')} />}

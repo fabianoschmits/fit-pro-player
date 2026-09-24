@@ -26,6 +26,8 @@ import { ANONYMOUS_SCOPE, resolveLocalScope } from './lib/local-state-scope.js'
 import { readScopedState } from './lib/account-cache.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
+import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
+import { assignedPlanToState } from './lib/assigned-program.js'
 const loadHome = () => import('./views/Home.jsx')
 const loadPlan = () => import('./views/Plan.jsx')
 const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
@@ -312,6 +314,23 @@ function Shell() {
       if (associationInFlight.current === auth.user.id) associationInFlight.current = null
     })
     return () => { disposed = true; if (associationInFlight.current === auth.user.id) associationInFlight.current = null }
+  }, [auth.status, auth.user?.id, ready])
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready) return undefined
+    let disposed = false
+    const client = getBrowserSupabaseClient()
+    if (!client) return undefined
+    const repository = createProfessionalWorkflowRepository({ client })
+    Promise.all([repository.professionalRole(auth.user.id), repository.assignedPrograms(auth.user.id)]).then(async ([isProfessional, assignments]) => {
+      if (disposed || isProfessional) return
+      const latest = assignments[0]
+      if (!latest) return
+      const version = await repository.version(latest.version_id)
+      if (disposed || !version) return
+      const current = useStore.getState().S
+      if (current.assignedProgram?.versionId !== version.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
+    }).catch(() => {})
+    return () => { disposed = true }
   }, [auth.status, auth.user?.id, ready])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current !== auth.user.id) return undefined

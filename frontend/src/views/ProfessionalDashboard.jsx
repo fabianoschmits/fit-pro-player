@@ -12,17 +12,18 @@ export default function ProfessionalDashboard() {
   const [form, setForm] = useState({ title: '', description: '' })
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState('')
+  const [professional, setProfessional] = useState(false)
   const refresh = async () => {
     setBusy(true); setError('')
     try { const [relations, invites, programs, assignments, executions] = await Promise.all([repo.relationships(auth.user.id), repo.invites(), repo.programs(), repo.assignments(), repo.executions()]); const versionPairs = await Promise.all(programs.map(async program => [program.id, await repo.versions(program.id)])); setData({ relations, invites, programs, versions: Object.fromEntries(versionPairs), assignments, executions }) }
     catch { setError('Não foi possível carregar a área profissional.') } finally { setBusy(false) }
   }
-  useEffect(() => { if (auth.user?.id) refresh() }, [auth.user?.id])
+  useEffect(() => { if (auth.user?.id) repo.professionalRole(auth.user.id).then(role => { setProfessional(role); if (role) refresh() }).catch(() => setProfessional(false)) }, [auth.user?.id])
   const createProgram = async () => { if (!form.title.trim()) return; try { await repo.createProgram(auth.user.id, form.title, form.description); setForm({ title: '', description: '' }); refresh() } catch { setError('Não foi possível criar o programa.') } }
   const createInvite = async kind => { try { await repo.createInvite(kind); refresh() } catch { setError('Não foi possível gerar o convite.') } }
   const publish = async program => { try { await repo.publishVersion(program.id, { monday: [{ exerciseId: '1254', sets: 3, reps: 8, rest: 90, notes: '' }] }); refresh() } catch { setError('Não foi possível publicar a versão.') } }
   const assign = async (program, version) => { const student = data.relations.find(item => item.status === 'active')?.student_user_id; if (!student) { setError('Vincule um aluno antes de atribuir o programa.'); return } try { await repo.assign({ programId: program.id, versionId: version.id, professionalUserId: auth.user.id, studentUserId: student }); refresh() } catch { setError('Não foi possível atribuir o programa.') } }
-  if (auth.status !== 'authenticated') return <div className="narrow"><Section><p>Entre em uma conta profissional para continuar.</p></Section></div>
+  if (auth.status !== 'authenticated' || !professional) return <div className="narrow"><Section><p>Esta área está disponível apenas para contas profissionais.</p></Section></div>
   return <div className="narrow professional-dashboard"><AppHeader title="Área profissional" subtitle="Alunos, convites e programas" />
     {error && <p role="alert" className="error">{error}</p>}
     {busy ? <p role="status">Carregando…</p> : <>
