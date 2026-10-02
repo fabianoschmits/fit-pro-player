@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'assets/brand/final'
 PUBLIC = ROOT / 'frontend/public'
 OUT.mkdir(parents=True, exist_ok=True)
+WEB = OUT / 'web'
+WEB.mkdir(parents=True, exist_ok=True)
 TEAL, INK = '#0F8B8D', '#101719'
 source = (ROOT / 'assets/brand/gym-concepts/a-v2.svg').read_text(encoding='utf-8')
 shape = re.search(r'<path[^>]+/>', source)[0]
@@ -65,16 +67,16 @@ mask = doc(f'<rect width="256" height="256" fill="{TEAL}"/><g transform="transla
 (OUT/'pwa-icon.svg').write_text(icon,encoding='utf-8')
 (OUT/'pwa-maskable.svg').write_text(mask,encoding='utf-8')
 for size in (180,192,512):
-    cairosvg.svg2png(bytestring=icon.encode(),write_to=str(PUBLIC/f'icon-{size}.png'),output_width=size,output_height=size)
+    cairosvg.svg2png(bytestring=icon.encode(),write_to=str(WEB/f'icon-{size}.png'),output_width=size,output_height=size)
 for size in (192,512):
-    cairosvg.svg2png(bytestring=mask.encode(),write_to=str(PUBLIC/f'icon-maskable-{size}.png'),output_width=size,output_height=size)
+    cairosvg.svg2png(bytestring=mask.encode(),write_to=str(WEB/f'icon-maskable-{size}.png'),output_width=size,output_height=size)
 for size in (16,32,48):
-    cairosvg.svg2png(bytestring=icon.encode(),write_to=str(PUBLIC/f'favicon-{size}.png'),output_width=size,output_height=size)
+    cairosvg.svg2png(bytestring=icon.encode(),write_to=str(WEB/f'favicon-{size}.png'),output_width=size,output_height=size)
 from PIL import Image
-Image.open(PUBLIC/'favicon-48.png').save(PUBLIC/'favicon.ico',sizes=[(16,16),(32,32),(48,48)])
+Image.open(WEB/'favicon-48.png').save(WEB/'favicon.ico',sizes=[(16,16),(32,32),(48,48)])
 (PUBLIC/'brand-symbol.svg').write_text(doc(symbol(TEAL)),encoding='utf-8')
 (PUBLIC/'brand-logo.svg').write_text(doc(symbol(TEAL)+wordmark(TEAL,280,60),620,256),encoding='utf-8')
-cairosvg.svg2png(bytestring=doc(symbol(TEAL)).encode(),write_to=str(PUBLIC/'brand-logo.png'),output_width=512,output_height=512)
+cairosvg.svg2png(bytestring=doc(symbol(TEAL)).encode(),write_to=str(OUT/'fit-pro-player-symbol-color.png'),output_width=512,output_height=512)
 for name in ('horizontal-color','horizontal-white','stacked-color'):
     path=OUT/f'fit-pro-player-{name}.svg'
     cairosvg.svg2png(url=str(path),write_to=str(path.with_suffix('.png')),output_width=1240)

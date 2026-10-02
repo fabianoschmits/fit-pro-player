@@ -16,7 +16,7 @@ Reserve pelo menos 24 unidades da grade do símbolo (256×256) ao redor do desen
 
 SVGs: símbolo, logo horizontal, empilhado e nome isolado, nas versões colorida, preta, branca e verde. PNGs de apresentação em alta resolução. Todos os nomes são contornos vetoriais editáveis.
 
-PWA: PNGs 192/512; Apple Touch 180; versões maskable 192/512 com fundo inteiro e símbolo dentro da área segura circular; favicons 16/32/48 e ICO. Os arquivos publicados ficam em frontend/public. Manifest e landing apontam para a nova identidade.
+O PWA, o favicon e toda a landing usam a imagem anterior: `frontend/public/brand-logo.png`, `icon-180.png` e `icon-512.png`. O halter minimalista permanece nas configurações, planos exportados, README e recursos nativos Android/iOS. Os ícones minimalistas disponíveis no kit são alternativas, não os ícones publicados do PWA. O gerador exporta essas alternativas apenas para `assets/brand/final/web` e preserva as imagens anteriores.
 
 Reproduzir: executar `python scripts/build-brand-kit.py` com CairoSVG e Pillow. A apresentação HTML e as imagens de verificação podem ser regeneradas com os scripts da skill logo-design.
 

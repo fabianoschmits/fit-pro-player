@@ -27,4 +27,4 @@ Arquivos `*.keystore`, `*.jks` e `frontend/android/key.properties` já estão ig
 
 ## Ícones
 
-O símbolo vetorial aprovado está em `assets/brand/gym-concepts/a-v2.svg`. Execute `python scripts/build-brand-kit.py` (CairoSVG e Pillow) para regenerar o mestre `frontend/resources/icon.png`, os ícones web/PWA, os ícones Android/iOS e as telas de abertura em seus tamanhos originais. O gerador não faz parte do bundle de produção. Revise os resultados antes de compilar os aplicativos nativos.
+O símbolo vetorial minimalista está em `assets/brand/gym-concepts/a-v2.svg`. Execute `python scripts/build-brand-kit.py` (CairoSVG e Pillow) para regenerar o mestre `frontend/resources/icon.png`, os ícones Android/iOS e as telas de abertura em seus tamanhos originais. Os ícones web minimalistas são exportados somente para `assets/brand/final/web`: o PWA e a landing preservam as imagens anteriores em `frontend/public/brand-logo.png`, `icon-180.png` e `icon-512.png`. O gerador não sobrescreve essas imagens. Revise os resultados antes de compilar os aplicativos nativos.

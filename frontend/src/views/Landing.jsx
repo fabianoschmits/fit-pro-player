@@ -65,7 +65,7 @@ const FEATURES = [
   { step: '03', icon: 'chartLine', title: 'Acompanhe', label: 'Evolução real', copy: 'Peso, volume e desempenho transformados em histórico legível.' },
   { step: '04', icon: 'shield', title: 'Decida', label: 'Leitura corporal', copy: 'Equilíbrio, fadiga e força para orientar o próximo treino.' },
 ]
-const BRAND_LOGO = '/brand-symbol.svg'
+const BRAND_LOGO = '/brand-logo.png'
 
 export function buildWeightPreviewPoints(now = Date.now()) {
   const weights = [82.4, 82.1, 81.9, 81.6, 81.3, 80.9, 80.7, 80.3, 79.8]
@@ -298,7 +298,7 @@ export default function Landing({ invitePath = false }) {
 
       <section className="landing-hero" id="top">
         <div className="landing-hero-copy">
-          <img className="landing-hero-logo" src="/brand-logo.svg" alt="Fit Pro Player" fetchPriority="high" />
+          <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
           <div className="landing-eyebrow">SEU TREINO, SEM RUÍDO</div>
           <h1>Treine com contexto. Evolua com clareza.</h1>
           <p>Planejamento, execução, progresso e recuperação vivem no mesmo lugar — do primeiro exercício à decisão sobre o próximo treino.</p>
