@@ -9,6 +9,7 @@
 //     a page break — each exercise, and each routine that fits, stays in one place.
 
 import { EXIDX, exerciseName, isBodyweightEq } from './exercises.js'
+import { BRAND_SYMBOL_SVG } from './brand.js'
 import { modeOf, fmtSec, isBw, isPerSide, sideReps } from './history.js'
 import { uid, todayISO, DAYN, fmtNum, exCount } from './format.js'
 import { t } from './i18n-core.js'
@@ -217,7 +218,8 @@ export function planPrintHTML(S, owner) {
   }
   .doc { max-width: 720px; margin: 0 auto; }
   header { border-bottom: 2px solid #16181d; padding-bottom: 12px; margin-bottom: 20px; }
-  header .kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #6a7a3a; font-weight: 700; }
+  header .kicker { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #0F8B8D; font-weight: 700; }
+  header .kicker svg { width: 24px; height: 24px; flex: none; }
   header h1 { font-size: 27px; letter-spacing: -.02em; margin: 3px 0 0; }
   header .sub { color: #6b7180; font-size: 13px; margin-top: 4px; }
 
@@ -251,7 +253,7 @@ export function planPrintHTML(S, owner) {
 </style></head>
 <body><div class="doc">
   <header>
-    <div class="kicker">Fit Pro Player</div>
+    <div class="kicker">${BRAND_SYMBOL_SVG} Fit Pro Player</div>
     <h1>${esc(t('Weekly Training Plan'))}</h1>
     ${sub ? `<div class="sub">${sub}</div>` : ''}
   </header>
@@ -259,7 +261,7 @@ export function planPrintHTML(S, owner) {
   ${weekHTML(S)}
   <h3 class="block">${esc(t('Routines'))}</h3>
   ${body}
-  <footer>${esc(t('Made with Fit Pro Player'))} · fit-pro-player.vercel.app</footer>
+  <footer>${esc(t('Made with Fit Pro Player'))} · www.fitpp.com.br</footer>
 </div></body></html>`
 }
 

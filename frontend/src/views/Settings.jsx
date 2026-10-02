@@ -267,6 +267,7 @@ export default function Settings() {
     </Section>}
 
     <div className="dim small" style={{ textAlign: 'center', marginTop: 4, lineHeight: 1.6 }}>
+      <img src="/brand-symbol.svg" alt="" width="40" height="40" style={{ display: 'block', margin: '0 auto 8px' }} />
       Fit Pro Player · Todos os direitos reservados.<br />
       Animações de exercícios produzidas para o Fit Pro Player.
     </div>

@@ -27,4 +27,4 @@ Arquivos `*.keystore`, `*.jks` e `frontend/android/key.properties` já estão ig
 
 ## Ícones
 
-O mestre está em `frontend/resources/icon.png`; os ícones e splash screens gerados já estão versionados. Ao trocar o mestre, use uma versão atual e auditada do gerador Capacitor apenas durante a regeneração, revise visualmente os resultados e não mantenha a ferramenta no bundle de produção.
+O símbolo vetorial aprovado está em `assets/brand/gym-concepts/a-v2.svg`. Execute `python scripts/build-brand-kit.py` (CairoSVG e Pillow) para regenerar o mestre `frontend/resources/icon.png`, os ícones web/PWA, os ícones Android/iOS e as telas de abertura em seus tamanhos originais. O gerador não faz parte do bundle de produção. Revise os resultados antes de compilar os aplicativos nativos.

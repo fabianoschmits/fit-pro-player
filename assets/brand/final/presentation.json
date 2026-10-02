@@ -1,0 +1,31 @@
+{
+  "brand": "Fit Pro Player",
+  "title": "Identidade final / Halter",
+  "status": "final",
+  "final": true,
+  "brand_color": "#0F8B8D",
+  "greyscale": false,
+  "brief": "Planejamento de treinos e acompanhamento de cargas e evolução para alunos e profissionais. Halter aprovado como símbolo; identidade forte, direta e consistente.",
+  "industry": "fitness",
+  "mockups": [
+    "app-icon",
+    "website",
+    "business-card"
+  ],
+  "concepts": [
+    {
+      "name": "Força em movimento",
+      "idea": "Um halter hexagonal em diagonal identifica a musculação e transmite ação.",
+      "symbol": "fit-pro-player-symbol-color.svg",
+      "lockup": "fit-pro-player-horizontal-color.svg",
+      "symbol_on_tile": "fit-pro-player-symbol-white.svg",
+      "lockup_on_dark": "fit-pro-player-horizontal-white.svg",
+      "tile_color": "#0F8B8D",
+      "rationale": [
+        "Silhueta reconhecível de academia.",
+        "Forma compacta para instalação no celular.",
+        "Letras vetoriais próprias."
+      ]
+    }
+  ]
+}
