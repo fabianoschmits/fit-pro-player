@@ -12,7 +12,7 @@ const W = 340   // viewBox width; the svg stretches to its container, height com
 // opts: { h, unit, color, axes, goal, invert }
 //   invert flips the y axis, for a scale that counts down as it gets harder (RIR). Without it
 //   a curve of reps-in-reserve reads upside down, with the hardest sets at the floor.
-export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit, selectedDate = null }) {
+export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit, selectedDate = null, label }) {
   const svgRef = useRef(null)
   const wrapRef = useRef(null)
   const tipRef = useRef(null)
@@ -111,10 +111,22 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
 
   return (
     <div className="chart-i" ref={wrapRef}
+      tabIndex={0} role="group" aria-label={label || t('Progress')}
+      onFocus={() => setHover(selectedPoint || hoverPts.at(-1))}
+      onKeyDown={e => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(e.key)) return
+        e.preventDefault()
+        if (e.key === 'Enter') { if (onPointEdit && hover) onPointEdit(hover); return }
+        const index = hover ? Math.max(0, hoverPts.findIndex(point => point.iso === hover.iso && point.x === hover.x)) : hoverPts.length - 1
+        const next = e.key === 'Home' ? 0 : e.key === 'End' ? hoverPts.length - 1 : Math.max(0, Math.min(hoverPts.length - 1, index + (e.key === 'ArrowLeft' ? -1 : 1)))
+        setHover(hoverPts[next])
+      }}
       onMouseMove={onMove} onMouseDown={onMove}
       onMouseLeave={() => setHover(null)}
       onTouchStart={onMove} onTouchMove={onMove}>
-      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ aspectRatio: `${W}/${H}` }}>
+      <svg ref={svgRef} role="img" aria-label={label || t('Progress')} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ aspectRatio: `${W}/${H}` }}>
+        <title>{label || t('Progress')}</title>
+        <desc>{points.map(p => `${fmtDate(p.d || isoOf(new Date(p.t)), true)}: ${fmtNum(p.y)} ${unit}`).join('; ')}</desc>
         <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={color} stopOpacity=".28" />
           <stop offset="1" stopColor={color} stopOpacity="0" />
@@ -140,13 +152,13 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
           <circle cx={hover.x} cy={hover.y} r="5" fill={color} stroke="var(--bg)" strokeWidth="2" />
         </g>}
       </svg>
-      {hover && <div className="ctip" ref={tipRef} style={{ pointerEvents: 'auto' }}>
+      {hover && <div className="ctip" ref={tipRef} role="status" style={{ pointerEvents: 'auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span>{fmtDate(hover.iso, true)} · {fmtNum(hover.v)}{unit ? ' ' + unit : ''}{hover.note ? ' · ' + hover.note : ''}</span>
           {onPointEdit && (
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--acc)', cursor: 'pointer', padding: '2px 4px' }} onClick={(e) => { e.stopPropagation(); onPointEdit(hover) }}>
+            <button type="button" className="chart-edit" onClick={(e) => { e.stopPropagation(); onPointEdit(hover) }}>
               {t('Edit')}
-            </span>
+            </button>
           )}
         </div>
       </div>}

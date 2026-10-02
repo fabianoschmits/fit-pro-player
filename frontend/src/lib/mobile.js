@@ -11,22 +11,47 @@
 // web bundles; the Capacitor plugins are only ever imported behind it.
 import { t } from './i18n-core.js'
 import { ANONYMOUS_SCOPE, nativePathForScope } from './local-state-scope.js'
+import { serializeStateOnly } from './account-cache.js'
+import { validateBackup } from './backup-state.js'
 
 export const MOBILE = import.meta.env.VITE_MOBILE === '1'
+const nativeWrites = new Map()
+
+function enqueueNative(scope, work) {
+  const key = nativePathForScope(scope)
+  const pending = (nativeWrites.get(key) || Promise.resolve()).then(work, work)
+  nativeWrites.set(key, pending)
+  pending.finally(() => { if (nativeWrites.get(key) === pending) nativeWrites.delete(key) })
+  return pending
+}
 
 export async function nativeLoad(scope = ANONYMOUS_SCOPE) {
   try {
+    await (nativeWrites.get(nativePathForScope(scope)) || Promise.resolve())
     const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
     const r = await Filesystem.readFile({ path: nativePathForScope(scope), directory: Directory.Data, encoding: Encoding.UTF8 })
-    return JSON.parse(r.data)
+    const state = validateBackup(JSON.parse(r.data))
+    if (scope.kind === 'account') state.pendingProfessionalEvents = (state.pendingProfessionalEvents || []).filter(event => event.accountId === scope.userId)
+    else state.pendingProfessionalEvents = []
+    return state
   } catch (e) { return null }   // first launch, or unreadable — localStorage copy takes over
 }
 
-export async function nativeSave(scope = ANONYMOUS_SCOPE, state) {
-  try {
-    const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
-    await Filesystem.writeFile({ path: nativePathForScope(scope), directory: Directory.Data, data: JSON.stringify(state), encoding: Encoding.UTF8 })
-  } catch (e) { /* keep the localStorage copy */ }
+export function nativeSave(scope = ANONYMOUS_SCOPE, state) {
+  let data
+  try { data = serializeStateOnly(state) } catch { return Promise.resolve(false) }
+  return enqueueNative(scope, async () => {
+    try {
+      const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
+      await Filesystem.writeFile({ path: nativePathForScope(scope), directory: Directory.Data, data, encoding: Encoding.UTF8 })
+      return true
+    } catch { return false }
+  })
+}
+
+// A timestamped empty snapshot survives WebView eviction and supersedes old queued writes.
+export function nativeClear(scope = ANONYMOUS_SCOPE, emptyState = { routines: [], workouts: [], _ts: Date.now() }) {
+  return nativeSave(scope, emptyState)
 }
 
 // (Re)schedule the workout-day reminder: one repeating notification per weekday that has a

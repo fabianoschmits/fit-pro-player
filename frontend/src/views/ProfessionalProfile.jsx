@@ -1,3 +1,4 @@
+import { t } from '../lib/i18n.js'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -28,7 +29,7 @@ export default function ProfessionalProfile() {
       if (!active) return
       setCapability(role)
       if (current) setProfile({ ...EMPTY, ...current })
-    }).catch(() => { if (active) setError('Não foi possível carregar o perfil profissional.') }).finally(() => { if (active) setBusy(false) })
+    }).catch(() => { if (active) setError(t('Não foi possível carregar o perfil profissional.')) }).finally(() => { if (active) setBusy(false) })
     return () => { active = false }
   }, [auth.status, auth.user?.id, repository])
 
@@ -38,7 +39,7 @@ export default function ProfessionalProfile() {
     try {
       const next = await repository.save(auth.user.id, profile)
       setProfile({ ...EMPTY, ...next }); setMode('view')
-    } catch (cause) { setError(cause.message === 'professional-profile-forbidden' ? 'Sua conta não possui a capability profissional.' : 'Não foi possível salvar agora. Verifique sua conexão.') }
+    } catch (cause) { setError(cause.message === 'professional-profile-forbidden' ? t('Sua conta não possui a capability profissional.') : t('Não foi possível salvar agora. Verifique sua conexão.')) }
     finally { setSaving(false) }
   }
   const provision = async () => {
@@ -46,50 +47,50 @@ export default function ProfessionalProfile() {
     try {
       const next = await repository.provision(auth.user.id, profile)
       setProfile({ ...EMPTY, ...next }); setCapability(true); setMode('view'); nav('/professional-profile', { replace: true })
-    } catch (cause) { setError(cause.message === 'professional-name-required' ? 'Informe seu nome profissional.' : 'Não foi possível criar o perfil profissional. Verifique sua conexão.') }
+    } catch (cause) { setError(cause.message === 'professional-name-required' ? t('Informe seu nome profissional.') : t('Não foi possível criar o perfil profissional. Verifique sua conexão.')) }
     finally { setSaving(false) }
   }
 
-  if (auth.status !== 'authenticated') return <div className="narrow"><AppHeader title="Perfil profissional" backTo="/more" /><Section><p>Entre em uma conta para acessar o perfil profissional.</p></Section></div>
-  if (busy) return <div className="narrow"><AppHeader title="Perfil profissional" backTo="/more" /><p role="status">Carregando…</p></div>
+  if (auth.status !== 'authenticated') return <div className="narrow"><AppHeader title={t("Perfil profissional")} backTo="/more" /><Section><p>{t("Entre em uma conta para acessar o perfil profissional.")}</p></Section></div>
+  if (busy) return <div className="narrow"><AppHeader title={t("Perfil profissional")} backTo="/more" /><p role="status">{t("Carregando…")}</p></div>
   if (!capability) return <div className="narrow">
-    <AppHeader title="Tornar-se profissional" backTo="/settings" />
-    <Section title="Crie seu perfil profissional">
-      <p className="muted small">Ative a área profissional para enviar treinos, gerar convites e acompanhar seus alunos.</p>
+    <AppHeader title={t("Tornar-se profissional")} backTo="/settings" />
+    <Section title={t("Crie seu perfil profissional")}>
+      <p className="muted small">{t("Ative a área profissional para enviar treinos, gerar convites e acompanhar seus alunos.")}</p>
       {error && <p role="alert" className="error">{error}</p>}
-      <label>Nome profissional<TextField value={profile.professionalName} onChange={event => update('professionalName', event.target.value)} maxLength={120} /></label>
-      <label>Bio<TextArea value={profile.bio || ''} onChange={event => update('bio', event.target.value)} maxLength={2000} rows={5} /></label>
-      <label>Especialidades<TextField value={(profile.specialties || []).join(', ')} onChange={event => update('specialties', event.target.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8))} /></label>
-      <label>Cidade/região<TextField value={profile.cityRegion || ''} onChange={event => update('cityRegion', event.target.value)} maxLength={120} /></label>
-      <label>Tipo de registro<TextField value={profile.registrationType || ''} onChange={event => update('registrationType', event.target.value)} maxLength={40} /></label>
-      <label>Número do registro<TextField value={profile.registrationNumber || ''} onChange={event => update('registrationNumber', event.target.value)} maxLength={80} /></label>
-      <Button disabled={saving} onClick={provision}>{saving ? 'Criando…' : 'Criar perfil profissional'}</Button>
+      <label>{t("Nome profissional")}<TextField value={profile.professionalName} onChange={event => update('professionalName', event.target.value)} maxLength={120} /></label>
+      <label>{t("Bio")}<TextArea value={profile.bio || ''} onChange={event => update('bio', event.target.value)} maxLength={2000} rows={5} /></label>
+      <label>{t("Especialidades")}<TextField value={(profile.specialties || []).join(', ')} onChange={event => update('specialties', event.target.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8))} /></label>
+      <label>{t("Cidade/região")}<TextField value={profile.cityRegion || ''} onChange={event => update('cityRegion', event.target.value)} maxLength={120} /></label>
+      <label>{t("Tipo de registro")}<TextField value={profile.registrationType || ''} onChange={event => update('registrationType', event.target.value)} maxLength={40} /></label>
+      <label>{t("Número do registro")}<TextField value={profile.registrationNumber || ''} onChange={event => update('registrationNumber', event.target.value)} maxLength={80} /></label>
+      <Button disabled={saving} onClick={provision}>{saving ? t('Criando…') : t('Criar perfil profissional')}</Button>
     </Section>
   </div>
 
   const preview = mode === 'preview'
   return <div className="narrow">
-    <AppHeader title="Perfil profissional" backTo="/more" />
-    <div className="seg" role="tablist" aria-label="Modo do perfil">
-      {['view', 'edit', 'preview'].map(item => <button key={item} type="button" role="tab" aria-selected={mode === item} onClick={() => setMode(item)}>{item === 'view' ? 'Ver' : item === 'edit' ? 'Editar' : 'Preview'}</button>)}
+    <AppHeader title={t("Perfil profissional")} backTo="/more" />
+    <div className="seg" role="tablist" aria-label={t("Modo do perfil")}>
+      {['view', 'edit', 'preview'].map(item => <button key={item} type="button" role="tab" aria-selected={mode === item} onClick={() => setMode(item)}>{t(item === 'view' ? 'Ver' : item === 'edit' ? 'Editar' : 'Preview')}</button>)}
     </div>
     {error && <p role="alert" className="error">{error}</p>}
-    {preview || mode === 'view' ? <Section title={profile.professionalName || 'Sem perfil profissional'}>
-      <p>{profile.bio || 'Adicione uma apresentação curta.'}</p>
-      {!!profile.specialties?.length && <p><strong>Especialidades:</strong> {profile.specialties.join(', ')}</p>}
+    {preview || mode === 'view' ? <Section title={profile.professionalName || t('Sem perfil profissional')}>
+      <p>{profile.bio || t('Adicione uma apresentação curta.')}</p>
+      {!!profile.specialties?.length && <p><strong>{t("Especialidades:")}</strong> {profile.specialties.join(', ')}</p>}
       {profile.cityRegion && <p>{profile.cityRegion}</p>}
-      {profile.registrationType && <p>Registro informado: {profile.registrationType} {profile.registrationNumber || ''}</p>}
-      <p className="muted small">Status do registro: {profile.verificationStatus === 'unverified' ? 'não verificado' : profile.verificationStatus}</p>
-      {mode === 'view' && <Button onClick={() => setMode('edit')}>Editar perfil</Button>}
-    </Section> : <Section title="Editar perfil">
-      <label>Nome profissional<TextField value={profile.professionalName} onChange={event => update('professionalName', event.target.value)} maxLength={120} /></label>
-      <label>Bio<TextArea value={profile.bio || ''} onChange={event => update('bio', event.target.value)} maxLength={2000} rows={5} /></label>
-      <label>Especialidades<TextField value={(profile.specialties || []).join(', ')} onChange={event => update('specialties', event.target.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8))} /></label>
-      <label>Cidade/região<TextField value={profile.cityRegion || ''} onChange={event => update('cityRegion', event.target.value)} maxLength={120} /></label>
-      <label>Tipo de registro<TextField value={profile.registrationType || ''} onChange={event => update('registrationType', event.target.value)} maxLength={40} /></label>
-      <label>Número do registro<TextField value={profile.registrationNumber || ''} onChange={event => update('registrationNumber', event.target.value)} maxLength={80} /></label>
-      <p className="muted small">Salvar exige conexão. O status de verificação é controlado pelo sistema.</p>
-      <Button disabled={saving} onClick={save}>{saving ? 'Salvando…' : 'Salvar perfil'}</Button>
+      {profile.registrationType && <p>{t('Registro informado: {0} {1}', profile.registrationType, profile.registrationNumber || '')}</p>}
+      <p className="muted small">{t('Status do registro: {0}', profile.verificationStatus === 'unverified' ? t('não verificado') : profile.verificationStatus)}</p>
+      {mode === 'view' && <Button onClick={() => setMode('edit')}>{t("Editar perfil")}</Button>}
+    </Section> : <Section title={t("Editar perfil")}>
+      <label>{t("Nome profissional")}<TextField value={profile.professionalName} onChange={event => update('professionalName', event.target.value)} maxLength={120} /></label>
+      <label>{t("Bio")}<TextArea value={profile.bio || ''} onChange={event => update('bio', event.target.value)} maxLength={2000} rows={5} /></label>
+      <label>{t("Especialidades")}<TextField value={(profile.specialties || []).join(', ')} onChange={event => update('specialties', event.target.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8))} /></label>
+      <label>{t("Cidade/região")}<TextField value={profile.cityRegion || ''} onChange={event => update('cityRegion', event.target.value)} maxLength={120} /></label>
+      <label>{t("Tipo de registro")}<TextField value={profile.registrationType || ''} onChange={event => update('registrationType', event.target.value)} maxLength={40} /></label>
+      <label>{t("Número do registro")}<TextField value={profile.registrationNumber || ''} onChange={event => update('registrationNumber', event.target.value)} maxLength={80} /></label>
+      <p className="muted small">{t("Salvar exige conexão. O status de verificação é controlado pelo sistema.")}</p>
+      <Button disabled={saving} onClick={save}>{saving ? t('Salvando…') : t('Salvar perfil')}</Button>
     </Section>}
   </div>
 }

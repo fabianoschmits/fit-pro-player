@@ -6,6 +6,25 @@ const scope = { kind: 'account', userId: USER_A }
 const storage = () => ({ data: new Map(), getItem(k) { return this.data.get(k) ?? null }, setItem(k, v) { this.data.set(k, String(v)) } })
 
 describe('account sync service', () => {
+  it('rejects a malformed outgoing snapshot before the CAS request', async () => {
+    const rpc = vi.fn()
+    const service = createAccountSyncService({ client: { rpc }, scope })
+    expect(await service.uploadSnapshot({ state: { routines: [], workouts: [], active: { entries: null } }, expectedRevision: 0 })).toMatchObject({ state: 'ERROR', error: 'invalid-local-state' })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+  it('keeps private professional editor drafts out of the cloud snapshot', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [{ status: 'APPLIED', revision: 1 }] })
+    await createAccountSyncService({ client: { rpc }, scope }).uploadSnapshot({ state: { routines: [], workouts: [], professionalProgramDrafts: { secretDraft: { name: 'unfinished' } } }, expectedRevision: 0 })
+    expect(rpc.mock.calls[0][1].p_payload).not.toHaveProperty('professionalProgramDrafts')
+  })
+  it('reports concurrent remote changes without advancing the local base revision', async () => {
+    const store = storage()
+    writeSyncMetadata(scope, { revision: 2, dirty: true }, store)
+    const service = createAccountSyncService({ scope, storage: store, client: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { user_id: USER_A, revision: 4, state_schema_version: 1, payload: { routines: [], workouts: [] } } }) }) }) }) } })
+    expect(await service.sync({ state: { routines: [], workouts: [] } })).toMatchObject({ state: REMOTE_SYNC_STATE.CONFLICT, snapshot: { revision: 4 } })
+    expect(readSyncMetadata(scope, store)).toEqual({ revision: 2, dirty: true })
+  })
+
   it('rejects anonymous scopes and invalid remote ownership/schema', async () => {
     const service = createAccountSyncService({ scope: { kind: 'anonymous', userId: null } })
     expect((await service.sync()).state).toBe(REMOTE_SYNC_STATE.ERROR)
@@ -19,7 +38,7 @@ describe('account sync service', () => {
     const service = createAccountSyncService({ client: { from }, scope, storage: store })
     expect((await service.sync({ state: {} })).state).toBe(REMOTE_SYNC_STATE.REMOTE_ABSENT)
 
-    from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { user_id: USER_A, revision: 3, state_schema_version: 1, payload: {}, updated_at: 'now' }, error: null }) }) }) })
+    from.mockReturnValue({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { user_id: USER_A, revision: 3, state_schema_version: 1, payload: { routines: [], workouts: [] }, updated_at: 'now' }, error: null }) }) }) })
     expect((await service.sync({ state: {} })).state).toBe(REMOTE_SYNC_STATE.REMOTE_AHEAD)
     writeSyncMetadata(scope, { revision: 3, dirty: true }, store)
     expect((await service.sync({ state: {} })).state).toBe(REMOTE_SYNC_STATE.LOCAL_AHEAD)
@@ -33,10 +52,10 @@ describe('account sync service', () => {
     const rpc = vi.fn().mockResolvedValueOnce({ data: [{ status: 'APPLIED', revision: 1, updated_at: 'one' }], error: null })
       .mockResolvedValueOnce({ data: [{ status: 'CONFLICT', revision: 4, updated_at: 'four' }], error: null })
     const service = createAccountSyncService({ client: { rpc }, scope, storage: store })
-    expect(await service.uploadSnapshot({ state: { workouts: [{ id: 1 }], access_token: 'never' }, expectedRevision: 0 })).toMatchObject({ state: REMOTE_SYNC_STATE.IN_SYNC, revision: 1 })
+    expect(await service.uploadSnapshot({ state: { routines: [], workouts: [{ id: 'one', entries: [] }], access_token: 'never' }, expectedRevision: 0 })).toMatchObject({ state: REMOTE_SYNC_STATE.IN_SYNC, revision: 1 })
     expect(readSyncMetadata(scope, store)).toEqual({ revision: 1, dirty: false })
-    expect(await service.uploadSnapshot({ state: { workouts: [{ id: 2 }] }, expectedRevision: 1 })).toMatchObject({ state: REMOTE_SYNC_STATE.CONFLICT, remoteRevision: 4 })
-    expect(rpc).toHaveBeenLastCalledWith('save_own_account_snapshot', expect.objectContaining({ p_expected_revision: 1, p_state_schema_version: 1, p_payload: expect.objectContaining({ workouts: [{ id: 2 }] }) }))
+    expect(await service.uploadSnapshot({ state: { routines: [], workouts: [{ id: 'two', entries: [] }] }, expectedRevision: 1 })).toMatchObject({ state: REMOTE_SYNC_STATE.CONFLICT, remoteRevision: 4 })
+    expect(rpc).toHaveBeenLastCalledWith('save_own_account_snapshot', expect.objectContaining({ p_expected_revision: 1, p_state_schema_version: 1, p_payload: expect.objectContaining({ workouts: [{ id: 'two', entries: [] }] }) }))
     expect(readSyncMetadata(scope, store)).toEqual({ revision: 1, dirty: false })
   })
 
@@ -52,7 +71,7 @@ describe('account sync service', () => {
       customEx: [{ id: 'custom-1', name: 'Cable press' }], targetW: 78, planMode: 'weekly',
       reminder: { on: true, time: '07:30', tz: 'America/Sao_Paulo' }, effort: 'rir',
       weighBeforeWorkout: false, simpleMode: false, onboardingDone: true, seenTips: { intro: true },
-      active: { routineId: 'push' }, mediaSize: 'full', access_token: 'must-not-upload',
+      active: { routineId: 'push', entries: [] }, mediaSize: 'full', access_token: 'must-not-upload',
     }
     const service = createAccountSyncService({ client: { rpc }, scope })
 

@@ -10,7 +10,7 @@ import { t } from '../lib/i18n.js'
 import { setProgressHighWater, supersetFlowStep } from '../lib/supersetFlow.js'
 import Media from '../components/Media.jsx'
 import WorkSetOverlay from '../components/WorkSetOverlay.jsx'
-import { startFlow, exercisePicker, exConfigSheet, exerciseDetailSheet, topWeightSheet, finishWorkout, workoutCompleteSheet, confirmSheet } from '../sheets.jsx'
+import { startFlow, exercisePicker, exConfigSheet, exerciseDetailSheet, topWeightSheet, finishWorkout, workoutCompleteSheet, confirmSheet, abandonWorkout } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button, Check, NumberField } from '../components/ui.jsx'
 import { nextPrescription, applyPrescription } from '../lib/progression.js'
@@ -135,7 +135,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
   // Effort (RIR or RPE, whichever the profile logs) only makes sense for weighted rep sets,
   // not cardio/timed holds, and is opt-in since it adds a third stepper to every row. `opt`
   // because an unlogged effort is not the same as 0 — RIR 0 says the set went to failure.
-  const kind = effortOf(S)
+  const kind = ['rir', 'rpe'].includes(cfg.effort) ? cfg.effort : effortOf(S)
   const eff = EFFORT[kind]
   const col3 = mode === 'reps' && eff ? { ...eff, eff: kind, dec: true, opt: true, hd: t(eff.hd) } : null
   // The effort column walks its own scale — see stepEffort. Weight and reps step up from 0
@@ -174,6 +174,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
       {ex.eq && <span className="tag">{sentenceCase(t(ex.eq))}</span>}
       {best > 0 && <span className="tag nocap">{t('Best:')} {fmtNum(best)} {S.unit}</span>}
     </div>
+    {cfg.notes && <p className="muted">{cfg.notes}</p>}
     <Media ex={ex} key={entry.id} compact={compact} minimizable />
     <WorkSetOverlay entryIdx={entryIdx} />
     {locked && onStartWorkout && (
@@ -302,6 +303,16 @@ function ActiveWorkout() {
 
   const total = A.entries.reduce((n, e) => n + e.sets.length, 0)
   const done = setsDoneActive(A)
+  const applySuggestedProgression = () => update(s => {
+    if (!s.active?.assignmentId || setsDoneActive(s.active)) return
+    const routine = s.routines.find(item => item.id === s.active.routineId)
+    s.active.entries.forEach(entry => {
+      const plan = nextPrescription(s, { ...entry.target, id: entry.id }, routine)
+      entry.plan = plan
+      entry.sets = applyPrescription(entry.sets, plan)
+    })
+    s.active.progressionApplied = true
+  })
 
   const mutEntry = (idx, fn) => update(s => { fn(s.active.entries[idx]) }, true)
   // Clearing an optional field drops the key rather than storing null, so a set only carries
@@ -487,6 +498,7 @@ function ActiveWorkout() {
       const freshUnitIdx = freshUnits.indexOf(freshUnit)
       const freshLastUnit = freshUnitIdx >= freshUnits.length - 1
       const freshUnitDone = freshUnit?.every(ui => fresh.entries[ui].sets.every(x => x.done))
+      const restSeconds = fresh.entries[idx].target?.rest ?? S.restSec
 
       // The final set ends the session immediately. A rest timer here obscures the finish action
       // and asks the user to wait even though there is no next set or exercise.
@@ -497,7 +509,7 @@ function ActiveWorkout() {
 
       // Singleton units are ordinary exercises: start rest timer and display completion sheet AFTER rest ends
       if (freshUnitDone) {
-        startRest(S.restSec, () => {
+        startRest(restSeconds, () => {
           if (!freshLastUnit && !askTop) {
             const nextUnit = freshUnits[freshUnitIdx + 1]
             if (nextUnit?.length) update(s => { if (s.active) s.active.cur = nextUnit[0] })
@@ -507,14 +519,14 @@ function ActiveWorkout() {
         return
       }
       if (!freshUnit || freshUnit.length <= 1) {
-        startRest(S.restSec)
+        startRest(restSeconds)
         return
       }
 
       const step = supersetFlowStep(fresh.entries, freshUnit, idx)
       if (!step) return
       if (step.unitDone) {
-        startRest(S.restSec, () => {
+        startRest(restSeconds, () => {
           if (!freshLastUnit) {
             const nextUnit = freshUnits[freshUnitIdx + 1]
             // The top-weight sheet's explicit "Just close" path owns the choice not to advance.
@@ -524,7 +536,7 @@ function ActiveWorkout() {
         })
       } else {
         if (step.nextIdx != null) update(s => { if (s.active) s.active.cur = step.nextIdx })
-        if (step.roundDone) startRest(S.restSec)
+        if (step.roundDone) startRest(restSeconds)
       }
     } else if (!checked) {
       stopRest(false)
@@ -534,7 +546,7 @@ function ActiveWorkout() {
   return <div className="narrow active-workout">
     <div className="workout-session-bar">
       <div className="hdr workout-session-header">
-        <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { update(s => { s.active = null }); stopRest(); nav('/home') } })}><Icon name="xmark" /></button>
+        <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { abandonWorkout(); nav('/home') } })}><Icon name="xmark" /></button>
         <div className="workout-session-title"><strong>{A.name}</strong><span><Elapsed start={A.start} /> · {t('{0} sets', done + '/' + total)}</span></div>
         <button className="finish-hdr-btn" aria-label={t('Finish workout')} onClick={finishWorkout}>
           <span className="finish-hdr-lbl">{t('Finish workout')}</span>
@@ -542,6 +554,7 @@ function ActiveWorkout() {
         </button>
       </div>
       <div className="wprog"><i style={{ '--progress': total ? done / total : 0 }} /></div>
+      {A.assignmentId && !done && !A.progressionApplied && <Button variant="ghost" onClick={applySuggestedProgression}>{t('Aplicar progressão sugerida')}</Button>}
       {A.entries.length > 0 && <div className="workout-exercise-rail" aria-label={t('Exercises')}>
         {units.map((indices, index) => {
           const entries = indices.map(entryIndex => A.entries[entryIndex])

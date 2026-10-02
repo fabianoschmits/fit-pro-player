@@ -37,6 +37,10 @@ npm test
 npm run build
 npm run check:supabase
 npm run audit
+npm --prefix frontend run check:i18n
+npm --prefix frontend run test:e2e
+npm --prefix frontend run test:e2e:pwa
+npm run check:database
 ```
 
 Para o modo demo/local, o frontend também pode ser executado sem variáveis Supabase. Nesse modo os dados ficam no dispositivo e podem ser exportados em JSON.
@@ -49,6 +53,10 @@ O projeto é publicado na Vercel. Configure no projeto Vercel apenas:
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 
 Chaves privadas do Supabase não pertencem ao frontend e não são lidas pelo Vite. Migrations versionadas em `supabase/migrations` são aplicadas separadamente ao projeto Supabase.
+
+A migration `202610020014_professional_readiness.sql` é necessária para a versão profissional: o frontend usa RPCs para criar/editar programas e iniciar/concluir/abandonar execuções. Aplique e valide migrations antes de publicar esse frontend. O push do código não aplica migrations ao banco remoto.
+
+Veja [operação e validação da versão profissional](docs/PROFESSIONAL_READINESS.md) para sincronização, preparação offline, recuperação e testes.
 
 ## Estrutura
 

@@ -29,5 +29,12 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
     bw: active.bw,
     entries,
     prs,
+    ...(active.professionalExecutionId ? {
+      professionalExecutionId: active.professionalExecutionId,
+      assignmentId: active.assignmentId,
+      programVersionId: active.programVersionId,
+      prescribedEntries: active.prescribedEntries,
+      unit: active.unit,
+    } : {}),
   }
 }

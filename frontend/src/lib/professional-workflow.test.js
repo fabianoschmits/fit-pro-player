@@ -2,6 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProfessionalWorkflowRepository } from './professional-workflow.js'
 
 describe('professional management repository', () => {
+  it('creates and updates program metadata through owner-scoped RPCs', async () => {
+    const calls = []; const repo = createProfessionalWorkflowRepository({ client: { rpc: async (name, args) => { calls.push([name, args]); return { data: { id: 'p' } } } } })
+    await repo.createProgram('owner', ' Força ', ' Base ')
+    await repo.updateProgram('p', { title: 'Força', description: 'Base', archived: true })
+    expect(calls).toEqual([['create_program', { p_title: 'Força', p_description: 'Base' }], ['update_program', { p_program_id: 'p', p_title: 'Força', p_description: 'Base', p_archived: true }]])
+  })
   it('reads normalized client summaries and detail through protected RPCs', async () => {
     const rpc = vi.fn(async name => name === 'professional_client_summaries'
       ? { data: [{ student_user_id: 'student-1', display_name: 'Ana', active_assignment_id: 'assignment-1' }], error: null }

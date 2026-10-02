@@ -13,6 +13,7 @@ data/
 !frontend/.env.development
 !frontend/.env.mobile
 !frontend/.env.vercel
+!frontend/.env.pwa-test
 .vercel/
 
 # Local Supabase state and credentials; keep supabase/config.toml and migrations tracked.
@@ -34,6 +35,9 @@ frontend/android/key.properties
 
 # Build output / deps
 frontend/dist/
+frontend/test-results/
+frontend/test-results-pwa/
+frontend/playwright-report/
 frontend/icons/
 node_modules/
 *.log

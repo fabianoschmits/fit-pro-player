@@ -14,7 +14,7 @@ import {
 } from './exercise-guide-assets.js'
 
 function frameCountForSlug(slug, source) {
-  const count = (source.match(/from '\.\/frame-\d+\.png'/g) || []).length
+  const count = (source.match(/from '\.\/frame-\d+\.webp'/g) || []).length
   expect(count, slug).toBeGreaterThanOrEqual(2)
   return count
 }
@@ -61,7 +61,7 @@ describe('local PNG exercise assets', () => {
       const count = frameCountForSlug(slug, source)
       expect(source, slug).not.toMatch(/<svg\b|data:image\/svg|dangerouslySetInnerHTML/)
       for (let i = 1; i <= count; i++) {
-        expect(existsSync(join(moduleDir, `frame-${i}.png`)), `${slug}/frame-${i}.png`).toBe(true)
+        expect(existsSync(join(moduleDir, `frame-${i}.webp`)), `${slug}/frame-${i}.webp`).toBe(true)
       }
 
       const asset = exerciseGuideAsset(EXDB.find(ex => EXERCISE_SPRITE_BY_EXERCISE_ID[ex.id] === slug))

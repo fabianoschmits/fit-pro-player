@@ -3,9 +3,9 @@ begin;
 select plan(10);
 
 select has_function('public', 'provision_professional_profile', array['text', 'text', 'text[]', 'text', 'text', 'text'], 'professional onboarding RPC exists');
-select function_security_definer('public.provision_professional_profile(text,text,text[],text,text,text)', 'professional onboarding RPC is SECURITY DEFINER');
-select function_privilege('public.provision_professional_profile(text,text,text[],text,text,text)', 'authenticated', 'EXECUTE', true, 'authenticated users can execute onboarding RPC');
-select function_privilege('public.provision_professional_profile(text,text,text[],text,text,text)', 'anon', 'EXECUTE', false, 'anonymous users cannot execute onboarding RPC');
+select ok((select prosecdef from pg_proc where oid = 'public.provision_professional_profile(text,text,text[],text,text,text)'::regprocedure), 'professional onboarding RPC is SECURITY DEFINER');
+select ok(has_function_privilege('authenticated', 'public.provision_professional_profile(text,text,text[],text,text,text)', 'EXECUTE'), 'authenticated users can execute onboarding RPC');
+select ok(not has_function_privilege('anon', 'public.provision_professional_profile(text,text,text[],text,text,text)', 'EXECUTE'), 'anonymous users cannot execute onboarding RPC');
 
 select ok(position('auth.uid()' in lower(pg_get_functiondef('public.provision_professional_profile(text,text,text[],text,text,text)'::regprocedure))) > 0, 'RPC is owner-scoped to auth.uid');
 select ok(position('professional' in lower(pg_get_functiondef('public.provision_professional_profile(text,text,text[],text,text,text)'::regprocedure))) > 0, 'RPC grants only professional capability');

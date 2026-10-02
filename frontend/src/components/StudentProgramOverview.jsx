@@ -1,16 +1,19 @@
+import { useState } from 'react'
 import { nextScheduledWorkouts } from '../lib/professional-program.js'
+import { professionalDate, statusLabel } from '../lib/professional-ux.js'
+import { t } from '../lib/i18n.js'
+import { professionalDayLabel, ProfessionalPrescription } from './ProfessionalPrescription.jsx'
 import { Button, Section } from './ui.jsx'
 
-const dayLabels = { sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça', wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado' }
-
 export default function StudentProgramOverview({ overview = {}, onStart }) {
+  const [limit, setLimit] = useState(20)
   const plan = overview.version?.weeklyPlan || {}
   const upcoming = nextScheduledWorkouts(plan, new Date(), 5)
   const executions = overview.executions || []
-  if (!overview.program) return <Section title="Programa profissional"><p className="muted">Você ainda não recebeu um programa ativo.</p></Section>
+  if (!overview.program) return <Section title={t('Programa profissional')}><p className="muted">{t('Você ainda não recebeu um programa ativo.')}</p></Section>
   return <div className="student-program-overview">
-    <Section title="Programa atual"><h3>{overview.program.title}</h3><p className="muted">{overview.professional?.name || 'Profissional'} · versão {overview.version?.versionNumber || '—'}</p>{overview.program.description && <p>{overview.program.description}</p>}</Section>
-    <Section title="Próximos treinos">{upcoming.length ? upcoming.map(item => <div className="card row between" key={item.date}><span><strong>{dayLabels[item.day]}</strong><small className="muted">{item.date} · {item.exercises.length} exercício(s)</small></span><Button onClick={() => onStart?.(item)}>Iniciar</Button></div>) : <p className="muted">Nenhum treino programado.</p>}</Section>
-    <Section title="Histórico">{executions.length ? executions.map(item => <div className="card" key={item.id}><strong>{dayLabels[item.day_key] || item.day_key}</strong><span className="muted small">{item.status} · {item.started_at || 'sem data'}</span></div>) : <p className="muted">Nenhuma execução registrada.</p>}</Section>
+    <Section title={t('Programa atual')}><h3>{overview.program.title}</h3><p className="muted">{t('{0} · versão {1}', overview.professional?.name || t('Profissional'), overview.version?.versionNumber || '—')}</p>{overview.version?.publishedAt && <p className="muted">{t('Atualizado em {0}', professionalDate(overview.version.publishedAt))}</p>}{overview.program.description && <p>{overview.program.description}</p>}<details><summary>{t('Ver prescrição completa')}</summary><ProfessionalPrescription plan={plan} /></details></Section>
+    <Section title={t('Próximos treinos')}>{upcoming.length ? upcoming.map(item => <div className="card row between" key={item.date}><span><strong>{professionalDayLabel(item.day)}</strong><small className="muted">{professionalDate(item.date)} · {t('{0} exercício(s)', item.exercises.length)}</small></span><Button onClick={() => onStart?.(item)}>{t('Iniciar')}</Button></div>) : <p className="muted">{t('Nenhum treino programado.')}</p>}</Section>
+    <Section title={t('Histórico')}>{executions.length ? executions.slice(0, limit).map(item => <div className="card" key={item.id}><strong>{professionalDayLabel(item.day_key)}</strong><span className="muted">{statusLabel(item.status)} · {professionalDate(item.started_at, true)}</span></div>) : <p className="muted">{t('Nenhuma execução registrada.')}</p>}{executions.length > limit && <Button onClick={() => setLimit(value => value + 20)}>{t('Carregar mais')}</Button>}</Section>
   </div>
 }

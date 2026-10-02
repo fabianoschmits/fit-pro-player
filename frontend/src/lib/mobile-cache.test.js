@@ -5,9 +5,26 @@ const readFile = vi.fn()
 const writeFile = vi.fn()
 vi.mock('@capacitor/filesystem', () => ({ Filesystem: { readFile, writeFile }, Directory: { Data: 'DATA' }, Encoding: { UTF8: 'utf8' } }))
 
-import { nativeLoad, nativeSave } from './mobile.js'
+import { nativeLoad, nativeSave, nativeClear } from './mobile.js'
 
 describe('Capacitor cache isolation', () => {
+  it('clears only after a previous write finishes, preventing resurrection', async () => {
+    let complete
+    const scope = resolveLocalScope(null)
+    writeFile.mockImplementationOnce(() => new Promise(resolve => { complete = resolve }))
+    const save = nativeSave(scope, { routines: [], workouts: [{ id: 'old', entries: [] }] })
+    await vi.waitFor(() => expect(writeFile).toHaveBeenCalledTimes(1))
+    const clear = nativeClear(scope, { routines: [], workouts: [], _ts: 10 })
+    expect(writeFile).toHaveBeenCalledTimes(1)
+    complete({})
+    await Promise.all([save, clear])
+    expect(JSON.parse(writeFile.mock.calls.at(-1)[0].data)).toMatchObject({ workouts: [], _ts: 10 })
+  })
+
+  it('reports native write failure', async () => {
+    writeFile.mockRejectedValueOnce(new Error('native storage unavailable'))
+    expect(await nativeSave(resolveLocalScope(null), { routines: [], workouts: [] })).toBe(false)
+  })
   beforeEach(() => { readFile.mockReset(); writeFile.mockReset(); readFile.mockResolvedValue({ data: '{}' }); writeFile.mockResolvedValue({}) })
 
   it('reads an account-specific private file', async () => {

@@ -1,5 +1,6 @@
 import { ACCOUNT_CACHE_SCHEMA_VERSION } from './local-state-scope.js'
 import { serializeStateOnly } from './account-cache.js'
+import { validateBackup } from './backup-state.js'
 
 export const REMOTE_SYNC_STATE = Object.freeze({
   REMOTE_ABSENT: 'REMOTE_ABSENT',
@@ -13,9 +14,31 @@ export const REMOTE_SYNC_STATE = Object.freeze({
 })
 
 const META_PREFIX = 'fpp_account_sync_v1:'
+const CONFLICT_PREFIX = 'fpp_account_conflict_v1:'
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const isObject = value => value && typeof value === 'object' && !Array.isArray(value)
+
+export function readSyncConflict(scope, storage = globalThis.localStorage) {
+  if (!syncMetadataKey(scope)) return null
+  try {
+    const data = JSON.parse(storage.getItem(`${CONFLICT_PREFIX}${scope.userId}`) || 'null')
+    if (!data || data.ownerId !== scope.userId) return null
+    validateBackup(data.local)
+    const remote = validateRemoteSnapshot({ user_id: scope.userId, revision: data.remote.revision, state_schema_version: ACCOUNT_CACHE_SCHEMA_VERSION, payload: data.remote.payload }, scope.userId)
+    return remote ? { ...data, remote } : null
+  } catch { return null }
+}
+
+export function writeSyncConflict(scope, conflict, storage = globalThis.localStorage) {
+  if (!syncMetadataKey(scope)) return false
+  try { storage.setItem(`${CONFLICT_PREFIX}${scope.userId}`, serializeStateOnly({ ...conflict, ownerId: scope.userId })); return true } catch { return false }
+}
+
+export function clearSyncConflict(scope, storage = globalThis.localStorage) {
+  if (!syncMetadataKey(scope)) return true
+  try { storage.removeItem(`${CONFLICT_PREFIX}${scope.userId}`); return true } catch { return false }
+}
 
 export function syncMetadataKey(scope) {
   if (scope?.kind !== 'account' || !UUID.test(scope.userId || '')) return null
@@ -55,6 +78,7 @@ export function validateRemoteSnapshot(row, ownerId, schemaVersion = ACCOUNT_CAC
   if (!Number.isSafeInteger(row.revision) || row.revision <= 0) return null
   if (row.state_schema_version !== schemaVersion) return null
   if (!isObject(row.payload)) return null
+  try { validateBackup(row.payload) } catch { return null }
   return Object.freeze({
     userId: row.user_id,
     revision: row.revision,
@@ -113,13 +137,15 @@ export function createAccountSyncService({
     }
   }
 
-  const uploadSnapshot = async ({ state, expectedRevision = readSyncMetadata(scope, storage).revision } = {}) => {
+  const uploadSnapshot = async ({ state, expectedRevision = readSyncMetadata(scope, storage).revision, isUnchanged = () => true } = {}) => {
     if (!current()) return { state: REMOTE_SYNC_STATE.ERROR, error: 'stale-scope' }
     if (!client || typeof client.rpc !== 'function') return { state: REMOTE_SYNC_STATE.ERROR, error: 'sync-unavailable' }
     if (!online()) return { state: REMOTE_SYNC_STATE.OFFLINE, error: 'offline' }
     let payload
-    try { payload = JSON.parse(serializeStateOnly(state)) } catch { return { state: REMOTE_SYNC_STATE.ERROR, error: 'invalid-local-state' } }
+    try { payload = JSON.parse(serializeStateOnly(state)); validateBackup(payload) } catch { return { state: REMOTE_SYNC_STATE.ERROR, error: 'invalid-local-state' } }
+    delete payload.professionalProgramDrafts
     if (!isObject(payload)) return { state: REMOTE_SYNC_STATE.ERROR, error: 'invalid-local-state' }
+    if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) return { state: REMOTE_SYNC_STATE.ERROR, error: 'invalid-base-revision' }
     try {
       const response = await client.rpc('save_own_account_snapshot', {
         p_expected_revision: expectedRevision,
@@ -141,7 +167,7 @@ export function createAccountSyncService({
       }
       const revision = Number(result.revision)
       if (!Number.isSafeInteger(revision) || revision <= 0) return { state: REMOTE_SYNC_STATE.ERROR, error: 'invalid-cas-response' }
-      writeSyncMetadata(scope, { revision, dirty: false }, storage)
+      if (!writeSyncMetadata(scope, { revision, dirty: !isUnchanged() }, storage)) return { state: REMOTE_SYNC_STATE.ERROR, error: 'local-metadata-write-failed', revision }
       return { state: REMOTE_SYNC_STATE.IN_SYNC, revision, updatedAt: result.updated_at || null }
     } catch (error) {
       return { state: isOffline(error, online) ? REMOTE_SYNC_STATE.OFFLINE : REMOTE_SYNC_STATE.ERROR, error: 'remote-write-failed' }
@@ -152,7 +178,8 @@ export function createAccountSyncService({
     const result = await fetchRemoteSnapshot()
     if (result.state !== REMOTE_SYNC_STATE.REMOTE_AVAILABLE) return result
     const metadata = readSyncMetadata(scope, storage)
-    if (dirty || metadata.revision > result.snapshot.revision) {
+    if ((dirty || metadata.dirty) && metadata.revision !== result.snapshot.revision) return { state: REMOTE_SYNC_STATE.CONFLICT, snapshot: result.snapshot }
+    if (dirty || metadata.dirty || metadata.revision > result.snapshot.revision) {
       return { state: REMOTE_SYNC_STATE.LOCAL_AHEAD, snapshot: result.snapshot }
     }
     if (metadata.revision < result.snapshot.revision) {

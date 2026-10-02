@@ -123,6 +123,15 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
+  it('applies progression to an assigned session only after an explicit action, keeping the prescription', async () => {
+    await mount([exercise('plain-bench', [false, false], { target: { id: 'plain-bench', sets: 2, mode: 'reps', reps: 5, weight: 40 } })])
+    mocks.S.active.assignmentId = 'assigned'
+    mocks.S.workouts = [{ entries: [{ id: 'plain-bench', target: { sets: 2, reps: 5, weight: 40 }, sets: [{ w: 40, r: 5, done: true }, { w: 40, r: 5, done: true }] }] }]
+    await act(async () => root.render(<Workout />))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar progressão sugerida').click())
+    expect(mocks.S.active.entries[0].sets[0].w).toBeGreaterThan(40)
+    expect(mocks.S.active.entries[0].target.weight).toBe(40)
+  })
   it('keeps the workout completion action in a dedicated mobile action region', async () => {
     await mount([exercise('plain-bench', [false, false])])
 
@@ -210,6 +219,12 @@ describe('Workout set completion flow', () => {
 
     expect(mocks.startRest).not.toHaveBeenCalled()
     expect(mocks.workoutCompleteSheet).toHaveBeenCalledOnce()
+  })
+
+  it('uses the assigned exercise rest instead of the global timer default', async () => {
+    await mount([exercise('0025', [false, false], { target: { mode: 'reps', reps: 8, weight: 40, rest: 25 } })])
+    await act(async () => container.querySelector('[role="checkbox"]').click())
+    expect(mocks.startRest).toHaveBeenCalledWith(25)
   })
 
   it('leaves a completed superset selected while its top-weight sheet owns the advance choice', async () => {

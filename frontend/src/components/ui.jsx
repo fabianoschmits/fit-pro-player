@@ -13,7 +13,7 @@
 //   · :active gives a scale/tint response so touch feels acknowledged
 //   · focus-visible draws a ring; pointer interaction never does
 
-import { useRef, useState, useEffect, useLayoutEffect, useCallback, forwardRef } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, forwardRef, useId, Children, cloneElement, isValidElement } from 'react'
 import Icon from './Icon.jsx'
 import { t } from '../lib/i18n.js'
 
@@ -77,12 +77,14 @@ export function SearchField({ value, onChange, onClear, ...rest }) {
 
 /* ============================ switch ============================ */
 
-export function Switch({ checked, onChange, disabled }) {
+export function Switch({ checked, onChange, disabled, ariaLabel, ...rest }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={!!checked}
+      aria-label={ariaLabel || rest['aria-label']}
+      {...rest}
       disabled={disabled}
       className={'sw' + (checked ? ' on' : '')}
       onClick={() => onChange(!checked)}
@@ -118,16 +120,17 @@ export function Segmented({ options, value, onChange, className = '' }) {
 
 /* ============================ stepper ============================ */
 
-export function Stepper({ value, step = 1, onChange, decimal = true, className = '', label, unit }) {
+export function Stepper({ value, step = 1, onChange, decimal = true, className = '', label, unit, ariaLabel }) {
+  const name = ariaLabel || label || t('Value')
   const set = v => onChange(Math.max(0, Math.round((v || 0) * 100) / 100))
   const inner = (
     <div className={'stp ' + className}>
-      <button type="button" onClick={() => set((+value || 0) - step)} aria-label={t('Decrease')}><Icon name="minus" /></button>
+      <button type="button" onClick={() => set((+value || 0) - step)} aria-label={`${t('Decrease')} ${name}`}><Icon name="minus" /></button>
       <span className="val">
-        <NumberField value={value} decimal={decimal} onChange={onChange} />
+        <NumberField value={value} decimal={decimal} onChange={onChange} aria-label={unit ? `${name} (${unit})` : name} />
         {unit && <i>{unit}</i>}
       </span>
-      <button type="button" onClick={() => set((+value || 0) + step)} aria-label={t('Increase')}><Icon name="plus" /></button>
+      <button type="button" onClick={() => set((+value || 0) + step)} aria-label={`${t('Increase')} ${name}`}><Icon name="plus" /></button>
     </div>
   )
   if (!label) return inner
@@ -139,7 +142,7 @@ export function Stepper({ value, step = 1, onChange, decimal = true, className =
 // Pointer-driven so the fill, track and thumb are all ours — no ::-webkit-*
 // pseudo-elements, which is the only way the control looks identical on every
 // platform and can pick up the accent colour.
-export function Slider({ value, min = 0, max = 100, step = 1, onChange, className = '' }) {
+export function Slider({ value, min = 0, max = 100, step = 1, onChange, className = '', ariaLabel, ...rest }) {
   const ref = useRef(null)
   const [drag, setDrag] = useState(false)
   const [trackWidth, setTrackWidth] = useState(0)
@@ -188,6 +191,7 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
   }, [drag, onChange, posToValue])
 
   const key = e => {
+    if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); onChange(e.key === 'Home' ? min : max); return }
     const d = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? step
       : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -step : 0
     if (!d) return
@@ -203,6 +207,8 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
       role="slider"
       tabIndex={0}
       aria-valuenow={value} aria-valuemin={min} aria-valuemax={max}
+      aria-label={ariaLabel || rest['aria-label']}
+      {...rest}
       data-nodrag                                  /* keeps the sheet from swipe-dismissing */
       onKeyDown={key}
       onPointerDown={e => { e.currentTarget.setPointerCapture?.(e.pointerId); setDrag(true); onChange(posToValue(e.clientX)) }}
@@ -248,15 +254,18 @@ export function Section({ title, footer, children, className = '' }) {
 }
 
 export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none', onClick, danger, children, className = '' }) {
+  const titleId = useId()
+  const controls = Children.map(children, child => isValidElement(child) && [Switch, Slider, Stepper].includes(child.type)
+    ? cloneElement(child, { ariaLabel: child.props.ariaLabel || (typeof title === 'string' ? title : undefined), ...(!child.props.ariaLabel && typeof title !== 'string' ? { 'aria-labelledby': titleId } : {}) }) : child)
   const Tag = onClick ? 'button' : 'div'
   return (
     <Tag {...(onClick ? { type: 'button' } : {})} className={'lrow' + (onClick ? ' tap' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick}>
       {icon && <span className="lrow-i" style={iconTint ? { '--tint': iconTint } : null}><Icon name={icon} /></span>}
       {title && <span className="lrow-m">
-        <span className="lrow-t">{title}</span>
+        <span className="lrow-t" id={titleId}>{title}</span>
         {subtitle && <span className="lrow-s">{subtitle}</span>}
       </span>}
-      {children}
+      {controls}
       {value != null && <span className="lrow-v">{value}</span>}
       {accessory === 'chevron' && <Icon name="chevronRight" className="lrow-c" />}
       {accessory === 'check' && <Icon name="check" className="lrow-k" />}

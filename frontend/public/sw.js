@@ -1,9 +1,19 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
    Media (img/gif) cache-first; everything else network-first with offline fallback.
    Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v14'
+const CACHE = 'fit-pro-player-rt-v15'
+const MEDIA_LIMIT = 256
+async function remember(request, response, media = false) {
+  const cache = await caches.open(CACHE)
+  await cache.put(request, response)
+  if (media) {
+    const keys = (await cache.keys()).filter(key => /\.(webp|png|jpg|jpeg|avif)$/.test(new URL(key.url).pathname))
+    for (const key of keys.slice(0, Math.max(0, keys.length - MEDIA_LIMIT))) await cache.delete(key)
+  }
+}
 
-self.addEventListener('install', () => self.skipWaiting())
+// Existing sessions decide when an update may activate. First installation needs no skip.
+self.addEventListener('install', () => {})
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => {
     // Keep one previous shell until the new worker has populated its runtime cache. If an
@@ -26,11 +36,11 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
   const sameOrigin = url.origin === location.origin
   if (!sameOrigin) return
-  const isMedia = url.pathname.includes('/img/') || url.pathname.includes('/gif/')
+  const isMedia = url.pathname.includes('/img/') || url.pathname.includes('/gif/') || /\.(webp|png|jpg|jpeg|avif)$/.test(url.pathname)
   if (isMedia) {
-    e.respondWith(caches.open(CACHE).then(c => c.match(e.request).then(hit =>
+    e.respondWith(caches.open(CACHE).then(c => caches.match(e.request, { ignoreVary: true }).then(hit =>
       hit || fetch(e.request).then(res => {
-        if (res.ok || res.type === 'opaque') c.put(e.request, res.clone())
+        if (res.ok || res.type === 'opaque') e.waitUntil(remember(e.request, res.clone(), true))
         return res
       })
     )))
@@ -39,8 +49,8 @@ self.addEventListener('fetch', e => {
       ? new Request(e.request, { cache: 'no-store' })
       : e.request
     e.respondWith(fetch(req).then(res => {
-      if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()))
+      if (res.ok) e.waitUntil(remember(e.request, res.clone()))
       return res
-    }).catch(() => caches.match(e.request).then(hit => hit || caches.match('index.html'))))
+    }).catch(() => caches.match(e.request, { ignoreVary: true }).then(async hit => hit || (e.request.mode === 'navigate' ? await caches.match('index.html') : null) || Response.error())))
   }
 })

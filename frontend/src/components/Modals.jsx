@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useId } from 'react'
 import { useUI } from '../store/useUI.js'
+import { useDialogFocus } from '../lib/dialog-focus.js'
 
 const EXIT_MS = 180
 
@@ -42,6 +43,8 @@ function useSheetPresence(sheets) {
 function Sheet({ sheet, exiting }) {
   const { closeSheet } = useUI()
   const ref = useRef(null)
+  const titleId = useId()
+  useDialogFocus(ref, { active: !exiting, titleId })
   const drag = useRef({ startY: null, delta: 0, startedAt: 0, kind: null })
 
   const onTouchStart = e => {
@@ -99,7 +102,7 @@ function Sheet({ sheet, exiting }) {
   const onKeyDown = e => {
     if (e.key !== 'Tab') return
     const surface = ref.current
-    const focusable = [...surface.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')]
+    const focusable = [...surface.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex]:not([tabindex="-1"])')]
       .filter(el => !el.closest('[aria-hidden="true"]'))
     if (!focusable.length) { e.preventDefault(); return }
     const first = focusable[0], last = focusable[focusable.length - 1]
@@ -131,7 +134,7 @@ function Sheet({ sheet, exiting }) {
     return (
       <div className={'modal-layer' + (exiting ? ' is-closing' : '')}>
         <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
-        <div className="center" ref={ref} role="dialog" aria-modal="true" tabIndex="-1" onKeyDown={onKeyDown}>{sheet.render(close)}</div>
+        <div className="center" ref={ref} role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>{sheet.render(close)}</div>
       </div>
     )
   }
@@ -140,7 +143,7 @@ function Sheet({ sheet, exiting }) {
       <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
       <div className="sheet" ref={ref} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-        role="dialog" aria-modal="true" tabIndex="-1" onKeyDown={onKeyDown}>
+        role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>
         <div className="grab" />
         {sheet.render(close)}
       </div>

@@ -6,6 +6,7 @@ import Icon from './Icon.jsx'
 import ExerciseMuscleThumb from './ExerciseMuscleThumb.jsx'
 import ExerciseGuideAnimation from './ExerciseGuideAnimation.jsx'
 import { hasExerciseGuideAsset } from '../lib/exercise-guide-assets.js'
+import { useDialogFocus } from '../lib/dialog-focus.js'
 
 const MUSCLES_EXIT_MS = 140
 
@@ -23,6 +24,7 @@ export default function Media({ ex, id, compact, minimizable }) {
   const resumeAfterMuscles = useRef(false)
   const musclesTriggerRef = useRef(null)
   const musclesCloseRef = useRef(null)
+  const musclesDialogRef = useRef(null)
   const musclesCloseTimer = useRef(null)
   const musclesTitleId = useId()
   useEffect(() => {
@@ -49,6 +51,7 @@ export default function Media({ ex, id, compact, minimizable }) {
   const openMuscles = e => {
     e.stopPropagation()
     musclesTriggerRef.current = e.currentTarget
+    e.currentTarget.focus({ preventScroll: true })
     resumeAfterMuscles.current = playing
     setPlaying(false)
     setMusclesClosing(false)
@@ -76,6 +79,7 @@ export default function Media({ ex, id, compact, minimizable }) {
     setMusclesClosing(true)
     musclesCloseTimer.current = window.setTimeout(finishClosingMuscles, MUSCLES_EXIT_MS)
   }, [finishClosingMuscles, musclesClosing, musclesOpen])
+  useDialogFocus(musclesDialogRef, { active: musclesOpen && !musclesClosing, titleId: musclesTitleId, onClose: () => closeMuscles(null, true) })
   useEffect(() => {
     if (!musclesOpen || musclesClosing) return undefined
     musclesCloseRef.current?.focus({ preventScroll: true })
@@ -128,6 +132,7 @@ export default function Media({ ex, id, compact, minimizable }) {
         <div className={`media-muscles-scrim${musclesClosing ? ' is-closing' : ''}`} onClick={closeMuscles}>
           <div
             className="media-muscles-pop"
+            ref={musclesDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={musclesTitleId}

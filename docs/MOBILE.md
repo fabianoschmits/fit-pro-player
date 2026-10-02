@@ -1,6 +1,10 @@
 # Aplicativos móveis
 
-O frontend também possui projetos Capacitor para Android e iOS. Nesse modo não há conta nem backend; o estado fica no dispositivo e os lembretes são notificações locais.
+O frontend também possui projetos Capacitor para Android e iOS. A configuração móvel padrão é local: o estado fica no dispositivo e os lembretes são notificações locais. Quando credenciais públicas Supabase são configuradas, o armazenamento continua isolado por conta e usa as mesmas regras de sincronização do web.
+
+O estado também é espelhado no diretório privado do aplicativo. A recuperação escolhe a cópia mais recente; dados de conta recuperados após perda da metadata do WebView são tratados como alterações locais e podem exigir resolução de conflito. Limpar os dados grava uma cópia vazia no espelho para impedir que treinos apagados reapareçam.
+
+`npm run build:mobile:web` valida somente o bundle web móvel. `npm run build:mobile` também sincroniza os projetos Capacitor; APK/IPA e testes em dispositivos reais exigem os SDKs e as ferramentas de assinatura abaixo.
 
 ## Build
 

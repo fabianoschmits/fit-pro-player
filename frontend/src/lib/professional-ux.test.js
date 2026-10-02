@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { FILTERS, filterStudents, inviteLink, normalizeInviteCode, statusLabel, studentStats, withTimeout } from './professional-ux.js'
+import { FILTERS, filterStudents, inviteLink, normalizeInviteCode, statusLabel, studentStats, withTimeout, attentionReasons } from './professional-ux.js'
 
 describe('professional UX contracts', () => {
+  it('selects attention only from missing prescription, inactivity and abandoned sessions', () => {
+    const now = new Date('2026-10-02T12:00:00Z')
+    expect(attentionReasons({ programTitle: 'Força', lastExecutionAt: '2026-10-01T12:00:00Z', lastExecutionStatus: 'completed' }, now)).toEqual([])
+    expect(attentionReasons({}, now)).toContain('Sem programa ativo')
+    expect(attentionReasons({ programTitle: 'Força', lastExecutionStatus: 'abandoned', lastExecutionAt: '2026-09-20T12:00:00Z' }, now)).toEqual(['Último treino abandonado', 'Sem treino há 7 dias'])
+  })
   it('normalizes invite codes and creates the same deep link for every share action', () => {
     expect(normalizeInviteCode(' ab12 - cd34 ')).toBe('AB12CD34')
     expect(inviteLink('https://app.example', ' ab12cd34 ')).toBe('https://app.example/#/invite/AB12CD34')

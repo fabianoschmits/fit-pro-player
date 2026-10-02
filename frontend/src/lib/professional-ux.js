@@ -24,7 +24,23 @@ export function studentStats(student = {}) {
 }
 
 export function statusLabel(status) {
-  return ({ pending: 'Pendente', active: 'Ativo', revoked: 'Revogado', completed: 'Concluído', in_progress: 'Em andamento', abandoned: 'Abandonado' })[status] || 'Desconhecido'
+  return t(({ pending: 'Pendente', active: 'Ativo', revoked: 'Revogado', completed: 'Concluído', in_progress: 'Em andamento', abandoned: 'Abandonado', replaced: 'Substituído', archived: 'Arquivado', unverified: 'não verificado' })[status] || 'Desconhecido')
+}
+
+export function attentionReasons(student = {}, now = new Date()) {
+  if (!student.programId && !student.programTitle) return ['Sem programa ativo']
+  const reasons = []
+  const elapsed = now.getTime() - new Date(student.lastExecutionAt || student.relationshipCreatedAt || now).getTime()
+  if (student.lastExecutionStatus === 'abandoned') reasons.push('Último treino abandonado')
+  if (student.lastExecutionStatus === 'in_progress' && elapsed > 24 * 3600000) reasons.push('Treino em andamento há mais de 24 horas')
+  if (elapsed >= 7 * 86400000) reasons.push(student.lastExecutionAt ? 'Sem treino há 7 dias' : 'Nenhum treino desde o vínculo há 7 dias')
+  return reasons
+}
+
+export function professionalDate(value, time = false) {
+  if (!value) return '—'
+  const date = new Date(String(value).length === 10 ? `${value}T12:00:00` : value)
+  return Number.isFinite(date.getTime()) ? new Intl.DateTimeFormat(dateLocale(), { dateStyle: 'medium', ...(time ? { timeStyle: 'short' } : {}) }).format(date) : '—'
 }
 
 export function withTimeout(promise, milliseconds = 10000) {
@@ -34,3 +50,4 @@ export function withTimeout(promise, milliseconds = 10000) {
     new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('request-timeout')), milliseconds) }),
   ]).finally(() => clearTimeout(timer))
 }
+import { t, dateLocale } from './i18n-core.js'

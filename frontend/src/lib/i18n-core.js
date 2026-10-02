@@ -3,6 +3,7 @@
 // loads, the React subscription hook) live in i18n.js and re-export from here.
 
 import ptBR from '../locales/pt.js'
+import professionalEnglish from './professional-english.js'
 
 export const LANGS = {
   pt: 'Português (Brasil)', en: 'English', de: 'Deutsch', es: 'Español', fr: 'Français', it: 'Italiano',
@@ -27,7 +28,7 @@ export const getVersion = () => version
 
 // Translate a source string; {0},{1}… are replaced with args (also on the English fallback).
 export function t(s, ...args) {
-  let v = dict[s] || s
+  let v = dict[s] || professionalEnglish[s] || s
   for (let i = 0; i < args.length; i++) v = v.replaceAll('{' + i + '}', args[i])
   return v
 }

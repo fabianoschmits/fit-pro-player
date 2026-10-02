@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { normalizeState, useStore } from './store/useStore.js'
+import { useStore } from './store/useStore.js'
 import { useAuth } from './auth/AuthProvider.jsx'
 import { openAuthSheet } from './components/AuthSheet.jsx'
 import { useUI } from './store/useUI.js'
@@ -20,14 +20,11 @@ import Toast from './components/Toast.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
-import { createAccountSyncService, readSyncMetadata, writeSyncMetadata, REMOTE_SYNC_STATE } from './lib/account-sync.js'
-import { applyAssociationChoice, canAutoAdoptAnonymous, classifyAssociation } from './lib/account-association.js'
-import { ANONYMOUS_SCOPE, resolveLocalScope } from './lib/local-state-scope.js'
-import { readScopedState } from './lib/account-cache.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
-import { assignedPlanToState } from './lib/assigned-program.js'
+import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
+import { flushProfessionalEvents } from './lib/professional-events.js'
 const loadHome = () => import('./views/Home.jsx')
 const loadPlan = () => import('./views/Plan.jsx')
 const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
@@ -79,56 +76,9 @@ const startFlow = (...args) => loadSheets().then(module => module.startFlow(...a
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
 
 const PROFILE_MOTIVATION_MESSAGES = [
-  'Birlll!',
-  'Aqui é bodybuilder!',
-  'O pai tá on.',
-  'Receba!',
-  'É os guri!',
-  'Mete marcha.',
-  'Só vai, pai.',
-  'Tá pago.',
-  'Bora, filho!',
-  'Sem caô.',
-  'Respeita o pai.',
-  'A tropa tá forte.',
-  'Hoje é sem desculpa.',
-  'O shape vem, confia.',
-  'Farmando músculo.',
-  'Modo monstro: ON.',
-  'Só progresso.',
-  'Vai dar bom.',
-  'É dentro.',
-  'Tá maluco!',
-  'Amassa esse treino.',
-  'Zerou a preguiça.',
-  'Cria do leg day.',
-  'Shape inexplicável.',
-  'Hoje tem!',
-  'Fé no processo.',
-  'Não tem como, pai.',
-  'Marcha no treino.',
-  'O monstro acordou.',
-  'Só os cria treinam.',
-  'Projeto monstro.',
-  'Hoje dói, amanhã posa.',
-  'Menos papo, mais carga.',
-  'Treina e confia.',
-  'O sofá não dá shape.',
-  'Sofrendo e evoluindo.',
-  'Sem suor, sem história.',
-  'Tá leve? Aumenta.',
-  'Não foge do leg day.',
-  'O shape não vem por Wi-Fi.',
-  'Só mais uma… confia.',
-  'Treino pago, treino feito.',
-  'Levanta e vai.',
-  'Build de monstro carregando…',
-  'Buff de força ativado.',
-  'NPC não treina perna.',
-  'Hoje o frango evolui.',
-  'Foco no shape, não na fofoca.',
-  'Desistir não queima calorias.',
-  'Treina agora, reclama depois.',
+  'Build consistency, one workout at a time.',
+  'Train at your own pace.',
+  'Keep showing up.',
 ]
 
 function weightGoalProgressPercent(S) {
@@ -177,6 +127,7 @@ export function ProfileHeader({ S, preview }) {
     `${currentWeight ? weightText(currentWeight) : '--'} ${S.unit}`,
   ]
   useEffect(() => {
+    if (S.motivationTone !== 'rotating' || reduceMotion) return
     const interval = window.setInterval(() => {
       setMessageIndex(index => {
         if (PROFILE_MOTIVATION_MESSAGES.length < 2) return index
@@ -186,7 +137,7 @@ export function ProfileHeader({ S, preview }) {
       })
     }, 7000)
     return () => window.clearInterval(interval)
-  }, [])
+  }, [S.motivationTone, reduceMotion])
   if (!S.onboardingDone || !profile?.name) return null
   return <header className="profile-hero" aria-label={profile.name}>
     <div className="profile-hero-avatar" aria-hidden="true">
@@ -206,7 +157,7 @@ export function ProfileHeader({ S, preview }) {
     <div className="profile-hero-content">
       <div className="profile-hero-copy">
         <strong className="profile-hero-name">{profile.name}</strong>
-        <div className="profile-hero-message-stage">
+        {S.motivationTone !== 'off' && <div className="profile-hero-message-stage">
           <AnimatePresence mode="wait" initial={false}>
             <motion.span
               key={messageIndex}
@@ -216,10 +167,10 @@ export function ProfileHeader({ S, preview }) {
               exit={reduceMotion ? { opacity: 0 } : { x: -3, opacity: 0 }}
               transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
             >
-              {PROFILE_MOTIVATION_MESSAGES[messageIndex]}
+              {t(PROFILE_MOTIVATION_MESSAGES[S.motivationTone === 'rotating' ? messageIndex : 0])}
             </motion.span>
           </AnimatePresence>
-        </div>
+        </div>}
       </div>
       <div className="profile-hero-facts">{facts.join(' · ')}</div>
       <div className="profile-hero-goal">
@@ -252,8 +203,6 @@ function Shell() {
   const loc = useLocation()
   const auth = useAuth()
   const recoveryShown = useRef(false)
-  const associationShown = useRef(null)
-  const associationInFlight = useRef(null)
   const boot = useStore(s => s.boot)
   const { S, ready } = useStore()
   const profilePreview = useUI(s => s.profilePreview)
@@ -280,106 +229,49 @@ function Shell() {
   useEffect(() => {
     if (auth.status === 'initializing') return
     const result = boot({ supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null })
-    if (auth.status === 'authenticated') Promise.resolve(result).then(() => useStore.getState?.().enterApp?.())
-  }, [auth.status, boot])
-  useEffect(() => {
-    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current === auth.user.id || associationInFlight.current === auth.user.id) return
-    const client = getBrowserSupabaseClient()
-    if (!client) return
     let disposed = false
-    associationInFlight.current = auth.user.id
-    const accountScope = resolveLocalScope(auth.user.id)
-    const service = createAccountSyncService({ client, scope: accountScope })
-    const accountState = useStore.getState().S
-    const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, accountState).state
-    const settleAutomatically = async remoteSnapshot => {
-      const metadata = readSyncMetadata(accountScope)
-      const localIsNewer = metadata.dirty || metadata.revision > (remoteSnapshot?.revision || 0)
-      if (localIsNewer) {
-        const uploaded = await service.uploadSnapshot({ state: accountState, expectedRevision: remoteSnapshot?.revision || 0 })
-        if (uploaded.state === REMOTE_SYNC_STATE.IN_SYNC) {
-          if (hasAnonymousData) useStore.getState().clearAnonymousState()
-          return
-        }
-        // A second device won the race. The newest confirmed cloud revision is the
-        // deterministic winner; the user can still force a copy from Settings.
-      }
-      if (remoteSnapshot?.payload) {
-        useStore.getState().replaceState(normalizeState(remoteSnapshot.payload), false)
-        writeSyncMetadata(accountScope, { revision: remoteSnapshot.revision, dirty: false })
-        if (hasAnonymousData) useStore.getState().clearAnonymousState()
-      }
-    }
-    const hasAnonymousData = Boolean(anonymousState?.onboardingDone || anonymousState?.active || anonymousState?.profile?.name || anonymousState?.workouts?.length || anonymousState?.bodyweight?.length || anonymousState?.bodyMeasurements?.length || anonymousState?.customEx?.length || anonymousState?.customEx?.length)
-    service.fetchRemoteSnapshot().then(async result => {
-      if (disposed || result.state === 'ERROR' || result.state === 'OFFLINE') return
-      const decision = classifyAssociation({ anonymousState, accountState, remoteSnapshot: result.snapshot, accountRevision: readSyncMetadata(accountScope).revision })
-      if (canAutoAdoptAnonymous({ anonymousState, accountState, remoteSnapshot: result.snapshot })) {
-        const applied = applyAssociationChoice('use-device', { anonymousState, accountState, remoteSnapshot: result.snapshot })
-        const next = normalizeState(applied.state)
-        useStore.getState().replaceState(next, false)
-        return service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision }).then(async uploaded => {
-          if (uploaded.state === REMOTE_SYNC_STATE.IN_SYNC) {
-            useStore.getState().clearAnonymousState()
-            associationShown.current = auth.user.id
-            return
-          }
-          if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) await settleAutomatically(result.snapshot)
-          else if (uploaded.state !== REMOTE_SYNC_STATE.IN_SYNC) throw new Error('Não foi possível associar os dados do dispositivo agora.')
-        })
-      }
-      if (!decision.requiresDecision) { associationShown.current = auth.user.id; return }
-      // Account reconnects are non-interactive. The last confirmed state wins:
-      // local dirty state is uploaded, otherwise the newer cloud revision is restored.
-      await settleAutomatically(result.snapshot)
-      associationShown.current = auth.user.id
-    }).catch(() => {}).finally(() => {
-      if (associationInFlight.current === auth.user.id) associationInFlight.current = null
-    })
-    return () => { disposed = true; if (associationInFlight.current === auth.user.id) associationInFlight.current = null }
-  }, [auth.status, auth.user?.id, ready])
+    const token = useStore.getState().getScopeToken?.()
+    const currentScope = () => !disposed && (!token || useStore.getState().isScopeCurrent?.(token))
+    if (auth.status === 'authenticated') Promise.resolve(result).then(() => { if (currentScope()) useStore.getState?.().enterApp?.() })
+    return () => { disposed = true }
+  }, [auth.status, auth.user?.id, boot])
   useEffect(() => {
-    if (auth.status !== 'authenticated' || !auth.user?.id || !ready) return undefined
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
     let disposed = false
+    const token = useStore.getState().getScopeToken?.()
+    const currentScope = () => !disposed && (!token || useStore.getState().isScopeCurrent?.(token))
     const client = getBrowserSupabaseClient()
     if (!client) return undefined
     const repository = createProfessionalWorkflowRepository({ client })
     Promise.all([repository.professionalRole(auth.user.id), repository.assignedPrograms(auth.user.id)]).then(async ([isProfessional, assignments]) => {
-      if (disposed || isProfessional) return
+      if (!currentScope() || isProfessional) return
       const latest = assignments[0]
-      if (!latest) return
+      if (!latest) {
+        const current = useStore.getState().S
+        if (current.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...current }))
+        return
+      }
       const version = await repository.version(latest.version_id)
-      if (disposed || !version) return
+      if (!currentScope() || !version) return
       const current = useStore.getState().S
-      if (current.assignedProgram?.versionId !== version.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
+      if (current.assignedProgram?.versionId !== version.id || current.assignedProgram?.assignmentId !== latest.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
     }).catch(() => {})
     return () => { disposed = true }
-  }, [auth.status, auth.user?.id, ready])
+  }, [auth.status, auth.user?.id, ready, appEntered])
   useEffect(() => {
-    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || associationShown.current !== auth.user.id) return undefined
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
     const client = getBrowserSupabaseClient()
     if (!client) return undefined
-    let disposed = false
-    const timer = window.setTimeout(async () => {
-      const scope = resolveLocalScope(auth.user.id)
-      const service = createAccountSyncService({ client, scope })
-      const result = await service.sync({ state: S })
-      if (disposed) return
-      if (result.state === REMOTE_SYNC_STATE.REMOTE_ABSENT) {
-        await service.uploadSnapshot({ state: S, expectedRevision: 0 })
-      } else if (result.state === REMOTE_SYNC_STATE.REMOTE_AHEAD && result.snapshot) {
-        useStore.getState().replaceState(normalizeState(result.snapshot.payload), false)
-        writeSyncMetadata(scope, { revision: result.snapshot.revision, dirty: false })
-      } else if (result.state === REMOTE_SYNC_STATE.LOCAL_AHEAD) {
-        const uploaded = await service.uploadSnapshot({ state: S, expectedRevision: result.snapshot.revision })
-        if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT && result.snapshot) {
-          useStore.getState().replaceState(normalizeState(result.snapshot.payload), false)
-          writeSyncMetadata(scope, { revision: result.snapshot.revision, dirty: false })
-        }
-      }
-    }, 900)
-    return () => { disposed = true; window.clearTimeout(timer) }
-  }, [auth.status, auth.user?.id, ready, S])
+    const sync = () => {
+      const state = useStore.getState()
+      if (state.getActiveLocalScope?.().userId !== auth.user.id) return
+      void state.syncAccount?.(client)
+      void flushProfessionalEvents({ client, store: useStore, userId: auth.user.id })
+    }
+    const timer = window.setTimeout(sync, 900)
+    window.addEventListener('online', sync)
+    return () => { window.clearTimeout(timer); window.removeEventListener('online', sync) }
+  }, [auth.status, auth.user?.id, ready, appEntered, S])
   useEffect(() => {
     if (auth.recovery !== 'required') {
       recoveryShown.current = false

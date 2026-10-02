@@ -3,6 +3,7 @@
 
 import assert from 'node:assert/strict'
 import pt from '../src/locales/pt.js'
+import professionalEnglish from '../src/lib/professional-english.js'
 import instructions from '../src/instr/pt.js'
 import names from '../src/generated/pt-exercise-names.js'
 import { EXDB } from '../src/lib/exercises-data.js'
@@ -27,6 +28,7 @@ for (const ex of EXDB) {
 }
 
 const validIdentities = new Set([
+  ...Object.keys(professionalEnglish),
   'Cardio', 'Jan', 'Mar', 'Jun', 'Jul', 'Nov', 'Reps', 'Volume', 'cardio',
   'kettlebell', 'core', 'Greyskull LP', 'RIR', 'RPE',
 ])

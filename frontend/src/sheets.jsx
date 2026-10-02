@@ -30,7 +30,8 @@ import { isWarmupRow } from './lib/workout-model.js'
 import { syncProfileWeightFromBodyweight } from './lib/profile.js'
 import { resetHistoricalSets } from './lib/workout-session.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
-import { createProfessionalExecutionRepository } from './lib/professional-execution.js'
+import { enqueueProfessionalEvent, flushProfessionalEvents } from './lib/professional-events.js'
+import { assignedSessionEntries } from './lib/assigned-program.js'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -1139,6 +1140,7 @@ function beginWorkoutFromHistory(workout, bw) {
     }
   })
   update(state => {
+    queueAbandon(state)
     state.active = { id: uid(), d: todayISO(), start: null, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
   })
   useUI.getState().stopRest()
@@ -1150,15 +1152,32 @@ export function beginWorkout(routineId, bw, professionalExecutionId = null) {
   // The prescription is applied as the session is built, so you walk up to the bar with the
   // right weight already on the screen instead of being told about it afterwards. `plan` is
   // kept on the entry purely so the workout can explain the number it chose.
-  const entries = (r ? r.ex : []).map(cfg => {
+  const entries = r?.assigned ? assignedSessionEntries(r, st.unit) : (r ? r.ex : []).map(cfg => {
     const plan = nextPrescription(st, cfg, r)
     return { id: cfg.id, sg: cfg.sg, target: { ...cfg }, plan, sets: applyPrescription(buildSets(st, cfg), plan) }
   })
   update(s => {
-    s.active = { id: uid(), d: todayISO(), start: null, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId }
+    queueAbandon(s)
+    const executionId = r?.assigned ? (professionalExecutionId || crypto.randomUUID()) : null
+    s.active = { id: uid(), d: todayISO(), start: null, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId: executionId,
+      ...(r?.assigned ? { assignmentId: r.assignmentId, programVersionId: r.programVersionId, assignedDayKey: r.assignedDayKey, prescribedEntries: structuredClone(r.ex), unit: s.unit } : {}) }
+    if (executionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId, assignmentId: r.assignmentId, type: 'start', dayKey: r.assignedDayKey, payload: { source: 'professional-program', workoutId: s.active.id, prescription: s.active.prescribedEntries, unit: s.unit } })
   })
+  flushEvents()
   useUI.getState().stopRest()
   nav('/workout')
+}
+const flushEvents = () => flushProfessionalEvents({ client: getBrowserSupabaseClient(), store: useStore, userId: useStore.getState().getActiveLocalScope().userId })
+function queueAbandon(state) {
+  const active = state.active
+  if (!active?.professionalExecutionId) return
+  enqueueProfessionalEvent(state, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: active.professionalExecutionId, type: 'abandon', payload: { source: 'professional-program', workoutId: active.id, prescription: active.prescribedEntries, entries: active.entries, unit: active.unit } })
+}
+export function abandonWorkout() {
+  update(state => { queueAbandon(state); state.active = null })
+  useUI.getState().stopRest()
+  useUI.getState().stopWork()
+  flushEvents()
 }
 function TopWeight({ entryIdx, close }) {
   const st = useStore(s => s.S)
@@ -1278,21 +1297,17 @@ function doFinishWorkout() {
     snapshotFor: e => EXIDX[e.id]?.custom ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
   })
   w.vol = workoutVolume(w)
-  const professionalExecutionId = A.professionalExecutionId
   update(s => {
     w.entries.forEach(e => {
       const mx = Math.max(0, ...e.sets.filter(x => x.done && !isWarmupRow(x)).map(x => x.w || 0), e.topW || 0)
       if (mx > 0) { const cur = s.exWeights[e.id]; if (!cur || mx > cur.w) s.exWeights[e.id] = { w: mx, d: w.d } }
     })
     s.workouts.push(w)
+    if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, unit: A.unit, prescription: A.prescribedEntries, entries: A.entries } })
     s.active = null
   })
   useUI.getState().stopRest()
-  if (professionalExecutionId) {
-    createProfessionalExecutionRepository({ client: getBrowserSupabaseClient() })
-      .completeAssignedExecution({ executionId: professionalExecutionId, payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, completedAt: w.end } })
-      .catch(() => toast(t('Could not sync your data — you are still signed in.')))
-  }
+  flushEvents()
   beep(snd(), 880, 0.15); beep(snd(), 1100, 0.15, 0.18); beep(snd(), 1320, 0.3, 0.36)
   ui().openSheet(close => <FinishSummary w={w} prs={prs} e1prs={e1prs} close={close} />, { kind: 'center', locked: true })
 }

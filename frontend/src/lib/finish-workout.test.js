@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { buildCompletedWorkout } from './finish-workout.js'
 
 describe('completed workout boundary', () => {
+  it('retains execution, assignment and immutable prescription identifiers in personal history', () => {
+    const active = { id: 'w', professionalExecutionId: 'execution', assignmentId: 'a', programVersionId: 'v', prescribedEntries: [{ id: 'x' }], entries: [] }
+    expect(buildCompletedWorkout(active)).toMatchObject({ professionalExecutionId: 'execution', assignmentId: 'a', programVersionId: 'v', prescribedEntries: [{ id: 'x' }] })
+  })
   it('builds the same legacy-shaped record doFinishWorkout stores and keeps it visible', () => {
     const active = {
       id: 'active-1', d: '2026-08-08', start: 1000, routineId: 'routine-1', name: 'Push', bw: 80,

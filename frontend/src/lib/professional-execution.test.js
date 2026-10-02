@@ -1,41 +1,24 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createProfessionalExecutionRepository, groupExecutionsByDate } from './professional-execution.js'
 
 describe('professional execution repository', () => {
-  it('starts an assigned execution idempotently', async () => {
-    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null })
-    const single = vi.fn().mockResolvedValue({ data: { id: 'execution-1', status: 'in_progress' }, error: null })
-    const eq = vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })) })) })) }))
-    const client = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq })) , insert: vi.fn(() => ({ select: vi.fn(() => ({ single })) })) })) }
+  it('replays a supplied stable session id through the authenticated start RPC', async () => {
+    const calls = []; const client = { rpc: async (name, args) => { calls.push([name, args]); return { data: { id: args.p_execution_id } } } }
     const repo = createProfessionalExecutionRepository({ client })
-
-    const result = await repo.startAssignedExecution({ assignmentId: 'a', versionId: 'v', studentUserId: 's', dayKey: 'monday' })
-
-    expect(result.id).toBe('execution-1')
-    expect(client.from).toHaveBeenCalledWith('workout_executions')
+    const result = await repo.startAssignedExecution({ executionId: 'e', assignmentId: 'a', dayKey: 'monday', startedAt: '2026-10-02T12:00:00Z' })
+    expect(result.id).toBe('e')
+    expect(calls).toEqual([['start_workout_execution', { p_execution_id: 'e', p_assignment_id: 'a', p_day_key: 'monday', p_payload: {}, p_started_at: '2026-10-02T12:00:00Z' }]])
   })
-
-  it('returns the existing in-progress execution instead of duplicating it', async () => {
-    const existing = { id: 'execution-existing', status: 'in_progress' }
-    const maybeSingle = vi.fn().mockResolvedValue({ data: existing, error: null })
-    const eq = vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle })) })) })) })) }))
-    const insert = vi.fn()
-    const client = { from: vi.fn(() => ({ select: vi.fn(() => ({ eq })), insert })) }
-
-    const result = await createProfessionalExecutionRepository({ client }).startAssignedExecution({ assignmentId: 'a', versionId: 'v', studentUserId: 's', dayKey: 'monday' })
-
-    expect(result).toEqual(existing)
-    expect(insert).not.toHaveBeenCalled()
+  it('sends terminal states only through RPC and preserves payload', async () => {
+    const calls = []; const client = { rpc: async (name, args) => { calls.push([name, args]); return { data: { id: args.p_execution_id } } } }
+    const repo = createProfessionalExecutionRepository({ client })
+    await repo.completeAssignedExecution({ executionId: 'e', payload: { entries: [] }, completedAt: '2026-10-02T12:00:00Z' })
+    await repo.abandonAssignedExecution({ executionId: 'e2', completedAt: '2026-10-02T12:00:00Z' })
+    expect(calls[0]).toEqual(['complete_workout_execution', { p_execution_id: 'e', p_payload: { entries: [] }, p_completed_at: '2026-10-02T12:00:00Z' }])
+    expect(calls[1][0]).toBe('abandon_workout_execution')
   })
-
-  it('groups executions by calendar date', () => {
-    expect(groupExecutionsByDate([
-      { id: 'a', started_at: '2026-09-24T08:00:00.000Z' },
-      { id: 'b', started_at: '2026-09-24T13:00:00.000Z' },
-      { id: 'c', started_at: '2026-09-25T08:00:00.000Z' },
-    ])).toEqual({
-      '2026-09-24': [{ id: 'a', started_at: '2026-09-24T08:00:00.000Z' }, { id: 'b', started_at: '2026-09-24T13:00:00.000Z' }],
-      '2026-09-25': [{ id: 'c', started_at: '2026-09-25T08:00:00.000Z' }],
-    })
+  it('groups executions by local calendar date', () => {
+    const date = new Date(2026, 9, 2, 23, 30)
+    expect(groupExecutionsByDate([{ id: 'a', started_at: date.toISOString() }])).toHaveProperty('2026-10-02')
   })
 })

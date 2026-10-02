@@ -13,6 +13,7 @@ vi.mock('../lib/exercise-guide-assets.js', async importOriginal => ({
 }))
 
 import Media from './Media.jsx'
+import Dialog from './Dialog.jsx'
 
 const EXERCISE = { id: '0001', name: 'Abdominal 3/4', name_pt: 'Abdominal 3/4' }
 let container
@@ -44,6 +45,18 @@ afterEach(() => {
 })
 
 describe('Media SVG playback', () => {
+  it('keeps nested muscle popup focus above the exercise dialog and restores its trigger', () => {
+    const close = vi.fn()
+    act(() => root.render(<Dialog title="Exercício" onClose={close}><Media ex={EXERCISE} /></Dialog>))
+    const trigger=document.querySelector('.media-muscles')
+    act(() => { trigger.focus(); trigger.click() })
+    const popup=document.querySelector('.media-muscles-pop')
+    expect(popup.contains(document.activeElement)).toBe(true)
+    act(() => popup.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})))
+    expect(document.querySelector('.media-muscles-pop')).toBeNull()
+    expect(document.activeElement).toBe(trigger)
+    expect(close).not.toHaveBeenCalled()
+  })
   it('starts automatically even with reduced motion, and lets the user pause', () => {
     Object.defineProperty(window, 'matchMedia', {
       configurable: true,

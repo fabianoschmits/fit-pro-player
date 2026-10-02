@@ -24,9 +24,11 @@ export function assignedPlanToState(state, version, assignment) {
       name: String(rawPlan[dayKey]?.title || rawPlan[dayKey]?.name || `Treino recebido · ${dayKey}`),
       emoji: 'dumbbell',
       assigned: true,
+      assignedDayKey: dayKey,
       assignmentId: assignment?.id || null,
       programVersionId: version.id,
       ex: (Array.isArray(entries) ? entries : entries.exercises || []).map(item => ({
+        ...item,
         id: String(item.exerciseId || item.id || ''),
         sets: Math.max(1, Number(item.sets) || 1),
         reps: Math.max(1, Number(item.reps) || 10),
@@ -50,6 +52,7 @@ export function assignedPlanToState(state, version, assignment) {
     programId: assignment?.program_id || null,
     versionId: version.id,
     versionNumber: version.version_number,
+    updatedAt: version.published_at || assignment?.created_at || null,
     receivedAt: new Date().toISOString(),
   }
   state.onboardingDone = true
@@ -58,4 +61,24 @@ export function assignedPlanToState(state, version, assignment) {
 
 export function hasAssignedProgram(state) {
   return Boolean(state?.assignedProgram?.versionId)
+}
+
+export function clearAssignedProgramFromState(state) {
+  const assigned = new Set((state.routines || []).filter(routine => routine.assigned).map(routine => routine.id))
+  state.routines = (state.routines || []).filter(routine => !routine.assigned)
+  state.week = Object.fromEntries(Object.entries(state.week || {}).filter(([, id]) => !assigned.has(id)))
+  state.dayPlan = Object.fromEntries(Object.entries(state.dayPlan || {}).filter(([, id]) => !assigned.has(id)))
+  state.assignedProgram = null
+  return state
+}
+
+export function assignedSessionEntries(routine, unit = 'kg') {
+  return (routine?.ex || []).map(cfg => {
+    const weight = cfg.unit && cfg.unit !== unit ? cfg.weight * (unit === 'lb' ? 2.2046226218 : 1 / 2.2046226218) : cfg.weight
+    const sets = Array.from({ length: cfg.sets }, () => ({
+      ...(cfg.mode === 'cardio' ? { min: cfg.min ?? 20, speed: cfg.speed ?? 8 } : cfg.mode === 'time' ? { sec: cfg.sec ?? 45, w: weight } : { w: weight, r: cfg.reps }),
+      ...(cfg.rir != null ? { rir: cfg.rir } : {}), ...(cfg.rpe != null ? { rpe: cfg.rpe } : {}), done: false,
+    }))
+    return { id: cfg.id, sg: cfg.sg, target: { ...cfg, weight, unit }, plan: null, sets }
+  })
 }

@@ -1,4 +1,4 @@
-const avatarModules = import.meta.glob('../assets/avatars/avatar-*.png', {
+const avatarModules = import.meta.glob('../assets/avatars/avatar-*.webp', {
   eager: true,
   query: '?url',
   import: 'default',

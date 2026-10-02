@@ -17,13 +17,10 @@ import Icon from '../components/Icon.jsx'
 import { Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
-import { openAccountAssociation } from '../components/AccountAssociationSheet.jsx'
-import { createAccountSyncService, readSyncMetadata, writeSyncMetadata, REMOTE_SYNC_STATE } from '../lib/account-sync.js'
-import { applyAssociationChoice } from '../lib/account-association.js'
-import { resolveLocalScope, ANONYMOUS_SCOPE } from '../lib/local-state-scope.js'
-import { readScopedState } from '../lib/account-cache.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
+import OfflineControls from '../components/OfflineControls.jsx'
+import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -35,6 +32,9 @@ export default function Settings() {
   const clearAnonymousState = useStore(s => s.clearAnonymousState)
   const clearLocalScope = useStore(s => s.clearLocalScope)
   const resetDemo = useStore(s => s.resetDemo)
+  const accountSync = useStore(s => s.accountSync) || { state: 'IDLE' }
+  const persistence = useStore(s => s.persistence) || { state: 'saved' }
+  const [syncBusy, setSyncBusy] = useState(false)
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
   const importRef = useRef(null)
@@ -50,38 +50,34 @@ export default function Settings() {
   }, [auth.status, auth.user?.id, professionalRepository])
 
   const openManualSync = async () => {
-    if (auth.status !== 'authenticated' || !auth.user?.id) return
-    const client = getBrowserSupabaseClient()
-    const scope = resolveLocalScope(auth.user.id)
-    const service = createAccountSyncService({ client, scope })
-    const result = await service.fetchRemoteSnapshot()
-    if (result.state === REMOTE_SYNC_STATE.OFFLINE) { toast('Sem conexão. Tente novamente quando estiver online.'); return }
-    if (result.state === REMOTE_SYNC_STATE.ERROR) { toast('Não foi possível consultar a nuvem.'); return }
-    const remoteSnapshot = result.snapshot
-    const accountState = useStore.getState().S
-    const anonymousState = readScopedState(ANONYMOUS_SCOPE, localStorage, DEF).state
-    openAccountAssociation({ conflict: Boolean(remoteSnapshot), onChoice: async choice => {
-      const applied = applyAssociationChoice(choice, { anonymousState, accountState, remoteSnapshot })
-      if (applied.kind === 'keep-separate') return
-      if (applied.kind === 'invalid') throw new Error('Não há dados válidos para essa escolha.')
-      const next = applied.state
-      useStore.getState().replaceState(next, false)
-      if (applied.upload) {
-        const uploaded = await service.uploadSnapshot({ state: next, expectedRevision: applied.expectedRevision })
-        if (uploaded.state !== REMOTE_SYNC_STATE.IN_SYNC) throw new Error('Não foi possível salvar os dados escolhidos.')
-      } else if (remoteSnapshot) {
-        writeSyncMetadata(scope, { revision: remoteSnapshot.revision, dirty: false })
-      }
-      toast('Sincronização atualizada')
-    }})
+    if (auth.status !== 'authenticated' || !auth.user?.id || syncBusy) return
+    setSyncBusy(true)
+    try { await useStore.getState().syncAccount(getBrowserSupabaseClient()) }
+    finally { setSyncBusy(false) }
+  }
+  const resolveConflict = choice => confirmSheet({
+    title: choice === 'local' ? t('Use the device copy?') : t('Use the cloud copy?'),
+    message: t('Both copies remain available as backups. The selected copy becomes the account state.'),
+    confirmText: t('Continue'), danger: true,
+    onConfirm: async () => {
+      setSyncBusy(true)
+      try {
+        const ok = await useStore.getState().resolveSyncConflict(choice, getBrowserSupabaseClient())
+        toast(ok ? t('Sync updated') : t('Could not finish sync. Your copies were preserved.'))
+      } finally { setSyncBusy(false) }
+    },
+  })
+  const exportConflict = async kind => {
+    const state = useStore.getState().getSyncCopy(kind)
+    if (state) await doExport(state, kind)
   }
 
-  const doExport = async () => {
-    const json = JSON.stringify(S, null, 2)
-    const name = 'fitproplayer-backup-' + todayISO() + '.json'
+  const doExport = async (state = S, suffix = '') => {
+    const json = JSON.stringify(state, null, 2)
+    const name = 'fitproplayer-backup-' + todayISO() + (suffix ? '-' + suffix : '') + '.json'
     // WKWebView can't download blob URLs — the native build hands the file to the share sheet.
     if (MOBILE) {
-      try { await shareExport(json, name); toast(t('Backup exported')) } catch (e) { /* share sheet dismissed */ }
+      try { await shareExport(json, name); toast(t('Backup exported')) } catch { toast(t('Could not export the backup')) }
       return
     }
     const blob = new Blob([json], { type: 'application/json' })
@@ -91,12 +87,18 @@ export default function Settings() {
   }
   const doImport = ev => {
     const f = ev.target.files[0]; ev.target.value = ''; if (!f) return
+    const token = useStore.getState().getScopeToken()
     if (f.size > MAX_BACKUP_BYTES) { toast(t('Import failed: {0}', 'file is larger than 5 MB')); return }
     const rd = new FileReader()
     rd.onload = () => {
+      if (!useStore.getState().isScopeCurrent(token)) return
       try {
         const data = validateBackup(JSON.parse(rd.result))
-        confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => { replaceState(data, true); toast(t('Backup imported')) } })
+        confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => {
+          if (!useStore.getState().isScopeCurrent(token)) return
+          const saved = replaceState(data, true)
+          toast(saved ? t('Backup imported') : t('Could not save on this device. Export a backup before closing the app.'))
+        } })
       } catch (e) { toast(t('Import failed: {0}', e.message)) }
     }
     rd.onerror = () => toast(t('Could not read that file'))
@@ -118,7 +120,7 @@ export default function Settings() {
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
       </> : auth.status === 'authenticated' ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
-        <Row icon="shuffle" iconTint="var(--blue)" title="Sincronização da conta" subtitle="Atualização automática. Escolha manualmente apenas se quiser trocar a cópia usada."
+        <Row icon="shuffle" iconTint="var(--blue)" title={t('Account sync')} subtitle={t('Sync automatically or retry now. Conflicts keep both copies.')}
           accessory="chevron" onClick={openManualSync} />
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
           title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
@@ -134,13 +136,34 @@ export default function Settings() {
           accessory="chevron" onClick={() => openAuthSheet('entry')} />
       </> : <Row icon="lock" iconTint="var(--grey)" title={t('Guest mode — data lives only in this browser.')} />}
     </Section>
+    {(auth.status === 'authenticated' || persistence.state === 'error') && <Section title={t('Storage and sync')}>
+      <div className="lrow" role="status" aria-live="polite" style={{ display: 'block' }}>
+        <p>{persistence.state === 'error' ? t('Could not save on this device. Export a backup before closing the app.') : t('Saved on this device')}</p>
+        {auth.status === 'authenticated' && <p>{t(SYNC_LABELS[accountSync.state] || 'Waiting to sync')}</p>}
+        {accountSync.state === 'CONFLICT' && <>
+          <p>{t('Another device changed your account. Choose which copy to use; both remain available for export.')}</p>
+          <div className="btn-row">
+            <button className="btn" disabled={syncBusy || !accountSync.conflict?.remote} onClick={() => resolveConflict('local')}>{t('Use device copy')}</button>
+            <button className="btn" disabled={syncBusy || !accountSync.conflict?.remote} onClick={() => resolveConflict('cloud')}>{t('Use cloud copy')}</button>
+          </div>
+          <div className="btn-row">
+            <button className="btn ghost" onClick={() => exportConflict('local')}>{t('Export device copy')}</button>
+            <button className="btn ghost" disabled={!accountSync.conflict?.remote} onClick={() => exportConflict('cloud')}>{t('Export cloud copy')}</button>
+          </div>
+        </>}
+        {persistence.state === 'error' && <button className="btn" onClick={() => useStore.getState().flushPersistence()}>{t('Retry saving')}</button>}
+      </div>
+    </Section>}
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
+
+    <Section title={t('Offline')}><OfflineControls /></Section>
+    <Section title={t('Diagnostics')}><DiagnosticsControls /></Section>
 
     <Section title={t('Personal profile')}>
       <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
         subtitle={t('Name, birth date, body, measurements and training goal')}
         accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
-      {auth.status === 'authenticated' && professional === false && <Row icon="personCircle" iconTint="var(--purple)" title="Tornar-se profissional" subtitle="Crie seu perfil para enviar treinos e convites" accessory="chevron" onClick={() => nav('/professional-profile?onboarding=1')} />}
+      {auth.status === 'authenticated' && professional === false && <Row icon="personCircle" iconTint="var(--purple)" title={t('Tornar-se profissional')} subtitle={t('Crie seu perfil para enviar treinos e convites')} accessory="chevron" onClick={() => nav('/professional-profile?onboarding=1')} />}
     </Section>
 
     {/* ---------- general ---------- */}
@@ -158,6 +181,9 @@ export default function Settings() {
           options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]}
           value={S.unit} onChange={v => update(s => { s.unit = v })} />
       </Row>
+      <SelectRow icon="person" iconTint="var(--teal)" title={t('Motivational messages')}
+        value={S.motivationTone || 'calm'} onChange={value => update(state => { state.motivationTone = value })}
+        options={[{ value: 'calm', label: t('Calm') }, { value: 'rotating', label: t('Rotating messages') }, { value: 'off', label: t('Hidden') }]} />
     </Section>
 
     {/* ---------- during a workout ---------- */}
@@ -235,24 +261,35 @@ export default function Settings() {
         subtitle={t('FitNotes, Strong, Hevy — or body weight from Apple Health')}
         accessory="chevron" onClick={() => importRef.current.click()} />
       <Row icon="upload" iconTint="var(--blue)" title={t('Import backup')} accessory="chevron" onClick={() => fileRef.current.click()} />
-      <Row icon="download" iconTint="var(--blue)" title={t('Export backup (JSON)')} accessory="chevron" onClick={doExport} />
-      <Row icon="trash" iconTint="var(--red)" title={t('Reset everything')} danger onClick={() => confirmSheet({
-        title: t('Reset everything?'),
+      <Row icon="download" iconTint="var(--blue)" title={t('Export backup (JSON)')} accessory="chevron" onClick={() => doExport()} />
+      <Row icon="trash" iconTint="var(--red)" title={t('Clear data on this device')} danger onClick={() => confirmSheet({
+        title: t('Clear data on this device?'),
         message: t('Deletes your plan, workouts and body weight on this device. This cannot be undone.'),
-        confirmText: t('Delete everything'),
+        confirmText: t('Clear device data'),
         danger: true,
         onConfirm: async () => {
-          if (auth.status === 'authenticated') {
-            const result = await auth.deleteAccount()
-            if (result.kind !== 'success') { toast(t('Could not sync your data — you are still signed in.')); return }
-          }
-          if (auth.status === 'authenticated') clearLocalScope(auth.user.id)
-          else clearAnonymousState?.()
+          if (auth.status === 'authenticated' && useStore.getState?.().getActiveLocalScope?.()?.userId !== auth.user.id) return
+          const cleared = auth.status === 'authenticated' ? clearLocalScope(auth.user.id) : clearAnonymousState?.()
+          if (cleared === false) { toast(t('Could not clear device data. Please try again.')); return }
+          await useStore.getState?.().flushPersistence?.()
           leaveApp?.()
           nav('/')
           toast(t('All data reset'))
         },
       })} />
+      {auth.status === 'authenticated' && <Row icon="trash" iconTint="var(--red)" title={t('Delete account permanently')} subtitle={t('Deletes the account and its cloud data on every device.')} danger onClick={() => confirmSheet({
+        title: t('Delete account permanently?'), message: t('Your cloud training data and account will be deleted. Export a backup first. This cannot be undone.'),
+        confirmText: t('Delete account'), danger: true,
+        onConfirm: async () => {
+          const accountId = auth.user.id
+          if (useStore.getState?.().getActiveLocalScope?.()?.userId !== accountId) return
+          const result = await auth.deleteAccount()
+          if (result.kind !== 'success') { toast(t('Could not delete your account. Please try again.')); return }
+          clearLocalScope(accountId)
+          await useStore.getState?.().flushPersistence?.()
+          leaveApp?.(); nav('/'); toast(t('Account deleted'))
+        },
+      })} />}
     </Section>
     <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={doImport} />
     {/* Reset after reading so picking the same file twice still fires onChange. */}
@@ -341,4 +378,11 @@ function MobileReminderCard({ S, update, toast }) {
       )}
     </Section>
   )
+}
+
+const SYNC_LABELS = {
+  IDLE: 'Waiting to sync', SYNCING: 'Syncing…', IN_SYNC: 'Account is up to date',
+  LOCAL_AHEAD: 'Changes waiting to sync', REMOTE_AHEAD: 'Cloud update available',
+  CONFLICT: 'Choose how to resolve the sync conflict', OFFLINE: 'Offline — changes will sync when connected',
+  ERROR: 'Could not sync. Your device copy is preserved.',
 }

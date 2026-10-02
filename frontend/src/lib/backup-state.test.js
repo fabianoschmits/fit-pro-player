@@ -9,6 +9,17 @@ const valid = () => ({
 })
 
 describe('backup validation', () => {
+  it.each([
+    { routines: [], workouts: [], restSec: -1 },
+    { routines: [], workouts: [], workoutsInvalid: 'x', active: { entries: [{ id: 'x', sets: [{ w: -50, r: 10 }] }] } },
+    { routines: [], workouts: [], dayPlan: { 'not-a-date': 'r1' } },
+    { routines: [], workouts: [], bodyweight: [{ d: '2026-99-01', w: 80 }] },
+    { routines: [], workouts: [], profile: { name: 'x'.repeat(50000) } },
+  ])('rejects invalid field bounds case %#', backup => expect(() => validateBackup(backup)).toThrow())
+
+  it('rejects object inputs larger than the import limit', () => {
+    expect(() => validateBackup({ routines: [], workouts: [], notes: 'x'.repeat(MAX_BACKUP_BYTES + 1) })).toThrow()
+  })
   it('accepts a structurally valid current backup', () => {
     const backup = valid()
     expect(validateBackup(backup)).toBe(backup)

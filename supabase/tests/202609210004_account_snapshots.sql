@@ -1,6 +1,6 @@
 begin;
 
-select plan(25);
+select plan(24);
 
 select has_table('public', 'account_snapshots', 'account snapshots table exists');
 select col_is_pk('public', 'account_snapshots', 'user_id', 'one snapshot exists per user');
@@ -51,7 +51,7 @@ select ok(
   'snapshot table has RLS enabled'
 );
 select is(
-  (select count(*)::integer from pg_trigger where tgrelid = 'public.account_snapshots'::regclass),
+  (select count(*)::integer from pg_trigger where tgrelid = 'public.account_snapshots'::regclass and not tgisinternal),
   0,
   'snapshot timestamps are controlled by the CAS operation'
 );

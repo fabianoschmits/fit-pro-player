@@ -12,12 +12,13 @@ vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }));
 vi.mock('../store/useStore.js', async () => {
   const actual = await vi.importActual('../store/useStore.js');
   const state = { S: actual.DEF, update: vi.fn(), replaceState: vi.fn(), leaveApp: vi.fn(), clearAnonymousState: vi.fn(), clearLocalScope: vi.fn(), resetDemo: vi.fn() };
-  return { ...actual, useStore: selector => selector(state) };
+  return { ...actual, useStore: Object.assign(selector => selector(state), { getState: () => ({ ...state, getActiveLocalScope: () => ({ userId: mocks.auth?.user?.id }), flushPersistence: async () => true }) }) };
 });
 vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }));
 vi.mock('../sheets.jsx', async () => ({ ...(await vi.importActual('../sheets.jsx')), confirmSheet: options => { mocks.confirm = options } }));
 
 import Settings from './Settings.jsx';
+import { t } from '../lib/i18n.js';
 import More from './More.jsx';
 
 let dom;
@@ -48,28 +49,28 @@ describe('Settings Supabase logout', () => {
 
   it('returns to the public landing after resetting all local account data', async () => {
     await act(async () => root.render(<Settings />));
-    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Restaurar tudo'));
+    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Clear data on this device')));
     await act(async () => reset.click());
     await act(async () => mocks.confirm.onConfirm());
 
     expect(mocks.navigate).toHaveBeenCalledWith('/');
   });
 
-  it('deletes the authenticated account before clearing local data', async () => {
+  it('clears device data without deleting the authenticated account', async () => {
     await act(async () => root.render(<Settings />));
-    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Restaurar tudo'));
+    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Clear data on this device')));
     await act(async () => reset.click());
     await act(async () => mocks.confirm.onConfirm());
 
-    expect(mocks.authDeleteAccount).toHaveBeenCalledTimes(1);
+    expect(mocks.authDeleteAccount).not.toHaveBeenCalled();
     expect(mocks.navigate).toHaveBeenCalledWith('/');
   });
 
   it('keeps authenticated data when account deletion fails', async () => {
     mocks.authDeleteAccount.mockResolvedValue({ kind: 'error', error: 'network_unavailable' });
     await act(async () => root.render(<Settings />));
-    const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Restaurar tudo'));
-    await act(async () => reset.click());
+    const deletion = [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Delete account permanently')));
+    await act(async () => deletion.click());
     await act(async () => mocks.confirm.onConfirm());
 
     expect(mocks.navigate).not.toHaveBeenCalledWith('/');

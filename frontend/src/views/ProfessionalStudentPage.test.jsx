@@ -13,10 +13,20 @@ vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title }) => <h1>{tit
 import ProfessionalStudentPage from './ProfessionalStudentPage.jsx'
 
 let dom, root, container
-beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional/students/s1' }); globalThis.window = dom; globalThis.document = dom.document; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
+beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional/students/s1' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional student detail', () => {
+  it('shows prescribed and actual loads, completed sets and unit for an execution', async () => {
+    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [], executions: [{ id: 'e', day_key: 'monday', status: 'completed', payload: { unit: 'kg', prescription: [{ id: 'bench', sets: 3, reps: 8, weight: 40, rest: 90 }], entries: [{ id: 'bench', target: { weight: 40 }, sets: [{ done: true, w: 35, r: 7 }, { done: false, w: 40, r: 8 }] }] } }] })
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Histórico').click())
+    expect(container.textContent).toContain('Prescrito')
+    expect(container.textContent).toContain('Realizado')
+    expect(container.textContent).toContain('35 kg')
+    expect(container.textContent).toContain('40 kg')
+    expect(container.textContent).toContain('1/2')
+  })
   it('separates summary, training, history and relationship actions', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })

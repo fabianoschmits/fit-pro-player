@@ -1,6 +1,6 @@
 export const DAYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
 
-const LIMITS = Object.freeze({ sets: 50, reps: 500, load: 10000, rest: 3600, notes: 500 })
+const LIMITS = Object.freeze({ sets: 50, reps: 500, load: 10000, weight: 10000, rest: 3600, notes: 500, sec: 86400, min: 1440, speed: 100, rir: 10, rpe: 10 })
 const numeric = (value, fallback, max) => Math.min(max, Math.max(0, Number.isFinite(Number(value)) ? Number(value) : fallback))
 
 function normalizeExercise(value) {
@@ -14,6 +14,10 @@ function normalizeExercise(value) {
     ...(value.mode ? { mode: String(value.mode).slice(0, 40) } : {}),
     ...(value.rest != null ? { rest: Math.round(numeric(value.rest, 0, LIMITS.rest)) } : {}),
     ...(value.notes ? { notes: String(value.notes).slice(0, LIMITS.notes) } : {}),
+    ...Object.fromEntries(['sec', 'min', 'speed', 'rir', 'rpe'].filter(key => value[key] != null).map(key => [key, numeric(value[key], 0, LIMITS[key])])),
+    ...(value.unit ? { unit: value.unit === 'lb' ? 'lb' : 'kg' } : {}),
+    ...(value.effort ? { effort: String(value.effort).slice(0, 10) } : {}),
+    ...(value.sg ? { sg: String(value.sg).slice(0, 80) } : {}),
   }
 }
 
@@ -34,7 +38,14 @@ export function validateWeeklyPlan(plan = {}) {
     if (!DAYS.includes(String(day).toLowerCase()) || !Array.isArray(entries) || entries.length > 50) return { ok: false, error: 'weekly-plan-day-invalid' }
     for (const entry of entries) {
       if (!String(entry?.exerciseId || entry?.id || '').trim()) return { ok: false, error: 'weekly-plan-exercise-invalid' }
-      if (Number(entry.sets) < 1 || Number(entry.sets) > LIMITS.sets || Number(entry.reps) < 1 || Number(entry.reps) > LIMITS.reps) return { ok: false, error: 'weekly-plan-number-invalid' }
+      for (const key of ['sets', 'reps', 'load', 'weight', 'rest', 'sec', 'min', 'speed', 'rir', 'rpe']) {
+        if (entry[key] == null && !['sets', 'reps'].includes(key)) continue
+        const value = Number(entry[key])
+        const minimum = ['sets', 'reps'].includes(key) ? 1 : 0
+        if (entry[key] === '' || !Number.isFinite(value) || value < minimum || value > LIMITS[key] || (['sets', 'reps'].includes(key) && !Number.isInteger(value))) return { ok: false, error: 'weekly-plan-number-invalid' }
+      }
+      if (entry.mode && !['reps', 'time', 'cardio'].includes(entry.mode)) return { ok: false, error: 'weekly-plan-mode-invalid' }
+      if (entry.unit && !['kg', 'lb'].includes(entry.unit)) return { ok: false, error: 'weekly-plan-unit-invalid' }
     }
   }
   const value = normalizeWeeklyPlan(plan)
@@ -51,9 +62,10 @@ export function nextScheduledWorkouts(plan = {}, fromDate = new Date(), count = 
   const start = new Date(fromDate)
   const output = []
   for (let offset = 0; offset < 7 && output.length < count; offset += 1) {
-    const date = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + offset))
-    const day = DAYS[date.getUTCDay()]
-    if (value[day]) output.push({ day, date: date.toISOString().slice(0, 10), exercises: value[day] })
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + offset, 12)
+    const day = DAYS[date.getDay()]
+    const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    if (value[day]) output.push({ day, date: localDate, exercises: value[day] })
   }
   return output
 }

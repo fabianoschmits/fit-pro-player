@@ -15,7 +15,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:fatigue-probe": "node scripts/fatigue-monotonic-probe.mjs",
-    "check:i18n": "node scripts/check-locales.mjs && node scripts/check-source-strings.mjs --strict && node scripts/check-pt-br.mjs"
+    "check:i18n": "node scripts/check-locales.mjs && node scripts/check-source-strings.mjs --strict && node scripts/check-pt-br.mjs",
+    "build:mobile:web": "vite build --mode=mobile",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:pwa": "vite build --mode=pwa-test && playwright test --config=playwright.pwa.config.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
@@ -35,6 +39,7 @@
     "@capacitor/android": "^7.6.8",
     "@capacitor/cli": "^7.6.8",
     "@capacitor/ios": "^7.6.8",
+    "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^6.0.3",
     "happy-dom": "^20.11.2",
     "linkedom": "^0.18.13",

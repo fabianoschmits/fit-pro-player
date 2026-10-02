@@ -2,6 +2,8 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+const motionPreference = vi.hoisted(() => ({ reduced: true }))
+vi.mock('framer-motion', async importOriginal => ({ ...(await importOriginal()), useReducedMotion: () => motionPreference.reduced }))
 import { DEFAULT_AVATAR_ID } from './lib/avatars.js'
 import { ProfileHeader } from './App.jsx'
 
@@ -26,6 +28,7 @@ let container
 let root
 
 beforeEach(() => {
+  motionPreference.reduced = true
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   vi.useFakeTimers()
   vi.setSystemTime(new Date('2026-09-13T12:00:00'))
@@ -96,12 +99,21 @@ describe('ProfileHeader editorial hero', () => {
   })
 
   it('continues rotating the motivational phrase', async () => {
+    motionPreference.reduced = false
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
-    act(() => root.render(<ProfileHeader S={stateAt(75)} />))
+    act(() => root.render(<ProfileHeader S={{...stateAt(75),motivationTone:'rotating'}} />))
 
     await act(async () => { await vi.advanceTimersByTimeAsync(7000) })
 
     expect(random).toHaveBeenCalled()
     expect(container.querySelector('.profile-hero-message-stage').hasAttribute('aria-live')).toBe(false)
+  })
+  it('keeps the default calm and lets the user hide messages', async () => {
+    const random = vi.spyOn(Math, 'random')
+    act(() => root.render(<ProfileHeader S={stateAt(75)} />))
+    await act(async () => { await vi.advanceTimersByTimeAsync(14000) })
+    expect(random).not.toHaveBeenCalled()
+    act(() => root.render(<ProfileHeader S={{...stateAt(75),motivationTone:'off'}} />))
+    expect(container.querySelector('.profile-hero-message-stage')).toBeNull()
   })
 })
