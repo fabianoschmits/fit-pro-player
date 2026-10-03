@@ -3,6 +3,8 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
   "Perform set {0} of {1}": "{1}세트 중 {0}세트를 수행하세요",
+  "Performing set": "세트 수행 중",
+  "Tap the highlighted check field when you finish this set.": "세트를 마치면 강조된 체크 칸을 눌러 완료하세요.",
   "Complete workout": "운동 완료",
   "Complete set and go to next exercise": "세트 완료 후 다음 운동으로",
   "Complete set and rest": "세트 완료 후 휴식",

@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => {
     S: null,
     startRest: vi.fn(),
     startWork: vi.fn(),
+    finishWorkEarly: vi.fn(),
     stopRest: vi.fn(),
     topWeightSheet: vi.fn(),
     workoutCompleteSheet: vi.fn(),
@@ -21,11 +22,12 @@ const mocks = vi.hoisted(() => {
     update: mut => mut(state.S),
   })
   state.uiSnapshot = () => ({
-    work: null,
+    work: state.work,
     timer: state.timer,
     startRest: state.startRest,
     stopRest: state.stopRest,
     startWork: state.startWork,
+    finishWorkEarly: state.finishWorkEarly,
     toast: vi.fn(),
   })
   return state
@@ -119,6 +121,7 @@ function startWorkoutButton() {
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.timer = null
+  mocks.work = null
 })
 
 afterEach(async () => {
@@ -126,6 +129,29 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
+  it('puts execution guidance on the current completion field and switches it off during rest', async () => {
+    await mount([exercise('plain-bench', [false, false])])
+    const row = container.querySelector('.setrow.is-current')
+    expect(row.querySelector('[role="checkbox"] svg')).toBeTruthy()
+    const hint = container.querySelector('.set-execution-hint')
+    expect(hint).toBeTruthy()
+    expect(hint.textContent).toContain('Executando série')
+    expect(row.querySelector('[role="checkbox"]').getAttribute('aria-describedby')).toBe(hint.id)
+    expect(row.querySelector('[role="checkbox"]').classList.contains('is-executing')).toBe(true)
+    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(1)
+    await toggleSet(0)
+    expect(mocks.S.active.entries[0].sets.map(set => set.done)).toEqual([true, false])
+    expect(mocks.startRest).toHaveBeenCalledWith(90)
+    mocks.timer = { left: 90, total: 90 }
+    await act(async () => root.render(<Workout />))
+    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(0)
+    expect(container.querySelector('.setrow.is-current .chk').disabled).toBe(true)
+    expect(container.querySelector('.set-execution-hint').textContent).toContain('Descansando')
+    mocks.timer = null
+    await act(async () => root.render(<Workout />))
+    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(1)
+  })
+
   it('guides execution, completes only the next set, and switches to rest guidance', async () => {
     await mount([exercise('plain-bench', [false, false])])
     expect(container.textContent).toContain('Execute a série 1 de 2')
@@ -169,6 +195,27 @@ describe('Workout set completion flow', () => {
     expect(mocks.startWork).toHaveBeenCalledWith(45, expect.any(String), expect.any(Function), expect.objectContaining({ entryIdx: 0, setIdx: 0 }))
     expect(mocks.S.active.entries[0].sets[0].done).toBe(false)
     expect(mocks.startRest).not.toHaveBeenCalled()
+  })
+
+  it('shows execution only while a timed set is running and completes through its elapsed-time callback', async () => {
+    await mount([exercise('plank', [false, false], { target: { mode: 'time' }, sets: [{ sec: 45, done: false }, { sec: 45, done: false }] })])
+    expect(container.querySelector('.chk.is-executing')).toBeNull()
+    mocks.work = { phase: 'work', entryIdx: 0, setIdx: 0, left: 30, total: 45 }
+    await act(async () => root.render(<Workout />))
+    expect(container.querySelector('.set-execution-hint').textContent).toContain('Executando série')
+    await act(async () => container.querySelector('.chk.is-executing').click())
+    expect(mocks.finishWorkEarly).toHaveBeenCalledTimes(1)
+    expect(mocks.S.active.entries[0].sets[0].done).toBe(false)
+  })
+
+  it('highlights the timed row actually running even when an earlier row is still pending', async () => {
+    await mount([exercise('plank', [false, false], { target: { mode: 'time' }, sets: [{ sec: 45, done: false }, { sec: 45, done: false }] })])
+    mocks.work = { phase: 'work', entryIdx: 0, setIdx: 1, left: 30, total: 45 }
+    await act(async () => root.render(<Workout />))
+    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(1)
+    expect(container.querySelector('.chk.is-executing').getAttribute('aria-describedby')).toBe('set-execution-0-1')
+    expect(container.querySelector('.chk.is-executing').closest('.setrow').getAttribute('aria-current')).toBe('step')
+    expect(container.querySelectorAll('.set-execution-hint')).toHaveLength(1)
   })
 
   it('applies progression to an assigned session only after an explicit action, keeping the prescription', async () => {

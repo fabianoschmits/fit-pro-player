@@ -3,6 +3,8 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
   "Perform set {0} of {1}": "Execute a série {0} de {1}",
+  "Performing set": "Executando série",
+  "Tap the highlighted check field when you finish this set.": "Ao terminar a série, toque no campo destacado para concluí-la.",
   "Complete workout": "Concluir treino",
   "Complete set and go to next exercise": "Concluir série e ir ao próximo exercício",
   "Complete set and rest": "Concluir série e descansar",

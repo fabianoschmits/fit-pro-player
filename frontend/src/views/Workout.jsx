@@ -124,6 +124,7 @@ function ExercisePhase({ entryIdx, locked, onToggle, onStartTimed }) {
 function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext, onUseLast, onReplace }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
+  const timer = useUI(s => s.timer)
   const entry = S.active.entries[entryIdx]
   const ex = exOr(entry.id)
   const mode = modeOf({ ...(entry.target || {}), id: entry.id })
@@ -234,6 +235,13 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
         {/* the header carries the same eff3 sizing as the rows, or the labels drift off their columns */}
         <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}{timed && <span className="ck-sp" />}<span className="ck-sp" /></div>
         {entry.sets.map((s, i) => {
+          const resting = !!timer || working?.phase === 'rest'
+          const timedRunning = working?.phase === 'work' && working.entryIdx === entryIdx && working.setIdx === i
+          const currentRow = timedRunning || (working?.phase !== 'work' && i === nextPending)
+          const currentField = !locked && (timedRunning || (working?.phase !== 'work' && entryIdx === (S.active.cur || 0) && i === nextPending))
+          const executing = currentField && !resting && ((!timed && !working) || timedRunning)
+          const showHint = currentField && (!working || working.entryIdx === entryIdx)
+          const hintId = `set-execution-${entryIdx}-${i}`
           const warm = isWarmupRow(s)
           const warmBefore = i > 0 && isWarmupRow(entry.sets[i - 1])
           const isFirstWarmup = warm && !warmBefore
@@ -242,7 +250,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
           return <div key={i}>
             {isFirstWarmup && <div className="setph">{t('Warm-up')}</div>}
             {!warm && warmBefore && <div className="setsep" />}
-            <div className={'setrow' + (s.done ? ' done' : '') + (i === nextPending ? ' is-current' : '') + (col3 ? ' eff3' : '')} aria-current={i === nextPending ? 'step' : undefined}>
+            <div className={'setrow' + (s.done ? ' done' : '') + (currentRow ? ' is-current' : '') + (col3 ? ' eff3' : '')} aria-current={currentRow ? 'step' : undefined}>
               <div className="n">{phaseNum}</div>
               {cell(s, i, col1, 'w')}
               {col2 && cell(s, i, col2, 'r')}
@@ -253,9 +261,19 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
                 onClick={() => onStartTimed(i)}><Icon name="play" /></button>}
               {warm && <button className="iconbtn" style={{ fontSize: 13 }} aria-label={t('Remove set')}
                 disabled={locked || entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
-              <Check checked={s.done} onChange={() => onToggle(i)} playMode disabled={locked}
+              <Check checked={s.done} onChange={() => timedRunning ? useUI.getState().finishWorkEarly() : onToggle(i)} playMode
+                disabled={locked || (currentField && resting)}
+                uncheckedIcon={executing ? 'flame' : showHint && resting ? 'moon' : null}
+                className={executing ? 'is-executing' : showHint && resting ? 'is-resting' : ''}
+                ariaDescribedBy={showHint ? hintId : undefined}
                 ariaLabel={`${warm ? t('Warm-up') : t('Sets')} ${phaseNum}: ${s.done ? t('Done') : t('Complete set')}`} />
             </div>
+            {showHint && <div id={hintId} className={'set-execution-hint' + (resting ? ' is-resting' : '')}>
+              <strong><Icon name={resting ? 'moon' : executing ? 'flame' : 'play'} />{resting ? t('Resting') : executing ? t('Performing set') : t('Start set')}</strong>
+              <span>{resting ? t('When rest ends, perform the next set.')
+                : executing ? t('Tap the highlighted check field when you finish this set.')
+                : t('Start the timer when you are ready to perform this set.')}</span>
+            </div>}
           </div>
         })}
         <div style={{ height: 8 }} />

@@ -3,6 +3,8 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
   "Perform set {0} of {1}": "Выполните подход {0} из {1}",
+  "Performing set": "Выполнение подхода",
+  "Tap the highlighted check field when you finish this set.": "Закончив этот подход, нажмите на выделенный флажок, чтобы отметить его завершение.",
   "Complete workout": "Завершить тренировку",
   "Complete set and go to next exercise": "Завершить подход и перейти к следующему упражнению",
   "Complete set and rest": "Завершить подход и отдохнуть",

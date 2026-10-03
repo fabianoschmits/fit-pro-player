@@ -1230,10 +1230,10 @@ h4.sec{
    bar take the top row and the controls take their own. The work timer keeps a single row —
    it only ever has two buttons. */
 #timer.rest{flex-direction:column;align-items:stretch;gap:8px}
-#timer.rest .head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 10px;min-width:0}
-#timer.rest .rest-label{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+#timer.rest .head{display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:8px;min-width:0}
+#timer.rest .rest-label{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0;max-width:100%;overflow:hidden}
 #timer.rest .rest-label span{max-width:100%;text-transform:none;letter-spacing:0}
-#timer.rest .t{white-space:nowrap;text-align:right}
+#timer.rest .t{white-space:nowrap;text-align:left;min-width:0;max-width:100%;font-size:32px;line-height:1.1}
 #timer.rest .bar{grid-column:1 / -1;min-width:0}
 #timer.rest .acts{display:flex;align-items:center;gap:6px}
 #timer.rest .acts .btn{padding-top:9px;padding-bottom:9px}
@@ -1971,3 +1971,11 @@ h4.sec{
 .exercise-phase button { width: 100%; min-height: 48px; white-space: normal; }
 .exercise-phase.is-resting { border-color: var(--surface-3); background: var(--surface); }
 .exercise-phase.is-resting p { margin-bottom: 0; }
+
+/* The pending set's completion control also identifies the execution phase. */
+.active-workout .setrow .chk.is-executing { background:var(--acc);color:var(--on-acc);box-shadow:0 0 0 3px var(--acc-soft); }
+.active-workout .setrow .chk.is-resting { color:var(--label-2); }
+.set-execution-hint { display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin:4px 0 10px;padding:8px 10px;border-left:2px solid var(--acc);font-size:12px;line-height:1.5; }
+.set-execution-hint strong { display:flex;align-items:center;gap:6px; }
+.set-execution-hint span { min-width:0;flex:1 1 180px;color:var(--label-2); }
+.set-execution-hint.is-resting { border-color:var(--surface-3); }

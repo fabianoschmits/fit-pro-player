@@ -3,6 +3,8 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 // Polish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
   "Perform set {0} of {1}": "Wykonaj serię {0} z {1}",
+  "Performing set": "Wykonywanie serii",
+  "Tap the highlighted check field when you finish this set.": "Po wykonaniu tej serii dotknij wyróżnionego pola, aby ją zakończyć.",
   "Complete workout": "Zakończ trening",
   "Complete set and go to next exercise": "Zakończ serię i przejdź do następnego ćwiczenia",
   "Complete set and rest": "Zakończ serię i odpocznij",

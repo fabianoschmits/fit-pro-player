@@ -3,6 +3,8 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 // Hindi UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
   "Perform set {0} of {1}": "{1} में से सेट {0} करें",
+  "Performing set": "सेट कर रहे हैं",
+  "Tap the highlighted check field when you finish this set.": "यह सेट समाप्त होने पर इसे पूरा करने के लिए हाइलाइट किए गए चेक बॉक्स पर टैप करें।",
   "Complete workout": "वर्कआउट पूरा करें",
   "Complete set and go to next exercise": "सेट पूरा करें और अगले व्यायाम पर जाएँ",
   "Complete set and rest": "सेट पूरा करें और आराम करें",

@@ -221,19 +221,20 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
 
 /* ============================ checkbox ============================ */
 
-export function Check({ checked, onChange, className = '', size, playMode = false, disabled = false, ariaLabel }) {
+export function Check({ checked, onChange, className = '', size, playMode = false, disabled = false, ariaLabel, ariaDescribedBy, uncheckedIcon }) {
   return (
     <button
       type="button"
       role="checkbox"
       aria-checked={!!checked}
       aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
       disabled={disabled}
       className={'chk' + (checked ? ' on' : '') + (playMode && !checked ? ' play-mode' : '') + ' ' + className}
       style={size ? { width: size, height: size } : null}
       onClick={() => onChange(!checked)}
     >
-      {checked && <Icon name="check" />}
+      {checked ? <Icon name="check" /> : uncheckedIcon ? <Icon name={uncheckedIcon} /> : null}
     </button>
   )
 }

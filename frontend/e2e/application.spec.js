@@ -4,17 +4,30 @@ import { seed, stateFixture } from './fixtures.test.js'
 test('execution guidance transitions through rest to the next set', async ({page}, testInfo) => {
   if (testInfo.project.name.includes('mobile')) await page.setViewportSize({width:320,height:720})
   const state = stateFixture()
-  state.routines[0].ex[0].sets = 2
+  const longExerciseName = 'Extensão unilateral de tríceps com halter acima da cabeça em pé, com controle do movimento e amplitude completa para cada lado'
+  state.customEx = [{id:'custom-long-name',name:longExerciseName,n:longExerciseName,bp:'upper arms',tg:'triceps',eq:'dumbbell',sm:[]}]
+  state.routines[0].ex[0] = {id:'custom-long-name',sets:2,reps:10,weight:20}
   await seed(page, {state})
   await page.goto('/#/home')
   await page.locator('[data-tab-key="start"]').click()
+  await expect(page.locator('.exercise-muscle-static svg')).toBeVisible()
   await page.getByRole('button', {name:'Começar treino', exact:true}).click()
   await expect(page.getByText('Execute a série 1 de 2', {exact:true})).toBeVisible()
   await page.screenshot({path:testInfo.outputPath('execution-guidance.png'),fullPage:true})
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2)).toBe(false)
-  await page.getByRole('button', {name:'Concluir série e descansar', exact:true}).click()
+  const currentField = page.locator('.setrow.is-current .chk.is-executing')
+  await expect(currentField.locator('svg')).toBeVisible()
+  await expect(page.locator('.set-execution-hint')).toContainText('Executando série')
+  await currentField.click()
   await expect(page.locator('.exercise-phase')).toContainText('Descansando')
-  const timerBounds = await page.locator('#timer .t').boundingBox()
+  await expect(page.locator('#timer .rest-label span')).toContainText(longExerciseName)
+  // Read both rectangles in one frame so the entry animation cannot skew the comparison.
+  const {labelBounds, timerBounds} = await page.locator('#timer').evaluate(timer => {
+    const label = timer.querySelector('.rest-label').getBoundingClientRect()
+    const clock = timer.querySelector('.t').getBoundingClientRect()
+    return {labelBounds:label.toJSON(),timerBounds:clock.toJSON()}
+  })
+  expect(timerBounds.y).toBeGreaterThanOrEqual(labelBounds.y + labelBounds.height)
   expect(timerBounds.x).toBeGreaterThanOrEqual(0)
   expect(timerBounds.x + timerBounds.width).toBeLessThanOrEqual(page.viewportSize().width)
   expect(timerBounds.y).toBeGreaterThanOrEqual(0)

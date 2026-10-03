@@ -3,6 +3,8 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
   "Perform set {0} of {1}": "进行第 {0} 组，共 {1} 组",
+  "Performing set": "正在进行本组",
+  "Tap the highlighted check field when you finish this set.": "完成本组后，点击高亮的勾选框将其标记为已完成。",
   "Complete workout": "完成训练",
   "Complete set and go to next exercise": "完成本组并进行下一个动作",
   "Complete set and rest": "完成本组并休息",

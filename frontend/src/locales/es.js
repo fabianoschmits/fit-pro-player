@@ -3,6 +3,8 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 // Spanish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
   "Perform set {0} of {1}": "Realiza la serie {0} de {1}",
+  "Performing set": "Realizando serie",
+  "Tap the highlighted check field when you finish this set.": "Cuando termines esta serie, toca la casilla resaltada para completarla.",
   "Complete workout": "Completar entrenamiento",
   "Complete set and go to next exercise": "Completar serie e ir al siguiente ejercicio",
   "Complete set and rest": "Completar serie y descansar",
