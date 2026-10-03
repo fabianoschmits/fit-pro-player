@@ -2,6 +2,15 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Perform set {0} of {1}": "{1} setten {0}. seti yapın",
+  "Complete workout": "Antrenmanı tamamla",
+  "Complete set and go to next exercise": "Seti tamamla ve sonraki egzersize geç",
+  "Complete set and rest": "Seti tamamla ve dinlen",
+  "Resting": "Dinlenme",
+  "When rest ends, perform the next set.": "Dinlenme bitince sonraki seti yapın.",
+  "Start the timer when you are ready to perform this set.": "Bu seti yapmaya hazır olduğunuzda zamanlayıcıyı başlatın.",
+  "When you finish, tap below to complete this set.": "Bitirdiğinizde bu seti tamamlamak için aşağıya dokunun.",
+  "Complete set": "Seti tamamla",
   ...onboardingLocale('tr'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",

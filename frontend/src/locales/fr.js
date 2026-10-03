@@ -2,6 +2,15 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // French UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Perform set {0} of {1}": "Effectuez la série {0} sur {1}",
+  "Complete workout": "Terminer la séance",
+  "Complete set and go to next exercise": "Terminer la série et passer à l’exercice suivant",
+  "Complete set and rest": "Terminer la série et se reposer",
+  "Resting": "Repos",
+  "When rest ends, perform the next set.": "À la fin du repos, effectuez la série suivante.",
+  "Start the timer when you are ready to perform this set.": "Démarrez le minuteur lorsque vous êtes prêt à effectuer cette série.",
+  "When you finish, tap below to complete this set.": "Une fois terminé, appuyez ci-dessous pour terminer cette série.",
+  "Complete set": "Terminer la série",
   ...onboardingLocale('fr'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",

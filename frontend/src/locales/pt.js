@@ -2,6 +2,15 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "Perform set {0} of {1}": "Execute a série {0} de {1}",
+  "Complete workout": "Concluir treino",
+  "Complete set and go to next exercise": "Concluir série e ir ao próximo exercício",
+  "Complete set and rest": "Concluir série e descansar",
+  "Resting": "Descansando",
+  "When rest ends, perform the next set.": "Quando o descanso terminar, execute a próxima série.",
+  "Start the timer when you are ready to perform this set.": "Inicie o cronômetro quando estiver pronto para executar esta série.",
+  "When you finish, tap below to complete this set.": "Ao terminar, toque abaixo para concluir esta série.",
+  "Complete set": "Concluir série",
   ...onboardingLocale('pt'),
   "your fingerprint, face or PIN": "sua impressão digital, reconhecimento facial ou PIN",
   "fingerprint or face unlock": "impressão digital ou reconhecimento facial",

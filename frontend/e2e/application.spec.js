@@ -1,5 +1,25 @@
 import { test, expect } from '@playwright/test'
-import { seed } from './fixtures.test.js'
+import { seed, stateFixture } from './fixtures.test.js'
+
+test('execution guidance transitions through rest to the next set', async ({page}, testInfo) => {
+  if (testInfo.project.name.includes('mobile')) await page.setViewportSize({width:320,height:720})
+  const state = stateFixture()
+  state.routines[0].ex[0].sets = 2
+  await seed(page, {state})
+  await page.goto('/#/home')
+  await page.locator('[data-tab-key="start"]').click()
+  await page.getByRole('button', {name:'Começar treino', exact:true}).click()
+  await expect(page.getByText('Execute a série 1 de 2', {exact:true})).toBeVisible()
+  await page.screenshot({path:testInfo.outputPath('execution-guidance.png'),fullPage:true})
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2)).toBe(false)
+  await page.getByRole('button', {name:'Concluir série e descansar', exact:true}).click()
+  await expect(page.locator('.exercise-phase')).toContainText('Descansando')
+  await expect(page.locator('.exercise-phase button')).toHaveCount(0)
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).active.entries[0].sets.map(set => set.done))).toEqual([true,false])
+  await page.locator('#timer .skip').click()
+  await expect(page.getByText('Execute a série 2 de 2', {exact:true})).toBeVisible()
+  await expect(page.getByRole('button', {name:'Concluir treino', exact:true})).toBeVisible()
+})
 
 test('student accepts invite, receives program and sends recorded workout events',async({page})=>{
   const programId='33333333-3333-4333-8333-333333333333',versionId='44444444-4444-4444-8444-444444444444',assignmentId='55555555-5555-4555-8555-555555555555'
@@ -23,7 +43,7 @@ test('student accepts invite, receives program and sends recorded workout events
   await page.getByRole('button',{name:'Iniciar',exact:true}).first().click()
   await expect(page.locator('.workout-session-title')).toBeVisible()
   await page.getByRole('button',{name:'Começar treino',exact:true}).click()
-  await page.getByRole('checkbox',{name:/Séries 1: Iniciar série/}).click()
+  await page.getByRole('button',{name:'Concluir treino',exact:true}).click()
   const dialog=page.getByRole('dialog').last();await expect(dialog).toBeVisible()
   if(await dialog.getByRole('button',{name:'Salvar',exact:true}).count()) await dialog.getByRole('button',{name:'Salvar',exact:true}).click()
   await page.getByRole('dialog').last().getByRole('button',{name:'Terminar treino',exact:true}).click()
@@ -53,7 +73,7 @@ test('completed workout is persisted and remains in history after reload',async(
   await seed(page);await page.goto('/#/home');await page.locator('[data-tab-key="start"]').click()
   await expect(page.locator('.workout-session-title')).toBeVisible()
   await page.getByRole('button',{name:'Começar treino',exact:true}).click()
-  await page.getByRole('checkbox',{name:/Séries 1: Iniciar série/}).click()
+  await page.getByRole('button',{name:'Concluir treino',exact:true}).click()
   const dialog=page.getByRole('dialog').last()
   await expect(dialog).toBeVisible()
   if(await dialog.getByRole('button',{name:'Salvar',exact:true}).count()) await dialog.getByRole('button',{name:'Salvar',exact:true}).click()

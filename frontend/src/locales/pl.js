@@ -2,6 +2,15 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Polish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Perform set {0} of {1}": "Wykonaj serię {0} z {1}",
+  "Complete workout": "Zakończ trening",
+  "Complete set and go to next exercise": "Zakończ serię i przejdź do następnego ćwiczenia",
+  "Complete set and rest": "Zakończ serię i odpocznij",
+  "Resting": "Odpoczynek",
+  "When rest ends, perform the next set.": "Po odpoczynku wykonaj następną serię.",
+  "Start the timer when you are ready to perform this set.": "Uruchom minutnik, gdy będziesz gotowy do wykonania tej serii.",
+  "When you finish, tap below to complete this set.": "Po wykonaniu dotknij poniżej, aby zakończyć tę serię.",
+  "Complete set": "Zakończ serię",
   ...onboardingLocale('pl'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",

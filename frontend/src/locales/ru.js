@@ -2,6 +2,15 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Perform set {0} of {1}": "Выполните подход {0} из {1}",
+  "Complete workout": "Завершить тренировку",
+  "Complete set and go to next exercise": "Завершить подход и перейти к следующему упражнению",
+  "Complete set and rest": "Завершить подход и отдохнуть",
+  "Resting": "Отдых",
+  "When rest ends, perform the next set.": "После отдыха выполните следующий подход.",
+  "Start the timer when you are ready to perform this set.": "Запустите таймер, когда будете готовы выполнить этот подход.",
+  "When you finish, tap below to complete this set.": "После выполнения нажмите ниже, чтобы завершить подход.",
+  "Complete set": "Завершить подход",
   ...onboardingLocale('ru'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",

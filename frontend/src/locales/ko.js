@@ -2,6 +2,15 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Perform set {0} of {1}": "{1}세트 중 {0}세트를 수행하세요",
+  "Complete workout": "운동 완료",
+  "Complete set and go to next exercise": "세트 완료 후 다음 운동으로",
+  "Complete set and rest": "세트 완료 후 휴식",
+  "Resting": "휴식 중",
+  "When rest ends, perform the next set.": "휴식이 끝나면 다음 세트를 수행하세요.",
+  "Start the timer when you are ready to perform this set.": "이 세트를 수행할 준비가 되면 타이머를 시작하세요.",
+  "When you finish, tap below to complete this set.": "수행을 마치면 아래를 눌러 세트를 완료하세요.",
+  "Complete set": "세트 완료",
   ...onboardingLocale('ko'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",

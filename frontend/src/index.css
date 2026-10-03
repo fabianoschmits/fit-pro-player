@@ -1958,3 +1958,12 @@ h4.sec{
   .professional-exercise-picker-main{align-items:flex-start}
   .professional-exercise-picker-main .row-actions{gap:6px}
 }
+
+/* Clear execution/rest guidance above the set fields. */
+.exercise-phase { margin-top: 12px; padding: 16px; border-left: 4px solid var(--acc); background: var(--acc-soft); border-radius: 10px; }
+.exercise-phase__heading { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; }
+.exercise-phase__heading > svg { flex-shrink: 0; }
+.exercise-phase p { margin: 8px 0 12px; line-height: 1.5; }
+.exercise-phase button { width: 100%; min-height: 48px; white-space: normal; }
+.exercise-phase.is-resting { border-color: var(--surface-3); background: var(--surface); }
+.exercise-phase.is-resting p { margin-bottom: 0; }

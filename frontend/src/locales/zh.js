@@ -2,6 +2,15 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Perform set {0} of {1}": "进行第 {0} 组，共 {1} 组",
+  "Complete workout": "完成训练",
+  "Complete set and go to next exercise": "完成本组并进行下一个动作",
+  "Complete set and rest": "完成本组并休息",
+  "Resting": "休息中",
+  "When rest ends, perform the next set.": "休息结束后进行下一组。",
+  "Start the timer when you are ready to perform this set.": "准备好进行本组时启动计时器。",
+  "When you finish, tap below to complete this set.": "完成后点击下方按钮结束本组。",
+  "Complete set": "完成本组",
   ...onboardingLocale('zh'),
   "your fingerprint, face or PIN": "your fingerprint, face or PIN",
   "fingerprint or face unlock": "fingerprint or face unlock",

@@ -86,6 +86,40 @@ function Elapsed({ start }) {
   return <span>{t}</span>
 }
 
+/* Guidance shares the completion path with the set rows; it never logs a separate set. */
+function ExercisePhase({ entryIdx, locked, onToggle, onStartTimed }) {
+  const active = useStore(s => s.S.active)
+  const timer = useUI(s => s.timer)
+  const work = useUI(s => s.work)
+  const entry = active.entries[entryIdx]
+  const next = entry.sets.findIndex(set => !set.done)
+  if (locked || next < 0 || entryIdx !== (active.cur || 0) || work) return null
+  const resting = !!timer
+  const timed = modeOf({ ...(entry.target || {}), id: entry.id }) === 'time'
+  const units = supersetUnits(active.entries)
+  const unit = units.find(group => group.includes(entryIdx))
+  const pendingInUnit = unit.reduce((n, idx) => n + active.entries[idx].sets.filter(set => !set.done).length, 0)
+  const finishesWorkout = units.indexOf(unit) === units.length - 1 && pendingInUnit === 1
+  // Simulate just this completion so uneven supersets use the same round boundary as toggle().
+  const after = active.entries.map((item, idx) => idx === entryIdx
+    ? { ...item, sets: item.sets.map((set, i) => i === next ? { ...set, done: true } : set) } : item)
+  const step = supersetFlowStep(after, unit, entryIdx)
+  const nextExercise = step && !step.unitDone && !step.roundDone
+  const action = timed ? t('Start set') : finishesWorkout ? t('Complete workout')
+    : nextExercise ? t('Complete set and go to next exercise') : t('Complete set and rest')
+  return <div className={'exercise-phase' + (resting ? ' is-resting' : '')}>
+    <div className="exercise-phase__heading" role="status">
+      <Icon name={resting ? 'moon' : 'flame'} />
+      <strong>{resting ? t('Resting') : t('Perform set {0} of {1}', next + 1, entry.sets.length)}</strong>
+    </div>
+    <p>{resting ? t('When rest ends, perform the next set.')
+      : timed ? t('Start the timer when you are ready to perform this set.')
+      : t('When you finish, tap below to complete this set.')}</p>
+    {!resting && <Button variant="primary" icon={timed ? 'play' : 'check'}
+      onClick={() => timed ? onStartTimed(next) : onToggle(next)}>{action}</Button>}
+  </div>
+}
+
 /* ---------- one exercise block (reps: weight×reps · time: a held duration · cardio: duration+speed) ---------- */
 function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext, onUseLast, onReplace }) {
   const S = useStore(s => s.S)
@@ -177,6 +211,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
     {cfg.notes && <p className="muted">{cfg.notes}</p>}
     <Media ex={ex} key={entry.id} compact={compact} minimizable />
     <WorkSetOverlay entryIdx={entryIdx} />
+    <ExercisePhase entryIdx={entryIdx} locked={locked} onToggle={onToggle} onStartTimed={onStartTimed} />
     {locked && onStartWorkout && (
       <button type="button" className="exercise-start-card" onClick={onStartWorkout}>
         <span className="exercise-start-card__label">{t('Start workout')}</span>
@@ -219,7 +254,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
               {warm && <button className="iconbtn" style={{ fontSize: 13 }} aria-label={t('Remove set')}
                 disabled={locked || entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
               <Check checked={s.done} onChange={() => onToggle(i)} playMode disabled={locked}
-                ariaLabel={`${warm ? t('Warm-up') : t('Sets')} ${phaseNum}: ${s.done ? t('Done') : t('Start set')}`} />
+                ariaLabel={`${warm ? t('Warm-up') : t('Sets')} ${phaseNum}: ${s.done ? t('Done') : t('Complete set')}`} />
             </div>
           </div>
         })}
