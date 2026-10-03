@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Workout adjustments": "운동 조정",
+  "Workout summary": "운동 요약",
+  "Finish workout early": "일찍 종료",
+  "Remove warm-up set {0}": "워밍업 세트 {0} 삭제",
   "Stop set": "세트 중지",
   "Tap play to start this set.": "재생을 눌러 이 세트를 시작하세요.",
   "When rest ends, tap play to start the next set.": "휴식이 끝나면 재생을 눌러 다음 세트를 시작하세요.",

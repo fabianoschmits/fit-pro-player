@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Workout adjustments": "Настройки тренировки",
+  "Workout summary": "Итоги тренировки",
+  "Finish workout early": "Завершить раньше",
+  "Remove warm-up set {0}": "Удалить разминочный подход {0}",
   "Stop set": "Остановить подход",
   "Tap play to start this set.": "Нажмите кнопку запуска, чтобы начать этот подход.",
   "When rest ends, tap play to start the next set.": "После отдыха нажмите кнопку запуска, чтобы начать следующий подход.",

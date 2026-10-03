@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "Workout adjustments": "Ajustes do treino",
+  "Workout summary": "Resumo do treino",
+  "Finish workout early": "Terminar mais cedo",
+  "Remove warm-up set {0}": "Remover aquecimento {0}",
   "Stop set": "Parar série",
   "Tap play to start this set.": "Toque em Play para iniciar esta série.",
   "When rest ends, tap play to start the next set.": "Quando o descanso terminar, toque em Play para iniciar a próxima série.",

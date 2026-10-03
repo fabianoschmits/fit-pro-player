@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Workout adjustments": "调整训练",
+  "Workout summary": "训练概览",
+  "Finish workout early": "提前结束",
+  "Remove warm-up set {0}": "删除热身组 {0}",
   "Stop set": "停止本组",
   "Tap play to start this set.": "点击播放按钮开始本组。",
   "When rest ends, tap play to start the next set.": "休息结束后，点击播放按钮开始下一组。",

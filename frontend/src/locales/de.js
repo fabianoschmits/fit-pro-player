@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // German UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Workout adjustments": "Training anpassen",
+  "Workout summary": "Trainingsübersicht",
+  "Finish workout early": "Früher beenden",
+  "Remove warm-up set {0}": "Aufwärmsatz {0} entfernen",
   "Stop set": "Satz stoppen",
   "Tap play to start this set.": "Tippe auf Play, um diesen Satz zu starten.",
   "When rest ends, tap play to start the next set.": "Tippe nach der Pause auf Play, um den nächsten Satz zu starten.",

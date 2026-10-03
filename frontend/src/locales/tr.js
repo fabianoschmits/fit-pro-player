@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Workout adjustments": "Antrenmanı düzenle",
+  "Workout summary": "Antrenman özeti",
+  "Finish workout early": "Erken bitir",
+  "Remove warm-up set {0}": "Isınma setini {0} kaldır",
   "Stop set": "Seti durdur",
   "Tap play to start this set.": "Bu seti başlatmak için oynat düğmesine dokunun.",
   "When rest ends, tap play to start the next set.": "Dinlenme bitince sonraki seti başlatmak için oynat düğmesine dokunun.",

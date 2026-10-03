@@ -20,6 +20,8 @@ const mocks = vi.hoisted(() => {
     stopRest: vi.fn(),
     topWeightSheet: vi.fn(),
     workoutCompleteSheet: vi.fn(),
+    exercisePicker: vi.fn(),
+    exConfigSheet: vi.fn(),
     navigate: vi.fn(),
   }
   state.storeSnapshot = () => ({
@@ -56,8 +58,8 @@ vi.mock('../store/useUI.js', () => {
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('../sheets.jsx', () => ({
   startFlow: vi.fn(),
-  exercisePicker: vi.fn(),
-  exConfigSheet: vi.fn(),
+  exercisePicker: mocks.exercisePicker,
+  exConfigSheet: mocks.exConfigSheet,
   exerciseDetailSheet: vi.fn(),
   topWeightSheet: mocks.topWeightSheet,
   finishWorkout: vi.fn(),
@@ -135,6 +137,19 @@ function startWorkoutButton() {
   return [...container.querySelectorAll('button')].find(button => button.textContent.includes('Começar treino'))
 }
 
+function buttonNamed(scope, label) {
+  expect(scope).toBeTruthy()
+  const button = [...scope.querySelectorAll('button')].find(button => button.textContent.trim() === label)
+  expect(button).toBeTruthy()
+  return button
+}
+
+async function clickAndRender(button) {
+  expect(button).toBeTruthy()
+  await act(async () => button.click())
+  await act(async () => root.render(<Workout />))
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.timer = null
@@ -164,8 +179,7 @@ describe('Workout set completion flow', () => {
     await mount([exercise('bench', [], { asked: true, sets: [
       { w: 20, r: 8, done: true, phase: 'warmup' }, { w: 60, r: 8, done: false },
     ] })])
-    await act(async () => container.querySelector('.setrow .iconbtn[aria-label="Remover série"]').click())
-    await act(async () => root.render(<Workout />))
+    await clickAndRender(container.querySelector('.workout-tool-group[data-exidx="0"] .workout-warmup-tools button[data-setidx="0"]'))
     await toggleSet(0)
     expect(mocks.workoutCompleteSheet).toHaveBeenCalledTimes(1)
   })
@@ -277,11 +291,158 @@ describe('Workout set completion flow', () => {
     expect(mocks.S.active.entries[0].sets[0].w).toBeGreaterThan(40)
     expect(mocks.S.active.entries[0].target.weight).toBe(40)
   })
-  it('keeps the workout completion action in a dedicated mobile action region', async () => {
+  it('keeps workout completion below adjustments in an inline session footer', async () => {
     await mount([exercise('plain-bench', [false, false])])
 
-    expect(container.querySelector('.workout-primary-action')).toBeTruthy()
-    expect(container.querySelector('.workout-primary-action button')?.textContent).toContain('Terminar')
+    const tools = container.querySelector('.workout-tools')
+    const footer = container.querySelector('.workout-session-footer')
+    expect(tools).toBeTruthy()
+    expect(footer).toBeTruthy()
+    expect(footer.closest('.exercise-input-card')).toBeNull()
+    expect(tools.compareDocumentPosition(footer) & 4).toBeTruthy()
+    expect(footer.textContent).toContain('Resumo do treino')
+    expect(footer.textContent).toContain('0/2')
+    expect(footer.textContent).toContain('0/1')
+    expect(footer.querySelector('.workout-primary-action button')?.textContent).toBe('Terminar mais cedo')
+    expect(container.querySelector('.workout-session-header .finish-hdr-btn')).toBeNull()
+  })
+
+  it('keeps auxiliary adjustments outside the series card and collapsed initially', async () => {
+    await mount([exercise('plain-bench', [], { sets: [
+      { w: 20, r: 8, done: false, phase: 'warmup' }, { w: 60, r: 5, done: false },
+    ] })])
+    mocks.S.workouts = [{ d: '2026-10-02', entries: [exercise('plain-bench', [true])] }]
+    await act(async () => root.render(<Workout />))
+
+    const card = container.querySelector('.exercise-input-card')
+    const tools = container.querySelector('details.workout-tools')
+    expect(tools).toBeTruthy()
+    expect(tools.hasAttribute('open')).toBe(false)
+    expect(tools.querySelector('summary').textContent).toContain('Ajustes do treino')
+    expect(card.querySelectorAll('button').length).toBeGreaterThan(0)
+    expect([...card.querySelectorAll('button')].every(button => button.matches('.set-start-action, .set-action, .stp button'))).toBe(true)
+    for (const label of ['Adicionar série de aquecimento', 'Adicionar série', 'Remover série', 'Substituir', 'Usar últimos valores', 'Remover exercício']) {
+      expect(card.textContent).not.toContain(label)
+      expect(buttonNamed(tools, label).closest('.workout-tools')).toBe(tools)
+    }
+    expect(container.querySelector('.workout-exercise-heading button[aria-label="Detalhes"]')).toBeTruthy()
+    expect(container.querySelector('.workout-exercise-heading').textContent).not.toContain('Substituir')
+    expect(buttonNamed(tools, 'Remover exercício').classList.contains('workout-danger-action')).toBe(true)
+  })
+
+  it('binds bottom set adjustments and warm-up removal to the chosen superset member', async () => {
+    await mount([
+      exercise('plain-bench', [false], { sg: 'pair' }),
+      exercise('plain-row', [], { sg: 'pair', sets: [
+        { w: 20, r: 6, done: false, phase: 'warmup' },
+        { w: 30, r: 7, done: false, phase: 'warmup' },
+        { w: 60, r: 8, done: false },
+      ] }),
+    ])
+    const firstSets = structuredClone(mocks.S.active.entries[0].sets)
+    const groups = container.querySelectorAll('.workout-tool-group')
+    expect(groups).toHaveLength(2)
+    expect([...groups].map(group => group.getAttribute('data-exidx'))).toEqual(['0', '1'])
+    for (const group of groups) expect(group.querySelector('h2, h3, h4, [role="heading"]')?.textContent.trim()).toBeTruthy()
+    const partnerTools = () => container.querySelector('.workout-tool-group[data-exidx="1"]')
+
+    await clickAndRender(buttonNamed(partnerTools(), 'Adicionar série de aquecimento'))
+    expect(mocks.S.active.entries[1].sets).toHaveLength(4)
+    expect(mocks.S.active.entries[1].sets.filter(set => set.phase === 'warmup')).toHaveLength(3)
+    await clickAndRender(buttonNamed(partnerTools(), 'Adicionar série'))
+    expect(mocks.S.active.entries[1].sets).toHaveLength(5)
+    await clickAndRender(buttonNamed(partnerTools(), 'Remover série'))
+    expect(mocks.S.active.entries[1].sets).toHaveLength(4)
+    const removeWarmup = partnerTools().querySelector('.workout-warmup-tools button[data-setidx="1"]')
+    expect(removeWarmup?.textContent).toContain('Remover aquecimento 2')
+    const beforeWarmupRemoval = structuredClone(mocks.S.active.entries[1].sets)
+    await clickAndRender(removeWarmup)
+    expect(mocks.S.active.entries[1].sets).toHaveLength(3)
+    expect(mocks.S.active.entries[1].sets).toEqual(beforeWarmupRemoval.filter((_, index) => index !== 1))
+    expect(mocks.S.active.entries[0].sets).toEqual(firstSets)
+    expect(container.querySelectorAll('.exercise-input-card .setrow button[data-setidx]')).toHaveLength(0)
+  })
+
+  it('applies history values and replacement from the correct superset tools', async () => {
+    await mount([
+      exercise('plain-bench', [false, false], { sg: 'pair' }),
+      exercise('plain-row', [false, false], { sg: 'pair' }),
+    ])
+    mocks.S.workouts = [{ d: '2026-10-02', entries: [exercise('plain-row', [], { sets: [
+      { w: 25, r: 8, done: true }, { w: 27, r: 10, done: true },
+    ] })] }]
+    await act(async () => root.render(<Workout />))
+    const partnerTools = () => container.querySelector('.workout-tool-group[data-exidx="1"]')
+    await clickAndRender(buttonNamed(partnerTools(), 'Usar últimos valores'))
+    expect(mocks.S.active.entries[1].sets.map(set => [set.w, set.r])).toEqual([[25, 8], [27, 10]])
+    expect(mocks.S.active.entries[0].sets.map(set => [set.w, set.r])).toEqual([[60, 5], [60, 5]])
+
+    await clickAndRender(buttonNamed(partnerTools(), 'Substituir'))
+    await act(async () => mocks.exercisePicker.mock.calls.at(-1)[0]({ id: 'plain-squat' }))
+    await act(async () => mocks.exConfigSheet.mock.calls.at(-1)[2]({ mode: 'reps', sets: 2, reps: 7, weight: 30, bodyweight: false }))
+    await act(async () => root.render(<Workout />))
+    expect(mocks.S.active.entries.map(entry => entry.id)).toEqual(['plain-bench', 'plain-squat'])
+    expect(mocks.S.active.entries[1].sets.map(set => [set.w, set.r, set.done])).toEqual([[30, 7, false], [30, 7, false]])
+  })
+
+  it('pairs either adjacent exercise and unpairs through bottom adjustments', async () => {
+    await mount([exercise('plain-bench', [false]), exercise('plain-row', [false]), exercise('plain-squat', [false])], 1)
+    const tools = () => container.querySelector('.workout-tools')
+    await clickAndRender(buttonNamed(tools(), 'Fazer superset com o anterior'))
+    expect(mocks.S.active.entries[0].sg).toBeTruthy()
+    expect(mocks.S.active.entries[1].sg).toBe(mocks.S.active.entries[0].sg)
+    expect(mocks.S.active.entries[2].sg).toBeFalsy()
+    const unpair = buttonNamed(tools(), 'Desfazer')
+    expect(unpair.closest('.workout-tool-group')).toBeNull()
+    expect(container.querySelector('.ss-hd').textContent).not.toContain('Desfazer')
+    await clickAndRender(unpair)
+    expect(mocks.S.active.entries.every(entry => !entry.sg)).toBe(true)
+    await clickAndRender(buttonNamed(tools(), 'Fazer superset com o próximo'))
+    expect(mocks.S.active.entries[0].sg).toBeFalsy()
+    expect(mocks.S.active.entries[1].sg).toBeTruthy()
+    expect(mocks.S.active.entries[2].sg).toBe(mocks.S.active.entries[1].sg)
+  })
+
+  it('toggles completed rows with the banner outside the series card', async () => {
+    await mount([exercise('plain-bench', [true, true], { asked: true })])
+    expect(container.querySelector('.exercise-input-card')).toBeNull()
+    const banner = () => container.querySelector('.ex-done-banner')
+    expect(banner()).toBeTruthy()
+    await clickAndRender(banner())
+    expect(container.querySelectorAll('.exercise-input-card .setrow')).toHaveLength(2)
+    expect(banner()).toBeTruthy()
+    expect(banner().closest('.exercise-input-card')).toBeNull()
+    expect(container.querySelector('.exercise-input-card').textContent).not.toContain('Collapse')
+    expect([...container.querySelectorAll('.exercise-input-card button')].every(button => button.matches('.set-action, .stp button'))).toBe(true)
+    await clickAndRender(banner())
+    expect(container.querySelector('.exercise-input-card')).toBeNull()
+  })
+
+  it('locks bottom adjustments during a manual set while keeping Stop and finish available', async () => {
+    await mount([exercise('plain-bench', [false, false]), exercise('plain-row', [false, false])])
+    await clickAndRender(container.querySelector('.set-start-action'))
+    const toolButtons = container.querySelectorAll('.workout-tools button')
+    expect(toolButtons.length).toBeGreaterThan(0)
+    expect([...toolButtons].every(button => button.disabled)).toBe(true)
+    expect(container.querySelector('.workout-session-footer .workout-primary-action button').disabled).toBe(false)
+    expect(container.querySelector('.set-action.is-executing').disabled).toBe(false)
+    await clickAndRender(container.querySelector('.set-action.is-executing'))
+    expect(mocks.S.active.entries[0].sets[0].done).toBe(true)
+    expect(buttonNamed(container.querySelector('.workout-tools'), 'Adicionar série').disabled).toBe(false)
+    expect(container.querySelector('.workout-session-footer .workout-primary-action button').disabled).toBe(false)
+  })
+
+  it('locks bottom adjustments during a timed set while keeping Stop and finish available', async () => {
+    await mount([exercise('plank', [], { target: { mode: 'time', bodyweight: true }, sets: [
+      { sec: 45, done: false }, { sec: 45, done: false },
+    ] })])
+    mocks.work = { phase: 'work', entryIdx: 0, setIdx: 0, left: 30, total: 45 }
+    await act(async () => root.render(<Workout />))
+    const toolButtons = container.querySelectorAll('.workout-tools button')
+    expect(toolButtons.length).toBeGreaterThan(0)
+    expect([...toolButtons].every(button => button.disabled)).toBe(true)
+    expect(container.querySelector('.workout-session-footer .workout-primary-action button').disabled).toBe(false)
+    expect(container.querySelector('.set-action.is-executing').disabled).toBe(false)
   })
 
   it('shows only freestyle and today-plan actions on rest days', async () => {

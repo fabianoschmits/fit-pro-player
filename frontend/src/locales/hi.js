@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Hindi UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Workout adjustments": "वर्कआउट में बदलाव",
+  "Workout summary": "वर्कआउट का सारांश",
+  "Finish workout early": "जल्दी समाप्त करें",
+  "Remove warm-up set {0}": "वार्म-अप सेट {0} हटाएँ",
   "Stop set": "सेट रोकें",
   "Tap play to start this set.": "यह सेट शुरू करने के लिए प्ले पर टैप करें।",
   "When rest ends, tap play to start the next set.": "आराम समाप्त होने पर अगला सेट शुरू करने के लिए प्ले पर टैप करें।",

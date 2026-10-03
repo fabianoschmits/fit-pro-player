@@ -1,6 +1,95 @@
 import { test, expect } from '@playwright/test'
 import { seed, stateFixture } from './fixtures.test.js'
 
+for (const width of [320, 390]) {
+  test(`workout adjustments stay below series and leave execution unobstructed at ${width}px`, async ({page}) => {
+    await page.setViewportSize({width, height:720})
+    await page.emulateMedia({reducedMotion:'reduce'})
+    const state = stateFixture()
+    state.routines[0].ex[0] = {id:'0025',sets:5,reps:10,weight:20}
+    await seed(page, {state})
+    await page.goto('/#/home')
+    await page.locator('[data-tab-key="start"]').click()
+    await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
+
+    const card = page.locator('.exercise-input-card')
+    const tools = page.locator('details.workout-tools')
+    const footer = page.locator('.workout-session-footer')
+    await expect(card.locator('.setrow')).toHaveCount(5)
+    await expect(tools).toBeVisible()
+    await expect(tools).not.toHaveAttribute('open', '')
+    await expect(tools.getByRole('button', {name:'Adicionar série', exact:true})).toBeHidden()
+    for (const name of ['Adicionar série de aquecimento', 'Adicionar série', 'Remover série', 'Substituir', 'Remover exercício']) {
+      await expect(card.getByRole('button', {name, exact:true})).toHaveCount(0)
+    }
+    await expect(page.locator('.workout-session-header .finish-hdr-btn')).toHaveCount(0)
+    await expect(footer.getByRole('button', {name:'Terminar mais cedo', exact:true})).toHaveCount(1)
+
+    await tools.locator('summary').filter({hasText:'Ajustes do treino'}).click()
+    await expect(tools).toHaveAttribute('open', '')
+    const group = tools.locator('.workout-tool-group[data-exidx="0"]')
+    await expect(group.getByRole('heading')).toHaveText(await page.locator('.workout-exercise-name').textContent())
+    await group.getByRole('button', {name:'Adicionar série de aquecimento', exact:true}).click()
+    await expect(card.locator('.setrow')).toHaveCount(6)
+    await group.getByRole('button', {name:'Adicionar série', exact:true}).click()
+    await expect(card.locator('.setrow')).toHaveCount(7)
+    await expect(card.locator('.setrow .iconbtn')).toHaveCount(0)
+
+    await footer.scrollIntoViewIfNeeded()
+    const geometry = await footer.evaluate(element => {
+      const card = document.querySelector('.exercise-input-card')
+      const tools = document.querySelector('.workout-tools')
+      return {
+        position:getComputedStyle(element).position,
+        actionPosition:getComputedStyle(element.querySelector('.workout-primary-action')).position,
+        footer:element.getBoundingClientRect().toJSON(),
+        card:card.getBoundingClientRect().toJSON(),
+        tools:tools.getBoundingClientRect().toJSON(),
+        followsTools:!!(tools.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING),
+        insideCard:!!element.closest('.exercise-input-card'),
+        horizontalOverflow:document.documentElement.scrollWidth > innerWidth + 2,
+      }
+    })
+    expect(['static', 'relative']).toContain(geometry.position)
+    expect(['static', 'relative']).toContain(geometry.actionPosition)
+    expect(geometry.followsTools).toBe(true)
+    expect(geometry.insideCard).toBe(false)
+    expect(geometry.footer.top).toBeGreaterThanOrEqual(geometry.tools.bottom)
+    expect(geometry.footer.top).toBeGreaterThanOrEqual(geometry.card.bottom)
+    expect(geometry.footer.left).toBeGreaterThanOrEqual(0)
+    expect(geometry.footer.right).toBeLessThanOrEqual(width)
+    expect(geometry.horizontalOverflow).toBe(false)
+
+    const assertUnobstructed = async button => {
+      await button.scrollIntoViewIfNeeded()
+      await expect(button).toBeInViewport()
+      await expect(button).toBeEnabled()
+      expect(await button.evaluate(element => {
+        const rect = element.getBoundingClientRect()
+        const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+        return hit === element || element.contains(hit)
+      })).toBe(true)
+    }
+    const play = page.locator('.set-start-action')
+    await expect(play).toHaveAccessibleName('Iniciar série 1')
+    await assertUnobstructed(play)
+    await play.click()
+    const stop = card.locator('.setrow .chk.is-executing')
+    await expect(stop).toHaveAccessibleName('Parar série 1')
+    await assertUnobstructed(stop)
+    await stop.click()
+    await expect(page.locator('#timer')).toBeVisible()
+    await expect(card.locator('.chk.is-executing')).toHaveCount(0)
+    await expect(page.locator('.set-start-action')).toHaveCount(0)
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).active.entries[0].sets.map(set => set.done))).toEqual([true,false,false,false,false,false,false])
+    await page.locator('#timer .skip').click()
+    await expect(page.locator('#timer')).toHaveCount(0)
+    await expect(play).toHaveAccessibleName('Iniciar série 1')
+    await assertUnobstructed(play)
+    await expect(card.locator('.set-execution-hint')).toContainText('Toque em Play para iniciar esta série.')
+  })
+}
+
 test('execution guidance waits for play before each set and progresses after stop', async ({page}, testInfo) => {
   if (testInfo.project.name.includes('mobile')) await page.setViewportSize({width:320,height:720})
   const state = stateFixture()

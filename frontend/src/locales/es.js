@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Spanish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Workout adjustments": "Ajustes del entrenamiento",
+  "Workout summary": "Resumen del entrenamiento",
+  "Finish workout early": "Terminar antes",
+  "Remove warm-up set {0}": "Eliminar calentamiento {0}",
   "Stop set": "Detener serie",
   "Tap play to start this set.": "Toca Play para iniciar esta serie.",
   "When rest ends, tap play to start the next set.": "Cuando termine el descanso, toca Play para iniciar la siguiente serie.",
