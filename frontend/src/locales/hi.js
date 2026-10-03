@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Hindi UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Stop set": "सेट रोकें",
+  "Tap play to start this set.": "यह सेट शुरू करने के लिए प्ले पर टैप करें।",
+  "When rest ends, tap play to start the next set.": "आराम समाप्त होने पर अगला सेट शुरू करने के लिए प्ले पर टैप करें।",
+  "Tap stop when you finish this set.": "यह सेट समाप्त होने पर उसे पूरा करने के लिए रोकें पर टैप करें।",
   "Perform set {0} of {1}": "{1} में से सेट {0} करें",
   "Performing set": "सेट कर रहे हैं",
   "Tap the highlighted check field when you finish this set.": "यह सेट समाप्त होने पर इसे पूरा करने के लिए हाइलाइट किए गए चेक बॉक्स पर टैप करें।",

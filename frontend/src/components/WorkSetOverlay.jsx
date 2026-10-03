@@ -7,7 +7,7 @@ const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '
 
 export default function WorkSetOverlay({ entryIdx }) {
   const work = useUI(s => s.work)
-  const { finishWorkEarly, stopWork, skipWorkRest } = useUI()
+  const { stopWork, skipWorkRest } = useUI()
 
   if (!work || work.entryIdx !== entryIdx) return null
 
@@ -18,18 +18,9 @@ export default function WorkSetOverlay({ entryIdx }) {
   const total = isRest ? work.restTotal : work.total
   const pct = total ? (left / total) * 100 : 0
 
-  const handleStartNext = () => {
-    // onNext is set by startTimed when there are more sets; it starts the next timed set
-    if (work.onNext) {
-      work.onNext()
-    } else {
-      skipWorkRest()
-    }
-  }
-
   // 'done' phase: set just finished, overlay stays open
   if (isDone) {
-    const hasNext = !!work.onNext
+    const hasNext = !work.isLastSet
     return (
       <div className="work-set-overlay is-done">
         <button type="button" className="work-set-overlay__backdrop" aria-label={t('Close')} onClick={stopWork} />
@@ -47,11 +38,6 @@ export default function WorkSetOverlay({ entryIdx }) {
           </div>
           <div className="work-set-overlay__actions">
             <Button variant="ghost" onClick={stopWork}>{t('Close')}</Button>
-            {hasNext && (
-              <Button variant="primary" icon="play" onClick={handleStartNext}>
-                {t('Next set')}
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -60,7 +46,7 @@ export default function WorkSetOverlay({ entryIdx }) {
 
   return (
     <div className={'work-set-overlay' + (isRest ? ' is-rest' : '')}>
-      <button type="button" className="work-set-overlay__backdrop" aria-label={t('Cancel')} onClick={stopWork} />
+      {isRest && <button type="button" className="work-set-overlay__backdrop" aria-label={t('Skip rest')} onClick={skipWorkRest} />}
       <div className={'work-set-overlay__card' + (isRest ? ' is-rest' : '')}>
         {isRest ? (
           <>
@@ -88,14 +74,10 @@ export default function WorkSetOverlay({ entryIdx }) {
           {isRest ? (
             <>
               <Button variant="ghost" onClick={skipWorkRest}>{t('Skip rest')}</Button>
-              <Button variant="primary" icon="play" onClick={handleStartNext}>
-                {work.onNext ? t('Next set') : t('Next exercise')}
-              </Button>
             </>
           ) : (
             <>
               <Button variant="ghost" onClick={stopWork}>{t('Cancel')}</Button>
-              <Button variant="primary" icon="check" onClick={finishWorkEarly}>{t('Done')}</Button>
             </>
           )}
         </div>

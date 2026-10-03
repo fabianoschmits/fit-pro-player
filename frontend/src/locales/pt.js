@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "Stop set": "Parar série",
+  "Tap play to start this set.": "Toque em Play para iniciar esta série.",
+  "When rest ends, tap play to start the next set.": "Quando o descanso terminar, toque em Play para iniciar a próxima série.",
+  "Tap stop when you finish this set.": "Ao terminar a série, toque em Parar para concluí-la.",
   "Perform set {0} of {1}": "Execute a série {0} de {1}",
   "Performing set": "Executando série",
   "Tap the highlighted check field when you finish this set.": "Ao terminar a série, toque no campo destacado para concluí-la.",

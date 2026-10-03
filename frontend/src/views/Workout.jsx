@@ -86,45 +86,12 @@ function Elapsed({ start }) {
   return <span>{t}</span>
 }
 
-/* Guidance shares the completion path with the set rows; it never logs a separate set. */
-function ExercisePhase({ entryIdx, locked, onToggle, onStartTimed }) {
-  const active = useStore(s => s.S.active)
-  const timer = useUI(s => s.timer)
-  const work = useUI(s => s.work)
-  const entry = active.entries[entryIdx]
-  const next = entry.sets.findIndex(set => !set.done)
-  if (locked || next < 0 || entryIdx !== (active.cur || 0) || work) return null
-  const resting = !!timer
-  const timed = modeOf({ ...(entry.target || {}), id: entry.id }) === 'time'
-  const units = supersetUnits(active.entries)
-  const unit = units.find(group => group.includes(entryIdx))
-  const pendingInUnit = unit.reduce((n, idx) => n + active.entries[idx].sets.filter(set => !set.done).length, 0)
-  const finishesWorkout = units.indexOf(unit) === units.length - 1 && pendingInUnit === 1
-  // Simulate just this completion so uneven supersets use the same round boundary as toggle().
-  const after = active.entries.map((item, idx) => idx === entryIdx
-    ? { ...item, sets: item.sets.map((set, i) => i === next ? { ...set, done: true } : set) } : item)
-  const step = supersetFlowStep(after, unit, entryIdx)
-  const nextExercise = step && !step.unitDone && !step.roundDone
-  const action = timed ? t('Start set') : finishesWorkout ? t('Complete workout')
-    : nextExercise ? t('Complete set and go to next exercise') : t('Complete set and rest')
-  return <div className={'exercise-phase' + (resting ? ' is-resting' : '')}>
-    <div className="exercise-phase__heading" role="status">
-      <Icon name={resting ? 'moon' : 'flame'} />
-      <strong>{resting ? t('Resting') : t('Perform set {0} of {1}', next + 1, entry.sets.length)}</strong>
-    </div>
-    <p>{resting ? t('When rest ends, perform the next set.')
-      : timed ? t('Start the timer when you are ready to perform this set.')
-      : t('When you finish, tap below to complete this set.')}</p>
-    {!resting && <Button variant="primary" icon={timed ? 'play' : 'check'}
-      onClick={() => timed ? onStartTimed(next) : onToggle(next)}>{action}</Button>}
-  </div>
-}
-
 /* ---------- one exercise block (reps: weight×reps · time: a held duration · cardio: duration+speed) ---------- */
 function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onStartTimed, onPairPrev, onPairNext, onUseLast, onReplace }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
   const timer = useUI(s => s.timer)
+  const manualSet = useUI(s => s.manualSet)
   const entry = S.active.entries[entryIdx]
   const ex = exOr(entry.id)
   const mode = modeOf({ ...(entry.target || {}), id: entry.id })
@@ -211,8 +178,6 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
     </div>
     {cfg.notes && <p className="muted">{cfg.notes}</p>}
     <Media ex={ex} key={entry.id} compact={compact} minimizable />
-    <WorkSetOverlay entryIdx={entryIdx} />
-    <ExercisePhase entryIdx={entryIdx} locked={locked} onToggle={onToggle} onStartTimed={onStartTimed} />
     {locked && onStartWorkout && (
       <button type="button" className="exercise-start-card" onClick={onStartWorkout}>
         <span className="exercise-start-card__label">{t('Start workout')}</span>
@@ -233,14 +198,19 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
           <b>{Math.round((entry.sets.length ? completedCount / entry.sets.length : 0) * 100)}%</b>
         </div>
         {/* the header carries the same eff3 sizing as the rows, or the labels drift off their columns */}
-        <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}{timed && <span className="ck-sp" />}<span className="ck-sp" /></div>
+        <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}<span className="ck-sp" /></div>
         {entry.sets.map((s, i) => {
           const resting = !!timer || working?.phase === 'rest'
           const timedRunning = working?.phase === 'work' && working.entryIdx === entryIdx && working.setIdx === i
-          const currentRow = timedRunning || (working?.phase !== 'work' && i === nextPending)
-          const currentField = !locked && (timedRunning || (working?.phase !== 'work' && entryIdx === (S.active.cur || 0) && i === nextPending))
-          const executing = currentField && !resting && ((!timed && !working) || timedRunning)
-          const showHint = currentField && (!working || working.entryIdx === entryIdx)
+          const manualRunning = manualSet?.sessionId === `${S.active.id}:${S.active.start}` && manualSet.entryIdx === entryIdx
+            && manualSet.setIdx === i && manualSet.exerciseId === entry.id && !s.done
+          const running = timedRunning || manualRunning
+          const anyRunning = !!manualSet || working?.phase === 'work'
+          const currentRow = running || (!anyRunning && entryIdx === (S.active.cur || 0) && i === nextPending)
+          const currentField = !locked && currentRow
+          const executing = currentField && !resting && running
+          const ready = currentField && !resting && !anyRunning
+          const showHint = currentField
           const hintId = `set-execution-${entryIdx}-${i}`
           const warm = isWarmupRow(s)
           const warmBefore = i > 0 && isWarmupRow(entry.sets[i - 1])
@@ -250,29 +220,31 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
           return <div key={i}>
             {isFirstWarmup && <div className="setph">{t('Warm-up')}</div>}
             {!warm && warmBefore && <div className="setsep" />}
+            {ready && <button type="button" className="set-start-action" aria-label={`${t('Start set')} ${phaseNum}`}
+              onClick={() => timed ? onStartTimed(i) : useUI.getState().startManualSet(`${S.active.id}:${S.active.start}`, entryIdx, i)}>
+              <Icon name="play" /><span>{t('Start set')} {phaseNum}</span>
+            </button>}
             <div className={'setrow' + (s.done ? ' done' : '') + (currentRow ? ' is-current' : '') + (col3 ? ' eff3' : '')} aria-current={currentRow ? 'step' : undefined}>
               <div className="n">{phaseNum}</div>
               {cell(s, i, col1, 'w')}
               {col2 && cell(s, i, col2, 'r')}
               {col3 && cell(s, i, col3, 'eff')}
-              {/* A timed set is started, not typed: the timer counts the hold down and checks the
-                  set off itself. The checkbox stays for anyone who timed it on their own watch. */}
-              {timed && <button className="setgo" aria-label={t('Start set')} disabled={locked || s.done || !!(working && working.phase === 'work')}
-                onClick={() => onStartTimed(i)}><Icon name="play" /></button>}
               {warm && <button className="iconbtn" style={{ fontSize: 13 }} aria-label={t('Remove set')}
                 disabled={locked || entry.sets.length <= 1} onClick={() => onRemoveSetAt(i)}><Icon name="xmark" /></button>}
-              <Check checked={s.done} onChange={() => timedRunning ? useUI.getState().finishWorkEarly() : onToggle(i)} playMode
-                disabled={locked || (currentField && resting)}
-                uncheckedIcon={executing ? 'flame' : showHint && resting ? 'moon' : null}
-                className={executing ? 'is-executing' : showHint && resting ? 'is-resting' : ''}
-                ariaDescribedBy={showHint ? hintId : undefined}
-                ariaLabel={`${warm ? t('Warm-up') : t('Sets')} ${phaseNum}: ${s.done ? t('Done') : t('Complete set')}`} />
+              {s.done ? <Check checked onChange={() => onToggle(i)} playMode disabled={locked || anyRunning}
+                className="set-action" ariaLabel={`${warm ? t('Warm-up') : t('Sets')} ${phaseNum}: ${t('Done')}`} />
+                : <button type="button" className={'chk play-mode set-action' + (executing ? ' is-executing' : currentField && resting ? ' is-resting' : '')}
+                  disabled={!executing} aria-describedby={showHint ? hintId : undefined}
+                  aria-label={`${executing ? t('Stop set') : t('Start set')} ${phaseNum}`}
+                  onClick={() => timedRunning ? useUI.getState().finishWorkEarly() : onToggle(i)}>
+                  {executing ? <Icon name="stop" /> : currentField && resting ? <Icon name="moon" /> : null}
+                </button>}
             </div>
             {showHint && <div id={hintId} className={'set-execution-hint' + (resting ? ' is-resting' : '')}>
               <strong><Icon name={resting ? 'moon' : executing ? 'flame' : 'play'} />{resting ? t('Resting') : executing ? t('Performing set') : t('Start set')}</strong>
-              <span>{resting ? t('When rest ends, perform the next set.')
-                : executing ? t('Tap the highlighted check field when you finish this set.')
-                : t('Start the timer when you are ready to perform this set.')}</span>
+              <span>{resting ? t('When rest ends, tap play to start the next set.')
+                : executing ? t('Tap stop when you finish this set.')
+                : t('Tap play to start this set.')}</span>
             </div>}
           </div>
         })}
@@ -290,6 +262,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
         )}
       </div>
     )}
+    <WorkSetOverlay entryIdx={entryIdx} />
     {last && <div className="workout-last-values">
       <div className="grow">
         <small>{t('Last time')} · {fmtDate(last.d)}</small>
@@ -313,6 +286,7 @@ export function removeActiveExercise(idx) {
   // Clear the work callback before indexes can shift. This also protects a confirmation sheet
   // that was opened first and confirmed after a timed hold started.
   useUI.getState().stopWork()
+  useUI.getState().stopManualSet()
   useStore.getState().update(s => {
     if (!s.active || !Array.isArray(s.active.entries)) return
     if (idx < 0 || idx >= s.active.entries.length) return
@@ -327,7 +301,7 @@ function ActiveWorkout() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
-  const { startRest, stopRest, work } = useUI()
+  const { startRest, stopRest, work, manualSet, stopManualSet } = useUI()
   const A = S.active
   const units = supersetUnits(A.entries)
   const cur = Math.min(A.cur, Math.max(0, A.entries.length - 1))
@@ -335,6 +309,13 @@ function ActiveWorkout() {
   const unitIdx = units.findIndex(u => u === unit)
   const isSuperset = unit.length > 1
   const workoutStarted = !!A.start
+  useEffect(() => {
+    if (!manualSet) return
+    const entry = A.entries[manualSet.entryIdx]
+    // Navigation and structural edits cancel execution rather than completing a different row.
+    if (manualSet.sessionId !== `${A.id}:${A.start}` || manualSet.entryIdx !== cur
+      || entry?.id !== manualSet.exerciseId || !entry?.sets[manualSet.setIdx] || entry.sets[manualSet.setIdx].done) stopManualSet()
+  }, [A.id, A.start, A.entries, cur, manualSet, stopManualSet])
   const startWorkout = () => update(s => {
     if (s.active && !s.active.start) s.active.start = Date.now()
   })
@@ -386,12 +367,19 @@ function ActiveWorkout() {
     else if (m === 'time') e.sets.push({ sec: l ? l.sec : (e.target.sec || 45), w: l ? (l.w || 0) : (e.target.weight || 0), done: false })
     else e.sets.push({ w: l ? l.w : 0, r: l ? l.r : e.target.reps, done: false })
   })
-  const removeSet = idx => mutEntry(idx, e => { if (e.sets.length > 1) e.sets.pop() })
-  const addWarmup = idx => mutEntry(idx, e => {
+  const reshapeEntry = (idx, fn) => {
+    useUI.getState().stopManualSet()
+    useUI.getState().stopWork()
+    mutEntry(idx, fn)
+    const entry = useStore.getState().S.active?.entries[idx]
+    if (entry) progressHighWater.current[idx] = entry.sets.filter(set => set.done).length
+  }
+  const removeSet = idx => reshapeEntry(idx, e => { if (e.sets.length > 1) e.sets.pop() })
+  const addWarmup = idx => reshapeEntry(idx, e => {
     const m = modeOf({ ...(e.target || {}), id: e.id })
     e.sets = insertWarmupRow(e.sets, m, e.target || {})
   })
-  const removeSetAt = (idx, i) => mutEntry(idx, e => { e.sets = removeRowAt(e.sets, i) })
+  const removeSetAt = (idx, i) => reshapeEntry(idx, e => { e.sets = removeRowAt(e.sets, i) })
   const pairAt = (first, second) => update(s => {
     s.active.entries = pairAdjacent(s.active.entries, first, second)
   })
@@ -435,6 +423,8 @@ function ActiveWorkout() {
       sets: Math.max(1, remaining || workSets.length || 1),
     }
     exConfigSheet(ex, null, cfg => {
+      useUI.getState().stopManualSet()
+      useUI.getState().stopWork()
       let replaced = false
       update(s => {
         if (!s.active?.entries?.[idx]) return
@@ -497,22 +487,15 @@ function ActiveWorkout() {
   // behave exactly as they do for a reps set.
   const startTimed = (idx, i) => {
     const e = A.entries[idx]
-    const pendingAfter = e.sets.slice(i + 1).filter(s => !s.done).length
-    const isLastSet = pendingAfter === 0
-    const onNext = isLastSet ? null : () => startNextTimed(idx)
+    const isLastSet = !e.sets.slice(i + 1).some(s => !s.done)
     useUI.getState().startWork(e.sets[i].sec || 45, exOr(e.id).n, elapsed => {
       mutEntry(idx, en => { en.sets[i].sec = elapsed })
       if (!useStore.getState().S.active.entries[idx].sets[i].done) toggle(idx, i)
-    }, { entryIdx: idx, setIdx: i, isLastSet, onNext })
-  }
-  const startNextTimed = idx => {
-    const entry = useStore.getState().S.active?.entries?.[idx]
-    if (!entry) return
-    const nextIdx = entry.sets.findIndex(s => !s.done)
-    if (nextIdx >= 0) startTimed(idx, nextIdx)
+    }, { entryIdx: idx, setIdx: i, isLastSet })
   }
 
   const toggle = (idx, i) => {
+    useUI.getState().stopManualSet()
     const m = modeAt(idx)
     const cardioEntry = m === 'cardio'
     const isLastUnit = unitIdx >= units.length - 1

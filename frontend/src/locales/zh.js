@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Stop set": "停止本组",
+  "Tap play to start this set.": "点击播放按钮开始本组。",
+  "When rest ends, tap play to start the next set.": "休息结束后，点击播放按钮开始下一组。",
+  "Tap stop when you finish this set.": "完成本组后，点击停止按钮将其标记为已完成。",
   "Perform set {0} of {1}": "进行第 {0} 组，共 {1} 组",
   "Performing set": "正在进行本组",
   "Tap the highlighted check field when you finish this set.": "完成本组后，点击高亮的勾选框将其标记为已完成。",

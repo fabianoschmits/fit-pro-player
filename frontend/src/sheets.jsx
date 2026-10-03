@@ -1090,6 +1090,12 @@ export function WorkoutRow({ w, onClick }) {
 }
 
 /* ============================ workout lifecycle ============================ */
+function stopWorkoutExecution() {
+  const ui = useUI.getState()
+  ui.stopRest(false)
+  ui.stopWork()
+  ui.stopManualSet()
+}
 export function startFlow(routineId, professionalExecutionId = null) {
   const st = S()
   if (shouldWeighBeforeWorkout(st)) {
@@ -1139,11 +1145,11 @@ function beginWorkoutFromHistory(workout, bw) {
       sets: historicalSets.length ? historicalSets : buildSets(st, full, { preferLast: true }),
     }
   })
+  stopWorkoutExecution()
   update(state => {
     queueAbandon(state)
     state.active = { id: uid(), d: todayISO(), start: null, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
   })
-  useUI.getState().stopRest()
   nav('/workout')
 }
 export function beginWorkout(routineId, bw, professionalExecutionId = null) {
@@ -1156,6 +1162,7 @@ export function beginWorkout(routineId, bw, professionalExecutionId = null) {
     const plan = nextPrescription(st, cfg, r)
     return { id: cfg.id, sg: cfg.sg, target: { ...cfg }, plan, sets: applyPrescription(buildSets(st, cfg), plan) }
   })
+  stopWorkoutExecution()
   update(s => {
     queueAbandon(s)
     const executionId = r?.assigned ? (professionalExecutionId || crypto.randomUUID()) : null
@@ -1164,7 +1171,6 @@ export function beginWorkout(routineId, bw, professionalExecutionId = null) {
     if (executionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId, assignmentId: r.assignmentId, type: 'start', dayKey: r.assignedDayKey, payload: { source: 'professional-program', workoutId: s.active.id, prescription: s.active.prescribedEntries, unit: s.unit } })
   })
   flushEvents()
-  useUI.getState().stopRest()
   nav('/workout')
 }
 const flushEvents = () => flushProfessionalEvents({ client: getBrowserSupabaseClient(), store: useStore, userId: useStore.getState().getActiveLocalScope().userId })
@@ -1174,9 +1180,8 @@ function queueAbandon(state) {
   enqueueProfessionalEvent(state, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: active.professionalExecutionId, type: 'abandon', payload: { source: 'professional-program', workoutId: active.id, prescription: active.prescribedEntries, entries: active.entries, unit: active.unit } })
 }
 export function abandonWorkout() {
+  stopWorkoutExecution()
   update(state => { queueAbandon(state); state.active = null })
-  useUI.getState().stopRest()
-  useUI.getState().stopWork()
   flushEvents()
 }
 function TopWeight({ entryIdx, close }) {
@@ -1306,7 +1311,7 @@ function doFinishWorkout() {
     if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, unit: A.unit, prescription: A.prescribedEntries, entries: A.entries } })
     s.active = null
   })
-  useUI.getState().stopRest()
+  stopWorkoutExecution()
   flushEvents()
   beep(snd(), 880, 0.15); beep(snd(), 1100, 0.15, 0.18); beep(snd(), 1320, 0.3, 0.36)
   ui().openSheet(close => <FinishSummary w={w} prs={prs} e1prs={e1prs} close={close} />, { kind: 'center', locked: true })

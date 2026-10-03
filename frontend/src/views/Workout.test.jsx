@@ -11,6 +11,12 @@ const mocks = vi.hoisted(() => {
     startRest: vi.fn(),
     startWork: vi.fn(),
     finishWorkEarly: vi.fn(),
+    startManualSet: vi.fn((sessionId, entryIdx, setIdx) => {
+      state.manualSet = { sessionId, entryIdx, setIdx, exerciseId: state.S.active.entries[entryIdx].id }
+      return true
+    }),
+    stopManualSet: vi.fn(() => { state.manualSet = null }),
+    stopWork: vi.fn(),
     stopRest: vi.fn(),
     topWeightSheet: vi.fn(),
     workoutCompleteSheet: vi.fn(),
@@ -24,6 +30,10 @@ const mocks = vi.hoisted(() => {
   state.uiSnapshot = () => ({
     work: state.work,
     timer: state.timer,
+    manualSet: state.manualSet,
+    startManualSet: state.startManualSet,
+    stopManualSet: state.stopManualSet,
+    stopWork: state.stopWork,
     startRest: state.startRest,
     stopRest: state.stopRest,
     startWork: state.startWork,
@@ -109,8 +119,15 @@ async function unmount() {
 }
 
 async function toggleSet(index) {
-  const checkbox = container.querySelectorAll('[role="checkbox"]')[index]
+  let checkbox = container.querySelectorAll('.set-action')[index]
   expect(checkbox).toBeTruthy()
+  if (checkbox.disabled) {
+    const play = checkbox.closest('.setrow').parentElement.querySelector('.set-start-action')
+    expect(play).toBeTruthy()
+    await act(async () => play.click())
+    await act(async () => root.render(<Workout />))
+    checkbox = container.querySelectorAll('.set-action')[index]
+  }
   await act(async () => { checkbox.dispatchEvent(new dom.Event('click', { bubbles: true })) })
 }
 
@@ -122,6 +139,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.timer = null
   mocks.work = null
+  mocks.manualSet = null
 })
 
 afterEach(async () => {
@@ -129,16 +147,45 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
-  it('puts execution guidance on the current completion field and switches it off during rest', async () => {
+  it('requires a fresh Play after navigating away from an executing set', async () => {
+    await mount([exercise('bench', [false]), exercise('row', [false])])
+    await act(async () => container.querySelector('.set-start-action').click())
+    await act(async () => root.render(<Workout />))
+    mocks.S.active.cur = 1
+    await act(async () => root.render(<Workout />))
+    expect(mocks.manualSet).toBeNull()
+    await act(async () => root.render(<Workout />))
+    expect(container.querySelector('.chk.is-executing')).toBeNull()
+    expect(container.querySelector('.set-start-action')).toBeTruthy()
+    expect(mocks.S.active.entries[0].sets[0].done).toBe(false)
+  })
+
+  it('still finishes the workout after a completed warm-up is removed', async () => {
+    await mount([exercise('bench', [], { asked: true, sets: [
+      { w: 20, r: 8, done: true, phase: 'warmup' }, { w: 60, r: 8, done: false },
+    ] })])
+    await act(async () => container.querySelector('.setrow .iconbtn[aria-label="Remover série"]').click())
+    await act(async () => root.render(<Workout />))
+    await toggleSet(0)
+    expect(mocks.workoutCompleteSheet).toHaveBeenCalledTimes(1)
+  })
+  it('waits for Play, shows Stop during execution, and waits for another Play after rest', async () => {
     await mount([exercise('plain-bench', [false, false])])
-    const row = container.querySelector('.setrow.is-current')
-    expect(row.querySelector('[role="checkbox"] svg')).toBeTruthy()
-    const hint = container.querySelector('.set-execution-hint')
-    expect(hint).toBeTruthy()
-    expect(hint.textContent).toContain('Executando série')
-    expect(row.querySelector('[role="checkbox"]').getAttribute('aria-describedby')).toBe(hint.id)
-    expect(row.querySelector('[role="checkbox"]').classList.contains('is-executing')).toBe(true)
-    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(1)
+    expect(container.querySelector('.exercise-phase')).toBeNull()
+    expect(container.querySelector('.chk.is-executing')).toBeNull()
+    expect(container.querySelector('.setrow.is-current .set-action').disabled).toBe(true)
+    const play = container.querySelector('.set-start-action')
+    expect(play).toBeTruthy()
+    expect(play.nextElementSibling.classList.contains('setrow')).toBe(true)
+    await act(async () => play.click())
+    await act(async () => root.render(<Workout />))
+    expect(mocks.startManualSet).toHaveBeenCalledWith(`${mocks.S.active.id}:${mocks.S.active.start}`, 0, 0)
+    const stop = container.querySelector('.chk.is-executing')
+    expect(stop.getAttribute('aria-label')).toContain('Parar série')
+    expect(stop.getAttribute('role')).toBeNull()
+    expect(stop.getAttribute('aria-describedby')).toBe(container.querySelector('.set-execution-hint').id)
+    expect(container.querySelector('.set-execution-hint').textContent).toContain('Executando série')
+    expect(mocks.S.active.entries[0].sets[0].done).toBe(false)
     await toggleSet(0)
     expect(mocks.S.active.entries[0].sets.map(set => set.done)).toEqual([true, false])
     expect(mocks.startRest).toHaveBeenCalledWith(90)
@@ -149,15 +196,15 @@ describe('Workout set completion flow', () => {
     expect(container.querySelector('.set-execution-hint').textContent).toContain('Descansando')
     mocks.timer = null
     await act(async () => root.render(<Workout />))
-    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(1)
+    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(0)
+    expect(container.querySelector('.set-start-action')).toBeTruthy()
+    expect(mocks.startManualSet).toHaveBeenCalledTimes(1)
   })
 
   it('guides execution, completes only the next set, and switches to rest guidance', async () => {
     await mount([exercise('plain-bench', [false, false])])
-    expect(container.textContent).toContain('Execute a série 1 de 2')
-    const action = [...container.querySelectorAll('button')].find(b => b.textContent === 'Concluir série e descansar')
-    expect(action).toBeTruthy()
-    await act(async () => action.click())
+    expect(container.querySelectorAll('.set-execution-hint')).toHaveLength(1)
+    await toggleSet(0)
     expect(mocks.S.active.entries[0].sets.map(s => s.done)).toEqual([true, false])
     expect(mocks.startRest).toHaveBeenCalledWith(90)
     mocks.timer = { left: 75, total: 90 }
@@ -167,22 +214,23 @@ describe('Workout set completion flow', () => {
     expect(container.querySelector('.exercise-phase button')).toBeNull()
     mocks.timer = null
     await act(async () => root.render(<Workout />))
-    expect(container.textContent).toContain('Execute a série 2 de 2')
-    expect(container.querySelector('.exercise-phase button').textContent).toBe('Concluir treino')
+    expect(container.querySelector('.set-start-action')).toBeTruthy()
+    expect(container.querySelector('.chk.is-executing')).toBeNull()
   })
 
   it('guides a superset to the next member without starting rest', async () => {
     await mount([exercise('plain-bench', [false, false], { sg: 'pair' }), exercise('plain-squat', [false, false], { sg: 'pair' })])
-    const action = [...container.querySelectorAll('button')].find(b => b.textContent === 'Concluir série e ir ao próximo exercício')
-    expect(action).toBeTruthy()
-    await act(async () => action.click())
+    await toggleSet(0)
     expect(mocks.S.active.cur).toBe(1)
     expect(mocks.startRest).not.toHaveBeenCalled()
+    await act(async () => root.render(<Workout />))
+    expect(container.querySelectorAll('.set-start-action')).toHaveLength(1)
+    expect(container.querySelector('.chk.is-executing')).toBeNull()
   })
 
   it('offers completion on the last set without starting a rest timer', async () => {
     await mount([exercise('plain-bench', [true, false], { asked: true })])
-    await act(async () => container.querySelector('.exercise-phase button').click())
+    await toggleSet(1)
     expect(mocks.S.active.entries[0].sets.every(set => set.done)).toBe(true)
     expect(mocks.workoutCompleteSheet).toHaveBeenCalledTimes(1)
     expect(mocks.startRest).not.toHaveBeenCalled()
@@ -190,8 +238,8 @@ describe('Workout set completion flow', () => {
 
   it('starts the timed set without immediately recording completion', async () => {
     await mount([exercise('plank', [false, false], { target: { mode: 'time' }, sets: [{ sec: 45, done: false }, { sec: 45, done: false }] })])
-    expect(container.querySelector('.exercise-phase button').textContent).toBe('Iniciar série')
-    await act(async () => container.querySelector('.exercise-phase button').click())
+    expect(container.querySelector('.set-start-action').textContent).toContain('Iniciar série')
+    await act(async () => container.querySelector('.set-start-action').click())
     expect(mocks.startWork).toHaveBeenCalledWith(45, expect.any(String), expect.any(Function), expect.objectContaining({ entryIdx: 0, setIdx: 0 }))
     expect(mocks.S.active.entries[0].sets[0].done).toBe(false)
     expect(mocks.startRest).not.toHaveBeenCalled()
@@ -203,6 +251,8 @@ describe('Workout set completion flow', () => {
     mocks.work = { phase: 'work', entryIdx: 0, setIdx: 0, left: 30, total: 45 }
     await act(async () => root.render(<Workout />))
     expect(container.querySelector('.set-execution-hint').textContent).toContain('Executando série')
+    expect(container.querySelector('.work-set-overlay').previousElementSibling.classList.contains('exercise-input-card')).toBe(true)
+    expect(container.querySelector('.work-set-overlay__backdrop')).toBeNull()
     await act(async () => container.querySelector('.chk.is-executing').click())
     expect(mocks.finishWorkEarly).toHaveBeenCalledTimes(1)
     expect(mocks.S.active.entries[0].sets[0].done).toBe(false)
@@ -277,13 +327,14 @@ describe('Workout set completion flow', () => {
     expect(container.textContent).toContain('0:00')
     expect(startWorkoutButton()).toBeTruthy()
     expect(container.querySelector('.exercise-phase')).toBeNull()
-    expect(container.querySelector('[role="checkbox"]')?.disabled).toBe(true)
+    expect(container.querySelector('.set-action')?.disabled).toBe(true)
 
     await act(async () => { startWorkoutButton().dispatchEvent(new dom.Event('click', { bubbles: true })) })
 
     expect(mocks.S.active.start).toEqual(expect.any(Number))
     await act(async () => { root.render(React.createElement(Workout)) })
-    expect(container.querySelector('[role="checkbox"]')?.disabled).toBe(false)
+    expect(container.querySelector('.set-start-action')?.disabled).toBe(false)
+    expect(container.querySelector('.set-action')?.disabled).toBe(true)
   })
 
   it('locks an entire opening superset behind one start action', async () => {
@@ -296,7 +347,7 @@ describe('Workout set completion flow', () => {
 
     const starts = [...container.querySelectorAll('button')].filter(button => button.textContent.includes('Começar treino'))
     expect(starts).toHaveLength(1)
-    expect([...container.querySelectorAll('[role="checkbox"]')].every(checkbox => checkbox.disabled)).toBe(true)
+    expect([...container.querySelectorAll('.set-action')].every(checkbox => checkbox.disabled)).toBe(true)
   })
 
   it('starts rest between sets but finishes immediately after the final set of the workout', async () => {
@@ -320,7 +371,7 @@ describe('Workout set completion flow', () => {
 
   it('uses the assigned exercise rest instead of the global timer default', async () => {
     await mount([exercise('0025', [false, false], { target: { mode: 'reps', reps: 8, weight: 40, rest: 25 } })])
-    await act(async () => container.querySelector('[role="checkbox"]').click())
+    await toggleSet(0)
     expect(mocks.startRest).toHaveBeenCalledWith(25)
   })
 
@@ -350,7 +401,8 @@ describe('Workout set completion flow', () => {
       }),
     ])
 
-    await toggleSet(0)
+    await act(async () => container.querySelector('.set-start-action').click())
+    await act(async () => mocks.startWork.mock.calls[0][2](30))
 
     expect(mocks.startRest).toHaveBeenCalledWith(90, expect.any(Function))
     const afterRest = mocks.startRest.mock.calls[0][1]

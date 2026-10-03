@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Stop set": "Остановить подход",
+  "Tap play to start this set.": "Нажмите кнопку запуска, чтобы начать этот подход.",
+  "When rest ends, tap play to start the next set.": "После отдыха нажмите кнопку запуска, чтобы начать следующий подход.",
+  "Tap stop when you finish this set.": "Закончив этот подход, нажмите кнопку остановки, чтобы отметить его завершение.",
   "Perform set {0} of {1}": "Выполните подход {0} из {1}",
   "Performing set": "Выполнение подхода",
   "Tap the highlighted check field when you finish this set.": "Закончив этот подход, нажмите на выделенный флажок, чтобы отметить его завершение.",

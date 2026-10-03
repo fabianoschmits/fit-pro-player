@@ -49,11 +49,20 @@ let workTick = null
 let workDone = null
 let workRestDone = null
 
+const validManualSet = (manualSet, active) => {
+  if (!manualSet || !active?.start || manualSet.sessionId !== `${active.id}:${active.start}`) return false
+  if (!Number.isInteger(manualSet.entryIdx) || manualSet.entryIdx < 0 || !Number.isInteger(manualSet.setIdx) || manualSet.setIdx < 0) return false
+  const entry = active.entries?.[manualSet.entryIdx]
+  const row = entry?.sets?.[manualSet.setIdx]
+  return !!row && !row.done && entry.id === manualSet.exerciseId
+}
+
 export const useUI = create((set, get) => ({
   sheets: [],          // { id, render:(close)=>JSX, kind:'sheet'|'center', locked }
   toastMsg: '',
   timer: null,         // rest countdown between sets — { left, total, endsAt }
   work: null,          // work countdown DURING a timed set (issue #16) — { left, total, endsAt, label }
+  manualSet: null,     // transient execution — { sessionId, entryIdx, setIdx, exerciseId }
   profilePreview: null,
   setProfilePreview(profilePreview) { set({ profilePreview }) },
 
@@ -72,7 +81,23 @@ export const useUI = create((set, get) => ({
     toastTm = setTimeout(() => set({ toastMsg: '' }), 2200)
   },
 
+  startManualSet(sessionId, entryIdx, setIdx) {
+    const active = useStore.getState().S.active
+    if (!active?.start || sessionId !== `${active.id}:${active.start}`) return false
+    if (!Number.isInteger(entryIdx) || entryIdx < 0 || !Number.isInteger(setIdx) || setIdx < 0) return false
+    const entry = active.entries?.[entryIdx]
+    const row = entry?.sets?.[setIdx]
+    if (!row || row.done) return false
+    const { timer, work, manualSet } = get()
+    if (timer || work?.phase === 'work' || work?.phase === 'rest' || validManualSet(manualSet, active)) return false
+    if (work?.phase === 'done') get().stopWork()
+    set({ manualSet: { sessionId, entryIdx, setIdx, exerciseId: entry.id } })
+    return true
+  },
+  stopManualSet() { set({ manualSet: null }) },
+
   startRest(sec, onDone) {
+    get().stopManualSet()
     get().stopRest(false)
     const wk = get().work
     if (wk) {
@@ -146,6 +171,7 @@ export const useUI = create((set, get) => ({
      Times the set itself inside the workout overlay; rest after a timed hold stays in the
      same overlay so the animation stays visible above the clock. */
   startWork(sec, label, onDone, opts = {}) {
+    if (get().manualSet && !validManualSet(get().manualSet, useStore.getState().S.active)) get().stopManualSet()
     get().stopWork()
     get().stopRest()
     const total = Math.max(1, Math.round(sec) || 1)
@@ -177,7 +203,6 @@ export const useUI = create((set, get) => ({
           vibrate([200, 100, 200]); maybeRestNotification(); get().toast(t('Rest over — next set!'))
           const cb = workRestDone
           workRestDone = null
-          cancelPushRestTimer()
           get().stopWork()
           if (cb) cb()
           return
@@ -213,6 +238,7 @@ export const useUI = create((set, get) => ({
     const done = workDone
     workDone = null
     vibrate(30)
+    set({ work: { ...wk, phase: 'done', left: 0 } })
     if (done) done(elapsed)
   },
   skipWorkRest() {
@@ -220,7 +246,6 @@ export const useUI = create((set, get) => ({
     if (!wk || wk.phase !== 'rest') return
     const cb = workRestDone
     workRestDone = null
-    cancelPushRestTimer()
     get().stopWork()
     if (cb) cb()
   },

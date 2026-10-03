@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // German UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Stop set": "Satz stoppen",
+  "Tap play to start this set.": "Tippe auf Play, um diesen Satz zu starten.",
+  "When rest ends, tap play to start the next set.": "Tippe nach der Pause auf Play, um den nächsten Satz zu starten.",
+  "Tap stop when you finish this set.": "Tippe auf Stopp, wenn du diesen Satz beendet hast.",
   "Perform set {0} of {1}": "Führe Satz {0} von {1} aus",
   "Performing set": "Satz wird ausgeführt",
   "Tap the highlighted check field when you finish this set.": "Tippe auf das hervorgehobene Kontrollkästchen, wenn du diesen Satz beendet hast.",

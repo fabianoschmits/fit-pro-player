@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Stop set": "세트 중지",
+  "Tap play to start this set.": "재생을 눌러 이 세트를 시작하세요.",
+  "When rest ends, tap play to start the next set.": "휴식이 끝나면 재생을 눌러 다음 세트를 시작하세요.",
+  "Tap stop when you finish this set.": "이 세트를 마치면 중지를 눌러 완료하세요.",
   "Perform set {0} of {1}": "{1}세트 중 {0}세트를 수행하세요",
   "Performing set": "세트 수행 중",
   "Tap the highlighted check field when you finish this set.": "세트를 마치면 강조된 체크 칸을 눌러 완료하세요.",

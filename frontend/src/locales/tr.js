@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Stop set": "Seti durdur",
+  "Tap play to start this set.": "Bu seti başlatmak için oynat düğmesine dokunun.",
+  "When rest ends, tap play to start the next set.": "Dinlenme bitince sonraki seti başlatmak için oynat düğmesine dokunun.",
+  "Tap stop when you finish this set.": "Bu seti bitirdiğinizde tamamlamak için durdur düğmesine dokunun.",
   "Perform set {0} of {1}": "{1} setten {0}. seti yapın",
   "Performing set": "Set yapılıyor",
   "Tap the highlighted check field when you finish this set.": "Bu seti bitirdiğinizde tamamlamak için vurgulanan onay kutusuna dokunun.",

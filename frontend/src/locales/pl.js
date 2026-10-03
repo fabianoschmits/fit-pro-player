@@ -2,6 +2,10 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Polish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Stop set": "Zatrzymaj serię",
+  "Tap play to start this set.": "Dotknij przycisku odtwarzania, aby rozpocząć tę serię.",
+  "When rest ends, tap play to start the next set.": "Po odpoczynku dotknij przycisku odtwarzania, aby rozpocząć następną serię.",
+  "Tap stop when you finish this set.": "Po wykonaniu tej serii dotknij przycisku Stop, aby ją zakończyć.",
   "Perform set {0} of {1}": "Wykonaj serię {0} z {1}",
   "Performing set": "Wykonywanie serii",
   "Tap the highlighted check field when you finish this set.": "Po wykonaniu tej serii dotknij wyróżnionego pola, aby ją zakończyć.",
