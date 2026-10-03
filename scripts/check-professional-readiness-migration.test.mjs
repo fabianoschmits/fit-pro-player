@@ -18,14 +18,19 @@ test('authenticated professional database boundaries and concurrent mutation ret
   assert.ok(available, 'A complete local PostgreSQL runtime is required (PG_BIN)')
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fitpp-readiness-'))
   const data = path.join(dir, 'cluster')
+  const serverLog = path.join(dir, 'server.log')
   const port = await freePort()
   const run = (name, args, input) => {
     const result = spawnSync(executable(name), args, { input, encoding: 'utf8', windowsHide: true, stdio: name === 'pg_ctl' ? 'ignore' : 'pipe', maxBuffer: 8 * 1024 * 1024 })
-    assert.equal(result.status, 0, `${name}: ${result.stderr || result.stdout || result.error}`)
+    const serverDetail = name === 'pg_ctl' && result.status !== 0 && fs.existsSync(serverLog)
+      ? '\n' + fs.readFileSync(serverLog, 'utf8') : ''
+    assert.equal(result.status, 0, `${name}: ${result.stderr || result.stdout || result.error || `exit ${result.status}`}${serverDetail}`)
     return result.stdout
   }
   run('initdb', ['-D', data, '-U', 'postgres', '-A', 'trust', '--encoding=UTF8', '--no-locale'])
-  run('pg_ctl', ['-D', data, '-l', path.join(dir, 'server.log'), '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start'])
+  // All clients use TCP; avoid the system socket directory owned by postgres on Linux.
+  fs.appendFileSync(path.join(data, 'postgresql.conf'), "\nunix_socket_directories = ''\n")
+  run('pg_ctl', ['-D', data, '-l', serverLog, '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start'])
   const args = ['-X', '-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At']
   const sql = input => run('psql', args, input)
   const asyncSql = input => new Promise((resolve, reject) => {
