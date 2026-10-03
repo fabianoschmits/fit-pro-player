@@ -66,4 +66,8 @@ Files: package*.json, frontend/package*.json, .github/workflows, docs, README/CO
 ### Task 7: Revisão e publicação Git
 - [x] Revisor independente da alteração completa; corrigir pendências e repetir verificações pertinentes.
 - [x] Registrar relatório de conclusão com checks e limitações verificadas.
-- [ ] Commit, push origin master sem force, confirmar hash remoto e git limpo.
+- [x] Commit, push origin master sem force, confirmar hash remoto e git limpo.
+
+## Aplicação remota posterior
+
+Após a entrega Git, o usuário autorizou explicitamente aplicar a migration usando as credenciais do `.env`. A migration 014 foi aplicada e validada no projeto Fpp. Registro: `docs/SUPABASE_DEPLOYMENT_2026-10-02.md`.

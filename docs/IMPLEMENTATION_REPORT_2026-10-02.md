@@ -60,6 +60,6 @@ As correções e melhorias do plano aprovado foram integradas na branch `master`
 
 ## Próxima etapa operacional
 
-A migration `202610020014_professional_readiness.sql` precisa ser aplicada no Supabase de homologação antes de publicar esse frontend. Nenhum banco remoto foi alterado nesta implementação. Testes de navegador usam respostas Supabase controladas; o banco foi exercitado localmente com usuários autenticados e concorrência real.
+A migration `202610020014_professional_readiness.sql` foi aplicada posteriormente no projeto Supabase **Fpp**, após autorização explícita do usuário. O histórico remoto, as constraints, permissões e RPCs foram validados; não há migrations pendentes. Veja o [registro da aplicação remota](SUPABASE_DEPLOYMENT_2026-10-02.md). Testes de navegador usam respostas Supabase controladas; os testes de usuários autenticados e concorrência foram executados no banco local.
 
 Para liberar a aplicação, faça a aceitação integrada no Supabase de homologação e em dispositivos Android/iOS reais. APK/IPA, assinatura e publicação em lojas exigem Android SDK/Xcode e credenciais. O CI remoto só pode ser confirmado após executar no GitHub. O procedimento está em [PROFESSIONAL_READINESS.md](PROFESSIONAL_READINESS.md).
