@@ -1230,7 +1230,11 @@ h4.sec{
    bar take the top row and the controls take their own. The work timer keeps a single row —
    it only ever has two buttons. */
 #timer.rest{flex-direction:column;align-items:stretch;gap:8px}
-#timer.rest .head{display:flex;align-items:center;gap:10px}
+#timer.rest .head{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px 10px;min-width:0}
+#timer.rest .rest-label{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+#timer.rest .rest-label span{max-width:100%;text-transform:none;letter-spacing:0}
+#timer.rest .t{white-space:nowrap;text-align:right}
+#timer.rest .bar{grid-column:1 / -1;min-width:0}
 #timer.rest .acts{display:flex;align-items:center;gap:6px}
 #timer.rest .acts .btn{padding-top:9px;padding-bottom:9px}
 #timer.rest .acts .skip{margin-left:auto;min-width:84px}
