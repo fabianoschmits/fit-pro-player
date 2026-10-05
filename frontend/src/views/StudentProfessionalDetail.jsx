@@ -20,6 +20,7 @@ export default function StudentProfessionalDetail() {
   return <DetailWorkspace key={`${auth.status}:${auth.user?.id}:${professionalId}`} professionalId={professionalId} />
 }
 function DetailWorkspace({ professionalId }) {
+  const auth = useAuth(); const callerId = auth.user?.id
   const navigate = useNavigate(); const [params] = useSearchParams()
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const alive = useRef(false); const mutationPending = useRef(false); const currentQuery = useRef(params.toString()); currentQuery.current = params.toString()
@@ -36,14 +37,16 @@ function DetailWorkspace({ professionalId }) {
     if (!data?.relationship?.id || mutationPending.current) return
     mutationPending.current = true
     const requestQuery = currentQuery.current
+    const requestScope = useStore.getState().getScopeToken()
     const revokedAssignments = new Set((data.materials || []).filter(item => item.status === 'active').map(item => item.assignmentId))
     setSaving(true); setActionError('')
     try {
       await withTimeout(repo.revokeRelationship(data.relationship.id), 10000)
-      if (!alive.current) return
-      const state = useStore.getState().S
-      // Reconcile the revoked assignment regardless of section/navigation; preserve a newer program.
-      if (state.assignedProgram?.assignmentId && revokedAssignments.has(state.assignedProgram.assignmentId)) useStore.getState().replaceState(clearAssignedProgramFromState({ ...state }))
+      const store = useStore.getState(); const state = store.S
+      const ownsState = requestScope.scope.kind === 'account' && requestScope.scope.userId === callerId && store.isScopeCurrent(requestScope)
+      // Local reconciliation outlives this screen, but never its initiating account/store scope.
+      if (ownsState && state.assignedProgram?.assignmentId && revokedAssignments.has(state.assignedProgram.assignmentId)) store.replaceState(clearAssignedProgramFromState({ ...state }))
+      if (!alive.current || !ownsState) return
       if (currentQuery.current === requestQuery) navigate('/student/professionals', { replace: true })
       else { setConfirm(false); await refresh() }
     }
