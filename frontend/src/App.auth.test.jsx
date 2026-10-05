@@ -10,15 +10,16 @@ const mocks = vi.hoisted(() => ({
   enterApp: vi.fn(),
   openAuthSheet: vi.fn(),
   ready: false,
+  onboardingDone: true,
 }));
 
 vi.mock('./auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('./components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }));
-vi.mock('./views/Landing.jsx', () => ({ default: () => <main className="landing-page" /> }));
+vi.mock('./views/Landing.jsx', () => ({ default: ({ invitePath }) => <main className="landing-page" data-invite={String(invitePath)} /> }));
 vi.mock('./store/useStore.js', () => ({
   useStore: Object.assign(selector => {
     const state = {
-    S: { theme: 'dark', accent: 'lime', lang: 'pt', onboardingDone: true, active: null, keepAwake: false },
+    S: { theme: 'dark', accent: 'lime', lang: 'pt', onboardingDone: mocks.onboardingDone, active: null, keepAwake: false },
     user: null,
     ready: mocks.ready,
     boot: mocks.boot,
@@ -40,6 +41,7 @@ beforeEach(() => {
   globalThis.document = dom.document;
   globalThis.history = dom.history;
   globalThis.location = dom.location;
+  globalThis.sessionStorage = dom.sessionStorage;
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   container = document.createElement('div');
   document.body.append(container);
@@ -49,6 +51,7 @@ beforeEach(() => {
   mocks.enterApp.mockReset();
   mocks.openAuthSheet.mockReset();
   mocks.ready = false;
+  mocks.onboardingDone = true;
 });
 
 afterEach(async () => {
@@ -57,6 +60,25 @@ afterEach(async () => {
 });
 
 describe('App Auth boot coordination', () => {
+  it.each(['/connect', '/student/professionals/add', '/connect?code=A1B2C3D4E5', '/student/professionals?code=A1B2C3D4E5', '/student/professionals/add?code=A1B2C3D4E5', '/invite/A1B2C3D4E5'])('retains anonymous invitation context through boot for %s', async route => {
+    window.location.hash = `#${route}`;
+    mocks.ready = true;
+    mocks.auth = { status: 'anonymous', user: null };
+    await act(async () => root.render(<App />));
+    await act(async () => { await vi.dynamicImportSettled(); });
+    expect(container.querySelector('.landing-page')?.dataset.invite).toBe('true');
+    expect(sessionStorage.getItem('fpp-pending-invite')).toBe(route.includes('A1B2C3D4E5') ? 'A1B2C3D4E5' : null);
+    expect(window.location.hash).toBe(`#${route}`);
+    if (!route.includes('A1B2C3D4E5')) {
+      mocks.auth = { status:'authenticated', user:{id:'supabase-user'} };
+      mocks.onboardingDone = false;
+      await act(async () => root.render(<App />));
+      await act(async () => { await vi.dynamicImportSettled(); });
+      expect(window.location.hash).toBe('#/student/professionals/add');
+      expect(container.querySelector('#student-invite-code')?.value).toBe('');
+      expect(container.textContent).not.toContain('Confira antes de vincular');
+    }
+  });
   it('waits for Auth and then disables legacy boot for a Supabase session', async () => {
     await act(async () => root.render(<App />));
     expect(mocks.boot).not.toHaveBeenCalled();

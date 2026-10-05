@@ -68,7 +68,8 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .management-workspace{display:grid;grid-template-columns:208px minmax(0,1fr);gap:var(--management-gap);align-items:start}
 .management-workspace-solo{grid-template-columns:minmax(0,1fr);max-width:760px;margin-inline:auto}
 .management-sidebar{min-width:0;position:sticky;top:24px}
-.management-content{min-width:0;display:grid;gap:20px;align-content:start}
+.management-content{min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-content:start}
+.management-layout .professional-program-editor{min-width:0}
 .management-layout .management-nav{display:flex;flex-direction:column;gap:4px;margin:0;padding:8px 12px 8px 0;border:0;border-right:1px solid var(--sep);border-radius:0;background:none;overflow:visible}
 .management-layout .management-nav a{display:flex;flex:none;align-items:center;justify-content:flex-start;min-height:46px;padding:10px 14px;border-radius:10px;color:var(--management-muted);font-size:15px;font-weight:550;text-decoration:none;white-space:normal;line-height:1.4;overflow-wrap:anywhere}
 .management-layout .management-nav a[aria-current="page"]{background:var(--acc-soft);color:var(--label);font-weight:700;box-shadow:inset 3px 0 var(--acc)}

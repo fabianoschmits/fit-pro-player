@@ -17,7 +17,12 @@ export default function More() {
   const account = auth.status === 'authenticated' ? auth.user : null
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const [professional, setProfessional] = useState(false)
-  useEffect(() => { if (account?.id) repo.professionalRole(account.id).then(setProfessional).catch(() => setProfessional(false)); else setProfessional(false) }, [account?.id, repo])
+  useEffect(() => {
+    let current = true
+    setProfessional(false)
+    if (account?.id) repo.professionalRole(account.id).then(value => { if (current) setProfessional(value) }).catch(() => { if (current) setProfessional(false) })
+    return () => { current = false }
+  }, [account?.id, repo])
 
   return <div className="narrow">
     <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
@@ -33,11 +38,11 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/history')} />
       <Row icon="personCircle" iconTint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo"
         accessory="chevron" onClick={() => nav('/body-progress')} />
-      {professional && <Row icon="personCircle" iconTint="var(--purple)" title="Perfil profissional" subtitle="Nome, especialidades e registro informado"
-        accessory="chevron" onClick={() => nav('/professional-profile')} />}
-      {professional && <Row icon="personCircle" iconTint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas"
+      {professional && <Row icon="personCircle" iconTint="var(--purple)" title={t('Perfil profissional')} subtitle={t('Sua apresentação para os alunos.')}
+        accessory="chevron" onClick={() => nav('/professional/profile')} />}
+      {professional && <Row icon="personCircle" iconTint="var(--purple)" title={t('Área profissional')} subtitle={t('Alunos, convites e programas')}
         accessory="chevron" onClick={() => nav('/professional')} />}
-      {account && <Row icon="personCircle" iconTint="var(--teal)" title="Meus profissionais" subtitle="Vínculos e convites recebidos"
+      {account && <Row icon="personCircle" iconTint="var(--teal)" title={t('Meus profissionais')} subtitle={t('Programas e prescrições dos seus profissionais')}
         accessory="chevron" onClick={() => nav('/student/professionals')} />}
     </Section>
 

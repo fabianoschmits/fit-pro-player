@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed, stateFixture } from './fixtures.test.js'
+import { seed, stateFixture, USER } from './fixtures.test.js'
 
 for (const width of [320, 390]) {
   test(`workout adjustments stay below series and leave execution unobstructed at ${width}px`, async ({page}) => {
@@ -227,20 +227,22 @@ test('student accepts invite, receives program and sends recorded workout events
   const plan=Object.fromEntries(['sunday','monday','tuesday','wednesday','thursday','friday','saturday'].map(day=>[day,[{exerciseId:'0025',sets:1,reps:10,load:20,rest:15}]]))
   const version={id:versionId,program_id:programId,version_number:1,weekly_plan:plan,published_at:'2026-10-02T12:00:00Z'}
   let accepted=false;const events=[]
+  const professionalId='77777777-7777-4777-8777-777777777777'
   await seed(page,{authenticated:true,rpc:{
     preview_professional_invite:[{professional_name:'Treinador de teste',bio:'Força e consistência',verification_status:'unverified',specialties:[]}],
     accept_professional_invite:()=>{accepted=true;return{id:'66666666-6666-4666-8666-666666666666'}},
     professional_student_relationships:()=>accepted?[{id:'66666666-6666-4666-8666-666666666666',status:'active',created_at:'2026-10-02T12:00:00Z'}]:[],
-    program_assignments:()=>accepted?[{id:assignmentId,program_id:programId,version_id:versionId,status:'active',created_at:'2026-10-02T12:00:00Z'}]:[],
+    student_professional_summaries:()=>accepted?[{professional_user_id:professionalId,professional_name:'Treinador de teste',relationship_id:'66666666-6666-4666-8666-666666666666',linked_at:'2026-10-02T12:00:00Z',active_program_title:'Programa recebido'}]:[],
+    program_assignments:()=>accepted?[{id:assignmentId,student_user_id:USER,professional_user_id:professionalId,program_id:programId,version_id:versionId,status:'active',created_at:'2026-10-02T12:00:00Z'}]:[],
     program_versions:[version],
-    student_program_overview:()=>accepted?{program:{title:'Programa recebido'},professional:{name:'Treinador de teste'},version:{weeklyPlan:plan,versionNumber:1},executions:[]}:{},
+    student_program_overview:()=>accepted?{assignment:{id:assignmentId},program:{title:'Programa recebido'},professional:{id:professionalId,name:'Treinador de teste'},version:{id:versionId,weeklyPlan:plan,versionNumber:1},executions:[]}:{},
     start_workout_execution:args=>{events.push({type:'start',args});return{id:args.p_execution_id,status:'in_progress'}},
     complete_workout_execution:args=>{events.push({type:'complete',args});return{id:args.p_execution_id,status:'completed'}},
   }})
   await page.goto('/#/invite/A1B2C3D4E5')
   await expect(page.getByText('Treinador de teste',{exact:true})).toBeVisible()
   await page.getByRole('button',{name:'Vincular a este profissional',exact:true}).click()
-  await expect(page.getByText('Programa recebido',{exact:true})).toBeVisible()
+  await expect(page.getByText('Programa recebido',{exact:true}).first()).toBeVisible()
   await page.getByRole('button',{name:'Iniciar',exact:true}).first().click()
   await expect(page.locator('.workout-session-title')).toBeVisible()
   await page.locator('.active-workout').getByRole('button',{name:'Começar treino',exact:true}).click()
@@ -293,7 +295,8 @@ test('professional editor keeps a recoverable draft and publishes an explicit pr
   let published
   await seed(page,{professional:true,rpc:{programs:[program],program_versions:[],publish_program_version:args=>{published=args;return{id:'44444444-4444-4444-8444-444444444444',version_number:1}}}})
   await page.goto('/#/professional/programs')
-  await page.getByRole('button',{name:'Editar programa',exact:true}).click()
+  await page.getByRole('link',{name:/Programa de teste/}).click()
+  await page.getByRole('link',{name:'Editar programa',exact:true}).click()
   await page.getByRole('button',{name:'Adicionar exercício',exact:true}).click()
   await page.getByRole('dialog').getByRole('textbox').fill('supino')
   await page.getByRole('dialog').getByRole('button',{name:'Adicionar',exact:true}).first().click()
@@ -301,7 +304,7 @@ test('professional editor keeps a recoverable draft and publishes an explicit pr
   await expect(page.locator('.program-fields')).toBeVisible()
   expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2)).toBe(false)
   await page.screenshot({path:testInfo.outputPath('professional-editor.png'),fullPage:true})
-  await page.reload();await page.getByRole('button',{name:'Editar programa',exact:true}).click()
+  await page.reload();await expect(page).toHaveURL(new RegExp(`professional/programs/${program.id}/edit`))
   await expect(page.getByText('Rascunho recuperado.',{exact:true})).toBeVisible()
   await expect(page.locator('.program-fields')).toBeVisible()
   await page.getByRole('button',{name:'Publicar nova versão',exact:true}).click()

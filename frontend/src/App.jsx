@@ -224,20 +224,22 @@ function Shell() {
   const authed = (authenticated || isGuest) && appEntered
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
-  const invitePath = loc.pathname.startsWith('/invite/')
+  const inviteEntry = ['/connect', '/student/professionals', '/student/professionals/add'].includes(loc.pathname)
+  const queryInviteCode = inviteEntry ? new URLSearchParams(loc.search).get('code') || '' : ''
+  const invitePath = loc.pathname.startsWith('/invite/') || loc.pathname === '/connect' || loc.pathname === '/student/professionals/add' || (inviteEntry && !!queryInviteCode)
   const inviteAcceptedPath = new URLSearchParams(loc.search).get('invite') === 'accepted'
   const inviteAuthenticated = invitePath && authenticated && ready
-  const pendingInviteCode = loc.pathname.match(/^\/invite\/([^/]+)/)?.[1] || ''
+  const pendingInviteCode = loc.pathname.match(/^\/invite\/([^/]+)/)?.[1] || queryInviteCode
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
   useEffect(() => { setNav(navigate) }, [navigate])
   useEffect(() => {
     if (pendingInviteCode) sessionStorage.setItem('fpp-pending-invite', pendingInviteCode)
   }, [pendingInviteCode])
   useEffect(() => {
-    if (!ready || !authenticated || !appEntered || loc.pathname.startsWith('/invite/')) return
+    if (!ready || !authenticated || !appEntered || invitePath) return
     const pending = sessionStorage.getItem('fpp-pending-invite')
     if (pending) navigate(`/invite/${encodeURIComponent(pending)}`, { replace: true })
-  }, [ready, authenticated, appEntered, loc.pathname, navigate])
+  }, [ready, authenticated, appEntered, invitePath, loc.pathname, navigate])
   useEffect(() => {
     if (auth.status === 'initializing') return
     const result = boot({ supabaseUserId: auth.status === 'authenticated' ? auth.user?.id || null : null })
