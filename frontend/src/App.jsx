@@ -8,7 +8,7 @@ import { useUI } from './store/useUI.js'
 import { bindUI } from './components/ui.jsx'
 import { ACCENTS } from './lib/format.js'
 import { DEFAULT_LANG, setLang, useLang, t } from './lib/i18n.js'
-import { setNav } from './lib/nav.js'
+import { setNav, nav } from './lib/nav.js'
 import { initBackButton } from './lib/back.js'
 import { useWakeLock } from './lib/wakelock.js'
 import Icon from './components/Icon.jsx'
@@ -25,6 +25,13 @@ import Landing from './views/Landing.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
+import { startNotificationCoordinator, syncNotificationPreferences, syncNotificationVisibility, reconnectNotifications, refreshNotificationReadiness, hasBackgroundNotifications, useNotificationStatus } from './lib/notification-client.js'
+import { createForegroundNotificationScheduler } from './lib/foreground-notification-scheduler.js'
+import { createNativePushAdapter } from './lib/native-push.js'
+import { MOBILE } from './lib/mobile.js'
+import { Capacitor } from '@capacitor/core'
+import { cancelNativeTimer, scheduleNativeTimer } from './lib/native-timer-notifications.js'
+import { normalizeNotificationPreferences } from './lib/notification-preferences.js'
 const loadHome = () => import('./views/Home.jsx')
 const loadPlan = () => import('./views/Plan.jsx')
 const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
@@ -272,6 +279,57 @@ function Shell() {
     window.addEventListener('online', sync)
     return () => { window.clearTimeout(timer); window.removeEventListener('online', sync) }
   }, [auth.status, auth.user?.id, ready, appEntered, S])
+  useEffect(() => {
+    if (!ready || !authed) return undefined
+    const userId = authenticated ? auth.user?.id : null
+    const getState = () => useStore.getState().S
+    const messages = {
+      workout_reminder: 'Your planned workout is coming up.',
+      weight_reminder: 'Time to record your weight.', measurement_reminder: 'Time to record your body measurements.',
+      program_updated: 'Your training plan has an update.', program_removed: 'Your training plan has an update.',
+      relationship_accepted: 'Your professional connection has an update.', relationship_ended: 'Your professional connection has an update.',
+      student_workout_completed: 'A student recorded a workout update.', student_workout_abandoned: 'A student recorded a workout update.',
+      verification_changed: 'Your professional verification has an update.',
+    }
+    const notify = kind => { if (messages[kind]) useUI.getState().toast(t(messages[kind])) }
+    const nativePush = MOBILE && Capacitor.getPlatform() === 'android' && Capacitor.isNativePlatform() ? createNativePushAdapter({
+      expectedOwnerId: userId, notify, navigate: nav, onToken: () => { void reconnectNotifications() }, onVisibility: () => { void syncNotificationVisibility(); local.sync() },
+    }) : null
+    const environment = nativePush ? { document: { get hidden() { return !nativePush.active || document.hidden }, get visibilityState() { return nativePush.active ? document.visibilityState : 'hidden' } },
+      navigator, storage: localStorage, crypto, now: Date.now, nativePush } : undefined
+    const disposeCoordinator = startNotificationCoordinator({ client: userId ? getBrowserSupabaseClient() : null, userId, getState, notify, ...(environment ? { environment } : {}) })
+    const local = createForegroundNotificationScheduler({ scope: userId || 'guest', getState, backgroundEnabled: hasBackgroundNotifications, notify,
+      ...(environment ? { environment: { document: environment.document, localStorage, Date, setTimeout, clearTimeout } } : {}) })
+    const unsubscribeStore = useStore.subscribe((state, previous) => {
+      if (state.S !== previous.S) {
+        syncNotificationPreferences(); local.sync()
+        if (MOBILE) {
+          const prefs = normalizeNotificationPreferences(state.S.notifications, state.S.reminder)
+          const previousPrefs = normalizeNotificationPreferences(previous.S.notifications, previous.S.reminder)
+          const ui = useUI.getState()
+          for (const [kind, field, deadline] of [['rest','rest',ui.timer?.endsAt || (ui.work?.phase === 'rest' ? ui.work.restEndsAt : null)],['timed_set','timedSet',ui.work?.phase === 'work' ? ui.work.endsAt : null]]) {
+            if (prefs[field] === previousPrefs[field]) continue
+            if (!prefs[field]) void cancelNativeTimer(kind)
+            else if (deadline > Date.now()) void scheduleNativeTimer(kind, deadline, { interactive: false, enabled: true, sound: state.S.sound })
+          }
+        }
+      }
+    })
+    const unsubscribeStatus = useNotificationStatus.subscribe(() => local.sync())
+    const visibility = () => { void syncNotificationVisibility(); local.sync() }
+    const online = () => { void reconnectNotifications(); refreshNotificationReadiness(); local.sync() }
+    const workerChanged = () => refreshNotificationReadiness()
+    document.addEventListener('visibilitychange', visibility)
+    window.addEventListener('online', online)
+    navigator.serviceWorker?.addEventListener('controllerchange', workerChanged)
+    local.sync()
+    return () => {
+      useUI.getState().stopRest(false); useUI.getState().stopWork(); useUI.getState().stopManualSet()
+      unsubscribeStore(); unsubscribeStatus(); local.dispose(); disposeCoordinator(); nativePush?.dispose()
+      document.removeEventListener('visibilitychange', visibility); window.removeEventListener('online', online)
+      navigator.serviceWorker?.removeEventListener('controllerchange', workerChanged)
+    }
+  }, [auth.user?.id, authenticated, authed, ready])
   useEffect(() => {
     if (auth.recovery !== 'required') {
       recoveryShown.current = false

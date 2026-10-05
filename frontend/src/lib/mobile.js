@@ -1,15 +1,14 @@
 // Mobile build (VITE_MOBILE=1) — the standalone app-store version (Capacitor native shell).
 //
-// There is no backend: nothing to sign in to, everything lives on the phone. Unlike guest
-// mode in a browser, this is the user's only copy of their training log, so it can't depend
-// on WebView localStorage alone (iOS evicts that under storage pressure). Every persist()
-// therefore also lands in a JSON file in the app's private data directory, and boot()
-// restores from it. The workout reminder uses native local notifications scheduled per
-// planned weekday — no server involved, unlike Web Push in the self-hosted version.
+// Native persistence mirrors the scoped training state to a private JSON file, because
+// WebView localStorage can be evicted under storage pressure. Account and guest data use
+// separate paths. Rest/timed-set deadlines are device-local OS notifications; account
+// reminders and professional updates use the separate background notification client.
+// Obsolete repeating weekly alerts are cancelled once on boot; current preferences
+// and calendar reminders belong to the notification coordinator.
 //
 // Like the demo build, MOBILE is replaced at build time, so all of this folds away in
 // web bundles; the Capacitor plugins are only ever imported behind it.
-import { t } from './i18n-core.js'
 import { ANONYMOUS_SCOPE, nativePathForScope } from './local-state-scope.js'
 import { serializeStateOnly } from './account-cache.js'
 import { validateBackup } from './backup-state.js'
@@ -54,32 +53,14 @@ export function nativeClear(scope = ANONYMOUS_SCOPE, emptyState = { routines: []
   return nativeSave(scope, emptyState)
 }
 
-// (Re)schedule the workout-day reminder: one repeating notification per weekday that has a
-// routine in the weekly plan. Cheap enough to run after any state change — the plan or the
-// reminder time may just have been edited. `interactive` gates the OS permission prompt to
-// the Settings toggle; a background resync never pops a dialog.
-export async function syncReminder(S, interactive = false) {
+// Retire alerts from the old weekly-reminder control without requesting permissions.
+// IDs 100..106 are disjoint from the current rest/timed-set IDs 2001/2002.
+export async function clearLegacyReminders() {
   try {
     const { LocalNotifications } = await import('@capacitor/local-notifications')
-    await LocalNotifications.cancel({ notifications: [0, 1, 2, 3, 4, 5, 6].map(d => ({ id: 100 + d })) }).catch(() => {})
-    const r = S.reminder
-    if (!r?.on || S.planMode === 'daily') return true
-    let perm = await LocalNotifications.checkPermissions()
-    if (perm.display !== 'granted' && interactive) perm = await LocalNotifications.requestPermissions()
-    if (perm.display !== 'granted') return false
-    const [hour, minute] = (r.time || '08:00').split(':').map(Number)
-    const notifications = Object.entries(S.week || {})
-      .filter(([, rid]) => rid && (S.routines || []).some(x => x.id === rid))
-      .map(([day, rid]) => ({
-        id: 100 + Number(day),
-        title: t('Workout day'),
-        body: t('{0} is on the plan today — let’s go!', S.routines.find(x => x.id === rid).name),
-        // Capacitor weekdays are 1 (Sunday) … 7 (Saturday); S.week uses getDay() 0…6.
-        schedule: { on: { weekday: Number(day) + 1, hour, minute }, allowWhileIdle: true },
-      }))
-    if (notifications.length) await LocalNotifications.schedule({ notifications })
+    await LocalNotifications.cancel({ notifications: Array.from({ length: 7 }, (_, day) => ({ id: 100 + day })) })
     return true
-  } catch (e) { return false }
+  } catch { return false }
 }
 
 // WKWebView can't do blob-URL downloads, so the backup goes out through the OS share sheet

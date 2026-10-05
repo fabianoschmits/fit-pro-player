@@ -1,6 +1,8 @@
 # Aplicativos móveis
 
-O frontend também possui projetos Capacitor para Android e iOS. A configuração móvel padrão é local: o estado fica no dispositivo e os lembretes são notificações locais. Quando credenciais públicas Supabase são configuradas, o armazenamento continua isolado por conta e usa as mesmas regras de sincronização do web.
+O frontend também possui projetos Capacitor para Android e iOS. Sem configuração Supabase, o aplicativo permite uso local. Quando credenciais públicas Supabase são configuradas, contas e armazenamento usam as mesmas regras de sincronização e isolamento do web.
+
+Descanso e séries cronometradas são notificações locais do sistema, sem chamadas de notificações ao Supabase. Lembretes de treino e avisos profissionais no APK Android usam FCM, preparado mas desativado até fornecer Firebase. A [ativação Android](notifications-android-setup.md) descreve a configuração que falta e os testes no aparelho. O PWA usa Web Push para esses avisos importantes.
 
 O estado também é espelhado no diretório privado do aplicativo. A recuperação escolhe a cópia mais recente; dados de conta recuperados após perda da metadata do WebView são tratados como alterações locais e podem exigir resolução de conflito. Limpar os dados grava uma cópia vazia no espelho para impedir que treinos apagados reapareçam.
 

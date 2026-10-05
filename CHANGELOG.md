@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — notificações
+
+- Central configurável com avisos locais de descanso/séries, lembretes antecipados de treino, peso/medidas e atualizações profissionais.
+- Web Push por dispositivo/conta com consentimento, conteúdo genérico, presença econômica e fila sem invocações Edge enquanto ociosa.
+- Descanso e série cronometrada exclusivamente locais, sem jobs ou chamadas de notificações ao Supabase.
+- Android preparado com alarmes locais do sistema e FCM opcional desativado até fornecer a configuração Firebase.
+- Testes de isolamento, concorrência SQL, criptografia, provedores, timers nativos e interface estreita; traduções nos 11 idiomas.
+
 ## Unreleased — prontidão profissional
 
 - RPCs profissionais, invariantes de proprietário/vínculo/versão e execuções idempotentes protegidas no banco.

@@ -5,5 +5,11 @@
   "backgroundColor": "#0c0e12",
   "android": {
     "allowMixedContent": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_notification",
+      "iconColor": "#0F8B8D"
+    }
   }
 }

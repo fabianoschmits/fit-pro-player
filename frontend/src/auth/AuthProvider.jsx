@@ -4,6 +4,7 @@ import { getBrowserSupabaseClient } from '../lib/supabase-client.js';
 import { MOBILE } from '../lib/mobile.js';
 import { parseCapacitorAuthUrl } from '../lib/capacitor-auth.js';
 import { toAuthError } from './auth-errors.js';
+import { disableBackgroundNotifications } from '../lib/notification-client.js';
 
 const AuthContext = createContext(null);
 
@@ -227,6 +228,8 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         return result
       },
       signOut: async () => {
+        // Detach this device while its authenticated RPC still has the current owner.
+        await disableBackgroundNotifications();
         const result = await execute('signing_out', () => client.auth.signOut());
         if (result.kind === 'success') setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
         return result;
@@ -235,6 +238,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         if (globalThis.navigator?.onLine === false) return { kind: 'error', error: 'network_unavailable' };
         const result = await execute('deleting_account', () => client.rpc('delete_my_account'));
         if (result.kind !== 'success') return result;
+        await disableBackgroundNotifications();
         await client.auth.signOut({ scope: 'local' });
         setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
         // The server-side delete already succeeded. Clear the local Auth session even if

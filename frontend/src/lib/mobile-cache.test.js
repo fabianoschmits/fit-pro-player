@@ -3,11 +3,20 @@ import { resolveLocalScope } from './local-state-scope.js'
 
 const readFile = vi.fn()
 const writeFile = vi.fn()
+const cancelNotifications = vi.fn()
+const scheduleNotifications = vi.fn()
+vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: { cancel: cancelNotifications, schedule: scheduleNotifications } }))
 vi.mock('@capacitor/filesystem', () => ({ Filesystem: { readFile, writeFile }, Directory: { Data: 'DATA' }, Encoding: { UTF8: 'utf8' } }))
 
-import { nativeLoad, nativeSave, nativeClear } from './mobile.js'
+import { nativeLoad, nativeSave, nativeClear, clearLegacyReminders } from './mobile.js'
 
 describe('Capacitor cache isolation', () => {
+  it('retires old weekly alerts without requesting permission or creating replacement alarms', async () => {
+    cancelNotifications.mockResolvedValue(undefined)
+    await clearLegacyReminders()
+    expect(cancelNotifications).toHaveBeenCalledWith({ notifications: Array.from({ length: 7 }, (_, day) => ({ id: 100 + day })) })
+    expect(scheduleNotifications).not.toHaveBeenCalled()
+  })
   it('clears only after a previous write finishes, preventing resurrection', async () => {
     let complete
     const scope = resolveLocalScope(null)

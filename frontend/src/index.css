@@ -837,6 +837,21 @@ h4.sec{
 .timef::-webkit-calendar-picker-indicator{filter:invert(.5)}
 :root[data-theme="light"] .timef::-webkit-calendar-picker-indicator{filter:none}
 
+/* Notification center uses the existing grouped settings controls. */
+.notification-settings .notification-delivery{padding-bottom:12px;border-bottom:var(--hair) solid var(--sep)}
+.notification-settings .notification-device-action{display:block;max-width:calc(100% - 24px);margin:4px 12px 0;min-height:44px;white-space:normal}
+.notification-settings .notification-note{margin:9px 12px 0;font-size:13px;line-height:1.4;color:var(--label-2);overflow-wrap:anywhere}
+.notification-settings .notification-error{color:var(--red)}
+.notification-settings .notification-time-row .timef{width:118px;min-width:0;min-height:44px;flex:0 0 118px}
+.notification-settings .lrow-t,.notification-settings .lrow-s{overflow-wrap:anywhere}
+.notification-settings .notification-privacy{margin-top:-12px;margin-bottom:20px}
+@media(max-width:360px){
+  .notification-settings .notification-time-row{flex-wrap:wrap}
+  .notification-settings .notification-time-row .lrow-m{flex-basis:calc(100% - 40px)}
+  .notification-settings .notification-time-row:has(.lrow-i) .timef{margin-left:40px}
+  .notification-settings .lrow-v{max-width:44%;white-space:normal}
+}
+
 /* --- stepper --- */
 .stp-w{display:flex;flex-direction:column;gap:6px;min-width:0}
 .stp-l{font-size:13px;color:var(--label-2);text-align:center}

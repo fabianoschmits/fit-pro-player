@@ -40,6 +40,26 @@ function validEntries(entries) {
     && Array.isArray(entry.sets) && entry.sets.length <= 200 && entry.sets.every(validSet))
 }
 
+function validNotificationPreferences(value) {
+  if (!isObject(value)) return false
+  const has = key => Object.prototype.hasOwnProperty.call(value, key)
+  for (const key of ['rest', 'timedSet', 'workoutReminder', 'professional', 'weightReminder', 'measurementReminder']) {
+    if (has(key) && typeof value[key] !== 'boolean') return false
+  }
+  const time = raw => typeof raw === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(raw)
+  for (const key of ['trainingTime', 'checkinTime']) if (has(key) && !time(value[key])) return false
+  if (has('leadMinutes') && ![0, 15, 30, 60, 120, 180, 360].includes(value.leadMinutes)) return false
+  if (has('checkinDay') && !(Number.isInteger(value.checkinDay) && value.checkinDay >= 0 && value.checkinDay <= 6)) return false
+  if (has('quietHours')) {
+    if (!isObject(value.quietHours)) return false
+    for (const [key, raw] of Object.entries(value.quietHours)) {
+      if (key === 'enabled' && typeof raw !== 'boolean') return false
+      if ((key === 'start' || key === 'end') && !time(raw)) return false
+    }
+  }
+  return true
+}
+
 export function validateBackup(data) {
   if (!isObject(data)) throw new Error('not a Fit Pro Player backup')
   rejectUnsafeKeys(data)
@@ -71,6 +91,7 @@ export function validateBackup(data) {
   for (const key of ['bodyMeasurementGoals', 'week', 'dayPlan', 'exWeights', 'profile', 'reminder']) {
     if (data[key] != null && !isObject(data[key])) throw new Error(`backup contains invalid ${key}`)
   }
+  if (Object.prototype.hasOwnProperty.call(data, 'notifications') && !validNotificationPreferences(data.notifications)) throw new Error('backup contains invalid notification preferences')
   if (!bounded(data.restSec, 0, 86400) || !bounded(data.targetW, 0.1, 1000) || !bounded(data._ts, 0, Number.MAX_SAFE_INTEGER)) throw new Error('backup contains invalid settings')
   if (data.week && !Object.entries(data.week).every(([key, value]) => /^[0-6]$/.test(key) && (value == null || identifier(value)))) throw new Error('backup contains an invalid weekly plan')
   if (data.dayPlan && !Object.entries(data.dayPlan).every(([key, value]) => validDate(key) && (value == null || identifier(value)))) throw new Error('backup contains an invalid daily plan')

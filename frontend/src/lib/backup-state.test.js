@@ -27,6 +27,26 @@ describe('backup validation', () => {
   })
 
   it.each([
+    [], 'enabled', { rest: 'true' }, { timedSet: 1 }, { workoutReminder: null },
+    { trainingTime: '24:00' }, { leadMinutes: 121 }, { checkinDay: -1 }, { checkinDay: 1.5 },
+    { checkinTime: '7:30' }, { quietHours: [] }, { quietHours: { enabled: 'false' } },
+    { quietHours: { start: '22:60' } }, { quietHours: { end: '24:00' } },
+  ].map(notifications => ({ notifications })))('rejects notification preferences that would restore invalid controls: %j', ({ notifications }) => {
+    expect(() => validateBackup({ ...valid(), notifications })).toThrow('notification')
+  })
+
+  it('accepts bounded notification preferences and preserves legacy backups', () => {
+    const notifications = {
+      rest: true, timedSet: false, workoutReminder: true, professional: true,
+      weightReminder: false, measurementReminder: false, trainingTime: '00:00',
+      leadMinutes: 360, checkinDay: 6, checkinTime: '23:59',
+      quietHours: { enabled: true, start: '22:00', end: '07:00' },
+    }
+    expect(validateBackup({ ...valid(), notifications }).notifications).toEqual(notifications)
+    expect(validateBackup(valid())).not.toHaveProperty('notifications')
+  })
+
+  it.each([
     null,
     [],
     { routines: [], workouts: [{ entries: null }] },

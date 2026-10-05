@@ -2,6 +2,8 @@ import React, { act, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Window } from 'happy-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+const notificationMocks=vi.hoisted(()=>({disable:vi.fn().mockResolvedValue(true)}));
+vi.mock('../lib/notification-client.js',()=>({disableBackgroundNotifications:notificationMocks.disable}));
 
 import { AuthProvider, buildAuthRedirectUrl, useAuth } from './AuthProvider.jsx';
 
@@ -64,6 +66,12 @@ afterEach(async () => {
 });
 
 describe('AuthProvider', () => {
+  it('detaches background delivery before signing out the current authenticated account',async()=>{
+    const client=createFakeClient({session:{user}});await renderProvider(client)
+    await act(async()=>{await latest.signOut()})
+    expect(notificationMocks.disable).toHaveBeenCalledOnce()
+    expect(notificationMocks.disable.mock.invocationCallOrder[0]).toBeLessThan(client.auth.signOut.mock.invocationCallOrder[0])
+  });
   it('restores a minimal authenticated user and never exposes token fields', async () => {
     const client = createFakeClient({ session: { user, access_token: 'secret' } });
     await renderProvider(client);

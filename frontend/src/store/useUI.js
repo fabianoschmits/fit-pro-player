@@ -3,6 +3,20 @@ import { uid } from '../lib/format.js'
 import { beep, vibrate } from '../lib/sound.js'
 import { t } from '../lib/i18n.js'
 import { useStore } from './useStore.js'
+import { normalizeNotificationPreferences } from '../lib/notification-preferences.js'
+import { MOBILE } from '../lib/mobile.js'
+import { scheduleNativeTimer, cancelNativeTimer, nativeTimerOwnsAlert } from '../lib/native-timer-notifications.js'
+
+const timerAlertsEnabled = kind => normalizeNotificationPreferences(useStore.getState().S.notifications, useStore.getState().S.reminder)[kind === 'timed_set' ? 'timedSet' : 'rest']
+const scheduleLocalTimer = (kind, endsAt, interactive = true) => {
+  if (MOBILE) void scheduleNativeTimer(kind, endsAt, { enabled: timerAlertsEnabled(kind), sound: useStore.getState().S.sound, interactive })
+  else if (timerAlertsEnabled(kind)) void requestRestNotificationPermission()
+}
+const localCompletionSound = (kind, sound) => {
+  if (!timerAlertsEnabled(kind) || nativeTimerOwnsAlert(kind)) return
+  beep(sound, 880, 0.15); beep(sound, 880, 0.15, 0.25); beep(sound, 1320, 0.4, 0.5)
+  vibrate([200, 100, 200])
+}
 
 const notificationsSupported = () => typeof window !== 'undefined' && 'Notification' in window
 let requestRestNotificationPermissionP = null
@@ -22,7 +36,9 @@ const requestRestNotificationPermission = async () => {
   return requestRestNotificationPermissionP
 }
 
-const maybeRestNotification = async () => {
+const maybeRestNotification = async (kind = 'rest') => {
+  if (MOBILE) return // OS deadline was scheduled at native timer start.
+  if (!timerAlertsEnabled(kind)) return
   if (!notificationsSupported()) return
   if (!document.hidden && document.visibilityState !== 'hidden') return
   if (Notification.permission !== 'granted' && !(await requestRestNotificationPermission())) return
@@ -31,10 +47,12 @@ const maybeRestNotification = async () => {
     // service-worker registration path is the one that actually pops there.
     const reg = await navigator.serviceWorker?.getRegistration?.()
     if (reg?.showNotification) {
-      reg.showNotification(t('Rest over — next set!'), { body: t('Rest over — next set!') })
+      const title = t(kind === 'rest' ? 'Rest over — next set!' : 'Your timed set is complete.')
+      reg.showNotification(title, { body: title })
       return
     }
-    new Notification(t('Rest over — next set!'), { body: t('Rest over — next set!') })
+    const title = t(kind === 'rest' ? 'Rest over — next set!' : 'Your timed set is complete.')
+    new Notification(title, { body: title })
   } catch {
     // Intentionally ignore: notification APIs vary by browser and policy in edge cases.
   }
@@ -109,7 +127,7 @@ export const useUI = create((set, get) => ({
       }
       workRestDone = onDone
       const endsAt = Date.now() + sec * 1000
-      requestRestNotificationPermission()
+      scheduleLocalTimer('rest', endsAt)
       set({
         work: {
           ...wk,
@@ -128,22 +146,22 @@ export const useUI = create((set, get) => ({
     const endsAt = Date.now() + sec * 1000
     timerDone = onDone
     set({ timer: { left: sec, total: sec, endsAt } })
-    requestRestNotificationPermission()
+    scheduleLocalTimer('rest', endsAt)
     timerTick = () => {
       const tm = get().timer
       if (!tm) return
-      const left = Math.max(0, Math.round((tm.endsAt - Date.now()) / 1000))
+      const left = Math.max(0, Math.ceil((tm.endsAt - Date.now()) / 1000))
       if (left === tm.left) return
       const snd = useStore.getState().S.sound
       if (left <= 0) {
-        beep(snd, 880, 0.15); beep(snd, 880, 0.15, 0.25); beep(snd, 1320, 0.4, 0.5)
-        vibrate([200, 100, 200]); maybeRestNotification(); get().toast(t('Rest over — next set!'))
+        localCompletionSound('rest', snd)
+        if (timerAlertsEnabled('rest')) { maybeRestNotification(); get().toast(t('Rest over — next set!')) }
         const cb = timerDone
-        get().stopRest(false)
+        get().stopRest(false, true)
         if (cb) cb()
         return
       }
-      if (left <= 3) beep(snd, 660, 0.1)
+      if (left <= 3 && timerAlertsEnabled('rest')) beep(snd, 660, 0.1)
       set({ timer: { ...tm, left } })
     }
     timerInt = setInterval(timerTick, 1000)
@@ -157,8 +175,12 @@ export const useUI = create((set, get) => ({
     // negative duration out of the progress bar
     if (left <= 0) { get().stopRest(true); return }
     set({ timer: { ...tm, left, total: tm.total + sec, endsAt: tm.endsAt + sec * 1000 } })
+    scheduleLocalTimer('rest', tm.endsAt + sec * 1000, false)
   },
-  stopRest(triggerCb = true) {
+  stopRest(triggerCb = true, completed = false) {
+    // A natural finish leaves the successful OS alert in charge, even in the foreground.
+    // Explicit cleanup also removes delayed alarms after the UI timer has already ended.
+    if (MOBILE && !completed) void cancelNativeTimer('rest')
     if (timerInt) clearInterval(timerInt); timerInt = null
     if (timerTick) document.removeEventListener('visibilitychange', timerTick); timerTick = null
     const cb = triggerCb ? timerDone : null
@@ -176,6 +198,7 @@ export const useUI = create((set, get) => ({
     get().stopRest()
     const total = Math.max(1, Math.round(sec) || 1)
     const endsAt = Date.now() + total * 1000
+    scheduleLocalTimer('timed_set', endsAt)
     workDone = onDone
     workRestDone = null
     set({
@@ -196,27 +219,27 @@ export const useUI = create((set, get) => ({
       if (!wk) return
       const snd = useStore.getState().S.sound
       if (wk.phase === 'rest') {
-        const left = Math.max(0, Math.round((wk.restEndsAt - Date.now()) / 1000))
+        const left = Math.max(0, Math.ceil((wk.restEndsAt - Date.now()) / 1000))
         if (left === wk.restLeft) return
         if (left <= 0) {
-          beep(snd, 880, 0.15); beep(snd, 880, 0.15, 0.25); beep(snd, 1320, 0.4, 0.5)
-          vibrate([200, 100, 200]); maybeRestNotification(); get().toast(t('Rest over — next set!'))
+          localCompletionSound('rest', snd)
+          if (timerAlertsEnabled('rest')) { maybeRestNotification(); get().toast(t('Rest over — next set!')) }
           const cb = workRestDone
           workRestDone = null
-          get().stopWork()
+          get().stopWork(true)
           if (cb) cb()
           return
         }
-        if (left <= 3) beep(snd, 660, 0.1)
+        if (left <= 3 && timerAlertsEnabled('rest')) beep(snd, 660, 0.1)
         set({ work: { ...wk, restLeft: left } })
         return
       }
       if (wk.phase === 'done') return
-      const left = Math.max(0, Math.round((wk.endsAt - Date.now()) / 1000))
+      const left = Math.max(0, Math.ceil((wk.endsAt - Date.now()) / 1000))
       if (left === wk.left) return
       if (left <= 0) {
-        beep(snd, 880, 0.15); beep(snd, 880, 0.15, 0.25); beep(snd, 1320, 0.4, 0.5)
-        vibrate([200, 100, 200])
+        localCompletionSound('timed_set', snd)
+        if (timerAlertsEnabled('timed_set')) maybeRestNotification('timed_set')
         const done = workDone
         workDone = null
         // Transition to 'done' phase — overlay stays open, user chooses next action
@@ -224,7 +247,7 @@ export const useUI = create((set, get) => ({
         if (done) done(wk.total)
         return
       }
-      if (left <= 3) beep(snd, 660, 0.1)
+      if (left <= 3 && timerAlertsEnabled('timed_set')) beep(snd, 660, 0.1)
       set({ work: { ...wk, left } })
     }
     workTick = tick
@@ -234,6 +257,7 @@ export const useUI = create((set, get) => ({
   finishWorkEarly() {
     const wk = get().work
     if (!wk || wk.phase !== 'work') return
+    if (MOBILE) void cancelNativeTimer('timed_set')
     const elapsed = Math.max(1, wk.total - wk.left)
     const done = workDone
     workDone = null
@@ -249,7 +273,11 @@ export const useUI = create((set, get) => ({
     get().stopWork()
     if (cb) cb()
   },
-  stopWork() {
+  stopWork(completed = false) {
+    if (MOBILE && !completed) {
+      void cancelNativeTimer('timed_set')
+      void cancelNativeTimer('rest')
+    }
     if (workInt) clearInterval(workInt); workInt = null
     if (workTick) document.removeEventListener('visibilitychange', workTick); workTick = null
     workDone = null

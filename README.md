@@ -58,6 +58,14 @@ A migration `202610020014_professional_readiness.sql` é necessária para a vers
 
 Veja [operação e validação da versão profissional](docs/PROFESSIONAL_READINESS.md) para sincronização, preparação offline, recuperação e testes.
 
+## Notificações
+
+A central em Configurações separa alertas locais dos timers e avisos importantes em segundo plano. Descanso e séries cronometradas não são enviados ao Supabase. PWA usa avisos locais sujeitos à suspensão do navegador; APK Android agenda esses prazos no sistema.
+
+Avisos remotos exigem a migration `202610040015_notifications.sql`, o worker `supabase/functions/push-dispatch` e a instalação administrativa [Cron/Vault](supabase/operations/notifications.sql). Configure somente no servidor `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `PUSH_DISPATCH_SECRET`. A chave pública chega ao cliente via RPC. A fila ociosa não invoca a Edge Function.
+
+FCM no APK permanece desativado até configurar Firebase. Veja [integração Android futura](docs/notifications-android-setup.md). Testes de envio: `npm run test:notifications`; testes PostgreSQL: `PG_BIN` apontando para os binários e `NOTIFICATIONS_REQUIRE_DB=1 node --test scripts/check-notification-migration.test.mjs`.
+
 ## Estrutura
 
 - `frontend/`: React, Vite, Zustand, PWA e projetos Capacitor.

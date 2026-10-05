@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const native = vi.hoisted(() => ({ load: vi.fn(), save: vi.fn(), clear: vi.fn() }))
-vi.mock('../lib/mobile.js', () => ({ MOBILE: true, nativeLoad: native.load, nativeSave: native.save, nativeClear: native.clear, syncReminder: vi.fn() }))
+vi.mock('../lib/mobile.js', () => ({ MOBILE: true, nativeLoad: native.load, nativeSave: native.save, nativeClear: native.clear, clearLegacyReminders: vi.fn() }))
 let useStore, DEF
 beforeEach(async () => {
   vi.resetModules(); localStorage.clear(); native.load.mockReset(); native.save.mockReset(); native.clear.mockReset()

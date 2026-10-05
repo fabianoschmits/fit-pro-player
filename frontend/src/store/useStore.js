@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED, STANDALONE } from '../lib/demo.js'
-import { MOBILE, nativeLoad, nativeSave, nativeClear, syncReminder } from '../lib/mobile.js'
+import { MOBILE, nativeLoad, nativeSave, nativeClear, clearLegacyReminders } from '../lib/mobile.js'
 import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from '../lib/starter.js'
 import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
 import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from '../lib/body-measurements.js'
@@ -10,6 +10,7 @@ import { ANONYMOUS_SCOPE, resolveLocalScope } from '../lib/local-state-scope.js'
 import { readScopedState, writeScopedState } from '../lib/account-cache.js'
 import { createAccountSyncService, readSyncConflict, writeSyncConflict, clearSyncConflict, readSyncMetadata, syncMetadataKey, writeSyncMetadata, REMOTE_SYNC_STATE } from '../lib/account-sync.js'
 import { recordDiagnostic } from '../lib/diagnostics.js'
+import { DEFAULT_NOTIFICATION_PREFERENCES, normalizeNotificationPreferences } from '../lib/notification-preferences.js'
 
 export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
@@ -22,6 +23,7 @@ export const DEF = {
   // server pull, backup import) still falls back to the `showRir` boolean this replaced and
   // keeps the column it had. See effortOf.
   reminder: { on: false, time: '08:00', tz: null }, effort: null, assignedProgram: null,
+  notifications: DEFAULT_NOTIFICATION_PREFERENCES,
   // UX prefs — weighBeforeWorkout defaults true; skipped automatically when already weighed today.
   weighBeforeWorkout: true, onboardingDone: false, simpleMode: true, seenTips: {}, pendingProfessionalEvents: [], professionalProgramDrafts: {}
 }
@@ -56,6 +58,7 @@ export function normalizeState(source) {
   state.dayPlan = object(state.dayPlan)
   state.exWeights = object(state.exWeights)
   state.planMode = state.planMode === 'daily' ? 'daily' : 'weekly'
+  state.notifications = normalizeNotificationPreferences(raw.notifications, raw.reminder)
   state.profile = normalizeProfile(raw.profile, state.body)
   syncProfileWeightFromBodyweight(state)
 
@@ -103,14 +106,13 @@ export const useStore = create((set, get) => {
   }
 
   // Mobile build: mirror the state into a file in the app's data directory (survives WebView
-  // storage eviction) and keep the native reminder schedule in step with the weekly plan.
+  // storage eviction). Notification schedules are maintained by their dedicated client.
   const nativePersist = (scope = activeScope, generation = scopeGeneration) => {
     clearTimeout(saveTm)
     saveTm = setTimeout(() => {
       saveTm = null
       if (generation !== scopeGeneration || scope !== activeScope) return
       saveNative(scope, get().S, generation)
-      syncReminder(get().S)
     }, 800)
   }
 
@@ -356,8 +358,8 @@ export const useStore = create((set, get) => {
       if (MOBILE) {
         saveNative(activeScope, get().S, scopeGeneration)
         get().setGuest(!supabaseUserId)
-        syncReminder(get().S)
-        set({ ready: true })
+        void clearLegacyReminders()
+          set({ ready: true })
         return
       }
       // Static demo build: seed once, then let the landing page introduce the product

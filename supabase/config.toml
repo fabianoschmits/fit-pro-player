@@ -55,3 +55,7 @@ enable_signup = false
 
 [analytics]
 enabled = false
+
+[functions.push-dispatch]
+# Cron uses a dedicated Vault secret verified by the handler, never a browser key.
+verify_jwt = false

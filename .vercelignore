@@ -13,3 +13,6 @@ mcp/
 web/
 /assets/
 docs/
+supabase/
+.superpowers/
+.worktrees/
