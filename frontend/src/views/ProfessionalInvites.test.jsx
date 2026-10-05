@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { Window } from 'happy-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -12,12 +12,27 @@ vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRe
 vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, action }) => <header><h1>{title}</h1>{action}</header> }))
 
 import ProfessionalInvites from './ProfessionalInvites.jsx'
+function CurrentLocation() { return <output data-location>{useLocation().search}</output> }
 
 let dom, root, container
 beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = new Window({ url: 'https://app.example/#/professional/invites' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional invites page', () => {
+  it('keeps the invitation list open when a pending creation finishes after Cancel', async () => {
+    let finishCreation
+    mocks.repo.createInvite.mockImplementationOnce(() => new Promise(resolve => { finishCreation = resolve }))
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/invites?section=create']}><ProfessionalInvites /><CurrentLocation /></MemoryRouter>))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Gerar convite').click())
+    await act(async () => [...container.querySelectorAll('a')].find(link => link.textContent === 'Cancelar').click())
+    expect(container.textContent).toContain('Pendentes (1)')
+    await act(async () => finishCreation({ id: 'i2', code: 'ZX98YU76' }))
+    expect(container.textContent).toContain('Pendentes (2)')
+    expect(container.textContent).toContain('AB12CD34')
+    expect(container.textContent).toContain('ZX98YU76')
+    expect(container.textContent).not.toContain('Compartilhar convite')
+    expect(container.querySelector('[data-location]').textContent).toBe('')
+  })
   it('generates once, restores the result by URL and confirms revocation', async () => {
     const view = path => <MemoryRouter initialEntries={[path]}><ProfessionalInvites /></MemoryRouter>
     await act(async () => root.render(view('/professional/invites?section=create')))

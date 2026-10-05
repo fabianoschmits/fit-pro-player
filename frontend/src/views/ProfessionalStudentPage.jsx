@@ -19,6 +19,7 @@ export default function ProfessionalStudentPage() {
 
 function StudentWorkspace({ userId, studentId }) {
   const navigate = useNavigate(); const [params, setParams] = useSearchParams()
+  const currentParams = useRef(params); currentParams.current = params
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const identity = `${userId}:${studentId}`; const owner = useRef(identity); owner.current = identity
   const [client, setClient] = useState(null); const [detail, setDetail] = useState(null); const [versions, setVersions] = useState([])
@@ -59,7 +60,7 @@ function StudentWorkspace({ userId, studentId }) {
   const assign = async () => {
     const version = versions.find(item => item.id === versionId); if (!version || saving) return
     const requestOwner = identity; setSaving(true)
-    try { await repo.assignProgramVersion({ programId: version.program_id, versionId: version.id, studentUserId: studentId }); if (owner.current !== requestOwner) return; const next = new URLSearchParams(params); next.delete('version'); setParams(next, { replace: true }); await refresh() }
+    try { await repo.assignProgramVersion({ programId: version.program_id, versionId: version.id, studentUserId: studentId }); if (owner.current !== requestOwner) return; const next = new URLSearchParams(currentParams.current); if (next.get('version') === version.id) next.delete('version'); setParams(next, { replace: true }); await refresh() }
     catch { if (owner.current === requestOwner) setError(t('Não foi possível enviar esta versão.')) }
     finally { if (owner.current === requestOwner) setSaving(false) }
   }

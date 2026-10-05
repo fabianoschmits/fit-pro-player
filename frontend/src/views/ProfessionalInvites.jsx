@@ -20,6 +20,7 @@ export default function ProfessionalInvites() {
 }
 function InvitesWorkspace({ userId }) {
   const [params, setParams] = useSearchParams(); const creating = params.get('section') === 'create'; const selectedCode = params.get('code')
+  const currentContext = useRef(params.toString()); currentContext.current = params.toString()
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const mounted = useRef(true)
   const [invites, setInvites] = useState([]); const [busy, setBusy] = useState(Boolean(userId)); const [saving, setSaving] = useState(false); const [error, setError] = useState(''); const [message, setMessage] = useState(''); const [confirmId, setConfirmId] = useState('')
@@ -27,8 +28,9 @@ function InvitesWorkspace({ userId }) {
   useEffect(() => { mounted.current = true; if (userId) refresh(); return () => { mounted.current = false } }, [userId])
   const create = async () => {
     if (saving) return
+    const requestContext = currentContext.current
     setSaving(true); setError(''); setMessage('')
-    try { const result = await repo.createInvite('code'); if (!mounted.current) return; const invite = Array.isArray(result) ? result[0] : result; const code = normalizeInviteCode(invite?.code); if (!code) throw new Error('missing-code'); setMessage(t('Convite criado. Compartilhe o código abaixo.')); await refresh(); if (!mounted.current) return; setInvites(items => items.some(item => normalizeInviteCode(item.code) === code) ? items : [{ ...invite, code, status: 'pending' }, ...items]); setParams({ section: 'result', code }) }
+    try { const result = await repo.createInvite('code'); if (!mounted.current) return; const invite = Array.isArray(result) ? result[0] : result; const code = normalizeInviteCode(invite?.code); if (!code) throw new Error('missing-code'); setMessage(t('Convite criado. Compartilhe o código abaixo.')); await refresh(); if (!mounted.current) return; setInvites(items => items.some(item => normalizeInviteCode(item.code) === code) ? items : [{ ...invite, code, status: 'pending' }, ...items]); if (currentContext.current === requestContext) setParams({ section: 'result', code }) }
     catch { if (mounted.current) setError(t('Não foi possível criar o convite.')) }
     finally { if (mounted.current) setSaving(false) }
   }

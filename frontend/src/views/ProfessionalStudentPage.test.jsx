@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Window } from 'happy-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -11,12 +11,31 @@ vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => nu
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, action }) => <header><h1>{title}</h1>{action}</header> }))
 import ProfessionalStudentPage from './ProfessionalStudentPage.jsx'
+function CurrentLocation() { return <output data-location>{useLocation().search}</output> }
 
 let dom, root, container
 beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = new Window({ url: 'https://app.example/#/professional/students/s1' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional student detail', () => {
+  it('preserves the current history section when a pending version assignment finishes', async () => {
+    let finishAssignment
+    mocks.repo.assignProgramVersion.mockImplementationOnce(() => new Promise(resolve => { finishAssignment = resolve }))
+    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Força' }])
+    mocks.repo.versions.mockResolvedValueOnce([{ id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: {} }])
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?section=training&program=p1&version=v1&from=library']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes><CurrentLocation /></MemoryRouter>))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Enviar versão').click())
+    await act(async () => [...container.querySelectorAll('a')].find(link => link.textContent === 'Histórico').click())
+    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [{ id: 'new', status: 'active' }], executions: [{ id: 'new-execution', day_key: 'tuesday', status: 'completed' }] })
+    await act(async () => finishAssignment({}))
+    const currentSection = container.querySelector('nav[aria-label="Detalhe do aluno"] a[aria-current="page"]')
+    expect(currentSection.textContent).toBe('Histórico')
+    expect(currentSection.getAttribute('href')).toContain('program=p1')
+    expect(currentSection.getAttribute('href')).toContain('from=library')
+    expect(currentSection.getAttribute('href')).not.toContain('version=v1')
+    expect(container.querySelector('[data-location]').textContent).toBe('?section=history&program=p1&from=library')
+    expect(container.textContent).toContain('Terça')
+  })
   it('opens a handoff in training, fetches only that program and assigns the selected version', async () => {
     mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Força' }, { id: 'p2', title: 'Corrida' }])
     mocks.repo.versions.mockResolvedValueOnce([{ id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: {} }])
