@@ -29,6 +29,42 @@ const toClientDetail = value => value ? ({
   executions: value.executions || [],
 }) : null
 
+const toStudentProfessional = value => ({
+  professionalId: value?.professional_user_id || null,
+  relationshipId: value?.relationship_id || null,
+  professionalName: value?.professional_name || 'Profissional',
+  bio: value?.bio || null,
+  specialties: value?.specialties || [],
+  cityRegion: value?.city_region || null,
+  registrationType: value?.registration_type || null,
+  registrationNumber: value?.registration_number || null,
+  verificationStatus: value?.verification_status || 'unverified',
+  linkedAt: value?.linked_at || null,
+  activeProgramTitle: value?.active_program_title || null,
+})
+
+const toStudentProfessionalDetail = value => value ? ({
+  professional: toStudentProfessional(value.professional),
+  relationship: {
+    id: value.relationship?.id || null,
+    status: value.relationship?.status || null,
+    linkedAt: value.relationship?.linked_at || null,
+  },
+  materials: (value.materials || []).map(material => ({
+    assignmentId: material.assignment_id,
+    programId: material.program_id,
+    versionId: material.version_id,
+    title: material.title,
+    description: material.description || null,
+    status: material.status,
+    versionNumber: material.version_number,
+    publishedAt: material.published_at,
+    assignedAt: material.assigned_at,
+    weeklyPlan: material.weekly_plan || {},
+  })),
+  executions: value.executions || [],
+}) : null
+
 export function createProfessionalWorkflowRepository({ client } = {}) {
   const rpc = async (name, args) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
@@ -66,5 +102,7 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const publishProgramVersion = (programId, weeklyPlan) => rpc('publish_program_version', { p_program_id: programId, p_weekly_plan: weeklyPlan })
   const assignProgramVersion = ({ programId, versionId, studentUserId }) => rpc('assign_program_version', { p_program_id: programId, p_version_id: versionId, p_student_user_id: studentUserId })
   const studentOverview = () => rpc('student_program_overview', {})
-  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview })
+  const studentProfessionals = () => rpc('student_professional_summaries', {}).then(rows => (rows || []).map(toStudentProfessional))
+  const studentProfessionalDetail = professionalId => rpc('student_professional_detail', { p_professional_user_id: professionalId }).then(rows => toStudentProfessionalDetail(rows?.[0]))
+  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }
