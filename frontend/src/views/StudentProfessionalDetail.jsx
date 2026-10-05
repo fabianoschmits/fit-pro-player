@@ -11,6 +11,8 @@ import { ManagementPanel, ManagementEmpty, ManagementAvatar, ManagementStatus } 
 import { ProfessionalPrescription, ProfessionalSessionDetail, professionalDayLabel } from '../components/ProfessionalPrescription.jsx'
 import useStudentManagementRequest from '../components/useStudentManagementRequest.js'
 import { studentVerificationLabel } from '../components/StudentProfessionalVerification.jsx'
+import { clearAssignedProgramFromState } from '../lib/assigned-program.js'
+import { useStore } from '../store/useStore.js'
 
 const SECTIONS = [['summary', 'Apresentação'], ['training', 'Treino'], ['history', 'Histórico'], ['relationship', 'Vínculo']]
 export default function StudentProfessionalDetail() {
@@ -34,8 +36,17 @@ function DetailWorkspace({ professionalId }) {
     if (!data?.relationship?.id || mutationPending.current) return
     mutationPending.current = true
     const requestQuery = currentQuery.current
+    const revokedAssignments = new Set((data.materials || []).filter(item => item.status === 'active').map(item => item.assignmentId))
     setSaving(true); setActionError('')
-    try { await withTimeout(repo.revokeRelationship(data.relationship.id), 10000); if (alive.current) { if (currentQuery.current === requestQuery) navigate('/student/professionals', { replace: true }); else { setConfirm(false); await refresh() } } }
+    try {
+      await withTimeout(repo.revokeRelationship(data.relationship.id), 10000)
+      if (!alive.current) return
+      const state = useStore.getState().S
+      // Reconcile the revoked assignment regardless of section/navigation; preserve a newer program.
+      if (state.assignedProgram?.assignmentId && revokedAssignments.has(state.assignedProgram.assignmentId)) useStore.getState().replaceState(clearAssignedProgramFromState({ ...state }))
+      if (currentQuery.current === requestQuery) navigate('/student/professionals', { replace: true })
+      else { setConfirm(false); await refresh() }
+    }
     catch { if (alive.current) setActionError(t('Não foi possível encerrar o vínculo.')) }
     finally { mutationPending.current = false; if (alive.current) setSaving(false) }
   }

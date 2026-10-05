@@ -28,19 +28,20 @@ export default function StudentProfessionals() {
 }
 
 function ProfessionalsOverview() {
+  const auth = useAuth(); const userId = auth.user?.id
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const load = useCallback(async current => {
-    const [professionals, assignments, overview] = await Promise.all([repo.studentProfessionals(), repo.assignments(), repo.studentOverview()])
+    const [professionals, assignments, overview] = await Promise.all([repo.studentProfessionals(), repo.assignedPrograms(userId), repo.studentOverview()])
     if (!current()) return null
-    const active = assignments.filter(item => item.status === 'active').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]
+    const active = assignments.filter(item => item.status === 'active' && item.student_user_id === userId && professionals.some(person => person.professionalId === item.professional_user_id)).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]
     const version = active ? await repo.version(active.version_id) : null
     if (!current()) return null
     const state = useStore.getState().S
-    if (version && (state.assignedProgram?.versionId !== version.id || state.assignedProgram?.assignmentId !== active.id)) useStore.getState().replaceState(assignedPlanToState({ ...state }, version, active))
+    if (version && version.id === active?.version_id && (state.assignedProgram?.versionId !== version.id || state.assignedProgram?.assignmentId !== active.id)) useStore.getState().replaceState(assignedPlanToState({ ...state }, version, active))
     else if (!active && state.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...state }))
     const scopedOverview = active && overview?.assignment?.id === active.id && overview?.version?.id === active.version_id && overview?.professional?.id === active.professional_user_id && professionals.some(person => person.professionalId === active.professional_user_id) ? overview : {}
     return { professionals, active, overview: scopedOverview }
-  }, [repo])
+  }, [repo, userId])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar seus profissionais.')
   const start = item => {
     const state = useStore.getState().S
