@@ -9,14 +9,22 @@ const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: '
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title }) => <h1>{title}</h1> }))
+vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, action }) => <header><h1>{title}</h1>{action}</header> }))
 import ProfessionalStudents from './ProfessionalStudents.jsx'
 
 let dom, root, container
-beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional/students' }); globalThis.window = dom; globalThis.document = dom.document; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
+beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional/students' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional students page', () => {
+  it('searches names while retaining the selected version handoff', async () => {
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students?program=p1&version=v1']}><ProfessionalStudents /></MemoryRouter>))
+    const input = container.querySelector('input[aria-label="Buscar aluno"]')
+    await act(async () => { Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(input, 'ana'); input.dispatchEvent(new Event('input', { bubbles: true })) })
+    expect(container.textContent).toContain('Ana')
+    expect(container.textContent).not.toContain('Bruno')
+    expect(container.querySelector('a[href="/professional/students/s1?program=p1&version=v1"]')).toBeTruthy()
+  })
   it('searches and filters real active students without mixing invites', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students']}><ProfessionalStudents /></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })

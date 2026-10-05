@@ -134,3 +134,79 @@ body:has(.app-status-global) #app{padding-bottom:170px}
   .management-person-heading h2{font-size:23px}
   .management-avatar{width:54px;height:54px;border-radius:16px;font-size:21px}
 }
+
+/* Professional management: people rows, focused versions and contextual sections. */
+.management-layout.professional-page{max-width:1120px}
+.management-layout .management-content>p{margin:0}
+.management-layout .management-record-list{display:grid;min-width:0}
+.management-layout .management-record{display:flex;align-items:center;gap:16px;min-width:0;padding:20px 0;color:var(--label);text-decoration:none;border-bottom:1px solid var(--sep)}
+.management-layout .management-record:first-child{padding-top:0}
+.management-layout .management-record:last-child{border-bottom:0;padding-bottom:0}
+.management-layout .management-record>div{min-width:0;flex:1}
+.management-layout .management-record strong{display:block;font-size:17px;line-height:1.4;overflow-wrap:anywhere}
+.management-layout .management-record p{color:var(--management-muted);margin:5px 0 0;font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.management-layout .management-record .management-avatar{width:46px;height:46px;border-radius:14px;font-size:17px}
+.management-layout .management-record:hover strong{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+.management-layout .management-list-tools{display:flex;gap:16px;align-items:end;flex-wrap:wrap}
+.management-layout .management-list-tools>label,.management-layout .management-list-tools>.field{flex:1;min-width:min(100%,230px)}
+.management-layout .management-filter{display:flex;gap:4px;flex-wrap:wrap;padding:4px;border:1px solid var(--sep);border-radius:12px;background:var(--surface)}
+.management-layout .management-filter button{min-height:44px;padding:8px 12px;border:0;border-radius:8px;background:transparent;color:var(--management-muted);font:inherit;font-size:14px;cursor:pointer}
+.management-layout .management-filter button[aria-pressed="true"]{background:var(--acc-soft);color:var(--label);font-weight:650}
+.management-layout .management-student-flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.management-layout .management-student-record .management-student-activity{flex:0 1 180px;text-align:right;color:var(--management-muted);font-size:13px;display:grid;gap:4px}
+.management-layout .management-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-block:1px solid var(--sep);padding-block:18px}
+.management-layout .management-overview a{display:grid;gap:2px;padding:4px 20px;color:var(--label);text-decoration:none;border-right:1px solid var(--sep);min-width:0}
+.management-layout .management-overview a:first-child{padding-left:0}
+.management-layout .management-overview a:last-child{border-right:0}
+.management-layout .management-overview strong{font-size:30px;line-height:1.2;font-variant-numeric:tabular-nums}
+.management-layout .management-overview span{font-size:13px;color:var(--management-muted);overflow-wrap:anywhere}
+.management-layout .management-dashboard-columns{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:20px}
+.management-layout .management-action-stack{display:grid;gap:12px}
+.management-layout .management-activity-list{display:grid;gap:16px}
+.management-layout .management-activity-list article+article{padding-top:16px;border-top:1px solid var(--sep)}
+.management-layout .management-activity-list article>div{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.management-layout .management-activity-list p{margin:5px 0 0;font-size:14px}
+.management-layout .management-activity-list a{color:var(--label);font-size:14px}
+.management-layout .management-person-strip{display:flex;align-items:center;gap:16px;min-width:0}
+.management-layout .management-person-strip>div{flex:1;min-width:0}
+.management-layout .management-person-strip strong{overflow-wrap:anywhere;font-size:18px}
+.management-layout .management-person-strip p{margin:4px 0 0;font-size:13px}
+.management-layout .management-section-nav{display:flex;gap:8px;overflow-x:auto;border-bottom:1px solid var(--sep);padding-bottom:8px}
+.management-layout .management-section-nav a{display:flex;align-items:center;min-height:44px;padding:10px 14px;border-radius:8px;color:var(--management-muted);text-decoration:none;white-space:nowrap}
+.management-layout .management-section-nav a[aria-current="page"]{color:var(--label);background:var(--acc-soft);box-shadow:inset 0 -3px var(--acc);font-weight:650}
+.management-layout .management-summary-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:0 0 28px}
+.management-layout .management-summary-facts dt{font-size:13px;color:var(--management-muted);margin-bottom:8px}
+.management-layout .management-summary-facts dd{margin:0;font-size:17px;font-weight:600;overflow-wrap:anywhere}
+.management-layout .management-summary-facts dd.small{font-size:13px;font-weight:400;margin-top:5px}
+.management-layout .management-program-description{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 24px;max-width:70ch}
+.management-layout .management-record-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.management-layout .management-record-heading h3{font-size:18px;margin:0}
+.management-layout .management-record-heading p{margin:4px 0 0}
+.management-layout .management-version-list,.management-layout .management-invite-list{display:grid;gap:24px}
+.management-layout .management-version+.management-version,.management-layout .management-invite+.management-invite{padding-top:24px;border-top:1px solid var(--sep)}
+.management-layout .management-version{display:grid;gap:16px;min-width:0}
+.management-layout .management-version>.management-button{justify-self:start}
+.management-layout summary{min-height:44px;padding:12px 0;cursor:pointer;overflow-wrap:anywhere}
+.management-layout .management-invite .invite-code{font-size:24px;letter-spacing:.05em;overflow-wrap:anywhere}
+.management-layout .management-invite>.btn{margin-top:14px}
+.management-layout .management-panel>label{margin-block:18px}
+.management-layout .management-panel>.card{padding:16px;margin-block:16px}
+.management-layout .danger-confirm{margin-top:20px;padding:16px;border:1px solid var(--red);border-radius:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.management-layout .danger-confirm p{flex-basis:100%;margin:0;line-height:1.6}
+.management-layout .danger-confirm .btn{width:auto}
+.management-layout select:focus-visible,.management-layout summary:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.management-layout .professional-program-editor>.row.between>div{min-width:0}
+@media(max-width:700px){
+ .management-layout .management-dashboard-columns{grid-template-columns:minmax(0,1fr)}
+ .management-layout .management-student-record{display:grid;grid-template-columns:46px minmax(0,1fr) 12px;gap:12px;align-items:start}
+ .management-layout .management-student-record .management-student-activity{grid-column:2;text-align:left;grid-row:2}
+ .management-layout .management-student-record>span:last-child{grid-column:3;grid-row:1}
+ .management-layout .management-summary-facts{grid-template-columns:minmax(0,1fr);gap:18px}
+ .management-layout .management-person-strip{display:grid;grid-template-columns:54px minmax(0,1fr)}
+ .management-layout .management-person-strip>.management-status{grid-column:2;justify-self:start;margin:0}
+ .management-layout .management-overview a{padding-inline:12px}
+ .management-layout .management-list-tools{align-items:stretch}
+ .management-layout .management-list-tools>.field{width:100%}
+ .management-layout .professional-editor-grid.program-fields{gap:10px}
+ .management-layout .professional-program-editor .row-actions>.btn{flex:0 1 auto;max-width:100%}
+}

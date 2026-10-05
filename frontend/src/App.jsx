@@ -387,6 +387,9 @@ function Shell() {
                 <Route path="/professional/students" element={<ProfessionalStudents />} />
                 <Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} />
                 <Route path="/professional/programs" element={<ProfessionalPrograms />} />
+                <Route path="/professional/programs/new" element={<ProfessionalPrograms />} />
+                <Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />
+                <Route path="/professional/programs/:programId/edit" element={<ProfessionalPrograms />} />
                 <Route path="/invite/:code" element={<InviteLanding />} />
                 <Route path="/connect" element={<Navigate to="/student/professionals" replace />} />
                 <Route path="/student/professionals" element={<StudentProfessionals />} />

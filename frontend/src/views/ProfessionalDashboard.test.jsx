@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title }) => <h1>{title}</h1> }))
+vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, action }) => <header><h1>{title}</h1>{action}</header> }))
 
 import ProfessionalDashboard from './ProfessionalDashboard.jsx'
 
@@ -28,6 +28,7 @@ let root
 let container
 
 beforeEach(() => {
+  vi.clearAllMocks(); mocks.auth.user = { id: 'professional-1' }
   dom = new Window({ url: 'https://app.example/#/professional' })
   globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
@@ -35,6 +36,24 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional dashboard', () => {
+  it('does not attribute unidentified activity to an arbitrary student', async () => {
+    mocks.repo.executions.mockResolvedValueOnce([{ id: 'e1', day_key: 'monday', status: 'completed' }])
+    await act(async () => root.render(<MemoryRouter><ProfessionalDashboard /></MemoryRouter>))
+    expect(container.querySelector('.management-activity-list').textContent).toContain('Segunda')
+    expect(container.querySelector('.management-activity-list').textContent).not.toContain('Ana')
+    expect(container.querySelector('.management-activity-list a')).toBeNull()
+  })
+  it('ignores a pending role lookup after switching accounts', async () => {
+    let finishOld
+    mocks.repo.professionalRole.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
+    const view = () => <MemoryRouter><ProfessionalDashboard /></MemoryRouter>
+    await act(async () => root.render(view()))
+    mocks.auth.user = { id: 'professional-2' }; mocks.repo.professionalRole.mockResolvedValueOnce(false)
+    await act(async () => root.render(view()))
+    await act(async () => finishOld(true))
+    expect(container.textContent).toContain('apenas para contas profissionais')
+    expect(mocks.repo.clientSummaries).not.toHaveBeenCalled()
+  })
   it('shows a focused overview and links to the dedicated client workspace', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional']}><ProfessionalDashboard /></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
