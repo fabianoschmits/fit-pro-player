@@ -21,6 +21,8 @@ describe('invite landing', () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/invite/AB12CD34']}><Routes><Route path="/invite/:code" element={<InviteLanding />} /></Routes></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
     expect(container.textContent).toContain('Ana')
+    expect(container.querySelector('.management-layout')).not.toBeNull()
+    expect(container.querySelector('a[href="/student/professionals/add"]')).not.toBeNull()
     expect(container.textContent).toContain('Vincular a este profissional')
     expect(mocks.repo.acceptInvite).not.toHaveBeenCalled()
   })

@@ -196,6 +196,40 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .management-layout .danger-confirm .btn{width:auto}
 .management-layout select:focus-visible,.management-layout summary:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 .management-layout .professional-program-editor>.row.between>div{min-width:0}
+/* Student management: named people, bounded material collections and read-only prescriptions. */
+.management-layout .management-person-list,.management-layout .management-material-list{display:grid;min-width:0}
+.management-layout .management-person-link,.management-layout .management-material-link{display:flex;align-items:center;gap:16px;min-height:64px;min-width:0;padding-block:20px;border-bottom:1px solid var(--sep);color:var(--label);text-decoration:none}
+.management-layout .management-person-link:first-child,.management-layout .management-material-link:first-child{padding-top:0}
+.management-layout .management-person-link:last-child,.management-layout .management-material-link:last-child{border-bottom:0;padding-bottom:0}
+.management-layout .management-person-link>div,.management-layout .management-material-link>div{flex:1;min-width:0}
+.management-layout .management-person-link h3,.management-layout .management-material-link h3{font-size:18px;line-height:1.45;margin:0;overflow-wrap:anywhere}
+.management-layout .management-person-link p,.management-layout .management-material-link p{margin:4px 0 7px;line-height:1.5;overflow-wrap:anywhere}
+.management-layout .management-person-link:hover h3,.management-layout .management-material-link:hover h3{text-decoration:underline;text-underline-offset:4px}
+.management-layout .management-person-facts{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px}
+.management-layout .management-person-facts p{max-width:65ch;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}
+.management-layout .management-person-facts h3{font-size:16px;margin:24px 0 8px}
+.management-layout .management-invite-form{display:grid;gap:12px;max-width:540px}
+.management-layout .management-material-detail{border-bottom:1px solid var(--sep);padding-block:8px}
+.management-layout .management-material-detail:last-child{border-bottom:0}
+.management-layout .management-material-detail summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;line-height:1.5}
+.management-layout .management-material-detail summary::before{content:'▸';font-size:16px;flex-shrink:0}
+.management-layout .management-material-detail[open] summary::before{content:'▾'}
+.management-layout .management-material-detail summary strong{font-size:17px;flex:1;min-width:120px;overflow-wrap:anywhere}
+.management-layout .management-material-detail>p{overflow-wrap:anywhere;line-height:1.6}
+.management-layout .student-program-overview{display:grid;gap:20px;min-width:0}
+.management-layout .student-program-overview h3{margin:0;font-size:18px;overflow-wrap:anywhere}
+.management-layout .student-program-overview p{max-width:65ch;overflow-wrap:anywhere}
+.management-layout .management-next-workout{display:flex;align-items:center;justify-content:space-between;gap:20px}
+.management-layout .management-next-workout>div{min-width:0}
+.management-layout .management-next-workout p{margin:5px 0 0}
+.management-layout .management-next-workout>.btn{width:auto;flex-shrink:0}
+@media(max-width:700px){
+ .management-layout .management-person-facts{grid-template-columns:minmax(0,1fr)}
+ .management-layout .management-person-link{display:grid;grid-template-columns:54px minmax(0,1fr);gap:12px}
+ .management-layout .management-person-link>.management-status{grid-column:2;justify-self:start}
+ .management-layout .management-material-link{align-items:flex-start;flex-wrap:wrap;gap:10px}
+ .management-layout .management-material-link>.management-status{margin:0}
+}
 @media(max-width:700px){
  .management-layout .management-dashboard-columns{grid-template-columns:minmax(0,1fr)}
  .management-layout .management-student-record{display:grid;grid-template-columns:46px minmax(0,1fr) 12px;gap:12px;align-items:start}

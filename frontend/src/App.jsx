@@ -50,6 +50,8 @@ const loadProfessionalStudents = () => import('./views/ProfessionalStudents.jsx'
 const loadProfessionalStudentPage = () => import('./views/ProfessionalStudentPage.jsx')
 const loadProfessionalPrograms = () => import('./views/ProfessionalPrograms.jsx')
 const loadStudentProfessionals = () => import('./views/StudentProfessionals.jsx')
+const loadStudentProfessionalDetail = () => import('./views/StudentProfessionalDetail.jsx')
+const loadStudentProfessionalMaterials = () => import('./views/StudentProfessionalMaterials.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Home = lazy(loadHome)
@@ -70,6 +72,9 @@ const ProfessionalStudents = lazy(loadProfessionalStudents)
 const ProfessionalStudentPage = lazy(loadProfessionalStudentPage)
 const ProfessionalPrograms = lazy(loadProfessionalPrograms)
 const StudentProfessionals = lazy(loadStudentProfessionals)
+const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ default: module.StudentConnect })))
+const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
+const StudentProfessionalMaterials = lazy(loadStudentProfessionalMaterials)
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
@@ -391,8 +396,11 @@ function Shell() {
                 <Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/:programId/edit" element={<ProfessionalPrograms />} />
                 <Route path="/invite/:code" element={<InviteLanding />} />
-                <Route path="/connect" element={<Navigate to="/student/professionals" replace />} />
+                <Route path="/connect" element={<StudentConnect />} />
                 <Route path="/student/professionals" element={<StudentProfessionals />} />
+                <Route path="/student/professionals/add" element={<StudentProfessionals />} />
+                <Route path="/student/professionals/materials" element={<StudentProfessionalMaterials />} />
+                <Route path="/student/professionals/:professionalId" element={<StudentProfessionalDetail />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />

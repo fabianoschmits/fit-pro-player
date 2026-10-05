@@ -1,68 +1,63 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useCallback, useMemo } from 'react'
+import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import { t } from '../lib/i18n.js'
-import { withTimeout, professionalDate } from '../lib/professional-ux.js'
+import { professionalDate } from '../lib/professional-ux.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from '../lib/assigned-program.js'
 import { useStore } from '../store/useStore.js'
 import { startFlow } from '../sheets.jsx'
-import { Button, Section, TextField } from '../components/ui.jsx'
-import AppHeader from '../components/AppHeader.jsx'
+import { Button } from '../components/ui.jsx'
+import ManagementLayout from '../components/ManagementLayout.jsx'
+import { ManagementPanel, ManagementEmpty, ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
 import StudentProgramOverview from '../components/StudentProgramOverview.jsx'
+import StudentProfessionalInvite from '../components/StudentProfessionalInvite.jsx'
+import useStudentManagementRequest from '../components/useStudentManagementRequest.js'
+
+export function StudentConnect() {
+  const { search } = useLocation()
+  return <Navigate to={`/student/professionals/add${search}`} replace />
+}
+
 export default function StudentProfessionals() {
-  const auth = useAuth(); const [params] = useSearchParams(); const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const owner = useRef(auth.user?.id); owner.current = auth.user?.id
-  const [code, setCode] = useState(params.get('code') || ''); const [preview, setPreview] = useState(null); const [relations, setRelations] = useState([]); const [assignments, setAssignments] = useState([]); const [overview, setOverview] = useState({}); const [busy, setBusy] = useState(true); const [message, setMessage] = useState(''); const [error, setError] = useState(''); const [confirmRelationshipId, setConfirmRelationshipId] = useState('')
-  const refresh = async () => {
-    const id = auth.user?.id; setBusy(true); setError('')
-    try {
-      const [nextRelations, nextAssignments, nextOverview] = await withTimeout(Promise.all([repo.relationships(id), repo.assignments(), repo.studentOverview()]), 10000)
-      if (owner.current !== id) return
-      const latest = nextAssignments.filter(item => item.status === 'active').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]
-      const version = latest ? await withTimeout(repo.version(latest.version_id), 10000) : null
-      if (owner.current !== id) return
-      setRelations(nextRelations); setAssignments(nextAssignments); setOverview(nextOverview || {})
-      const current = useStore.getState().S
-      if (version && (current.assignedProgram?.versionId !== version.id || current.assignedProgram?.assignmentId !== latest.id)) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
-      else if (!latest && current.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...current }))
-    } catch (cause) { if (owner.current === id) setError(t(cause?.message === 'request-timeout' ? 'A conexão demorou mais que o esperado.' : 'Não foi possível carregar seus profissionais.')) }
-    finally { if (owner.current === id) setBusy(false) }
+  const auth = useAuth(); const [params] = useSearchParams(); const { pathname, search } = useLocation()
+  if (pathname.endsWith('/add')) return <StudentProfessionalInvite />
+  if (params.has('code')) return <Navigate to={`/student/professionals/add${search}`} replace />
+  return <ProfessionalsOverview key={`${auth.status}:${auth.user?.id}`} />
+}
+
+function ProfessionalsOverview() {
+  const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
+  const load = useCallback(async current => {
+    const [professionals, assignments, overview] = await Promise.all([repo.studentProfessionals(), repo.assignments(), repo.studentOverview()])
+    if (!current()) return null
+    const active = assignments.filter(item => item.status === 'active').sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]
+    const version = active ? await repo.version(active.version_id) : null
+    if (!current()) return null
+    const state = useStore.getState().S
+    if (version && (state.assignedProgram?.versionId !== version.id || state.assignedProgram?.assignmentId !== active.id)) useStore.getState().replaceState(assignedPlanToState({ ...state }, version, active))
+    else if (!active && state.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...state }))
+    const scopedOverview = active && overview?.assignment?.id === active.id && overview?.version?.id === active.version_id && overview?.professional?.id === active.professional_user_id && professionals.some(person => person.professionalId === active.professional_user_id) ? overview : {}
+    return { professionals, active, overview: scopedOverview }
+  }, [repo])
+  const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar seus profissionais.')
+  const start = item => {
+    const state = useStore.getState().S
+    if (!data?.active || data.active.status !== 'active' || data.overview.assignment?.id !== data.active.id || state.assignedProgram?.assignmentId !== data.active.id || state.assignedProgram?.versionId !== data.active.version_id) return
+    const day = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 }[item.day]
+    const routineId = state.week?.[day]
+    const routine = state.routines?.find(entry => entry.id === routineId && entry.assignmentId === data.active.id)
+    if (routine) startFlow(routineId)
   }
-  useEffect(() => {
-    owner.current = auth.user?.id
-    if (auth.status === 'initializing') {
-      const guard = window.setTimeout(() => {
-        setBusy(false)
-        setError(t('Não foi possível confirmar sua sessão. Tente novamente.'))
-      }, 12000)
-      return () => window.clearTimeout(guard)
-    }
-    if (!auth.user?.id) {
-      setBusy(false)
-      setError(t('Entre na sua conta para acessar seus profissionais.'))
-      return
-    }
-    let settled = false
-    const request = refresh()
-    const guard = window.setTimeout(() => {
-      if (!settled) {
-        setBusy(false)
-        setError(t('A conexão demorou mais que o esperado.'))
-      }
-    }, 12000)
-    Promise.resolve(request).finally(() => { settled = true; window.clearTimeout(guard) })
-    if (params.get('code')) repo.previewInvite(params.get('code')).then(rows => { if (owner.current === auth.user?.id) setPreview(rows?.[0] || null) }).catch(() => setError(t('Convite inválido ou expirado.')))
-    return () => { settled = true; owner.current = null; window.clearTimeout(guard) }
-  }, [auth.status, auth.user?.id])
-  const previewInvite = async () => { setError(''); try { const rows = await repo.previewInvite(code); setPreview(rows?.[0] || null); if (!rows?.length) setError(t('Convite inválido ou expirado.')) } catch { setError(t('Não foi possível consultar o convite.')) } }
-  const accept = async () => { try { await repo.acceptInvite(code); setMessage(t('Vínculo aceito.')); setPreview(null); await refresh() } catch { setError(t('Não foi possível aceitar este convite.')) } }
-  const start = item => { if (!assignments.some(entry => entry.status === 'active')) return; const dayNumber = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 }[item.day]; const routineId = useStore.getState().S.week?.[dayNumber]; if (!routineId) { setError(t('Não foi possível iniciar o treino.')); return } startFlow(routineId) }
-  const activeRelations = relations.filter(item => item.status === 'active')
-  return <div className="narrow student-professionals-page"><AppHeader title={t("Meus profissionais")} subtitle={t("Vínculos, convites e treinos recebidos")} backTo="/more" />{error && <p role="alert" className="error">{error} <button className="link" onClick={refresh}>{t("Tentar novamente")}</button></p>}{message && <p role="status">{message}</p>}{busy ? <p role="status">{t("Carregando…")}</p> : <>
-    <Section title={t("Adicionar profissional")}><p className="muted">{t("Digite o código recebido e confira o perfil antes de vincular.")}</p><TextField aria-label={t("Código do profissional")} placeholder={t("Ex.: A1B2C3D4E5")} value={code} onChange={event => setCode(event.target.value.toUpperCase())} /><Button onClick={previewInvite}>{t("Continuar")}</Button>{preview && <div className="card invite-preview-card"><strong>{preview.professional_name}</strong><span>{preview.bio || t('Perfil profissional')}</span>{preview.specialties?.length > 0 && <span className="muted small">{preview.specialties.join(' · ')}</span>}<Button variant="primary" onClick={accept}>{t("Vincular a este profissional")}</Button></div>}</Section>
-    <Section title={t('Profissionais vinculados ({0})', activeRelations.length)}>{activeRelations.length ? activeRelations.map(item => <div className="card row between" key={item.id}><span><strong>{t("Profissional vinculado")}</strong><small className="muted">{t('Desde {0}', professionalDate(item.accepted_at || item.created_at))}</small></span>{confirmRelationshipId === item.id ? <span className="danger-confirm"><strong>{t("Desvincular este profissional?")}</strong><Button variant="danger" onClick={() => repo.revokeRelationship(item.id).then(() => { setConfirmRelationshipId(''); return refresh() }).catch(() => setError(t('Não foi possível encerrar o vínculo.')))}>{t("Confirmar")}</Button><Button onClick={() => setConfirmRelationshipId('')}>{t("Cancelar")}</Button></span> : <Button variant="ghost" onClick={() => setConfirmRelationshipId(item.id)}>{t("Desvincular")}</Button>}</div>) : <p className="muted">{t("Você ainda não possui profissionais vinculados.")}</p>}</Section>
-    <StudentProgramOverview overview={overview} onStart={start} />
-  </>}</div>
+  return <ManagementLayout audience="student" className="student-professionals-page" title={t('Meus profissionais')} subtitle={t('Pessoas que acompanham seu treino')} backTo="/more" action={<Link className="management-button management-button-primary" to="/student/professionals/add">{t('Adicionar profissional')}</Link>}>
+    {error && <p role="alert" className="management-error">{error} <Button onClick={refresh}>{t('Tentar novamente')}</Button></p>}
+    {busy ? <p role="status">{t('Carregando…')}</p> : data && <>
+      <ManagementPanel title={t('Profissionais vinculados ({0})', data.professionals.length)}>{data.professionals.length ? <div className="management-person-list">{data.professionals.map(person => <Link className="management-person-link" to={`/student/professionals/${person.professionalId}`} key={person.professionalId}>
+        <ManagementAvatar name={person.professionalName} /><div><h3>{person.professionalName}</h3>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}<p>{person.activeProgramTitle || t('Sem programa ativo')}</p><small className="muted">{t('Desde {0}', professionalDate(person.linkedAt))}</small></div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus>
+      </Link>)}</div> : <ManagementEmpty title={t('Você ainda não possui profissionais vinculados.')} description={t('Use o convite recebido para começar o acompanhamento.')} action={<Link className="management-button" to="/student/professionals/add">{t('Adicionar profissional')}</Link>} />}</ManagementPanel>
+      <ManagementPanel title={t('Materiais recebidos')} description={t('Consulte programas e prescrições de cada profissional.')} action={<Link className="management-button" to="/student/professionals/materials">{t('Ver materiais')}</Link>} />
+      {data.overview.program ? <StudentProgramOverview overview={data.overview} onStart={start} managementCompact trainingTo={`/student/professionals/${data.active.professional_user_id}?section=training`} /> : <ManagementPanel title={t('Programa profissional')}><p className="muted">{t('Você ainda não recebeu um programa ativo.')}</p></ManagementPanel>}
+    </>}
+  </ManagementLayout>
 }

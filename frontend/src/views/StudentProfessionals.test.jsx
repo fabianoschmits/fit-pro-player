@@ -1,55 +1,32 @@
 // @vitest-environment happy-dom
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
-import { Window } from 'happy-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'student-1' } }, repo: { relationships: vi.fn().mockResolvedValue([]), assignments: vi.fn().mockResolvedValue([]), studentOverview: vi.fn().mockResolvedValue({}), revokeRelationship: vi.fn() } }))
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+const mocks = vi.hoisted(() => ({ auth: {}, repo: { studentProfessionals: vi.fn(), assignments: vi.fn(), studentOverview: vi.fn(), version: vi.fn() }, replace: vi.fn(), start: vi.fn(), state: {} }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../lib/professional-execution.js', () => ({ createProfessionalExecutionRepository: () => ({ startAssignedExecution: vi.fn() }) }))
-vi.mock('../sheets.jsx', () => ({ startFlow: vi.fn() }))
-vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title }) => <h1>{title}</h1> }))
+vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: mocks.state, replaceState: mocks.replace }) } }))
+vi.mock('../sheets.jsx', () => ({ startFlow: (...args) => mocks.start(...args) }))
 import StudentProfessionals from './StudentProfessionals.jsx'
-
-let dom, root, container
-beforeEach(() => { dom = new Window({ url: 'https://app.example/#/student/professionals' }); globalThis.window = dom; globalThis.document = dom.document; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
-afterEach(async () => { await act(async () => root.unmount()); dom.close() })
-
-describe('student professionals page', () => {
-  it('shows a focused add-professional empty state', async () => {
-    await act(async () => root.render(<MemoryRouter initialEntries={['/student/professionals']}><StudentProfessionals /></MemoryRouter>))
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    expect(container.textContent).toContain('Adicionar profissional')
-    expect(container.textContent).toContain('Você ainda não possui profissionais vinculados.')
-  })
-
-  it('requires confirmation before unlinking a professional', async () => {
-    mocks.repo.relationships.mockResolvedValue([{ id: 'r1', status: 'active', accepted_at: '2026-09-24T00:00:00Z' }])
-    await act(async () => root.render(<MemoryRouter initialEntries={['/student/professionals']}><StudentProfessionals /></MemoryRouter>))
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Desvincular').click())
-    expect(container.textContent).toContain('Desvincular este profissional?')
-    expect(mocks.repo.revokeRelationship).not.toHaveBeenCalled()
-  })
-
-  it('does not leave the page loading without an authenticated user', async () => {
-    mocks.auth = { status: 'anonymous', user: null }
-    await act(async () => root.render(<MemoryRouter initialEntries={['/student/professionals']}><StudentProfessionals /></MemoryRouter>))
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    expect(container.textContent).toContain('Entre na sua conta para acessar seus profissionais.')
-    expect(container.textContent).not.toContain('Carregando…')
-  })
-
-  it('fails the loading state when session bootstrap is stuck', async () => {
-    mocks.auth = { status: 'initializing', user: null }
-    const originalSetTimeout = window.setTimeout
-    window.setTimeout = callback => { callback(); return 1 }
-    await act(async () => root.render(<MemoryRouter initialEntries={['/student/professionals']}><StudentProfessionals /></MemoryRouter>))
-    expect(container.textContent).toContain('Não foi possível confirmar sua sessão. Tente novamente.')
-    expect(container.textContent).not.toContain('Carregando…')
-    window.setTimeout = originalSetTimeout
-  })
+let root, container
+beforeEach(() => { vi.clearAllMocks(); mocks.auth = { status: 'authenticated', user: { id: 's1' } }; mocks.state = { routines: [] }; mocks.repo.studentProfessionals.mockResolvedValue([]); mocks.repo.assignments.mockResolvedValue([]); mocks.repo.studentOverview.mockResolvedValue({}); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
+afterEach(async () => { await act(async () => root.unmount()); container.remove() })
+const render = async (path = '/student/professionals') => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/student/professionals" element={<StudentProfessionals />} /><Route path="/student/professionals/add" element={<p>Add destination</p>} /></Routes></MemoryRouter>))
+it('names each linked professional and gives separate add and materials links', async () => { mocks.repo.studentProfessionals.mockResolvedValue([{ professionalId: 'p1', professionalName: 'Ana Silva', activeProgramTitle: 'Força' }, { professionalId: 'p2', professionalName: 'João Reis', activeProgramTitle: 'Corrida' }]); await render(); expect(container.textContent).toContain('Ana Silva'); expect(container.textContent).toContain('João Reis'); expect(container.querySelector('a[href="/student/professionals/p2"]').textContent).toContain('João Reis'); expect(container.querySelector('input')).toBeNull() })
+it('shows an actionable empty state', async () => { await render(); expect(container.textContent).toContain('Você ainda não possui profissionais vinculados.'); expect(container.querySelector('a[href="/student/professionals/add"]')).not.toBeNull() })
+it('preserves a code-bearing entry in the add destination', async () => { await render('/student/professionals?code=AB12'); expect(container.textContent).toContain('Add destination'); expect(mocks.repo.studentProfessionals).not.toHaveBeenCalled() })
+it('shows an error and retries the summary request', async () => { mocks.repo.studentProfessionals.mockRejectedValueOnce(new Error('offline')); await render(); expect(container.querySelector('[role="alert"]').textContent).toContain('Não foi possível carregar seus profissionais.'); await act(async () => [...container.querySelectorAll('button')].find(x => x.textContent === 'Tentar novamente').click()); expect(mocks.repo.studentProfessionals).toHaveBeenCalledTimes(2) })
+it('renders loading and discards an earlier account response and synchronization', async () => { let resolve; mocks.repo.studentProfessionals.mockReturnValueOnce(new Promise(r => { resolve = r })); await render(); expect(container.textContent).toContain('Carregando…'); mocks.auth = { status: 'authenticated', user: { id: 's2' } }; await render(); await act(async () => resolve([{ professionalId: 'p1', professionalName: 'Wrong account' }])); expect(container.textContent).not.toContain('Wrong account'); expect(mocks.replace).not.toHaveBeenCalled() })
+it('synchronizes only the current active assignment', async () => { mocks.repo.assignments.mockResolvedValue([{ id: 'a1', status: 'active', version_id: 'v1', created_at: '2026-10-01' }]); mocks.repo.version.mockResolvedValue({ id: 'v1', weekly_plan: { monday: [{ exerciseId: 'squat', sets: 3 }] } }); await render(); expect(mocks.replace).toHaveBeenCalledWith(expect.objectContaining({ assignedProgram: expect.objectContaining({ assignmentId: 'a1', versionId: 'v1' }) })) })
+it('does not leave anonymous or stalled authentication loading', async () => { mocks.auth = { status: 'anonymous', user: null }; await render(); expect(container.textContent).toContain('Entre na sua conta para acessar seus profissionais.'); expect(mocks.repo.studentProfessionals).not.toHaveBeenCalled(); mocks.auth = { status: 'initializing', user: null }; const timer = vi.spyOn(window, 'setTimeout').mockImplementation(fn => { fn(); return 1 }); await render(); expect(container.textContent).toContain('Não foi possível confirmar sua sessão. Tente novamente.'); timer.mockRestore() })
+it('starts only a routine belonging to the synchronized active assignment', async () => {
+  const plan = { monday: [{ exerciseId: 'squat', sets: 3 }] }
+  mocks.repo.studentProfessionals.mockResolvedValue([{ professionalId: 'p1', professionalName: 'Ana Silva' }]); mocks.repo.assignments.mockResolvedValue([{ id: 'a1', status: 'active', professional_user_id: 'p1', version_id: 'v1' }]); mocks.repo.version.mockResolvedValue({ id: 'v1', weekly_plan: plan }); mocks.repo.studentOverview.mockResolvedValue({ assignment: { id: 'a1' }, program: { title: 'Força' }, professional: { id: 'p1', name: 'Ana Silva' }, version: { id: 'v1', weeklyPlan: plan } }); await render()
+  const button = [...container.querySelectorAll('button')].find(x => x.textContent === 'Iniciar'); expect(button).toBeDefined()
+  mocks.state = { assignedProgram: { assignmentId: 'a1', versionId: 'v1' }, week: { 1: 'assigned-r1' }, routines: [{ id: 'assigned-r1', assignmentId: 'a1' }] }; await act(async () => button.click()); expect(mocks.start).toHaveBeenCalledWith('assigned-r1')
+  mocks.start.mockClear(); mocks.state.assignedProgram.assignmentId = 'other-assignment'; await act(async () => button.click()); expect(mocks.start).not.toHaveBeenCalled()
 })
+it('clears a synchronized professional plan when there is no active assignment', async () => { mocks.state = { assignedProgram: { assignmentId: 'old' }, routines: [{ id: 'old', assigned: true }], week: {} }; await render(); expect(mocks.replace).toHaveBeenCalled(); expect(mocks.replace.mock.calls[0][0].assignedProgram).toBeNull() })
+it('does not show a current program under a different professional identity', async () => { mocks.repo.studentProfessionals.mockResolvedValue([{ professionalId: 'p1', professionalName: 'Ana Silva' }]); mocks.repo.assignments.mockResolvedValue([{ id: 'a1', status: 'active', professional_user_id: 'p1', version_id: 'v1' }]); mocks.repo.version.mockResolvedValue({ id: 'v1', weekly_plan: {} }); mocks.repo.studentOverview.mockResolvedValue({ assignment: { id: 'a1' }, professional: { id: 'p2', name: 'João Reis' }, program: { title: 'Wrong professional program' }, version: { id: 'v1', weeklyPlan: {} } }); await render(); expect(container.textContent).not.toContain('Wrong professional program'); expect(container.textContent).not.toContain('João Reis') })
