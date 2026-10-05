@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { t } from '../lib/i18n.js'
 
 const LINKS = [
@@ -10,7 +10,10 @@ const LINKS = [
 ]
 
 export default function ProfessionalWorkspaceNav() {
-  return <nav className="professional-workspace-nav" aria-label={t('Navegação da área profissional')}>
-    {LINKS.map(([label, to]) => <NavLink key={to} to={to} end={to === '/professional'}>{t(label)}</NavLink>)}
+  const { pathname } = useLocation()
+  return <nav className="professional-workspace-nav management-nav" aria-label={t('Navegação da área profissional')}>
+    {LINKS.map(([label, to]) => to === '/professional/profile' && pathname === '/professional-profile'
+      ? <Link key={to} to={to} aria-current="page">{t(label)}</Link>
+      : <NavLink key={to} to={to} end={to === '/professional'}>{t(label)}</NavLink>)}
   </nav>
 }

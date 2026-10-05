@@ -7,10 +7,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import ProfessionalWorkspaceNav from './ProfessionalWorkspaceNav.jsx'
 
 let dom, root, container
-beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional' }); globalThis.window = dom; globalThis.document = dom.document; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
+beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional workspace navigation', () => {
+  it('recognizes the legacy profile alias as the active profile destination', async () => {
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional-profile?onboarding=1']}><ProfessionalWorkspaceNav /></MemoryRouter>))
+    expect(container.querySelector('[aria-current="page"]')?.textContent).toContain('Perfil')
+  })
   it('exposes focused workspace destinations without changing the main tab bar', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students']}><ProfessionalWorkspaceNav /></MemoryRouter>))
     expect(container.textContent).toContain('Visão geral')

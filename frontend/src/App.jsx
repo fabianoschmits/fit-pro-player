@@ -381,6 +381,7 @@ function Shell() {
                 <Route path="/body-progress" element={<BodyProgress />} />
                 <Route path="/professional-profile" element={<ProfessionalProfile />} />
                 <Route path="/professional/profile" element={<ProfessionalProfile />} />
+                <Route path="/professional/profile/edit" element={<ProfessionalProfile />} />
                 <Route path="/professional" element={<ProfessionalDashboard />} />
                 <Route path="/professional/invites" element={<ProfessionalInvites />} />
                 <Route path="/professional/students" element={<ProfessionalStudents />} />
