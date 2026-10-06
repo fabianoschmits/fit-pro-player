@@ -45,6 +45,7 @@ function DetailWorkspace({ professionalId }) {
       const store = useStore.getState(); const state = store.S
       const ownsState = requestScope.scope.kind === 'account' && requestScope.scope.userId === callerId && store.isScopeCurrent(requestScope)
       // Local reconciliation outlives this screen, but never its initiating account/store scope.
+      if (ownsState) store.invalidateAssignedProgramReads(requestScope)
       if (ownsState && state.assignedProgram?.assignmentId && revokedAssignments.has(state.assignedProgram.assignmentId)) store.replaceState(clearAssignedProgramFromState({ ...state }))
       if (!alive.current || !ownsState) return
       if (currentQuery.current === requestQuery) navigate('/student/professionals', { replace: true })

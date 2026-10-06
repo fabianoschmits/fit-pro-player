@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: '
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: mocks.state, replaceState: mocks.replace, getScopeToken: () => ({ ...mocks.scopeToken }), isScopeCurrent: token => token.scope === mocks.scopeToken.scope && token.generation === mocks.scopeToken.generation }) } }))
+vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: mocks.state, replaceState: mocks.replace, invalidateAssignedProgramReads: () => {}, getScopeToken: () => ({ ...mocks.scopeToken }), isScopeCurrent: token => token.scope === mocks.scopeToken.scope && token.generation === mocks.scopeToken.generation }) } }))
 vi.mock('../sheets.jsx', () => ({ startFlow: mocks.start }))
 import StudentProfessionalDetail from './StudentProfessionalDetail.jsx'
 import { assignedPlanToState } from '../lib/assigned-program.js'

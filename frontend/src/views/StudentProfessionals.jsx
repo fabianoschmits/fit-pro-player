@@ -29,19 +29,33 @@ export default function StudentProfessionals() {
 
 function ProfessionalsOverview() {
   const auth = useAuth(); const userId = auth.user?.id
+  const ready = useStore(state => state.ready)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const load = useCallback(async current => {
-    const [professionals, assignments, overview] = await Promise.all([repo.studentProfessionals(), repo.assignedPrograms(userId), repo.studentOverview()])
-    if (!current()) return null
-    const active = assignments.filter(item => item.status === 'active' && item.student_user_id === userId && professionals.some(person => person.professionalId === item.professional_user_id)).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]
-    const version = active ? await repo.version(active.version_id) : null
-    if (!current()) return null
-    const state = useStore.getState().S
-    if (version && version.id === active?.version_id && (state.assignedProgram?.versionId !== version.id || state.assignedProgram?.assignmentId !== active.id)) useStore.getState().replaceState(assignedPlanToState({ ...state }, version, active))
-    else if (!active && state.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...state }))
-    const scopedOverview = active && overview?.assignment?.id === active.id && overview?.version?.id === active.version_id && overview?.professional?.id === active.professional_user_id && professionals.some(person => person.professionalId === active.professional_user_id) ? overview : {}
-    return { professionals, active, overview: scopedOverview }
-  }, [repo, userId])
+    if (!ready) return null
+    // A concurrent reconciliation may invalidate this read without leaving the page.
+    // Fetch a fresh snapshot then, rather than rendering an obsolete program or a blank
+    // summary. The request hook bounds retries by its lifetime and timeout generation.
+    while (current()) {
+      const token = useStore.getState().getAssignedProgramReadToken()
+      if (token.scope.kind !== 'account' || token.scope.userId !== userId) return null
+      const ownsRead = () => useStore.getState().isAssignedProgramReadCurrent(token, userId)
+      const [professionals, assignments, overview] = await Promise.all([repo.studentProfessionals(), repo.assignedPrograms(userId), repo.studentOverview()])
+      if (!current()) return null
+      if (!ownsRead()) continue
+      const active = assignments.filter(item => item.status === 'active' && item.student_user_id === userId && professionals.some(person => person.professionalId === item.professional_user_id)).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))[0]
+      const version = active ? await repo.version(active.version_id) : null
+      if (!current()) return null
+      if (!ownsRead()) continue
+      const state = useStore.getState().S
+      if (!active || version?.id === active.version_id) useStore.getState().invalidateAssignedProgramReads(token)
+      if (version && version.id === active?.version_id && (state.assignedProgram?.versionId !== version.id || state.assignedProgram?.assignmentId !== active.id)) useStore.getState().replaceState(assignedPlanToState({ ...state }, version, active))
+      else if (!active && state.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...state }))
+      const scopedOverview = active && overview?.assignment?.id === active.id && overview?.version?.id === active.version_id && overview?.professional?.id === active.professional_user_id && professionals.some(person => person.professionalId === active.professional_user_id) ? overview : {}
+      return { professionals, active, overview: scopedOverview }
+    }
+    return null
+  }, [repo, userId, ready])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar seus profissionais.')
   const start = item => {
     const state = useStore.getState().S

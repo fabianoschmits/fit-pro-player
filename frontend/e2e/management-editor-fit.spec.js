@@ -9,6 +9,7 @@ test('long program names leave the editor fields and Cancel within the mobile wo
       await page.goto(`/#${route}`)
       await expect(page.locator('.management-layout')).toBeVisible()
       await expect(page.locator('.management-content')).not.toContainText('Carregando programas…')
+      if(route.endsWith('/edit')) await expect(page.locator('.professional-program-editor')).toBeVisible()
       const clipped=await page.locator('.management-content').evaluate(content=>{
         const bounds=content.getBoundingClientRect()
         // Chips deliberately scroll; the editor itself and its form actions must fit.
@@ -17,8 +18,9 @@ test('long program names leave the editor fields and Cancel within the mobile wo
       expect(clipped,`${width}px ${route}`).toEqual([])
       if(route.endsWith('/edit')){
         const cancel=page.getByRole('button',{name:'Cancelar',exact:true})
-        await cancel.scrollIntoViewIfNeeded()
         await expect(cancel).toBeInViewport()
+        // Locator click retries a detached target during the existing route transition;
+        // a separate scroll action captures an element that may belong to the exiting page.
         await cancel.click()
         await expect(page).toHaveURL(new RegExp(`professional/programs/${id}$`))
       }

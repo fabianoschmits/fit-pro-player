@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ auth: {}, repo: { studentProfessionals: vi.fn(
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: mocks.state, replaceState: mocks.replace }) } }))
+vi.mock('../store/useStore.js', () => ({ useStore: Object.assign(selector => selector({ ready: true }), { getState: () => ({ S: mocks.state, replaceState: mocks.replace, invalidateAssignedProgramReads: () => {}, getAssignedProgramReadToken: () => ({ scope: { kind: 'account', userId: mocks.auth.user?.id } }), isAssignedProgramReadCurrent: () => true }) }) }))
 vi.mock('../sheets.jsx', () => ({ startFlow: (...args) => mocks.start(...args) }))
 import StudentProfessionals from './StudentProfessionals.jsx'
 let root, container

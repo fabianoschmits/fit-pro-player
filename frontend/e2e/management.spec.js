@@ -56,6 +56,22 @@ test('code entry remains accessible before onboarding and acceptance', async ({p
   await expect(page.getByRole('button',{name:'Vincular a este profissional',exact:true})).toHaveCount(0)
 })
 
+test('a direct invitation alias selects and reveals Add in the mobile management navigation', async ({page}) => {
+  await page.setViewportSize({width:360,height:800})
+  await seed(page,{authenticated:true,rpc})
+  await page.goto('/#/invite/A1B2C3D4E5')
+  const selected = page.locator('.management-nav [aria-current="page"]')
+  await expect(selected).toHaveCount(1)
+  await expect(selected).toHaveText('Adicionar profissional')
+  await expect(page.getByRole('button',{name:'Vincular a este profissional',exact:true})).toBeVisible()
+  const bounds = await selected.evaluate(link => {
+    const selectedBounds = link.getBoundingClientRect(), navBounds = link.closest('nav').getBoundingClientRect()
+    return {left:selectedBounds.left,right:selectedBounds.right,navLeft:navBounds.left,navRight:navBounds.right}
+  })
+  expect(bounds.left).toBeGreaterThanOrEqual(bounds.navLeft - 1)
+  expect(bounds.right).toBeLessThanOrEqual(bounds.navRight + 1)
+})
+
 test('program creation opens its addressable editor and returns to its detail', async ({page}) => {
   let created = null
   await seed(page,{professional:true,rpc:{programs:() => created ? [created] : [], create_program:args => { created={...program,title:args.p_title,description:args.p_description};return created }}})

@@ -86,6 +86,7 @@ const hasData = st => !!(
 export const useStore = create((set, get) => {
   let activeScope = ANONYMOUS_SCOPE
   let scopeGeneration = 0
+  let assignedProgramGeneration = 0
   let localDirty = false
   let saveTm = null
   let syncRunning = null
@@ -119,6 +120,8 @@ export const useStore = create((set, get) => {
   const persist = (S, dirty = true) => {
     const scope = activeScope
     const generation = scopeGeneration
+    const previousAssignment = get().S?.assignedProgram
+    if (['assignmentId', 'versionId', 'programId'].some(key => previousAssignment?.[key] !== S.assignedProgram?.[key])) assignedProgramGeneration++
     if (dirty) localDirty = true
     if (dirty) S._ts = nextStateTimestamp(get().S?._ts)
     registerCustom(S.customEx)
@@ -160,6 +163,14 @@ export const useStore = create((set, get) => {
     getActiveLocalScope: () => activeScope,
     getScopeToken: scopeToken,
     isScopeCurrent: isCurrent,
+    // Reads share this generation across Shell and management. Every persisted assignment
+    // replacement/clear invalidates older snapshots. Confirmed reads and successful
+    // unlink also invalidate when the local assignment happens to remain unchanged.
+    getAssignedProgramReadToken: () => ({ ...scopeToken(), assignmentGeneration: assignedProgramGeneration }),
+    isAssignedProgramReadCurrent: (token, userId) => isCurrent(token) && token.scope.kind === 'account' && token.scope.userId === userId && token.assignmentGeneration === assignedProgramGeneration,
+    invalidateAssignedProgramReads(token) {
+      if (isCurrent(token)) assignedProgramGeneration++
+    },
     async flushPersistence() {
       clearTimeout(saveTm); saveTm = null
       const token = scopeToken()

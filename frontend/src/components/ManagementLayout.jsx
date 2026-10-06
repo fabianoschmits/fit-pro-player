@@ -8,7 +8,7 @@ function StudentWorkspaceNav() {
   const navRef = useManagementNavVisibility()
   const { pathname } = useLocation()
   const materials = pathname === '/student/professionals/materials'
-  const adding = pathname === '/student/professionals/add'
+  const adding = pathname === '/student/professionals/add' || pathname.startsWith('/invite/')
   return <nav ref={navRef} className="management-nav" aria-label={t('Navegação dos meus profissionais')}>
     <Link to="/student/professionals" aria-current={!materials && !adding ? 'page' : undefined}>{t('Meus profissionais')}</Link>
     <Link to="/student/professionals/materials" aria-current={materials ? 'page' : undefined}>{t('Materiais')}</Link>

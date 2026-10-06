@@ -252,8 +252,8 @@ function Shell() {
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
     let disposed = false
-    const token = useStore.getState().getScopeToken?.()
-    const currentScope = () => !disposed && (!token || useStore.getState().isScopeCurrent?.(token))
+    const token = useStore.getState().getAssignedProgramReadToken()
+    const currentScope = () => !disposed && useStore.getState().isAssignedProgramReadCurrent(token, auth.user.id)
     const client = getBrowserSupabaseClient()
     if (!client) return undefined
     const repository = createProfessionalWorkflowRepository({ client })
@@ -261,12 +261,14 @@ function Shell() {
       if (!currentScope() || isProfessional) return
       const latest = assignments[0]
       if (!latest) {
+        useStore.getState().invalidateAssignedProgramReads(token)
         const current = useStore.getState().S
         if (current.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...current }))
         return
       }
       const version = await repository.version(latest.version_id)
       if (!currentScope() || !version) return
+      useStore.getState().invalidateAssignedProgramReads(token)
       const current = useStore.getState().S
       if (current.assignedProgram?.versionId !== version.id || current.assignedProgram?.assignmentId !== latest.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
     }).catch(() => {})
