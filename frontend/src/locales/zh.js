@@ -1154,5 +1154,16 @@ export default {
   "Encerrado": "已结束",
   "Material não encontrado nesta janela recente.": "在近期项目中未找到此资料。",
   "Desvinculando…": "正在解除关联…",
-  "Não foi possível carregar os materiais deste profissional.": "无法加载此专业人员的资料。"
+  "Não foi possível carregar os materiais deste profissional.": "无法加载此专业人员的资料。",
+  "Montar semana": "安排一周",
+  "Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.": "选择日期，添加练习并调整训练安排。然后发布并发送给学员。",
+  "Opções avançadas": "高级选项",
+  "Substituir exercícios do dia?": "替换当天的练习？",
+  "Os exercícios de {0} serão substituídos pelos de {1}.": "{0}的练习将被替换为{1}的练习。",
+  "Substituir dia": "替换当天安排",
+  "Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.": "发布会保存一个计划版本。下一步可发送给学员。",
+  "Use a seta para ver a animação e Adicionar para incluir no dia.": "点击箭头查看动画，点击添加将练习加入当天。",
+  "Filtrar por músculo": "按肌肉筛选",
+  "Filtrar por equipamento": "按器械筛选",
+  "{0} exercício(s) no dia": "当天有{0}个练习"
 }

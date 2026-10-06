@@ -378,5 +378,16 @@ export default {
   "Material não encontrado nesta janela recente.": "Material not found among recent items.",
   "Desvinculando…": "Unlinking…",
   "Não foi possível carregar os materiais deste profissional.": "Could not load this professional's materials.",
-  "Bio": "Bio"
+  "Bio": "Bio",
+  "Montar semana": "Plan the week",
+  "Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.": "Choose a day, add exercises and adjust the prescription. Then publish and send to the student.",
+  "Opções avançadas": "Advanced options",
+  "Substituir exercícios do dia?": "Replace this day’s exercises?",
+  "Os exercícios de {0} serão substituídos pelos de {1}.": "The exercises for {0} will be replaced with those for {1}.",
+  "Substituir dia": "Replace day",
+  "Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.": "Publishing saves a program version. Send it to the student in the next step.",
+  "Use a seta para ver a animação e Adicionar para incluir no dia.": "Use the arrow to preview the animation and Add to include it in the day.",
+  "Filtrar por músculo": "Filter by muscle",
+  "Filtrar por equipamento": "Filter by equipment",
+  "{0} exercício(s) no dia": "{0} exercise(s) in the day"
 }

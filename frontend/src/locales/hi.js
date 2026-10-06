@@ -1154,5 +1154,16 @@ export default {
   "Encerrado": "समाप्त",
   "Material não encontrado nesta janela recente.": "हाल की सामग्री में यह नहीं मिला।",
   "Desvinculando…": "संबंध हटाया जा रहा है…",
-  "Não foi possível carregar os materiais deste profissional.": "इस विशेषज्ञ की सामग्री लोड नहीं हो सकी।"
+  "Não foi possível carregar os materiais deste profissional.": "इस विशेषज्ञ की सामग्री लोड नहीं हो सकी।",
+  "Montar semana": "साप्ताहिक योजना बनाएं",
+  "Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.": "दिन चुनें, व्यायाम जोड़ें और निर्देश समायोजित करें। फिर प्रकाशित करें और विद्यार्थी को भेजें।",
+  "Opções avançadas": "उन्नत विकल्प",
+  "Substituir exercícios do dia?": "दिन के व्यायाम बदलें?",
+  "Os exercícios de {0} serão substituídos pelos de {1}.": "{0} के व्यायाम {1} के व्यायाम से बदल दिए जाएंगे।",
+  "Substituir dia": "दिन बदलें",
+  "Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.": "प्रकाशित करने से कार्यक्रम का संस्करण सहेजा जाता है। अगले चरण में विद्यार्थी को भेजें।",
+  "Use a seta para ver a animação e Adicionar para incluir no dia.": "एनिमेशन देखने के लिए तीर और दिन में शामिल करने के लिए जोड़ें दबाएं।",
+  "Filtrar por músculo": "मांसपेशी के अनुसार छांटें",
+  "Filtrar por equipamento": "उपकरण के अनुसार छांटें",
+  "{0} exercício(s) no dia": "दिन में {0} व्यायाम"
 }

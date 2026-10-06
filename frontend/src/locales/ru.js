@@ -1154,5 +1154,16 @@ export default {
   "Encerrado": "Завершено",
   "Material não encontrado nesta janela recente.": "Материал не найден среди последних записей.",
   "Desvinculando…": "Разрыв связи…",
-  "Não foi possível carregar os materiais deste profissional.": "Не удалось загрузить материалы этого специалиста."
+  "Não foi possível carregar os materiais deste profissional.": "Не удалось загрузить материалы этого специалиста.",
+  "Montar semana": "Составить неделю",
+  "Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.": "Выберите день, добавьте упражнения и настройте назначения. Затем опубликуйте и отправьте ученику.",
+  "Opções avançadas": "Дополнительные параметры",
+  "Substituir exercícios do dia?": "Заменить упражнения дня?",
+  "Os exercícios de {0} serão substituídos pelos de {1}.": "Упражнения дня {0} будут заменены упражнениями дня {1}.",
+  "Substituir dia": "Заменить день",
+  "Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.": "Публикация сохраняет версию программы. Отправка ученику выполняется на следующем шаге.",
+  "Use a seta para ver a animação e Adicionar para incluir no dia.": "Нажмите стрелку для просмотра анимации и Добавить для включения в день.",
+  "Filtrar por músculo": "Фильтр по мышцам",
+  "Filtrar por equipamento": "Фильтр по оборудованию",
+  "{0} exercício(s) no dia": "Упражнений в день: {0}"
 }

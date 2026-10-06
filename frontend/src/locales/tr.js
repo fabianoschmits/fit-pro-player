@@ -1154,5 +1154,16 @@ export default {
   "Encerrado": "Sonlandırıldı",
   "Material não encontrado nesta janela recente.": "Materyal son öğeler arasında bulunamadı.",
   "Desvinculando…": "Bağlantı kaldırılıyor…",
-  "Não foi possível carregar os materiais deste profissional.": "Bu uzmanın materyalleri yüklenemedi."
+  "Não foi possível carregar os materiais deste profissional.": "Bu uzmanın materyalleri yüklenemedi.",
+  "Montar semana": "Haftayı planla",
+  "Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.": "Günü seç, egzersiz ekle ve programı düzenle. Ardından yayımla ve öğrenciye gönder.",
+  "Opções avançadas": "Gelişmiş seçenekler",
+  "Substituir exercícios do dia?": "Günün egzersizleri değiştirilsin mi?",
+  "Os exercícios de {0} serão substituídos pelos de {1}.": "{0} gününün egzersizleri {1} gününün egzersizleriyle değiştirilecek.",
+  "Substituir dia": "Günü değiştir",
+  "Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.": "Yayımlama, programın bir sürümünü kaydeder. Öğrenciye gönderme sonraki adımdadır.",
+  "Use a seta para ver a animação e Adicionar para incluir no dia.": "Animasyonu görmek için oku, güne dahil etmek için Ekle düğmesini kullan.",
+  "Filtrar por músculo": "Kasa göre filtrele",
+  "Filtrar por equipamento": "Ekipmana göre filtrele",
+  "{0} exercício(s) no dia": "Günde {0} egzersiz"
 }

@@ -51,6 +51,45 @@
 .professional-exercise-picker-main small{display:block;margin-top:4px}.professional-exercise-picker-item{margin-block:8px;padding:12px}
 .professional-exercise-animation{max-width:360px;margin:12px auto}.exercise-animation-toggle{width:44px;height:44px;border:1px solid var(--sep);border-radius:var(--r);background:var(--surface);color:var(--label);cursor:pointer}
 .professional-program-editor>.chips{overflow:auto;flex-wrap:nowrap;margin-block:16px}.professional-program-editor>.chips .chip{flex-shrink:0}
+
+/* Professional catalogue: keep names compact while preserving touch targets. */
+.dialog-surface.professional-exercise-modal{width:min(100%,760px);display:flex;flex-direction:column;gap:12px;overflow:hidden;max-height:90dvh}
+.professional-picker-tools{flex:none;display:grid;gap:10px;min-width:0}
+.professional-picker-tools p{margin:0}
+.professional-picker-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.professional-picker-filters select{width:100%;min-width:0;min-height:44px;padding:8px;border:1px solid var(--sep);border-radius:var(--r-sm);color:var(--label);background:var(--field-fill);font:inherit;font-size:13px}
+.professional-picker-results{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+.professional-picker-row{border-bottom:1px solid var(--sep);padding:0;background:var(--surface)}
+.professional-picker-row:last-child{border-bottom:0}
+.professional-picker-row.is-selected{background:color-mix(in srgb,var(--acc) 6%,var(--surface))}
+.professional-picker-line{display:flex;align-items:center;gap:8px;padding:8px;min-width:0}
+.professional-picker-line .thumb{flex:none;width:40px;height:40px;border-radius:var(--r-sm)}
+.professional-picker-name{flex:1;min-width:0}
+.professional-picker-name strong{display:block;font-size:13px;font-weight:550;line-height:1.4;overflow-wrap:anywhere}
+.professional-picker-name small{display:block;color:var(--label-2);font-size:11px;line-height:1.4;margin-top:2px;overflow-wrap:anywhere}
+.professional-picker-preview-button{display:grid;place-items:center;flex:none;width:44px;height:44px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--label-2);cursor:pointer}
+.professional-picker-preview-button:hover{background:var(--surface-2)}
+.professional-picker-line>.btn{flex:none;width:auto;min-height:44px;padding:8px;font-size:12px}
+.professional-picker-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;border-top:1px solid var(--sep);padding-top:12px}
+.professional-picker-footer>.btn{width:auto;min-height:44px}
+.professional-day-count{margin-left:6px;font-size:11px;font-variant-numeric:tabular-nums;opacity:.7}
+.professional-program-steps{list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 16px;padding:0}
+.professional-program-steps li{display:flex;align-items:center;gap:6px;font-size:12px;line-height:1.4;color:var(--label-2);min-width:0}
+.professional-program-steps li>span{display:grid;place-items:center;flex:none;width:24px;height:24px;border-radius:50%;background:var(--surface-2);font-variant-numeric:tabular-nums}
+.professional-program-steps li[aria-current]{color:var(--acc);font-weight:600}
+.professional-program-steps li[aria-current]>span{background:var(--acc-soft)}
+.professional-current-prescription,.professional-send-prescription{padding:16px;min-width:0}
+.professional-send-prescription{border-top:1px solid var(--sep);display:grid;gap:12px}
+.professional-current-prescription h3,.professional-send-prescription h3{font-size:15px;margin:0 0 8px}
+@media(max-width:560px){.professional-program-steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}}
+.professional-prescription-heading>strong{font-size:14px;line-height:1.4;overflow-wrap:anywhere}
+.professional-exercise-order{color:var(--label-2);font-variant-numeric:tabular-nums}
+.professional-prescription-advanced{border-top:1px solid var(--sep);padding-top:4px}
+.professional-prescription-advanced>summary{min-height:44px;display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;color:var(--label-2)}
+.professional-prescription-advanced>summary::before{content:'›';font-size:20px}
+.professional-prescription-advanced[open]>summary::before{transform:rotate(90deg)}
+@media(min-width:900px){.management-layout .professional-prescription-editor>.program-fields{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:420px){.professional-picker-line{gap:4px;padding:6px}.professional-picker-line .thumb{width:32px;height:32px}.professional-picker-preview-button{width:44px}.professional-picker-name strong{font-size:12px}.professional-picker-line>.btn{padding-inline:6px;font-size:11px}}
 body:has(.app-status-global) #app{padding-bottom:170px}
 @media(min-width:900px){.professional-session-detail,.professional-version-compare{grid-template-columns:repeat(2,minmax(0,1fr))}.professional-session-detail>p{grid-column:1/-1}}
 @keyframes dialog-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}

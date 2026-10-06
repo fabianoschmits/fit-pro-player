@@ -35,7 +35,7 @@ describe('professional programs page', () => {
     await act(async () => { Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(input, 'Resistência'); input.dispatchEvent(new Event('input', { bubbles: true })) })
     await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
     expect(mocks.repo.createProgram).toHaveBeenCalledWith('pro-1', 'Resistência', '')
-    expect(container.textContent).toContain('Editar programa semanal')
+    expect(container.textContent).toContain('Montar semana')
     expect(mocks.repo.versions).toHaveBeenCalledWith('p2')
   })
   it('keeps the previous account response out of a pending library load', async () => {
@@ -51,9 +51,9 @@ describe('professional programs page', () => {
   })
   it('opens the editor directly and cancels back to program detail', async () => {
     await act(async () => root.render(page('/professional/programs/p1/edit')))
-    expect(container.textContent).toContain('Editar programa semanal')
+    expect(container.textContent).toContain('Montar semana')
     await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Cancelar').click())
-    expect(container.textContent).not.toContain('Editar programa semanal')
+    expect(container.querySelector('.professional-program-editor')).toBeNull()
     expect(container.textContent).toContain('Versão 1')
     expect(container.querySelector('a[href="/professional/students?program=p1&version=v1"]')).toBeTruthy()
   })

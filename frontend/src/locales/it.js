@@ -1154,5 +1154,16 @@ export default {
   "Encerrado": "Terminato",
   "Material não encontrado nesta janela recente.": "Materiale non trovato tra gli elementi recenti.",
   "Desvinculando…": "Scollegamento…",
-  "Não foi possível carregar os materiais deste profissional.": "Impossibile caricare i materiali di questo professionista."
+  "Não foi possível carregar os materiais deste profissional.": "Impossibile caricare i materiali di questo professionista.",
+  "Montar semana": "Organizza la settimana",
+  "Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.": "Scegli il giorno, aggiungi esercizi e modifica la prescrizione. Poi pubblica e invia all’allievo.",
+  "Opções avançadas": "Opzioni avanzate",
+  "Substituir exercícios do dia?": "Sostituire gli esercizi del giorno?",
+  "Os exercícios de {0} serão substituídos pelos de {1}.": "Gli esercizi di {0} saranno sostituiti da quelli di {1}.",
+  "Substituir dia": "Sostituisci giorno",
+  "Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.": "Pubblicare salva una versione del programma. L’invio all’allievo avviene nel passaggio successivo.",
+  "Use a seta para ver a animação e Adicionar para incluir no dia.": "Usa la freccia per vedere l’animazione e Aggiungi per includere nel giorno.",
+  "Filtrar por músculo": "Filtra per muscolo",
+  "Filtrar por equipamento": "Filtra per attrezzatura",
+  "{0} exercício(s) no dia": "{0} esercizio/i nel giorno"
 }

@@ -1154,5 +1154,16 @@ export default {
   "Encerrado": "종료됨",
   "Material não encontrado nesta janela recente.": "최근 항목에서 자료를 찾을 수 없습니다.",
   "Desvinculando…": "연결 해제 중…",
-  "Não foi possível carregar os materiais deste profissional.": "이 전문가의 자료를 불러올 수 없습니다."
+  "Não foi possível carregar os materiais deste profissional.": "이 전문가의 자료를 불러올 수 없습니다.",
+  "Montar semana": "주간 계획 구성",
+  "Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.": "요일을 선택하고 운동을 추가한 후 처방을 조정하세요. 그런 다음 게시하고 회원에게 보내세요.",
+  "Opções avançadas": "고급 옵션",
+  "Substituir exercícios do dia?": "해당 요일의 운동을 교체할까요?",
+  "Os exercícios de {0} serão substituídos pelos de {1}.": "{0}의 운동이 {1}의 운동으로 교체됩니다.",
+  "Substituir dia": "요일 교체",
+  "Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.": "게시하면 프로그램 버전이 저장됩니다. 다음 단계에서 회원에게 보낼 수 있습니다.",
+  "Use a seta para ver a animação e Adicionar para incluir no dia.": "화살표로 애니메이션을 보고 추가 버튼으로 해당 요일에 포함하세요.",
+  "Filtrar por músculo": "근육별 필터",
+  "Filtrar por equipamento": "장비별 필터",
+  "{0} exercício(s) no dia": "해당 요일 운동 {0}개"
 }

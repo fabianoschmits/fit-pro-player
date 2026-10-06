@@ -45,6 +45,7 @@ describe('professional student detail', () => {
     expect(container.querySelector('select[aria-label="Versão do programa"]').value).toBe('v1')
     await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Enviar versão').click())
     expect(mocks.repo.assignProgramVersion).toHaveBeenCalledWith({ programId: 'p1', versionId: 'v1', studentUserId: 's1' })
+    expect(container.querySelector('nav[aria-label="Detalhe do aluno"] a[aria-current="page"]').textContent).toBe('Treino')
   })
   it('uses summary for an invalid section and does not fetch program versions', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?section=invalid&program=p1&version=v1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
