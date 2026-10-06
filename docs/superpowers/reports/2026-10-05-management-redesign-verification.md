@@ -26,7 +26,17 @@ O teste do editor reproduziu um recorte interno antes da correção. A verifica�
 
 ## Banco e aplicação
 
-A migração `supabase/migrations/202610050015_student_professional_management.sql` está preparada e **não foi aplicada ao servidor**. Os testes SQL de execução não puderam inicializar um banco descartável porque a instalação local do PostgreSQL não possui `postgres.bki`. As verificações estáticas passaram; não há alegação de validação SQL/RLS em execução nem de dados reais no navegador.
+A migração `supabase/migrations/202610050015_student_professional_management.sql` foi **aplicada ao Supabase em 06/10/2026**, após autorização explícita do usuário. Projeto configurado no `.env`: **Fpp**, referência `bgqavxoxwgheloeubbpf`, região `sa-east-1`. As credenciais foram carregadas no ambiente dos processos e não foram registradas nos comandos, resultados ou neste relatório.
+
+Verificação remota com Supabase CLI 2.119.0:
+
+- Antes da aplicação, `migration list --linked` e `db push --linked --dry-run` apontaram somente essa migração pendente.
+- `db push --linked --yes` concluiu a aplicação sem erros.
+- Depois, as 16 migrações locais corresponderam ao histórico remoto; nova simulação retornou `upToDate: true` e nenhuma migração pendente.
+- Uma transação somente de leitura confirmou o registro único no histórico, funções presentes, execução concedida a `authenticated` e negada a `anon`, `security definer` com `search_path` fixo e RLS do perfil habilitada.
+- As funções foram executadas em verificações sem gravação: ausência de identidade produziu erro de permissão e identidade de prova sem vínculo recebeu resultados vazios. As requisições REST anônimas para ambas as funções retornaram HTTP 401 / SQLSTATE `42501`.
+
+A instalação local do PostgreSQL continua sem `postgres.bki`; a suíte completa com dados de teste em banco descartável não foi executada. As verificações remotas acima são testes básicos de execução e permissões, não substituem a suíte completa de isolamento com múltiplos usuários. Os testes de navegador continuam usando dados sintéticos.
 
 ## Decisões de implementação
 
@@ -38,4 +48,4 @@ A migração `supabase/migrations/202610050015_student_professional_management.s
 
 ## Revisão
 
-As cinco etapas passaram por revisão independente, com regressões de contexto e sincronização corrigidas e revisadas. A revisão final do conjunto e a revisão focada das correções foram aprovadas. A regressão de leitura atrasada foi reproduzida com aplicativo, armazenamento real e ficha integrados; a revisão compartilhada da atribuição impede restaurar treino revogado ou sobrescrever um programa mais recente. O teste contínuo de autenticação/aceite e a navegação do link antigo de convite também foram aprovados. Trabalho mantido localmente, sem publicação ou aplicação remota de migração.
+As cinco etapas passaram por revisão independente, com regressões de contexto e sincronização corrigidas e revisadas. A revisão final do conjunto e a revisão focada das correções foram aprovadas. A regressão de leitura atrasada foi reproduzida com aplicativo, armazenamento real e ficha integrados; a revisão compartilhada da atribuição impede restaurar treino revogado ou sobrescrever um programa mais recente. O teste contínuo de autenticação/aceite e a navegação do link antigo de convite também foram aprovados. Código mantido localmente, sem publicação do frontend; a migração foi aplicada remotamente na etapa autorizada em 06/10/2026.
