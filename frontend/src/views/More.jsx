@@ -9,6 +9,7 @@ import { EXDB } from '../lib/exercises.js'
 import AppHeader from '../components/AppHeader.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
+import { createConsoleRepository } from '../lib/console.js'
 import { useEffect, useMemo, useState } from 'react'
 
 export default function More() {
@@ -16,13 +17,19 @@ export default function More() {
   const auth = useAuth()
   const account = auth.status === 'authenticated' ? auth.user : null
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
+  const consoleRepo = useMemo(() => createConsoleRepository({ client: getBrowserSupabaseClient() }), [])
   const [professional, setProfessional] = useState(false)
+  const [consoleAccess, setConsoleAccess] = useState(false)
   useEffect(() => {
     let current = true
     setProfessional(false)
-    if (account?.id) repo.professionalRole(account.id).then(value => { if (current) setProfessional(value) }).catch(() => { if (current) setProfessional(false) })
+    setConsoleAccess(false)
+    if (account?.id) {
+      repo.professionalRole(account.id).then(value => { if (current) setProfessional(value) }).catch(() => { if (current) setProfessional(false) })
+      consoleRepo.adminRole(account.id).then(value => { if (current) setConsoleAccess(value) }).catch(() => { if (current) setConsoleAccess(false) })
+    }
     return () => { current = false }
-  }, [account?.id, repo])
+  }, [account?.id, repo, consoleRepo])
 
   return <div className="narrow">
     <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
@@ -44,6 +51,8 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/professional')} />}
       {account && <Row icon="personCircle" iconTint="var(--teal)" title={t('Meus profissionais')} subtitle={t('Programas e prescrições dos seus profissionais')}
         accessory="chevron" onClick={() => nav('/student/professionals')} />}
+      {consoleAccess && <Row icon="gear" iconTint="var(--label)" title="Central" subtitle="Operação da plataforma"
+        accessory="chevron" onClick={() => nav('/console')} />}
     </Section>
 
     <Section title={t('About')}>

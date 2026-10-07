@@ -52,6 +52,7 @@ const loadProfessionalPrograms = () => import('./views/ProfessionalPrograms.jsx'
 const loadStudentProfessionals = () => import('./views/StudentProfessionals.jsx')
 const loadStudentProfessionalDetail = () => import('./views/StudentProfessionalDetail.jsx')
 const loadStudentProfessionalMaterials = () => import('./views/StudentProfessionalMaterials.jsx')
+const loadConsole = () => import('./views/Console.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Home = lazy(loadHome)
@@ -75,6 +76,10 @@ const StudentProfessionals = lazy(loadStudentProfessionals)
 const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ default: module.StudentConnect })))
 const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
 const StudentProfessionalMaterials = lazy(loadStudentProfessionalMaterials)
+const ConsoleHome = lazy(loadConsole)
+const ConsoleUsers = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUsers })))
+const ConsoleProfessionals = lazy(() => loadConsole().then(module => ({ default: module.ConsoleProfessionals })))
+const ConsoleUserPage = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUserPage })))
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
@@ -409,6 +414,10 @@ function Shell() {
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/console" element={<ConsoleHome />} />
+                <Route path="/console/users" element={<ConsoleUsers />} />
+                <Route path="/console/users/:userId" element={<ConsoleUserPage />} />
+                <Route path="/console/professionals" element={<ConsoleProfessionals />} />
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes></Suspense></>
           )}

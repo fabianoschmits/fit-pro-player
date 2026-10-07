@@ -82,6 +82,20 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         throw error;
       }
     };
+    const enforceActiveAccount = async sessionUser => {
+      if (!sessionUser?.id || typeof client?.from !== 'function') return;
+      const { data, error } = await client.from('profiles').select('suspended_at').eq('id', sessionUser.id).limit(1);
+      if (error || !data?.[0]?.suspended_at) return;
+      await client.auth.signOut();
+      if (!disposed) {
+        setState(current => ({
+          ...current,
+          status: 'anonymous',
+          user: null,
+          error: { code: 'account_suspended', message: 'Esta conta está suspensa.' },
+        }));
+      }
+    };
     const applySession = (event, session, { recovery = false } = {}) => {
       const user = publicUser(session?.user);
       const nextRecovery = recovery || event === 'PASSWORD_RECOVERY' ? 'required' : undefined;
@@ -98,6 +112,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
       void provisionOnce(session?.user).catch(error => {
         if (!disposed) setState(current => ({ ...current, error: toAuthError(error, 'professional_onboarding') }));
       });
+      if (user) void enforceActiveAccount(session?.user);
     };
     const applyError = (error, operation) => {
       setState(current => ({ ...current, status: 'anonymous', user: null, error: toAuthError(error, operation) }));

@@ -284,3 +284,23 @@ body:has(.app-status-global) #app{padding-bottom:170px}
  .management-layout .professional-editor-grid.program-fields{gap:10px}
  .management-layout .professional-program-editor .row-actions>.btn{flex:0 1 auto;max-width:100%}
 }
+
+/* Central (ops console) */
+.console-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.console-stat{display:grid;gap:4px;padding:16px;border:1px solid var(--sep);border-radius:12px;background:var(--surface-2)}
+.console-stat strong{font-size:28px;line-height:1.1;letter-spacing:-.02em}
+.console-stat span{color:var(--management-muted);font-size:13px}
+.management-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.console-inline-actions{margin-top:10px}
+.console-meta{margin:0;display:grid;gap:14px}
+.console-meta>div{display:grid;gap:4px}
+.console-meta dt{font-size:13px;color:var(--management-muted)}
+.console-meta dd{margin:0;overflow-wrap:anywhere}
+.console-meta code{font-size:13px}
+.console-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.console-form-grid label{display:grid;gap:6px;font-size:14px;min-width:0}
+.console-form-grid .console-span-2{grid-column:1/-1}
+.management-success{margin:0;border-left:3px solid var(--acc);padding:12px 16px;background:var(--acc-soft);color:var(--label)}
+.console-pro-record{align-items:flex-start}
+@media(max-width:700px){.console-form-grid{grid-template-columns:1fr}}
+
