@@ -45,5 +45,33 @@ test('ops console migration seeds admin and gates every RPC', () => {
   assert.match(migration, /cannot suspend own account/i)
   assert.match(migration, /cannot delete own account via ops/i)
   assert.match(migration, /cannot delete admin account/i)
+  assert.match(migration, /u\.email::text/i)
   assert.doesNotMatch(migration, /grant execute[^;]*to (?:public|anon)/i)
+})
+
+const emailCastPath = path.join(root, 'supabase/migrations/202610070017_ops_console_email_cast.sql')
+const emailCast = fs.existsSync(emailCastPath) ? fs.readFileSync(emailCastPath, 'utf8') : ''
+
+test('ops console email cast migration casts auth.users.email to text', () => {
+  assert.ok(emailCast, 'email cast migration must exist')
+  assert.match(emailCast, /ops_list_users/i)
+  assert.match(emailCast, /ops_user_detail/i)
+  assert.match(emailCast, /ops_list_professionals/i)
+  assert.match(emailCast, /u\.email::text/i)
+  assert.match(emailCast, /ops_require_admin\(\)/i)
+})
+
+const localUsersPath = path.join(root, 'supabase/migrations/202610070018_ops_console_local_users.sql')
+const localUsers = fs.existsSync(localUsersPath) ? fs.readFileSync(localUsersPath, 'utf8') : ''
+
+test('ops console local users migration exposes account vs local kinds', () => {
+  assert.ok(localUsers, 'local users migration must exist')
+  assert.match(localUsers, /local_user_count/i)
+  assert.match(localUsers, /account_user_count/i)
+  assert.match(localUsers, /p_account_kind/i)
+  assert.match(localUsers, /is_anonymous/i)
+  assert.match(localUsers, /account_kind/i)
+  assert.match(localUsers, /ops_require_admin\(\)/i)
+  assert.match(localUsers, /drop function if exists public\.ops_list_users\(text, integer, integer\)/i)
+  assert.match(localUsers, /grant execute on function public\.ops_list_users\(text, text, integer, integer\) to authenticated/i)
 })

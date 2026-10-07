@@ -14,6 +14,7 @@ function publicUser(user) {
     id: user.id,
     email: user.email || null,
     emailConfirmedAt: user.email_confirmed_at || null,
+    isAnonymous: Boolean(user.is_anonymous),
   };
 }
 
@@ -214,11 +215,39 @@ export function AuthProvider({ children, client: injectedClient, location: injec
     return {
       ...state,
       configured,
+      signInAnonymously: async () => {
+        const result = await execute('signing_in_anonymously', () => client.auth.signInAnonymously({
+          options: { data: { display_name: 'Utilizador local', account_type: 'student' } },
+        }));
+        if (result.kind !== 'success') return result;
+        return { kind: 'authenticated', data: result.data };
+      },
       signUp: async ({ email, password, displayName, accountType = 'student' }) => {
+        const metadata = { display_name: displayName, account_type: accountType === 'professional' ? 'professional' : 'student' };
+        const current = state.user;
+        if (current?.isAnonymous) {
+          const result = await execute('signing_up', () => client.auth.updateUser({
+            email,
+            password,
+            data: metadata,
+          }));
+          if (result.kind !== 'success') return result;
+          try {
+            await provisionProfessional(client, result.data?.user || { ...current, user_metadata: metadata });
+          } catch (error) {
+            const mapped = toAuthError(error, 'professional_onboarding');
+            setState(next => ({ ...next, error: mapped }));
+            return { kind: 'error', error: mapped };
+          }
+          if (!result.data?.user?.email_confirmed_at && result.data?.user?.email) {
+            return { kind: 'confirmation_required' };
+          }
+          return { kind: 'authenticated' };
+        }
         const result = await execute('signing_up', () => client.auth.signUp({
           email,
           password,
-          options: { data: { display_name: displayName, account_type: accountType === 'professional' ? 'professional' : 'student' }, emailRedirectTo: buildAuthRedirectUrl(location, 'confirm') },
+          options: { data: metadata, emailRedirectTo: buildAuthRedirectUrl(location, 'confirm') },
         }));
         if (result.kind !== 'success') return result;
         if (result.data?.session) {
@@ -226,7 +255,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
             await provisionProfessional(client, result.data.session.user);
           } catch (error) {
             const mapped = toAuthError(error, 'professional_onboarding');
-            setState(current => ({ ...current, error: mapped }));
+            setState(currentState => ({ ...currentState, error: mapped }));
             return { kind: 'error', error: mapped };
           }
           return { kind: 'authenticated' };

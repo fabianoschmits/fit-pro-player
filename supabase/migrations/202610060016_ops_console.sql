@@ -139,7 +139,7 @@ begin
   return query
   select
     p.id,
-    coalesce(u.email, ''),
+    coalesce(u.email::text, ''),
     coalesce(p.display_name, ''),
     p.avatar_ref,
     p.created_at,
@@ -163,7 +163,7 @@ begin
   join auth.users u on u.id = p.id
   left join public.professional_profiles pp on pp.user_id = p.id
   where needle is null
-    or lower(coalesce(u.email, '')) like '%' || needle || '%'
+    or lower(coalesce(u.email::text, '')) like '%' || needle || '%'
     or lower(coalesce(p.display_name, '')) like '%' || needle || '%'
     or p.id::text like '%' || needle || '%'
   order by p.created_at desc
@@ -206,7 +206,7 @@ begin
   return query
   select
     p.id,
-    coalesce(u.email, ''),
+    coalesce(u.email::text, ''),
     coalesce(p.display_name, ''),
     p.avatar_ref,
     p.created_at,
@@ -275,7 +275,7 @@ begin
   return query
   select
     pp.user_id,
-    coalesce(u.email, ''),
+    coalesce(u.email::text, ''),
     coalesce(p.display_name, ''),
     pp.professional_name,
     pp.city_region,
@@ -295,7 +295,7 @@ begin
   where (p_status is null or pp.verification_status = p_status)
     and (
       needle is null
-      or lower(coalesce(u.email, '')) like '%' || needle || '%'
+      or lower(coalesce(u.email::text, '')) like '%' || needle || '%'
       or lower(coalesce(p.display_name, '')) like '%' || needle || '%'
       or lower(coalesce(pp.professional_name, '')) like '%' || needle || '%'
       or pp.user_id::text like '%' || needle || '%'

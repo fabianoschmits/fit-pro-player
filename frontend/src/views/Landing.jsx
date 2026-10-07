@@ -262,10 +262,27 @@ export default function Landing({ invitePath = false }) {
     return () => document.body.classList.remove('landing-mode')
   }, [])
 
-  const enter = () => enterApp(true)
-  const entryUnavailable = auth.configured ? false : !localEntry && !canGuest
+  const [guestBusy, setGuestBusy] = useState(false)
+  const enterLocal = () => enterApp(true)
+  const enter = async () => {
+    if (!auth.configured || localEntry || auth.status === 'authenticated') {
+      enterLocal()
+      return
+    }
+    setGuestBusy(true)
+    try {
+      const result = await auth.signInAnonymously?.()
+      if (result?.kind === 'error') enterLocal()
+      else enterLocal()
+    } catch {
+      enterLocal()
+    } finally {
+      setGuestBusy(false)
+    }
+  }
+  const entryUnavailable = (auth.configured ? false : !localEntry && !canGuest) || guestBusy
   const primaryAction = auth.status === 'authenticated'
-    ? enter
+    ? enterLocal
     : auth.configured
     ? () => openAuthSheet('entry')
     : enter

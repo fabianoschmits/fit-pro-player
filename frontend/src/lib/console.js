@@ -4,6 +4,8 @@ const toOverview = row => row ? ({
   pendingVerificationCount: Number(row.pending_verification_count || 0),
   suspendedCount: Number(row.suspended_count || 0),
   newUsers7d: Number(row.new_users_7d || 0),
+  accountUserCount: Number(row.account_user_count || 0),
+  localUserCount: Number(row.local_user_count || 0),
 }) : null
 
 const toUser = row => row ? ({
@@ -25,6 +27,8 @@ const toUser = row => row ? ({
   cityRegion: row.city_region || null,
   registrationType: row.registration_type || null,
   registrationNumber: row.registration_number || null,
+  isAnonymous: Boolean(row.is_anonymous),
+  accountKind: row.account_kind || (row.is_anonymous ? 'local' : 'account'),
 }) : null
 
 const toProfessional = row => row ? ({
@@ -63,8 +67,9 @@ export function createConsoleRepository({ client } = {}) {
     .then(rows => Boolean(rows[0]?.suspended_at))
 
   const overview = () => rpc('ops_overview').then(rows => toOverview(rows?.[0] || rows))
-  const listUsers = ({ query = '', limit = 50, offset = 0 } = {}) => rpc('ops_list_users', {
+  const listUsers = ({ query = '', accountKind = null, limit = 50, offset = 0 } = {}) => rpc('ops_list_users', {
     p_query: query || null,
+    p_account_kind: accountKind || null,
     p_limit: limit,
     p_offset: offset,
   }).then(rows => (rows || []).map(toUser))

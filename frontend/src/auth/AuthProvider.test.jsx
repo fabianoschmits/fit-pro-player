@@ -19,6 +19,7 @@ function createFakeClient({ session = null, getSession } = {}) {
     }),
     exchangeCodeForSession: vi.fn().mockResolvedValue({ data: { session: { user } }, error: null }),
     signUp: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+    signInAnonymously: vi.fn().mockResolvedValue({ data: { session: { user: { ...user, email: null, is_anonymous: true } } }, error: null }),
     signInWithPassword: vi.fn().mockResolvedValue({ data: { session: { user } }, error: null }),
     resetPasswordForEmail: vi.fn().mockResolvedValue({ data: {}, error: null }),
     updateUser: vi.fn().mockResolvedValue({ data: { user }, error: null }),
@@ -78,8 +79,18 @@ describe('AuthProvider', () => {
     await act(async () => Promise.resolve());
 
     expect(latest.status).toBe('authenticated');
-    expect(latest.user).toEqual({ id: user.id, email: user.email, emailConfirmedAt: user.email_confirmed_at });
+    expect(latest.user).toEqual({ id: user.id, email: user.email, emailConfirmedAt: user.email_confirmed_at, isAnonymous: false });
     expect(latest.user).not.toHaveProperty('access_token');
+  });
+
+  it('creates an anonymous session for continue-without-account', async () => {
+    const client = createFakeClient();
+    await renderProvider(client);
+    await act(async () => Promise.resolve());
+    await act(async () => { await latest.signInAnonymously(); });
+    expect(client.auth.signInAnonymously).toHaveBeenCalledWith({
+      options: { data: { display_name: 'Utilizador local', account_type: 'student' } },
+    });
   });
 
   it('lets a newer SIGNED_IN event beat a stale bootstrap result', async () => {

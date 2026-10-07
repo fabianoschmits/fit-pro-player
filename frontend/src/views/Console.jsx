@@ -16,7 +16,7 @@ function ConsoleNav() {
   const pros = pathname.startsWith('/console/professionals')
   return <nav ref={navRef} className="management-nav" aria-label="Navegação da Central">
     <Link to="/console" aria-current={overview ? 'page' : undefined}>Visão geral</Link>
-    <Link to="/console/users" aria-current={users ? 'page' : undefined}>Utilizadores</Link>
+    <Link to="/console/users" aria-current={users ? 'page' : undefined}>Usuarios</Link>
     <Link to="/console/professionals" aria-current={pros ? 'page' : undefined}>Profissionais</Link>
   </nav>
 }
@@ -93,7 +93,9 @@ export default function ConsoleHome() {
       {busy || !stats ? <p role="status">A carregar resumo…</p> : <>
         <Section title="Resumo">
           <div className="console-stat-grid">
-            <div className="console-stat"><strong>{stats.userCount}</strong><span>Utilizadores</span></div>
+            <div className="console-stat"><strong>{stats.userCount}</strong><span>Usuarios</span></div>
+            <div className="console-stat"><strong>{stats.accountUserCount}</strong><span>Com conta</span></div>
+            <div className="console-stat"><strong>{stats.localUserCount}</strong><span>Só local</span></div>
             <div className="console-stat"><strong>{stats.professionalCount}</strong><span>Profissionais</span></div>
             <div className="console-stat"><strong>{stats.pendingVerificationCount}</strong><span>Verificação pendente</span></div>
             <div className="console-stat"><strong>{stats.suspendedCount}</strong><span>Suspensos</span></div>
@@ -102,7 +104,8 @@ export default function ConsoleHome() {
         </Section>
         <Section title="Atalhos">
           <div className="management-actions">
-            <Link className="management-button management-button-primary" to="/console/users">Gerir utilizadores</Link>
+            <Link className="management-button management-button-primary" to="/console/users">Gerir usuarios</Link>
+            <Link className="management-button" to="/console/users?kind=local">Ver só locais ({stats.localUserCount})</Link>
             <Link className="management-button" to="/console/professionals">Gerir profissionais</Link>
             {stats.pendingVerificationCount > 0 && <Link className="management-button" to="/console/professionals?status=pending">Ver pendentes ({stats.pendingVerificationCount})</Link>}
           </div>
@@ -114,8 +117,11 @@ export default function ConsoleHome() {
 
 export function ConsoleUsers() {
   const { userId, repo, allowed } = useConsoleAccess()
+  const [params] = useSearchParams()
+  const initialKind = params.get('kind') || ''
   const [rows, setRows] = useState([])
   const [query, setQuery] = useState('')
+  const [kind, setKind] = useState(initialKind)
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState('')
   const [limit, setLimit] = useState(50)
@@ -126,10 +132,10 @@ export function ConsoleUsers() {
     const id = userId
     setBusy(true)
     try {
-      const next = await repo.listUsers({ query, limit })
+      const next = await repo.listUsers({ query, accountKind: kind || null, limit })
       if (owner.current === id) { setRows(next); setError('') }
     } catch {
-      if (owner.current === id) setError('Não foi possível carregar os utilizadores.')
+      if (owner.current === id) setError('Não foi possível carregar os usuarios.')
     } finally {
       if (owner.current === id) setBusy(false)
     }
@@ -139,22 +145,32 @@ export function ConsoleUsers() {
     owner.current = userId
     if (userId && allowed) refresh()
     return () => { owner.current = null }
-  }, [userId, allowed, query, limit])
+  }, [userId, allowed, query, kind, limit])
+
+  const filters = [
+    ['', 'Todos'],
+    ['account', 'Com conta'],
+    ['local', 'Só local'],
+  ]
 
   return <AccessGate allowed={allowed}>
-    <ConsoleShell title="Utilizadores" subtitle="Contas da plataforma">
+    <ConsoleShell title="Usuarios" subtitle="Contas registadas e uso local">
       {error && <p role="alert" className="management-error">{error} <button type="button" className="link" onClick={refresh}>Tentar novamente</button></p>}
       <div className="management-list-tools">
-        <TextField aria-label="Buscar utilizador" placeholder="Email, nome ou id" value={query} onChange={event => { setQuery(event.target.value); setLimit(50) }} />
+        <TextField aria-label="Buscar usuario" placeholder="Email, nome ou id" value={query} onChange={event => { setQuery(event.target.value); setLimit(50) }} />
+        <div className="management-filter" role="group" aria-label="Filtro de tipo de conta">
+          {filters.map(([value, label]) => <button type="button" key={value || 'all'} aria-pressed={kind === value} className={kind === value ? 'on' : ''} onClick={() => { setKind(value); setLimit(50) }}>{label}</button>)}
+        </div>
       </div>
-      {busy ? <p role="status">A carregar utilizadores…</p> : !rows.length ? <Section title="Nenhum resultado"><p className="muted">Ajuste a busca ou aguarde novos registos.</p></Section> : <Section title={`${rows.length} utilizador(es)`}>
+      {busy ? <p role="status">A carregar usuarios…</p> : !rows.length ? <Section title="Nenhum resultado"><p className="muted">Ajuste a busca ou o filtro. Utilizadores só locais aparecem depois de usarem “Continuar sem conta” com esta versão.</p></Section> : <Section title={`${rows.length} usuario(s)`}>
         <div className="management-record-list">
           {rows.map(user => <Link className="management-record management-student-record" to={`/console/users/${user.userId}`} key={user.userId}>
-            <ManagementAvatar name={user.displayName || user.email} />
+            <ManagementAvatar name={user.displayName || user.email || 'Local'} />
             <div className="management-student-main">
-              <strong>{user.displayName || user.email || 'Utilizador'}</strong>
-              <p>{user.email}</p>
+              <strong>{user.displayName || user.email || 'Utilizador local'}</strong>
+              <p>{user.email || 'Sem email · dados neste dispositivo'}</p>
               <div className="management-student-flags">
+                <ManagementStatus tone={user.accountKind === 'local' ? 'warning' : 'success'}>{user.accountKind === 'local' ? 'Local' : 'Conta'}</ManagementStatus>
                 {(user.roles || []).map(role => <ManagementStatus key={role}>{role}</ManagementStatus>)}
                 {user.suspendedAt && <ManagementStatus tone="error">Suspenso</ManagementStatus>}
                 {user.verificationStatus && <ManagementStatus tone={verificationTone(user.verificationStatus)}>{VERIFICATION_LABELS[user.verificationStatus] || user.verificationStatus}</ManagementStatus>}
@@ -294,10 +310,10 @@ export function ConsoleUserPage() {
         setRegType(next?.registrationType || '')
         setRegNumber(next?.registrationNumber || '')
         setSpecialtiesText((next?.specialties || []).join(', '))
-        setError(next ? '' : 'Utilizador não encontrado.')
+        setError(next ? '' : 'Usuario não encontrado.')
       }
     } catch {
-      if (owner.current === id) setError('Não foi possível carregar o utilizador.')
+      if (owner.current === id) setError('Não foi possível carregar o usuario.')
     } finally {
       if (owner.current === id) setBusy(false)
     }
@@ -327,15 +343,19 @@ export function ConsoleUserPage() {
   const isAdmin = (user?.roles || []).includes('admin')
 
   return <AccessGate allowed={allowed}>
-    <ConsoleShell title={user?.displayName || user?.email || 'Utilizador'} subtitle="Detalhe e ações operacionais" action={<Link className="management-button" to="/console/users">Voltar à lista</Link>}>
+    <ConsoleShell title={user?.displayName || user?.email || 'Usuario'} subtitle="Detalhe e ações operacionais" action={<Link className="management-button" to="/console/users">Voltar à lista</Link>}>
       {error && <p role="alert" className="management-error">{error}</p>}
       {message && <p role="status" className="management-success">{message}</p>}
       {busy || !user ? <p role="status">A carregar…</p> : <>
         <Section title="Conta">
+          <div className="management-student-flags" style={{ marginBottom: 12 }}>
+            <ManagementStatus tone={user.accountKind === 'local' ? 'warning' : 'success'}>{user.accountKind === 'local' ? 'Local · sem cadastro' : 'Conta registada'}</ManagementStatus>
+          </div>
           <dl className="console-meta">
             <div><dt>Email</dt><dd>{user.email || '—'}</dd></div>
             <div><dt>ID</dt><dd><code>{user.userId}</code></dd></div>
             <div><dt>Criado</dt><dd>{formatDate(user.createdAt)}</dd></div>
+            <div><dt>Tipo</dt><dd>{user.accountKind === 'local' ? 'Só dados locais (anónimo)' : 'Conta com email'}</dd></div>
             <div><dt>Roles</dt><dd>{(user.roles || []).join(', ') || '—'}</dd></div>
             <div><dt>Estado</dt><dd>{user.suspendedAt ? `Suspenso desde ${formatDate(user.suspendedAt)}` : 'Ativo'}</dd></div>
             <div><dt>Vínculos</dt><dd>{user.studentLinks} como aluno · {user.professionalLinks} como profissional</dd></div>
