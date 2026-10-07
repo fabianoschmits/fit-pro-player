@@ -51,13 +51,13 @@ export default function More() {
         accessory="chevron" onClick={() => nav('/professional')} />}
       {account && <Row icon="personCircle" iconTint="var(--teal)" title={t('Meus profissionais')} subtitle={t('Programas e prescrições dos seus profissionais')}
         accessory="chevron" onClick={() => nav('/student/professionals')} />}
-      {consoleAccess && <Row icon="gear" iconTint="var(--label)" title="Central" subtitle="Operação da plataforma"
-        accessory="chevron" onClick={() => nav('/console')} />}
     </Section>
 
     <Section title={t('About')}>
       <Row icon="personCircle" iconTint="var(--teal)" title={account?.email || (MOBILE || STANDALONE ? t('Guest mode') : DEMO ? t('Demo') : t('Guest mode'))}
         subtitle={account ? t('Signed in to your account') : t('Guest data stays on this device — export a backup now and then!')} />
+      {consoleAccess && <Row icon="gear" iconTint="var(--label)" title="Central" subtitle="Operação da plataforma"
+        accessory="chevron" onClick={() => nav('/console')} />}
     </Section>
   </div>
 }
