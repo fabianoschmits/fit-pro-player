@@ -94,6 +94,37 @@ export function createConsoleRepository({ client } = {}) {
     p_registration_number: payload.registrationNumber ?? null,
   })
   const deleteUser = userId => rpc('ops_delete_user', { p_user_id: userId })
+  const userTraining = userId => rpc('ops_user_training', { p_user_id: userId }).then(row => {
+    const data = Array.isArray(row) ? row[0] : row
+    if (!data || typeof data !== 'object') {
+      return {
+        hasSnapshot: false,
+        profile: {},
+        planMode: null,
+        week: {},
+        dayPlan: {},
+        routines: [],
+        workoutCount: 0,
+        recentWorkouts: [],
+        bodyweight: [],
+        bodyMeasurements: [],
+        snapshotUpdatedAt: null,
+      }
+    }
+    return {
+      hasSnapshot: Boolean(data.has_snapshot),
+      profile: data.profile || {},
+      planMode: data.plan_mode || null,
+      week: data.week || {},
+      dayPlan: data.day_plan || {},
+      routines: data.routines || [],
+      workoutCount: Number(data.workout_count || 0),
+      recentWorkouts: data.recent_workouts || [],
+      bodyweight: data.bodyweight || [],
+      bodyMeasurements: data.body_measurements || [],
+      snapshotUpdatedAt: data.snapshot_updated_at || null,
+    }
+  })
 
   return Object.freeze({
     adminRole,
@@ -101,6 +132,7 @@ export function createConsoleRepository({ client } = {}) {
     overview,
     listUsers,
     userDetail,
+    userTraining,
     listProfessionals,
     setDisplayName,
     setSuspended,

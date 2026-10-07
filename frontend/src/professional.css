@@ -302,5 +302,11 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .console-form-grid .console-span-2{grid-column:1/-1}
 .management-success{margin:0;border-left:3px solid var(--acc);padding:12px 16px;background:var(--acc-soft);color:var(--label)}
 .console-pro-record{align-items:flex-start}
+.console-week-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.console-week-day{display:grid;gap:4px;padding:12px;border:1px solid var(--sep);border-radius:12px;background:var(--surface-2)}
+.console-week-day strong{font-size:13px}
+.console-week-day span{font-size:13px;color:var(--management-muted);overflow-wrap:anywhere}
+.console-workout-list{margin-top:14px}
+.app-status-dismiss{margin-left:auto;border:0;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px}
 @media(max-width:700px){.console-form-grid{grid-template-columns:1fr}}
 

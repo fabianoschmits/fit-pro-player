@@ -75,3 +75,16 @@ test('ops console local users migration exposes account vs local kinds', () => {
   assert.match(localUsers, /drop function if exists public\.ops_list_users\(text, integer, integer\)/i)
   assert.match(localUsers, /grant execute on function public\.ops_list_users\(text, text, integer, integer\) to authenticated/i)
 })
+
+const trainingPath = path.join(root, 'supabase/migrations/202610070019_ops_user_training_detail.sql')
+const training = fs.existsSync(trainingPath) ? fs.readFileSync(trainingPath, 'utf8') : ''
+
+test('ops console training detail migration syncs names and exposes training RPC', () => {
+  assert.ok(training, 'training detail migration must exist')
+  assert.match(training, /ops_user_training/i)
+  assert.match(training, /account_snapshots/i)
+  assert.match(training, /profile,name/i)
+  assert.match(training, /save_own_account_snapshot/i)
+  assert.match(training, /ops_require_admin\(\)/i)
+  assert.match(training, /grant execute on function public\.ops_user_training\(uuid\) to authenticated/i)
+})

@@ -4,9 +4,61 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createConsoleRepository, VERIFICATION_LABELS, verificationTone } from '../lib/console.js'
 import { Button, TextArea, TextField } from '../components/ui.jsx'
+import LineChart from '../components/LineChart.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementPanel as Section, ManagementAvatar, ManagementStatus, ManagementEmpty } from '../components/ManagementUI.jsx'
 import useManagementNavVisibility from '../components/useManagementNavVisibility.js'
+
+const WEEK_LABELS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
+
+function routineNameById(routines, id) {
+  if (!id || id === 'rest') return id === 'rest' ? 'Descanso' : '—'
+  const found = (routines || []).find(routine => String(routine.id) === String(id))
+  return found?.name || `Rotina ${id}`
+}
+
+function weekSchedule(training) {
+  const week = training?.week || {}
+  const routines = training?.routines || []
+  return WEEK_LABELS.map((label, day) => {
+    const routineId = week[String(day)] ?? week[day] ?? null
+    return {
+      day,
+      label,
+      routineId,
+      routineName: routineId == null || routineId === '' ? 'Livre / sem treino' : routineNameById(routines, routineId),
+    }
+  })
+}
+
+function workoutVolumePoints(workouts) {
+  return (workouts || [])
+    .map(workout => {
+      const date = workout?.d
+      if (!date) return null
+      const entries = workout.entries || []
+      const sets = entries.reduce((sum, entry) => sum + (entry.sets || []).filter(set => set.done !== false).length, 0)
+      const timestamp = Date.parse(`${date}T12:00:00`)
+      if (!Number.isFinite(timestamp)) return null
+      return { t: timestamp, y: sets, d: date }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.t - b.t)
+}
+
+function bodyweightPoints(rows) {
+  return (rows || [])
+    .map(row => {
+      const date = row?.d
+      const weight = Number(row?.w)
+      if (!date || !Number.isFinite(weight)) return null
+      const timestamp = Date.parse(`${date}T12:00:00`)
+      if (!Number.isFinite(timestamp)) return null
+      return { t: timestamp, y: weight, d: date }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.t - b.t)
+}
 
 function ConsoleNav() {
   const navRef = useManagementNavVisibility()
@@ -282,6 +334,7 @@ export function ConsoleUserPage() {
   const navigate = useNavigate()
   const { userId, repo, allowed } = useConsoleAccess()
   const [user, setUser] = useState(null)
+  const [training, setTraining] = useState(null)
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -300,10 +353,14 @@ export function ConsoleUserPage() {
     const id = userId
     setBusy(true)
     try {
-      const next = await repo.userDetail(targetId)
+      const [next, nextTraining] = await Promise.all([
+        repo.userDetail(targetId),
+        repo.userTraining(targetId),
+      ])
       if (owner.current === id) {
         setUser(next)
-        setDisplayName(next?.displayName || '')
+        setTraining(nextTraining)
+        setDisplayName(next?.displayName || nextTraining?.profile?.name || '')
         setProName(next?.professionalName || '')
         setBio(next?.bio || '')
         setCity(next?.cityRegion || '')
@@ -341,9 +398,14 @@ export function ConsoleUserPage() {
 
   const isPro = (user?.roles || []).includes('professional')
   const isAdmin = (user?.roles || []).includes('admin')
+  const profile = training?.profile || {}
+  const schedule = weekSchedule(training)
+  const volumePoints = workoutVolumePoints(training?.recentWorkouts)
+  const weightPoints = bodyweightPoints(training?.bodyweight)
+  const pageTitle = user?.displayName || profile.name || user?.email || 'Usuario'
 
   return <AccessGate allowed={allowed}>
-    <ConsoleShell title={user?.displayName || user?.email || 'Usuario'} subtitle="Detalhe e ações operacionais" action={<Link className="management-button" to="/console/users">Voltar à lista</Link>}>
+    <ConsoleShell title={pageTitle} subtitle="Perfil, treino e ações operacionais" action={<Link className="management-button" to="/console/users">Voltar à lista</Link>}>
       {error && <p role="alert" className="management-error">{error}</p>}
       {message && <p role="status" className="management-success">{message}</p>}
       {busy || !user ? <p role="status">A carregar…</p> : <>
@@ -352,6 +414,7 @@ export function ConsoleUserPage() {
             <ManagementStatus tone={user.accountKind === 'local' ? 'warning' : 'success'}>{user.accountKind === 'local' ? 'Local · sem cadastro' : 'Conta registada'}</ManagementStatus>
           </div>
           <dl className="console-meta">
+            <div><dt>Nome</dt><dd>{user.displayName || profile.name || '—'}</dd></div>
             <div><dt>Email</dt><dd>{user.email || '—'}</dd></div>
             <div><dt>ID</dt><dd><code>{user.userId}</code></dd></div>
             <div><dt>Criado</dt><dd>{formatDate(user.createdAt)}</dd></div>
@@ -361,6 +424,51 @@ export function ConsoleUserPage() {
             <div><dt>Vínculos</dt><dd>{user.studentLinks} como aluno · {user.professionalLinks} como profissional</dd></div>
           </dl>
         </Section>
+
+        <Section title="Perfil de treino">
+          {!training?.hasSnapshot ? <p className="muted">Ainda não há snapshot sincronizado deste utilizador. Assim que usar o app com sessão (conta ou local), os dados aparecem aqui.</p> : <>
+            <dl className="console-meta">
+              <div><dt>Nome no app</dt><dd>{profile.name || '—'}</dd></div>
+              <div><dt>Sexo</dt><dd>{profile.sex || '—'}</dd></div>
+              <div><dt>Altura</dt><dd>{profile.heightCm != null ? `${profile.heightCm} cm` : '—'}</dd></div>
+              <div><dt>Peso inicial</dt><dd>{profile.startWeight != null ? `${profile.startWeight} kg` : '—'}</dd></div>
+              <div><dt>Objetivo</dt><dd>{profile.goal || '—'}</dd></div>
+              <div><dt>Experiência</dt><dd>{profile.experience || '—'}</dd></div>
+              <div><dt>Modo do plano</dt><dd>{training.planMode === 'daily' ? 'Diário' : training.planMode === 'weekly' ? 'Semanal' : (training.planMode || '—')}</dd></div>
+              <div><dt>Treinos registados</dt><dd>{training.workoutCount}</dd></div>
+              <div><dt>Última sincronização</dt><dd>{formatDate(training.snapshotUpdatedAt)}</dd></div>
+            </dl>
+          </>}
+        </Section>
+
+        {training?.hasSnapshot && <Section title="Dias da semana">
+          <div className="console-week-grid">
+            {schedule.map(day => <div className="console-week-day" key={day.day}>
+              <strong>{day.label}</strong>
+              <span>{day.routineName}</span>
+            </div>)}
+          </div>
+        </Section>}
+
+        {training?.hasSnapshot && <Section title="Evolução de peso">
+          {weightPoints.length ? <LineChart points={weightPoints} unit="kg" h={160} label="Peso corporal" /> : <p className="muted">Sem pesagens registadas.</p>}
+        </Section>}
+
+        {training?.hasSnapshot && <Section title="Treinos realizados">
+          {volumePoints.length ? <LineChart points={volumePoints} unit="séries" h={160} label="Séries por treino" /> : <p className="muted">Sem treinos concluídos no histórico sincronizado.</p>}
+          {!!(training.recentWorkouts || []).length && <div className="management-record-list console-workout-list">
+            {(training.recentWorkouts || []).slice(0, 12).map((workout, index) => {
+              const entries = workout.entries || []
+              const sets = entries.reduce((sum, entry) => sum + (entry.sets || []).length, 0)
+              return <div className="management-record" key={workout.id || `${workout.d}-${index}`}>
+                <div className="management-student-main">
+                  <strong>{workout.d || 'Sem data'}</strong>
+                  <p>{entries.length} exercício(s) · {sets} série(s)</p>
+                </div>
+              </div>
+            })}
+          </div>}
+        </Section>}
 
         <Section title="Nome de exibição">
           <TextField aria-label="Nome de exibição" value={displayName} onChange={event => setDisplayName(event.target.value)} />
