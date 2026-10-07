@@ -38,10 +38,14 @@ export default function AppStatus() {
     const onPointerDown = event => {
       if (asideRef.current && !asideRef.current.contains(event.target)) setUpdateDismissed(true)
     }
-    const timer = window.setTimeout(() => document.addEventListener('pointerdown', onPointerDown), 0)
+    const timer = window.setTimeout(() => {
+      document.addEventListener('click', onPointerDown, { capture: true })
+      document.addEventListener('touchstart', onPointerDown, { capture: true })
+    }, 0)
     return () => {
       window.clearTimeout(timer)
-      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('click', onPointerDown, { capture: true })
+      document.removeEventListener('touchstart', onPointerDown, { capture: true })
     }
   }, [state])
 
