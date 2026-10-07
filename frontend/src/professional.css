@@ -286,6 +286,13 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 }
 
 /* Central (ops console) */
+.console-page-custom { width: 100%; max-width: 760px; margin: 0 auto; padding-bottom: calc(58px + 44px + var(--sab, 0px) + 24px); }
+.console-page-custom .home-titlebar { margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
+.console-page-custom .home-titlebar-action { margin-bottom: 8px; }
+.console-content { display: grid; gap: 24px; }
+.console-section { background: var(--surface); border: 1px solid var(--sep); border-radius: 16px; padding: 24px; }
+.console-section-head { margin-bottom: 16px; }
+.console-section-head h2 { font-size: 20px; line-height: 1.35; margin: 0; }
 .console-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .console-stat{display:grid;gap:4px;padding:16px;border:1px solid var(--sep);border-radius:12px;background:var(--surface-2)}
 .console-stat strong{font-size:28px;line-height:1.1;letter-spacing:-.02em}
@@ -308,5 +315,47 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .console-week-day span{font-size:13px;color:var(--management-muted);overflow-wrap:anywhere}
 .console-workout-list{margin-top:14px}
 .app-status-dismiss{margin-left:auto;border:0;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px}
+
+.console-mobile-nav {
+  position: fixed;
+  bottom: calc(58px + var(--sab, 0px));
+  left: 0;
+  right: 0;
+  z-index: 49;
+  background: var(--surface);
+  border-top: 1px solid var(--sep);
+  padding: 5px 12px;
+  display: flex;
+  justify-content: center;
+}
+.console-mobile-nav .management-nav {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 760px;
+  width: 100%;
+}
+.console-mobile-nav .management-nav::-webkit-scrollbar { display: none; }
+.console-mobile-nav .management-nav a {
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--surface-2);
+  color: var(--label-2);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  flex: none;
+}
+.console-mobile-nav .management-nav a[aria-current="page"] {
+  background: var(--acc);
+  color: var(--on-acc);
+}
+
 @media(max-width:700px){.console-form-grid{grid-template-columns:1fr}}
 

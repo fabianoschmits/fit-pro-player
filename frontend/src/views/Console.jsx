@@ -5,9 +5,17 @@ import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createConsoleRepository, VERIFICATION_LABELS, verificationTone } from '../lib/console.js'
 import { Button, TextArea, TextField } from '../components/ui.jsx'
 import LineChart from '../components/LineChart.jsx'
-import ManagementLayout from '../components/ManagementLayout.jsx'
-import { ManagementPanel as Section, ManagementAvatar, ManagementStatus, ManagementEmpty } from '../components/ManagementUI.jsx'
+import { ManagementAvatar, ManagementStatus, ManagementEmpty } from '../components/ManagementUI.jsx'
 import useManagementNavVisibility from '../components/useManagementNavVisibility.js'
+
+function Section({ title, description, children }) {
+  return (
+    <div className="console-section">
+      {title && <div className="console-section-head"><h2>{title}</h2>{description && <p className="sub">{description}</p>}</div>}
+      {children}
+    </div>
+  )
+}
 
 const WEEK_LABELS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
@@ -66,22 +74,33 @@ function ConsoleNav() {
   const overview = pathname === '/console'
   const users = pathname.startsWith('/console/users')
   const pros = pathname.startsWith('/console/professionals')
-  return <nav ref={navRef} className="management-nav" aria-label="Navegação da Central">
-    <Link to="/console" aria-current={overview ? 'page' : undefined}>Visão geral</Link>
-    <Link to="/console/users" aria-current={users ? 'page' : undefined}>Usuarios</Link>
-    <Link to="/console/professionals" aria-current={pros ? 'page' : undefined}>Profissionais</Link>
-  </nav>
+  return (
+    <div className="console-mobile-nav">
+      <nav ref={navRef} className="management-nav" aria-label="Navegação da Central">
+        <Link to="/console" aria-current={overview ? 'page' : undefined}>Visão geral</Link>
+        <Link to="/console/users" aria-current={users ? 'page' : undefined}>Usuários</Link>
+        <Link to="/console/professionals" aria-current={pros ? 'page' : undefined}>Profissionais</Link>
+      </nav>
+    </div>
+  )
 }
 
 function ConsoleShell({ title, subtitle, children, action }) {
-  return <ManagementLayout
-    className="professional-page console-page"
-    title={title}
-    subtitle={subtitle}
-    backTo="/more"
-    action={action}
-    nav={<ConsoleNav />}
-  >{children}</ManagementLayout>
+  return (
+    <div className="narrow console-page-custom">
+      <ConsoleNav />
+      <div className="hdr home-titlebar">
+        <div>
+          <h1>{title}</h1>
+          {subtitle && <div className="sub">{subtitle}</div>}
+        </div>
+        {action && <div className="home-titlebar-action">{action}</div>}
+      </div>
+      <div className="console-content">
+        {children}
+      </div>
+    </div>
+  )
 }
 
 function useConsoleAccess() {

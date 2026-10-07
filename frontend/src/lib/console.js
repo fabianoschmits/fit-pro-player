@@ -67,6 +67,7 @@ export function createConsoleRepository({ client } = {}) {
     .then(rows => Boolean(rows[0]?.suspended_at))
 
   const overview = () => rpc('ops_overview').then(rows => toOverview(rows?.[0] || rows))
+  const advancedMetrics = () => rpc('ops_advanced_metrics').then(rows => rows?.[0] || rows || {})
   const listUsers = ({ query = '', accountKind = null, limit = 50, offset = 0 } = {}) => rpc('ops_list_users', {
     p_query: query || null,
     p_account_kind: accountKind || null,
@@ -130,6 +131,7 @@ export function createConsoleRepository({ client } = {}) {
     adminRole,
     accountSuspended,
     overview,
+    advancedMetrics,
     listUsers,
     userDetail,
     userTraining,
