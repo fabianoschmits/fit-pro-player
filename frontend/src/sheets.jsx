@@ -32,6 +32,7 @@ import { resetHistoricalSets } from './lib/workout-session.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import { enqueueProfessionalEvent, flushProfessionalEvents } from './lib/professional-events.js'
 import { assignedSessionEntries } from './lib/assigned-program.js'
+import { WorkoutShareModal } from './components/WorkoutShareModal.jsx'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
@@ -1251,7 +1252,9 @@ export const workoutCompleteSheet = () => ui().openSheet(close => <WorkoutComple
 
 function FinishSummary({ w, prs, e1prs = [], close }) {
   const st = useStore(s => s.S)
+  const [showShare, setShowShare] = useState(false)
   return <div className="finish-summary">
+    {showShare && <WorkoutShareModal w={w} onClose={() => setShowShare(false)} />}
     <div className="finish-summary-heading">
       <Icon name="checkCircle" />
       <div><h3>{t('Workout complete!')}</h3><span>{fmtDate(w.d, true)}</span></div>
@@ -1270,7 +1273,10 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     <h4 className="sec" style={{ textAlign: 'left' }}>{t('What you just trained')}</h4>
     <BodyMap className="finish-bodymap" load={loadOfWorkouts([w])} body={st.body} />
     <div style={{ height: 14 }} />
-    <Button variant="primary" icon="house" onClick={() => { close(); nav('/home') }}>{t('Home')}</Button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <Button variant="secondary" icon="instagram" onClick={() => setShowShare(true)}>{t('Compartilhar treino')}</Button>
+      <Button variant="primary" icon="house" onClick={() => { close(); nav('/home') }}>{t('Home')}</Button>
+    </div>
   </div>
 }
 export function finishWorkout() {

@@ -31,6 +31,7 @@
     "@capacitor/share": "^7.0.4",
     "@supabase/supabase-js": "^2.116.0",
     "framer-motion": "^12.43.0",
+    "html-to-image": "^1.11.13",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.2",
