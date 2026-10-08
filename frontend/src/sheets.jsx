@@ -992,8 +992,10 @@ export const dayAssignSheet = day => ui().openSheet(close => <DayAssign day={day
 function WorkoutDetail({ w, close }) {
   const st = useStore(s => s.S)
   const [openEntry, setOpenEntry] = useState(null)
+  const [showShare, setShowShare] = useState(false)
   const reduced = useReducedMotion()
   return <>
+    {showShare && <WorkoutShareModal w={w} onClose={() => setShowShare(false)} />}
     <h3>{w.name}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
     {w.entries.map((e, i) => {
@@ -1028,9 +1030,11 @@ function WorkoutDetail({ w, close }) {
         </AnimatePresence>
       </div>
     })}
-    <Button variant="primary" icon="reset" onClick={() => { close(); repeatWorkout(w) }}>{t('Repeat {0}', w.name)}</Button>
-    <div style={{ height: 8 }} />
-    <Button variant="danger" onClick={() => confirmSheet({ title: t('Delete workout?'), message: t('This removes it from your history for good.'), confirmText: t('Delete'), danger: true, onConfirm: () => { update(s => { s.workouts = s.workouts.filter(x => x.id !== w.id) }); close(); toast(t('Workout deleted')) } })}>{t('Delete workout')}</Button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+      <Button variant="secondary" icon="instagram" onClick={() => setShowShare(true)}>{t('Compartilhar treino')}</Button>
+      <Button variant="primary" icon="reset" onClick={() => { close(); repeatWorkout(w) }}>{t('Repeat {0}', w.name)}</Button>
+      <Button variant="danger" onClick={() => confirmSheet({ title: t('Delete workout?'), message: t('This removes it from your history for good.'), confirmText: t('Delete'), danger: true, onConfirm: () => { update(s => { s.workouts = s.workouts.filter(x => x.id !== w.id) }); close(); toast(t('Workout deleted')) } })}>{t('Delete workout')}</Button>
+    </div>
   </>
 }
 export const workoutDetailSheet = w => ui().openSheet(close => <WorkoutDetail w={w} close={close} />)
