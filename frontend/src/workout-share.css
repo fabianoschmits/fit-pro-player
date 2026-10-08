@@ -96,8 +96,8 @@
   z-index: 0;
 }
 
-/* All content sits above bg */
-.workout-story-canvas > *:not(.wsc-bg) {
+/* All content sits above bg and bodymap */
+.workout-story-canvas > *:not(.wsc-bg):not(.wsc-bodymap-wrap) {
   position: relative;
   z-index: 1;
 }
@@ -140,31 +140,33 @@
 }
 .wsc-dot { opacity: 0.3; }
 
-/* ── BodyMap — front view, below logo+title ── */
+/* ── BodyMap — absolute background, full canvas ── */
 .wsc-bodymap-wrap {
-  flex: 1;
+  position: absolute;
+  inset: 0;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding: 40px 200px 0;
-  /* Subtle opacity so it reads as decorative background art */
-  opacity: 0.18;
+  align-items: center;
+  opacity: 0.07;  /* large but very faded */
   pointer-events: none;
+  z-index: 0;
+  padding: 60px 120px;
 }
 .wsc-bodymap-wrap .bodymap {
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 /* Hide back view if both were somehow rendered */
 .wsc-bodymap-wrap .bodymap .bm-v:nth-child(2) {
   display: none;
 }
-/* Colour override: make the muscle paths match our teal accent */
+/* Colour override: teal accent for trained muscles */
 .wsc-bodymap-wrap .bm-m { fill: #0F8B8D; }
-.wsc-bodymap-wrap .bm-inert { fill: rgba(255,255,255,0.06); }
-.wsc-bodymap-wrap svg { width: 100%; height: auto; }
+.wsc-bodymap-wrap .bm-inert { fill: rgba(255,255,255,0.04); }
+.wsc-bodymap-wrap svg { width: 100%; height: 100%; max-height: 100%; }
 
 /* ── Stats ── */
 .wsc-stats {

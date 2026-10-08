@@ -19,6 +19,17 @@ function WorkoutStoryPreview({ w, st, innerRef }) {
       {/* Background gradient */}
       <div className="wsc-bg" />
 
+      {/* BodyMap — absolute background, full canvas, very faded */}
+      <div className="wsc-bodymap-wrap">
+        <BodyMap
+          load={load}
+          body={st.body || 'male'}
+          view="front"
+          decorative
+          className="wsc-bodymap"
+        />
+      </div>
+
       {/* Logo — small, at the very top */}
       <div className="wsc-logo">
         <img src="/brand-logo.png" alt="Fit Pro Player" />
@@ -34,18 +45,7 @@ function WorkoutStoryPreview({ w, st, innerRef }) {
         </div>
       </div>
 
-      {/* BodyMap front view — large, below logo/title, decorative */}
-      <div className="wsc-bodymap-wrap">
-        <BodyMap
-          load={load}
-          body={st.body || 'male'}
-          view="front"
-          decorative
-          className="wsc-bodymap"
-        />
-      </div>
-
-      {/* Stats overlay — over the body */}
+      {/* Stats */}
       <div className="wsc-stats">
         <div className="wsc-stat">
           <strong>{w.entries.length}</strong>
