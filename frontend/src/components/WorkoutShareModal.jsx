@@ -4,86 +4,52 @@ import { t } from '../lib/i18n.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { fmtDate, fmtVol, fmtDur } from '../lib/format.js'
 import { useStore } from '../store/useStore.js'
-import { loadOfWorkouts, MUSCLES, levelsOf } from '../lib/muscles.js'
-import Icon from './Icon.jsx'
+import { loadOfWorkouts } from '../lib/muscles.js'
 import { Button } from './ui.jsx'
 
-// Inline body silhouette using SVG paths - avoids html-to-image cross-origin issues
-// We use a simplified human body silhouette as an inline SVG background
+// Inline SVG silhouette — avoids html-to-image cross-origin/lazy-load issues
 function BodySilhouette({ gender }) {
-  // Use a path string for a simplified body silhouette
-  // This avoids the BodyMap lazy-loading issue with html-to-image
-  const color = 'rgba(255,255,255,0.08)'
   if (gender === 'female') {
     return (
-      <svg viewBox="0 0 200 480" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', fill: color }}>
-        {/* Head */}
-        <ellipse cx="100" cy="40" rx="28" ry="35" />
-        {/* Neck */}
-        <rect x="88" y="70" width="24" height="20" rx="4" />
-        {/* Shoulders */}
-        <ellipse cx="60" cy="95" rx="22" ry="14" />
-        <ellipse cx="140" cy="95" rx="22" ry="14" />
-        {/* Torso */}
-        <path d="M68 88 Q58 120 62 160 Q72 185 100 190 Q128 185 138 160 Q142 120 132 88 Z" />
-        {/* Hips */}
-        <path d="M62 160 Q50 200 55 220 Q70 240 100 242 Q130 240 145 220 Q150 200 138 160 Z" />
-        {/* Left arm */}
-        <path d="M60 90 Q35 110 28 145 Q24 165 30 185 Q36 175 40 155 Q46 125 62 105 Z" />
-        {/* Right arm */}
-        <path d="M140 90 Q165 110 172 145 Q176 165 170 185 Q164 175 160 155 Q154 125 138 105 Z" />
-        {/* Left forearm */}
-        <path d="M30 185 Q22 215 24 240 Q30 230 34 210 Q36 195 36 183 Z" />
-        {/* Right forearm */}
-        <path d="M170 185 Q178 215 176 240 Q170 230 166 210 Q164 195 164 183 Z" />
-        {/* Left thigh */}
-        <path d="M55 220 Q45 265 48 310 Q58 300 62 265 Q66 240 65 220 Z" />
-        {/* Right thigh */}
-        <path d="M145 220 Q155 265 152 310 Q142 300 138 265 Q134 240 135 220 Z" />
-        {/* Left leg */}
-        <path d="M48 310 Q44 360 46 395 Q56 385 58 350 Q60 320 58 308 Z" />
-        {/* Right leg */}
-        <path d="M152 310 Q156 360 154 395 Q144 385 142 350 Q140 320 142 308 Z" />
-        {/* Left foot */}
-        <ellipse cx="48" cy="405" rx="14" ry="10" />
-        {/* Right foot */}
-        <ellipse cx="152" cy="405" rx="14" ry="10" />
+      <svg viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg" fill="white" style={{ width: '100%', height: '100%' }}>
+        <ellipse cx="100" cy="38" rx="28" ry="34" />
+        <rect x="88" y="68" width="24" height="18" rx="4" />
+        <ellipse cx="58" cy="92" rx="22" ry="13" />
+        <ellipse cx="142" cy="92" rx="22" ry="13" />
+        <path d="M70 85 Q58 122 62 164 Q72 188 100 190 Q128 188 138 164 Q142 122 130 85 Z" />
+        <path d="M62 164 Q50 200 54 222 Q68 244 100 245 Q132 244 146 222 Q150 200 138 164 Z" />
+        <path d="M58 88 Q32 108 25 148 Q21 170 28 192 Q35 180 39 158 Q45 124 62 102 Z" />
+        <path d="M142 88 Q168 108 175 148 Q179 170 172 192 Q165 180 161 158 Q155 124 138 102 Z" />
+        <path d="M28 192 Q20 224 22 250 Q29 240 33 218 Q36 202 35 190 Z" />
+        <path d="M172 192 Q180 224 178 250 Q171 240 167 218 Q164 202 165 190 Z" />
+        <path d="M54 222 Q44 268 47 314 Q58 304 62 268 Q66 242 65 222 Z" />
+        <path d="M146 222 Q156 268 153 314 Q142 304 138 268 Q134 242 135 222 Z" />
+        <path d="M47 314 Q42 368 44 400 Q56 390 58 354 Q60 326 57 312 Z" />
+        <path d="M153 314 Q158 368 156 400 Q144 390 142 354 Q140 326 143 312 Z" />
+        <ellipse cx="45" cy="410" rx="15" ry="10" />
+        <ellipse cx="155" cy="410" rx="15" ry="10" />
       </svg>
     )
   }
+  // Male (default)
   return (
-    <svg viewBox="0 0 200 480" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%', fill: color }}>
-      {/* Head */}
-      <ellipse cx="100" cy="38" rx="30" ry="36" />
-      {/* Neck */}
-      <rect x="86" y="70" width="28" height="18" rx="4" />
-      {/* Shoulders - wider for male */}
-      <ellipse cx="55" cy="92" rx="26" ry="15" />
-      <ellipse cx="145" cy="92" rx="26" ry="15" />
-      {/* Torso - broader */}
-      <path d="M64 84 Q52 120 56 165 Q68 188 100 190 Q132 188 144 165 Q148 120 136 84 Z" />
-      {/* Hips - narrower than shoulders */}
-      <path d="M56 165 Q48 195 52 215 Q66 235 100 236 Q134 235 148 215 Q152 195 144 165 Z" />
-      {/* Left arm - bulkier */}
-      <path d="M56 86 Q28 108 22 148 Q18 170 25 192 Q32 180 36 158 Q42 122 60 100 Z" />
-      {/* Right arm */}
-      <path d="M144 86 Q172 108 178 148 Q182 170 175 192 Q168 180 164 158 Q158 122 140 100 Z" />
-      {/* Left forearm */}
-      <path d="M25 192 Q16 225 18 252 Q26 240 30 218 Q33 200 32 190 Z" />
-      {/* Right forearm */}
-      <path d="M175 192 Q184 225 182 252 Q174 240 170 218 Q167 200 168 190 Z" />
-      {/* Left thigh */}
-      <path d="M52 215 Q42 265 45 315 Q57 305 60 268 Q64 240 64 215 Z" />
-      {/* Right thigh */}
-      <path d="M148 215 Q158 265 155 315 Q143 305 140 268 Q136 240 136 215 Z" />
-      {/* Left calf */}
-      <path d="M45 315 Q40 368 43 400 Q54 390 57 355 Q59 328 56 313 Z" />
-      {/* Right calf */}
-      <path d="M155 315 Q160 368 157 400 Q146 390 143 355 Q141 328 144 313 Z" />
-      {/* Left foot */}
-      <ellipse cx="44" cy="410" rx="16" ry="11" />
-      {/* Right foot */}
-      <ellipse cx="156" cy="410" rx="16" ry="11" />
+    <svg viewBox="0 0 200 500" xmlns="http://www.w3.org/2000/svg" fill="white" style={{ width: '100%', height: '100%' }}>
+      <ellipse cx="100" cy="36" rx="30" ry="35" />
+      <rect x="86" y="68" width="28" height="16" rx="4" />
+      <ellipse cx="54" cy="90" rx="26" ry="14" />
+      <ellipse cx="146" cy="90" rx="26" ry="14" />
+      <path d="M64 82 Q50 120 55 168 Q68 190 100 192 Q132 190 145 168 Q150 120 136 82 Z" />
+      <path d="M55 168 Q46 198 50 218 Q65 238 100 240 Q135 238 150 218 Q154 198 145 168 Z" />
+      <path d="M54 84 Q26 106 20 148 Q16 172 24 194 Q32 182 36 158 Q42 122 60 98 Z" />
+      <path d="M146 84 Q174 106 180 148 Q184 172 176 194 Q168 182 164 158 Q158 122 140 98 Z" />
+      <path d="M24 194 Q15 228 17 256 Q26 243 30 220 Q33 203 32 192 Z" />
+      <path d="M176 194 Q185 228 183 256 Q174 243 170 220 Q167 203 168 192 Z" />
+      <path d="M50 218 Q40 268 44 318 Q56 308 60 270 Q64 242 64 218 Z" />
+      <path d="M150 218 Q160 268 156 318 Q144 308 140 270 Q136 242 136 218 Z" />
+      <path d="M44 318 Q38 372 41 404 Q54 394 57 356 Q59 328 55 316 Z" />
+      <path d="M156 318 Q162 372 159 404 Q146 394 143 356 Q141 328 145 316 Z" />
+      <ellipse cx="42" cy="414" rx="17" ry="11" />
+      <ellipse cx="158" cy="414" rx="17" ry="11" />
     </svg>
   )
 }
@@ -95,13 +61,13 @@ function WorkoutStoryPreview({ w, st }) {
 
   return (
     <div className="workout-story-preview">
-      {/* Inline SVG body silhouette — avoids cross-origin html-to-image issues */}
-      <div className="workout-story-bg-body">
+      {/* Silhouette — full bleed background */}
+      <div className="workout-story-bg-body" aria-hidden="true">
         <BodySilhouette gender={st.body || 'male'} />
       </div>
 
       <div className="workout-story-content">
-        {/* Logo */}
+        {/* Logo image (lion mascot) */}
         <div className="workout-story-logo">
           <img src="/brand-logo.png" alt="Fit Pro Player" />
         </div>
@@ -116,7 +82,7 @@ function WorkoutStoryPreview({ w, st }) {
           </div>
         </div>
 
-        {/* Stats row */}
+        {/* Stats */}
         <div className="workout-story-stats">
           <div className="story-stat">
             <strong>{w.entries.length}</strong>
@@ -137,8 +103,11 @@ function WorkoutStoryPreview({ w, st }) {
         </div>
 
         {/* Exercises */}
-        <div className="workout-story-exercises" data-few={fewExercises ? 'true' : 'false'}>
-          {w.entries.map((e, idx) => {
+        <div
+          className="workout-story-exercises"
+          data-few={fewExercises ? 'true' : 'false'}
+        >
+          {w.entries.slice(0, 8).map((e, idx) => {
             const exData = EXIDX[e.id]
             const name = exData ? exerciseName(exData) : e.id
             const totalSets = e.sets ? e.sets.length : 0
@@ -158,113 +127,141 @@ function WorkoutStoryPreview({ w, st }) {
         </div>
 
         {/* Footer */}
-        <div className="workout-story-footer">
-          fitproplayer.app
-        </div>
+        <div className="workout-story-footer">fitproplayer.app</div>
       </div>
     </div>
   )
 }
 
+// ─── helper: dataURL → File object ─────────────────────────────────────────
+async function dataUrlToFile(dataUrl, name) {
+  const res = await fetch(dataUrl)
+  const blob = await res.blob()
+  return new File([blob], name, { type: 'image/png' })
+}
+
 export function WorkoutShareModal({ w, onClose }) {
   const st = useStore(s => s.S)
   const [generating, setGenerating] = useState(false)
-  const previewRef = useRef(null)      // the 1080×1920 canvas
-  const outerRef = useRef(null)        // the visible scaler-outer box
+  const [error, setError] = useState(null)
+  const previewRef = useRef(null)
+  const outerRef = useRef(null)
 
-  // Dynamically compute CSS scale so the canvas fills the outer box
+  // Scale canvas to fill the outer container
   useEffect(() => {
     if (!outerRef.current || !previewRef.current) return
-    const observer = new ResizeObserver(entries => {
-      const w = entries[0].contentRect.width
-      if (w > 0) {
-        previewRef.current.style.transform = `scale(${w / 1080})`
+    const obs = new ResizeObserver(entries => {
+      const width = entries[0].contentRect.width
+      if (width > 0) {
+        previewRef.current.style.transform = `scale(${width / 1080})`
+        previewRef.current.style.transformOrigin = 'top left'
       }
     })
-    observer.observe(outerRef.current)
-    return () => observer.disconnect()
+    obs.observe(outerRef.current)
+    return () => obs.disconnect()
   }, [])
 
-
-  const handleGenerateImage = async () => {
+  // ── Generate PNG from the 1080×1920 canvas ────────────────────────────────
+  const generateImage = async () => {
     if (!previewRef.current) return null
+    setGenerating(true)
+    setError(null)
     try {
-      setGenerating(true)
-      await new Promise(r => setTimeout(r, 200))
+      // Reset scale to 1 before capture so html-to-image sees true size
+      const prev = previewRef.current.style.transform
+      previewRef.current.style.transform = 'scale(1)'
+      await new Promise(r => setTimeout(r, 150)) // let paint settle
+
       const dataUrl = await toPng(previewRef.current, {
-        quality: 1,
-        pixelRatio: 2,
         width: 1080,
         height: 1920,
-        cacheBust: true
+        pixelRatio: 1,
+        cacheBust: true,
+        backgroundColor: '#080a0b',
       })
+
+      // Restore visual scale
+      previewRef.current.style.transform = prev
       return dataUrl
     } catch (err) {
-      console.error('Error generating image', err)
+      console.error('[share] generate error:', err)
+      setError(t('Erro ao gerar imagem. Tente novamente.'))
       return null
     } finally {
       setGenerating(false)
     }
   }
 
-  const shareNative = async (dataUrl) => {
-    try {
-      const { Capacitor } = await import('@capacitor/core')
-      if (Capacitor.isNativePlatform()) {
-        const { Filesystem, Directory } = await import('@capacitor/filesystem')
-        const { Share } = await import('@capacitor/share')
-        const base64Data = dataUrl.split(',')[1]
-        const fileName = `treino-${w.id || Date.now()}.png`
-        const savedFile = await Filesystem.writeFile({
-          path: fileName,
-          data: base64Data,
-          directory: Directory.Cache
-        })
-        await Share.share({
-          title: t('Meu treino no Fit Pro Player'),
-          url: savedFile.uri,
-          dialogTitle: t('Compartilhar treino')
-        })
-        return
-      }
-      // Web fallback
-      const res = await fetch(dataUrl)
-      const blob = await res.blob()
-      const file = new File([blob], `workout-${w.id || Date.now()}.png`, { type: 'image/png' })
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: t('Meu treino no Fit Pro Player'), files: [file] })
-      } else {
-        downloadFallback(dataUrl)
-      }
-    } catch (e) {
-      downloadFallback(dataUrl)
-    }
-  }
-
-  const downloadFallback = (dataUrl) => {
+  // ── Download to device (universal fallback) ───────────────────────────────
+  const download = (dataUrl) => {
     const a = document.createElement('a')
     a.href = dataUrl
-    a.download = `workout-${w.id || Date.now()}.png`
+    a.download = `treino-fpp-${w.id || Date.now()}.png`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
   }
 
+  // ── Native share via Web Share API or Capacitor ───────────────────────────
+  const share = async (dataUrl) => {
+    const fileName = `treino-fpp-${w.id || Date.now()}.png`
+    const shareTitle = 'Meu treino no Fit Pro Player 💪'
+
+    // 1) Try Capacitor native (Android/iOS app)
+    try {
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const { Filesystem, Directory } = await import('@capacitor/filesystem')
+        const { Share: CapShare } = await import('@capacitor/share')
+        const base64 = dataUrl.split(',')[1]
+        const saved = await Filesystem.writeFile({
+          path: fileName,
+          data: base64,
+          directory: Directory.Cache,
+        })
+        await CapShare.share({
+          title: shareTitle,
+          url: saved.uri,
+          dialogTitle: t('Compartilhar treino'),
+        })
+        return
+      }
+    } catch (_) { /* not native */ }
+
+    // 2) Try Web Share API with file (Chrome Android, Safari iOS on PWA)
+    try {
+      const file = await dataUrlToFile(dataUrl, fileName)
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: shareTitle, files: [file] })
+        return
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') {
+        console.warn('[share] Web Share API failed:', e)
+      } else {
+        return // user cancelled — do nothing
+      }
+    }
+
+    // 3) Fallback: download
+    download(dataUrl)
+  }
+
   const onShare = async (platform) => {
-    const dataUrl = await handleGenerateImage()
+    const dataUrl = await generateImage()
     if (!dataUrl) return
-    if (platform === 'download') downloadFallback(dataUrl)
-    else shareNative(dataUrl)
+    if (platform === 'download') {
+      download(dataUrl)
+    } else {
+      await share(dataUrl)
+    }
   }
 
   return (
     <div className="workout-share-sheet">
-      {/* Title only — no X button, sheet drag handle handles close */}
-      <div className="workout-share-title">
-        <span>{t('Compartilhar treino')}</span>
-      </div>
+      {/* No title text — sheet handle is enough */}
 
-      {/* Preview container — fills remaining height */}
+      {/* Story preview */}
       <div className="workout-share-preview-area">
         <div ref={outerRef} className="workout-share-scaler-outer">
           <div className="workout-share-scaler-inner">
@@ -275,38 +272,45 @@ export function WorkoutShareModal({ w, onClose }) {
         </div>
       </div>
 
-      {/* Buttons — always pinned to bottom, never scroll */}
+      {/* Error message */}
+      {error && (
+        <div style={{ padding: '8px 20px', color: 'var(--red)', fontSize: 13, textAlign: 'center' }}>
+          {error}
+        </div>
+      )}
+
+      {/* Action buttons — pinned at bottom */}
       <div className="workout-share-actions">
         <Button
           variant="primary"
-          onClick={() => onShare('instagram')}
+          onClick={() => onShare('native')}
           disabled={generating}
           className="share-btn-ig"
         >
-          {generating ? t('Gerando...') : '📱 ' + t('Instagram Stories')}
+          {generating ? t('Gerando...') : t('Instagram Stories')}
         </Button>
         <div className="workout-share-row">
           <Button
             variant="secondary"
-            onClick={() => onShare('whatsapp')}
+            onClick={() => onShare('native')}
             disabled={generating}
             className="share-btn-wa"
           >
-            💬 {t('WhatsApp')}
+            {t('WhatsApp')}
           </Button>
           <Button
             variant="secondary"
             onClick={() => onShare('download')}
             disabled={generating}
           >
-            <Icon name="download" /> {t('Salvar')}
+            {t('Salvar')}
           </Button>
           <Button
             variant="ghost"
-            onClick={() => onShare('other')}
+            onClick={() => onShare('native')}
             disabled={generating}
           >
-            <Icon name="share" /> {t('Mais')}
+            {t('Mais')}
           </Button>
         </div>
       </div>

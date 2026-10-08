@@ -11,86 +11,76 @@
   background: var(--bg);
 }
 
-.workout-share-title {
-  text-align: center;
-  padding: 4px 20px 12px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--label);
-  flex-shrink: 0;
-}
-
-/* ---- Preview area (scrollable center) ---- */
+/* ---- Preview area ---- */
 .workout-share-preview-area {
   flex: 1;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: 16px;
   background: var(--surface-2);
   overflow: hidden;
 }
 
-/* Outer box: 9:16 ratio visible frame */
+/* Outer visible frame — 9:16 ratio */
 .workout-share-scaler-outer {
-  /* Fit within the available height, keeping 9:16 */
   height: 100%;
-  max-height: calc(88vh - 200px); /* leave room for title + buttons */
+  max-height: calc(88vh - 180px);
   aspect-ratio: 9 / 16;
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
 }
 
-/* Inner box: exactly 1080×1920, scaled down to fit outer */
+/* Inner layer fills the outer frame */
 .workout-share-scaler-inner {
   position: absolute;
   inset: 0;
 }
 
-/* The real 1080×1920 canvas — scaled with CSS to fill the outer box */
+/* The real 1080×1920 canvas — scaled by JS via style.transform */
 .workout-story-canvas {
   width: 1080px;
   height: 1920px;
   transform-origin: top left;
-  /* scale = outer.width / 1080. We use a CSS custom prop set in JS, fallback 0.25 */
-  transform: scale(var(--story-scale, 0.25));
   overflow: hidden;
 }
 
 /* ============================================================
-   Story Art — 1080 × 1920 px canvas
+   Story Art (1080 × 1920)
    ============================================================ */
 .workout-story-preview {
   width: 1080px;
   height: 1920px;
   position: relative;
-  background: radial-gradient(ellipse at 50% 20%, #15181f 0%, #080a0b 100%);
+  background: radial-gradient(ellipse at 50% 20%, #14171e 0%, #06080a 100%);
   color: #fff;
   display: flex;
   flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Silhouette background */
+/* Silhouette — fills full canvas behind content */
 .workout-story-bg-body {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.07;
   pointer-events: none;
   z-index: 0;
+  opacity: 0.09; /* visible but subtle */
+  padding: 60px;
 }
 .workout-story-bg-body svg {
-  height: 95%;
+  height: 100%;
   width: auto;
+  max-width: 100%;
 }
 
-/* Content layer */
+/* Content layer — on top of silhouette */
 .workout-story-content {
   position: relative;
   z-index: 1;
@@ -104,32 +94,32 @@
 .workout-story-logo {
   display: flex;
   justify-content: center;
-  margin-bottom: 80px;
+  margin-bottom: 72px;
 }
 .workout-story-logo img {
-  width: 420px;
+  width: 320px; /* smaller */
   height: auto;
   object-fit: contain;
 }
 
-/* Title block */
+/* Title */
 .workout-story-title-block {
   text-align: center;
-  margin-bottom: 80px;
+  margin-bottom: 72px;
 }
 .workout-story-title-block h2 {
   font-size: 100px;
   font-weight: 900;
   margin: 0 0 24px;
   line-height: 1;
-  background: linear-gradient(160deg, #ffffff 30%, #a8b0c0 100%);
+  background: linear-gradient(160deg, #ffffff 30%, #9aa0b0 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .workout-story-meta {
-  font-size: 38px;
-  color: rgba(255,255,255,0.5);
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.45);
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -137,7 +127,7 @@
   gap: 20px;
 }
 .workout-story-meta-sep {
-  opacity: 0.4;
+  opacity: 0.3;
 }
 
 /* Stats */
@@ -145,8 +135,8 @@
   display: flex;
   align-items: center;
   justify-content: space-evenly;
-  background: rgba(255,255,255,0.04);
-  border: 1.5px solid rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
   border-radius: 48px;
   padding: 56px 40px;
   margin-bottom: 80px;
@@ -158,35 +148,34 @@
   gap: 14px;
 }
 .story-stat strong {
-  font-size: 76px;
+  font-size: 72px;
   font-weight: 900;
   color: #0F8B8D;
   line-height: 1;
 }
 .story-stat small {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255, 255, 255, 0.3);
 }
 .story-stat-divider {
   width: 1.5px;
   height: 80px;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-/* Exercises list */
+/* Exercises */
 .workout-story-exercises {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0;
-  justify-content: flex-start;
 }
 .workout-story-exercises[data-few='true'] {
   justify-content: center;
-  gap: 20px;
+  gap: 12px;
 }
 
 .story-ex-row {
@@ -194,15 +183,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 34px 0;
-  border-bottom: 1.5px solid rgba(255,255,255,0.07);
-  gap: 24px;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.07);
+  gap: 28px;
 }
 .story-ex-name {
   font-size: 36px;
   font-weight: 600;
-  color: rgba(255,255,255,0.88);
+  color: rgba(255, 255, 255, 0.88);
   flex: 1;
-  /* Single line truncation */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -216,28 +204,27 @@
 }
 .story-ex-extra {
   text-align: center;
-  font-size: 34px;
-  color: rgba(255,255,255,0.35);
+  font-size: 32px;
+  color: rgba(255, 255, 255, 0.3);
   font-weight: 600;
   padding-top: 32px;
-  border-bottom: none;
+  border: none;
 }
 
 /* Footer */
 .workout-story-footer {
   padding-top: 48px;
   text-align: center;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 600;
-  color: rgba(255,255,255,0.2);
-  letter-spacing: 0.05em;
-  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.18);
+  letter-spacing: 0.06em;
 }
 
-/* ---- Pinned action buttons ---- */
+/* ---- Pinned buttons ---- */
 .workout-share-actions {
   flex-shrink: 0;
-  padding: 16px 20px calc(16px + env(safe-area-inset-bottom));
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -252,9 +239,9 @@
   flex: 1;
 }
 
-/* Share button variants */
+/* Button colours */
 .share-btn-ig {
-  background: linear-gradient(90deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) !important;
+  background: linear-gradient(90deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important;
   color: #fff !important;
   border: none !important;
 }
