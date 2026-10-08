@@ -29,7 +29,9 @@ function WorkoutStoryPreview({ w, st }) {
 
       <div className="workout-story-content">
         <div className="workout-story-header">
-          <div className="workout-story-logo">FIT PRO PLAYER</div>
+          <div className="workout-story-logo">
+            <img src="/brand-logo.svg" alt="Fit Pro Player" style={{ width: 400, opacity: 0.9 }} />
+          </div>
           <h2>{t('Treino finalizado')}</h2>
           <div className="workout-story-meta">
             <span>{fmtDate(w.d, true)}</span>
@@ -54,7 +56,7 @@ function WorkoutStoryPreview({ w, st }) {
           )}
         </div>
 
-        <div className="workout-story-exercises">
+        <div className="workout-story-exercises" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: displayedExercises.length < 5 ? 'center' : 'flex-start', gap: displayedExercises.length < 5 ? '60px' : '36px' }}>
           {displayedExercises.map((e, idx) => {
             const exData = EXIDX[e.id]
             const name = exData ? exerciseName(exData) : e.id
@@ -64,7 +66,7 @@ function WorkoutStoryPreview({ w, st }) {
             return (
               <div key={idx} className="story-ex-row">
                 <div className="story-ex-name">{name}</div>
-                <div className="story-ex-sets">{totalSets} × {maxReps > 0 ? maxReps : '-'}</div>
+                <div className="story-ex-sets" style={{ whiteSpace: 'nowrap' }}>{totalSets} × {maxReps > 0 ? maxReps : '-'}</div>
               </div>
             )
           })}

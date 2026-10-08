@@ -1,31 +1,23 @@
 .workout-share-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  /* legacy, kept to avoid breaking just in case */
 }
 
 .workout-share-modal {
-  background: var(--bg);
-  border-radius: 24px 24px 0 0;
   width: 100%;
-  max-height: 95vh;
+  height: 88vh; /* Fixed height so buttons stay at bottom */
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
   overflow: hidden;
+  background: var(--bg);
 }
 
 .workout-share-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center; /* Center the title */
   padding: 16px 20px;
   border-bottom: 1px solid var(--sep);
+  flex-shrink: 0;
 }
 
 .workout-share-header h3 {
@@ -57,7 +49,7 @@
 .workout-story-wrapper {
   width: 1080px;
   height: 1920px;
-  transform: scale(calc(100% / 1080));
+  transform: scale(0.25);
   transform-origin: top left;
   position: absolute;
   top: 0;
@@ -67,17 +59,17 @@
   font-family: inherit; /* Inherits the app font */
 }
 
-/* Make sure the parent of wrapper handles the scaled dimensions correctly 
-   Actually, a better approach for the wrapper is using container queries or simply CSS transforms. */
-.workout-share-preview-scaler {
-  /* This container handles the responsive scaling of the 1080x1920 art */
-}
-.workout-story-wrapper {
-  transform: scale(0.296); /* default scale for ~320px width */
-}
 @media (max-width: 380px) {
   .workout-story-wrapper {
-    transform: scale(0.26); /* smaller screens */
+    transform: scale(0.24); /* smaller screens */
+  }
+}
+@media (min-height: 800px) {
+  .workout-share-preview-scaler {
+    max-width: 360px;
+  }
+  .workout-story-wrapper {
+    transform: scale(0.28);
   }
 }
 
@@ -95,7 +87,7 @@
   position: absolute;
   top: 15%;
   left: 50%;
-  transform: translateX(-50%) scale(2.5);
+  transform: translateX(-50%) scale(2.8);
   width: 100%;
   height: 100%;
   opacity: 0.05;
@@ -127,12 +119,7 @@
 }
 
 .workout-story-logo {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: var(--acc);
   margin-bottom: 40px;
-  text-transform: uppercase;
 }
 
 .workout-story-header h2 {
@@ -188,37 +175,33 @@
   color: #808590;
 }
 
-.workout-story-exercises {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 36px;
-}
-
 .story-ex-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding-bottom: 36px;
   border-bottom: 2px solid rgba(255,255,255,0.1);
+  gap: 20px;
 }
 
 .story-ex-name {
-  font-size: 44px;
-  font-weight: 700;
+  font-size: 38px; /* Reduced font size */
+  font-weight: 600; /* Less heavy to match smaller size */
   color: #fff;
+  line-height: 1.2;
 }
 
 .story-ex-sets {
   font-size: 40px;
   font-weight: 800;
   color: var(--acc);
+  flex-shrink: 0;
 }
 
 .story-ex-extra {
   justify-content: center;
   border-bottom: none;
-  font-size: 40px;
+  font-size: 38px;
   color: #808590;
   font-weight: 600;
 }
@@ -229,6 +212,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--sep);
 }
 
 .workout-share-row {
