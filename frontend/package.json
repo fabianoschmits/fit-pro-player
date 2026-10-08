@@ -40,7 +40,7 @@
   "devDependencies": {
     "@capacitor/android": "^7.6.8",
     "@capacitor/cli": "^7.6.8",
-    "@capacitor/ios": "^7.6.8",
+    "@capacitor/ios": "^7.6.9",
     "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^6.0.3",
     "happy-dom": "^20.11.2",
