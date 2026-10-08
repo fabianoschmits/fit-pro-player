@@ -1,5 +1,5 @@
 /* ============================================================
-   Workout Share Sheet
+   Workout Share Sheet — outer shell
    ============================================================ */
 
 .workout-share-sheet {
@@ -11,7 +11,7 @@
   background: var(--bg);
 }
 
-/* ---- Preview area ---- */
+/* ---- Scrollable preview area ---- */
 .workout-share-preview-area {
   flex: 1;
   min-height: 0;
@@ -23,205 +23,23 @@
   overflow: hidden;
 }
 
-/* Outer visible frame — 9:16 ratio */
+/* Visible 9:16 frame */
 .workout-share-scaler-outer {
   height: 100%;
-  max-height: calc(88vh - 180px);
+  max-height: calc(88vh - 160px);
   aspect-ratio: 9 / 16;
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
 }
 
-/* Inner layer fills the outer frame */
 .workout-share-scaler-inner {
   position: absolute;
   inset: 0;
 }
 
-/* The real 1080×1920 canvas — scaled by JS via style.transform */
-.workout-story-canvas {
-  width: 1080px;
-  height: 1920px;
-  transform-origin: top left;
-  overflow: hidden;
-}
-
-/* ============================================================
-   Story Art (1080 × 1920)
-   ============================================================ */
-.workout-story-preview {
-  width: 1080px;
-  height: 1920px;
-  position: relative;
-  background: radial-gradient(ellipse at 50% 20%, #14171e 0%, #06080a 100%);
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-/* Silhouette — fills full canvas behind content */
-.workout-story-bg-body {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.09; /* visible but subtle */
-  padding: 60px;
-}
-.workout-story-bg-body svg {
-  height: 100%;
-  width: auto;
-  max-width: 100%;
-}
-
-/* Content layer — on top of silhouette */
-.workout-story-content {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 100px 80px 80px;
-}
-
-/* Logo */
-.workout-story-logo {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 72px;
-}
-.workout-story-logo img {
-  width: 320px; /* smaller */
-  height: auto;
-  object-fit: contain;
-}
-
-/* Title */
-.workout-story-title-block {
-  text-align: center;
-  margin-bottom: 72px;
-}
-.workout-story-title-block h2 {
-  font-size: 100px;
-  font-weight: 900;
-  margin: 0 0 24px;
-  line-height: 1;
-  background: linear-gradient(160deg, #ffffff 30%, #9aa0b0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.workout-story-meta {
-  font-size: 36px;
-  color: rgba(255, 255, 255, 0.45);
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-}
-.workout-story-meta-sep {
-  opacity: 0.3;
-}
-
-/* Stats */
-.workout-story-stats {
-  display: flex;
-  align-items: center;
-  justify-content: space-evenly;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
-  border-radius: 48px;
-  padding: 56px 40px;
-  margin-bottom: 80px;
-}
-.story-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-}
-.story-stat strong {
-  font-size: 72px;
-  font-weight: 900;
-  color: #0F8B8D;
-  line-height: 1;
-}
-.story-stat small {
-  font-size: 26px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.3);
-}
-.story-stat-divider {
-  width: 1.5px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-/* Exercises */
-.workout-story-exercises {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-.workout-story-exercises[data-few='true'] {
-  justify-content: center;
-  gap: 12px;
-}
-
-.story-ex-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 34px 0;
-  border-bottom: 1.5px solid rgba(255, 255, 255, 0.07);
-  gap: 28px;
-}
-.story-ex-name {
-  font-size: 36px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.88);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.story-ex-sets {
-  font-size: 38px;
-  font-weight: 800;
-  color: #0F8B8D;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.story-ex-extra {
-  text-align: center;
-  font-size: 32px;
-  color: rgba(255, 255, 255, 0.3);
-  font-weight: 600;
-  padding-top: 32px;
-  border: none;
-}
-
-/* Footer */
-.workout-story-footer {
-  padding-top: 48px;
-  text-align: center;
-  font-size: 28px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.18);
-  letter-spacing: 0.06em;
-}
-
-/* ---- Pinned buttons ---- */
+/* ---- Pinned action buttons ---- */
 .workout-share-actions {
   flex-shrink: 0;
   padding: 14px 20px calc(14px + env(safe-area-inset-bottom));
@@ -231,22 +49,211 @@
   background: var(--surface);
   border-top: 1px solid var(--sep);
 }
+
 .workout-share-row {
   display: flex;
   gap: 10px;
 }
-.workout-share-row > * {
-  flex: 1;
+.workout-share-row > * { flex: 1; }
+
+.workout-share-error {
+  color: var(--red, #ff453a);
+  font-size: 13px;
+  text-align: center;
+  padding: 4px 20px 0;
+  margin: 0;
+  flex-shrink: 0;
 }
 
-/* Button colours */
+/* Share button skins */
 .share-btn-ig {
   background: linear-gradient(90deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important;
   color: #fff !important;
   border: none !important;
 }
-.share-btn-wa {
-  background: #25D366 !important;
-  color: #fff !important;
-  border: none !important;
+
+/* ============================================================
+   Story canvas — 1080 × 1920 px
+   (JS scales this with transform: scale(n) )
+   ============================================================ */
+.workout-story-canvas {
+  width: 1080px;
+  height: 1920px;
+  transform-origin: top left;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow: hidden;
+  color: #ffffff;
+}
+
+/* Background */
+.wsc-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 15%, #151820 0%, #06080a 100%);
+  z-index: 0;
+}
+
+/* All content sits above bg */
+.workout-story-canvas > *:not(.wsc-bg) {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Logo ── */
+.wsc-logo {
+  display: flex;
+  justify-content: center;
+  padding: 90px 100px 0;
+}
+.wsc-logo img {
+  width: 260px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ── Title block ── */
+.wsc-title-block {
+  text-align: center;
+  padding: 52px 80px 0;
+}
+.wsc-title {
+  font-size: 96px;
+  font-weight: 900;
+  line-height: 1.05;
+  margin: 0 0 20px;
+  background: linear-gradient(160deg, #ffffff 30%, #8a9ab0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.wsc-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  font-size: 34px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+}
+.wsc-dot { opacity: 0.3; }
+
+/* ── BodyMap — front view, below logo+title ── */
+.wsc-bodymap-wrap {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 40px 200px 0;
+  /* Subtle opacity so it reads as decorative background art */
+  opacity: 0.18;
+  pointer-events: none;
+}
+.wsc-bodymap-wrap .bodymap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+}
+/* Hide back view if both were somehow rendered */
+.wsc-bodymap-wrap .bodymap .bm-v:nth-child(2) {
+  display: none;
+}
+/* Colour override: make the muscle paths match our teal accent */
+.wsc-bodymap-wrap .bm-m { fill: #0F8B8D; }
+.wsc-bodymap-wrap .bm-inert { fill: rgba(255,255,255,0.06); }
+.wsc-bodymap-wrap svg { width: 100%; height: auto; }
+
+/* ── Stats ── */
+.wsc-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  margin: 0 80px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 48px;
+  padding: 52px 40px;
+}
+.wsc-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.wsc-stat strong {
+  font-size: 70px;
+  font-weight: 900;
+  color: #0F8B8D;
+  line-height: 1;
+}
+.wsc-stat small {
+  font-size: 25px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.3);
+}
+.wsc-stat-sep {
+  width: 1.5px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Exercise list ── */
+.wsc-exercises {
+  display: flex;
+  flex-direction: column;
+  padding: 0 80px;
+  margin-top: 60px;
+}
+.wsc-exercises[data-few='true'] {
+  justify-content: center;
+  gap: 16px;
+}
+
+.wsc-ex-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30px 0;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.06);
+  gap: 28px;
+}
+.wsc-ex-name {
+  font-size: 34px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wsc-ex-sets {
+  font-size: 36px;
+  font-weight: 800;
+  color: #0F8B8D;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.wsc-ex-extra {
+  text-align: center;
+  font-size: 30px;
+  color: rgba(255, 255, 255, 0.28);
+  font-weight: 600;
+  padding-top: 30px;
+  border: none;
+}
+
+/* ── Footer ── */
+.wsc-footer {
+  margin-top: auto;
+  padding: 40px 80px 70px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.15);
 }
