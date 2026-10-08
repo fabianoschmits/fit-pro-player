@@ -176,83 +176,66 @@ export function WorkoutShareModal({ w, onClose }) {
   }
 
   return (
-    <AnimatePresence>
-      <motion.div 
-        className="workout-share-backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-        onClick={onClose}
-      >
-        <motion.div 
-          className="workout-share-modal"
-          initial={{ y: '100%', opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: '100%', opacity: 0 }}
-          transition={{ duration: 0.3, type: 'spring', bounce: 0 }}
-          onClick={e => e.stopPropagation()}
+    <div className="workout-share-modal">
+      <div className="workout-share-header">
+        <button className="iconbtn" onClick={onClose} aria-label={t('Close')}>
+          <Icon name="xmark" />
+        </button>
+        <h3>{t('Compartilhar treino')}</h3>
+        <div style={{ width: 44 }} /> {/* balance */}
+      </div>
+
+      <div className="workout-share-preview-container">
+        <div className="workout-share-preview-scaler">
+          {/* This wrapper is the one converted to image */}
+          <div ref={previewRef} className="workout-story-wrapper">
+            <WorkoutStoryPreview w={w} st={st} />
+          </div>
+        </div>
+      </div>
+
+      <div className="workout-share-actions">
+        <Button 
+          variant="primary" 
+          icon="instagram" 
+          onClick={() => onShare('instagram')}
+          disabled={generating}
+          className="share-btn-ig"
         >
-          <div className="workout-share-header">
-            <button className="iconbtn" onClick={onClose} aria-label={t('Close')}>
-              <Icon name="xmark" />
-            </button>
-            <h3>{t('Compartilhar treino')}</h3>
-            <div style={{ width: 44 }} /> {/* balance */}
-          </div>
-
-          <div className="workout-share-preview-container">
-            <div className="workout-share-preview-scaler">
-              {/* This wrapper is the one converted to image */}
-              <div ref={previewRef} className="workout-story-wrapper">
-                <WorkoutStoryPreview w={w} st={st} />
-              </div>
-            </div>
-          </div>
-
-          <div className="workout-share-actions">
-            <Button 
-              variant="primary" 
-              icon="instagram" 
-              onClick={() => onShare('instagram')}
-              disabled={generating}
-              className="share-btn-ig"
-            >
-              {generating ? t('Gerando...') : t('Instagram Stories')}
-            </Button>
-            
-            <div className="workout-share-row">
-              <Button 
-                variant="secondary" 
-                icon="messageCircle" 
-                onClick={() => onShare('whatsapp')}
-                disabled={generating}
-                className="share-btn-wa"
-              >
-                {t('WhatsApp')}
-              </Button>
-              
-              <Button 
-                variant="secondary" 
-                icon="download" 
-                onClick={() => onShare('download')}
-                disabled={generating}
-              >
-                {t('Salvar')}
-              </Button>
-              
-              <Button 
-                variant="ghost" 
-                icon="share" 
-                onClick={() => onShare('other')}
-                disabled={generating}
-              >
-                {t('Mais...')}
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+          {generating ? t('Gerando...') : t('Instagram Stories')}
+        </Button>
+        
+        <div className="workout-share-row">
+          <Button 
+            variant="secondary" 
+            icon="messageCircle" 
+            onClick={() => onShare('whatsapp')}
+            disabled={generating}
+            className="share-btn-wa"
+          >
+            {t('WhatsApp')}
+          </Button>
+          
+          <Button 
+            variant="secondary" 
+            icon="download" 
+            onClick={() => onShare('download')}
+            disabled={generating}
+          >
+            {t('Salvar')}
+          </Button>
+          
+          <Button 
+            variant="ghost" 
+            icon="share" 
+            onClick={() => onShare('other')}
+            disabled={generating}
+          >
+            {t('Mais...')}
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }
+
