@@ -89,14 +89,17 @@ export function WorkoutShareModal({ w, onClose }) {
     try {
       setGenerating(true)
       // Small delay to ensure styles and fonts are applied
-      await new Promise(r => setTimeout(r, 100))
+      await new Promise(r => setTimeout(r, 300))
       const dataUrl = await toPng(previewRef.current, {
         quality: 1,
-        pixelRatio: 2,
+        pixelRatio: 1, // Fixes issues on high-DPI screens generating oversized/blank images
+        width: 1080,
+        height: 1920,
         cacheBust: true,
         style: {
           transform: 'scale(1)',
-          transformOrigin: 'top left'
+          transformOrigin: 'top left',
+          margin: '0'
         }
       })
       return dataUrl
@@ -108,8 +111,33 @@ export function WorkoutShareModal({ w, onClose }) {
     }
   }
 
-  const shareNative = async (dataUrl) => {
+  const shareNative = async (dataUrl, intent) => {
     try {
+      // Check if we are running natively via Capacitor
+      const { Capacitor } = await import('@capacitor/core')
+      if (Capacitor.isNativePlatform()) {
+        const { Filesystem, Directory } = await import('@capacitor/filesystem')
+        const { Share } = await import('@capacitor/share')
+        
+        // Write the base64 image data to a temporary file
+        const base64Data = dataUrl.split(',')[1]
+        const fileName = `treino-${w.id || Date.now()}.png`
+        
+        const savedFile = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache
+        })
+        
+        await Share.share({
+          title: t('Meu treino no Fit Pro Player'),
+          url: savedFile.uri,
+          dialogTitle: t('Compartilhar treino')
+        })
+        return
+      }
+      
+      // Fallback for Web/PWA
       const res = await fetch(dataUrl)
       const blob = await res.blob()
       const file = new File([blob], `workout-${w.id || Date.now()}.png`, { type: 'image/png' })
@@ -131,21 +159,19 @@ export function WorkoutShareModal({ w, onClose }) {
     const a = document.createElement('a')
     a.href = dataUrl
     a.download = `workout-${w.id || Date.now()}.png`
+    document.body.appendChild(a)
     a.click()
+    document.body.removeChild(a)
   }
 
   const onShare = async (platform) => {
     const dataUrl = await handleGenerateImage()
     if (!dataUrl) return
 
-    if (platform === 'instagram') {
-      shareNative(dataUrl)
-    } else if (platform === 'whatsapp') {
-      shareNative(dataUrl)
-    } else if (platform === 'download') {
+    if (platform === 'download') {
       downloadFallback(dataUrl)
     } else {
-      shareNative(dataUrl)
+      shareNative(dataUrl, platform)
     }
   }
 
