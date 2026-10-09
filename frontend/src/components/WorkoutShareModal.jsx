@@ -8,14 +8,48 @@ import { loadOfWorkouts } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
 import { Button } from './ui.jsx'
+import '../workout-themes.css'
 
-function WorkoutStoryPreview({ w, st, innerRef }) {
+const THEMES = [
+  { id: 't1', name: 'Original' },
+  { id: 't2', name: 'Minimal Light' },
+  { id: 't3', name: 'Luxury Gold' },
+  { id: 't4', name: 'Blood Sport' },
+  { id: 't5', name: 'Ocean' },
+  { id: 't6', name: 'Forest' },
+  { id: 't7', name: 'Sunset' },
+  { id: 't8', name: 'Midnight' },
+  { id: 't9', name: 'Neon Purple' },
+  { id: 't10', name: 'High Contrast' },
+  { id: 't11', name: 'Mesh Glow' },
+  { id: 't12', name: 'Synthwave' },
+  { id: 't13', name: 'Pure Dark' },
+  { id: 't14', name: 'Bubblegum' },
+  { id: 't15', name: 'Military' },
+  { id: 't16', name: 'Royal' },
+  { id: 't17', name: 'Hacker' },
+  { id: 't18', name: 'Magma' },
+  { id: 't19', name: 'Ice' },
+  { id: 't20', name: 'Pastel' },
+  { id: 't21', name: 'Mono' },
+  { id: 't22', name: 'Deep Space' },
+  { id: 't23', name: 'Toxic' },
+  { id: 't24', name: 'Desert' },
+  { id: 't25', name: 'Cyber Pink' },
+  { id: 't26', name: 'Steel' },
+  { id: 't27', name: 'Bronze' },
+  { id: 't28', name: 'Outrun' },
+  { id: 't29', name: 'Clean Blue' },
+  { id: 't30', name: 'OLED' }
+]
+
+function WorkoutStoryPreview({ w, st, innerRef, themeId }) {
   const dur = w.end - w.start
   const setsCount = w.entries.reduce((acc, e) => acc + (e.sets ? e.sets.length : 0), 0)
   const load = loadOfWorkouts([w])
 
   return (
-    <div ref={innerRef} className="workout-story-canvas">
+    <div ref={innerRef} className={`workout-story-canvas ${themeId}`}>
       {/* Backgrounds and glows */}
       <div className="wsc-bg" />
       <div className="wsc-grid-pattern" />
@@ -133,6 +167,7 @@ export function WorkoutShareModal({ w, onClose }) {
   const st = useStore(s => s.S)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState(null)
+  const [selectedTheme, setSelectedTheme] = useState(THEMES[0].id)
   const canvasRef = useRef(null)   // points to .workout-story-canvas (1080×1920)
   const outerRef = useRef(null)    // points to the visible scaler container
 
@@ -169,7 +204,7 @@ export function WorkoutShareModal({ w, onClose }) {
         height: 1920,
         pixelRatio: 1,
         cacheBust: true,
-        backgroundColor: '#06080a',
+        // The background color is now defined by the theme css
         // inline all styles so SVG colours are captured
         includeQueryParams: true,
       })
@@ -246,8 +281,23 @@ export function WorkoutShareModal({ w, onClose }) {
       <div className="workout-share-preview-area">
         <div ref={outerRef} className="workout-share-scaler-outer">
           <div className="workout-share-scaler-inner">
-            <WorkoutStoryPreview w={w} st={st} innerRef={canvasRef} />
+            <WorkoutStoryPreview w={w} st={st} innerRef={canvasRef} themeId={selectedTheme} />
           </div>
+        </div>
+      </div>
+
+      {/* Theme selector */}
+      <div className="workout-share-themes">
+        <div className="workout-share-themes-scroll">
+          {THEMES.map(t => (
+            <button
+              key={t.id}
+              className={`theme-btn ${t.id === selectedTheme ? 'active' : ''} ${t.id}`}
+              onClick={() => setSelectedTheme(t.id)}
+            >
+              {t.name}
+            </button>
+          ))}
         </div>
       </div>
 

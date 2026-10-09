@@ -1,0 +1,272 @@
+/* Auto-generated Themes */
+
+.t1 {
+  --wsc-bg: radial-gradient(circle at 50% 0%, #17202c 0%, #0b0e14 70%);
+  --wsc-text1: #fff;
+  --wsc-text2: #8b95a5;
+  --wsc-accent: #0F8B8D;
+  --wsc-box-bg: rgba(255,255,255,0.03);
+  --wsc-box-border: rgba(255,255,255,0.08);
+  --wsc-radius: 24px;
+}
+.t2 {
+  --wsc-bg: #f5f7fa;
+  --wsc-text1: #111;
+  --wsc-text2: #555;
+  --wsc-accent: #222;
+  --wsc-box-bg: #fff;
+  --wsc-box-border: rgba(0,0,0,0.1);
+  --wsc-radius: 16px;
+}
+.t3 {
+  --wsc-bg: #000;
+  --wsc-text1: #fff;
+  --wsc-text2: #d4af37;
+  --wsc-accent: #d4af37;
+  --wsc-box-bg: rgba(212,175,55,0.1);
+  --wsc-box-border: #d4af37;
+  --wsc-radius: 0px;
+}
+.t4 {
+  --wsc-bg: #1a0505;
+  --wsc-text1: #fff;
+  --wsc-text2: #ff4444;
+  --wsc-accent: #e60000;
+  --wsc-box-bg: rgba(230,0,0,0.1);
+  --wsc-box-border: rgba(230,0,0,0.3);
+  --wsc-radius: 8px;
+}
+.t5 {
+  --wsc-bg: linear-gradient(180deg, #02111D 0%, #033959 100%);
+  --wsc-text1: #fff;
+  --wsc-text2: #88ccff;
+  --wsc-accent: #00aaff;
+  --wsc-box-bg: rgba(255,255,255,0.05);
+  --wsc-box-border: rgba(0,170,255,0.3);
+  --wsc-radius: 30px;
+}
+.t6 {
+  --wsc-bg: #0d1a11;
+  --wsc-text1: #fff;
+  --wsc-text2: #88cc99;
+  --wsc-accent: #2eb85c;
+  --wsc-box-bg: rgba(46,184,92,0.1);
+  --wsc-box-border: rgba(46,184,92,0.3);
+  --wsc-radius: 20px;
+}
+.t7 {
+  --wsc-bg: linear-gradient(135deg, #2b0f2a 0%, #ff5e62 100%);
+  --wsc-text1: #fff;
+  --wsc-text2: #ffc3a0;
+  --wsc-accent: #ff9966;
+  --wsc-box-bg: rgba(255,255,255,0.1);
+  --wsc-box-border: rgba(255,255,255,0.2);
+  --wsc-radius: 24px;
+}
+.t8 {
+  --wsc-bg: #00001a;
+  --wsc-text1: #e6e6ff;
+  --wsc-text2: #8080b3;
+  --wsc-accent: #6666ff;
+  --wsc-box-bg: rgba(102,102,255,0.05);
+  --wsc-box-border: rgba(102,102,255,0.2);
+  --wsc-radius: 12px;
+}
+.t9 {
+  --wsc-bg: #0d001a;
+  --wsc-text1: #fff;
+  --wsc-text2: #d9b3ff;
+  --wsc-accent: #9933ff;
+  --wsc-box-bg: rgba(153,51,255,0.1);
+  --wsc-box-border: #9933ff;
+  --wsc-radius: 24px;
+}
+.t10 {
+  --wsc-bg: #000;
+  --wsc-text1: #fff;
+  --wsc-text2: #fff;
+  --wsc-accent: #ffff00;
+  --wsc-box-bg: #000;
+  --wsc-box-border: #ffff00;
+  --wsc-radius: 0px;
+}
+.t11 {
+  --wsc-bg: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  --wsc-text1: #fff;
+  --wsc-text2: #ddd;
+  --wsc-accent: #ff66b2;
+  --wsc-box-bg: rgba(255,255,255,0.05);
+  --wsc-box-border: rgba(255,255,255,0.2);
+  --wsc-radius: 32px;
+}
+.t12 {
+  --wsc-bg: linear-gradient(180deg, #2a0033 0%, #000000 100%);
+  --wsc-text1: #00ffff;
+  --wsc-text2: #ff00ff;
+  --wsc-accent: #ff00ff;
+  --wsc-box-bg: rgba(255,0,255,0.1);
+  --wsc-box-border: #00ffff;
+  --wsc-radius: 4px;
+}
+.t13 {
+  --wsc-bg: #000;
+  --wsc-text1: #fff;
+  --wsc-text2: #666;
+  --wsc-accent: #fff;
+  --wsc-box-bg: #111;
+  --wsc-box-border: #333;
+  --wsc-radius: 16px;
+}
+.t14 {
+  --wsc-bg: #ffe6f2;
+  --wsc-text1: #33001a;
+  --wsc-text2: #cc0066;
+  --wsc-accent: #ff3399;
+  --wsc-box-bg: #fff;
+  --wsc-box-border: #ff99cc;
+  --wsc-radius: 40px;
+}
+.t15 {
+  --wsc-bg: #2d3324;
+  --wsc-text1: #e6e8e3;
+  --wsc-text2: #9fa693;
+  --wsc-accent: #6b735c;
+  --wsc-box-bg: #3a4030;
+  --wsc-box-border: #4a523d;
+  --wsc-radius: 2px;
+}
+.t16 {
+  --wsc-bg: #1a0033;
+  --wsc-text1: #fff;
+  --wsc-text2: #ffd700;
+  --wsc-accent: #cc00ff;
+  --wsc-box-bg: rgba(204,0,255,0.1);
+  --wsc-box-border: #ffd700;
+  --wsc-radius: 20px;
+}
+.t17 {
+  --wsc-bg: #000;
+  --wsc-text1: #0f0;
+  --wsc-text2: #080;
+  --wsc-accent: #0f0;
+  --wsc-box-bg: #000;
+  --wsc-box-border: #0f0;
+  --wsc-radius: 0px;
+}
+.t18 {
+  --wsc-bg: #1a0500;
+  --wsc-text1: #fff;
+  --wsc-text2: #ff6600;
+  --wsc-accent: #ff3300;
+  --wsc-box-bg: rgba(255,51,0,0.1);
+  --wsc-box-border: #ff6600;
+  --wsc-radius: 12px;
+}
+.t19 {
+  --wsc-bg: #e6f7ff;
+  --wsc-text1: #00334d;
+  --wsc-text2: #006699;
+  --wsc-accent: #0099e6;
+  --wsc-box-bg: #fff;
+  --wsc-box-border: #b3e6ff;
+  --wsc-radius: 24px;
+}
+.t20 {
+  --wsc-bg: #fdf6e3;
+  --wsc-text1: #657b83;
+  --wsc-text2: #93a1a1;
+  --wsc-accent: #2aa198;
+  --wsc-box-bg: #eee8d5;
+  --wsc-box-border: #d3c6aa;
+  --wsc-radius: 30px;
+}
+.t21 {
+  --wsc-bg: #fff;
+  --wsc-text1: #000;
+  --wsc-text2: #000;
+  --wsc-accent: #000;
+  --wsc-box-bg: #fff;
+  --wsc-box-border: #000;
+  --wsc-radius: 0px;
+}
+.t22 {
+  --wsc-bg: radial-gradient(circle at 50% 50%, #0a0a2a 0%, #000 100%);
+  --wsc-text1: #fff;
+  --wsc-text2: #aaa;
+  --wsc-accent: #fff;
+  --wsc-box-bg: rgba(255,255,255,0.05);
+  --wsc-box-border: rgba(255,255,255,0.1);
+  --wsc-radius: 100px;
+}
+.t23 {
+  --wsc-bg: #0a0f0a;
+  --wsc-text1: #fff;
+  --wsc-text2: #33ff33;
+  --wsc-accent: #00ff00;
+  --wsc-box-bg: rgba(0,255,0,0.05);
+  --wsc-box-border: #00ff00;
+  --wsc-radius: 8px;
+}
+.t24 {
+  --wsc-bg: #2b1d14;
+  --wsc-text1: #f2e8cf;
+  --wsc-text2: #bc6c25;
+  --wsc-accent: #dda15e;
+  --wsc-box-bg: #3d2b1f;
+  --wsc-box-border: #606c38;
+  --wsc-radius: 16px;
+}
+.t25 {
+  --wsc-bg: #000;
+  --wsc-text1: #fff;
+  --wsc-text2: #0ff;
+  --wsc-accent: #f0f;
+  --wsc-box-bg: rgba(255,0,255,0.1);
+  --wsc-box-border: #f0f;
+  --wsc-radius: 20px;
+}
+.t26 {
+  --wsc-bg: #1c1e21;
+  --wsc-text1: #e4e6eb;
+  --wsc-text2: #b0b3b8;
+  --wsc-accent: #ffffff;
+  --wsc-box-bg: #242526;
+  --wsc-box-border: #3a3b3c;
+  --wsc-radius: 12px;
+}
+.t27 {
+  --wsc-bg: #1a1105;
+  --wsc-text1: #e6d5c3;
+  --wsc-text2: #cd7f32;
+  --wsc-accent: #b87333;
+  --wsc-box-bg: #2a1b0a;
+  --wsc-box-border: #cd7f32;
+  --wsc-radius: 4px;
+}
+.t28 {
+  --wsc-bg: linear-gradient(to bottom, #0f172a, #312e81);
+  --wsc-text1: #fbcfe8;
+  --wsc-text2: #38bdf8;
+  --wsc-accent: #f472b6;
+  --wsc-box-bg: rgba(255,255,255,0.1);
+  --wsc-box-border: #c084fc;
+  --wsc-radius: 24px;
+}
+.t29 {
+  --wsc-bg: #ffffff;
+  --wsc-text1: #0f172a;
+  --wsc-text2: #64748b;
+  --wsc-accent: #2563eb;
+  --wsc-box-bg: #f8fafc;
+  --wsc-box-border: #e2e8f0;
+  --wsc-radius: 16px;
+}
+.t30 {
+  --wsc-bg: #000000;
+  --wsc-text1: #ffffff;
+  --wsc-text2: #a1a1aa;
+  --wsc-accent: #3b82f6;
+  --wsc-box-bg: #09090b;
+  --wsc-box-border: #27272a;
+  --wsc-radius: 24px;
+}
