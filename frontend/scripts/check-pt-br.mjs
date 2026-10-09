@@ -15,6 +15,14 @@ assert.equal(DATE_LOCALES.pt, 'pt-BR')
 assert.equal(LANGS.pt, 'Português (Brasil)')
 assert.equal(t('Settings'), 'Configurações')
 
+const missingProfessionalPortuguese = Object.keys(professionalEnglish)
+  .filter(key => !Object.hasOwn(pt, key))
+assert.deepEqual(
+  missingProfessionalPortuguese,
+  [],
+  `Professional UI strings missing from pt-BR: ${missingProfessionalPortuguese.join(', ')}`,
+)
+
 const ids = new Set(EXDB.map(ex => ex.id))
 assert.equal(ids.size, EXDB.length, 'Exercise ids must be unique')
 assert.equal(Object.keys(names).length, EXDB.length, 'Every exercise needs a pt-BR name')

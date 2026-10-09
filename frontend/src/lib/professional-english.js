@@ -269,7 +269,6 @@ export default {
   "Salvar exige conexão. O status de verificação é controlado pelo sistema.": "Saving requires a connection. Verification status is managed by the system.",
   "Salvando…": "Saving…",
   "Salvar perfil": "Save profile",
-  "N�o foi poss�vel encerrar o v�nculo.": "Unable to close the link.",
   "Programa arquivado.": "Program archived.",
   "Programa restaurado.": "Program restored.",
   "Criar nova versão": "Create new version",
