@@ -9,41 +9,44 @@ import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
 import { Button } from './ui.jsx'
 import '../workout-themes.css'
+import '../workout-share-layouts.css'
+import { LayoutMinimal, LayoutReceipt, LayoutBrutal, LayoutPolaroid } from './WorkoutShareLayouts.jsx'
 
 const THEMES = [
-  { id: 't1', name: 'Original' },
-  { id: 't2', name: 'Minimal Light' },
-  { id: 't3', name: 'Luxury Gold' },
-  { id: 't4', name: 'Blood Sport' },
-  { id: 't5', name: 'Ocean' },
-  { id: 't6', name: 'Forest' },
-  { id: 't7', name: 'Sunset' },
-  { id: 't8', name: 'Midnight' },
-  { id: 't9', name: 'Neon Purple' },
-  { id: 't10', name: 'High Contrast' },
-  { id: 't11', name: 'Mesh Glow' },
-  { id: 't12', name: 'Synthwave' },
-  { id: 't13', name: 'Pure Dark' },
-  { id: 't14', name: 'Bubblegum' },
-  { id: 't15', name: 'Military' },
-  { id: 't16', name: 'Royal' },
-  { id: 't17', name: 'Hacker' },
-  { id: 't18', name: 'Magma' },
-  { id: 't19', name: 'Ice' },
-  { id: 't20', name: 'Pastel' },
-  { id: 't21', name: 'Mono' },
-  { id: 't22', name: 'Deep Space' },
-  { id: 't23', name: 'Toxic' },
-  { id: 't24', name: 'Desert' },
-  { id: 't25', name: 'Cyber Pink' },
-  { id: 't26', name: 'Steel' },
-  { id: 't27', name: 'Bronze' },
-  { id: 't28', name: 'Outrun' },
-  { id: 't29', name: 'Clean Blue' },
-  { id: 't30', name: 'OLED' }
+  { id: 't1', name: 'Original', layout: 'dashboard' },
+  { id: 't2', name: 'Minimal Light', layout: 'minimal' },
+  { id: 't3', name: 'Luxury Gold', layout: 'minimal' },
+  { id: 't4', name: 'Blood Sport', layout: 'brutal' },
+  { id: 't5', name: 'Ocean', layout: 'dashboard' },
+  { id: 't6', name: 'Forest', layout: 'polaroid' },
+  { id: 't7', name: 'Sunset', layout: 'receipt' },
+  { id: 't8', name: 'Midnight', layout: 'minimal' },
+  { id: 't9', name: 'Neon Purple', layout: 'dashboard' },
+  { id: 't10', name: 'High Contrast', layout: 'brutal' },
+  { id: 't11', name: 'Mesh Glow', layout: 'dashboard' },
+  { id: 't12', name: 'Synthwave', layout: 'receipt' },
+  { id: 't13', name: 'Pure Dark', layout: 'brutal' },
+  { id: 't14', name: 'Bubblegum', layout: 'polaroid' },
+  { id: 't15', name: 'Military', layout: 'minimal' },
+  { id: 't16', name: 'Royal', layout: 'receipt' },
+  { id: 't17', name: 'Hacker', layout: 'brutal' },
+  { id: 't18', name: 'Magma', layout: 'polaroid' },
+  { id: 't19', name: 'Ice', layout: 'dashboard' },
+  { id: 't20', name: 'Pastel', layout: 'minimal' },
+  { id: 't21', name: 'Mono', layout: 'receipt' },
+  { id: 't22', name: 'Deep Space', layout: 'polaroid' },
+  { id: 't23', name: 'Toxic', layout: 'brutal' },
+  { id: 't24', name: 'Desert', layout: 'minimal' },
+  { id: 't25', name: 'Cyber Pink', layout: 'dashboard' },
+  { id: 't26', name: 'Steel', layout: 'receipt' },
+  { id: 't27', name: 'Bronze', layout: 'polaroid' },
+  { id: 't28', name: 'Outrun', layout: 'brutal' },
+  { id: 't29', name: 'Clean Blue', layout: 'minimal' },
+  { id: 't30', name: 'OLED', layout: 'dashboard' }
 ]
 
-function WorkoutStoryPreview({ w, st, innerRef, themeId }) {
+// The Dashboard layout is the default "gamer card" layout
+function LayoutDashboard({ w, st, innerRef, themeId }) {
   const dur = w.end - w.start
   const setsCount = w.entries.reduce((acc, e) => acc + (e.sets ? e.sets.length : 0), 0)
   const load = loadOfWorkouts([w])
@@ -153,6 +156,15 @@ function WorkoutStoryPreview({ w, st, innerRef, themeId }) {
       </div>
     </div>
   )
+}
+
+function WorkoutStoryPreview({ w, st, innerRef, themeId }) {
+  const theme = THEMES.find(t => t.id === themeId) || THEMES[0]
+  if (theme.layout === 'minimal') return <LayoutMinimal w={w} st={st} innerRef={innerRef} themeId={themeId} />
+  if (theme.layout === 'receipt') return <LayoutReceipt w={w} st={st} innerRef={innerRef} themeId={themeId} />
+  if (theme.layout === 'brutal') return <LayoutBrutal w={w} st={st} innerRef={innerRef} themeId={themeId} />
+  if (theme.layout === 'polaroid') return <LayoutPolaroid w={w} st={st} innerRef={innerRef} themeId={themeId} />
+  return <LayoutDashboard w={w} st={st} innerRef={innerRef} themeId={themeId} />
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
