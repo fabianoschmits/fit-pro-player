@@ -1,33 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../auth/AuthProvider.jsx'
-import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
-import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
-import { FILTERS, filterStudents, professionalDate, statusLabel, attentionReasons } from '../lib/professional-ux.js'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import { t } from '../lib/i18n.js'
-import { Button, TextField } from '../components/ui.jsx'
-import ManagementLayout from '../components/ManagementLayout.jsx'
-import { ManagementPanel as Section, ManagementAvatar, ManagementStatus, ManagementEmpty } from '../components/ManagementUI.jsx'
-const FILTER_LABELS = { [FILTERS.ALL]: 'Todos', [FILTERS.WITH_PROGRAM]: 'Com programa', [FILTERS.WITHOUT_PROGRAM]: 'Sem programa' }
+import { useProfessionalSession } from '../features/professional/hooks/useProfessionalSession.js'
+import { useProfessionalLists } from '../features/professional/hooks/useProfessionalLists.js'
+import ProfessionalLayout from '../features/professional/components/ProfessionalLayout.jsx'
+import SearchBar from '../features/professional/components/SearchBar.jsx'
+import FilterChips from '../features/professional/components/FilterChips.jsx'
+import CompactList from '../features/professional/components/CompactList.jsx'
+import StudentRow from '../features/professional/components/StudentRow.jsx'
+import EmptyState from '../features/professional/components/EmptyState.jsx'
+import { preserveProfessionalIdentity } from '../features/professional/routes.js'
 
+const OPTIONS = [{ value: 'all', label: t('Todos') }, { value: 'with_program', label: t('Com programa') }, { value: 'without_program', label: t('Sem programa') }, { value: 'attention', label: t('Atenção') }]
 export default function ProfessionalStudents() {
-  const auth = useAuth()
-  return <StudentsWorkspace key={auth.user?.id || 'anonymous'} userId={auth.user?.id} />
-}
-function StudentsWorkspace({ userId }) {
-  const navigate = useNavigate(); const [params] = useSearchParams(); const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const owner = useRef(userId); owner.current = userId
-  const [students, setStudents] = useState([]); const [query, setQuery] = useState(''); const [filter, setFilter] = useState(FILTERS.ALL); const [busy, setBusy] = useState(Boolean(userId)); const [error, setError] = useState(''); const [limit, setLimit] = useState(30)
-  const refresh = async () => { const id = userId; setBusy(true); try { const next = await repo.clientSummaries(); if (owner.current === id) { setStudents(next); setError('') } } catch { if (owner.current === id) setError(t('Não foi possível carregar os alunos.')) } finally { if (owner.current === id) setBusy(false) } }
-  useEffect(() => { owner.current = userId; if (userId) refresh(); return () => { owner.current = null } }, [userId])
-  const visible = filterStudents(students, query, filter)
-  const context = params.get('version') ? `?program=${encodeURIComponent(params.get('program') || '')}&version=${encodeURIComponent(params.get('version'))}` : ''
-  return <ManagementLayout className="professional-page" title={t('Alunos')} subtitle={t('Pessoas com vínculo ativo')} backTo="/professional" action={<Link className="management-button management-button-primary" to="/professional/invites?section=create">{t('Convidar aluno')}</Link>}>
-    {error && <p role="alert" className="management-error">{error} <button className="link" onClick={refresh}>{t('Tentar novamente')}</button></p>}
-    {!userId ? <ManagementEmpty title={t('Entre na sua conta para continuar.')} /> : busy ? <p role="status">{t('Carregando alunos…')}</p> : <>
-      {context && <p role="status">{t('Selecione o aluno para revisar e enviar a versão escolhida.')}</p>}
-      <div className="management-list-tools"><TextField aria-label={t('Buscar aluno')} placeholder={t('Buscar por nome')} value={query} onChange={event => { setQuery(event.target.value); setLimit(30) }} /><div className="management-filter" role="group" aria-label={t('Filtros de alunos')}>{Object.entries(FILTER_LABELS).map(([value, label]) => <button type="button" aria-pressed={filter === value} className={filter === value ? 'on' : ''} key={value} onClick={() => { setFilter(value); setLimit(30) }}>{t(label)}</button>)}</div></div>
-      {!students.length ? <Section title={t('Nenhum aluno ainda')}><p className="muted">{t('Convide seu primeiro aluno para começar a acompanhar treinos.')}</p><Button variant="primary" onClick={() => navigate('/professional/invites?section=create')}>{t('Convidar aluno')}</Button></Section> : !visible.length ? <Section title={t('Nenhum resultado')}><p className="muted">{t('Ajuste a busca ou troque o filtro.')}</p></Section> : <Section title={t('{0} aluno(s)', visible.length)}><div className="management-record-list">{visible.slice(0, limit).map(student => <Link className="management-record management-student-record" to={`/professional/students/${student.studentUserId}${context}`} key={student.studentUserId}><ManagementAvatar name={student.displayName} /><div className="management-student-main"><strong>{student.displayName || t('Aluno')}</strong><p>{student.programTitle || t('Sem programa ativo')}</p><div className="management-student-flags">{attentionReasons(student).map(reason => <ManagementStatus tone="warning" key={reason}>{t(reason)}</ManagementStatus>)}</div></div><div className="management-student-activity"><span>{student.lastExecutionStatus ? statusLabel(student.lastExecutionStatus) : t('Nenhum treino registrado')}</span>{student.lastExecutionAt && <time>{professionalDate(student.lastExecutionAt)}</time>}</div><span aria-hidden="true">›</span></Link>)}</div>{visible.length > limit && <Button onClick={() => setLimit(value => value + 30)}>{t('Carregar mais')}</Button>}</Section>}
-    </>}
-  </ManagementLayout>
+  const session = useProfessionalSession(), location = useLocation(), [params, setParams] = useSearchParams()
+  const list = useProfessionalLists({ accountId: session.accountId, resourceKey: 'students', initialFilters: { search: params.get('q') || '', status: params.get('status') || 'all' }, loadPage: page => session.repo.studentPage(page) })
+  const update = patch => { list.setFilters(patch); const next = new URLSearchParams(params); if ('search' in patch) patch.search ? next.set('q', patch.search) : next.delete('q'); if ('status' in patch) patch.status === 'all' ? next.delete('status') : next.set('status', patch.status); setParams(next, { replace: true }) }
+  return <ProfessionalLayout title={t('Alunos')} subtitle={list.total == null ? t('Pessoas com vínculo ativo') : t('{0} aluno(s)', list.total)} action={<Link className="management-button management-button-primary" to="/professional/invites?section=create">{t('Convidar aluno')}</Link>}>
+    <SearchBar label={t('Buscar aluno')} value={list.filters.search} onChange={search => update({ search })} /><FilterChips options={OPTIONS} value={list.filters.status} onChange={status => update({ status })} />
+    {list.error && <p role="alert">{t('Não foi possível carregar os alunos.')} <button onClick={list.retry}>{t('Tentar novamente')}</button></p>}
+    <CompactList status={list.status} hasMore={list.hasMore} onLoadMore={list.loadMore} empty={<EmptyState title={t('Nenhum resultado')} description={t('Ajuste a busca ou troque o filtro.')} />}>{list.items.map(student => <StudentRow key={student.studentUserId} student={student} to={preserveProfessionalIdentity(`/professional/students/${student.studentUserId}`, location.search)} />)}</CompactList>
+  </ProfessionalLayout>
 }

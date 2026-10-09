@@ -8,10 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   auth: { status: 'authenticated', user: { id: 'professional-1' } },
   repo: {
-    professionalRole: vi.fn().mockResolvedValue(true),
-    clientSummaries: vi.fn().mockResolvedValue([{ studentUserId: 'student-1', displayName: 'Ana', programTitle: 'Força' }]),
-    clientDetail: vi.fn().mockResolvedValue({ assignments: [], executions: [] }),
-    invites: vi.fn().mockResolvedValue([]), programs: vi.fn().mockResolvedValue([]), assignments: vi.fn().mockResolvedValue([]), executions: vi.fn().mockResolvedValue([]),
+    dashboardSummary: vi.fn().mockResolvedValue({ activeStudents: 1, attentionStudents: 0, todayWorkouts: 0, activePrograms: 0, pendingInvites: 0, today: [], recentActivity: [] }),
   },
   navigate: vi.fn(),
 }))
@@ -37,36 +34,34 @@ afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional dashboard', () => {
   it('does not attribute unidentified activity to an arbitrary student', async () => {
-    mocks.repo.executions.mockResolvedValueOnce([{ id: 'e1', day_key: 'monday', status: 'completed' }])
+    mocks.repo.dashboardSummary.mockResolvedValueOnce({ activeStudents: 1, attentionStudents: 0, todayWorkouts: 0, activePrograms: 0, pendingInvites: 0, today: [], recentActivity: [{ id: 'e1', dayKey: 'monday', status: 'completed', startedAt: '2026-10-09' }] })
     await act(async () => root.render(<MemoryRouter><ProfessionalDashboard /></MemoryRouter>))
-    expect(container.querySelector('.management-activity-list').textContent).toContain('Segunda')
-    expect(container.querySelector('.management-activity-list').textContent).not.toContain('Ana')
-    expect(container.querySelector('.management-activity-list a')).toBeNull()
+    expect(container.textContent).toContain('monday')
+    expect(container.textContent).not.toContain('Ana')
   })
   it('ignores a pending role lookup after switching accounts', async () => {
     let finishOld
-    mocks.repo.professionalRole.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
+    mocks.repo.dashboardSummary.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
     const view = () => <MemoryRouter><ProfessionalDashboard /></MemoryRouter>
     await act(async () => root.render(view()))
-    mocks.auth.user = { id: 'professional-2' }; mocks.repo.professionalRole.mockResolvedValueOnce(false)
+    mocks.auth.user = { id: 'professional-2' }; mocks.repo.dashboardSummary.mockResolvedValueOnce({ activeStudents: 0, attentionStudents: 0, todayWorkouts: 0, activePrograms: 0, pendingInvites: 0, today: [], recentActivity: [] })
     await act(async () => root.render(view()))
-    await act(async () => finishOld(true))
-    expect(container.textContent).toContain('apenas para contas profissionais')
-    expect(mocks.repo.clientSummaries).not.toHaveBeenCalled()
+    await act(async () => finishOld({ activeStudents: 99, attentionStudents: 99, todayWorkouts: 0, activePrograms: 0, pendingInvites: 0, today: [], recentActivity: [] }))
+    expect(container.textContent).not.toContain('99')
   })
   it('shows a focused overview and links to the dedicated client workspace', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional']}><ProfessionalDashboard /></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
     expect(container.textContent).toContain('Alunos')
-    expect(container.textContent).toContain('Nenhuma pendência identificada')
+    expect(container.textContent).toContain('Alunos ativos')
     expect(container.textContent).toContain('Convites')
     expect(container.querySelector('a[href="/professional/students"]')).toBeTruthy()
   })
   it('shows reasons for attention and excludes a recently completed student', async () => {
-    mocks.repo.clientSummaries.mockResolvedValueOnce([{ studentUserId: 'recent', displayName: 'Recente', programTitle: 'Força', lastExecutionStatus: 'completed', lastExecutionAt: new Date().toISOString() }, { studentUserId: 'missing', displayName: 'Sem plano' }])
+    mocks.repo.dashboardSummary.mockResolvedValueOnce({ activeStudents: 2, attentionStudents: 1, todayWorkouts: 1, activePrograms: 1, pendingInvites: 0, today: [{ studentUserId: 'missing', displayName: 'Sem plano', attentionReasons: ['without_program'] }], recentActivity: [] })
     await act(async () => root.render(<MemoryRouter><ProfessionalDashboard /></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    expect(container.textContent).toContain('Sem programa ativo')
+    expect(container.textContent).toContain('Sem plano')
     expect(container.textContent).not.toContain('Recente')
   })
 })

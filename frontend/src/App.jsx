@@ -78,6 +78,11 @@ const ProgramComparePage = lazy(() => import('./features/professional/pages/Prog
 const ProgramAssignPage = lazy(() => import('./features/professional/pages/ProgramAssignPage.jsx'))
 const ProgramWeekPage = lazy(() => import('./features/professional/pages/ProgramWeekPage.jsx'))
 const ProgramWorkoutPage = lazy(() => import('./features/professional/pages/ProgramWorkoutPage.jsx'))
+const StudentTrainingPage = lazy(() => import('./features/professional/pages/StudentTrainingPage.jsx'))
+const StudentAssignPage = lazy(() => import('./features/professional/pages/StudentAssignPage.jsx'))
+const StudentHistoryPage = lazy(() => import('./features/professional/pages/StudentHistoryPage.jsx'))
+const StudentExecutionPage = lazy(() => import('./features/professional/pages/StudentExecutionPage.jsx'))
+const StudentProgressPage = lazy(() => import('./features/professional/pages/StudentProgressPage.jsx'))
 const StudentProfessionals = lazy(loadStudentProfessionals)
 const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ default: module.StudentConnect })))
 const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
@@ -406,6 +411,11 @@ function Shell() {
                 <Route path="/professional/invites" element={<ProfessionalInvites />} />
                 <Route path="/professional/students" element={<ProfessionalStudents />} />
                 <Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} />
+                <Route path="/professional/students/:studentId/training" element={<StudentTrainingPage />} />
+                <Route path="/professional/students/:studentId/assign" element={<StudentAssignPage />} />
+                <Route path="/professional/students/:studentId/history" element={<StudentHistoryPage />} />
+                <Route path="/professional/students/:studentId/history/:executionId" element={<StudentExecutionPage />} />
+                <Route path="/professional/students/:studentId/progress" element={<StudentProgressPage />} />
                 <Route path="/professional/programs" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/new" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />

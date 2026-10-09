@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { Window } from 'happy-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'pro-1' } }, repo: { professionalRole: vi.fn().mockResolvedValue(true), clientSummaries: vi.fn().mockResolvedValue([{ studentUserId: 's1', displayName: 'Ana', programTitle: 'Força' }, { studentUserId: 's2', displayName: 'Bruno', programTitle: null }]) } }))
+const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'pro-1' } }, repo: { studentPage: vi.fn().mockImplementation(async ({ search = '', status = 'all', offset = 0 }) => { const all = [{ studentUserId: 's1', displayName: 'Ana', programTitle: 'Força', currentProgram: { title: 'Força' } }, { studentUserId: 's2', displayName: 'Bruno', programTitle: null }]; const items = all.filter(item => (!search || item.displayName.toLowerCase().includes(search.toLowerCase())) && (status !== 'without_program' || !item.currentProgram)); return { items, total: items.length, offset, hasMore: false } }) } }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
@@ -19,11 +19,13 @@ afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 describe('professional students page', () => {
   it('searches names while retaining the selected version handoff', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students?program=p1&version=v1']}><ProfessionalStudents /></MemoryRouter>))
-    const input = container.querySelector('input[aria-label="Buscar aluno"]')
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+    const input = container.querySelector('input[type="search"]')
     await act(async () => { Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(input, 'ana'); input.dispatchEvent(new Event('input', { bubbles: true })) })
     expect(container.textContent).toContain('Ana')
     expect(container.textContent).not.toContain('Bruno')
-    expect(container.querySelector('a[href="/professional/students/s1?program=p1&version=v1"]')).toBeTruthy()
+    const href = container.querySelector('a[href^="/professional/students/s1?"]')?.getAttribute('href') || ''
+    expect(href).toContain('program=p1'); expect(href).toContain('version=v1')
   })
   it('searches and filters real active students without mixing invites', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students']}><ProfessionalStudents /></MemoryRouter>))
