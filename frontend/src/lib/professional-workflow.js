@@ -120,6 +120,7 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const revokeRelationship = id => rpc('revoke_professional_relationship', { p_relationship_id: id })
   const revokeInvite = id => rpc('revoke_professional_invite', { p_invite_id: id })
   const programs = () => read('programs', q => q.select('*').order('updated_at', { ascending: false }).limit(500))
+  const program = programId => read('programs', q => q.select('*').eq('id', programId)).then(rows => rows[0] || null)
   const versions = programId => read('program_versions', q => q.select('*').eq('program_id', programId).order('version_number', { ascending: false }).limit(100))
   const version = versionId => read('program_versions', q => q.select('*').eq('id', versionId)).then(rows => rows[0] || null)
   const createProgram = (_userId, title, description = '') => rpc('create_program', { p_title: title.trim(), p_description: description.trim() || null })
@@ -150,5 +151,5 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   })
   const studentProfessionals = () => rpc('student_professional_summaries', {}).then(rows => (rows || []).map(toStudentProfessional))
   const studentProfessionalDetail = professionalId => rpc('student_professional_detail', { p_professional_user_id: professionalId }).then(rows => toStudentProfessionalDetail(rows?.[0]))
-  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, program, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }

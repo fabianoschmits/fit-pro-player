@@ -2,6 +2,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProfessionalWorkflowRepository } from './professional-workflow.js'
 
 describe('professional management repository', () => {
+  it('reads an exact program beyond the capped library under the existing RLS boundary', async () => {
+    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), then: done => done({ data: [{ id: '501', title: 'Exact' }], error: null }) }
+    const repo = createProfessionalWorkflowRepository({ client: { from: vi.fn(() => query) } })
+    expect(await repo.program('501')).toEqual({ id: '501', title: 'Exact' })
+    expect(query.eq).toHaveBeenCalledExactlyOnceWith('id', '501')
+  })
   it('rejects missing authoritative totals rather than inventing a zero count', async () => {
     const repo = createProfessionalWorkflowRepository({ client: { rpc: async () => ({ data: { items: [], offset: 0, has_more: false }, error: null }) } })
     await expect(repo.studentPage()).rejects.toThrow('invalid-page')

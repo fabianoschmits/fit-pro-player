@@ -1320,5 +1320,14 @@ export default {
   "Use a seta para ver a animação e Adicionar para incluir no dia.": "Use a seta para ver a animação e Adicionar para incluir no dia.",
   "Filtrar por músculo": "Filtrar por músculo",
   "Filtrar por equipamento": "Filtrar por equipamento",
-  "{0} exercício(s) no dia": "{0} exercício(s) no dia"
+  "{0} exercício(s) no dia": "{0} exercício(s) no dia",
+  "Editar prescrição": "Editar prescrição",
+  "Ações do exercício {0}": "Ações do exercício {0}",
+  "Nome do treino": "Nome do treino",
+  "Concluir treino": "Concluir treino",
+  "Revisar semana": "Revisar semana",
+  "Publicar semana": "Publicar semana",
+  "Objetivo": "Objetivo",
+  "Treino não encontrado.": "Treino não encontrado.",
+  "Versão não encontrada.": "Versão não encontrada."
 }

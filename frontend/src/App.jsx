@@ -73,6 +73,8 @@ const InviteLanding = lazy(loadInviteLanding)
 const ProfessionalStudents = lazy(loadProfessionalStudents)
 const ProfessionalStudentPage = lazy(loadProfessionalStudentPage)
 const ProfessionalPrograms = lazy(loadProfessionalPrograms)
+const ProgramWeekPage = lazy(() => import('./features/professional/pages/ProgramWeekPage.jsx'))
+const ProgramWorkoutPage = lazy(() => import('./features/professional/pages/ProgramWorkoutPage.jsx'))
 const StudentProfessionals = lazy(loadStudentProfessionals)
 const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ default: module.StudentConnect })))
 const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
@@ -404,7 +406,8 @@ function Shell() {
                 <Route path="/professional/programs" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/new" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />
-                <Route path="/professional/programs/:programId/edit" element={<ProfessionalPrograms />} />
+                <Route path="/professional/programs/:programId/edit" element={<ProgramWeekPage />} />
+                <Route path="/professional/programs/:programId/edit/:day" element={<ProgramWorkoutPage />} />
                 <Route path="/invite/:code" element={<InviteLanding />} />
                 <Route path="/connect" element={<StudentConnect />} />
                 <Route path="/student/professionals" element={<StudentProfessionals />} />

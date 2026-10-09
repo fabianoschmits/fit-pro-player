@@ -215,6 +215,15 @@ export const useStore = create((set, get) => {
       mut(S)
       persist(S)
     },
+    // Draft writes are local and require the exact account generation, including A-B-A.
+    writeProgramDraft({ accountId, programId, scopeToken: token, value }) {
+      if (!token || !isCurrent(token) || activeScope.kind !== 'account' || activeScope.userId !== accountId || !programId) return false
+      const next = clone(get().S), key = `${accountId}:${programId}`
+      if (value == null) delete next.professionalProgramDrafts[key]
+      else next.professionalProgramDrafts[key] = clone(value)
+      persist(next)
+      return true
+    },
     replaceState(S, dirty = true) {
       const next = normalizeState(S)
       next.pendingProfessionalEvents = next.pendingProfessionalEvents.filter(event => activeScope.kind === 'account' && event.accountId === activeScope.userId)

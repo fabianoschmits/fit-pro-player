@@ -400,5 +400,14 @@ export default {
   "Use a seta para ver a animação e Adicionar para incluir no dia.": "Use the arrow to preview the animation and Add to include it in the day.",
   "Filtrar por músculo": "Filter by muscle",
   "Filtrar por equipamento": "Filter by equipment",
-  "{0} exercício(s) no dia": "{0} exercise(s) in the day"
+  "{0} exercício(s) no dia": "{0} exercise(s) in the day",
+  "Editar prescrição": "Edit prescription",
+  "Ações do exercício {0}": "Exercise {0} actions",
+  "Nome do treino": "Workout name",
+  "Concluir treino": "Finish workout",
+  "Revisar semana": "Review week",
+  "Publicar semana": "Publish week",
+  "Objetivo": "Objective",
+  "Treino não encontrado.": "Workout not found.",
+  "Versão não encontrada.": "Version not found."
 }

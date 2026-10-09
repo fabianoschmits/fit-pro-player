@@ -15,6 +15,18 @@ beforeEach(() => {
 afterEach(() => localStorage.clear())
 
 describe('local account cache isolation', () => {
+  it('weekly drafts persist only to the exact account and reject stale A-B-A writes', async () => {
+    await useStore.getState().activateLocalScope(USER_A)
+    const scopeToken = useStore.getState().getScopeToken()
+    const draft = { title: 'Privado A', weeklyPlan: { monday: [{ exerciseId: 'x', sets: 3, reps: 8, notes: 'Integral' }] }, workoutTitles: { monday: 'A' } }
+    expect(useStore.getState().writeProgramDraft({ accountId: USER_A, programId: 'p', scopeToken, value: draft })).toBe(true)
+    await useStore.getState().activateLocalScope(USER_B)
+    expect(useStore.getState().writeProgramDraft({ accountId: USER_A, programId: 'p', scopeToken, value: null })).toBe(false)
+    expect(useStore.getState().S.professionalProgramDrafts).toEqual({})
+    await useStore.getState().activateLocalScope(USER_A)
+    expect(useStore.getState().S.professionalProgramDrafts[`${USER_A}:p`]).toEqual(draft)
+    expect(useStore.getState().writeProgramDraft({ accountId: USER_A, programId: 'p', scopeToken, value: null })).toBe(false)
+  })
   it('anonymous boot reads gym_state_v1', async () => {
     localStorage.setItem('gym_state_v1', JSON.stringify(stateWithWorkout('anonymous')))
     await useStore.getState().boot({ supabaseUserId: null })

@@ -9,7 +9,7 @@ import { exerciseGuideAsset } from '../lib/exercise-guide-assets.js'
 import { sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 
-export default function ProfessionalExercisePicker({ exercises, selectedIds, exerciseCount, dayLabel, onAdd, onClose }) {
+export default function ProfessionalExercisePicker({ exercises, selectedIds, exerciseCount, dayLabel, onAdd, onClose, onAfterClose }) {
   const [query, setQuery] = useState('')
   const [muscle, setMuscle] = useState('')
   const [equipment, setEquipment] = useState('')
@@ -21,7 +21,7 @@ export default function ProfessionalExercisePicker({ exercises, selectedIds, exe
   const activeEquipment = equipments.includes(equipment) ? equipment : ''
   const available = activeEquipment ? base.filter(ex => ex.eq === activeEquipment) : base
   const resetList = () => { setCount(40); setExpanded(null) }
-  return <Dialog title={t('Selecionar exercício')} onClose={onClose} className="professional-exercise-modal">
+  return <Dialog title={t('Selecionar exercício')} onClose={onClose} onAfterClose={onAfterClose} className="professional-exercise-modal professional-editor-sheet">
     <div className="professional-picker-tools">
       <p className="muted small">{dayLabel} · {t('Use a seta para ver a animação e Adicionar para incluir no dia.')}</p>
       <SearchField type="search" inputMode="search" aria-label={t('Pesquisar exercício')} placeholder={t('Pesquisar por nome, músculo ou equipamento')} value={query} onChange={event => { setQuery(event.target.value); setEquipment(''); resetList() }} onClear={() => { setQuery(''); setEquipment(''); resetList() }} />
