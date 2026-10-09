@@ -91,7 +91,7 @@ Identidade compacta seguida de resumo de frequência e última atividade. Progra
 
 Principal ação muda conforme contexto: **Prescrever treino** quando não existe programa, **Gerenciar treino** quando existe. Trocar programa/encerrar atribuição/vínculo ficam em ações contextuais com confirmação de efeitos. Editar um programa reutilizado deixa explícito que gera nova versão do modelo; alterar apenas para este aluno usa duplicação para novo programa antes da edição. Nunca modificar silenciosamente prescrições de outros alunos.
 
-Frequência planejada e realizada aparecem separadas, com período claro. Evolução usa dados das execuções atribuídas já compartilhadas. Medidas pessoais aguardam a decisão de compartilhamento descrita na seção 9.
+Frequência planejada e realizada aparecem separadas, com período claro. Evolução usa dados das execuções atribuídas já compartilhadas. Medidas pessoais permanecem privadas, conforme a seção 9.
 
 ### Programas
 
