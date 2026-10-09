@@ -1,7 +1,7 @@
 # Gestão profissional nativa — proposta de desenho
 
 Data: 2026-10-06. Base: `00a2bb0`.
-Status: **rascunho para revisão; não implementado**.
+Status: **aprovado pelo usuário; implementação pendente**.
 Inventário: `docs/superpowers/reports/2026-10-06-professional-management-inventory.md`.
 
 ## 1. Intenção
@@ -197,11 +197,11 @@ Os caminhos antigos de edição, queries de seções, convite e material continu
 
 Arquivar, encerrar atribuição e desvincular continuam exigindo confirmação com efeito explícito. Publicar permanece separado de atribuir. Visualizar versões históricas permanece separado de iniciar execução.
 
-## 9. Decisão pendente: medidas pessoais
+## 9. Medidas pessoais
 
 As medidas existem na área pessoal, mas não são compartilhadas com profissionais no contrato atual. Foi perguntado ao usuário se deseja manter essa fronteira ou incluir compartilhamento opcional com consentimento.
 
-Recomendação/base desta proposta: manter medidas pessoais privadas; mostrar evolução das execuções profissionais já compartilhadas. Se o usuário escolher compartilhamento, atualizar esta seção com projeção mínima, consentimento/revogação e testes antes de planejar implementação. Não ler account_snapshots de outros usuários como atalho.
+Base aprovada: manter medidas pessoais privadas; mostrar evolução das execuções profissionais já compartilhadas. Não houve autorização específica para compartilhar medidas. Uma futura mudança exige consentimento/revogação e contrato próprio. Não ler account_snapshots de outros usuários como atalho.
 
 ## 10. Critérios de aceite e verificação
 
