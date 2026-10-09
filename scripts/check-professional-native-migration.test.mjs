@@ -34,3 +34,21 @@ test('native metadata schema keeps private notes behind RPCs and historical pres
   assert.doesNotMatch(sql, /drop table|truncate|delete from public\.(?:programs|program_versions|workout_executions)|update public\.workout_executions/i)
   assert.match(sql, /public\.publish_program_version\(p_program_id, p_weekly_plan\)/)
 })
+
+test('native workspace reads have explicit scoped RPC boundaries and private internal projection', () => {
+  const reads = readFileSync(new URL('../supabase/migrations/202610090017_professional_workspace_reads.sql', import.meta.url), 'utf8')
+  for (const [name, signature] of [
+    ['professional_students_page', 'text,text,int,int'],
+    ['professional_programs_page', 'text,bool,int,int'],
+    ['professional_executions_page', 'uuid,text,text,timestamptz,timestamptz,int,int'],
+    ['professional_dashboard_summary', 'date,text'],
+  ]) {
+    const declaration = reads.match(new RegExp(`create or replace function public\\.${name}\\([\\s\\S]*?as \\$\\$`, 'i'))?.[0]
+    assert.match(declaration || '', /security definer\s+set search_path\s*=\s*public,\s*pg_temp/i)
+    const escapedSignature = signature.replaceAll(',', ',\\s*')
+    assert.match(reads, new RegExp(`revoke all on function public\\.${name}\\(${escapedSignature}\\) from public,\\s*anon,\\s*authenticated`, 'i'))
+    assert.match(reads, new RegExp(`grant execute on function public\\.${name}\\(${escapedSignature}\\) to authenticated`, 'i'))
+  }
+  assert.match(reads, /revoke all on function public\.professional_workspace_students\(\) from public, anon, authenticated/i)
+  assert.doesNotMatch(reads, /grant.*professional_workspace_students|account_snapshots|drop table|truncate|update public\.workout_executions/i)
+})

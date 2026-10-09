@@ -2,6 +2,35 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProfessionalWorkflowRepository } from './professional-workflow.js'
 
 describe('professional management repository', () => {
+  it('rejects missing authoritative totals rather than inventing a zero count', async () => {
+    const repo = createProfessionalWorkflowRepository({ client: { rpc: async () => ({ data: { items: [], offset: 0, has_more: false }, error: null }) } })
+    await expect(repo.studentPage()).rejects.toThrow('invalid-page')
+    await expect(repo.programPage()).rejects.toThrow('invalid-page')
+    await expect(repo.executionPage()).rejects.toThrow('invalid-page')
+  })
+  it('maps exact workspace totals and paginated DTOs with explicit timezone and filters', async () => {
+    const calls = []
+    const repo = createProfessionalWorkflowRepository({ client: { rpc: async (name, args) => {
+      calls.push([name, args])
+      const values = {
+        professional_dashboard_summary: { active_students: 240, attention_students: 12, today_workouts: 210, active_programs: 4, pending_invites: 2, today: [{ student_user_id: 's', display_name: 'Ana', day_key: 'monday', workout_title: 'A', status: 'scheduled' }], recent_activity: [{ id: 'e', started_at: '2026-10-09', prescription_snapshot: { exercises: [{ notes: 'full' }] } }] },
+        professional_students_page: { items: [{ student_user_id: 's', display_name: 'Ana', avatar_ref: 'avatar', current_program: { id: 'p', title: 'Base', assignment_id: 'a', version_id: 'v', version_number: 2, assigned_at: '2026-10-01' }, last_activity_at: '2026-10-09', attention_reasons: ['abandoned'] }], total: 240, offset: 30, has_more: true },
+        professional_programs_page: { items: [{ id: 'p', title: 'Base', objective: 'Força', archived: false, workout_count: 3, student_count: 201, last_changed_at: '2026-10-09' }], total: 501, offset: 20, has_more: true },
+        professional_executions_page: { items: [{ id: 'e', assignment_id: 'a', day_key: 'monday', started_at: '2026-10-09', prescription_snapshot: { exercises: [{ notes: 'full' }] }, payload: { sets: [1] } }], total: 601, offset: 20, has_more: true },
+      }
+      return { data: values[name], error: null }
+    } } })
+    expect(await repo.dashboardSummary({ localDate: '2026-10-08', timeZone: 'America/Sao_Paulo' })).toMatchObject({ activeStudents: 240, attentionStudents: 12, todayWorkouts: 210, activePrograms: 4, pendingInvites: 2, today: [{ studentUserId: 's', dayKey: 'monday', workoutTitle: 'A', status: 'scheduled' }], recentActivity: [{ id: 'e', startedAt: '2026-10-09' }] })
+    expect(await repo.studentPage({ search: ' Ana ', status: 'attention', offset: 30, limit: 30 })).toMatchObject({ total: 240, offset: 30, hasMore: true, items: [{ studentUserId: 's', avatarRef: 'avatar', currentProgram: { id: 'p', assignmentId: 'a', versionId: 'v', versionNumber: 2, assignedAt: '2026-10-01' }, lastActivityAt: '2026-10-09', attentionReasons: ['abandoned'] }] })
+    expect(await repo.programPage({ archived: false, offset: 20, limit: 20 })).toMatchObject({ total: 501, hasMore: true, items: [{ workoutCount: 3, studentCount: 201, lastChangedAt: '2026-10-09' }] })
+    expect(await repo.executionPage({ studentId: 's', search: 'A', status: 'completed', from: '2026-10-01', to: '2026-10-09', offset: 20, limit: 20 })).toMatchObject({ total: 601, items: [{ id: 'e', assignmentId: 'a', dayKey: 'monday', prescriptionSnapshot: { exercises: [{ notes: 'full' }] }, payload: { sets: [1] } }] })
+    expect(calls).toEqual([
+      ['professional_dashboard_summary', { p_local_date: '2026-10-08', p_timezone: 'America/Sao_Paulo' }],
+      ['professional_students_page', { p_search: 'Ana', p_status: 'attention', p_offset: 30, p_limit: 30 }],
+      ['professional_programs_page', { p_search: '', p_archived: false, p_offset: 20, p_limit: 20 }],
+      ['professional_executions_page', { p_student_id: 's', p_search: 'A', p_status: 'completed', p_from: '2026-10-01', p_to: '2026-10-09', p_offset: 20, p_limit: 20 }],
+    ])
+  })
   it('updates objective without changing the archived state through the metadata boundary', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { id: 'p', professional_user_id: 'owner', title: 'Força', description: null, objective: 'Hipertrofia', archived: true, updated_at: '2026-10-09' }, error: null })
     const repo = createProfessionalWorkflowRepository({ client: { rpc } })

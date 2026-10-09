@@ -74,7 +74,7 @@ set local request.jwt.claim.sub='09001600-0000-0000-0000-000000000003';
 select pg_temp.expect_error($q$select public.professional_student_note(auth.uid())$q$,'42501');
 select pg_temp.expect_error($q$select public.save_professional_student_note(auth.uid(),'student')$q$,'42501');
 select pg_temp.assert_true(public.student_program_overview()->'version'->'workout_titles'->>'monday'=repeat('n',80),'overview propagates names');
-select pg_temp.assert_true((select materials->0->'workout_titles'->>'monday'=repeat('n',80) from public.student_professional_detail('09001600-0000-0000-0000-000000000001')),'received material propagates names');
+select pg_temp.assert_true((select material->'workout_titles'->>'monday'=repeat('n',80) from public.student_professional_detail('09001600-0000-0000-0000-000000000001') d cross join lateral jsonb_array_elements(d.materials) material where material->>'status'='active' and material->>'program_id'='09001620-0000-0000-0000-000000000001'),'received material propagates names for the intended active assignment');
 select public.start_workout_execution('09001640-0000-0000-0000-000000000002',(select id from public.program_assignments where status='active'),'monday');
 select pg_temp.assert_true((select prescription_snapshot->>'workoutTitle'=repeat('n',80) and prescription_snapshot->'exercises'=(select version->'weekly_plan'->'monday' from originals) from public.workout_executions where id='09001640-0000-0000-0000-000000000002'),'new execution captures immutable version title and prescription');
 select pg_temp.assert_true((select to_jsonb(e)=(select execution from old_history) from public.workout_executions e where id='09001640-0000-0000-0000-000000000001'),'new publication never rewrites old execution');

@@ -2,6 +2,19 @@
 /** @typedef {{id:string,professionalUserId:string,title:string,description:?string,objective:?string,archived:boolean,createdAt:?string,updatedAt:?string}} ProgramMetadata */
 /** @typedef {{id:string,programId:string,versionNumber:number,weeklyPlan:Object,workoutTitles:Object<string,string>,publishedAt:?string,createdAt:?string}} ProgramVersion */
 /** @typedef {{body:string,updatedAt:?string}} StudentNote */
+/** @template T @typedef {{items:T[],total:number,offset:number,hasMore:boolean}} Page */
+/** @typedef {{id:string,title:string,assignmentId:string,versionId:string,versionNumber:number,assignedAt:string}} CurrentProgram */
+/** @typedef {{studentUserId:string,displayName:string,avatarRef:?string,relationshipCreatedAt:string,currentProgram:?CurrentProgram,lastActivityAt:?string,attentionReasons:string[]}} StudentSummary */
+/** @typedef {{id:string,title:string,description:?string,objective:?string,archived:boolean,workoutCount:number,studentCount:number,lastChangedAt:string}} ProgramSummary */
+/** @typedef {{activeStudents:number,attentionStudents:number,todayWorkouts:number,activePrograms:number,pendingInvites:number,today:Object[],recentActivity:Object[]}} DashboardSummary */
+const toCurrentProgram = value => value ? ({ id: value.id, title: value.title, assignmentId: value.assignment_id, versionId: value.version_id, versionNumber: value.version_number, assignedAt: value.assigned_at }) : null
+const toStudentSummary = value => ({ ...toClientSummary(value), currentProgram: toCurrentProgram(value.current_program), lastActivityAt: value.last_activity_at || null, attentionReasons: value.attention_reasons || [] })
+const toProgramSummary = value => ({ id: value.id, title: value.title, description: value.description || null, objective: value.objective || null, archived: Boolean(value.archived), workoutCount: Number(value.workout_count), studentCount: Number(value.student_count), lastChangedAt: value.last_changed_at || null })
+const toExecution = value => ({ id: value.id, assignmentId: value.assignment_id || null, versionId: value.version_id || null, studentUserId: value.student_user_id, displayName: value.display_name || 'Aluno', avatarRef: value.avatar_ref || null, dayKey: value.day_key, status: value.status, startedAt: value.started_at, completedAt: value.completed_at || null, programTitle: value.program_title || null, versionNumber: value.version_number || null, prescriptionSnapshot: value.prescription_snapshot || {}, payload: value.payload || {} })
+const toPage = (value, map) => {
+  if (!value || !Array.isArray(value.items) || !Number.isSafeInteger(value.total) || value.total < 0 || !Number.isSafeInteger(value.offset) || value.offset < 0 || typeof value.has_more !== 'boolean') throw new Error('invalid-page')
+  return { items: value.items.map(map), total: value.total, offset: value.offset, hasMore: value.has_more }
+}
 const toProgram = value => value ? ({
   id: value.id, professionalUserId: value.professional_user_id,
   title: value.title, description: value.description || null, objective: value.objective || null,
@@ -117,6 +130,10 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const duplicateProgram = ({ programId, versionId = null, title }) => rpc('duplicate_professional_program', { p_program_id: programId, p_version_id: versionId, p_title: title.trim() }).then(value => ({ program: toProgram(value?.program), version: toVersion(value?.version) }))
   const studentNote = studentId => rpc('professional_student_note', { p_student_id: studentId }).then(toNote)
   const saveStudentNote = ({ studentId, body }) => rpc('save_professional_student_note', { p_student_id: studentId, p_body: body }).then(toNote)
+  const dashboardSummary = ({ localDate, timeZone }) => rpc('professional_dashboard_summary', { p_local_date: localDate, p_timezone: timeZone }).then(value => ({ activeStudents: Number(value.active_students), attentionStudents: Number(value.attention_students), todayWorkouts: Number(value.today_workouts), activePrograms: Number(value.active_programs), pendingInvites: Number(value.pending_invites), today: (value.today || []).map(item => ({ ...toStudentSummary(item), dayKey: item.day_key, workoutTitle: item.workout_title, status: item.status, executionId: item.execution_id || null })), recentActivity: (value.recent_activity || []).map(toExecution) }))
+  const studentPage = ({ search = '', status = 'all', offset = 0, limit = 30 } = {}) => rpc('professional_students_page', { p_search: search.trim(), p_status: status, p_offset: offset, p_limit: limit }).then(value => toPage(value, toStudentSummary))
+  const programPage = ({ search = '', archived = null, offset = 0, limit = 20 } = {}) => rpc('professional_programs_page', { p_search: search.trim(), p_archived: archived, p_offset: offset, p_limit: limit }).then(value => toPage(value, toProgramSummary))
+  const executionPage = ({ studentId = null, search = '', status = 'all', from = null, to = null, offset = 0, limit = 20 } = {}) => rpc('professional_executions_page', { p_student_id: studentId, p_search: search.trim(), p_status: status, p_from: from, p_to: to, p_offset: offset, p_limit: limit }).then(value => toPage(value, toExecution))
   const assignments = () => read('program_assignments', q => q.select('*').order('created_at', { ascending: false }).limit(500))
   const assignedPrograms = studentId => read('program_assignments', q => q.select('*').eq('student_user_id', studentId).eq('status', 'active').order('created_at', { ascending: false }).limit(500))
   const assign = ({ programId, versionId, studentUserId }) => rpc('assign_program_version', { p_program_id: programId, p_version_id: versionId, p_student_user_id: studentUserId })
@@ -133,5 +150,5 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   })
   const studentProfessionals = () => rpc('student_professional_summaries', {}).then(rows => (rows || []).map(toStudentProfessional))
   const studentProfessionalDetail = professionalId => rpc('student_professional_detail', { p_professional_user_id: professionalId }).then(rows => toStudentProfessionalDetail(rows?.[0]))
-  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }
