@@ -33,7 +33,7 @@ for (const width of [375, 1280]) test(`native workout editor ${width}px`, async 
   const edit = page.getByRole('dialog', { name: 'Editar prescrição' })
   await expect(edit).toBeVisible()
   expect(await edit.locator('input').first().evaluate(el => getComputedStyle(el).fontSize)).toBe('16px')
-  expect(await edit.getByRole('button', { name: 'Salvar', exact: true }).evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(22, 200, 189)')
+  expect(await edit.locator('button.primary').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgb(22, 200, 189)')
   await page.screenshot({ path: info.outputPath(`prescription-${width}.png`), fullPage: true })
   await page.keyboard.press('Escape')
   await expect(edit).toHaveCount(0)

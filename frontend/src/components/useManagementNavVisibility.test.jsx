@@ -15,6 +15,12 @@ it.each([['professional', '/professional/profile/edit'], ['student', '/student/p
   const scrollPage = vi.spyOn(window, 'scrollTo')
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   await act(async () => root.render(<MemoryRouter initialEntries={[route]}><ManagementLayout audience={audience} title="Management" /></MemoryRouter>))
+  if (audience === 'professional') {
+    expect(container.querySelector('.professional-workspace-nav')).not.toBeNull()
+    expect(container.querySelector('.management-nav')).toBeNull()
+    expect(scrollPage).not.toHaveBeenCalled()
+    return
+  }
   if (route.startsWith('/invite/')) expect([...container.querySelectorAll('.management-nav [aria-current]')].map(link => link.textContent)).toEqual(['Adicionar profissional'])
   expect(container.querySelector('.management-nav').scrollLeft).toBe(200)
   expect(scrollPage).not.toHaveBeenCalled()

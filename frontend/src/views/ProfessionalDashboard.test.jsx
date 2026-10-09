@@ -53,7 +53,7 @@ describe('professional dashboard', () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional']}><ProfessionalDashboard /></MemoryRouter>))
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
     expect(container.textContent).toContain('Alunos')
-    expect(container.textContent).toContain('Alunos ativos')
+    expect(container.querySelector('.professional-metrics dd').textContent).toBe('1')
     expect(container.textContent).toContain('Convites')
     expect(container.querySelector('a[href="/professional/students"]')).toBeTruthy()
   })

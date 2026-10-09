@@ -12,6 +12,7 @@
 import { readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import professionalEnglish from '../src/lib/professional-english.js'
 
 const localesDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'locales')
 const files = readdirSync(localesDir).filter(f => f.endsWith('.js')).sort()
@@ -35,12 +36,16 @@ for (const file of files) {
 // which is the usual shape of the bug and worth naming separately from plain gaps.
 const seen = new Map()
 for (const keys of locales.values()) for (const k of keys) seen.set(k, (seen.get(k) || 0) + 1)
-const union = [...seen.keys()]
+// Professional-management copy has one deliberate shared English fallback used by
+// every locale at runtime. It is not duplicated into eleven packs until translated.
+const sharedFallback = new Set(Object.keys(professionalEnglish))
+const union = [...seen.keys()].filter(key => !sharedFallback.has(key))
 
 let failed = false
 for (const [lang, keys] of locales) {
-  const missing = union.filter(k => !keys.has(k))
-  const orphans = union.filter(k => keys.has(k) && seen.get(k) === 1)
+  const comparable = new Set([...keys].filter(key => !sharedFallback.has(key)))
+  const missing = union.filter(k => !comparable.has(k))
+  const orphans = union.filter(k => comparable.has(k) && seen.get(k) === 1)
   if (missing.length || orphans.length) {
     failed = true
     console.error(`\n${lang}.js: ${keys.size}/${union.length} keys`)

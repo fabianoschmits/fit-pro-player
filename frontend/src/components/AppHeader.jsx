@@ -13,7 +13,7 @@ export function AppHeader({ title, subtitle, backTo, backState, action, classNam
     <header className={`app-header ${variant === 'compact' ? 'app-header-compact' : ''} ${className}`.trim()}>
       <div className="app-header-main">
         {backTo && (
-          <button type="button" className="iconbtn app-header-back" aria-label={t('Back')} onClick={() => navigate(backTo, { state: backState })}>
+          <button type="button" className="iconbtn app-header-back" aria-label={t('Back')} onClick={() => backState === undefined ? navigate(backTo) : navigate(backTo, { state: backState })}>
             <Icon name="chevronLeft" />
           </button>
         )}

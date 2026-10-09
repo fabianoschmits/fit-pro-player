@@ -14,6 +14,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import professionalEnglish from '../src/lib/professional-english.js'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const srcDir = join(root, 'src')
@@ -48,6 +49,7 @@ for (const file of walk(srcDir)) {
 }
 
 const defined = new Set()
+for (const key of Object.keys(professionalEnglish)) defined.add(key)
 for (const file of readdirSync(localesDir).filter(f => f.endsWith('.js'))) {
   const pack = (await import(pathToFileURL(join(localesDir, file)).href)).default
   for (const key of Object.keys(pack)) defined.add(key)
