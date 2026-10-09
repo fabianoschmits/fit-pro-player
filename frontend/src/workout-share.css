@@ -86,59 +86,51 @@
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow: hidden;
   color: #ffffff;
+  background-color: #0b0e14;
 }
 
-/* Background */
+/* ── Backgrounds & Glows ── */
 .wsc-bg {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 15%, #151820 0%, #06080a 100%);
+  background: radial-gradient(circle at 50% 0%, #17202c 0%, #0b0e14 70%);
   z-index: 0;
 }
 
-/* All content sits above bg and bodymap */
-.workout-story-canvas > *:not(.wsc-bg):not(.wsc-bodymap-wrap) {
-  position: relative;
-  z-index: 1;
+.wsc-grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  z-index: 0;
+  opacity: 0.5;
 }
 
-/* ── Logo ── */
-.wsc-logo {
-  display: flex;
-  justify-content: center;
-  padding: 90px 100px 0;
+.wsc-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 0;
+  pointer-events: none;
 }
-.wsc-logo img {
-  width: 260px;
-  height: auto;
-  object-fit: contain;
+.wsc-glow-top {
+  width: 800px;
+  height: 800px;
+  top: -400px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 139, 141, 0.25);
 }
-
-/* ── Title block ── */
-.wsc-title-block {
-  text-align: center;
-  padding: 52px 80px 0;
+.wsc-glow-bottom {
+  width: 1000px;
+  height: 1000px;
+  bottom: -500px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 139, 141, 0.15);
 }
-.wsc-title {
-  font-size: 96px;
-  font-weight: 900;
-  line-height: 1.05;
-  margin: 0 0 20px;
-  background: linear-gradient(160deg, #ffffff 30%, #8a9ab0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.wsc-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  font-size: 34px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
-}
-.wsc-dot { opacity: 0.3; }
 
 /* ── BodyMap — absolute background, full canvas ── */
 .wsc-bodymap-wrap {
@@ -147,10 +139,10 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  opacity: 0.13;  /* subtle but visible */
+  opacity: 0.12;
   pointer-events: none;
   z-index: 0;
-  padding: 60px 120px;
+  padding: 80px 100px;
 }
 .wsc-bodymap-wrap .bodymap {
   width: 100%;
@@ -165,69 +157,207 @@
 }
 /* Colour override: teal accent for trained muscles */
 .wsc-bodymap-wrap .bm-m { fill: #0F8B8D; }
-.wsc-bodymap-wrap .bm-inert { fill: rgba(255,255,255,0.04); }
+.wsc-bodymap-wrap .bm-inert { fill: rgba(255,255,255,0.05); }
 .wsc-bodymap-wrap svg { width: 100%; height: 100%; max-height: 100%; }
 
-/* ── Stats ── */
-.wsc-stats {
-  display: flex;
-  align-items: center;
-  justify-content: space-evenly;
-  margin: 0 80px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
-  border-radius: 48px;
-  padding: 52px 40px;
-}
-.wsc-stat {
+/* ── Content Wrapper ── */
+.wsc-content-wrapper {
+  position: relative;
+  z-index: 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 14px;
-}
-.wsc-stat strong {
-  font-size: 70px;
-  font-weight: 900;
-  color: #0F8B8D;
-  line-height: 1;
-}
-.wsc-stat small {
-  font-size: 25px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.3);
-}
-.wsc-stat-sep {
-  width: 1.5px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.08);
+  padding: 70px 60px;
 }
 
-/* ── Exercise list ── */
-.wsc-exercises {
+/* ── Header ── */
+.wsc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 60px;
+}
+.wsc-logo-box img {
+  width: 180px;
+  height: auto;
+  object-fit: contain;
+}
+.wsc-date-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 16px 28px;
+  border-radius: 100px;
+  backdrop-filter: blur(10px);
+  color: #a4abb8;
+  font-size: 32px;
+  font-weight: 600;
+}
+.wsc-date-badge svg {
+  color: #0F8B8D;
+  font-size: 32px;
+}
+
+/* ── Title Container ── */
+.wsc-title-container {
   display: flex;
   flex-direction: column;
-  padding: 0 80px;
-  margin-top: 60px;
+  align-items: flex-start;
+  margin-bottom: 80px;
+  padding-left: 20px;
+  border-left: 6px solid #0F8B8D;
 }
-.wsc-exercises[data-few='true'] {
+.wsc-title-subtitle {
+  color: #0F8B8D;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.wsc-title {
+  font-size: 110px;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0 0 24px;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+.wsc-duration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(15, 139, 141, 0.15);
+  color: #2ed5d8;
+  border: 1px solid rgba(15, 139, 141, 0.3);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 36px;
+  font-weight: 700;
+}
+.wsc-duration-badge svg {
+  font-size: 36px;
+}
+
+/* ── Stats Grid ── */
+.wsc-stats-grid {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 60px;
+}
+.wsc-stat-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 30px 24px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  gap: 24px;
+}
+.wsc-stat-icon {
+  display: flex;
+  align-items: center;
   justify-content: center;
-  gap: 16px;
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(15, 139, 141, 0.2), rgba(15, 139, 141, 0.05));
+  border: 1px solid rgba(15, 139, 141, 0.3);
+  color: #2ed5d8;
+  font-size: 36px;
+  flex-shrink: 0;
+}
+.wsc-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+.wsc-stat-val {
+  font-size: 64px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1.1;
+}
+.wsc-stat-label {
+  font-size: 26px;
+  font-weight: 600;
+  color: #8b95a5;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Exercises Card ── */
+.wsc-exercises-card {
+  flex: 1;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 32px;
+  padding: 40px 50px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.05), 0 16px 40px rgba(0,0,0,0.3);
+  backdrop-filter: blur(16px);
+}
+.wsc-exercises-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+.wsc-eh-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
+}
+.wsc-exercises-header span {
+  color: #a4abb8;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.wsc-exercises-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+.wsc-exercises-card[data-few='true'] .wsc-exercises-list {
+  justify-content: center;
+  gap: 30px;
 }
 
 .wsc-ex-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 30px 0;
-  border-bottom: 1.5px solid rgba(255, 255, 255, 0.06);
-  gap: 28px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.03);
+  border-radius: 16px;
+  padding: 24px 30px;
+  gap: 24px;
+}
+.wsc-ex-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(15, 139, 141, 0.15);
+  color: #2ed5d8;
+  font-size: 24px;
+  flex-shrink: 0;
 }
 .wsc-ex-name {
   font-size: 34px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.9);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -236,26 +366,39 @@
 .wsc-ex-sets {
   font-size: 36px;
   font-weight: 800;
-  color: #0F8B8D;
+  color: #ffffff;
+  background: #0F8B8D;
+  padding: 8px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(15, 139, 141, 0.3);
   white-space: nowrap;
   flex-shrink: 0;
 }
 .wsc-ex-extra {
   text-align: center;
   font-size: 30px;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.3);
   font-weight: 600;
-  padding-top: 30px;
-  border: none;
+  padding: 20px 0;
 }
 
 /* ── Footer ── */
 .wsc-footer {
-  margin-top: auto;
-  padding: 40px 80px 70px;
-  text-align: center;
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 50px;
 }
+.wsc-footer-line {
+  width: 60px;
+  height: 2px;
+  background: rgba(255,255,255,0.1);
+}
+.wsc-footer span {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: rgba(255,255,255,0.2);
+}
+

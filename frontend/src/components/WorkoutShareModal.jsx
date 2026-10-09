@@ -6,9 +6,9 @@ import { fmtDate, fmtVol, fmtDur } from '../lib/format.js'
 import { useStore } from '../store/useStore.js'
 import { loadOfWorkouts } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
+import Icon from './Icon.jsx'
 import { Button } from './ui.jsx'
 
-// Story preview — the actual 1080×1920 canvas content
 function WorkoutStoryPreview({ w, st, innerRef }) {
   const dur = w.end - w.start
   const setsCount = w.entries.reduce((acc, e) => acc + (e.sets ? e.sets.length : 0), 0)
@@ -16,10 +16,13 @@ function WorkoutStoryPreview({ w, st, innerRef }) {
 
   return (
     <div ref={innerRef} className="workout-story-canvas">
-      {/* Background gradient */}
+      {/* Backgrounds and glows */}
       <div className="wsc-bg" />
+      <div className="wsc-grid-pattern" />
+      <div className="wsc-glow wsc-glow-top" />
+      <div className="wsc-glow wsc-glow-bottom" />
 
-      {/* BodyMap — absolute background, full canvas, very faded */}
+      {/* BodyMap — background */}
       <div className="wsc-bodymap-wrap">
         <BodyMap
           load={load}
@@ -30,64 +33,90 @@ function WorkoutStoryPreview({ w, st, innerRef }) {
         />
       </div>
 
-      {/* Logo — small, at the very top */}
-      <div className="wsc-logo">
-        <img src="/brand-logo.png" alt="Fit Pro Player" />
-      </div>
-
-      {/* "Treino finalizado" — right below logo */}
-      <div className="wsc-title-block">
-        <h2 className="wsc-title">{t('Treino finalizado')}</h2>
-        <div className="wsc-meta">
-          <span>{fmtDate(w.d, true)}</span>
-          <span className="wsc-dot">·</span>
-          <span>{fmtDur(dur)}</span>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="wsc-stats">
-        <div className="wsc-stat">
-          <strong>{w.entries.length}</strong>
-          <small>{t('Exercícios')}</small>
-        </div>
-        <div className="wsc-stat-sep" />
-        <div className="wsc-stat">
-          <strong>{setsCount}</strong>
-          <small>{t('Séries')}</small>
-        </div>
-        {w.vol > 0 && <>
-          <div className="wsc-stat-sep" />
-          <div className="wsc-stat">
-            <strong>{fmtVol(w.vol, st.unit)}</strong>
-            <small>{t('Volume')}</small>
+      <div className="wsc-content-wrapper">
+        {/* Header: Logo and Date */}
+        <div className="wsc-header">
+          <div className="wsc-logo-box">
+            <img src="/brand-logo.png" alt="Fit Pro Player" />
           </div>
-        </>}
-      </div>
+          <div className="wsc-date-badge">
+            <Icon name="calendar" />
+            <span>{fmtDate(w.d, true)}</span>
+          </div>
+        </div>
 
-      {/* Exercise list */}
-      <div className="wsc-exercises" data-few={w.entries.length < 5 ? 'true' : 'false'}>
-        {w.entries.slice(0, 8).map((e, idx) => {
-          const exData = EXIDX[e.id]
-          const name = exData ? exerciseName(exData) : e.id
-          const totalSets = e.sets ? e.sets.length : 0
-          const maxReps = e.sets && e.sets.length
-            ? Math.max(...e.sets.filter(s => s.r).map(s => s.r || 0))
-            : 0
-          return (
-            <div key={idx} className="wsc-ex-row">
-              <span className="wsc-ex-name">{name}</span>
-              <span className="wsc-ex-sets">{totalSets}×{maxReps > 0 ? maxReps : '-'}</span>
+        {/* Title */}
+        <div className="wsc-title-container">
+          <div className="wsc-title-subtitle">STATUS DO JOGADOR</div>
+          <h2 className="wsc-title">TREINO CONCLUÍDO</h2>
+          <div className="wsc-duration-badge">
+            <Icon name="clock" /> {fmtDur(dur)}
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="wsc-stats-grid">
+          <div className="wsc-stat-box">
+            <div className="wsc-stat-icon"><Icon name="list" /></div>
+            <div className="wsc-stat-info">
+              <span className="wsc-stat-val">{w.entries.length}</span>
+              <span className="wsc-stat-label">{t('Exercícios')}</span>
             </div>
-          )
-        })}
-        {w.entries.length > 8 && (
-          <div className="wsc-ex-extra">+ {w.entries.length - 8} {t('exercícios')}</div>
-        )}
-      </div>
+          </div>
+          <div className="wsc-stat-box">
+            <div className="wsc-stat-icon"><Icon name="repeat" /></div>
+            <div className="wsc-stat-info">
+              <span className="wsc-stat-val">{setsCount}</span>
+              <span className="wsc-stat-label">{t('Séries')}</span>
+            </div>
+          </div>
+          {w.vol > 0 && (
+            <div className="wsc-stat-box">
+              <div className="wsc-stat-icon"><Icon name="dumbbell" /></div>
+              <div className="wsc-stat-info">
+                <span className="wsc-stat-val">{fmtVol(w.vol, st.unit)}</span>
+                <span className="wsc-stat-label">{t('Volume')}</span>
+              </div>
+            </div>
+          )}
+        </div>
 
-      {/* Footer */}
-      <div className="wsc-footer">fitpp.com.br</div>
+        {/* Exercises Card */}
+        <div className="wsc-exercises-card" data-few={w.entries.length < 5 ? 'true' : 'false'}>
+          <div className="wsc-exercises-header">
+            <div className="wsc-eh-line" />
+            <span>DESEMPENHO</span>
+            <div className="wsc-eh-line" />
+          </div>
+          <div className="wsc-exercises-list">
+            {w.entries.slice(0, 8).map((e, idx) => {
+              const exData = EXIDX[e.id]
+              const name = exData ? exerciseName(exData) : e.id
+              const totalSets = e.sets ? e.sets.length : 0
+              const maxReps = e.sets && e.sets.length
+                ? Math.max(...e.sets.filter(s => s.r).map(s => s.r || 0))
+                : 0
+              return (
+                <div key={idx} className="wsc-ex-row">
+                  <div className="wsc-ex-icon"><Icon name="check" /></div>
+                  <span className="wsc-ex-name">{name}</span>
+                  <span className="wsc-ex-sets">{totalSets}×{maxReps > 0 ? maxReps : '-'}</span>
+                </div>
+              )
+            })}
+            {w.entries.length > 8 && (
+              <div className="wsc-ex-extra">+ {w.entries.length - 8} {t('exercícios')}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="wsc-footer">
+          <div className="wsc-footer-line" />
+          <span>FITPPLAYER.COM.BR</span>
+          <div className="wsc-footer-line" />
+        </div>
+      </div>
     </div>
   )
 }
