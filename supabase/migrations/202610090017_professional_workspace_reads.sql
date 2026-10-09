@@ -124,6 +124,8 @@ begin
   with filtered as materialized (
     select e.*,coalesce(p.display_name,'') as display_name,p.avatar_ref,pr.title as program_title,v.version_number
     from public.workout_executions e join public.program_assignments a on a.id=e.assignment_id
+    join public.professional_student_relationships r on r.professional_user_id=a.professional_user_id
+      and r.student_user_id=a.student_user_id and r.professional_user_id=auth.uid() and r.status='active'
     join public.programs pr on pr.id=a.program_id and pr.professional_user_id=auth.uid()
     join public.program_versions v on v.id=e.version_id and v.program_id=pr.id
     left join public.profiles p on p.id=e.student_user_id
@@ -173,6 +175,8 @@ begin
   ), recent as (
     select e.*,coalesce(p.display_name,'') as display_name,p.avatar_ref,pr.title as program_title,v.version_number
     from public.workout_executions e join public.program_assignments a on a.id=e.assignment_id
+    join public.professional_student_relationships r on r.professional_user_id=a.professional_user_id
+      and r.student_user_id=a.student_user_id and r.professional_user_id=auth.uid() and r.status='active'
     join public.programs pr on pr.id=a.program_id and pr.professional_user_id=auth.uid()
     join public.program_versions v on v.id=e.version_id and v.program_id=pr.id
     left join public.profiles p on p.id=e.student_user_id

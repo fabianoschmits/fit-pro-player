@@ -81,6 +81,27 @@ select pg_temp.expect_error($q$select public.professional_dashboard_summary(null
 set local request.jwt.claim.sub='09001700-0000-0000-0000-000000000002';
 select pg_temp.assert_true((public.professional_students_page('','all',0,30)->>'total')::int=0 and (public.professional_executions_page(null,'','all',null,null,0,20)->>'total')::int=0,'caller-scoped student/execution isolation');
 select pg_temp.assert_true((public.professional_programs_page('',null,0,20)->>'total')::int=1 and (public.professional_dashboard_summary('2026-10-08','UTC')->>'active_students')::int=0,'caller-scoped program/dashboard isolation');
+-- Relationship revocation ends professional historical reads. Assignment revocation
+-- alone must still preserve history while that professional's link is active.
+reset role;
+insert into public.professional_student_relationships(professional_user_id,student_user_id,status) values
+ ('09001700-0000-0000-0000-000000000002',md5('workspace-student-1')::uuid,'active');
+create temporary table own_history_before_revocation as
+select jsonb_agg(to_jsonb(e) order by e.id) as rows from public.workout_executions e where e.student_user_id=md5('workspace-student-1')::uuid;
+grant select on own_history_before_revocation to authenticated;
+set local role authenticated;
+set local request.jwt.claim.sub='09001700-0000-0000-0000-000000000001';
+select pg_temp.assert_true((public.professional_executions_page(md5('workspace-student-1')::uuid,'','all',null,null,0,20)->>'total')::int=601,'revoked assignment history remains readable while caller-owned relationship is active');
+select pg_temp.assert_true(exists(select 1 from jsonb_array_elements(public.professional_dashboard_summary('2026-10-08','UTC')->'recent_activity') e where e->>'student_user_id'=md5('workspace-student-1')::uuid::text),'revoked assignment history remains in recent feed before relationship revocation');
+select public.revoke_professional_relationship((select id from public.professional_student_relationships where professional_user_id=auth.uid() and student_user_id=md5('workspace-student-1')::uuid));
+select pg_temp.assert_true((public.professional_executions_page(null,'','all',null,null,0,20)->>'total')::int=3,'revoked relationship excluded from global execution total');
+select pg_temp.assert_true((public.professional_executions_page(md5('workspace-student-1')::uuid,'','all',null,null,0,20)->>'total')::int=0 and public.professional_executions_page(md5('workspace-student-1')::uuid,'','all',null,null,0,20)->'items'='[]'::jsonb,'revoked relationship excluded from selected student execution total and items');
+select pg_temp.assert_true(not exists(select 1 from jsonb_array_elements(public.professional_executions_page(null,'','all',null,null,0,100)->'items') e where e->>'student_user_id'=md5('workspace-student-1')::uuid::text),'revoked relationship excluded from all-student execution items');
+select pg_temp.assert_true(not exists(select 1 from jsonb_array_elements(public.professional_dashboard_summary('2026-10-08','UTC')->'recent_activity') e where e->>'student_user_id'=md5('workspace-student-1')::uuid::text),'revoked relationship excluded from dashboard recent feed even if another professional has an active link');
+select pg_temp.assert_true(jsonb_array_length(public.professional_dashboard_summary('2026-10-08','UTC')->'recent_activity')=3,'dashboard recent feed keeps authorized students');
+select pg_temp.assert_true((select count(*)=0 from public.workout_executions where student_user_id=md5('workspace-student-1')::uuid),'existing professional RLS also excludes revoked relationship');
+set local request.jwt.claim.sub='b2c24b70-edf6-a7fb-5d32-e37f470305de';
+select pg_temp.assert_true((select count(*)=601 and jsonb_agg(to_jsonb(e) order by e.id)=(select rows from own_history_before_revocation) from public.workout_executions e where e.student_user_id=auth.uid()),'student own historical access and entire execution rows remain unchanged after revocation');
 set local request.jwt.claim.sub='';
 select pg_temp.expect_error($q$select public.professional_students_page('','all',0,30)$q$,'42501');
 select pg_temp.expect_error($q$select public.professional_programs_page('',null,0,20)$q$,'42501');
