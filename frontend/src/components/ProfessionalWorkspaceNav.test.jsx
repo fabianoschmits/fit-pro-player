@@ -11,13 +11,14 @@ beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional' 
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional workspace navigation', () => {
-  it('recognizes the legacy profile alias as the active profile destination', async () => {
+  it('recognizes the legacy profile alias inside the Gestão destination', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional-profile?onboarding=1']}><ProfessionalWorkspaceNav /></MemoryRouter>))
-    expect(container.querySelector('[aria-current="page"]')?.textContent).toContain('Perfil')
+    expect(container.querySelector('[aria-current="page"]')?.textContent).toBe('Gestão')
   })
-  it('exposes focused workspace destinations without changing the main tab bar', async () => {
+  it('exposes exactly four focused workspace destinations', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students']}><ProfessionalWorkspaceNav /></MemoryRouter>))
-    expect(container.textContent).toContain('Visão geral')
+    expect(container.textContent).toContain('Gestão')
+    expect(container.querySelectorAll('a')).toHaveLength(4)
     expect(container.textContent).toContain('Alunos')
     expect(container.textContent).toContain('Convites')
     expect(container.textContent).toContain('Programas')

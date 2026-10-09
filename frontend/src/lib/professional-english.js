@@ -1,5 +1,16 @@
 // English source equivalents for the Portuguese-authored professional workspace.
 export default {
+  "Gestão": "Management",
+  "Exercícios": "Exercises",
+  "Última alteração": "Last changed",
+  "Atenção": "Attention",
+  "Voltar ao FPP": "Back to FPP",
+  "Retomar treino": "Resume workout",
+  "Limpar busca": "Clear search",
+  "Filtros": "Filters",
+  "{0} treinos": "{0} workouts",
+  "{0} alunos": "{0} students",
+  "Ações de {0}": "Actions for {0}",
   "Abrir programas": "Open programs",
   "Adicionar exercício": "Add exercise",
   "Ajuste a busca ou troque o filtro.": "Adjust your search or change the filter.",

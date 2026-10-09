@@ -1,21 +1,18 @@
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { t } from '../lib/i18n.js'
-import useManagementNavVisibility from './useManagementNavVisibility.js'
+import Icon from './Icon.jsx'
 
 const LINKS = [
-  ['Visão geral', '/professional'],
-  ['Alunos', '/professional/students'],
-  ['Convites', '/professional/invites'],
-  ['Programas', '/professional/programs'],
-  ['Perfil', '/professional/profile'],
+  ['Gestão', '/professional', 'house'],
+  ['Alunos', '/professional/students', 'person'],
+  ['Programas', '/professional/programs', 'calendar'],
+  ['Convites', '/professional/invites', 'link'],
 ]
 
 export default function ProfessionalWorkspaceNav() {
   const { pathname } = useLocation()
-  const navRef = useManagementNavVisibility()
-  return <nav ref={navRef} className="professional-workspace-nav management-nav" aria-label={t('Navegação da área profissional')}>
-    {LINKS.map(([label, to]) => to === '/professional/profile' && pathname === '/professional-profile'
-      ? <Link key={to} to={to} aria-current="page">{t(label)}</Link>
-      : <NavLink key={to} to={to} end={to === '/professional'}>{t(label)}</NavLink>)}
+  const selected = LINKS.slice(1).find(([, to]) => pathname === to || pathname.startsWith(`${to}/`))?.[1] || '/professional'
+  return <nav className="professional-workspace-nav" aria-label={t('Navegação da área profissional')}>
+    {LINKS.map(([label, to, icon]) => <Link key={to} to={to} aria-current={selected === to ? 'page' : undefined}><Icon name={icon} /><span>{t(label)}</span></Link>)}
   </nav>
 }

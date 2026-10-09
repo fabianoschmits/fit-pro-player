@@ -13,6 +13,7 @@ import { initBackButton } from './lib/back.js'
 import { useWakeLock } from './lib/wakelock.js'
 import Icon from './components/Icon.jsx'
 import TabBar from './components/TabBar.jsx'
+import { isProfessionalRoute } from './features/professional/routes.js'
 import PageTransition from './components/PageTransition.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
@@ -423,7 +424,7 @@ function Shell() {
           )}
         </ErrorBoundary>
       </PageTransition>
-      <TabBar onStart={startFlow} />
+      {!isProfessionalRoute(loc.pathname) && <TabBar onStart={startFlow} />}
       <RestTimer />
       <Modals />
       <Toast />

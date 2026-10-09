@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { t } from '../lib/i18n.js'
 import AppHeader from './AppHeader.jsx'
-import ProfessionalWorkspaceNav from './ProfessionalWorkspaceNav.jsx'
+import ProfessionalLayout from '../features/professional/components/ProfessionalLayout.jsx'
 import useManagementNavVisibility from './useManagementNavVisibility.js'
 
 function StudentWorkspaceNav() {
@@ -17,7 +17,8 @@ function StudentWorkspaceNav() {
 }
 
 export default function ManagementLayout({ title, subtitle, backTo, action, audience = 'professional', children, className = '', nav }) {
-  const navigation = nav === undefined ? (audience === 'student' ? <StudentWorkspaceNav /> : <ProfessionalWorkspaceNav />) : nav
+  if (audience === 'professional') return <ProfessionalLayout title={title} subtitle={subtitle} backTo={backTo} action={action} className={className} nav={nav}>{children}</ProfessionalLayout>
+  const navigation = nav === undefined ? <StudentWorkspaceNav /> : nav
   return <div className={`management-layout ${className}`.trim()}>
     <AppHeader title={title} subtitle={subtitle} backTo={backTo} action={action} className="management-header" />
     <div className={`management-workspace${navigation ? '' : ' management-workspace-solo'}`}>

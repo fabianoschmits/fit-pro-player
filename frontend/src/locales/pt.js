@@ -2,6 +2,17 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "Gestão": "Gestão",
+  "Exercícios": "Exercícios",
+  "Última alteração": "Última alteração",
+  "Atenção": "Atenção",
+  "Voltar ao FPP": "Voltar ao FPP",
+  "Retomar treino": "Retomar treino",
+  "Limpar busca": "Limpar busca",
+  "Filtros": "Filtros",
+  "{0} treinos": "{0} treinos",
+  "{0} alunos": "{0} alunos",
+  "Ações de {0}": "Ações de {0}",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "No app Android, os alertas locais dos cronômetros podem chegar com o app minimizado. Dependem da permissão de notificações e das configurações do sistema.",
   "Background notifications will be available after the Android service is configured.": "As notificações em segundo plano estarão disponíveis após a configuração do serviço Android.",
   "Local timer alerts": "Alertas locais dos cronômetros",

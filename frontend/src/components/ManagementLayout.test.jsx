@@ -16,7 +16,7 @@ describe('management workspace', () => {
     await render(<ManagementLayout title="Editar perfil" subtitle="Sua apresentação" backTo="/professional/profile" action={<a href="/action">Ação</a>}><p>Conteúdo</p></ManagementLayout>)
     expect(container.querySelector('h1').textContent).toBe('Editar perfil')
     expect(container.querySelector('.management-content').textContent).toBe('Conteúdo')
-    expect(container.querySelector('[aria-current="page"]').textContent).toContain('Perfil')
+    expect(container.querySelector('[aria-current="page"]').textContent).toBe('Gestão')
     expect(container.querySelector('button[aria-label="Voltar"]')).not.toBeNull()
     expect(container.textContent).toContain('Sua apresentação')
   })
