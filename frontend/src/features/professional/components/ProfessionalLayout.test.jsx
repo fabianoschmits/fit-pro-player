@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import React, { act } from 'react'
+import React, { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import ProfessionalLayout from './ProfessionalLayout.jsx'
 import ContextActions from './ContextActions.jsx'
@@ -9,8 +9,10 @@ import StudentRow from './StudentRow.jsx'
 import FilterChips from './FilterChips.jsx'
 import SearchBar from './SearchBar.jsx'
 import ProgramRow from './ProgramRow.jsx'
-const state = vi.hoisted(() => ({ S: { active: { id: 'personal-session' } } }))
-vi.mock('../../../store/useStore.js', () => ({ useStore: selector => selector(state) }))
+import Dialog from '../../../components/Dialog.jsx'
+const state = vi.hoisted(() => ({ S: { active: { id: 'personal-session' } }, generation: 0,
+  getScopeToken: () => state.generation, isScopeCurrent: token => token === state.generation }))
+vi.mock('../../../store/useStore.js', () => ({ useStore: Object.assign(selector => selector(state), { getState: () => state }) }))
 let root, container
 beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
@@ -29,16 +31,82 @@ it('provides profile, catalogue and personal home through the contextual menu', 
   expect(document.querySelector('[role="dialog"]').textContent).toContain('Exercícios')
   expect(document.querySelector('[role="dialog"]').textContent).toContain('Voltar ao FPP')
 })
-it('sheet_returns_focus_and_back_once using the existing Dialog controller', async () => {
-  const select = vi.fn(), back = vi.spyOn(history, 'back').mockImplementation(() => {})
+function pendingBack() {
+  const previous = history.state
+  let deliver
+  const back = vi.spyOn(history, 'back').mockImplementation(() => {
+    deliver = () => { history.replaceState(previous, ''); window.dispatchEvent(new PopStateEvent('popstate', { state: previous })) }
+  })
+  return { back, flush: () => act(async () => deliver?.()) }
+}
+it('sheet_returns_focus_and_back_once after the asynchronous popstate handoff', async () => {
+  const select = vi.fn(), traversal = pendingBack()
   await render(<ContextActions label="Ações do programa" items={[{ id: 'edit', label: 'Editar', onSelect: select }]} />)
   const trigger = container.querySelector('button'); trigger.focus()
   await act(async () => trigger.click())
   await act(async () => [...document.querySelectorAll('[role="dialog"] button')].find(button => button.textContent === 'Editar').click())
-  expect(select).toHaveBeenCalledOnce()
+  expect(select).not.toHaveBeenCalled()
   expect(document.querySelector('[role="dialog"]')).toBeNull()
   expect(document.activeElement).toBe(trigger)
-  expect(back).toHaveBeenCalledOnce()
+  expect(traversal.back).toHaveBeenCalledOnce()
+  expect(trigger.getAttribute('aria-disabled')).toBe('true')
+  await traversal.flush()
+  expect(select).toHaveBeenCalledOnce()
+  expect(trigger.getAttribute('aria-disabled')).toBe('false')
+})
+it('action to confirmation waits for popstate and keeps the next Dialog open', async () => {
+  const traversal = pendingBack()
+  function Flow() {
+    const [confirmation, setConfirmation] = useState(false)
+    return <><ContextActions label="Ações" items={[{id:'delete',label:'Excluir',onSelect:() => setConfirmation(true)}]} />{confirmation && <Dialog title="Confirmar" onClose={() => setConfirmation(false)}>Confirmação</Dialog>}</>
+  }
+  await render(<Flow />)
+  await act(async () => container.querySelector('button').click())
+  await act(async () => document.querySelector('.professional-context-items button').click())
+  expect(document.querySelector('[role="dialog"]')).toBeNull()
+  await traversal.flush()
+  expect(document.querySelector('[role="dialog"]').textContent).toContain('Confirmar')
+  expect(document.body.style.overflow).toBe('hidden')
+})
+it('the optional Dialog close completion ignores StrictMode trial cleanup', async () => {
+  const completed = vi.fn(), traversal = pendingBack()
+  await act(async () => root.render(<React.StrictMode><MemoryRouter><Dialog title="Confirmar" onClose={() => {}} onAfterClose={completed}>Conteúdo</Dialog></MemoryRouter></React.StrictMode>))
+  expect(completed).not.toHaveBeenCalled()
+  await render(null)
+  expect(completed).not.toHaveBeenCalled()
+  await traversal.flush()
+  expect(completed).toHaveBeenCalledOnce()
+})
+it('ignores immediate reopening until the old history entry is consumed', async () => {
+  const traversal = pendingBack()
+  await render(<ContextActions label="Ações" />)
+  const trigger = container.querySelector('button')
+  await act(async () => trigger.click())
+  await act(async () => document.querySelector('.dialog-close').click())
+  await act(async () => trigger.click())
+  expect(document.querySelector('[role="dialog"]')).toBeNull()
+  await traversal.flush()
+  await act(async () => trigger.click())
+  expect(document.querySelector('[role="dialog"]')).not.toBeNull()
+})
+for (const change of ['account', 'route', 'unmount']) it(`cancels a pending selected action after ${change} changes`, async () => {
+  const traversal = pendingBack(), select = vi.fn()
+  let navigate
+  function Flow() { navigate = useNavigate(); return <ContextActions label="Ações" items={[{id:'edit',label:'Editar',onSelect:select}]} /> }
+  await render(<Flow />)
+  await act(async () => container.querySelector('button').click())
+  await act(async () => document.querySelector('.professional-context-items button').click())
+  if (change === 'account') state.generation++
+  if (change === 'route') await act(async () => navigate('/professional/programs'))
+  if (change === 'unmount') await render(null)
+  await traversal.flush()
+  expect(select).not.toHaveBeenCalled()
+})
+for (const route of ['/professional/profile', '/professional-profile', '/professional/exercises']) it(`disables the current contextual destination at ${route}`, async () => {
+  await render(<ProfessionalLayout title="Perfil" />, route)
+  await act(async () => container.querySelector('[aria-haspopup="dialog"]').click())
+  const label = route === '/professional/exercises' ? 'Exercícios' : 'Perfil'
+  expect([...document.querySelectorAll('.professional-context-items button')].find(button => button.textContent === label).disabled).toBe(true)
 })
 it('avatar_uses_authorized_asset_or_initials and never an arbitrary photograph URL', async () => {
   await render(<ul><StudentRow student={{displayName:'Ana Silva',avatarRef:'https://photos.example/ana.jpg'}} to="/professional/students/ana" /></ul>)

@@ -3,12 +3,16 @@ import { createPortal } from 'react-dom'
 import { useDialogFocus } from '../lib/dialog-focus.js'
 import { t } from '../lib/i18n.js'
 
-export default function Dialog({ title, onClose, children, className = '', locked = false }) {
-  const ref = useRef(null), titleId = useId(), closeRef = useRef(onClose), lockedRef = useRef(locked)
+// Optional onAfterClose runs after unmount cleanup and, when owned, the pending
+// sentinel traversal. Consumers must cancel deferred work when their context ends.
+export default function Dialog({ title, onClose, onAfterClose, children, className = '', locked = false }) {
+  const ref = useRef(null), titleId = useId(), closeRef = useRef(onClose), lockedRef = useRef(locked), afterCloseRef = useRef(onAfterClose), lifecycle = useRef(0)
   closeRef.current = onClose
   lockedRef.current = locked
+  afterCloseRef.current = onAfterClose
   useDialogFocus(ref, { onClose: () => closeRef.current?.(), locked, titleId })
   useEffect(() => {
+    const generation = ++lifecycle.current
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const openedAt = location.href
@@ -25,7 +29,12 @@ export default function Dialog({ title, onClose, children, className = '', locke
       document.body.style.overflow = previous
       disposed = true
       window.removeEventListener('popstate', back)
-      if (pushed && !consumed && location.href === openedAt && history.state?.fitProPlayerDialog === titleId) history.back()
+      const afterClose = afterCloseRef.current
+      const complete = () => queueMicrotask(() => { if (lifecycle.current === generation) afterClose?.() })
+      if (pushed && !consumed && location.href === openedAt && history.state?.fitProPlayerDialog === titleId) {
+        if (afterClose) window.addEventListener('popstate', complete, { once: true })
+        history.back()
+      } else if (afterClose) complete()
     }
   }, [titleId])
   return createPortal(<div className="dialog-layer">

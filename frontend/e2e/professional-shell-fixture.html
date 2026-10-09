@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Professional shell regression fixture</title></head>
+<body><div id="app"></div><script type="module">
+import React, { useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import { flushSync } from 'react-dom'
+import { MemoryRouter } from 'react-router-dom'
+import Dialog from '../src/components/Dialog.jsx'
+import ProfessionalLayout from '../src/features/professional/components/ProfessionalLayout.jsx'
+import ContextActions from '../src/features/professional/components/ContextActions.jsx'
+import ProgramRow from '../src/features/professional/components/ProgramRow.jsx'
+import '../src/index.css'
+import '../src/professional.css'
+window.closeAndImmediatelyReopen = () => {
+  flushSync(() => document.querySelector('.dialog-close').click())
+  document.querySelector('[aria-label="Ações do programa"]').click()
+}
+function Fixture() {
+  const [confirm, setConfirm] = useState(false)
+  return React.createElement(MemoryRouter, null,
+    React.createElement(ProfessionalLayout, { title: 'Programa', backTo: '/professional/programs' },
+      React.createElement(ContextActions, { label: 'Ações do programa', items: [{ id: 'delete', label: 'Excluir programa', onSelect: () => setConfirm(true) }] }),
+      React.createElement('ul', null, React.createElement(ProgramRow, { program: { id: 'p', title: 'Força' }, to: '/professional/programs/p', onAction: () => {} }))),
+    confirm && React.createElement(Dialog, { title: 'Confirmar exclusão', onClose: () => setConfirm(false) }, 'Confirmação permanece aberta'))
+}
+createRoot(document.getElementById('app')).render(React.createElement(React.StrictMode, null, React.createElement(Fixture)))
+</script></body></html>
