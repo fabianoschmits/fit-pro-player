@@ -15,6 +15,20 @@ const render = async (Component, props) => act(async () => root.render(<Componen
 const page = (items, total = items.length, offset = 0, hasMore = false) => ({ items, total, offset, hasMore })
 
 describe('professional resource generations', () => {
+  it('load receives a request guard that expires on timeout and newer retries', async () => {
+    vi.useFakeTimers()
+    const slow = pending(), guards = []
+    const load = current => { guards.push(current); return slow.promise }
+    await render(Resource, { accountId: 'a', resourceKey: 'summary', load })
+    expect(typeof guards[0]).toBe('function')
+    expect(guards[0]()).toBe(true)
+    await act(async () => { result.retry() })
+    expect(guards[0]()).toBe(false)
+    expect(guards[1]()).toBe(true)
+    await act(async () => vi.advanceTimersByTimeAsync(10000))
+    expect(guards[1]()).toBe(false)
+    expect(result.status).toBe('error')
+  })
   it('account_switch_discards_response, including a switch back to the original identity', async () => {
     const old = pending(), other = pending(), fresh = pending()
     const load = vi.fn().mockReturnValueOnce(old.promise).mockReturnValueOnce(other.promise).mockReturnValueOnce(fresh.promise)

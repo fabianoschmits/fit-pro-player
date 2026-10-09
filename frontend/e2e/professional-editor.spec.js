@@ -45,6 +45,16 @@ for (const width of [375, 1280]) test(`native workout editor ${width}px`, async 
   await expect.poll(() => page.evaluate(() => history.state?.fitProPlayerDialog)).toBeTruthy()
   await page.goBack()
   await expect(edit).toHaveCount(0)
+  await page.getByRole('button', { name: 'Ações do exercício 1', exact: true }).click()
+  await page.getByRole('button', { name: 'Remover', exact: true }).click()
+  const removal = page.getByRole('dialog', { name: 'Remover exercício?', exact: true })
+  await expect(removal).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(1)
+  await expect(page.locator('.professional-prescription-row')).toHaveCount(1)
+  await expect.poll(() => page.evaluate(() => history.state?.fitProPlayerDialog)).toBeTruthy()
+  await page.goBack()
+  await expect(removal).toHaveCount(0)
+  await expect(page.locator('.professional-prescription-row')).toHaveCount(1)
   await page.getByRole('button', { name: 'Copiar dia', exact: true }).click()
   await expect(page.getByRole('dialog', { name: 'Substituir exercícios do dia?' })).toBeVisible()
   await page.getByRole('button', { name: 'Cancelar', exact: true }).click()
@@ -82,4 +92,32 @@ for (const width of [375, 1280]) test(`native workout editor ${width}px`, async 
   expect(publications[0].p_workout_titles.monday).toBe('Força A revisada')
   expect(assignments).toHaveLength(0)
   expect(await page.evaluate(({ accountId, id }) => JSON.parse(localStorage.getItem(`fpp_account_cache_v1:${accountId}`)).state.professionalProgramDrafts[`${accountId}:${id}`] || null, { accountId: USER, id: programId })).toBeNull()
+})
+
+test('fresh historical editor preserves exact query and prescription across navigation', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop-chromium', 'Explicit browser navigation regression.')
+  const versionId = '66666666-6666-4666-8666-666666666666'
+  const search = `?version=${versionId}&material=x%20y&student=student&section=training&code=A%2BB`
+  await seed(page, { professional: true, rpc: {
+    programs: [{ id: programId, professional_user_id: USER, title, archived: false }],
+  } })
+  await page.route('https://fitpp-test.supabase.co/rest/v1/program_versions*', async route => {
+    const historical = new URL(route.request().url()).searchParams.has('id')
+    const version = {
+      id: historical ? versionId : '44444444-4444-4444-8444-444444444444',
+      program_id: programId, version_number: historical ? 1 : 3,
+      weekly_plan: { monday: [{ ...entries[0], notes: historical ? 'Histórico exato' : 'Latest diferente' }] },
+      workout_titles: { monday: historical ? 'Treino histórico' : 'Treino atual' },
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([version]) })
+  })
+  await page.goto(`/#/professional/programs/${programId}/edit${search}`)
+  await expect(page.locator('.professional-compact-list')).toContainText('Treino histórico')
+  await expect(page.locator('.professional-compact-list a').first()).toHaveAttribute('href', `#/professional/programs/${programId}/edit/monday${search}`)
+  await page.locator('.professional-compact-list a').first().click()
+  await expect(page.locator('.professional-prescription-row')).toContainText('Histórico exato')
+  await expect(page.locator('.professional-prescription-row')).not.toContainText('Latest diferente')
+  await page.getByRole('link', { name: 'Concluir treino', exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`version=${versionId}&material=x%20y&student=student&section=training&code=A%2BB$`))
+  await expect(page.locator('.professional-compact-list')).toContainText('Treino histórico')
 })

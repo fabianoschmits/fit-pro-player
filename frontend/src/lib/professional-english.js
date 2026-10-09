@@ -409,5 +409,7 @@ export default {
   "Publicar semana": "Publish week",
   "Objetivo": "Objective",
   "Treino não encontrado.": "Workout not found.",
-  "Versão não encontrada.": "Version not found."
+  "Versão não encontrada.": "Version not found.",
+  "Remover exercício?": "Remove exercise?",
+  "Confirmar remoção": "Confirm removal"
 }

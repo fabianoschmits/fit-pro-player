@@ -6,6 +6,8 @@ import { withTimeout } from '../../../lib/professional-ux.js'
  * status: idle | loading (initial skeleton) | refreshing | success | error.
  * Capture isCurrent before an async mutation to guard its local completion.
  * Keep resourceKey stable for the complete resource identity; load may be inline.
+ * load(isRequestCurrent) may ignore the additive argument. Staged loaders must
+ * check it before each next read; it expires on timeout, retry, context or unmount.
  */
 export function useProfessionalResource({ accountId, resourceKey, load }) {
   const identity = useRef(null)
@@ -22,7 +24,8 @@ export function useProfessionalResource({ accountId, resourceKey, load }) {
   const retry = useCallback(async () => {
     if (!accountId || !isCurrent()) return
     const request = ++generation.current
-    const current = () => isCurrent() && generation.current === request
+    let active = true
+    const current = () => active && isCurrent() && generation.current === request
     setState(previous => ({
       context, data: previous?.context === context ? previous.data : null,
       status: previous?.context === context && previous.hasData ? 'refreshing' : 'loading',
@@ -30,11 +33,13 @@ export function useProfessionalResource({ accountId, resourceKey, load }) {
     }))
     const read = loader.current
     try {
-      const data = await withTimeout(Promise.resolve().then(() => read()), 10000)
+      const data = await withTimeout(Promise.resolve().then(() => current() ? read(current) : undefined), 10000)
       if (current()) setState({ context, data, hasData: true, status: 'success', error: null })
       return current() ? data : undefined
     } catch (error) {
       if (current()) setState(previous => ({ ...previous, status: 'error', error }))
+    } finally {
+      active = false
     }
   }, [accountId, context, isCurrent])
 

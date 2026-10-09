@@ -1329,5 +1329,7 @@ export default {
   "Publicar semana": "Publicar semana",
   "Objetivo": "Objetivo",
   "Treino não encontrado.": "Treino não encontrado.",
-  "Versão não encontrada.": "Versão não encontrada."
+  "Versão não encontrada.": "Versão não encontrada.",
+  "Remover exercício?": "Remover exercício?",
+  "Confirmar remoção": "Confirmar remoção"
 }
