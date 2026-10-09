@@ -22,7 +22,8 @@ export default function ContextActions({ label, items = [] }) {
     if (!mounted.current || !closingRef.current) return
     const selected = pending.current
     pending.current = null; closingRef.current = false; setClosing(false)
-    if (selected?.location === context.current && selected.href === window.location.href && useStore.getState().isScopeCurrent(selected.scope)) selected.onSelect?.()
+    const sameEntry = selected && ['key', 'pathname', 'search', 'hash'].every(key => selected.location[key] === context.current[key])
+    if (sameEntry && selected.href === window.location.href && useStore.getState().isScopeCurrent(selected.scope)) selected.onSelect?.()
   }
   return <>
     <button type="button" className="iconbtn professional-context-trigger" aria-label={label} aria-haspopup="dialog" aria-expanded={open} aria-disabled={closing} onClick={() => { if (!closingRef.current) setOpen(true) }}><Icon name="more" /></button>

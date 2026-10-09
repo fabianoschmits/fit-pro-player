@@ -2,82 +2,91 @@
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
-import { Window } from 'happy-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'pro-1' } }, repo: { programs: vi.fn().mockResolvedValue([{ id: 'p1', title: 'Força', description: 'Base' }]), versions: vi.fn().mockResolvedValue([{ id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: { monday: [{ exerciseId: '1', sets: 3, reps: 8 }] } }]), createProgram: vi.fn(), updateProgram: vi.fn(), publishProgramVersion: vi.fn() } }))
-vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
-vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, action }) => <header><h1>{title}</h1>{action}</header> }))
-vi.mock('../lib/exercises.js', async importOriginal => ({ ...(await importOriginal()), PROFESSIONAL_EXERCISES: [{ id: '1', n: 'Agachamento' }] }))
+import { beforeEach, afterEach, it, expect, vi } from 'vitest'
+import { useStore } from '../store/useStore.js'
 import ProfessionalPrograms from './ProfessionalPrograms.jsx'
-
-const page = (path = '/professional/programs') => <MemoryRouter initialEntries={[path]}><Routes><Route path="/professional/programs" element={<ProfessionalPrograms />} /><Route path="/professional/programs/new" element={<ProfessionalPrograms />} /><Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} /><Route path="/professional/programs/:programId/edit" element={<ProfessionalPrograms />} /></Routes></MemoryRouter>
-let dom, root, container
-beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = new Window({ url: 'https://app.example/#/professional/programs' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
-afterEach(async () => { await act(async () => root.unmount()); dom.close() })
-
-describe('professional programs page', () => {
-  it('separates archived programs without loading their versions', async () => {
-    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Disponível' }, { id: 'p2', title: 'Programa antigo', archived: true }])
-    await act(async () => root.render(page()))
-    expect(container.textContent).not.toContain('Programa antigo')
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Arquivados').click())
-    expect(container.textContent).toContain('Programa antigo')
-    expect(mocks.repo.versions).not.toHaveBeenCalled()
-  })
-  it('creates on its focused page and opens the returned program editor', async () => {
-    mocks.repo.createProgram.mockResolvedValueOnce({ id: 'p2', title: 'Resistência' })
-    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p2', title: 'Resistência' }])
-    await act(async () => root.render(page('/professional/programs/new')))
-    const input = container.querySelector('input[aria-label="Nome do programa"]')
-    await act(async () => { Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(input, 'Resistência'); input.dispatchEvent(new Event('input', { bubbles: true })) })
-    await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
-    expect(mocks.repo.createProgram).toHaveBeenCalledWith('pro-1', 'Resistência', '')
-    expect(container.textContent).toContain('Montar semana')
-    expect(mocks.repo.versions).toHaveBeenCalledWith('p2')
-  })
-  it('keeps the previous account response out of a pending library load', async () => {
-    let finishOld
-    mocks.repo.programs.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
-    await act(async () => root.render(page()))
-    mocks.auth.user = { id: 'pro-2' }
-    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p2', title: 'Nova conta' }])
-    await act(async () => root.render(page()))
-    await act(async () => finishOld([{ id: 'old', title: 'Conta anterior' }]))
-    expect(container.textContent).toContain('Nova conta')
-    expect(container.textContent).not.toContain('Conta anterior')
-  })
-  it('opens the editor directly and cancels back to program detail', async () => {
-    await act(async () => root.render(page('/professional/programs/p1/edit')))
-    expect(container.textContent).toContain('Montar semana')
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Cancelar').click())
-    expect(container.querySelector('.professional-program-editor')).toBeNull()
-    expect(container.textContent).toContain('Versão 1')
-    expect(container.querySelector('a[href="/professional/students?program=p1&version=v1"]')).toBeTruthy()
-  })
-
-  it('compares published prescriptions and requires an explicit archive action', async () => {
-    mocks.repo.versions.mockResolvedValueOnce([{ id: 'v2', program_id: 'p1', version_number: 2, weekly_plan: { monday: [{ exerciseId: '1', sets: 3, reps: 8, load: 45 }] } }, { id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: { monday: [{ exerciseId: '1', sets: 3, reps: 8, load: 40 }] } }])
-    await act(async () => root.render(page('/professional/programs/p1')))
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Comparar versões').click())
-    expect(document.body.textContent).toContain('45 kg')
-    expect(document.body.textContent).toContain('40 kg')
-    await act(async () => document.querySelector('[role="dialog"] button').click())
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Arquivar').click())
-    expect(container.textContent).toContain('encerra as atribuições ativas')
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Confirmar arquivo').click())
-    expect(mocks.repo.updateProgram).toHaveBeenCalledWith('p1', expect.objectContaining({ archived: true }))
-  })
-  it('shows versioned programs independently from client assignment', async () => {
-    await act(async () => root.render(page()))
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    expect(container.textContent).toContain('Programas')
-    expect(container.textContent).toContain('Força')
-    expect(mocks.repo.versions).not.toHaveBeenCalled()
-    expect(container.querySelector('a[href="/professional/programs/new"]')).toBeTruthy()
-    expect(container.querySelector('input[aria-label="Nome do programa"]')).toBeNull()
-    expect(container.textContent).not.toContain('Enviar para cliente selecionado')
-  })
+import ProgramWeekPage from '../features/professional/pages/ProgramWeekPage.jsx'
+import ProgramWorkoutPage from '../features/professional/pages/ProgramWorkoutPage.jsx'
+const account = '11111111-1111-4111-8111-111111111111'
+const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: '11111111-1111-4111-8111-111111111111' } }, repo: {
+  programPage: vi.fn(), program: vi.fn(), versions: vi.fn(), version: vi.fn(), createProgram: vi.fn(), updateProgramMetadata: vi.fn(), updateProgram: vi.fn(), duplicateProgram: vi.fn(), assignProgramVersion: vi.fn(), publishProgramDraft: vi.fn(),
+} }))
+vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
+vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
+let root, node
+const render = async (path = '/professional/programs') => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Routes>
+  <Route path="/professional/programs" element={<ProfessionalPrograms />} /><Route path="/professional/programs/new" element={<ProfessionalPrograms />} /><Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />
+  <Route path="/professional/programs/:programId/versions/:versionId" element={<ProfessionalPrograms />} />
+  <Route path="/professional/programs/:programId/edit" element={<ProgramWeekPage />} /><Route path="/professional/programs/:programId/edit/:day" element={<ProgramWorkoutPage />} /><Route path="/professional/programs/:programId/workouts/:day" element={<ProgramWorkoutPage readOnly />} />
+</Routes></MemoryRouter>))
+const click = async label => act(async () => [...document.querySelectorAll('button,a')].find(button => button.textContent === label).click())
+const finishMenu = async () => act(async () => { if (!document.querySelector('[role="dialog"]')) window.dispatchEvent(new PopStateEvent('popstate')) })
+beforeEach(async () => {
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true; vi.clearAllMocks(); localStorage.clear()
+  mocks.auth.status = 'authenticated'; mocks.auth.user = { id: account }; await useStore.getState().activateLocalScope(account)
+  mocks.repo.programPage.mockImplementation(async ({ archived = false, offset = 0 }) => ({ items: [{ id: archived ? 'archived' : 'p', title: archived ? 'Antigo' : 'Força', objective: 'Ganhar força', workoutCount: 4, studentCount: 603, lastChangedAt: '2026-10-08', archived }], total: 603, offset, hasMore: offset === 0 }))
+  mocks.repo.program.mockImplementation(async id => ({ id, title: id === 'copy' ? 'Cópia' : 'Força', professional_user_id: account, archived: id === 'archived' }))
+  mocks.repo.versions.mockResolvedValue([{ id: 'v', program_id: 'p', version_number: 2, workout_titles: { monday: 'Força A' }, weekly_plan: { monday: [{ exerciseId: '9997', sets: 3, reps: 8, notes: 'Original' }] } }])
+  mocks.repo.updateProgram.mockResolvedValue({}); mocks.repo.updateProgramMetadata.mockResolvedValue({})
+  node = document.createElement('div'); document.body.append(node); root = createRoot(node)
+})
+afterEach(async () => { await act(async () => root.unmount()); node.remove(); vi.useRealTimers() })
+it('filters_and_return_preserve_search', async () => {
+  await render('/professional/programs?q=For%C3%A7a')
+  expect(node.querySelector('input[type="search"]').value).toBe('Força'); expect(node.textContent).toContain('603'); expect(node.textContent).toContain('4 treinos'); expect(node.textContent).toContain('Ganhar força'); expect(node.textContent).toContain('Última alteração')
+  await act(async () => node.querySelector('a[href^="/professional/programs/p"]').click())
+  await act(async () => node.querySelector('.app-header-back').click())
+  expect(node.querySelector('input[type="search"]').value).toBe('Força'); await click('Arquivados')
+  expect(node.textContent).toContain('Antigo'); expect(mocks.repo.programPage).toHaveBeenLastCalledWith(expect.objectContaining({ search: 'Força', archived: true, offset: 0 }))
+})
+it('pagination_keeps_global_total_and_fetches_next_offset', async () => {
+  await render(); await click('Carregar mais'); expect(mocks.repo.programPage).toHaveBeenLastCalledWith(expect.objectContaining({ offset: 1 })); expect(node.querySelectorAll('.professional-compact-list li')).toHaveLength(1); expect(node.textContent).toContain('603')
+})
+it('creates metadata then opens actual local draft without publishing or assigning', async () => {
+  mocks.repo.createProgram.mockResolvedValue({ id: 'p' }); await render('/professional/programs/new')
+  const set = async (label, value) => act(async () => { const input = node.querySelector(`[aria-label="${label}"]`); Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(input, value); input.dispatchEvent(new Event('input', { bubbles: true })) })
+  await set('Nome do programa', 'Força'); await set('Objetivo', 'Ganhar força')
+  await act(async () => node.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+  expect(mocks.repo.updateProgramMetadata).toHaveBeenCalledWith({ programId: 'p', title: 'Força', description: '', objective: 'Ganhar força' }); expect(node.textContent).toContain('Montar semana'); expect(mocks.repo.publishProgramDraft).not.toHaveBeenCalled(); expect(mocks.repo.assignProgramVersion).not.toHaveBeenCalled()
+})
+it('published_week_is_read_only', async () => {
+  await render('/professional/programs/p?material=original'); expect(node.querySelectorAll('.professional-workout-day')).toHaveLength(7)
+  await act(async () => node.querySelector('a[href="/professional/programs/p/workouts/monday?material=original"]').click())
+  expect(node.textContent).toContain('Original'); expect(node.textContent).not.toContain('Adicionar exercício'); expect(node.textContent).not.toContain('Publicar nova versão'); expect(useStore.getState().S.professionalProgramDrafts).toEqual({}); expect(mocks.repo.assignProgramVersion).not.toHaveBeenCalled()
+})
+it('legacy program and version query resolves exact identity without capped library or mutation', async () => {
+  mocks.repo.version.mockResolvedValue({ id: 'old', program_id: 'beyond-500', version_number: 1, weekly_plan: {}, workout_titles: { monday: 'Antigo exato' } })
+  await render('/professional/programs?program=beyond-500&version=old&material=source')
+  expect(node.textContent).toContain('Antigo exato')
+  expect(mocks.repo.program).toHaveBeenCalledWith('beyond-500')
+  expect(mocks.repo.version).toHaveBeenCalledWith('old')
+  expect(mocks.repo.programPage).not.toHaveBeenCalled()
+  expect(mocks.repo.versions).not.toHaveBeenCalled()
+  expect(useStore.getState().S.professionalProgramDrafts).toEqual({})
+})
+it('actual editor cancels back to published week and preserves exact source', async () => {
+  await render('/professional/programs/p/edit?material=source')
+  expect(node.textContent).toContain('Montar semana')
+  await click('Cancelar')
+  expect(node.querySelectorAll('.professional-workout-day')).toHaveLength(7)
+  expect(node.querySelector('a[href="/professional/programs/p/workouts/monday?material=source"]')).toBeTruthy()
+  expect(node.textContent).toContain('Versão 2')
+  expect(node.textContent).not.toContain('Publicar nova versão')
+})
+it('duplicate_selected_version_is_independent', async () => {
+  mocks.repo.version.mockResolvedValue({ id: 'old', program_id: 'p', version_number: 1, weekly_plan: {} }); mocks.repo.duplicateProgram.mockResolvedValue({ program: { id: 'copy' }, version: { id: 'copy-v' } })
+  await render('/professional/programs/p?version=old'); await act(async () => node.querySelector('[aria-label="Ações do programa"]').click()); await click('Duplicar'); await finishMenu(); expect(mocks.repo.duplicateProgram).not.toHaveBeenCalled()
+  await click('Duplicar programa'); expect(mocks.repo.duplicateProgram).toHaveBeenCalledWith({ programId: 'p', versionId: 'old', title: 'Força — cópia' }); await finishMenu(); expect(node.textContent).toContain('Cópia'); expect(mocks.repo.assignProgramVersion).not.toHaveBeenCalled()
+})
+it('archive_confirms_and_restore_does_not_reactivate', async () => {
+  await render('/professional/programs/p'); await act(async () => node.querySelector('[aria-label="Ações do programa"]').click()); await click('Arquivar'); await finishMenu()
+  expect(mocks.repo.updateProgram).not.toHaveBeenCalled(); expect(document.body.textContent).toContain('encerra as atribuições ativas')
+  mocks.repo.program.mockResolvedValue({ id: 'p', title: 'Força', professional_user_id: account, archived: true }); await click('Confirmar arquivo'); await finishMenu()
+  expect(mocks.repo.updateProgram).toHaveBeenCalledWith('p', { title: 'Força', description: '', archived: true })
+  await act(async () => node.querySelector('[aria-label="Ações do programa"]').click()); await click('Restaurar'); await finishMenu()
+  expect(mocks.repo.updateProgram).toHaveBeenLastCalledWith('p', { title: 'Força', description: '', archived: false }); expect(mocks.repo.assignProgramVersion).not.toHaveBeenCalled()
+})
+it('no account is idle and initializing auth stops after 12s', async () => {
+  mocks.auth.user = null; await render(); expect(node.textContent).toContain('Entre na sua conta'); expect(node.querySelector('.professional-skeleton')).toBeNull()
+  mocks.auth.status = 'initializing'; vi.useFakeTimers(); await act(async () => root.render(<MemoryRouter><ProfessionalPrograms /></MemoryRouter>)); await act(async () => vi.advanceTimersByTimeAsync(12000)); expect(node.textContent).toContain('Não foi possível confirmar sua sessão'); expect(mocks.repo.programPage).not.toHaveBeenCalled()
 })

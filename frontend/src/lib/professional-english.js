@@ -411,5 +411,17 @@ export default {
   "Treino não encontrado.": "Workout not found.",
   "Versão não encontrada.": "Version not found.",
   "Remover exercício?": "Remove exercise?",
-  "Confirmar remoção": "Confirm removal"
+  "Confirmar remoção": "Confirm removal",
+  "Ações do programa": "Program actions",
+  "Editar dados": "Edit details",
+  "Editar semana": "Edit week",
+  "Semana publicada": "Published week",
+  "Duplicar programa": "Duplicate program",
+  "A cópia será independente e não terá alunos atribuídos.": "The copy will be independent and will have no assigned students.",
+  "Não foi possível duplicar o programa.": "Could not duplicate the program.",
+  "O envio substitui o programa ativo do aluno, inclusive de qualquer profissional. O histórico será preservado.": "Sending replaces the student's active program, including one from any professional. History is preserved.",
+  "Revisar envio": "Review assignment",
+  "Programa enviado.": "Program sent.",
+  "Ver aluno": "View student",
+  "Enviando…": "Sending…"
 }

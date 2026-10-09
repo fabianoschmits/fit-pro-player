@@ -73,6 +73,9 @@ const InviteLanding = lazy(loadInviteLanding)
 const ProfessionalStudents = lazy(loadProfessionalStudents)
 const ProfessionalStudentPage = lazy(loadProfessionalStudentPage)
 const ProfessionalPrograms = lazy(loadProfessionalPrograms)
+const ProgramVersionsPage = lazy(() => import('./features/professional/pages/ProgramVersionsPage.jsx'))
+const ProgramComparePage = lazy(() => import('./features/professional/pages/ProgramComparePage.jsx'))
+const ProgramAssignPage = lazy(() => import('./features/professional/pages/ProgramAssignPage.jsx'))
 const ProgramWeekPage = lazy(() => import('./features/professional/pages/ProgramWeekPage.jsx'))
 const ProgramWorkoutPage = lazy(() => import('./features/professional/pages/ProgramWorkoutPage.jsx'))
 const StudentProfessionals = lazy(loadStudentProfessionals)
@@ -406,6 +409,11 @@ function Shell() {
                 <Route path="/professional/programs" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/new" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />
+                <Route path="/professional/programs/:programId/versions" element={<ProgramVersionsPage />} />
+                <Route path="/professional/programs/:programId/versions/compare" element={<ProgramComparePage />} />
+                <Route path="/professional/programs/:programId/versions/:versionId" element={<ProfessionalPrograms />} />
+                <Route path="/professional/programs/:programId/assign" element={<ProgramAssignPage />} />
+                <Route path="/professional/programs/:programId/workouts/:day" element={<ProgramWorkoutPage readOnly />} />
                 <Route path="/professional/programs/:programId/edit" element={<ProgramWeekPage />} />
                 <Route path="/professional/programs/:programId/edit/:day" element={<ProgramWorkoutPage />} />
                 <Route path="/invite/:code" element={<InviteLanding />} />

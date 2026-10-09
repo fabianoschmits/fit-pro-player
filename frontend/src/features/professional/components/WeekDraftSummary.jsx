@@ -11,7 +11,7 @@ import CompactList from './CompactList.jsx'
 import WorkoutRow from './WorkoutRow.jsx'
 import BottomActionBar from './BottomActionBar.jsx'
 
-export default function WeekDraftSummary({ api, programId, search = '', versionNumber, onPublish, onPublished, onDay, onCancel, onSaveMetadata }) {
+export default function WeekDraftSummary({ api, programId, search = '', state, versionNumber, onPublish, onPublished, onDay, onCancel, onSaveMetadata }) {
   const [sheet, setSheet] = useState(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -127,7 +127,7 @@ export default function WeekDraftSummary({ api, programId, search = '', versionN
           </button>
         </li>
         : <WorkoutRow key={day} day={day} title={metadata.workoutTitles[day]} count={metadata.weeklyPlan[day]?.length || 0}
-          to={preserveProfessionalIdentity(professionalPath({ kind: 'programWorkoutEdit', id: programId, day }), search)} />)}
+          to={preserveProfessionalIdentity(professionalPath({ kind: 'programWorkoutEdit', id: programId, day }), search)} state={state} />)}
     </CompactList>
     {(api.dirty || api.persistenceError) && <p className="muted small" role="status">
       {t(api.persistenceError ? 'Não foi possível salvar o rascunho neste dispositivo.' : 'Rascunho salvo neste dispositivo.')}

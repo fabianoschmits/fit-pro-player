@@ -14,7 +14,7 @@ import ExercisePrescriptionRow from './ExercisePrescriptionRow.jsx'
 import PrescriptionSheet from './PrescriptionSheet.jsx'
 import ExercisePickerSheet from './ExercisePickerSheet.jsx'
 
-export default function WorkoutDraftEditor({ api, day, backTo, onDone, exercises = PROFESSIONAL_EXERCISES }) {
+export default function WorkoutDraftEditor({ api, day, backTo, backState, onDone, exercises = PROFESSIONAL_EXERCISES }) {
   const [sheet, setSheet] = useState(null)
   const [closing, setClosing] = useState(false)
   const [destination, setDestination] = useState(WEEK_DAYS.find(item => item !== day))
@@ -102,7 +102,7 @@ export default function WorkoutDraftEditor({ api, day, backTo, onDone, exercises
       <Button variant="primary" disabled={entries.length >= 50} aria-disabled={locked}
         onClick={() => open({ kind: 'picker' })}>{t('Adicionar exercício')}</Button>
       {backTo
-        ? <Link className="management-button" to={backTo}>{t('Concluir treino')}</Link>
+        ? <Link className="management-button" to={backTo} state={backState}>{t('Concluir treino')}</Link>
         : <Button disabled={locked} onClick={onDone}>{t('Concluir treino')}</Button>}
     </BottomActionBar>
     <PrescriptionSheet open={sheet?.kind === 'prescription'} prescription={sheet?.prescription}

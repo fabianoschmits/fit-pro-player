@@ -6,9 +6,9 @@ import { useStore } from '../../../store/useStore.js'
 import { t } from '../../../lib/i18n.js'
 import ContextActions from './ContextActions.jsx'
 
-export default function ProfessionalLayout({ title, subtitle, backTo, action, children, className = '', nav = true }) {
+export default function ProfessionalLayout({ title, subtitle, backTo, backState, action, children, className = '', nav = true }) {
   const active = useStore(state => state.S.active)
-  const navigate = useNavigate(), { pathname } = useLocation(), shell = useRef(null)
+  const navigate = useNavigate(), { pathname, state } = useLocation(), shell = useRef(null)
   const current = destination => pathname === destination || (destination === '/professional/profile' && pathname === '/professional-profile')
   const go = destination => { if (!current(destination)) navigate(destination) }
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function ProfessionalLayout({ title, subtitle, backTo, action, ch
     return () => { viewport.removeEventListener('resize', resize); document.removeEventListener('focusout', resize) }
   }, [])
   return <div ref={shell} className={`management-layout professional-native ${className}`.trim()} data-navigation={!!nav}>
-    <AppHeader title={title} subtitle={subtitle} backTo={backTo} variant="compact" action={<>{action}<ContextActions label={t('Área profissional')} items={[
+    <AppHeader title={title} subtitle={subtitle} backTo={backTo} backState={backState ?? state} variant="compact" action={<>{action}<ContextActions label={t('Área profissional')} items={[
       { id: 'profile', label: t('Perfil'), disabled: current('/professional/profile'), onSelect: () => go('/professional/profile') },
       { id: 'exercises', label: t('Exercícios'), disabled: current('/professional/exercises'), onSelect: () => go('/professional/exercises') },
       { id: 'home', label: t('Voltar ao FPP'), disabled: current('/home'), onSelect: () => go('/home') },

@@ -7,13 +7,13 @@ import Icon from './Icon.jsx'
  * The shell owns primary navigation; this component only gives a screen a
  * predictable title, optional supporting text, and one contextual action.
  */
-export function AppHeader({ title, subtitle, backTo, action, className = '', variant }) {
+export function AppHeader({ title, subtitle, backTo, backState, action, className = '', variant }) {
   const navigate = useNavigate()
   return (
     <header className={`app-header ${variant === 'compact' ? 'app-header-compact' : ''} ${className}`.trim()}>
       <div className="app-header-main">
         {backTo && (
-          <button type="button" className="iconbtn app-header-back" aria-label={t('Back')} onClick={() => navigate(backTo)}>
+          <button type="button" className="iconbtn app-header-back" aria-label={t('Back')} onClick={() => navigate(backTo, { state: backState })}>
             <Icon name="chevronLeft" />
           </button>
         )}

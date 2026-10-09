@@ -33,8 +33,8 @@ function Week({ resource, programId }) {
     })
   }
   return <ProfessionalLayout title={api.draft.title} backTo={backTo}>
-    <WeekDraftSummary api={api} programId={programId} search={location.search}
+    <WeekDraftSummary api={api} programId={programId} search={location.search} state={location.state}
       versionNumber={resource.data.version?.version_number} onPublish={publish}
-      onPublished={() => { if (resource.isCurrent()) navigate(backTo) }} onCancel={() => navigate(backTo)} />
+      onPublished={() => { if (resource.isCurrent()) navigate(backTo, { state: location.state }) }} onCancel={() => navigate(backTo, { state: location.state })} />
   </ProfessionalLayout>
 }

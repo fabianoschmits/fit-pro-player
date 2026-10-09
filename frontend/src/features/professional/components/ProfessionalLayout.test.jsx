@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React, { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter, useNavigate } from 'react-router-dom'
+import { MemoryRouter, Router, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import ProfessionalLayout from './ProfessionalLayout.jsx'
 import ContextActions from './ContextActions.jsx'
@@ -53,6 +53,19 @@ it('sheet_returns_focus_and_back_once after the asynchronous popstate handoff', 
   await traversal.flush()
   expect(select).toHaveBeenCalledOnce()
   expect(trigger.getAttribute('aria-disabled')).toBe('false')
+})
+it('runs selected action when history restores an equal location with cloned return state', async () => {
+  const select = vi.fn(), traversal = pendingBack()
+  const location = { pathname: '/professional/programs/p', search: '?version=old', hash: '', key: 'same-entry', state: { programsReturn: '/professional/programs?q=Força' } }
+  const navigator = { createHref: to => to, push: vi.fn(), replace: vi.fn(), go: vi.fn() }
+  const flow = value => <Router location={value} navigator={navigator}><ContextActions label="Ações" items={[{ id: 'archive', label: 'Arquivar', onSelect: select }]} /></Router>
+  await act(async () => root.render(flow(location)))
+  await act(async () => container.querySelector('button').click())
+  await act(async () => document.querySelector('.professional-context-items button').click())
+  await act(async () => root.render(flow(structuredClone(location))))
+  expect(select).not.toHaveBeenCalled()
+  await traversal.flush()
+  expect(select).toHaveBeenCalledOnce()
 })
 it('action to confirmation waits for popstate and keeps the next Dialog open', async () => {
   const traversal = pendingBack()

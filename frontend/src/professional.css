@@ -1078,3 +1078,18 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 @media(max-width:899px){.dialog-layer:has(.professional-editor-sheet){align-items:end;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}.professional-editor-sheet{max-height:calc(100dvh - 24px - env(safe-area-inset-bottom,0px));padding:16px}.professional-editor-sheet .professional-picker-filters select{font-size:16px}}
 
 .professional-editor-sheet select,.professional-native .professional-day-tools select{border:1px solid var(--sep);border-radius:8px;padding:8px;color:var(--label);background:var(--surface-2)}
+/* Program library, immutable reads and assignment review. */
+.professional-native :is(.professional-program-form,.professional-published-week){display:grid;gap:12px;min-width:0}
+.professional-native :is(.professional-program-description,.professional-program-objective){margin:0;overflow-wrap:anywhere;white-space:pre-wrap;max-width:70ch;font-size:14px;line-height:1.5}
+.professional-native .professional-student-choice{border:0;background:transparent;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.professional-native .professional-student-choice[aria-pressed="true"]{background:var(--acc-soft);border-radius:8px;padding-left:8px;color:var(--acc)}
+.professional-native .professional-program-comparison{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;min-width:0}
+.professional-native .professional-program-comparison>section{min-width:0;display:grid;gap:8px;align-content:start}
+.professional-native .professional-program-comparison label{display:grid;gap:4px;font-size:13px}
+.professional-native .professional-program-comparison select{min-height:44px;background:var(--surface);color:var(--label);border:1px solid var(--sep);border-radius:8px;padding:8px}
+.professional-native .professional-program-comparison :is(h2,h3,h4){font-size:14px;margin:8px 0}
+.professional-native .professional-prescription-row :is(strong,span,p){overflow-wrap:anywhere;max-width:100%}
+.professional-native .professional-prescription-row>strong{font-size:14px;flex-basis:100%}
+.professional-native .professional-prescription-row>span{font-size:12px}
+.professional-native .professional-prescription-row>p{flex-basis:100%;font-size:13px;margin:4px 0}
+@media(min-width:900px){.professional-native .professional-program-comparison{grid-template-columns:repeat(2,minmax(0,1fr))}}

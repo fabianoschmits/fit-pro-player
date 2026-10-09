@@ -1331,5 +1331,17 @@ export default {
   "Treino não encontrado.": "Treino não encontrado.",
   "Versão não encontrada.": "Versão não encontrada.",
   "Remover exercício?": "Remover exercício?",
-  "Confirmar remoção": "Confirmar remoção"
+  "Confirmar remoção": "Confirmar remoção",
+  "Ações do programa": "Ações do programa",
+  "Editar dados": "Editar dados",
+  "Editar semana": "Editar semana",
+  "Semana publicada": "Semana publicada",
+  "Duplicar programa": "Duplicar programa",
+  "A cópia será independente e não terá alunos atribuídos.": "A cópia será independente e não terá alunos atribuídos.",
+  "Não foi possível duplicar o programa.": "Não foi possível duplicar o programa.",
+  "O envio substitui o programa ativo do aluno, inclusive de qualquer profissional. O histórico será preservado.": "O envio substitui o programa ativo do aluno, inclusive de qualquer profissional. O histórico será preservado.",
+  "Revisar envio": "Revisar envio",
+  "Programa enviado.": "Programa enviado.",
+  "Ver aluno": "Ver aluno",
+  "Enviando…": "Enviando…"
 }
