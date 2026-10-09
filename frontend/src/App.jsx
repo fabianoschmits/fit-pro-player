@@ -83,6 +83,7 @@ const StudentAssignPage = lazy(() => import('./features/professional/pages/Stude
 const StudentHistoryPage = lazy(() => import('./features/professional/pages/StudentHistoryPage.jsx'))
 const StudentExecutionPage = lazy(() => import('./features/professional/pages/StudentExecutionPage.jsx'))
 const StudentProgressPage = lazy(() => import('./features/professional/pages/StudentProgressPage.jsx'))
+const ProfessionalExercisesPage = lazy(() => import('./features/professional/pages/ProfessionalExercisesPage.jsx'))
 const StudentProfessionals = lazy(loadStudentProfessionals)
 const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ default: module.StudentConnect })))
 const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
@@ -416,6 +417,7 @@ function Shell() {
                 <Route path="/professional/students/:studentId/history" element={<StudentHistoryPage />} />
                 <Route path="/professional/students/:studentId/history/:executionId" element={<StudentExecutionPage />} />
                 <Route path="/professional/students/:studentId/progress" element={<StudentProgressPage />} />
+                <Route path="/professional/exercises" element={<ProfessionalExercisesPage />} />
                 <Route path="/professional/programs" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/new" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />

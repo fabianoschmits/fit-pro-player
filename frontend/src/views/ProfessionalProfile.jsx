@@ -8,6 +8,7 @@ import { Button } from '../components/ui.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementAvatar, ManagementPanel, ManagementStatus } from '../components/ManagementUI.jsx'
 import ProfessionalProfileForm from '../components/ProfessionalProfileForm.jsx'
+import Skeleton from '../features/professional/components/Skeleton.jsx'
 
 const EMPTY = { professionalName: '', bio: '', specialties: [], cityRegion: '', registrationType: '', registrationNumber: '', verificationStatus: 'unverified' }
 
@@ -70,7 +71,7 @@ function ProfileWorkspace({ auth }) {
   }
 
   if (!authenticated) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p>{t('Entre em uma conta para acessar o perfil profissional.')}</p></ManagementPanel></ManagementLayout>
-  if (busy) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><p role="status">{t('Carregando…')}</p></ManagementLayout>
+  if (busy) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><Skeleton variant="detail" label={t('Carregando…')} /></ManagementLayout>
   if (loadError) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p role="alert" className="management-error">{t('Não foi possível carregar o perfil profissional.')}</p><Button onClick={() => setAttempt(value => value + 1)}>{t('Tentar novamente')}</Button></ManagementPanel></ManagementLayout>
 
   if (!capability || editing) return <ManagementLayout

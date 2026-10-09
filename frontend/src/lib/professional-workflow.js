@@ -113,7 +113,7 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   }
   const relationships = userId => read('professional_student_relationships', q => q.select('*').or(`professional_user_id.eq.${userId},student_user_id.eq.${userId}`).order('created_at', { ascending: false }).limit(500))
   const professionalRole = userId => read('user_roles', q => q.select('role').eq('user_id', userId)).then(rows => rows.some(row => row.role === 'professional'))
-  const invites = () => read('professional_invites', q => q.select('id,kind,code,status,created_at,accepted_at').order('created_at', { ascending: false }).limit(500))
+  const invites = () => read('professional_invites', q => q.select('id,kind,code,status,created_at,expires_at,accepted_at,accepted_by').order('created_at', { ascending: false }).limit(500))
   const createInvite = kind => rpc('create_professional_invite', { p_kind: kind || 'code' })
   const previewInvite = code => rpc('preview_professional_invite', { p_code: code })
   const acceptInvite = code => rpc('accept_professional_invite', { p_code: code })
