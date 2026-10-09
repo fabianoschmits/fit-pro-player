@@ -433,6 +433,10 @@ function Shell() {
                 <Route path="/student/professionals" element={<StudentProfessionals />} />
                 <Route path="/student/professionals/add" element={<StudentProfessionals />} />
                 <Route path="/student/professionals/materials" element={<StudentProfessionalMaterials />} />
+                <Route path="/student/professionals/:professionalId/training" element={<StudentProfessionalDetail />} />
+                <Route path="/student/professionals/:professionalId/history" element={<StudentProfessionalDetail />} />
+                <Route path="/student/professionals/:professionalId/history/:executionId" element={<StudentProfessionalDetail />} />
+                <Route path="/student/professionals/:professionalId/relationship" element={<StudentProfessionalDetail />} />
                 <Route path="/student/professionals/:professionalId" element={<StudentProfessionalDetail />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />

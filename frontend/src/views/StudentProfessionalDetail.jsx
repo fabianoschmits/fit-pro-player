@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
@@ -13,6 +13,7 @@ import useStudentManagementRequest from '../components/useStudentManagementReque
 import { studentVerificationLabel } from '../components/StudentProfessionalVerification.jsx'
 import { clearAssignedProgramFromState } from '../lib/assigned-program.js'
 import { useStore } from '../store/useStore.js'
+import Skeleton from '../features/professional/components/Skeleton.jsx'
 
 const SECTIONS = [['summary', 'Apresentação'], ['training', 'Treino'], ['history', 'Histórico'], ['relationship', 'Vínculo']]
 export default function StudentProfessionalDetail() {
@@ -21,7 +22,7 @@ export default function StudentProfessionalDetail() {
 }
 function DetailWorkspace({ professionalId }) {
   const auth = useAuth(); const callerId = auth.user?.id
-  const navigate = useNavigate(); const [params] = useSearchParams()
+  const navigate = useNavigate(); const location = useLocation(); const [params] = useSearchParams()
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const alive = useRef(false); const mutationPending = useRef(false); const currentQuery = useRef(params.toString()); currentQuery.current = params.toString()
   const [confirm, setConfirm] = useState(false); const [saving, setSaving] = useState(false); const [actionError, setActionError] = useState('')
@@ -31,7 +32,8 @@ function DetailWorkspace({ professionalId }) {
     return detail?.professional?.professionalId === professionalId ? detail : null
   }, [repo, professionalId])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar este profissional.')
-  const section = SECTIONS.some(([value]) => value === params.get('section')) ? params.get('section') : 'summary'
+  const routeSection = location.pathname.includes('/history') ? 'history' : location.pathname.endsWith('/training') ? 'training' : location.pathname.endsWith('/relationship') ? 'relationship' : null
+  const section = routeSection || (SECTIONS.some(([value]) => value === params.get('section')) ? params.get('section') : 'summary')
   const sectionUrl = value => { const next = new URLSearchParams(params); next.set('section', value); return `?${next}` }
   const revoke = async () => {
     if (!data?.relationship?.id || mutationPending.current) return
@@ -54,7 +56,7 @@ function DetailWorkspace({ professionalId }) {
     catch { if (alive.current) setActionError(t('Não foi possível encerrar o vínculo.')) }
     finally { mutationPending.current = false; if (alive.current) setSaving(false) }
   }
-  if (busy || !data) return <ManagementLayout audience="student" title={t('Profissional')} backTo="/student/professionals">{busy ? <p role="status">{t('Carregando profissional…')}</p> : <ManagementEmpty title={error || t('Profissional não encontrado.')} action={<div className="row-actions">{error && <Button onClick={refresh}>{t('Tentar novamente')}</Button>}<Link className="management-button" to="/student/professionals">{t('Voltar para meus profissionais')}</Link></div>} />}</ManagementLayout>
+  if (busy || !data) return <ManagementLayout audience="student" title={t('Profissional')} backTo="/student/professionals">{busy ? <Skeleton variant="detail" label={t('Carregando profissional…')} /> : <ManagementEmpty title={error || t('Profissional não encontrado.')} action={<div className="row-actions">{error && <Button onClick={refresh}>{t('Tentar novamente')}</Button>}<Link className="management-button" to="/student/professionals">{t('Voltar para meus profissionais')}</Link></div>} />}</ManagementLayout>
   const person = data.professional
   const materials = data.materials || []; const materialId = params.get('material')
   const selectedMaterial = materials.find(item => item.assignmentId === materialId)

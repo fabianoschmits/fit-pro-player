@@ -14,6 +14,7 @@ import { ManagementPanel, ManagementEmpty, ManagementAvatar, ManagementStatus } 
 import StudentProgramOverview from '../components/StudentProgramOverview.jsx'
 import StudentProfessionalInvite from '../components/StudentProfessionalInvite.jsx'
 import useStudentManagementRequest from '../components/useStudentManagementRequest.js'
+import Skeleton from '../features/professional/components/Skeleton.jsx'
 
 export function StudentConnect() {
   const { search } = useLocation()
@@ -67,12 +68,12 @@ function ProfessionalsOverview() {
   }
   return <ManagementLayout audience="student" className="student-professionals-page" title={t('Meus profissionais')} subtitle={t('Pessoas que acompanham seu treino')} backTo="/more" action={<Link className="management-button management-button-primary" to="/student/professionals/add">{t('Adicionar profissional')}</Link>}>
     {error && <p role="alert" className="management-error">{error} <Button onClick={refresh}>{t('Tentar novamente')}</Button></p>}
-    {busy ? <p role="status">{t('Carregando…')}</p> : data && <>
+    {busy ? <Skeleton variant="rows" label={t('Carregando…')} /> : data && <>
       <ManagementPanel title={t('Profissionais vinculados ({0})', data.professionals.length)}>{data.professionals.length ? <div className="management-person-list">{data.professionals.map(person => <Link className="management-person-link" to={`/student/professionals/${person.professionalId}`} key={person.professionalId}>
         <ManagementAvatar name={person.professionalName} /><div><h3>{person.professionalName}</h3>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}<p>{person.activeProgramTitle || t('Sem programa ativo')}</p><small className="muted">{t('Desde {0}', professionalDate(person.linkedAt))}</small></div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus>
       </Link>)}</div> : <ManagementEmpty title={t('Você ainda não possui profissionais vinculados.')} description={t('Use o convite recebido para começar o acompanhamento.')} action={<Link className="management-button" to="/student/professionals/add">{t('Adicionar profissional')}</Link>} />}</ManagementPanel>
       <ManagementPanel title={t('Materiais recebidos')} description={t('Consulte programas e prescrições de cada profissional.')} action={<Link className="management-button" to="/student/professionals/materials">{t('Ver materiais')}</Link>} />
-      {data.overview.program ? <StudentProgramOverview overview={data.overview} onStart={start} managementCompact trainingTo={`/student/professionals/${data.active.professional_user_id}?section=training`} /> : <ManagementPanel title={t('Programa profissional')}><p className="muted">{t('Você ainda não recebeu um programa ativo.')}</p></ManagementPanel>}
+      {data.overview.program ? <StudentProgramOverview overview={data.overview} onStart={start} managementCompact trainingTo={`/student/professionals/${data.active.professional_user_id}/training`} /> : <ManagementPanel title={t('Programa profissional')}><p className="muted">{t('Você ainda não recebeu um programa ativo.')}</p></ManagementPanel>}
     </>}
   </ManagementLayout>
 }
