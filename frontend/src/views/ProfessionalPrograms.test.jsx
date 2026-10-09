@@ -7,6 +7,7 @@ import { useStore } from '../store/useStore.js'
 import ProfessionalPrograms from './ProfessionalPrograms.jsx'
 import ProgramWeekPage from '../features/professional/pages/ProgramWeekPage.jsx'
 import ProgramWorkoutPage from '../features/professional/pages/ProgramWorkoutPage.jsx'
+import ProgramVersionsPage from '../features/professional/pages/ProgramVersionsPage.jsx'
 const account = '11111111-1111-4111-8111-111111111111'
 const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: '11111111-1111-4111-8111-111111111111' } }, repo: {
   programPage: vi.fn(), program: vi.fn(), versions: vi.fn(), version: vi.fn(), createProgram: vi.fn(), updateProgramMetadata: vi.fn(), updateProgram: vi.fn(), duplicateProgram: vi.fn(), assignProgramVersion: vi.fn(), publishProgramDraft: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRe
 let root, node
 const render = async (path = '/professional/programs') => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Routes>
   <Route path="/professional/programs" element={<ProfessionalPrograms />} /><Route path="/professional/programs/new" element={<ProfessionalPrograms />} /><Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />
-  <Route path="/professional/programs/:programId/versions/:versionId" element={<ProfessionalPrograms />} />
+  <Route path="/professional/programs/:programId/versions" element={<ProgramVersionsPage />} /><Route path="/professional/programs/:programId/versions/:versionId" element={<ProfessionalPrograms />} />
   <Route path="/professional/programs/:programId/edit" element={<ProgramWeekPage />} /><Route path="/professional/programs/:programId/edit/:day" element={<ProgramWorkoutPage />} /><Route path="/professional/programs/:programId/workouts/:day" element={<ProgramWorkoutPage readOnly />} />
 </Routes></MemoryRouter>))
 const click = async label => act(async () => [...document.querySelectorAll('button,a')].find(button => button.textContent === label).click())
@@ -63,6 +64,17 @@ it('legacy program and version query resolves exact identity without capped libr
   expect(mocks.repo.programPage).not.toHaveBeenCalled()
   expect(mocks.repo.versions).not.toHaveBeenCalled()
   expect(useStore.getState().S.professionalProgramDrafts).toEqual({})
+})
+it('legacy alias back reaches the canonical library without redirecting again', async () => {
+  mocks.repo.version.mockResolvedValue({ id: 'old', program_id: 'beyond-500', version_number: 1, weekly_plan: {}, workout_titles: { monday: 'Antigo exato' } })
+  await render('/professional/programs?program=beyond-500&version=old&material=source')
+  await act(async () => node.querySelector('.app-header-back').click())
+  expect(node.textContent).toContain('Versões publicadas')
+  await act(async () => node.querySelector('.app-header-back').click())
+  expect(node.textContent).toContain('Antigo exato')
+  await act(async () => node.querySelector('.app-header-back').click())
+  expect(node.querySelector('input[type="search"]')).toBeTruthy()
+  expect(mocks.repo.programPage).toHaveBeenCalled()
 })
 it('actual editor cancels back to published week and preserves exact source', async () => {
   await render('/professional/programs/p/edit?material=source')

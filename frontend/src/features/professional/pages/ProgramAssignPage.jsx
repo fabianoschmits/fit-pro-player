@@ -54,8 +54,10 @@ function Assign({ resource }) {
         const assignedVersion = active ? await resource.repo.version(active.version_id) : null
         if (!ownsRead()) return
         if (active && (!assignedVersion || assignedVersion.id !== active.version_id)) throw new Error('missing-assigned-version')
-        store.invalidateAssignedProgramReads(token)
-        store.replaceState(active ? assignedPlanToState({ ...store.S }, assignedVersion, active) : clearAssignedProgramFromState({ ...store.S }))
+        const latestStore = useStore.getState()
+        if (!latestStore.isAssignedProgramReadCurrent(token, resource.accountId)) return
+        latestStore.invalidateAssignedProgramReads(token)
+        latestStore.replaceState(active ? assignedPlanToState({ ...latestStore.S }, assignedVersion, active) : clearAssignedProgramFromState({ ...latestStore.S }))
       }
     }, () => { setSent(true); students.retry() }, t('Não foi possível enviar esta versão.'))
   }

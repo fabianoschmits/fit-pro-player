@@ -7,7 +7,7 @@ import { useStore } from '../../../store/useStore.js'
 import ProgramAssignPage from './ProgramAssignPage.jsx'
 const account = '11111111-1111-4111-8111-111111111111'
 const auth = vi.hoisted(() => ({ user: { id: '11111111-1111-4111-8111-111111111111' }, status: 'authenticated' }))
-const repo = vi.hoisted(() => ({ program: vi.fn(), version: vi.fn(), versions: vi.fn(), studentPage: vi.fn(), assignProgramVersion: vi.fn() }))
+const repo = vi.hoisted(() => ({ program: vi.fn(), version: vi.fn(), versions: vi.fn(), studentPage: vi.fn(), assignProgramVersion: vi.fn(), assignedPrograms: vi.fn() }))
 vi.mock('../../../auth/AuthProvider.jsx', () => ({ useAuth: () => auth }))
 vi.mock('../../../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => repo }))
 let root, node
@@ -48,4 +48,13 @@ it('send timeout permits retry of the exact version and ignores late success', a
   await click('Enviar para aluno')
   expect(repo.assignProgramVersion).toHaveBeenLastCalledWith({ programId: 'p', versionId: 'old', studentUserId: 'first' })
   expect(node.textContent).toContain('Programa enviado')
+})
+it('self assignment preserves concurrent personal state updates', async () => {
+  let finishAssignments
+  repo.studentPage.mockResolvedValue({ items: [{ studentUserId: account, displayName: 'Eu' }], total: 1, offset: 0, hasMore: false })
+  repo.assignedPrograms.mockImplementation(() => new Promise(resolve => { finishAssignments = resolve }))
+  await render(); await click('EuSem programa ativo'); await click('Revisar envio'); await click('Enviar para aluno')
+  await act(async () => useStore.getState().update(state => state.pendingProfessionalEvents.push({ id: 'concurrent', accountId: account, type: 'test' })))
+  await act(async () => finishAssignments([{ id: 'assignment', status: 'active', student_user_id: account, program_id: 'p', version_id: 'old' }]))
+  expect(useStore.getState().S.pendingProfessionalEvents).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'concurrent' })]))
 })
