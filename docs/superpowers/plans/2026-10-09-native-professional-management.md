@@ -18,6 +18,7 @@
 - Fonte FPP; header 18–20px, seção 14–16px, nomes 13–14px, metadados 11–12px. Campos mobile 16px.
 - Espaçamento 4/8/12/16/24; radius 8–12; alvos pelo menos 44px; safe-area e espaço reservado para barras.
 - Pessoas usam avatares existentes autorizados ou iniciais. Exercícios usam miniaturas/animações reais.
+- Pedido adicional aprovado: skeletons com dimensões próximas do conteúdo real em dados dinâmicos do feature; estado busy acessível, sem números fictícios, shimmer desligado em reduced-motion, dados atuais mantidos em refresh de fundo.
 - Preservar 7 dias, limite de 50 exercícios/dia, todos os campos de prescrição e seus limites já validados.
 - Publicação da semana separada da atribuição; versões históricas imutáveis; uma atribuição ativa global por aluno.
 - Novos limites: objetivo opcional 160 caracteres; nome de treino 80; observação privada 2000. Não reduzir limites existentes.
