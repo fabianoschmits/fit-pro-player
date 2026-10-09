@@ -21,7 +21,7 @@ export function assignedPlanToState(state, version, assignment) {
     if (day == null || !Array.isArray(entries) || !entries.length) return
     const routine = {
       id: `assigned:${version.id}:${day}:${index}`,
-      name: String(rawPlan[dayKey]?.title || rawPlan[dayKey]?.name || `Treino recebido · ${dayKey}`),
+      name: String(version.workout_titles?.[dayKey] || '').trim() || String(rawPlan[dayKey]?.title || rawPlan[dayKey]?.name || '').trim() || `Treino recebido · ${dayKey}`,
       emoji: 'dumbbell',
       assigned: true,
       assignedDayKey: dayKey,

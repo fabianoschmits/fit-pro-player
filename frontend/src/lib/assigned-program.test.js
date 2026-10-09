@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { assignedPlanToState, clearAssignedProgramFromState, hasAssignedProgram } from './assigned-program.js'
 
 describe('assigned program priority', () => {
+  it('assigned_title_falls_back_for_legacy and preserves old history', () => {
+    const history = Object.freeze([{ id: 'past', name: 'Nome histórico' }])
+    const weeklyPlan = Object.freeze({ monday: Object.freeze([{ exerciseId: 'x', sets: 2, reps: 8 }]), friday: Object.freeze([{ exerciseId: 'y', sets: 3, reps: 10 }]) })
+    const next = assignedPlanToState({ routines: [], workouts: history }, { id: 'v', weekly_plan: weeklyPlan, workout_titles: { monday: ' Superior ', friday: ' ' } }, { id: 'a' })
+    expect(next.routines.map(routine => routine.name)).toEqual(['Superior', 'Treino recebido · friday'])
+    expect(next.workouts).toBe(history)
+    expect(weeklyPlan.monday).toEqual([{ exerciseId: 'x', sets: 2, reps: 8 }])
+    const legacy = assignedPlanToState({ routines: [] }, { id: 'old', weekly_plan: weeklyPlan }, { id: 'a' })
+    expect(legacy.routines[0].name).toBe('Treino recebido · monday')
+  })
   it('removes revoked routines and calendar references while preserving personal history', () => {
     const state = { assignedProgram: { assignmentId: 'a' }, routines: [{ id: 'received', assigned: true }, { id: 'personal' }], week: { 1: 'received', 2: 'personal' }, dayPlan: { '2026-10-02': 'received' }, workouts: [{ id: 'old' }] }
     expect(clearAssignedProgramFromState(state)).toMatchObject({ assignedProgram: null, routines: [{ id: 'personal' }], week: { 2: 'personal' }, dayPlan: {}, workouts: [{ id: 'old' }] })

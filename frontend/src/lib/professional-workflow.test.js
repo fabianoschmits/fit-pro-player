@@ -2,6 +2,45 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProfessionalWorkflowRepository } from './professional-workflow.js'
 
 describe('professional management repository', () => {
+  it('updates objective without changing the archived state through the metadata boundary', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { id: 'p', professional_user_id: 'owner', title: 'Força', description: null, objective: 'Hipertrofia', archived: true, updated_at: '2026-10-09' }, error: null })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    expect(await repo.updateProgramMetadata({ programId: 'p', title: ' Força ', description: ' ', objective: ' Hipertrofia ' })).toMatchObject({ id: 'p', professionalUserId: 'owner', title: 'Força', description: null, objective: 'Hipertrofia', archived: true, updatedAt: '2026-10-09' })
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('update_program_metadata', { p_program_id: 'p', p_title: 'Força', p_description: null, p_objective: 'Hipertrofia' })
+  })
+
+  it('publishes a named draft without rewriting prescription arrays', async () => {
+    const weeklyPlan = Object.freeze({ monday: Object.freeze([{ exerciseId: 'x', sets: 3, reps: 8, rest: 60, notes: 'Controlado' }]) })
+    const rpc = vi.fn().mockResolvedValue({ data: { id: 'v', program_id: 'p', version_number: 2, weekly_plan: weeklyPlan, workout_titles: { monday: 'Força A' }, published_at: '2026-10-09' }, error: null })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    expect(await repo.publishProgramDraft({ programId: 'p', weeklyPlan, workoutTitles: { monday: 'Força A' } })).toMatchObject({ id: 'v', programId: 'p', versionNumber: 2, weeklyPlan, workoutTitles: { monday: 'Força A' }, publishedAt: '2026-10-09' })
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('publish_program_version_with_titles', { p_program_id: 'p', p_weekly_plan: weeklyPlan, p_workout_titles: { monday: 'Força A' } })
+  })
+
+  it('duplicates an exact version and accepts sources without a published version', async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({ data: { program: { id: 'copy', title: 'Cópia', archived: false, objective: 'Força' }, version: { id: 'copy-v', program_id: 'copy', version_number: 1, weekly_plan: { monday: [] }, workout_titles: { monday: 'A' } } }, error: null }).mockResolvedValueOnce({ data: { program: { id: 'empty', title: 'Vazio' }, version: null }, error: null })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    expect(await repo.duplicateProgram({ programId: 'p', versionId: 'v', title: ' Cópia ' })).toMatchObject({ program: { id: 'copy', title: 'Cópia', archived: false, objective: 'Força' }, version: { id: 'copy-v', programId: 'copy', versionNumber: 1, workoutTitles: { monday: 'A' } } })
+    expect(await repo.duplicateProgram({ programId: 'p2', title: 'Vazio' })).toMatchObject({ program: { id: 'empty' }, version: null })
+    expect(rpc).toHaveBeenNthCalledWith(1, 'duplicate_professional_program', { p_program_id: 'p', p_version_id: 'v', p_title: 'Cópia' })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'duplicate_professional_program', { p_program_id: 'p2', p_version_id: null, p_title: 'Vazio' })
+  })
+
+  it('normalizes private notes and propagates denied access instead of an empty success', async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({ data: { body: '', updated_at: null }, error: null }).mockResolvedValueOnce({ data: { body: 'Preservar espaço\n', updated_at: '2026-10-09' }, error: null }).mockResolvedValue({ data: null, error: { code: '42501' } })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    expect(await repo.studentNote('student')).toEqual({ body: '', updatedAt: null })
+    expect(await repo.saveStudentNote({ studentId: 'student', body: 'Preservar espaço\n' })).toEqual({ body: 'Preservar espaço\n', updatedAt: '2026-10-09' })
+    expect(rpc).toHaveBeenNthCalledWith(1, 'professional_student_note', { p_student_id: 'student' })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'save_professional_student_note', { p_student_id: 'student', p_body: 'Preservar espaço\n' })
+    await expect(repo.studentNote('student')).rejects.toEqual({ code: '42501' })
+    await expect(repo.saveStudentNote({ studentId: 'student', body: 'Denied' })).rejects.toEqual({ code: '42501' })
+  })
+
+  it('propagates versioned names and objective into received material DTOs', async () => {
+    const repo = createProfessionalWorkflowRepository({ client: { rpc: async () => ({ data: [{ materials: [{ assignment_id: 'a', program_id: 'p', version_id: 'v', title: 'Base', objective: 'Força', workout_titles: { monday: 'Superior' }, weekly_plan: { monday: [{ exerciseId: 'x', sets: 3, reps: 8 }] } }] }] }) } })
+    expect((await repo.studentProfessionalDetail('pro')).materials[0]).toMatchObject({ objective: 'Força', workoutTitles: { monday: 'Superior' }, weeklyPlan: { monday: [{ exerciseId: 'x', sets: 3, reps: 8 }] } })
+  })
   it('creates and updates program metadata through owner-scoped RPCs', async () => {
     const calls = []; const repo = createProfessionalWorkflowRepository({ client: { rpc: async (name, args) => { calls.push([name, args]); return { data: { id: 'p' } } } } })
     await repo.createProgram('owner', ' Força ', ' Base ')
@@ -37,6 +76,11 @@ describe('professional management repository', () => {
     const repository = createProfessionalWorkflowRepository({ client: { rpc } })
     expect(await repository.studentOverview()).toMatchObject({ program: { title: 'Força' } })
     expect(rpc).toHaveBeenCalledWith('student_program_overview', {})
+  })
+
+  it('normalizes additive overview title metadata while retaining its existing fields', async () => {
+    const repository = createProfessionalWorkflowRepository({ client: { rpc: async () => ({ data: { program: { title: 'Base', objective: 'Força' }, version: { id: 'v', versionNumber: 2, weeklyPlan: { monday: [] }, workout_titles: { monday: 'A' } } } }) } })
+    expect(await repository.studentOverview()).toEqual({ program: { title: 'Base', objective: 'Força' }, version: { id: 'v', versionNumber: 2, weeklyPlan: { monday: [] }, workoutTitles: { monday: 'A' } } })
   })
 
   it('revokes a pending invite through its owner-scoped RPC', async () => {
@@ -80,7 +124,7 @@ describe('professional management repository', () => {
     expect(await repository.studentProfessionalDetail('pro-1')).toEqual({
       professional: { professionalId: 'pro-1', relationshipId: 'link-1', professionalName: 'Ana', bio: null, specialties: [], cityRegion: null, registrationType: null, registrationNumber: null, verificationStatus: 'unverified', linkedAt: '2026-10-01', activeProgramTitle: null },
       relationship: { id: 'link-1', status: 'active', linkedAt: '2026-10-01' },
-      materials: [{ assignmentId: 'a-1', programId: 'p-1', versionId: 'v-1', title: 'Força', description: 'Base', status: 'revoked', versionNumber: 2, publishedAt: '2026-09-30', assignedAt: '2026-10-02', weeklyPlan: { monday: [] } }],
+      materials: [{ assignmentId: 'a-1', programId: 'p-1', versionId: 'v-1', title: 'Força', description: 'Base', objective: null, status: 'revoked', versionNumber: 2, publishedAt: '2026-09-30', assignedAt: '2026-10-02', weeklyPlan: { monday: [] }, workoutTitles: {} }],
       executions: [{ id: 'e-1', assignment_id: 'a-1', version_id: 'v-1', student_user_id: 's-1', day_key: 'monday', status: 'completed', payload: { sets: 3 }, started_at: '2026-10-02', completed_at: '2026-10-02', prescription_snapshot: {}, program_title: 'Força', version_number: 2 }],
     })
     expect(rpc).toHaveBeenCalledExactlyOnceWith('student_professional_detail', { p_professional_user_id: 'pro-1' })

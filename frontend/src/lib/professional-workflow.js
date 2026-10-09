@@ -1,3 +1,21 @@
+/** @typedef {{title:string,description:string,objective:string,weeklyPlan:Object,workoutTitles:Object<string,string>}} WeekDraft */
+/** @typedef {{id:string,professionalUserId:string,title:string,description:?string,objective:?string,archived:boolean,createdAt:?string,updatedAt:?string}} ProgramMetadata */
+/** @typedef {{id:string,programId:string,versionNumber:number,weeklyPlan:Object,workoutTitles:Object<string,string>,publishedAt:?string,createdAt:?string}} ProgramVersion */
+/** @typedef {{body:string,updatedAt:?string}} StudentNote */
+const toProgram = value => value ? ({
+  id: value.id, professionalUserId: value.professional_user_id,
+  title: value.title, description: value.description || null, objective: value.objective || null,
+  archived: Boolean(value.archived), createdAt: value.created_at || null, updatedAt: value.updated_at || null,
+}) : null
+
+const toVersion = value => value ? ({
+  id: value.id, programId: value.program_id, versionNumber: value.version_number,
+  weeklyPlan: value.weekly_plan || {}, workoutTitles: value.workout_titles || {},
+  publishedAt: value.published_at || null, createdAt: value.created_at || null,
+}) : null
+
+const toNote = value => ({ body: value?.body || '', updatedAt: value?.updated_at || null })
+
 const toProfile = value => value ? ({
   userId: value.professional_user_id,
   professionalName: value.professional_name,
@@ -56,11 +74,13 @@ const toStudentProfessionalDetail = value => value ? ({
     versionId: material.version_id,
     title: material.title,
     description: material.description || null,
+    objective: material.objective || null,
     status: material.status,
     versionNumber: material.version_number,
     publishedAt: material.published_at,
     assignedAt: material.assigned_at,
     weeklyPlan: material.weekly_plan || {},
+    workoutTitles: material.workout_titles || {},
   })),
   executions: value.executions || [],
 }) : null
@@ -92,6 +112,11 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const createProgram = (_userId, title, description = '') => rpc('create_program', { p_title: title.trim(), p_description: description.trim() || null })
   const updateProgram = (programId, { title, description = '', archived = false }) => rpc('update_program', { p_program_id: programId, p_title: title.trim(), p_description: description.trim() || null, p_archived: archived })
   const publishVersion = (programId, weeklyPlan) => rpc('publish_program_version', { p_program_id: programId, p_weekly_plan: weeklyPlan })
+  const updateProgramMetadata = ({ programId, title, description = '', objective = '' }) => rpc('update_program_metadata', { p_program_id: programId, p_title: title.trim(), p_description: description.trim() || null, p_objective: objective.trim() || null }).then(toProgram)
+  const publishProgramDraft = ({ programId, weeklyPlan, workoutTitles = {} }) => rpc('publish_program_version_with_titles', { p_program_id: programId, p_weekly_plan: weeklyPlan, p_workout_titles: workoutTitles }).then(toVersion)
+  const duplicateProgram = ({ programId, versionId = null, title }) => rpc('duplicate_professional_program', { p_program_id: programId, p_version_id: versionId, p_title: title.trim() }).then(value => ({ program: toProgram(value?.program), version: toVersion(value?.version) }))
+  const studentNote = studentId => rpc('professional_student_note', { p_student_id: studentId }).then(toNote)
+  const saveStudentNote = ({ studentId, body }) => rpc('save_professional_student_note', { p_student_id: studentId, p_body: body }).then(toNote)
   const assignments = () => read('program_assignments', q => q.select('*').order('created_at', { ascending: false }).limit(500))
   const assignedPrograms = studentId => read('program_assignments', q => q.select('*').eq('student_user_id', studentId).eq('status', 'active').order('created_at', { ascending: false }).limit(500))
   const assign = ({ programId, versionId, studentUserId }) => rpc('assign_program_version', { p_program_id: programId, p_version_id: versionId, p_student_user_id: studentUserId })
@@ -101,8 +126,12 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const clientDetail = studentUserId => rpc('professional_client_detail', { p_student_user_id: studentUserId }).then(rows => toClientDetail(rows?.[0]))
   const publishProgramVersion = (programId, weeklyPlan) => rpc('publish_program_version', { p_program_id: programId, p_weekly_plan: weeklyPlan })
   const assignProgramVersion = ({ programId, versionId, studentUserId }) => rpc('assign_program_version', { p_program_id: programId, p_version_id: versionId, p_student_user_id: studentUserId })
-  const studentOverview = () => rpc('student_program_overview', {})
+  const studentOverview = () => rpc('student_program_overview', {}).then(value => {
+    if (!value?.version) return value
+    const { workout_titles, ...version } = value.version
+    return { ...value, version: { ...version, workoutTitles: workout_titles || {} } }
+  })
   const studentProfessionals = () => rpc('student_professional_summaries', {}).then(rows => (rows || []).map(toStudentProfessional))
   const studentProfessionalDetail = professionalId => rpc('student_professional_detail', { p_professional_user_id: professionalId }).then(rows => toStudentProfessionalDetail(rows?.[0]))
-  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }
