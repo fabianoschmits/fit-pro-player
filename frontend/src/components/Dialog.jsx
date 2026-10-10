@@ -5,7 +5,7 @@ import { t } from '../lib/i18n.js'
 
 // Optional onAfterClose runs after unmount cleanup and, when owned, the pending
 // sentinel traversal. Consumers must cancel deferred work when their context ends.
-export default function Dialog({ title, onClose, onAfterClose, children, className = '', locked = false }) {
+export default function Dialog({ open = true, title, onClose, onAfterClose, children, className = '', locked = false }) {
   const ref = useRef(null), titleId = useId(), closeRef = useRef(onClose), lockedRef = useRef(locked), afterCloseRef = useRef(onAfterClose), lifecycle = useRef(0)
   closeRef.current = onClose
   lockedRef.current = locked
@@ -37,6 +37,7 @@ export default function Dialog({ title, onClose, onAfterClose, children, classNa
       } else if (afterClose) complete()
     }
   }, [titleId])
+  if (!open) return null
   return createPortal(<div className="dialog-layer">
     <div className="dialog-backdrop" onClick={() => { if (!locked) onClose?.() }} />
     <section ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`dialog-surface ${className}`}>

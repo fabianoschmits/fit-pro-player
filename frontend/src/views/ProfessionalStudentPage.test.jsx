@@ -92,4 +92,13 @@ describe('professional student detail', () => {
     expect(container.textContent).toContain('Histórico')
     expect(container.textContent).toContain('Vínculo')
   })
+
+  it('keeps professional notes closed until the user opens them', async () => {
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1']}><Routes><Route path="/professional/students/:studentId/*" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Observações').click())
+    expect(document.querySelector('[role="dialog"] h2').textContent).toBe('Observações do profissional')
+    expect([...document.querySelectorAll('[role="dialog"] button')].some(button => button.textContent === 'Cancelar')).toBe(true)
+  })
 })
