@@ -13,6 +13,12 @@ const KEYS = [
   'Your settings changed. Reopen personal data and try again.',
 ]
 
+const EXTRA = {
+  'Início': ['Home', 'Inicio', 'Startseite', 'Accueil', 'होम', 'Home', '홈', 'Strona główna', 'Главная', 'Ana sayfa', '首页'],
+  'Mais': ['More', 'Más', 'Mehr', 'Plus', 'अधिक', 'Altro', '더 보기', 'Więcej', 'Ещё', 'Daha fazla', '更多'],
+  'Opções do dia': ['Day options', 'Opciones del día', 'Tagesoptionen', 'Options du jour', 'विकल्प', 'Opzioni del giorno', '일일 옵션', 'Opcje dnia', 'Параметры дня', 'Gün seçenekleri', '日选项'],
+}
+
 const TRANSLATIONS = {
   pt: [
     'Seus treinos, áreas de trabalho e preferências', 'Conta e configurações',
@@ -160,5 +166,8 @@ const TRANSLATIONS = {
 }
 
 export function settingsLocale(language) {
-  return Object.fromEntries(KEYS.map((key, index) => [key, TRANSLATIONS[language][index]]))
+  const base = Object.fromEntries(KEYS.map((key, index) => [key, TRANSLATIONS[language][index]]))
+  const languageIndex = ['en', 'es', 'de', 'fr', 'hi', 'it', 'ko', 'pl', 'ru', 'tr', 'zh'].indexOf(language)
+  for (const [key, values] of Object.entries(EXTRA)) base[key] = language === 'pt' ? ({ 'Início': 'Início', 'Mais': 'Mais', 'Opções do dia': 'Opções do dia' })[key] : values[languageIndex < 0 ? 0 : languageIndex]
+  return base
 }

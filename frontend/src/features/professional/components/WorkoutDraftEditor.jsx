@@ -13,6 +13,7 @@ import BottomActionBar from './BottomActionBar.jsx'
 import ExercisePrescriptionRow from './ExercisePrescriptionRow.jsx'
 import PrescriptionSheet from './PrescriptionSheet.jsx'
 import ExercisePickerSheet from './ExercisePickerSheet.jsx'
+import ContextActions from './ContextActions.jsx'
 
 export default function WorkoutDraftEditor({ api, day, backTo, backState, onDone, exercises = PROFESSIONAL_EXERCISES }) {
   const [sheet, setSheet] = useState(null)
@@ -58,12 +59,10 @@ export default function WorkoutDraftEditor({ api, day, backTo, backState, onDone
             <option key={item} value={item}>{t(DAY_LABELS[item])}</option>)}
         </select>
       </label>
-      <Button disabled={!entries.length} aria-disabled={locked} onClick={() => { if (!locked) copy() }}>
-        {t('Copiar dia')}
-      </Button>
-      <Button disabled={locked} onClick={() => { api.swapDays(day, destination); setExpanded(null) }}>
-        {t('Trocar dias')}
-      </Button>
+      <ContextActions label={t('Opções do dia')} items={[
+        { id: 'copy', label: t('Copiar dia'), disabled: locked || !entries.length, onSelect: copy },
+        { id: 'swap', label: t('Trocar dias'), disabled: locked, onSelect: () => { api.swapDays(day, destination); setExpanded(null) } },
+      ]} />
     </div>
     <CompactList empty={<EmptyState title={t('Nenhum exercício neste dia.')} />}>
       {entries.map((entry, index) => {

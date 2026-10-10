@@ -55,3 +55,8 @@ it('removal confirmation cannot mutate another account after scope switches', as
   await confirm()
   expect(useStore.getState().S.professionalProgramDrafts).toEqual({})
 })
+it('keeps day actions inside a contextual menu instead of the editor surface', async () => {
+  expect(node.querySelector('button[aria-label="Opções do dia"]')).toBeTruthy()
+  expect([...node.querySelectorAll('button')].some(button => button.textContent === 'Copiar dia')).toBe(false)
+  expect([...node.querySelectorAll('button')].some(button => button.textContent === 'Trocar dias')).toBe(false)
+})

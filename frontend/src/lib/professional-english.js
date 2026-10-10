@@ -1,6 +1,9 @@
 // English source equivalents for the Portuguese-authored professional workspace.
 import { professionalPhotoEnglish } from './professional-photo-locales.js'
 export default {
+  "Início": "Home",
+  "Mais": "More",
+  "Opções do dia": "Day options",
   ...professionalPhotoEnglish,
   "Aceito": "Accepted",
   "Cancelado": "Cancelled",
