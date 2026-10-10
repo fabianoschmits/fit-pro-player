@@ -15,6 +15,7 @@ const material = { assignment_id:ASSIGNMENT, program_id:PROGRAM, version_id:VERS
 const rpc = {
   professional_profiles:{ user_id:USER, professional_name:name, bio:professionals[0].bio, specialties:professionals[0].specialties, city_region:professionals[0].city_region, verification_status:'verified' },
   professional_client_summaries:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', program_id:PROGRAM, program_title:program.title }],
+  professional_students_page:args => ({ items:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', current_program:{ id:PROGRAM, title:program.title, version_number:2 } }], total:1, offset:args.p_offset, has_more:false }),
   professional_client_detail:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', assignments:[], executions:[] }],
   professional_student_relationships:[{ id:'relationship', professional_user_id:USER, student_user_id:STUDENT, status:'active', created_at:'2026-10-01T12:00:00Z' }],
   professional_invites:[{ id:'invite', code:'A1B2C3D4E5', status:'pending', created_at:'2026-10-04T12:00:00Z' }],
@@ -37,7 +38,7 @@ test('reserved routes, aliases and handoff queries resolve through the applicati
   }
   await page.evaluate(() => sessionStorage.removeItem('fpp-pending-invite'))
   await page.goto(`/#/professional/students?program=${PROGRAM}&version=${VERSION}`)
-  await page.locator('.management-student-record').first().click()
+  await page.getByRole('link', {name:new RegExp(name.split(' — ')[0])}).first().click()
   await expect(page).toHaveURL(new RegExp(`program=${PROGRAM}&version=${VERSION}`))
   await expect(page.locator('.management-section-nav [aria-current="page"]')).toHaveText('Treino')
   await page.reload(); await expect(page.locator('.management-section-nav [aria-current="page"]')).toHaveText('Treino')
@@ -80,8 +81,8 @@ test('program creation opens its addressable editor and returns to its detail', 
   await page.getByRole('textbox',{name:'Descrição do programa',exact:true}).fill('Progressão individual')
   await page.getByRole('button',{name:'Criar programa',exact:true}).click()
   await expect(page).toHaveURL(new RegExp(`professional/programs/${PROGRAM}/edit`))
-  await expect(page.locator('.professional-program-editor')).toBeVisible()
-  await page.reload(); await expect(page.locator('.professional-program-editor')).toBeVisible()
+  await expect(page.locator('.professional-week-editor')).toBeVisible()
+  await page.reload(); await expect(page.locator('.professional-week-editor')).toBeVisible()
   await page.getByRole('button',{name:'Cancelar',exact:true}).click()
   await expect(page).toHaveURL(new RegExp(`professional/programs/${PROGRAM}$`))
   await expect(page.getByRole('heading',{name:'Novo programa integrado',exact:true,level:1})).toBeVisible()

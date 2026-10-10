@@ -2,6 +2,12 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Aceito": "Принято",
+  "Cancelado": "Отменено",
+  "Expirado": "Истекло",
+  "Aceitos": "Принятые",
+  "Cancelados": "Отменённые",
+  "Expirados": "Истёкшие",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "В приложении Android локальные уведомления таймеров могут приходить, когда приложение свёрнуто. Это зависит от разрешения на уведомления и настроек системы.",
   "Background notifications will be available after the Android service is configured.": "Уведомления в фоне станут доступны после настройки службы Android.",
   "Local timer alerts": "Локальные оповещения таймеров",

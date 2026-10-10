@@ -2,6 +2,12 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // French UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Aceito": "Acceptée",
+  "Cancelado": "Annulée",
+  "Expirado": "Expirée",
+  "Aceitos": "Acceptées",
+  "Cancelados": "Annulées",
+  "Expirados": "Expirées",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "Dans l’app Android, les alertes locales des minuteurs peuvent arriver lorsque l’app est réduite. Elles dépendent de l’autorisation de notification et des réglages du système.",
   "Background notifications will be available after the Android service is configured.": "Les notifications en arrière-plan seront disponibles une fois le service Android configuré.",
   "Local timer alerts": "Alertes locales des minuteurs",

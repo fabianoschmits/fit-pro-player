@@ -66,6 +66,9 @@ $$;
 revoke all on function public.ops_list_users(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.ops_list_users(text, integer, integer) to authenticated;
 
+-- A clean replay already applied the earlier local/training detail migrations.
+-- Recreate this historical signature before the following migrations restore it.
+drop function if exists public.ops_user_detail(uuid);
 create or replace function public.ops_user_detail(p_user_id uuid)
 returns table (
   user_id uuid,

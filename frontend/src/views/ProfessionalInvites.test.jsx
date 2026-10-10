@@ -19,6 +19,21 @@ beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = 
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional invites page', () => {
+  it.each([
+    ['accepted', 'active', 'Aceito'],
+    ['cancelled', 'revoked', 'Cancelado'],
+    ['expired', 'pending', 'Expirado'],
+  ])('shows %s invites using persisted database statuses', async (filter, status, label) => {
+    mocks.repo.invites.mockResolvedValueOnce([
+      { id: 'history', code: 'HISTORY123', status, created_at: '2026-09-24T10:00:00Z', expires_at: filter === 'expired' ? '2020-01-01T00:00:00Z' : null },
+      { id: 'pending', code: 'PENDING123', status: 'pending', created_at: '2026-09-24T10:00:00Z' },
+    ])
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/professional/invites?status=${filter}`]}><ProfessionalInvites /></MemoryRouter>))
+    expect(container.textContent).toContain('HISTORY123')
+    expect(container.textContent).not.toContain('PENDING123')
+    expect(container.querySelector('.management-invite').textContent).toContain(label)
+    expect(container.querySelector('.management-invite').textContent).not.toContain('Copiar código')
+  })
   it('keeps the invitation list open when a pending creation finishes after Cancel', async () => {
     let finishCreation
     mocks.repo.createInvite.mockImplementationOnce(() => new Promise(resolve => { finishCreation = resolve }))

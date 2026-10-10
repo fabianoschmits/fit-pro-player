@@ -2,6 +2,12 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Aceito": "已接受",
+  "Cancelado": "已取消",
+  "Expirado": "已过期",
+  "Aceitos": "已接受",
+  "Cancelados": "已取消",
+  "Expirados": "已过期",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "在 Android 应用中，即使应用已最小化，本地计时器提醒也可能送达，具体取决于通知权限和系统设置。",
   "Background notifications will be available after the Android service is configured.": "配置 Android 服务后，即可使用后台通知。",
   "Local timer alerts": "本地计时器提醒",

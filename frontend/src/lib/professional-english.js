@@ -1,5 +1,11 @@
 // English source equivalents for the Portuguese-authored professional workspace.
 export default {
+  "Aceito": "Accepted",
+  "Cancelado": "Cancelled",
+  "Expirado": "Expired",
+  "Aceitos": "Accepted",
+  "Cancelados": "Cancelled",
+  "Expirados": "Expired",
   "Gestão": "Management",
   "Exercícios": "Exercises",
   "Última alteração": "Last changed",

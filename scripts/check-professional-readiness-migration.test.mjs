@@ -53,6 +53,9 @@ test('authenticated professional database boundaries and concurrent mutation ret
       sql(fs.readFileSync(path.join(root, 'supabase/migrations', file), 'utf8'))
     }
     sql(fs.readFileSync(path.join(root, 'supabase/tests/202610020014_professional_readiness.sql'), 'utf8'))
+    sql(fs.readFileSync(path.join(root, 'supabase/tests/202610090016_professional_program_metadata.sql'), 'utf8'))
+    sql(fs.readFileSync(path.join(root, 'supabase/tests/202610090017_professional_workspace_reads.sql'), 'utf8'))
+    sql(fs.readFileSync(path.join(root, 'supabase/tests/202610100018_professional_invite_flow.sql'), 'utf8'))
     sql(`insert into auth.users(id) values ('00000000-0000-0000-0000-000000000009');`)
     const firstSave = `begin; set local role authenticated; set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000009'; select status from public.save_own_account_snapshot(0,1,'{}'); select pg_sleep(0.2); commit;`
     const writes = await Promise.all([asyncSql(firstSave), asyncSql(firstSave)])

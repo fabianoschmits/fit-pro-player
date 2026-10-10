@@ -2,6 +2,12 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Aceito": "Kabul edildi",
+  "Cancelado": "İptal edildi",
+  "Expirado": "Süresi doldu",
+  "Aceitos": "Kabul edilenler",
+  "Cancelados": "İptal edilenler",
+  "Expirados": "Süresi dolanlar",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "Android uygulamasında, uygulama simge durumuna küçültülmüşken yerel zamanlayıcı uyarıları gelebilir. Bildirim iznine ve sistem ayarlarına bağlıdır.",
   "Background notifications will be available after the Android service is configured.": "Android hizmeti yapılandırıldıktan sonra arka plan bildirimleri kullanılabilir.",
   "Local timer alerts": "Yerel zamanlayıcı uyarıları",

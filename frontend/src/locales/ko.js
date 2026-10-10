@@ -2,6 +2,12 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Aceito": "수락됨",
+  "Cancelado": "취소됨",
+  "Expirado": "만료됨",
+  "Aceitos": "수락됨",
+  "Cancelados": "취소됨",
+  "Expirados": "만료됨",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "Android 앱에서는 앱을 최소화해도 로컬 타이머 알림이 도착할 수 있습니다. 알림 권한과 시스템 설정에 따라 달라집니다.",
   "Background notifications will be available after the Android service is configured.": "Android 서비스 설정이 완료되면 백그라운드 알림을 사용할 수 있습니다.",
   "Local timer alerts": "로컬 타이머 알림",

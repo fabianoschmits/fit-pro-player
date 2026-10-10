@@ -2,6 +2,12 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "Aceito": "Aceito",
+  "Cancelado": "Cancelado",
+  "Expirado": "Expirado",
+  "Aceitos": "Aceitos",
+  "Cancelados": "Cancelados",
+  "Expirados": "Expirados",
   "Gestão": "Gestão",
   "Exercícios": "Exercícios",
   "Última alteração": "Última alteração",

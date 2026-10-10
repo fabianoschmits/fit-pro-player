@@ -2,6 +2,12 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Hindi UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Aceito": "स्वीकृत",
+  "Cancelado": "रद्द",
+  "Expirado": "समाप्त",
+  "Aceitos": "स्वीकृत",
+  "Cancelados": "रद्द",
+  "Expirados": "समाप्त",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "Android ऐप में स्थानीय टाइमर के अलर्ट ऐप छोटा किए जाने पर भी आ सकते हैं। यह नोटिफ़िकेशन की अनुमति और सिस्टम की सेटिंग पर निर्भर करता है।",
   "Background notifications will be available after the Android service is configured.": "Android सेवा कॉन्फ़िगर होने के बाद बैकग्राउंड नोटिफ़िकेशन उपलब्ध होंगे।",
   "Local timer alerts": "स्थानीय टाइमर अलर्ट",
