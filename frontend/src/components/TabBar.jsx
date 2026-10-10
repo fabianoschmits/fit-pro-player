@@ -17,10 +17,23 @@ const TABS = [
   { k: 'more', icon: 'more', to: '/more', label: () => t('More') },
 ]
 
+const PROFESSIONAL_TABS = [
+  { k: 'professional-home', icon: 'house', to: '/professional', label: () => t('Início') },
+  { k: 'professional-students', icon: 'person', to: '/professional/students', label: () => t('Alunos') },
+  { k: 'professional-programs', icon: 'calendar', to: '/professional/programs', label: () => t('Programas') },
+  { k: 'professional-more', icon: 'more', to: '/more', label: () => t('Mais') },
+]
+
 const QUICK = { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] }
 const PILL = { duration: 0.18, ease: [0.2, 0.8, 0.2, 1], layout: QUICK }
 
-function isActive(cur, k) {
+function isActive(cur, k, context) {
+  if (context === 'professional') {
+    if (k === 'professional-more') return cur === 'more' || cur === 'professional-profile' || cur === 'professional-exercises' || cur === 'settings'
+    if (k === 'professional-students') return cur === 'professional-students' || cur === 'professional-invites'
+    if (k === 'professional-programs') return cur === 'professional-programs'
+    return cur === 'professional'
+  }
   if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings' || cur === 'library'
   if (k === 'stats') return cur === 'stats' || cur === 'body-progress'
   if (k === 'start') return cur === 'workout'
@@ -91,7 +104,7 @@ function TabItem({ featured, active, icon, label, recording, onClick, tabKey, ta
   )
 }
 
-export default function TabBar({ onStart }) {
+export default function TabBar({ onStart, context = 'personal' }) {
   const nav = useNavigate()
   const loc = useLocation()
   const S = useStore(s => s.S)
@@ -145,7 +158,10 @@ export default function TabBar({ onStart }) {
     return () => { row.removeEventListener('pointerdown', down); row.removeEventListener('pointermove', move); row.removeEventListener('pointerup', end); row.removeEventListener('pointercancel', end) }
   }, [])
 
-  const cur = loc.pathname.split('/')[1] || 'home'
+  const parts = loc.pathname.split('/').filter(Boolean)
+  const cur = context === 'professional'
+    ? (parts.length > 1 ? `${parts[0]}-${parts[1]}` : parts[0] || 'professional')
+    : parts[0] || 'home'
 
   if (!(authenticated || isGuest) || !S.onboardingDone) return null
 
@@ -162,14 +178,15 @@ export default function TabBar({ onStart }) {
     else nav(tab.to)
   }
 
+  const tabs = context === 'professional' ? PROFESSIONAL_TABS : TABS
   return (
-    <div id="tabbar">
+    <div id="tabbar" data-context={context}>
       <nav className="tabbar-nav" aria-label={t('Main navigation')}>
         <div className="tabbar-bg" aria-hidden="true" />
         <LayoutGroup>
           <div ref={rowRef} className="tabbar-row tabbar-row-draggable">
-            {TABS.map(tab => {
-              const active = dragTab ? dragTab === tab.k : isActive(cur, tab.k)
+            {tabs.map(tab => {
+              const active = dragTab ? dragTab === tab.k : isActive(cur, tab.k, context)
               const icon = typeof tab.icon === 'function' ? tab.icon(S) : tab.icon
               const label = tab.label(S)
               return (

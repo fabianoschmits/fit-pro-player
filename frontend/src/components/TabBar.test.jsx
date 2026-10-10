@@ -93,4 +93,14 @@ describe('TabBar scroll stability', () => {
 
     expect(container.querySelectorAll('.tab-label')).toHaveLength(5)
   })
+
+  it('uses the existing global bar for the professional workspace context', () => {
+    mocks.state.isGuest = () => false
+    mocks.auth = { status: 'authenticated' }
+    act(() => {
+      root.render(<MemoryRouter initialEntries={['/professional/students']}><TabBar context="professional" onStart={vi.fn()} /></MemoryRouter>)
+    })
+    expect([...container.querySelectorAll('.tab-label')].map(node => node.textContent)).toEqual(['Início', 'Alunos', 'Programas', 'Mais'])
+    expect(container.querySelectorAll('#tabbar')).toHaveLength(1)
+  })
 })

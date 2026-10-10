@@ -450,7 +450,7 @@ function Shell() {
           )}
         </ErrorBoundary>
       </PageTransition>
-      {!isProfessionalRoute(loc.pathname) && <TabBar onStart={startFlow} />}
+      <TabBar context={isProfessionalRoute(loc.pathname) ? 'professional' : 'personal'} onStart={startFlow} />
       <RestTimer />
       <Modals />
       <Toast />

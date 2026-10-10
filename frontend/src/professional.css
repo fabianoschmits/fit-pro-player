@@ -990,6 +990,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .professional-native :is(a,button,input,select,textarea):focus-visible,.professional-context-sheet button:focus-visible{outline:2px solid var(--acc,#16c8bd);outline-offset:3px}
 .professional-native :is(input,select,textarea){font-size:16px;min-width:0;max-width:100%}
 .professional-native .professional-workspace-nav{position:fixed;inset:auto 0 0;z-index:80;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch;gap:0;padding:4px 8px calc(4px + env(safe-area-inset-bottom,0px));margin:0;background:var(--surface);border-top:1px solid var(--sep);min-height:var(--professional-nav-height)}
+.professional-native .professional-workspace-nav{display:none}
 .professional-native .professional-workspace-nav a{display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:56px;min-width:0;padding:4px;color:var(--label-2);text-decoration:none;white-space:normal;overflow-wrap:anywhere;text-align:center;font-size:11px;line-height:1.3;border-radius:8px}
 .professional-native .professional-workspace-nav svg{width:20px;height:20px}
 .professional-native .professional-workspace-nav a[aria-current="page"]{color:var(--acc);background:var(--acc-soft);font-weight:650}
@@ -1043,6 +1044,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .professional-context-items button[data-destructive="true"]{color:var(--red)}
 @media(max-width:899px){.dialog-layer:has(.professional-context-sheet){align-items:end;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}}
 @media(min-width:900px){
+  #tabbar[data-context="professional"]{display:none}
   .professional-native{grid-template-columns:168px minmax(0,1fr);gap:16px 24px;--professional-nav-height:0px;padding-bottom:16px}
   .professional-native>.app-header{grid-column:2}
   .professional-native>.professional-workspace-nav{position:sticky;inset:auto;top:24px;grid-column:1;grid-row:1/3;align-self:start;display:flex;flex-direction:column;border:0;padding:0;background:transparent;gap:4px}
