@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { useUI } from '../store/useUI.js'
@@ -22,9 +22,13 @@ import { createProfessionalWorkflowRepository } from '../lib/professional-workfl
 import OfflineControls from '../components/OfflineControls.jsx'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 import NotificationSettings from '../components/NotificationSettings.jsx'
+import SettingsGroup from '../components/SettingsGroup.jsx'
+import PersonalSettings from '../components/PersonalSettings.jsx'
+import '../settings.css'
 
 export default function Settings() {
   const nav = useNavigate()
+  const location = useLocation()
   const auth = useAuth()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
@@ -106,18 +110,27 @@ export default function Settings() {
     rd.readAsText(f)
   }
 
-  return <div className="narrow">
-    <AppHeader title={t('Settings')} backTo="/more" />
+  return <div className="narrow settings-page">
+    <AppHeader title={t('Settings')} subtitle={t('Your data and preferences in one place')} backTo="/more" />
+
+    <SettingsGroup title={t('Personal profile')} description={t('Name, birth date, body, measurements and training goal')} icon="person" open>
+      <PersonalSettings key={`${auth.status}:${auth.user?.id || 'guest'}:${location.search}`} initiallyEditing={new URLSearchParams(location.search).get('profile') === 'edit'} />
+      {auth.status === 'authenticated' && professional === true && <Row icon="personCircle" iconTint="var(--purple)" title={t('Perfil profissional')} subtitle={t('Sua apresentação para os alunos.')} accessory="chevron" onClick={() => nav('/professional/profile')} />}
+      {auth.status === 'authenticated' && professional === false && <Row icon="personCircle" iconTint="var(--purple)" title={t('Tornar-se profissional')} subtitle={t('Crie seu perfil para enviar treinos e convites')} accessory="chevron" onClick={() => nav('/professional-profile?onboarding=1')} />}
+    </SettingsGroup>
+
+    <SettingsGroup title={t('Account')} description={auth.user?.email || t('Protect your training')} icon="lock">
 
     <Section title={STANDALONE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
-      {STANDALONE ? <>
+      {STANDALONE && auth.status !== 'authenticated' ? <>
         <Row icon="lock" iconTint="var(--acc)" title={t('Guest mode — data lives only in this browser.')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
       </> : DEMO ? <>
         <Row icon="dumbbell" iconTint="var(--acc)" title={t('You’re in the demo')} subtitle={t('Example data, stored only in this browser — change anything you like.')} />
         <Row icon="reset" iconTint="var(--blue)" title={t('Reset demo data')} accessory="chevron"
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
       </> : auth.status === 'authenticated' ? <>
-        <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
+        <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Your data syncs with your profile — sign in anywhere to see it.')} />
+        <Row icon="lock" iconTint="var(--teal)" title={t('Change password')} accessory="chevron" onClick={() => openAuthSheet('forgot_password')} />
         <Row icon="shuffle" iconTint="var(--blue)" title={t('Account sync')} subtitle={t('Sync automatically or retry now. Conflicts keep both copies.')}
           accessory="chevron" onClick={openManualSync} />
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
@@ -153,19 +166,10 @@ export default function Settings() {
       </div>
     </Section>}
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
-
-    <Section title={t('Offline')}><OfflineControls /></Section>
-    <Section title={t('Diagnostics')}><DiagnosticsControls /></Section>
-
-    <Section title={t('Personal profile')}>
-      <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
-        subtitle={t('Name, birth date, body, measurements and training goal')}
-        accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
-      {auth.status === 'authenticated' && professional === false && <Row icon="personCircle" iconTint="var(--purple)" title={t('Tornar-se profissional')} subtitle={t('Crie seu perfil para enviar treinos e convites')} accessory="chevron" onClick={() => nav('/professional-profile?onboarding=1')} />}
-    </Section>
+    </SettingsGroup>
 
     {/* ---------- general ---------- */}
-    <Section title={t('General')} footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
+    <SettingsGroup title={t('General')} description={t('Language, units and messages')} icon="globe" footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
       <SelectRow
         icon="globe" iconTint="var(--blue)" title={t('Language')}
         value={S.lang || DEFAULT_LANG} onChange={v => update(s => { s.lang = v })}
@@ -182,10 +186,10 @@ export default function Settings() {
       <SelectRow icon="person" iconTint="var(--teal)" title={t('Motivational messages')}
         value={S.motivationTone || 'calm'} onChange={value => update(state => { state.motivationTone = value })}
         options={[{ value: 'calm', label: t('Calm') }, { value: 'rotating', label: t('Rotating messages') }, { value: 'off', label: t('Hidden') }]} />
-    </Section>
+    </SettingsGroup>
 
     {/* ---------- during a workout ---------- */}
-    <Section title={t('During a workout')} footer={wakeOK ? t('The screen stays on while a workout is running, so you don’t have to unlock your phone between sets.') : null}>
+    <SettingsGroup title={t('During a workout')} description={t('Timers, effort and workout controls')} icon="timer" footer={wakeOK ? t('The screen stays on while a workout is running, so you don’t have to unlock your phone between sets.') : null}>
       <TipOnce id="effort-tip">
         <span>{t('RIR counts reps left in the tank; RPE rates effort from 1–10. Both are optional — turn them on only if you use them.')}</span>
       </TipOnce>
@@ -218,27 +222,18 @@ export default function Settings() {
         subtitle={t('Hides advanced stats and progression options for a cleaner experience.')}>
         <Switch checked={S.simpleMode !== false} onChange={v => update(s => { s.simpleMode = v })} />
       </Row>
-    </Section>
+    </SettingsGroup>
 
-    <NotificationSettings S={S} update={update} toast={toast} />
+    <SettingsGroup title={t('Notifications')} description={t('Reminders, alerts and quiet hours')} icon="bell"><NotificationSettings S={S} update={update} toast={toast} /></SettingsGroup>
 
     {/* ---------- appearance ---------- */}
-    <Section title={t('Appearance')}>
+    <SettingsGroup title={t('Appearance')} description={t('Theme and accent color')} icon="moon">
       <Row icon="moon" iconTint="var(--indigo)" title={t('Theme')}>
         <Segmented
           className="seg-inline"
           options={[{ value: 'dark', icon: 'moon', label: t('Dark') }, { value: 'light', icon: 'sun', label: t('Light') }]}
           value={S.theme === 'light' ? 'light' : 'dark'}
           onChange={v => update(s => { s.theme = v })}
-        />
-      </Row>
-      {/* Purely how the muscle map is drawn — nothing else in the app reads this. */}
-      <Row icon="figureStrength" iconTint="var(--teal)" title={t('Body diagram')}>
-        <Segmented
-          className="seg-inline"
-          options={[{ value: 'male', label: t('Male') }, { value: 'female', label: t('Female') }]}
-          value={S.body === 'female' ? 'female' : 'male'}
-          onChange={v => update(s => { s.body = v; s.profile = { ...s.profile, sex: v } })}
         />
       </Row>
       <div className="lrow" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12, paddingTop: 13, paddingBottom: 14 }}>
@@ -250,10 +245,10 @@ export default function Settings() {
           ))}
         </div>
       </div>
-    </Section>
+    </SettingsGroup>
 
     {/* ---------- data: fill it, bring things over, back it up, wipe it ---------- */}
-    <Section title={t('Data')}>
+    <SettingsGroup title={t('Data')} description={t('Backups, imports and account deletion')} icon="download">
       <Row icon="dumbbell" iconTint="var(--acc)" title={t('Load starter plan (PPL)')} accessory="chevron" onClick={loadStarterPlan} />
       <Row icon="shuffle" iconTint="var(--teal)" title={t('Import from another app')}
         subtitle={t('FitNotes, Strong, Hevy — or body weight from Apple Health')}
@@ -288,18 +283,21 @@ export default function Settings() {
           leaveApp?.(); nav('/'); toast(t('Account deleted'))
         },
       })} />}
-    </Section>
+    </SettingsGroup>
     <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={doImport} />
     {/* Reset after reading so picking the same file twice still fires onChange. */}
     <input ref={importRef} type="file" accept=".csv,.xml,text/csv,text/xml" style={{ display: 'none' }}
       onChange={ev => { const f = ev.target.files[0]; if (f) importFromApp(f); ev.target.value = '' }} />
 
-    {/* "Add to Home screen" makes no sense inside the native app */}
+    <SettingsGroup title={t('This device')} description={t('Offline access, installation and diagnostics')} icon="gear">
+    <Section title={t('Offline')}><OfflineControls /></Section>
+    <Section title={t('Diagnostics')}><DiagnosticsControls /></Section>
     {!MOBILE && <Section title={t('Tip')}>
       <Row icon="lightbulb" iconTint="var(--yellow)"
         title={IS_ANDROID ? t('In Chrome: ⋮ menu → Add to Home screen') : t('In Safari: Share → Add to Home Screen')}
         subtitle={t('to install Fit Pro Player as a full-screen app.') + ' ' + (auth.user ? t('Your data syncs with your profile — sign in anywhere to see it.') : t('Guest data stays on this device — export a backup now and then!'))} />
     </Section>}
+    </SettingsGroup>
 
     <div className="dim small" style={{ textAlign: 'center', marginTop: 4, lineHeight: 1.6 }}>
       <img src="/brand-symbol.svg" alt="" width="40" height="40" style={{ display: 'block', margin: '0 auto 8px' }} />

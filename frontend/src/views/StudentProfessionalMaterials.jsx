@@ -7,7 +7,7 @@ import { professionalDate } from '../lib/professional-ux.js'
 import { t } from '../lib/i18n.js'
 import { Button } from '../components/ui.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
-import { ManagementPanel, ManagementEmpty, ManagementStatus } from '../components/ManagementUI.jsx'
+import { ManagementPanel, ManagementEmpty, ManagementStatus, ManagementAvatar } from '../components/ManagementUI.jsx'
 import useStudentManagementRequest from '../components/useStudentManagementRequest.js'
 import Skeleton from '../features/professional/components/Skeleton.jsx'
 
@@ -31,7 +31,7 @@ function ProfessionalMaterials({ person, repo }) {
     return detail?.professional?.professionalId === person.professionalId ? detail : null
   }, [repo, person.professionalId])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar os materiais deste profissional.')
-  return <ManagementPanel title={person.professionalName} action={<Link className="management-button" to={`/student/professionals/${person.professionalId}`}>{t('Ver profissional')}</Link>}>
+  return <ManagementPanel title={<span className="management-material-person"><ManagementAvatar name={person.professionalName} photoPath={person.photoPath} />{person.professionalName}</span>} action={<Link className="management-button" to={`/student/professionals/${person.professionalId}`}>{t('Ver profissional')}</Link>}>
     {busy ? <Skeleton variant="rows" count={2} label={t('Carregando materiais…')} /> : error ? <p role="alert" className="management-error">{error} <Button onClick={refresh}>{t('Tentar novamente')}</Button></p> : data?.materials?.length ? <div className="management-material-list">{data.materials.map(item => <Link className="management-material-link" key={item.assignmentId} to={`/student/professionals/${person.professionalId}?section=training&material=${encodeURIComponent(item.assignmentId)}`}><div><h3>{item.title}</h3><p className="muted">{t('Versão {0}', item.versionNumber || '—')}</p><small className="muted">{t('Recebido em {0}', professionalDate(item.assignedAt))}</small></div><ManagementStatus tone={item.status === 'active' ? 'success' : 'neutral'}>{t(item.status === 'active' ? 'Ativo' : 'Encerrado')}</ManagementStatus></Link>)}</div> : <p className="muted">{t('Nenhum material recebido deste profissional.')}</p>}
   </ManagementPanel>
 }

@@ -239,8 +239,7 @@ function Shell() {
   const appEntered = useStore(s => s.isAppEntered ? s.isAppEntered() : s.isGuest())
   const authenticated = auth.status === 'authenticated'
   const authed = (authenticated || isGuest) && appEntered
-  const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
-  const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
+  const showProfileHeader = loc.pathname === '/home'
   const inviteEntry = ['/connect', '/student/professionals', '/student/professionals/add'].includes(loc.pathname)
   const queryInviteCode = inviteEntry ? new URLSearchParams(loc.search).get('code') || '' : ''
   const invitePath = loc.pathname.startsWith('/invite/') || loc.pathname === '/connect' || loc.pathname === '/student/professionals/add' || (inviteEntry && !!queryInviteCode)

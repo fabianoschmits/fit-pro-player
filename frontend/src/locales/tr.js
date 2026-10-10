@@ -1,7 +1,11 @@
+import { settingsLocale } from '../lib/settings-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
+import { professionalPhotoLocale } from '../lib/professional-photo-locales.js'
 
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...settingsLocale('tr'),
+  ...professionalPhotoLocale('tr'),
   "Aceito": "Kabul edildi",
   "Cancelado": "İptal edildi",
   "Expirado": "Süresi doldu",

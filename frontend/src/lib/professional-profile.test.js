@@ -2,6 +2,10 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProfessionalProfileRepository, normalizeProfessionalProfile } from './professional-profile.js'
 
 describe('professional profile repository', () => {
+  it('retains the saved photo pointer in normalized profiles', () => {
+    expect(normalizeProfessionalProfile({ photo_path: 'owner/photo.jpg' }).photoPath).toBe('owner/photo.jpg')
+    expect(normalizeProfessionalProfile({ photoPath: 'owner/photo.jpg' }).photoPath).toBe('owner/photo.jpg')
+  })
   it('normalizes bounded professional fields without accepting verification authority', () => {
     const profile = normalizeProfessionalProfile({ professional_name: '  Ana  ', specialties: ['Força', 'força', 'MOBILIDADE'], verification_status: 'verified', bio: 'x'.repeat(2500) })
     expect(profile.professionalName).toBe('Ana')

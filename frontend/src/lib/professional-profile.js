@@ -8,6 +8,7 @@ export function normalizeProfessionalProfile(input = {}) {
     : []
   return {
     userId: input.user_id || input.userId || null,
+    photoPath: stringOrNull(input.photo_path || input.photoPath),
     professionalName: String(input.professional_name || input.professionalName || '').trim().slice(0, MAX.name),
     bio: stringOrNull(input.bio)?.slice(0, MAX.bio) || null,
     specialties: specialties.map(value => value.slice(0, MAX.specialty)),

@@ -8,6 +8,7 @@ import { Button } from '../components/ui.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementAvatar, ManagementPanel, ManagementStatus } from '../components/ManagementUI.jsx'
 import ProfessionalProfileForm from '../components/ProfessionalProfileForm.jsx'
+import ProfessionalPhotoEditor from '../components/ProfessionalPhotoEditor.jsx'
 import Skeleton from '../features/professional/components/Skeleton.jsx'
 
 const EMPTY = { professionalName: '', bio: '', specialties: [], cityRegion: '', registrationType: '', registrationNumber: '', verificationStatus: 'unverified' }
@@ -59,7 +60,7 @@ function ProfileWorkspace({ auth }) {
     try {
       const next = await (provisioning ? repository.provision(auth.user.id, draft) : repository.save(auth.user.id, draft))
       if (!active.current) return
-      setProfile({ ...EMPTY, ...next }); setCapability(true)
+      setProfile(previous => ({ ...EMPTY, ...next, photoPath: provisioning ? next.photoPath : previous.photoPath })); setCapability(true)
       setNotice(provisioning ? t('Perfil profissional criado.') : t('Perfil salvo.'))
       navigate(provisioning ? '/professional-profile' : '/professional/profile', { replace: true })
     } catch (cause) {
@@ -81,6 +82,7 @@ function ProfileWorkspace({ auth }) {
     nav={capability ? undefined : false}
   >
     {error && <p role="alert" className="management-error">{error}</p>}
+    {capability && <ProfessionalPhotoEditor key={auth.user.id} userId={auth.user.id} profile={profile} onChange={next => setProfile(previous => ({ ...previous, photoPath: next.photoPath }))} />}
     <ProfessionalProfileForm key={pathname} profile={profile} saving={saving} provisioning={!capability} onSave={persist} onCancel={() => navigate(capability ? '/professional/profile' : '/settings')} />
   </ManagementLayout>
 
@@ -88,9 +90,10 @@ function ProfileWorkspace({ auth }) {
   return <ManagementLayout title={t('Perfil profissional')} subtitle={t('Sua apresentação para os alunos.')} backTo="/more" action={<Link className="management-button management-button-primary" to="/professional/profile/edit">{t('Editar perfil')}</Link>}>
     {notice && <p role="status" className="management-notice">{notice}</p>}
     <ManagementPanel className="management-profile-identity">
-      <div className="management-person-heading"><ManagementAvatar name={profile.professionalName} /><div><h2>{profile.professionalName || t('Sem perfil profissional')}</h2>{profile.cityRegion && <p>{profile.cityRegion}</p>}</div></div>
+      <div className="management-person-heading"><ManagementAvatar name={profile.professionalName} photoPath={profile.photoPath} /><div><h2>{profile.professionalName || t('Sem perfil profissional')}</h2>{profile.cityRegion && <p>{profile.cityRegion}</p>}</div></div>
       <div className="management-profile-bio"><h3>{t('Apresentação')}</h3><p>{profile.bio || t('Adicione uma apresentação curta.')}</p></div>
     </ManagementPanel>
+    <ProfessionalPhotoEditor key={auth.user.id} userId={auth.user.id} profile={profile} onChange={next => setProfile(previous => ({ ...previous, photoPath: next.photoPath }))} />
     <div className="management-profile-details">
       <ManagementPanel title={t('Atuação')}>
         <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{value}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Cidade/região')}</dt><dd>{profile.cityRegion || t('Não informado')}</dd></div></dl>

@@ -1,7 +1,11 @@
+import { settingsLocale } from '../lib/settings-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
+import { professionalPhotoLocale } from '../lib/professional-photo-locales.js'
 
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...settingsLocale('ko'),
+  ...professionalPhotoLocale('ko'),
   "Aceito": "수락됨",
   "Cancelado": "취소됨",
   "Expirado": "만료됨",

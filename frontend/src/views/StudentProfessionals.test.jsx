@@ -5,12 +5,17 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ auth: {}, repo: { studentProfessionals: vi.fn(), assignments: vi.fn(), assignedPrograms: vi.fn(), studentOverview: vi.fn(), version: vi.fn() }, replace: vi.fn(), start: vi.fn(), state: {} }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
+vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => ({ storage: { from: () => ({ getPublicUrl: path => ({ data: { publicUrl: `https://project.test/storage/v1/object/public/professional-photos/${path}` } }) }) } }) }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 vi.mock('../store/useStore.js', () => ({ useStore: Object.assign(selector => selector({ ready: true }), { getState: () => ({ S: mocks.state, replaceState: mocks.replace, invalidateAssignedProgramReads: () => {}, getAssignedProgramReadToken: () => ({ scope: { kind: 'account', userId: mocks.auth.user?.id } }), isAssignedProgramReadCurrent: () => true }) }) }))
 vi.mock('../sheets.jsx', () => ({ startFlow: (...args) => mocks.start(...args) }))
 import StudentProfessionals from './StudentProfessionals.jsx'
 let root, container
+it('shows the linked professional photo', async () => {
+  const photoPath = '11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg'
+  mocks.repo.studentProfessionals.mockResolvedValue([{ professionalId: 'p1', professionalName: 'Ana', photoPath }]); await render()
+  expect(container.querySelector('.management-avatar img')?.getAttribute('src')).toContain(photoPath)
+})
 beforeEach(() => { vi.clearAllMocks(); mocks.auth = { status: 'authenticated', user: { id: 's1' } }; mocks.state = { routines: [] }; mocks.repo.studentProfessionals.mockResolvedValue([]); mocks.repo.assignments.mockResolvedValue([]); mocks.repo.assignedPrograms.mockResolvedValue([]); mocks.repo.studentOverview.mockResolvedValue({}); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 const render = async (path = '/student/professionals') => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/student/professionals" element={<StudentProfessionals />} /><Route path="/student/professionals/add" element={<p>Add destination</p>} /></Routes></MemoryRouter>))

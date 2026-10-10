@@ -4,10 +4,11 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'professional-a' } }, role: vi.fn(), own: vi.fn(), save: vi.fn(), provision: vi.fn() }))
+const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'professional-a' } }, role: vi.fn(), own: vi.fn(), save: vi.fn(), provision: vi.fn(), upload: vi.fn(), remove: vi.fn() }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-profile.js', () => ({ createProfessionalProfileRepository: () => mocks }))
+vi.mock('../lib/professional-photo.js', async original => ({ ...await original(), createProfessionalPhotoRepository: () => mocks }))
 import ProfessionalProfile from './ProfessionalProfile.jsx'
 
 const saved = { professionalName: 'Ana Silva', bio: 'Treinamento de força', specialties: ['força', 'corrida'], cityRegion: 'São Paulo', registrationType: 'CREF', registrationNumber: '123', verificationStatus: 'unverified' }
@@ -25,6 +26,25 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
 describe('professional profile workspace', () => {
+  it('keeps the changed photo when an earlier text save finishes and preserves text drafts during photo updates', async () => {
+    let resolveSave; mocks.save.mockReturnValueOnce(new Promise(resolve => { resolveSave = resolve }))
+    mocks.upload.mockResolvedValue({ ...saved, photoPath: 'owner/new.jpg' })
+    await render('/professional/profile/edit'); await fill('professionalName', 'Draft name'); await click('Salvar perfil')
+    await act(async () => {
+      const input = container.querySelector('input[type="file"]')
+      Object.defineProperty(input, 'files', { configurable: true, value: [new File(['photo'], 'new.jpg', { type: 'image/jpeg' })] })
+      input.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(container.querySelector('[name="professionalName"]').value).toBe('Draft name')
+    await act(async () => resolveSave({ ...saved, professionalName: 'Draft name', photoPath: null }))
+    expect(container.textContent).toContain('Remover foto')
+  })
+  it('shows independent photo controls on the profile and edit page only for professionals', async () => {
+    await render(); expect(container.querySelector('input[type="file"]')).not.toBeNull()
+    await click('Editar perfil'); expect(container.querySelector('input[type="file"]')).not.toBeNull()
+    mocks.auth = { status: 'authenticated', user: { id: 'new-account' } }; mocks.role.mockResolvedValue(false)
+    await render('/professional/profile/edit'); expect(container.querySelector('input[type="file"]')).toBeNull()
+  })
   it('opens saved values directly in the addressable edit page', async () => {
     await render('/professional/profile/edit')
     expect(container.querySelector('input[name="professionalName"]')?.value).toBe('Ana Silva')

@@ -5,12 +5,17 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 's1' } }, repo: { studentProfessionals: vi.fn(), studentProfessionalDetail: vi.fn() }, replace: vi.fn(), start: vi.fn() }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
+vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => ({ storage: { from: () => ({ getPublicUrl: path => ({ data: { publicUrl: `https://project.test/storage/v1/object/public/professional-photos/${path}` } }) }) } }) }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: {}, replaceState: mocks.replace }) } }))
 vi.mock('../sheets.jsx', () => ({ startFlow: mocks.start }))
 import StudentProfessionalMaterials from './StudentProfessionalMaterials.jsx'
 let root, container
+it('shows the professional photo beside received materials', async () => {
+  const photoPath = '11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg'
+  mocks.repo.studentProfessionals.mockResolvedValue([{ professionalId: 'p1', professionalName: 'Ana', photoPath }]); await render()
+  expect(container.querySelector('.management-avatar img')?.getAttribute('src')).toContain(photoPath)
+})
 beforeEach(() => { vi.clearAllMocks(); mocks.repo.studentProfessionals.mockResolvedValue([{ professionalId: 'p1', professionalName: 'Ana Silva' }, { professionalId: 'p2', professionalName: 'João Reis' }]); mocks.repo.studentProfessionalDetail.mockImplementation(id => Promise.resolve({ professional: { professionalId: id }, materials: [{ assignmentId: `a-${id}`, title: `Programa ${id}`, status: id === 'p1' ? 'active' : 'replaced', versionNumber: 2 }] })); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 const render = async () => act(async () => root.render(<MemoryRouter><StudentProfessionalMaterials /></MemoryRouter>))

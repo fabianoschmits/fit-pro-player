@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({ authSignOut: vi.fn().mockResolvedValue({ kind:
 
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }));
-vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }));
+vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useLocation: () => ({ pathname: '/settings', search: '' }) }));
 vi.mock('../store/useStore.js', async () => {
   const actual = await vi.importActual('../store/useStore.js');
   const state = { S: actual.DEF, update: vi.fn(), replaceState: vi.fn(), leaveApp: vi.fn(), clearAnonymousState: vi.fn(), clearLocalScope: vi.fn(), resetDemo: vi.fn() };
@@ -80,7 +80,7 @@ describe('Settings Supabase logout', () => {
   it('routes an authenticated Supabase account through Auth only and keeps the local-data guarantee visible', async () => {
     await act(async () => root.render(<Settings />));
     expect(container.textContent).toContain('ana@example.com');
-    expect(container.textContent).toContain('dados de convidado ficam neste dispositivo')
+    expect(container.textContent).toContain('Seus dados são sincronizados com seu perfil')
     const signOut = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Terminar sessão'));
     await act(async () => signOut.click());
     await act(async () => mocks.confirm.onConfirm());

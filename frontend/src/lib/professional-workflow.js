@@ -30,6 +30,7 @@ const toVersion = value => value ? ({
 const toNote = value => ({ body: value?.body || '', updatedAt: value?.updated_at || null })
 
 const toProfile = value => value ? ({
+  photoPath: value.photo_path || null,
   userId: value.professional_user_id,
   professionalName: value.professional_name,
   bio: value.bio,
@@ -61,6 +62,7 @@ const toClientDetail = value => value ? ({
 }) : null
 
 const toStudentProfessional = value => ({
+  photoPath: value?.photo_path || null,
   professionalId: value?.professional_user_id || null,
   relationshipId: value?.relationship_id || null,
   professionalName: value?.professional_name || 'Profissional',

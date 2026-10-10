@@ -1,7 +1,11 @@
+import { settingsLocale } from '../lib/settings-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
+import { professionalPhotoLocale } from '../lib/professional-photo-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  ...settingsLocale('pt'),
+  ...professionalPhotoLocale('pt'),
   "Aceito": "Aceito",
   "Cancelado": "Cancelado",
   "Expirado": "Expirado",

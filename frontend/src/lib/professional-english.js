@@ -1,5 +1,7 @@
 // English source equivalents for the Portuguese-authored professional workspace.
+import { professionalPhotoEnglish } from './professional-photo-locales.js'
 export default {
+  ...professionalPhotoEnglish,
   "Aceito": "Accepted",
   "Cancelado": "Cancelled",
   "Expirado": "Expired",

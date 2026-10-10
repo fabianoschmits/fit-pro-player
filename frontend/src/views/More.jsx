@@ -1,63 +1,65 @@
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
+import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
-import Icon from '../components/Icon.jsx'
 import { Section, Row } from '../components/ui.jsx'
-import { DEMO, STANDALONE } from '../lib/demo.js'
-import { MOBILE } from '../lib/mobile.js'
 import { EXDB } from '../lib/exercises.js'
 import AppHeader from '../components/AppHeader.jsx'
+import AvatarImage from '../components/AvatarImage.jsx'
+import Icon from '../components/Icon.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import { createConsoleRepository } from '../lib/console.js'
-import { useEffect, useMemo, useState } from 'react'
+import '../settings.css'
 
 export default function More() {
-  const nav = useNavigate()
-  const auth = useAuth()
+  const nav = useNavigate(), auth = useAuth(), profile = useStore(store => store.S.profile)
   const account = auth.status === 'authenticated' ? auth.user : null
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const consoleRepo = useMemo(() => createConsoleRepository({ client: getBrowserSupabaseClient() }), [])
-  const [professional, setProfessional] = useState(false)
-  const [consoleAccess, setConsoleAccess] = useState(false)
+  const [roles, setRoles] = useState(null), [attempt, setAttempt] = useState(0)
   useEffect(() => {
     let current = true
-    setProfessional(false)
-    setConsoleAccess(false)
-    if (account?.id) {
-      repo.professionalRole(account.id).then(value => { if (current) setProfessional(value) }).catch(() => { if (current) setProfessional(false) })
-      consoleRepo.adminRole(account.id).then(value => { if (current) setConsoleAccess(value) }).catch(() => { if (current) setConsoleAccess(false) })
-    }
+    if (account?.id) Promise.allSettled([repo.professionalRole(account.id), consoleRepo.adminRole(account.id)]).then(([professional, admin]) => {
+      if (current) setRoles({ owner: account.id, professional: professional.status === 'fulfilled' && professional.value, admin: admin.status === 'fulfilled' && admin.value, error: professional.status === 'rejected' || admin.status === 'rejected' })
+    })
     return () => { current = false }
-  }, [account?.id, repo, consoleRepo])
-
-  return <div className="narrow">
-    <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
-
-    <Section title={t('Your app')}>
-      <Row icon="list" iconTint="var(--blue)" title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)}
-        accessory="chevron" onClick={() => nav('/library')} />
-      <Row icon="personCircle" iconTint="var(--teal)" title={t('Edit your personal data')} subtitle={t('These details personalize your progress, body map and training suggestions.')}
-        accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
-      <Row icon="gear" iconTint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')}
-        accessory="chevron" onClick={() => nav('/settings')} />
-      <Row icon="history" iconTint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')}
-        accessory="chevron" onClick={() => nav('/history')} />
-      <Row icon="personCircle" iconTint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo"
-        accessory="chevron" onClick={() => nav('/body-progress')} />
-      {professional && <Row icon="personCircle" iconTint="var(--purple)" title={t('Perfil profissional')} subtitle={t('Sua apresentação para os alunos.')}
-        accessory="chevron" onClick={() => nav('/professional/profile')} />}
-      {professional && <Row icon="personCircle" iconTint="var(--purple)" title={t('Área profissional')} subtitle={t('Alunos, convites e programas')}
-        accessory="chevron" onClick={() => nav('/professional')} />}
-      {account && <Row icon="personCircle" iconTint="var(--teal)" title={t('Meus profissionais')} subtitle={t('Programas e prescrições dos seus profissionais')}
-        accessory="chevron" onClick={() => nav('/student/professionals')} />}
+  }, [account?.id, repo, consoleRepo, attempt])
+  const permissions = roles?.owner === account?.id ? roles : null
+  const row = (title, icon, to, subtitle) => <Row key={to} title={t(title)} icon={icon} subtitle={subtitle ? t(subtitle) : undefined} accessory="chevron" onClick={() => nav(to)} />
+  return <div className="narrow more-page">
+    <AppHeader title={t('More')} subtitle={t('Your training, workspaces and preferences')} />
+    <button type="button" className="menu-profile" onClick={() => nav('/settings')}>
+      <AvatarImage avatarId={profile?.avatarId} /><span><strong>{profile?.name || t('Your profile')}</strong><small>{account?.email || t('Guest mode')}</small><span className="menu-profile-link">{t('Account and settings')}</span></span><Icon name="chevronRight" />
+    </button>
+    {account && <p className="menu-account-status">{t('Signed in to your account')}</p>}
+    {permissions?.error && <p role="alert" className="settings-error">{t('Could not load your workspaces.')} <button className="link" onClick={() => setAttempt(value => value + 1)}>{t('Retry')}</button></p>}
+    {permissions?.admin && <div data-menu-group="admin"><Section title={t('Administration')} className="menu-workspace menu-admin">
+      {row('Central', 'gear', '/console', 'Platform overview')}
+      {row('Users', 'person', '/console/users')}
+      {row('Professionals', 'personCircle', '/console/professionals')}
+    </Section></div>}
+    {permissions?.professional && <div data-menu-group="professional"><Section title={t('Área profissional')} className="menu-workspace">
+      {row('Gestão', 'chart', '/professional', 'Alunos, convites e programas')}
+      {row('Alunos', 'person', '/professional/students')}
+      {row('Programas', 'list', '/professional/programs')}
+      {row('Convidar aluno', 'plus', '/professional/invites?section=create')}
+      {row('Perfil profissional', 'personCircle', '/professional/profile', 'Sua apresentação para os alunos.')}
+    </Section></div>}
+    <Section title={t('My training')}>
+      {row('History', 'history', '/history', 'All your past workouts')}
+      {row('Body progress', 'chart', '/body-progress', 'Weight and body measurements')}
+      {row('Exercises', 'list', '/library', t('{0} exercises in the catalogue', EXDB.length))}
     </Section>
-
-    <Section title={t('About')}>
-      <Row icon="personCircle" iconTint="var(--teal)" title={account?.email || (MOBILE || STANDALONE ? t('Guest mode') : DEMO ? t('Demo') : t('Guest mode'))}
-        subtitle={account ? t('Signed in to your account') : t('Guest data stays on this device — export a backup now and then!')} />
-      {consoleAccess && <Row icon="gear" iconTint="var(--label)" title="Central" subtitle="Operação da plataforma"
-        accessory="chevron" onClick={() => nav('/console')} />}
+    {account && <Section title={t('Professional support')}>
+      {row('Meus profissionais', 'personCircle', '/student/professionals', 'Programas e prescrições dos seus profissionais')}
+      {row('Received training', 'dumbbell', '/student/professionals/materials')}
+      {row('Adicionar profissional', 'plus', '/student/professionals/add')}
+    </Section>}
+    <Section title={t('Account and settings')}>
+      {row('Personal data', 'person', '/settings?profile=edit', 'Name, birth date, body, measurements and training goal')}
+      {row('Settings', 'gear', '/settings', 'Language, units, backup & preferences')}
     </Section>
   </div>
 }

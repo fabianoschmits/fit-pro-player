@@ -5,10 +5,15 @@ import { MemoryRouter, Routes, Route, Link, useLocation } from 'react-router-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ auth: {}, repo: { previewInvite: vi.fn(), acceptInvite: vi.fn() } }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
+vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => ({ storage: { from: () => ({ getPublicUrl: path => ({ data: { publicUrl: `https://project.test/storage/v1/object/public/professional-photos/${path}` } }) }) } }) }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 import StudentProfessionalInvite from './StudentProfessionalInvite.jsx'
 let root, container
+it('shows the professional photo in the invite preview', async () => {
+  const photo_path = '11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg'
+  mocks.repo.previewInvite.mockResolvedValue([{ professional_name: 'Ana', photo_path }]); await render()
+  expect(container.querySelector('.management-avatar img')?.getAttribute('src')).toContain(photo_path)
+})
 beforeEach(() => { vi.clearAllMocks(); mocks.auth = { status: 'authenticated', user: { id: 's1' } }; mocks.repo.previewInvite.mockResolvedValue([{ professional_name: 'Ana Silva' }]); mocks.repo.acceptInvite.mockResolvedValue({}); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 function Destination() { const { search } = useLocation(); return <p>Overview {search}</p> }

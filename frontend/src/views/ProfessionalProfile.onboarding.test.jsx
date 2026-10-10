@@ -32,6 +32,7 @@ describe('professional onboarding', () => {
     expect(container.querySelector('[data-location]').textContent).toBe('/professional-profile')
     expect(container.textContent).toContain('Ana')
     expect(container.textContent).toContain('Perfil profissional criado.')
-    expect(container.querySelector('input')).toBeNull()
+    expect(container.querySelector('input[name="professionalName"]')).toBeNull()
+    expect(container.querySelector('input[type="file"]')).not.toBeNull()
   })
 })

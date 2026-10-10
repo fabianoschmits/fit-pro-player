@@ -5,7 +5,7 @@ import { MemoryRouter, Routes, Route, Link, useLocation } from 'react-router-dom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 's1' } }, repo: { studentProfessionalDetail: vi.fn(), revokeRelationship: vi.fn() }, replace: vi.fn(), start: vi.fn(), state: {}, scopeToken: null }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
+vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => ({ storage: { from: () => ({ getPublicUrl: path => ({ data: { publicUrl: `https://project.test/storage/v1/object/public/professional-photos/${path}` } }) }) } }) }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: mocks.state, replaceState: mocks.replace, invalidateAssignedProgramReads: () => {}, getScopeToken: () => ({ ...mocks.scopeToken }), isScopeCurrent: token => token.scope === mocks.scopeToken.scope && token.generation === mocks.scopeToken.generation }) } }))
 vi.mock('../sheets.jsx', () => ({ startFlow: mocks.start }))
@@ -13,6 +13,12 @@ import StudentProfessionalDetail from './StudentProfessionalDetail.jsx'
 import { assignedPlanToState } from '../lib/assigned-program.js'
 const detail = id => ({ professional: { professionalId: id, professionalName: id === 'p1' ? 'Ana Silva' : 'João Reis', specialties: ['Força'], bio: 'Acompanhamento', cityRegion: 'São Paulo', registrationType: 'CREF', registrationNumber: '123' }, relationship: { id: `r-${id}`, status: 'active', linkedAt: '2026-09-01' }, materials: [{ assignmentId: `a-${id}`, title: `Programa ${id}`, status: 'replaced', versionNumber: 1, weeklyPlan: { monday: [{ exerciseId: 'squat', sets: 3, reps: 10 }] } }], executions: [{ id: 'e1', day_key: 'monday', status: 'completed', started_at: '2026-10-01', payload: {} }] })
 let root, container
+it('shows the selected professional photo', async () => {
+  const photoPath = '11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg'
+  const value = detail('p1'); value.professional.photoPath = photoPath
+  mocks.repo.studentProfessionalDetail.mockResolvedValue(value); await render('/student/professionals/p1')
+  expect(container.querySelector('.management-avatar img')?.getAttribute('src')).toContain(photoPath)
+})
 beforeEach(() => { vi.clearAllMocks(); mocks.auth = { status: 'authenticated', user: { id: 's1' } }; mocks.scopeToken = { scope: { kind: 'account', userId: 's1' }, generation: 1 }; mocks.state = {}; mocks.replace.mockImplementation(value => { mocks.state = value }); mocks.repo.studentProfessionalDetail.mockImplementation(id => Promise.resolve(detail(id))); mocks.repo.revokeRelationship.mockResolvedValue({}); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 function CurrentRoute() { const location = useLocation(); return <span data-route>{location.pathname}{location.search}</span> }

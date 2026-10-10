@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { DAYN, DAYS, uid, exCount, fmtDate, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
@@ -23,11 +22,10 @@ export default function Plan() {
   const location = useLocation()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
-  const [editingProfile, setEditingProfile] = useState(() => new URLSearchParams(location.search).get('profile') === 'edit')
-
-  if (!S.onboardingDone || editingProfile) {
-    const closeEditor = () => { setEditingProfile(false); nav('/plan', { replace: true }) }
-    return <PlanWizard editing={editingProfile} onCancel={closeEditor} onDone={closeEditor} />
+  if (new URLSearchParams(location.search).get('profile') === 'edit') return <Navigate to="/settings?profile=edit" replace />
+  if (!S.onboardingDone) {
+    const closeEditor = () => nav('/plan', { replace: true })
+    return <PlanWizard onCancel={closeEditor} onDone={closeEditor} />
   }
 
   const addRoutine = () => {

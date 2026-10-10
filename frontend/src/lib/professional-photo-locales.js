@@ -1,0 +1,191 @@
+const KEYS = [
+  "Foto profissional",
+  "Sua foto aparece para você, convidados e alunos.",
+  "JPG, PNG ou WebP, até 5 MB.",
+  "Adicionar foto",
+  "Trocar foto",
+  "Remover foto",
+  "Salvando foto…",
+  "Foto atualizada.",
+  "Foto removida.",
+  "Escolha uma imagem JPG, PNG ou WebP.",
+  "A imagem deve ter até 5 MB.",
+  "Não foi possível atualizar a foto. Tente novamente."
+]
+const translations = {
+  "en": [
+    "Professional photo",
+    "Your photo is shown to you, invitees and students.",
+    "JPG, PNG or WebP, up to 5 MB.",
+    "Add photo",
+    "Change photo",
+    "Remove photo",
+    "Saving photo…",
+    "Photo updated.",
+    "Photo removed.",
+    "Choose a JPG, PNG or WebP image.",
+    "The image must be no larger than 5 MB.",
+    "Could not update the photo. Try again."
+  ],
+  "pt": [
+    "Foto profissional",
+    "Sua foto aparece para você, convidados e alunos.",
+    "JPG, PNG ou WebP, até 5 MB.",
+    "Adicionar foto",
+    "Trocar foto",
+    "Remover foto",
+    "Salvando foto…",
+    "Foto atualizada.",
+    "Foto removida.",
+    "Escolha uma imagem JPG, PNG ou WebP.",
+    "A imagem deve ter até 5 MB.",
+    "Não foi possível atualizar a foto. Tente novamente."
+  ],
+  "de": [
+    "Profilfoto",
+    "Dein Foto wird dir, eingeladenen Personen und Schülern angezeigt.",
+    "JPG, PNG oder WebP, bis zu 5 MB.",
+    "Foto hinzufügen",
+    "Foto ändern",
+    "Foto entfernen",
+    "Foto wird gespeichert…",
+    "Foto aktualisiert.",
+    "Foto entfernt.",
+    "Wähle ein JPG-, PNG- oder WebP-Bild.",
+    "Das Bild darf höchstens 5 MB groß sein.",
+    "Das Foto konnte nicht aktualisiert werden. Versuche es erneut."
+  ],
+  "es": [
+    "Foto profesional",
+    "Tu foto se muestra a ti, a las personas invitadas y a tus alumnos.",
+    "JPG, PNG o WebP, hasta 5 MB.",
+    "Añadir foto",
+    "Cambiar foto",
+    "Eliminar foto",
+    "Guardando foto…",
+    "Foto actualizada.",
+    "Foto eliminada.",
+    "Elige una imagen JPG, PNG o WebP.",
+    "La imagen debe tener un tamaño máximo de 5 MB.",
+    "No se pudo actualizar la foto. Inténtalo de nuevo."
+  ],
+  "fr": [
+    "Photo professionnelle",
+    "Votre photo est visible par vous, les personnes invitées et vos élèves.",
+    "JPG, PNG ou WebP, jusqu’à 5 Mo.",
+    "Ajouter une photo",
+    "Changer la photo",
+    "Supprimer la photo",
+    "Enregistrement de la photo…",
+    "Photo mise à jour.",
+    "Photo supprimée.",
+    "Choisissez une image JPG, PNG ou WebP.",
+    "L’image ne doit pas dépasser 5 Mo.",
+    "Impossible de mettre à jour la photo. Réessayez."
+  ],
+  "it": [
+    "Foto professionale",
+    "La tua foto è visibile a te, alle persone invitate e ai tuoi allievi.",
+    "JPG, PNG o WebP, fino a 5 MB.",
+    "Aggiungi foto",
+    "Cambia foto",
+    "Rimuovi foto",
+    "Salvataggio della foto…",
+    "Foto aggiornata.",
+    "Foto rimossa.",
+    "Scegli un’immagine JPG, PNG o WebP.",
+    "L’immagine non deve superare 5 MB.",
+    "Impossibile aggiornare la foto. Riprova."
+  ],
+  "pl": [
+    "Zdjęcie profesjonalisty",
+    "Twoje zdjęcie jest widoczne dla Ciebie, zaproszonych osób i podopiecznych.",
+    "JPG, PNG lub WebP, do 5 MB.",
+    "Dodaj zdjęcie",
+    "Zmień zdjęcie",
+    "Usuń zdjęcie",
+    "Zapisywanie zdjęcia…",
+    "Zdjęcie zaktualizowane.",
+    "Zdjęcie usunięte.",
+    "Wybierz obraz JPG, PNG lub WebP.",
+    "Obraz nie może przekraczać 5 MB.",
+    "Nie udało się zaktualizować zdjęcia. Spróbuj ponownie."
+  ],
+  "tr": [
+    "Profesyonel fotoğrafı",
+    "Fotoğrafınız size, davet edilen kişilere ve öğrencilerinize gösterilir.",
+    "JPG, PNG veya WebP, en fazla 5 MB.",
+    "Fotoğraf ekle",
+    "Fotoğrafı değiştir",
+    "Fotoğrafı kaldır",
+    "Fotoğraf kaydediliyor…",
+    "Fotoğraf güncellendi.",
+    "Fotoğraf kaldırıldı.",
+    "JPG, PNG veya WebP görüntüsü seçin.",
+    "Görüntü en fazla 5 MB olmalıdır.",
+    "Fotoğraf güncellenemedi. Tekrar deneyin."
+  ],
+  "ru": [
+    "Фото специалиста",
+    "Ваше фото видно вам, приглашённым пользователям и вашим ученикам.",
+    "JPG, PNG или WebP, до 5 МБ.",
+    "Добавить фото",
+    "Изменить фото",
+    "Удалить фото",
+    "Сохранение фото…",
+    "Фото обновлено.",
+    "Фото удалено.",
+    "Выберите изображение JPG, PNG или WebP.",
+    "Размер изображения не должен превышать 5 МБ.",
+    "Не удалось обновить фото. Попробуйте снова."
+  ],
+  "hi": [
+    "पेशेवर की फ़ोटो",
+    "आपकी फ़ोटो आपको, आमंत्रित लोगों और आपके छात्रों को दिखाई जाती है।",
+    "JPG, PNG या WebP, अधिकतम 5 MB।",
+    "फ़ोटो जोड़ें",
+    "फ़ोटो बदलें",
+    "फ़ोटो हटाएँ",
+    "फ़ोटो सहेजी जा रही है…",
+    "फ़ोटो अपडेट की गई।",
+    "फ़ोटो हटा दी गई।",
+    "JPG, PNG या WebP छवि चुनें।",
+    "छवि का आकार 5 MB से अधिक नहीं होना चाहिए।",
+    "फ़ोटो अपडेट नहीं हो सकी। फिर से प्रयास करें।"
+  ],
+  "ko": [
+    "전문가 사진",
+    "사진은 본인, 초대받은 사람, 회원에게 표시됩니다.",
+    "JPG, PNG 또는 WebP, 최대 5 MB.",
+    "사진 추가",
+    "사진 변경",
+    "사진 삭제",
+    "사진 저장 중…",
+    "사진이 업데이트되었습니다.",
+    "사진이 삭제되었습니다.",
+    "JPG, PNG 또는 WebP 이미지를 선택하세요.",
+    "이미지 크기는 5 MB 이하여야 합니다.",
+    "사진을 업데이트하지 못했습니다. 다시 시도하세요."
+  ],
+  "zh": [
+    "专业人士照片",
+    "您的照片会显示给您、受邀者和学员。",
+    "JPG、PNG 或 WebP，最大 5 MB。",
+    "添加照片",
+    "更换照片",
+    "移除照片",
+    "正在保存照片…",
+    "照片已更新。",
+    "照片已移除。",
+    "请选择 JPG、PNG 或 WebP 图片。",
+    "图片大小不得超过 5 MB。",
+    "无法更新照片，请重试。"
+  ]
+}
+
+export const professionalPhotoEnglish = Object.fromEntries(KEYS.map((key, index) => [key, translations.en[index]]))
+export function professionalPhotoLocale(language) {
+  const values = translations[language] || translations.en
+  return Object.fromEntries(KEYS.map((key, index) => [key, values[index]]))
+}
+
