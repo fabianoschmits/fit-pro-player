@@ -1087,6 +1087,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .professional-native .professional-week-editor button.professional-row-link{width:100%;border:0;background:transparent;text-align:left;font:inherit;cursor:pointer}
 .professional-native .professional-week-editor :is(p,li){overflow-wrap:anywhere}
 @media(max-width:899px){.dialog-layer:has(.professional-editor-sheet){align-items:end;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px))}.professional-editor-sheet{max-height:calc(100dvh - 24px - env(safe-area-inset-bottom,0px));padding:16px}.professional-editor-sheet .professional-picker-filters select{font-size:16px}}
+@media(max-width:899px){.dialog-layer:has(.professional-prescription-sheet){align-items:end}.professional-prescription-sheet{min-height:75dvh;max-height:90dvh;overflow:auto;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
 
 .professional-editor-sheet select,.professional-native .professional-day-tools select{border:1px solid var(--sep);border-radius:8px;padding:8px;color:var(--label);background:var(--surface-2)}
 /* Program library, immutable reads and assignment review. */
@@ -1103,4 +1104,6 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .professional-native .professional-prescription-row>strong{font-size:14px;flex-basis:100%}
 .professional-native .professional-prescription-row>span{font-size:12px}
 .professional-native .professional-prescription-row>p{flex-basis:100%;font-size:13px;margin:4px 0}
+.student-program-overview .card{border:0;border-radius:0;border-bottom:1px solid var(--sep);background:transparent;box-shadow:none;padding:12px 0;min-height:56px}
+.student-program-overview .card:last-child{border-bottom:0}
 @media(min-width:900px){.professional-native .professional-program-comparison{grid-template-columns:repeat(2,minmax(0,1fr))}}

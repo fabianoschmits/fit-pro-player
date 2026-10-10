@@ -24,6 +24,7 @@ describe('student professional program overview', () => {
     expect([...container.querySelectorAll('button')].filter(x => x.textContent.includes('Iniciar'))).toHaveLength(1)
     expect(container.textContent).not.toContain('Histórico')
     expect(container.querySelector('a[href="/student/professionals/p1?section=training"]')).not.toBeNull()
+    expect(container.textContent.indexOf('Próximo treino')).toBeLessThan(container.textContent.indexOf('Programa atual'))
   })
   it('shows current program, upcoming sessions and execution history', async () => {
     const onStart = vi.fn()

@@ -15,8 +15,8 @@ export default function StudentProgramOverview({ overview = {}, onStart, managem
   if (managementCompact && overview.program) {
     const next = upcoming[0]
     return <div className="student-program-overview">
-      <ManagementPanel title={t('Programa atual')} action={trainingTo && <Link className="management-button" to={trainingTo}>{t('Ver treino recebido')}</Link>}><h3>{overview.program.title}</h3><p className="muted">{t('{0} · versão {1}', overview.professional?.name || t('Profissional'), overview.version?.versionNumber || '—')}</p>{overview.version?.publishedAt && <p className="muted">{t('Atualizado em {0}', professionalDate(overview.version.publishedAt))}</p>}{overview.program.description && <p>{overview.program.description}</p>}</ManagementPanel>
       <ManagementPanel title={t('Próximo treino')}>{next ? <div className="management-next-workout"><div><strong>{professionalDayLabel(next.day)}</strong><p className="muted">{professionalDate(next.date)} · {t('{0} exercício(s)', next.exercises.length)}</p></div><Button onClick={() => onStart?.(next)}>{t('Iniciar')}</Button></div> : <p className="muted">{t('Nenhum treino programado.')}</p>}</ManagementPanel>
+      <ManagementPanel title={t('Programa atual')} action={trainingTo && <Link className="management-button" to={trainingTo}>{t('Ver treino recebido')}</Link>}><h3>{overview.program.title}</h3><p className="muted">{t('{0} · versão {1}', overview.professional?.name || t('Profissional'), overview.version?.versionNumber || '—')}</p>{overview.version?.publishedAt && <p className="muted">{t('Atualizado em {0}', professionalDate(overview.version.publishedAt))}</p>}{overview.program.description && <p>{overview.program.description}</p>}</ManagementPanel>
     </div>
   }
   if (!overview.program) return <Section title={t('Programa profissional')}><p className="muted">{t('Você ainda não recebeu um programa ativo.')}</p></Section>
