@@ -27,7 +27,7 @@ export default function More() {
     return () => { current = false }
   }, [account?.id, repo, consoleRepo, attempt])
   const permissions = roles?.owner === account?.id ? roles : null
-  const row = (title, icon, to, subtitle) => <Row key={to} title={t(title)} icon={icon} subtitle={subtitle ? t(subtitle) : undefined} accessory="chevron" onClick={() => nav(to)} />
+  const row = (title, icon, to, subtitle) => <Row key={to} title={t(title)} icon={icon} subtitle={subtitle ? t(subtitle) : undefined} accessory="chevron" onClick={() => nav(to)} className="more-row" />
   return <div className="narrow more-page">
     <AppHeader title={t('More')} subtitle={t('Your training, workspaces and preferences')} />
     <button type="button" className="menu-profile" onClick={() => nav('/settings')}>
@@ -47,17 +47,17 @@ export default function More() {
       {row('Convidar aluno', 'plus', '/professional/invites?section=create')}
       {row('Perfil profissional', 'personCircle', '/professional/profile', 'Sua apresentação para os alunos.')}
     </Section></div>}
-    <Section title={t('My training')}>
+    <Section title={t('My training')} className="more-section">
       {row('History', 'history', '/history', 'All your past workouts')}
       {row('Body progress', 'chart', '/body-progress', 'Weight and body measurements')}
       {row('Exercises', 'list', '/library', t('{0} exercises in the catalogue', EXDB.length))}
     </Section>
-    {account && <Section title={t('Professional support')}>
+    {account && <Section title={t('Professional support')} className="more-section">
       {row('Meus profissionais', 'personCircle', '/student/professionals', 'Programas e prescrições dos seus profissionais')}
       {row('Received training', 'dumbbell', '/student/professionals/materials')}
       {row('Adicionar profissional', 'plus', '/student/professionals/add')}
     </Section>}
-    <Section title={t('Account and settings')}>
+    <Section title={t('Account and settings')} className="more-section">
       {row('Personal data', 'person', '/settings?profile=edit', 'Name, birth date, body, measurements and training goal')}
       {row('Settings', 'gear', '/settings', 'Language, units, backup & preferences')}
     </Section>

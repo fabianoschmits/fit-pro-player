@@ -1736,9 +1736,9 @@ h4.sec{
 .workout-row{width:100%;text-align:left}
 .workout-row-icon{width:32px;height:32px;border-radius:7px;font-size:17px}
 
-.library-view,.history-view{width:100%;max-width:760px;margin-inline:auto}
+.library-view,.history-view{width:100%;max-width:760px;margin-inline:auto;padding-bottom:28px}
 .library-view>.hdr{margin-bottom:12px}
-.library-list{gap:0;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:8px;background:var(--surface)}
+.library-list{gap:0;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:var(--r-card);background:var(--surface)}
 .library-list>.item{min-height:58px;border-radius:0;background:transparent;transform:none}
 .library-list>.item+.item{border-top:var(--hair) solid var(--sep-op)}
 .library-list .thumb{width:42px;height:42px;border-radius:7px}
@@ -1815,7 +1815,7 @@ h4.sec{
 .history-titlebar .app-header-main{flex:1}
 .history-month{margin-bottom:20px}.history-month-heading{display:flex;align-items:center;justify-content:space-between;margin:0 3px 7px;padding-bottom:0;border-bottom:0}
 .history-month-heading h2{font-size:13px;font-weight:650;text-transform:capitalize}.history-month-heading span{color:var(--label-3);font-size:10px}
-.history-list{gap:0;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:8px;background:var(--surface)}
+.history-list{gap:0;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:var(--r-card);background:var(--surface)}
 .history-list .workout-row{min-height:54px;border-radius:0;background:transparent;transform:none}
 .history-list .workout-row+.workout-row{border-top:var(--hair) solid var(--sep-op)}
 
