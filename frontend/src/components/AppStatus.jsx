@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
+import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 
 export default function AppStatus() {
   const sync = useStore(s => s.accountSync), persistence = useStore(s => s.persistence)
@@ -9,6 +10,8 @@ export default function AppStatus() {
   const [online, setOnline] = useState(navigator.onLine !== false)
   const [update, setUpdate] = useState(false)
   const [updateDismissed, setUpdateDismissed] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncFeedback, setSyncFeedback] = useState(null)
   const asideRef = useRef(null)
 
   useEffect(() => {
@@ -49,7 +52,24 @@ export default function AppStatus() {
     }
   }, [state])
 
-  if (!state) return null
+  const updateConflict = async () => {
+    if (syncing) return
+    setSyncing(true); setSyncFeedback(null)
+    try {
+      const ok = await useStore.getState().resolveSyncConflict('cloud', getBrowserSupabaseClient())
+      if (!ok) { setSyncFeedback('error'); return }
+      setSyncFeedback('success')
+      window.setTimeout(() => setSyncFeedback(null), 1800)
+    } catch {
+      setSyncFeedback('error')
+    } finally { setSyncing(false) }
+  }
+
+  if (!state && !syncFeedback) return null
+  if (syncFeedback === 'success') return <aside className="app-status app-status-global" data-state="success" role="status">
+    <span className="status-dot" />
+    <span>{t('Sync updated')}</span>
+  </aside>
   const text = state === 'error' ? t('Data could not be saved on this device.')
     : state === 'conflict' ? t('Your devices have different changes. Review sync copies in Settings.')
     : state === 'offline' ? t('Offline — changes stay on this device until you reconnect.')
@@ -57,11 +77,13 @@ export default function AppStatus() {
     : state === 'sync-error' ? t('Could not sync. Your device copy is preserved.')
     : state === 'pending' ? t('{0} professional updates waiting to sync.', pending)
     : t('App update ready. It will be applied after your workout.')
+  const syncError = syncFeedback === 'error' && t('Could not finish sync. Your copies were preserved.')
 
   return <aside ref={asideRef} className="app-status app-status-global" data-state={state} role="status">
     <span className="status-dot" />
-    <span>{text}</span>
+    <span>{syncError || text}</span>
     <a href="#/settings">{t('Settings')}</a>
+    {state === 'conflict' && <button type="button" className="app-status-action" disabled={syncing} onClick={updateConflict}>{syncing ? t('Syncing') : t('Sync now')}</button>}
     {state === 'update' && <button type="button" className="app-status-dismiss" aria-label={t('Close')} onClick={() => setUpdateDismissed(true)}>×</button>}
   </aside>
 }

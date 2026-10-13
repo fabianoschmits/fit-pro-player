@@ -20,6 +20,7 @@
 .app-status-global{position:fixed;bottom:calc(84px + var(--sab));left:16px;right:16px;z-index:60;box-shadow:var(--card-shadow)}
 .app-status[data-state="error"],.app-status[data-state="conflict"]{border-color:var(--red);color:var(--label)}
 .app-status a{color:var(--label);text-decoration:underline}.app-status .status-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);flex:none}
+.app-status-action{margin-left:auto;border:1px solid var(--acc);border-radius:8px;padding:7px 10px;background:var(--acc-soft);color:var(--acc);font:inherit;font-weight:600;cursor:pointer}.app-status-action:disabled{opacity:.65;cursor:wait}
 .offline-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.offline-controls progress{width:100%;accent-color:var(--acc)}
 .professional-filter-bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.professional-filter-bar .field{flex:1;min-width:180px}
 .professional-page .sect-b{overflow:hidden}.professional-page .lrow-m{min-width:0}

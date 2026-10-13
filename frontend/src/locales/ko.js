@@ -996,6 +996,8 @@ export default {
   "Use the cloud copy?": "클라우드 사본을 사용하시겠습니까?",
   "Both copies remain available as backups. The selected copy becomes the account state.": "두 복사본 모두 백업으로 사용할 수 있습니다. 선택한 사본이 계정 상태가 됩니다.",
   "Sync updated": "동기화가 업데이트되었습니다.",
+  "Sync now": "지금 동기화",
+  "Syncing": "동기화 중...",
   "Could not finish sync. Your copies were preserved.": "동기화를 완료할 수 없습니다. 귀하의 사본은 보존되었습니다.",
   "Could not export the backup": "백업을 내보낼 수 없습니다.",
   "Could not save on this device. Export a backup before closing the app.": "이 장치에 저장할 수 없습니다. 앱을 닫기 전에 백업을 내보내세요.",

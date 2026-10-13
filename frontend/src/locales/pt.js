@@ -1107,6 +1107,8 @@ export default {
   "Use the cloud copy?": "Usar a cópia na nuvem?",
   "Both copies remain available as backups. The selected copy becomes the account state.": "As duas cópias continuam disponíveis como backups. A cópia escolhida passa a ser usada pela conta.",
   "Sync updated": "Sincronização atualizada",
+  "Sync now": "Atualizar agora",
+  "Syncing": "Atualizando...",
   "Could not finish sync. Your copies were preserved.": "Não foi possível concluir a sincronização. Suas cópias foram preservadas.",
   "Could not export the backup": "Não foi possível exportar o backup",
   "Could not save on this device. Export a backup before closing the app.": "Não foi possível salvar neste dispositivo. Exporte um backup antes de fechar o aplicativo.",

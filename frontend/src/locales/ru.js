@@ -963,6 +963,8 @@ export default {
   "Use the cloud copy?": "Использовать облачную копию?",
   "Both copies remain available as backups. The selected copy becomes the account state.": "Обе копии остаются доступными в качестве резервных копий. Выбранная копия становится состоянием аккаунта.",
   "Sync updated": "Синхронизация обновлена",
+  "Sync now": "Синхронизировать сейчас",
+  "Syncing": "Синхронизация...",
   "Could not finish sync. Your copies were preserved.": "Не удалось завершить синхронизацию. Ваши копии сохранились.",
   "Could not export the backup": "Не удалось экспортировать резервную копию",
   "Could not save on this device. Export a backup before closing the app.": "Не удалось сохранить на этом устройстве. Экспортируйте резервную копию перед закрытием приложения.",

@@ -963,6 +963,8 @@ export default {
   "Use the cloud copy?": "Korzystać z kopii w chmurze?",
   "Both copies remain available as backups. The selected copy becomes the account state.": "Obie kopie pozostają dostępne jako kopie zapasowe. Wybrana kopia staje się stanem konta.",
   "Sync updated": "Synchronizacja zaktualizowana",
+  "Sync now": "Synchronizuj teraz",
+  "Syncing": "Synchronizowanie...",
   "Could not finish sync. Your copies were preserved.": "Nie udało się dokończyć synchronizacji. Twoje kopie zostały zachowane.",
   "Could not export the backup": "Nie można wyeksportować kopii zapasowej",
   "Could not save on this device. Export a backup before closing the app.": "Nie udało się zapisać na tym urządzeniu. Wyeksportuj kopię zapasową przed zamknięciem aplikacji.",

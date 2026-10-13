@@ -963,6 +963,8 @@ export default {
   "Use the cloud copy?": "Bulut kopyasını mı kullanıyorsunuz?",
   "Both copies remain available as backups. The selected copy becomes the account state.": "Her iki kopya da yedek olarak kullanılabilir durumda kalır. Seçilen kopya hesap durumu olur.",
   "Sync updated": "Senkronizasyon güncellendi",
+  "Sync now": "Şimdi senkronize et",
+  "Syncing": "Senkronize ediliyor...",
   "Could not finish sync. Your copies were preserved.": "Senkronizasyon tamamlanamadı. Kopyalarınız korundu.",
   "Could not export the backup": "Yedekleme dışa aktarılamadı",
   "Could not save on this device. Export a backup before closing the app.": "Bu cihaza kaydedilemedi. Uygulamayı kapatmadan önce bir yedeği dışa aktarın.",

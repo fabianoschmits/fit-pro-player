@@ -963,6 +963,8 @@ export default {
   "Use the cloud copy?": "क्लाउड कॉपी का उपयोग करें?",
   "Both copies remain available as backups. The selected copy becomes the account state.": "दोनों प्रतियाँ बैकअप के रूप में उपलब्ध रहती हैं। चयनित प्रतिलिपि खाता स्थिति बन जाती है.",
   "Sync updated": "समन्वयन अद्यतन किया गया",
+  "Sync now": "अभी समन्वयित करें",
+  "Syncing": "समन्वयित किया जा रहा है...",
   "Could not finish sync. Your copies were preserved.": "सिंक पूरा नहीं हो सका. आपकी प्रतियाँ सुरक्षित रखी गईं.",
   "Could not export the backup": "बैकअप निर्यात नहीं किया जा सका",
   "Could not save on this device. Export a backup before closing the app.": "इस डिवाइस पर सहेजा नहीं जा सका. ऐप बंद करने से पहले एक बैकअप निर्यात करें।",

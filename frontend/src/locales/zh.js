@@ -996,6 +996,8 @@ export default {
   "Use the cloud copy?": "使用云拷贝吗？",
   "Both copies remain available as backups. The selected copy becomes the account state.": "两个副本仍可用作备份。所选副本成为帐户状态。",
   "Sync updated": "同步更新",
+  "Sync now": "立即同步",
+  "Syncing": "正在同步...",
   "Could not finish sync. Your copies were preserved.": "无法完成同步。您的副本已保存。",
   "Could not export the backup": "无法导出备份",
   "Could not save on this device. Export a backup before closing the app.": "无法在此设备上保存。关闭应用程序之前导出备份。",
