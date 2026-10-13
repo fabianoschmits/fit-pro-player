@@ -22,6 +22,7 @@ import { createProfessionalWorkflowRepository } from '../lib/professional-workfl
 import OfflineControls from '../components/OfflineControls.jsx'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 import NotificationSettings from '../components/NotificationSettings.jsx'
+import PrivacyControls from '../components/PrivacyControls.jsx'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -154,6 +155,7 @@ export default function Settings() {
     </Section>}
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
 
+    <Section title="Privacidade e dados"><PrivacyControls toast={toast} /></Section>
     <Section title={t('Offline')}><OfflineControls /></Section>
     <Section title={t('Diagnostics')}><DiagnosticsControls /></Section>
 
