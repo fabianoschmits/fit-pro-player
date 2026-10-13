@@ -22,6 +22,7 @@ import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from '
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
+import PrivacyPages from './views/PrivacyPages.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
@@ -232,6 +233,7 @@ function Shell() {
   const inviteEntry = ['/connect', '/student/professionals', '/student/professionals/add'].includes(loc.pathname)
   const queryInviteCode = inviteEntry ? new URLSearchParams(loc.search).get('code') || '' : ''
   const invitePath = loc.pathname.startsWith('/invite/') || loc.pathname === '/connect' || loc.pathname === '/student/professionals/add' || (inviteEntry && !!queryInviteCode)
+  const publicPrivacyPath = ['/privacy', '/terms', '/data-rights'].includes(loc.pathname)
   const inviteAcceptedPath = new URLSearchParams(loc.search).get('invite') === 'accepted'
   const inviteAuthenticated = invitePath && authenticated && ready
   const pendingInviteCode = loc.pathname.match(/^\/invite\/([^/]+)/)?.[1] || queryInviteCode
@@ -361,12 +363,12 @@ function Shell() {
   // First entry is a single, resumable setup inside Plan. Until it is complete, other routes
   // cannot accidentally surface an empty dashboard or the retired Home overlay.
   useEffect(() => {
-    if (ready && !appEntered && !invitePath && loc.pathname !== '/') {
+    if (ready && !appEntered && !invitePath && !publicPrivacyPath && loc.pathname !== '/') {
       navigate('/', { replace: true })
       return
     }
     if (ready && authed && !invitePath && !inviteAcceptedPath && !S.onboardingDone && loc.pathname !== '/plan') navigate('/plan', { replace: true })
-  }, [S.onboardingDone, appEntered, authed, inviteAcceptedPath, invitePath, loc.pathname, navigate, ready])
+  }, [S.onboardingDone, appEntered, authed, inviteAcceptedPath, invitePath, loc.pathname, navigate, ready, publicPrivacyPath])
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
 
@@ -385,9 +387,12 @@ function Shell() {
           re-mounts the boundary, so the tab bar is always a way out */}
       <PageTransition>
         <ErrorBoundary>
-          {!(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
+          {publicPrivacyPath ? <PrivacyPages kind={loc.pathname === '/terms' ? 'terms' : loc.pathname === '/data-rights' ? 'rights' : 'privacy'} /> : !(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
             <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
+                <Route path="/privacy" element={<PrivacyPages kind="privacy" />} />
+                <Route path="/terms" element={<PrivacyPages kind="terms" />} />
+                <Route path="/data-rights" element={<PrivacyPages kind="rights" />} />
                 <Route path="/plan" element={<Plan />} />
                 <Route path="/plan/r/:id" element={<RoutineEdit />} />
                 <Route path="/workout" element={<Workout />} />

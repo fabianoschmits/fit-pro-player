@@ -58,6 +58,8 @@ export default function More() {
         subtitle={account ? t('Signed in to your account') : t('Guest data stays on this device — export a backup now and then!')} />
       {consoleAccess && <Row icon="gear" iconTint="var(--label)" title="Central" subtitle="Operação da plataforma"
         accessory="chevron" onClick={() => nav('/console')} />}
+      <Row icon="shield" iconTint="var(--blue)" title="Privacidade e dados" subtitle="Aviso, direitos dos titulares e solicitações LGPD"
+        accessory="chevron" onClick={() => nav('/data-rights')} />
     </Section>
   </div>
 }

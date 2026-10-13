@@ -1493,6 +1493,8 @@ body.landing-mode #tabbar {
   justify-self: end;
 }
 
+.landing-footer nav{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}.landing-footer nav a{color:var(--label-2);text-decoration:underline}
+
 .landing-footer-brand img {
   width: 30px;
   height: 30px;

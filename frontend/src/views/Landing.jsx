@@ -420,6 +420,7 @@ export default function Landing({ invitePath = false }) {
       <footer className="landing-footer">
         <a className="landing-footer-brand" href="#top"><img src={BRAND_LOGO} alt="" /><span>FIT PRO PLAYER</span></a>
         <p>Treine com intenção. Acompanhe com clareza.</p>
+        <nav aria-label="Documentos legais"><a href="#/privacy">Privacidade</a><a href="#/terms">Termos</a><a href="#/data-rights">Direitos dos titulares</a></nav>
         <span>Todos os direitos reservados.</span>
       </footer>
     </main>

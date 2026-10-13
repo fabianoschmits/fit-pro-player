@@ -846,6 +846,7 @@ h4.sec{
 .notification-settings .notification-time-row .timef{width:118px;min-width:0;min-height:44px;flex:0 0 118px}
 .notification-settings .lrow-t,.notification-settings .lrow-s{overflow-wrap:anywhere}
 .notification-settings .notification-privacy{margin-top:-12px;margin-bottom:20px}
+.privacy-page{padding:24px 16px 100px;color:var(--label);line-height:1.6}.privacy-page-header{display:flex;align-items:center;gap:14px;margin-bottom:36px}.privacy-page-header>a{font-size:28px;color:var(--label);text-decoration:none}.privacy-page-header span{display:block;color:var(--acc);font-size:12px;letter-spacing:.16em}.privacy-page-header small{color:var(--label-3);font-size:11px}.privacy-page h1{font-size:32px;line-height:1.1;margin:0 0 20px}.privacy-page h2{font-size:19px;margin:28px 0 8px}.privacy-page p,.privacy-page li{color:var(--label-2);font-size:14px}.privacy-page a{color:var(--acc)}.privacy-page-links{display:flex;flex-wrap:wrap;gap:14px;border-top:1px solid var(--sep);padding-top:20px;margin-top:40px}.privacy-config-warning{border:1px solid var(--red);border-radius:var(--r);padding:12px;color:var(--label);background:var(--surface)}.privacy-page .btn{display:inline-flex;margin:8px 0;padding:10px 14px;border-radius:10px;background:var(--acc);color:var(--on-acc);text-decoration:none;font-weight:700}
 @media(max-width:360px){
   .notification-settings .notification-time-row{flex-wrap:wrap}
   .notification-settings .notification-time-row .lrow-m{flex-basis:calc(100% - 40px)}
