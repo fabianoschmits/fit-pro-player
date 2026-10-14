@@ -67,7 +67,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
   const keyMuscle = (event, slug) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
-    onMuscle(slug)
+    onMuscle(slug, viewName)
   }
   const pathA11y = (slug, index) => onMuscle && index === 0 ? {
     role: 'button', tabIndex: 0, 'aria-label': t(MUSCLE_NAME[slug]),
@@ -97,7 +97,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')}
           d={d}
           style={captureSafe ? { fill: ['#243d36', '#688d57', '#8fbd58', '#b7ef54', '#e4ff9a'][levels[slug] || 0] } : undefined}
-          onClick={onMuscle ? () => onMuscle(slug) : undefined}
+          onClick={onMuscle ? () => onMuscle(slug, viewName) : undefined}
           {...pathA11y(slug, i)}
         />)
         const renderPath = (d, i, local = false, scale = 1) => <path
@@ -105,7 +105,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '') + (local ? ' bm-shape-path' : '')}
           style={{ ...(local ? { transform: `scaleX(${scale})` } : {}), ...(captureSafe ? { fill: ['#243d36', '#688d57', '#8fbd58', '#b7ef54', '#e4ff9a'][levels[slug] || 0] } : {}) }}
           d={d}
-          onClick={onMuscle ? () => onMuscle(slug) : undefined}
+          onClick={onMuscle ? () => onMuscle(slug, viewName) : undefined}
           {...pathA11y(slug, i)}
         />
         if (LOCAL_SHAPE_SLUGS.has(slug)) return paths.map((d, i) => renderPath(d, i, true, shapeScaleForPath(shapeScales, slug, i, paths.length, viewName)))

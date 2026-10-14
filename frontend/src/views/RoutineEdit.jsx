@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -19,6 +19,26 @@ import { loadOfRoutine, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
 import { routineName } from '../lib/starter.js'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
+const MUSCLE_ANCHORS = {
+  trapezius: { front: { x: 50, y: 18 }, back: { x: 50, y: 19 } },
+  deltoids: { front: { x: 32, y: 24 }, back: { x: 68, y: 24 } },
+  chest: { front: { x: 50, y: 30 } },
+  'upper-back': { back: { x: 50, y: 31 }, front: { x: 50, y: 31 } },
+  serratus: { front: { x: 34, y: 36 }, back: { x: 66, y: 36 } },
+  biceps: { front: { x: 27, y: 37 }, back: { x: 73, y: 37 } },
+  triceps: { back: { x: 27, y: 38 }, front: { x: 73, y: 38 } },
+  forearm: { front: { x: 25, y: 50 }, back: { x: 75, y: 50 } },
+  abs: { front: { x: 50, y: 43 } },
+  obliques: { front: { x: 42, y: 45 }, back: { x: 58, y: 45 } },
+  'lower-back': { back: { x: 50, y: 53 }, front: { x: 50, y: 53 } },
+  gluteal: { back: { x: 50, y: 62 } },
+  quadriceps: { front: { x: 42, y: 70 }, back: { x: 58, y: 70 } },
+  hamstring: { back: { x: 42, y: 70 }, front: { x: 58, y: 70 } },
+  adductors: { front: { x: 50, y: 71 }, back: { x: 50, y: 71 } },
+  'hip-flexors': { front: { x: 42, y: 62 } },
+  calves: { back: { x: 42, y: 86 }, front: { x: 58, y: 86 } },
+  tibialis: { front: { x: 42, y: 86 }, back: { x: 58, y: 86 } },
+}
 
 export default function RoutineEdit() {
   const nav = useNavigate()
@@ -26,8 +46,18 @@ export default function RoutineEdit() {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const [organizing, setOrganizing] = useState(false)
+  const [selectedMuscle, setSelectedMuscle] = useState(null)
+  const muscleMapRef = useRef(null)
   const r = S.routines.find(x => x.id === id)
   useEffect(() => { if (!r) nav('/plan') }, [!!r])
+  useEffect(() => {
+    if (!selectedMuscle) return undefined
+    const clear = event => {
+      if (!muscleMapRef.current?.contains(event.target)) setSelectedMuscle(null)
+    }
+    document.addEventListener('pointerdown', clear)
+    return () => document.removeEventListener('pointerdown', clear)
+  }, [selectedMuscle])
   if (!r) return null
 
   const edit = fn => update(s => { fn(s.routines.find(x => x.id === id).ex) })
@@ -144,9 +174,11 @@ export default function RoutineEdit() {
     {r.ex.length > 0 && (() => {
       const load = loadOfRoutine(r)
       const { worked } = rankOf(load)
-      return <div className="card routine-muscles">
+      const anchor = MUSCLE_ANCHORS[selectedMuscle?.slug]?.[selectedMuscle?.view] || MUSCLE_ANCHORS[selectedMuscle?.slug]?.front
+      return <div className="card routine-muscles" ref={muscleMapRef} onClick={event => { if (event.target === event.currentTarget) setSelectedMuscle(null) }}>
         <h2>{t('What this session hits')}</h2>
-        <BodyMap load={load} body={S.body} />
+        {selectedMuscle && anchor && <div className="routine-muscle-popover" style={{ '--muscle-x': `${anchor.x}%`, '--muscle-y': `${anchor.y}%` }} role="status">{t(MUSCLE_NAME[selectedMuscle.slug])}</div>}
+        <BodyMap load={load} body={S.body} selected={selectedMuscle?.slug} onMuscle={(slug, view) => setSelectedMuscle({ slug, view })} />
         <div className="mchips">
           {worked.slice(0, 6).map(m => <span key={m} className="mchip">{sentenceCase(t(MUSCLE_NAME[m]))}</span>)}
         </div>
