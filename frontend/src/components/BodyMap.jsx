@@ -50,7 +50,7 @@ export function shapeScaleForPath(shapeScales, slug, index, count, viewName) {
   return Number.isFinite(scale) ? Math.min(1.4, Math.max(.72, scale)) : 1
 }
 
-export function BodyMapView({ view, viewName, levels, onMuscle, selected, selectedSide, decorative, shapeScales, shapeInstant }) {
+export function BodyMapView({ view, viewName, levels, onMuscle, selected, selectedSide, decorative, shapeScales, shapeInstant, captureSafe }) {
   const selectedMuscles = new Set(Array.isArray(selected) ? selected : selected ? [selected] : [])
   const pathIsSelected = (slug, index, count) => selectedMuscles.has(slug)
     && (!SIDE_AWARE_SLUGS.has(slug) || pathMatchesSelectedSide(index, count, selectedSide, viewName))
@@ -75,7 +75,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
     >
       {INERT.map(slug => {
         const paths = view.p[slug] || []
-        const rendered = paths.map((d, i) => <path key={slug + i} className={'bm-sil' + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')} d={d} />)
+        const rendered = paths.map((d, i) => <path key={slug + i} className={'bm-sil' + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')} d={d} style={captureSafe ? { fill: '#48615a' } : undefined} />)
         if (slug !== 'neck' || !shapeScales) return rendered
         const scale = shapeScaleForPath(shapeScales, slug, 0, 1, viewName)
         return <g key={slug} className="bm-shape-group" style={{ transform: `scaleX(${scale})` }}>{rendered}</g>
@@ -86,13 +86,14 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
           key={slug + i}
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')}
           d={d}
+          style={captureSafe ? { fill: ['#243d36', '#688d57', '#8fbd58', '#b7ef54', '#e4ff9a'][levels[slug] || 0] } : undefined}
           onClick={onMuscle ? () => onMuscle(slug) : undefined}
           {...pathA11y(slug, i)}
         />)
         const renderPath = (d, i, local = false, scale = 1) => <path
           key={slug + i}
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '') + (local ? ' bm-shape-path' : '')}
-          style={local ? { transform: `scaleX(${scale})` } : undefined}
+          style={{ ...(local ? { transform: `scaleX(${scale})` } : {}), ...(captureSafe ? { fill: ['#243d36', '#688d57', '#8fbd58', '#b7ef54', '#e4ff9a'][levels[slug] || 0] } : {}) }}
           d={d}
           onClick={onMuscle ? () => onMuscle(slug) : undefined}
           {...pathA11y(slug, i)}
@@ -114,7 +115,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
  */
 export default function BodyMap({
   load = {}, thresholds, body = 'male', onMuscle, selected, selectedSide, className = '',
-  view = 'both', decorative = false, shapeScales, shapeInstant = false,
+  view = 'both', decorative = false, shapeScales, shapeInstant = false, captureSafe = false,
 }) {
   const paths = useBodyPaths()
   const levels = levelsOf(load, thresholds)
@@ -135,6 +136,7 @@ export default function BodyMap({
               decorative={decorative}
               shapeScales={shapeScales}
               shapeInstant={shapeInstant}
+              captureSafe={captureSafe}
             />
           ))
         : <div className="bm-ph" aria-hidden="true" />}
