@@ -68,4 +68,12 @@ describe('body-map shape rendering', () => {
     act(() => paths[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })))
     expect(picked).toEqual(['biceps'])
   })
+
+  it('reports which body view contains the selected muscle', () => {
+    const picked = []
+    const view = { vb: '0 0 100 200', p: { chest: ['M40 40h20v20H40z'] } }
+    act(() => root.render(<BodyMapView view={view} viewName="back" levels={{}} onMuscle={(slug, side) => picked.push([slug, side])} />))
+    act(() => container.querySelector('.bm-m').dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(picked).toEqual([['chest', 'back']])
+  })
 })
