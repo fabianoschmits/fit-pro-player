@@ -2178,3 +2178,25 @@ body.landing-mode #tabbar {
     grid-row: auto;
   }
 }
+.landing-page .landing-workout-section {
+  background: #101722;
+  color: #fff;
+}
+
+.landing-page .landing-profile-preview {
+  background: #101722;
+  color: #fff;
+}
+
+.landing-page .landing-profile-copy > strong {
+  color: #fff;
+}
+
+.landing-page .landing-profile-copy > p {
+  color: var(--landing-acid);
+}
+
+.landing-page .landing-profile-copy > span,
+.landing-page .landing-profile-goal small {
+  color: rgba(255, 255, 255, .68);
+}
