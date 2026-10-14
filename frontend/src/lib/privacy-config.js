@@ -9,7 +9,7 @@ export function getPrivacyConfig(env = import.meta.env || {}) {
     controllerAddress: env.VITE_PRIVACY_CONTROLLER_ADDRESS || 'Venâncio Aires, Rio Grande do Sul, Brasil',
     retentionSummary: env.VITE_PRIVACY_RETENTION || 'Os dados da conta serão excluídos imediatamente após a solicitação, ressalvadas obrigações legais de conservação.',
     operators: env.VITE_PRIVACY_OPERATORS || 'Supabase (infraestrutura e armazenamento).',
-    transferSummary: env.VITE_PRIVACY_TRANSFERS || 'Não há transferência internacional declarada pelo controlador.',
+    transferSummary: env.VITE_PRIVACY_TRANSFERS || 'Os dados principais são armazenados na região South America (São Paulo), sa-east-1, Brasil, utilizando o Supabase. Alguns serviços auxiliares do fornecedor podem envolver processamento internacional, conforme os termos e documentos de privacidade do Supabase.',
   }
 }
 
