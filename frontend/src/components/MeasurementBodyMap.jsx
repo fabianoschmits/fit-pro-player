@@ -178,7 +178,13 @@ export default function MeasurementBodyMap({
     return () => observer.disconnect()
   }, [])
 
-  return <div ref={stageRef} className={`measurement-map-stage${instant ? ' is-scrubbing' : ''}`}>
+  const clearSelectionFromSilhouette = event => {
+    // Tapping the empty area of the silhouette clears the active region. Keep
+    // hotspot taps untouched so selecting a new member still works on mobile.
+    if (!event.target.closest?.('.measurement-hotspot')) onSelect?.(null)
+  }
+
+  return <div ref={stageRef} className={`measurement-map-stage${instant ? ' is-scrubbing' : ''}`} onClick={clearSelectionFromSilhouette}>
     <BodyMap
       className="tappable measurement-bodymap"
       body={body}
