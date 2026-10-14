@@ -10,9 +10,15 @@ describe('workout share summary', () => {
         { id: 'custom-2', sets: [{ done: true }] },
       ],
     }, { unit: 'kg' })
-    expect(summary).toMatchObject({ name: 'Push day', duration: '1h 0m', exercises: 2, sets: 3, volume: '1.250 kg' })
+    expect(summary).toMatchObject({ name: 'Push day', duration: '1h 0m', exercises: 2, sets: 3 })
     expect(summary.exerciseRows).toHaveLength(2)
     expect(summary.exerciseRows[0].sets).toBe(2)
+    expect(summary.topLoad.weight).toBe(0)
+  })
+
+  it('finds the highest completed load and its equipment', () => {
+    const summary = buildWorkoutShareSummary({ entries: [{ id: 'custom-1', sets: [{ done: true, w: 42 }, { done: true, w: 55 }] }] }, { unit: 'kg' })
+    expect(summary.topLoad).toMatchObject({ weight: 55, exercise: 'custom-1' })
   })
 
   it('does not expose a blank title when historical data has no name', () => {
