@@ -5,6 +5,7 @@ import { t } from '../lib/i18n.js';
 import { useUI } from '../store/useUI.js';
 import { useStore } from '../store/useStore.js';
 import { Button } from './ui.jsx';
+import { PRIVACY_DOCUMENT_VERSION } from '../lib/privacy-config.js'
 
 const ERROR_COPY = {
   invalid_credentials: 'Email or password is incorrect.',
@@ -37,6 +38,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [values, setValues] = useState(() => ({ name: offlineName, email: '', password: '', confirmation: '', accountType: 'student' }));
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const alertRef = useRef(null);
   const busy = auth.operation === operationFor[mode];
 
@@ -44,6 +46,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     setMode(initial(initialMode));
     setError('');
     setNotice('');
+    setPrivacyAccepted(false)
   }, [initialMode]);
 
   useEffect(() => {
@@ -71,10 +74,11 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       setError(t('Passwords do not match.'));
       return;
     }
+    if (mode === 'sign_up' && !privacyAccepted) { setError('Aceite o Aviso de Privacidade e os Termos para criar a conta.'); return }
 
     let result;
     if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
-    if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType });
+    if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType, privacyVersion: PRIVACY_DOCUMENT_VERSION });
     if (mode === 'forgot_password') result = await auth.sendPasswordRecovery(values.email);
     if (mode === 'reset_password') result = await auth.updatePassword(values.password);
 
@@ -134,6 +138,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
         <label>{t('Confirm password')}<input className="input" type="password" aria-label={t('Confirm password')} autoComplete="new-password" required minLength={8} aria-describedby="auth-error" value={values.confirmation} onChange={change('confirmation')} /></label>
       </>}
     </>}
+    {isSignUp && <label className="auth-consent"><input type="checkbox" checked={privacyAccepted} onChange={event => setPrivacyAccepted(event.target.checked)} /> <span>Aceito o <a href="#/privacy" target="_blank" rel="noreferrer">Aviso de Privacidade</a> e os <a href="#/terms" target="_blank" rel="noreferrer">Termos de Uso</a>.</span></label>}
     <p id="auth-error" ref={alertRef} role="alert" tabIndex="-1">{error}</p>
     {notice && <p role="status">{notice}</p>}
     <Button variant="primary" type="submit" disabled={busy}>{t(submitLabel)}</Button>

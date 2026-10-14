@@ -28,6 +28,7 @@ let close;
 
 const input = label => [...container.querySelectorAll('input')].find(element => element.getAttribute('aria-label') === label);
 const button = label => [...container.querySelectorAll('button')].find(element => element.textContent.trim() === label);
+const acceptPrivacy = async () => click(container.querySelector('.auth-consent input'));
 
 async function setValue(element, value) {
   await act(async () => {
@@ -107,6 +108,7 @@ describe('AuthSheet', () => {
     await setValue(input('Email'), 'ana@example.com');
     await setValue(input('New password'), 'long-enough-password');
     await setValue(input('Confirm password'), 'long-enough-password');
+    await acceptPrivacy();
     await click(button('Create account'));
 
     expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'professional' }));
@@ -135,6 +137,7 @@ describe('AuthSheet', () => {
     await setValue(input('Email'), 'ana@example.com');
     await setValue(input('New password'), 'long-enough-password');
     await setValue(input('Confirm password'), 'long-enough-password');
+    await acceptPrivacy();
 
     await click(button('Create account'));
 
@@ -155,6 +158,7 @@ describe('AuthSheet', () => {
       await setValue(input('Name'), 'Ana');
       await setValue(input('New password'), 'long-enough-password');
       await setValue(input('Confirm password'), 'long-enough-password');
+      await acceptPrivacy();
     }
     await setValue(input('Email'), 'ana@example.com');
     if (mode === 'sign_in') await setValue(input('Password'), 'long-enough-password');

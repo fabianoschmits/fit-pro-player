@@ -27,6 +27,19 @@ async function provisionProfessional(client, sessionUser) {
   if (error) throw error;
 }
 
+async function recordPrivacyConsents(client, sessionUser) {
+  const version = sessionUser?.user_metadata?.privacy_notice_version;
+  if (!version || typeof client?.rpc !== 'function') return;
+  for (const purpose of ['privacy', 'terms']) {
+    const { error } = await client.rpc('record_privacy_consent', {
+      p_version: version,
+      p_purpose: purpose,
+      p_granted: true,
+    });
+    if (error) throw error;
+  }
+}
+
 function callbackUrl(locationLike) {
   if (locationLike instanceof URL) return new URL(locationLike.href);
   if (typeof locationLike === 'string') return new URL(locationLike);
@@ -113,6 +126,9 @@ export function AuthProvider({ children, client: injectedClient, location: injec
       void provisionOnce(session?.user).catch(error => {
         if (!disposed) setState(current => ({ ...current, error: toAuthError(error, 'professional_onboarding') }));
       });
+      void recordPrivacyConsents(client, session?.user).catch(error => {
+        if (!disposed) setState(current => ({ ...current, error: toAuthError(error, 'privacy_consent') }));
+      });
       if (user) void enforceActiveAccount(session?.user);
     };
     const applyError = (error, operation) => {
@@ -176,6 +192,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         if (disposed || callbackRevision !== revision.current) return;
         if (error) throw error;
         await provisionProfessional(client, result?.session?.user);
+        await recordPrivacyConsents(client, result?.session?.user);
         const user = publicUser(result?.session?.user);
         setState(current => ({
           ...current,
@@ -222,8 +239,8 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         if (result.kind !== 'success') return result;
         return { kind: 'authenticated', data: result.data };
       },
-      signUp: async ({ email, password, displayName, accountType = 'student' }) => {
-        const metadata = { display_name: displayName, account_type: accountType === 'professional' ? 'professional' : 'student' };
+      signUp: async ({ email, password, displayName, accountType = 'student', privacyVersion }) => {
+        const metadata = { display_name: displayName, account_type: accountType === 'professional' ? 'professional' : 'student', ...(privacyVersion ? { privacy_notice_version: privacyVersion, terms_version: privacyVersion } : {}) };
         const current = state.user;
         if (current?.isAnonymous) {
           const result = await execute('signing_up', () => client.auth.updateUser({
