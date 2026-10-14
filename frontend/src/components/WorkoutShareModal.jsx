@@ -158,8 +158,27 @@ export function WorkoutShareModal({ w, onClose }) {
     setError(null)
     setGenerating(true)
 
-    // Wait for BodyMap SVG paths to be fully painted
+    // html-to-image clones the node. Make every async resource ready first;
+    // otherwise the clone can contain the fallback silhouette and omit the logo.
     await new Promise(r => setTimeout(r, 400))
+    await document.fonts?.ready
+    const images = [...canvasRef.current.querySelectorAll('img')]
+    await Promise.all(images.map(image => {
+      if (!image.complete) return new Promise(resolve => {
+        image.addEventListener('load', resolve, { once: true })
+        image.addEventListener('error', resolve, { once: true })
+      })
+      return image.decode?.().catch(() => undefined)
+    }))
+    await new Promise(resolve => {
+      const started = performance.now()
+      const check = () => {
+        const paths = canvasRef.current.querySelectorAll('.share-card-map svg path')
+        if (paths.length || performance.now() - started > 2000) return resolve()
+        requestAnimationFrame(check)
+      }
+      check()
+    })
 
     try {
       const dataUrl = await toPng(canvasRef.current, {
