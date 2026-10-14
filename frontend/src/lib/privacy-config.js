@@ -1,15 +1,15 @@
-const PLACEHOLDER = 'PREENCHER — identidade jurídica do controlador'
+const DEFAULT_CONTROLLER = 'CONFILAR TECNOLOGIA INOVA SIMPLES (I.S.) — CNPJ 65.169.675/0001-04'
 
 export const PRIVACY_DOCUMENT_VERSION = '2026-10-13'
 
 export function getPrivacyConfig(env = import.meta.env || {}) {
   return {
-    controllerName: env.VITE_PRIVACY_CONTROLLER_NAME || PLACEHOLDER,
-    dpoEmail: env.VITE_PRIVACY_DPO_EMAIL || 'PREENCHER — canal LGPD',
-    controllerAddress: env.VITE_PRIVACY_CONTROLLER_ADDRESS || 'PREENCHER — endereço do controlador',
-    retentionSummary: env.VITE_PRIVACY_RETENTION || 'Os prazos devem ser definidos pelo controlador conforme a finalidade e as obrigações legais aplicáveis.',
-    operators: env.VITE_PRIVACY_OPERATORS || 'Supabase, Vercel e outros operadores devem ser confirmados pelo controlador.',
-    transferSummary: env.VITE_PRIVACY_TRANSFERS || 'Transferências internacionais e respectivas salvaguardas devem ser confirmadas pelo controlador.',
+    controllerName: env.VITE_PRIVACY_CONTROLLER_NAME || DEFAULT_CONTROLLER,
+    dpoEmail: env.VITE_PRIVACY_DPO_EMAIL || 'contato@appconfilar.com.br',
+    controllerAddress: env.VITE_PRIVACY_CONTROLLER_ADDRESS || 'Venâncio Aires, Rio Grande do Sul, Brasil',
+    retentionSummary: env.VITE_PRIVACY_RETENTION || 'Os dados da conta serão excluídos imediatamente após a solicitação, ressalvadas obrigações legais de conservação.',
+    operators: env.VITE_PRIVACY_OPERATORS || 'Supabase (infraestrutura e armazenamento).',
+    transferSummary: env.VITE_PRIVACY_TRANSFERS || 'Não há transferência internacional declarada pelo controlador.',
   }
 }
 

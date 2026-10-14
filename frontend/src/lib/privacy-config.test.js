@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { getPrivacyConfig, isPrivacyConfigComplete } from './privacy-config.js'
 
 describe('privacy configuration', () => {
-  it('keeps legal identity explicit and reports incomplete configuration', () => {
-    const config = getPrivacyConfig({})
+  it('reports an incomplete configuration when legal values are placeholders', () => {
+    const config = getPrivacyConfig({ VITE_PRIVACY_CONTROLLER_NAME: 'PREENCHER controlador', VITE_PRIVACY_DPO_EMAIL: 'PREENCHER canal' })
     expect(config.controllerName).toContain('PREENCHER')
     expect(isPrivacyConfigComplete(config)).toBe(false)
   })

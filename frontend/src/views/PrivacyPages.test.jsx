@@ -10,16 +10,16 @@ beforeEach(() => { container = document.createElement('div'); document.body.appe
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
 describe('public privacy pages', () => {
-  it('renders the privacy notice with a rights link and configuration warning', async () => {
+  it('renders the privacy notice with a rights link and configured legal identity', async () => {
     await act(async () => root.render(<MemoryRouter><PrivacyPages kind="privacy" /></MemoryRouter>))
     expect(container.querySelector('h1')?.textContent).toContain('Aviso de Privacidade')
     expect(container.querySelector('a[href="/data-rights"]')).toBeTruthy()
-    expect(container.textContent).toContain('configuração jurídica')
+    expect(container.textContent).toContain('CONFILAR TECNOLOGIA INOVA SIMPLES')
   })
 
   it('renders the titular rights page with a request action', async () => {
     await act(async () => root.render(<MemoryRouter><PrivacyPages kind="rights" /></MemoryRouter>))
     expect(container.querySelector('h1')?.textContent).toContain('Direitos dos titulares')
-    expect(container.textContent).toContain('canal LGPD ainda não foi configurado')
+    expect(container.querySelector('a[href^="mailto:contato@appconfilar.com.br"]')).toBeTruthy()
   })
 })
