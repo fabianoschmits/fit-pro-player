@@ -9,9 +9,7 @@ import { ensureStarterRoutines, routineName } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { dayAssignSheet, dayOverrideSheet, planToolsSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
-import BodyMap from '../components/BodyMap.jsx'
-import { loadOfRoutine } from '../lib/muscles.js'
-import { routineBodyView } from '../lib/exercise-body-view.js'
+import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
 import { Button } from '../components/ui.jsx'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
@@ -20,16 +18,6 @@ import AppHeader from '../components/AppHeader.jsx'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 const DEFAULT_DAYS = [1, 3, 5]
-
-function RoutineMuscleThumb({ routine, body, className }) {
-  return <BodyMap
-    className={`plan-routine-body-thumb ${className || ''}`.trim()}
-    load={loadOfRoutine(routine)}
-    body={body}
-    view={routineBodyView(routine)}
-    decorative
-  />
-}
 
 export default function Plan() {
   const nav = useNavigate()

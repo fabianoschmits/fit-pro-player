@@ -10,6 +10,13 @@ const BACK_MUSCLES = new Set([
   'trapezius', 'upper-back', 'triceps', 'lower-back', 'gluteal',
   'hamstring', 'calves',
 ])
+const UPPER_MUSCLES = new Set([
+  'trapezius', 'deltoids', 'chest', 'upper-back', 'serratus', 'biceps',
+  'triceps', 'forearm', 'abs', 'obliques', 'lower-back', 'hip-flexors',
+])
+const LOWER_MUSCLES = new Set([
+  'gluteal', 'quadriceps', 'hamstring', 'adductors', 'calves', 'tibialis',
+])
 
 export function exerciseBodyView(ex) {
   const load = musclesOf(ex)
@@ -36,4 +43,17 @@ export function routineBodyView(routine) {
     if (BACK_MUSCLES.has(muscle)) back += weight
   }
   return back > front ? 'back' : 'front'
+}
+
+export function routineBodyRegion(routine) {
+  const load = loadOfRoutine(routine)
+  let upper = 0
+  let lower = 0
+  for (const [muscle, weight] of Object.entries(load)) {
+    if (UPPER_MUSCLES.has(muscle)) upper += weight
+    if (LOWER_MUSCLES.has(muscle)) lower += weight
+  }
+  if (upper > lower * 1.25) return 'upper'
+  if (lower > upper * 1.25) return 'lower'
+  return 'full'
 }

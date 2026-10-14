@@ -10,6 +10,7 @@ import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
 import { Thumb } from '../components/Media.jsx'
 import { glyphPicker, exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
+import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
 import { glyphOf } from '../lib/glyphs.js'
 import { Button, SelectRow } from '../components/ui.jsx'
 import { POLICIES_FOR, POLICY_NAME, POLICY_DESC } from '../lib/progression.js'
@@ -132,7 +133,7 @@ export default function RoutineEdit() {
             aria-label={`${t(DAYN[day])}: ${selected ? displayName : other ? routineName(other) : t('Rest')}`}
             aria-pressed={selected} onClick={() => toggleDay(day)}>
             <span className="plan-day-label">{t(DAYS[day])}</span>
-            <span className="plan-day-icon"><Icon name={selected ? glyphOf(r.emoji) : other ? glyphOf(other.emoji) : 'moon'} /></span>
+            <span className="plan-day-icon">{selected ? <RoutineMuscleThumb routine={r} body={S.body} /> : other ? <RoutineMuscleThumb routine={other} body={S.body} /> : <Icon name="moon" />}</span>
             <span className="plan-day-name">{selected ? displayName : other ? routineName(other) : t('Rest')}</span>
           </button>
         })}

@@ -19,6 +19,7 @@ import Icon from './components/Icon.jsx'
 import { Button, Slider, Switch, Segmented, SelectRow, Row } from './components/ui.jsx'
 import { glyphOf, GLYPH_GROUPS, DEFAULT_GLYPH } from './lib/glyphs.js'
 import BodyMap from './components/BodyMap.jsx'
+import RoutineMuscleThumb from './components/RoutineMuscleThumb.jsx'
 import { exerciseMuscleSnapshot, loadOfWorkouts } from './lib/muscles.js'
 import { parseImport, mergeImport } from './lib/import-csv.js'
 import { buildPlanBundle, parsePlan, mergePlan, printPlan } from './lib/plan-share.js'
@@ -477,7 +478,7 @@ function AddToRoutine({ ex, close }) {
     <div className="muted small" style={{ marginBottom: 12 }}>{t('Pick a routine — sets, reps & weight come next.')}</div>
     <div className="list">
       {st.routines.map(r => <button type="button" key={r.id} className="item" onClick={() => pick(r.id)}>
-        <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
+        <span className="lrow-i"><RoutineMuscleThumb routine={r} body={st.body} /></span>
         <div className="grow"><div className="tt">{r.name}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         {r.ex.some(e => e.id === ex.id) && <span className="tag">{t('already in')}</span>}<Icon name="plus" className="chev" />
       </button>)}
@@ -959,7 +960,7 @@ function DayOverride({ iso, close }) {
     {!!st.routines.length &&
     <div className="list">
       {st.routines.map(r => <div key={r.id} className="item" onClick={() => set(r.id)}>
-        <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
+        <span className="lrow-i"><RoutineMuscleThumb routine={r} body={st.body} /></span>
         <div className="grow"><div className="tt">{routineName(r)}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         {effId === r.id && <Icon name="check" className="accent" />}</div>)}
       <div className="item" onClick={() => set('rest')}><span className="lrow-i" style={{ background: 'var(--surface-3)' }}><Icon name="moon" /></span><div className="grow"><div className="tt">{t('Rest / skip this day')}</div></div>{effId === null && (!daily || st.dayPlan[iso] === 'rest') && <Icon name="check" className="accent" />}</div>
@@ -980,7 +981,7 @@ function DayAssign({ day, close }) {
     </> : <div className="list">
       <div className="item" onClick={() => set('')}><span className="lrow-i" style={{ background: 'var(--surface-3)' }}><Icon name="moon" /></span><div className="grow"><div className="tt">{t('Rest day')}</div></div>{!st.week[day] && <Icon name="check" className="accent" />}</div>
       {st.routines.map(r => <div key={r.id} className="item" onClick={() => set(r.id)}>
-        <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
+        <span className="lrow-i"><RoutineMuscleThumb routine={r} body={st.body} /></span>
         <div className="grow"><div className="tt">{routineName(r)}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         {st.week[day] === r.id && <Icon name="check" className="accent" />}</div>)}
     </div>}
@@ -1083,9 +1084,9 @@ export const calendarSheet = start => ui().openSheet(close => <Calendar start={s
 /* shared small workout row (used in lists) */
 export function WorkoutRow({ w, onClick }) {
   const st = useStore(s => s.S)
-  const glyph = glyphOf((st.routines.find(r => r.id === w.routineId) || {}).emoji)
+  const routine = st.routines.find(r => r.id === w.routineId)
   return <button type="button" className="item workout-row" onClick={onClick}>
-    <span className="lrow-i workout-row-icon"><Icon name={glyph} /></span>
+    <span className="lrow-i workout-row-icon">{routine ? <RoutineMuscleThumb routine={routine} body={st.body} /> : <Icon name="clipboard" />}</span>
     <div className="grow"><div className="tt">{w.name}</div>
       <div className="ss">{[fmtDate(w.d, true), ...durPart(w.end - w.start), t('{0} sets', setsDone(w)), fmtVol(w.vol, st.unit)].join(' · ')}</div></div>
     {w.prs && w.prs.length > 0 && <span className="pr"><Icon name="trophy" />{w.prs.length} {getLang() === 'pt' ? 'RP' : 'PR'}</span>}

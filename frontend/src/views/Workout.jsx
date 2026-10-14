@@ -12,6 +12,7 @@ import Media from '../components/Media.jsx'
 import WorkSetOverlay from '../components/WorkSetOverlay.jsx'
 import { startFlow, exercisePicker, exConfigSheet, exerciseDetailSheet, topWeightSheet, finishWorkout, workoutCompleteSheet, confirmSheet, abandonWorkout } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
+import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
 import { Button, Check, NumberField } from '../components/ui.jsx'
 import { nextPrescription, applyPrescription } from '../lib/progression.js'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
@@ -45,7 +46,7 @@ function StartChooser() {
       <h2 className="accent">{t("Today's plan")}{todayOvr ? ' · ' + t('rescheduled') : ''}</h2>
       <div className="row between" style={{ marginBottom: 12 }}>
         <div><div className="big">{routineName(todayR)}</div><div className="muted small">{exCount(todayR.ex.length)}</div></div>
-        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9, fontSize: 22 }}><Icon name={glyphOf(todayR.emoji)} /></span>
+        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9 }}><RoutineMuscleThumb routine={todayR} body={S.body} /></span>
       </div>
       <Button variant="primary" icon="play" onClick={() => startFlow(todayR.id)}>{t('Start {0}', routineName(todayR))}</Button>
     </div>}
@@ -53,13 +54,13 @@ function StartChooser() {
       <h2>{t("Today's plan")}</h2>
       <div className="row between" style={{ marginBottom: 12 }}>
         <div><div className="big">{routineName(emptyToday)}</div><div className="muted small">{exCount(0)}</div></div>
-        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9, fontSize: 22 }}><Icon name={glyphOf(emptyToday.emoji)} /></span>
+        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9 }}><RoutineMuscleThumb routine={emptyToday} body={S.body} /></span>
       </div>
       <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + emptyToday.id)}>{t('Add exercise')}</Button>
     </div>}
     {others.length > 0 && <><h4 className="sec">{t('Other routines')}</h4>
       <div className="list">{others.map(r => <div key={r.id} className="item" onClick={() => startFlow(r.id)}>
-        <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
+        <span className="lrow-i"><RoutineMuscleThumb routine={r} body={S.body} /></span>
         <div className="grow"><div className="tt">{routineName(r)}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         <span className="tag acc">{t('Start')}</span></div>)}</div></>}
     <div style={{ height: 14 }} />
