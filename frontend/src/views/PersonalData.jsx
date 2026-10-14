@@ -22,6 +22,17 @@ function EditableField({ name, label, value, summary = value, onChange, children
   </section>
 }
 
+function MeasuresField({ height, weight, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState({ height, weight })
+  const save = () => { onSave(draft); setEditing(false) }
+  return <section className={`personal-field personal-measures-field ${editing ? 'is-editing' : ''}`} data-profile-field="measures">
+    <div className="personal-field-head"><span>Medidas</span>{editing ? <button type="button" className="personal-save" onClick={save}><Icon name="check" /> Salvar</button> : <button type="button" className="personal-edit" onClick={() => { setDraft({ height, weight }); setEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
+    <div className="personal-field-summary">{height} m · {weight} kg</div>
+    <div className="personal-field-editor"><div className="personal-measures-editor"><label>Altura<input className="field" inputMode="decimal" value={draft.height} onChange={event => setDraft(current => ({ ...current, height: event.target.value }))} /></label><label>Peso<input className="field" inputMode="decimal" value={draft.weight} onChange={event => setDraft(current => ({ ...current, weight: event.target.value }))} /></label></div></div>
+  </section>
+}
+
 export default function PersonalData() {
   const nav = useNavigate()
   const S = useStore(state => state.S)
@@ -43,8 +54,7 @@ export default function PersonalData() {
       <EditableField name="name" label="Nome" value={formatPersonName(profile.name || '')} summary={formatPersonName(profile.name || '')} onChange={value => commit('name', formatPersonName(value))} inputProps={{ autoComplete: 'name' }} />
       <EditableField name="sex" label="Sexo" value={profile.sex} summary={profile.sex === 'female' ? 'Feminino' : 'Masculino'} onChange={value => commit('sex', value)}>{({ editing, value, setValue }) => <Segmented options={[{ value: 'male', label: 'Masculino' }, { value: 'female', label: 'Feminino' }]} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="birthDate" label="Data de nascimento" value={profile.birthDate || defaultBirthDate()} summary={profile.birthDate || 'Não informado'} onChange={value => commit('birthDate', value)}>{({ editing, value, setValue }) => <DateWheelPicker value={value} max={new Date().toISOString().slice(0, 10)} onChange={setValue} disabled={!editing} />}</EditableField>
-      <EditableField name="heightCm" label="Altura" value={heightText(profile.heightCm)} summary={`${heightText(profile.heightCm)} m`} onChange={value => commit('heightCm', Number(String(value).replace(',', '.')) * (String(value).includes('.') ? 100 : 1))} inputProps={{ inputMode: 'decimal', placeholder: '1,76' }} />
-      <EditableField name="startWeight" label="Peso inicial" value={weightText(profile.startWeight)} summary={`${weightText(profile.startWeight)} kg`} onChange={value => commit('startWeight', Number(String(value).replace(',', '.')))} inputProps={{ inputMode: 'decimal', placeholder: '71,2' }} />
+      <MeasuresField height={heightText(profile.heightCm)} weight={weightText(profile.startWeight)} onSave={({ height, weight }) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), heightCm: Number(String(height).replace(',', '.')) * (String(height).includes('.') ? 100 : 1), startWeight: Number(String(weight).replace(',', '.')) } }); toast('Salvo com sucesso') }} />
       <EditableField name="goal" label="Objetivo" value={profile.goal} summary={profile.goal ? t(PROFILE_GOAL_LABELS[profile.goal]) : 'Não informado'} onChange={value => commit('goal', value)}>{({ editing, value, setValue }) => <Segmented options={PROFILE_GOALS.map(goal => ({ value: goal, label: t(PROFILE_GOAL_LABELS[goal]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="experience" label="Experiência" value={profile.experience} summary={profile.experience ? t(EXPERIENCE_LABELS[profile.experience]) : 'Não informado'} onChange={value => commit('experience', value)}>{({ editing, value, setValue }) => <Segmented options={EXPERIENCE_LEVELS.map(level => ({ value: level, label: t(EXPERIENCE_LABELS[level]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
     </div>

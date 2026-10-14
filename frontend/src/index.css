@@ -712,6 +712,7 @@ h4.sec{
 .sheet-title-row h3{margin:0}
 .item.item-selected{opacity:.64;cursor:default}
 
+.personal-measures-editor{display:grid;grid-template-columns:1fr 1fr;gap:10px}.personal-measures-editor label{display:grid;gap:6px;color:var(--label-2);font-size:12px;font-weight:650}
 @media (max-width:520px){
   .plan-wizard{place-items:start stretch;padding-top:0}
   .wizard-step h1{font-size:30px;line-height:1.1}
