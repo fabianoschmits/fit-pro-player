@@ -1773,7 +1773,7 @@ h4.sec{
 .home-recent-list .workout-row{border-radius:0;background:transparent;transform:none}
 .home-recent-list .workout-row+.workout-row{border-top:var(--hair) solid var(--sep-op)}
 .workout-row{width:100%;text-align:left}
-.workout-row-icon{width:32px;height:32px;border-radius:7px;font-size:17px}
+.workout-row-icon{width:32px;height:32px;border-radius:0;background:transparent;font-size:17px;overflow:hidden}.workout-row-icon .plan-routine-body-thumb{width:32px;height:32px}
 
 .library-view,.history-view{width:100%;max-width:760px;margin-inline:auto}
 .library-view>.hdr{margin-bottom:12px}
