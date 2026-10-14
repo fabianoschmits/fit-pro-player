@@ -59,7 +59,6 @@ export default function More() {
     <Section title="Geral" className="more-section" collapsible defaultOpen>
       <MenuRow icon="person" tint="var(--teal)" title="Dados pessoais" subtitle="Seus dados e informações" onClick={() => nav('/personal-data')} />
       <MenuRow icon="gear" tint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')} onClick={() => nav('/settings')} />
-      <MenuRow icon="info" tint="var(--blue)" title="Ajuda e suporte" subtitle="Dúvidas e suporte" onClick={() => { window.location.href = 'mailto:contato@appconfilar.com.br' }} />
       {consoleAccess && <MenuRow icon="gear" tint="var(--purple)" title="Central da plataforma" subtitle="Operação da plataforma" onClick={() => nav('/console')} />}
     </Section>
 
@@ -76,6 +75,7 @@ export default function More() {
     </Section>}
 
     <Section title="Sobre o Fit Pro Player" className="more-section" collapsible defaultOpen={false}>
+      <MenuRow icon="info" tint="var(--blue)" title="Ajuda e suporte" subtitle="Dúvidas e suporte" onClick={() => { window.location.href = 'mailto:contato@appconfilar.com.br' }} />
       <MenuRow icon="info" tint="var(--blue)" title="Sobre o Fit Pro Player" subtitle="Informações do aplicativo" onClick={() => nav('/privacy')} />
       <MenuRow icon="shield" tint="var(--teal)" title="Termos e privacidade" subtitle="Privacidade, cookies e direitos LGPD" onClick={() => nav('/privacy-settings')} />
       {account && <MenuRow icon="signOut" tint="var(--red)" title="Sair da conta" subtitle="Encerrar a sessão neste dispositivo" danger onClick={signOut} />}
