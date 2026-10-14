@@ -31,7 +31,7 @@ beforeEach(() => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); _setLangState('pt', null, null); vi.restoreAllMocks() })
-const render = async () => act(async () => root.render(<NotificationSettings S={state} update={mutate => { mutate(state); root.render(<NotificationSettings S={state} update={mutateAgain => mutateAgain(state)} toast={toast} />) }} toast={toast} />))
+const render = async () => { await act(async () => root.render(<NotificationSettings S={state} update={mutate => { mutate(state); root.render(<NotificationSettings S={state} update={mutateAgain => mutateAgain(state)} toast={toast} />) }} toast={toast} />)); await act(async () => container.querySelectorAll('.sect-toggle').forEach(toggle => { if (!toggle.classList.contains('open')) toggle.click() })) }
 const button = text => [...container.querySelectorAll('button')].find(item => item.textContent.includes(t(text)))
 
 describe('notification settings center', () => {

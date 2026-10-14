@@ -34,10 +34,11 @@ beforeEach(() => {
   mocks.auth = { status: 'authenticated', configured: true, user: { id: 'supabase-user', email: 'ana@example.com' }, signOut: mocks.authSignOut, deleteAccount: mocks.authDeleteAccount };
 });
 afterEach(async () => { await act(async () => root.unmount()); dom.close(); });
+const renderSettings = async () => { await act(async () => root.render(<Settings />)); await act(async () => container.querySelectorAll('.sect-toggle').forEach(toggle => { if (!toggle.classList.contains('open')) toggle.click() })) }
 
 describe('Settings Supabase logout', () => {
   it('offers professional onboarding to an authenticated account without the professional capability', async () => {
-    await act(async () => root.render(<Settings />));
+    await renderSettings();
     await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) });
 
     const becomeProfessional = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Tornar-se profissional'));
@@ -48,7 +49,7 @@ describe('Settings Supabase logout', () => {
   });
 
   it('returns to the public landing after resetting all local account data', async () => {
-    await act(async () => root.render(<Settings />));
+    await renderSettings();
     const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Clear data on this device')));
     await act(async () => reset.click());
     await act(async () => mocks.confirm.onConfirm());
@@ -57,7 +58,7 @@ describe('Settings Supabase logout', () => {
   });
 
   it('clears device data without deleting the authenticated account', async () => {
-    await act(async () => root.render(<Settings />));
+    await renderSettings();
     const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Clear data on this device')));
     await act(async () => reset.click());
     await act(async () => mocks.confirm.onConfirm());
@@ -68,7 +69,7 @@ describe('Settings Supabase logout', () => {
 
   it('keeps authenticated data when account deletion fails', async () => {
     mocks.authDeleteAccount.mockResolvedValue({ kind: 'error', error: 'network_unavailable' });
-    await act(async () => root.render(<Settings />));
+    await renderSettings();
     const deletion = [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Delete account permanently')));
     await act(async () => deletion.click());
     await act(async () => mocks.confirm.onConfirm());
@@ -78,7 +79,7 @@ describe('Settings Supabase logout', () => {
   });
 
   it('routes an authenticated Supabase account through Auth only and keeps the local-data guarantee visible', async () => {
-    await act(async () => root.render(<Settings />));
+    await renderSettings();
     expect(container.textContent).toContain('ana@example.com');
     expect(container.textContent).toContain('dados de convidado ficam neste dispositivo')
     const signOut = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Terminar sessão'));
@@ -89,7 +90,7 @@ describe('Settings Supabase logout', () => {
 
   it('keeps the user on the account when Supabase sign-out fails', async () => {
     mocks.authSignOut.mockResolvedValue({ kind: 'error' });
-    await act(async () => root.render(<Settings />));
+    await renderSettings();
     const signOut = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Terminar sessão'));
     await act(async () => signOut.click());
     await act(async () => mocks.confirm.onConfirm());
