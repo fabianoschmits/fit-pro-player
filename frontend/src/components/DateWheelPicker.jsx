@@ -4,7 +4,7 @@ import { dateFromParts, dateParts, daysInMonth, defaultBirthDate } from '../lib/
 
 const ITEM_HEIGHT = 44
 
-function WheelColumn({ label, items, value, onChange, reducedMotion }) {
+function WheelColumn({ label, items, value, onChange, reducedMotion, disabled }) {
   const ref = useRef(null)
   const timer = useRef(null)
 
@@ -43,22 +43,22 @@ function WheelColumn({ label, items, value, onChange, reducedMotion }) {
     align(next, true)
   }
 
-  return <div className="date-wheel-column" role="listbox" aria-label={label} tabIndex={0}
+  return <div className="date-wheel-column" role="listbox" aria-label={label} aria-disabled={disabled} tabIndex={disabled ? -1 : 0}
     onScroll={settle}
     onKeyDown={event => {
-      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return
+      if (disabled || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return
       event.preventDefault()
       step(event.key === 'ArrowUp' ? -1 : 1)
     }} ref={ref}>
     {items.map(item => <button type="button" role="option" aria-selected={item.value === value}
-      tabIndex={-1} key={item.value} className={item.value === value ? 'selected' : ''}
-      onClick={() => { onChange(item.value); align(item.value, true) }}>
+      tabIndex={-1} key={item.value} className={item.value === value ? 'selected' : ''} disabled={disabled}
+      onClick={() => { if (!disabled) { onChange(item.value); align(item.value, true) } }}>
       {item.label}
     </button>)}
   </div>
 }
 
-export default function DateWheelPicker({ value, onChange, max = '', reducedMotion = false }) {
+export default function DateWheelPicker({ value, onChange, max = '', reducedMotion = false, disabled = false }) {
   const maxDate = max || new Date().toISOString().slice(0, 10)
   const selected = dateParts(value, defaultBirthDate())
   const maxParts = dateParts(maxDate, maxDate)
@@ -88,9 +88,9 @@ export default function DateWheelPicker({ value, onChange, max = '', reducedMoti
 
   return <div className="date-wheel-wrap">
     <div className="date-wheel" aria-describedby="date-wheel-value">
-      <WheelColumn label={t('Day')} items={days} value={selected.day} onChange={day => commit({ day })} reducedMotion={reducedMotion} />
-      <WheelColumn label={t('Month')} items={months} value={selected.month} onChange={month => commit({ month })} reducedMotion={reducedMotion} />
-      <WheelColumn label={t('Year')} items={years} value={selected.year} onChange={year => commit({ year })} reducedMotion={reducedMotion} />
+      <WheelColumn label={t('Day')} items={days} value={selected.day} onChange={day => commit({ day })} reducedMotion={reducedMotion} disabled={disabled} />
+      <WheelColumn label={t('Month')} items={months} value={selected.month} onChange={month => commit({ month })} reducedMotion={reducedMotion} disabled={disabled} />
+      <WheelColumn label={t('Year')} items={years} value={selected.year} onChange={year => commit({ year })} reducedMotion={reducedMotion} disabled={disabled} />
     </div>
     <span id="date-wheel-value" className="sr-only" aria-live="polite">{t('Selected date: {0}', spoken)}</span>
   </div>

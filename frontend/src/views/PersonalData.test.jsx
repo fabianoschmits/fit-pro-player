@@ -6,14 +6,15 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   state: { S: { body: 'male', targetW: 70, unit: 'kg', profile: { name: 'Ana', avatarId: 'avatar-1', birthDate: '1990-01-01', sex: 'female', heightCm: 167, startWeight: 71, goal: 'lose_weight', experience: 'intermediate' }, bodyweight: [] } },
-  update: vi.fn(),
+  update: vi.fn(), toast: vi.fn(),
 }))
 vi.mock('../store/useStore.js', () => ({ useStore: selector => selector({ ...mocks.state, update: mocks.update }) }))
+vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }))
 
 import PersonalData from './PersonalData.jsx'
 
 let root, container
-beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container); mocks.update.mockReset() })
+beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container); mocks.update.mockReset(); mocks.toast.mockReset() })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 const render = () => act(async () => root.render(<MemoryRouter><PersonalData /></MemoryRouter>) )
 
@@ -33,6 +34,14 @@ it('saves only the edited personal field', async () => {
   await act(async () => { const input = field.querySelector('input'); input.value = 'Beatriz'; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })) })
   await act(async () => [...field.querySelectorAll('button')].find(button => button.textContent.includes('Salvar')).click())
   expect(mocks.update).toHaveBeenCalledTimes(1)
+  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso')
+})
+
+it('keeps the birth date controls disabled until editing is activated', async () => {
+  await render()
+  expect(container.querySelector('[data-profile-field="birthDate"] .date-wheel-column button').disabled).toBe(true)
+  await act(async () => container.querySelector('[data-profile-field="birthDate"] .personal-edit').click())
+  expect(container.querySelector('[data-profile-field="birthDate"] .date-wheel-column button').disabled).toBe(false)
 })
 
 it('renders the avatar picker as a horizontal scroller', async () => {
