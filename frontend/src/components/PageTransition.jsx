@@ -3,13 +3,17 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { MOBILE } from '../lib/mobile.js'
 
 const EASE = [0.32, 0.72, 0, 1]
+const MOBILE_LIKE = MOBILE || (typeof window !== 'undefined' && (
+  window.matchMedia?.('(pointer: coarse)').matches ||
+  (navigator.maxTouchPoints || 0) > 0
+))
 
 export default function PageTransition({ children }) {
   const loc = useLocation()
   const reduced = useReducedMotion()
 
   return (
-    <AnimatePresence mode={MOBILE ? 'sync' : 'wait'} initial={false}>
+    <AnimatePresence mode={MOBILE_LIKE ? 'sync' : 'wait'} initial={false}>
       <motion.div
         id="app"
         key={loc.pathname}
@@ -18,7 +22,7 @@ export default function PageTransition({ children }) {
         // WKWebView can leave the outgoing page mounted without completing its
         // exit animation. Keeping the old page visible until the new route is
         // ready can otherwise leave the app shell black and unresponsive.
-        exit={MOBILE || reduced ? undefined : { opacity: 0 }}
+        exit={MOBILE_LIKE || reduced ? undefined : { opacity: 0 }}
         transition={{ duration: reduced ? 0 : 0.12, ease: EASE }}
       >
         {children}
