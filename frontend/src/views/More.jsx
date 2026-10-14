@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { t } from '../lib/i18n.js'
 import Icon from '../components/Icon.jsx'
+import AvatarImage from '../components/AvatarImage.jsx'
 import { Section, Row } from '../components/ui.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
@@ -10,11 +11,18 @@ import AppHeader from '../components/AppHeader.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import { createConsoleRepository } from '../lib/console.js'
+import { useStore } from '../store/useStore.js'
+import { confirmSheet } from '../sheets.jsx'
 import { useEffect, useMemo, useState } from 'react'
+
+function MenuRow({ icon, tint, title, subtitle, onClick, danger = false }) {
+  return <Row icon={icon} iconTint={tint} title={title} subtitle={subtitle} accessory="chevron" danger={danger} onClick={onClick} />
+}
 
 export default function More() {
   const nav = useNavigate()
   const auth = useAuth()
+  const profile = useStore(state => state.S.profile) || {}
   const account = auth.status === 'authenticated' ? auth.user : null
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const consoleRepo = useMemo(() => createConsoleRepository({ client: getBrowserSupabaseClient() }), [])
@@ -31,35 +39,46 @@ export default function More() {
     return () => { current = false }
   }, [account?.id, repo, consoleRepo])
 
-  return <div className="narrow">
+  const guestName = MOBILE || STANDALONE ? t('Guest mode') : DEMO ? t('Demo') : t('Guest mode')
+  const displayName = profile.name || guestName
+  const email = account?.email || (account ? t('Signed in to your account') : t('Local profile'))
+  const signOut = () => confirmSheet({
+    title: 'Sair da conta?', message: 'Sua sessão será encerrada neste dispositivo.', confirmText: 'Sair', danger: true,
+    onConfirm: async () => { await auth.signOut(); nav('/') },
+  })
+
+  return <div className="narrow more-page">
     <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
 
-    <Section title={t('Your app')}>
-      <Row icon="list" iconTint="var(--blue)" title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)}
-        accessory="chevron" onClick={() => nav('/library')} />
-      <Row icon="personCircle" iconTint="var(--teal)" title={t('Edit your personal data')} subtitle={t('These details personalize your progress, body map and training suggestions.')}
-        accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
-      <Row icon="gear" iconTint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')}
-        accessory="chevron" onClick={() => nav('/settings')} />
-      <Row icon="history" iconTint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')}
-        accessory="chevron" onClick={() => nav('/history')} />
-      <Row icon="personCircle" iconTint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo"
-        accessory="chevron" onClick={() => nav('/body-progress')} />
-      {professional && <Row icon="personCircle" iconTint="var(--purple)" title={t('Perfil profissional')} subtitle={t('Sua apresentação para os alunos.')}
-        accessory="chevron" onClick={() => nav('/professional/profile')} />}
-      {professional && <Row icon="personCircle" iconTint="var(--purple)" title={t('Área profissional')} subtitle={t('Alunos, convites e programas')}
-        accessory="chevron" onClick={() => nav('/professional')} />}
-      {account && <Row icon="personCircle" iconTint="var(--teal)" title={t('Meus profissionais')} subtitle={t('Programas e prescrições dos seus profissionais')}
-        accessory="chevron" onClick={() => nav('/student/professionals')} />}
+    <button type="button" className="more-account-card" onClick={() => nav('/plan?profile=edit')}>
+      <span className="more-account-avatar"><AvatarImage avatarId={profile.avatarId} alt="" /></span>
+      <span className="more-account-copy"><strong>{displayName}</strong><span>{email}</span><em>{account ? 'Ver conta' : 'Editar perfil'} <Icon name="chevronRight" /></em></span>
+      <Icon name="chevronRight" className="more-account-chevron" />
+    </button>
+
+    <Section title="Geral" className="more-section">
+      <MenuRow icon="person" tint="var(--teal)" title="Dados pessoais" subtitle="Seus dados e informações" onClick={() => nav('/plan?profile=edit')} />
+      <MenuRow icon="gear" tint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')} onClick={() => nav('/settings')} />
+      <MenuRow icon="info" tint="var(--blue)" title="Ajuda e suporte" subtitle="Dúvidas e suporte" onClick={() => { window.location.href = 'mailto:contato@appconfilar.com.br' }} />
+      {consoleAccess && <MenuRow icon="gear" tint="var(--purple)" title="Central da plataforma" subtitle="Operação da plataforma" onClick={() => nav('/console')} />}
     </Section>
 
-    <Section title={t('About')}>
-      <Row icon="personCircle" iconTint="var(--teal)" title={account?.email || (MOBILE || STANDALONE ? t('Guest mode') : DEMO ? t('Demo') : t('Guest mode'))}
-        subtitle={account ? t('Signed in to your account') : t('Guest data stays on this device — export a backup now and then!')} />
-      {consoleAccess && <Row icon="gear" iconTint="var(--label)" title="Central" subtitle="Operação da plataforma"
-        accessory="chevron" onClick={() => nav('/console')} />}
-      <Row icon="shield" iconTint="var(--blue)" title="Privacidade e dados" subtitle="Aviso, direitos dos titulares e solicitações LGPD"
-        accessory="chevron" onClick={() => nav('/privacy-settings')} />
+    <Section title="Treino" className="more-section">
+      <MenuRow icon="list" tint="var(--teal)" title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)} onClick={() => nav('/library')} />
+      <MenuRow icon="history" tint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')} onClick={() => nav('/history')} />
+      <MenuRow icon="chartLine" tint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo" onClick={() => nav('/body-progress')} />
+    </Section>
+
+    {(account || professional) && <Section title="Profissional" className="more-section">
+      {account && <MenuRow icon="personCircle" tint="var(--teal)" title="Meus profissionais" subtitle="Programas e prescrições dos seus profissionais" onClick={() => nav('/student/professionals')} />}
+      {professional && <MenuRow icon="clipboard" tint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas" onClick={() => nav('/professional')} />}
+      {professional && <MenuRow icon="personCircle" tint="var(--purple)" title="Perfil profissional" subtitle="Sua apresentação para os alunos" onClick={() => nav('/professional/profile')} />}
+    </Section>}
+
+    <Section title="Sobre o Fit Pro Player" className="more-section">
+      <MenuRow icon="info" tint="var(--blue)" title="Sobre o Fit Pro Player" subtitle="Informações do aplicativo" onClick={() => nav('/privacy')} />
+      <MenuRow icon="shield" tint="var(--teal)" title="Termos e privacidade" subtitle="Privacidade, cookies e direitos LGPD" onClick={() => nav('/privacy-settings')} />
+      {account && <MenuRow icon="signOut" tint="var(--red)" title="Sair da conta" subtitle="Encerrar a sessão neste dispositivo" danger onClick={signOut} />}
     </Section>
   </div>
 }

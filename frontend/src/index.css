@@ -285,6 +285,23 @@ h4.sec{
 .lrow-c{color:var(--label);font-size:15px;flex:none;--icon-stroke:2.4}
 .lrow-k{color:var(--acc);font-size:17px;flex:none;--icon-stroke:2.4}
 .lrow.danger,.lrow.danger .lrow-t{color:var(--red)}
+.more-page{padding-bottom:28px}
+.more-page .more-account-card{width:100%;display:flex;align-items:center;gap:14px;text-align:left;padding:14px 16px;margin:2px 0 24px;border:1px solid var(--surface-border);border-radius:var(--r-card);background:var(--surface);color:var(--label);cursor:pointer}
+.more-page .more-account-card:active{background:var(--surface-2)}
+.more-account-avatar{width:72px;height:72px;flex:none;border-radius:50%;overflow:hidden;background:var(--surface-2);border:1px solid var(--surface-border)}
+.more-account-avatar .profile-avatar-image{width:100%;height:100%;object-fit:cover}
+.more-account-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.more-account-copy strong{font-size:18px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.more-account-copy>span{font-size:14px;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.more-account-copy em{display:flex;align-items:center;gap:3px;color:var(--acc);font-style:normal;font-size:15px;font-weight:600;margin-top:4px}.more-account-copy em svg{width:14px;height:14px}
+.more-account-chevron{width:18px;height:18px;color:var(--label-2);flex:none}
+.more-page .more-section{margin-bottom:20px}.more-page .more-section .sect-t{padding:0 4px 9px;font-size:19px;font-weight:700;line-height:1.2;color:var(--label)}
+.more-page .more-section .sect-b{border-radius:var(--r-card);background:var(--surface);overflow:hidden}
+.more-page .more-section .lrow{min-height:68px;padding:12px 14px;gap:12px}
+.more-page .more-section .lrow-i{width:40px;height:40px;border-radius:12px;background:var(--surface-2);color:var(--tint,var(--acc));flex:none}
+.more-page .more-section .lrow-i .icn{width:22px;height:22px}
+.more-page .more-section .lrow-t{font-size:16px;font-weight:600;line-height:1.25}.more-page .more-section .lrow-s{font-size:13px;line-height:1.35}.more-page .more-section .lrow-c{width:18px;height:18px;color:var(--label-2)}
+.more-page .more-section .lrow+.lrow::before{left:66px}
 
 .helpbtn{
   color:var(--label-3);font-size:16px;background:none;line-height:0;flex:none;
