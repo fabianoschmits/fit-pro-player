@@ -7,6 +7,7 @@ const COLUMNS = 4
 export default function AvatarPicker({ value, onChange, t, orientation = 'grid', disabled = false }) {
   const gridRef = useRef(null)
   const selectedRef = useRef(null)
+  const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false })
 
   useEffect(() => {
     const grid = gridRef.current
@@ -38,8 +39,25 @@ export default function AvatarPicker({ value, onChange, t, orientation = 'grid',
     selectAndFocus(index + delta)
   }
 
+  const onPointerDown = event => {
+    if (disabled || orientation !== 'horizontal' || event.pointerType === 'mouse' && event.button !== 0) return
+    drag.current = { active: true, startX: event.clientX, startScroll: gridRef.current.scrollLeft, moved: false }
+    gridRef.current.setPointerCapture?.(event.pointerId)
+  }
+  const onPointerMove = event => {
+    if (!drag.current.active || !gridRef.current) return
+    const delta = event.clientX - drag.current.startX
+    if (Math.abs(delta) > 4) drag.current.moved = true
+    gridRef.current.scrollLeft = drag.current.startScroll - delta
+  }
+  const onPointerUp = event => {
+    if (!drag.current.active) return
+    gridRef.current?.releasePointerCapture?.(event.pointerId)
+    drag.current.active = false
+  }
+
   return (
-    <div ref={gridRef} data-orientation={orientation} className={`avatar-picker-grid ${orientation === 'horizontal' ? 'avatar-picker-horizontal' : ''} ${disabled ? 'is-disabled' : ''}`} role="radiogroup" aria-label={t('Available avatars')} aria-disabled={disabled}>
+    <div ref={gridRef} data-orientation={orientation} className={`avatar-picker-grid ${orientation === 'horizontal' ? 'avatar-picker-horizontal' : ''} ${disabled ? 'is-disabled' : ''}`} role="radiogroup" aria-label={t('Available avatars')} aria-disabled={disabled} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}>
       {AVATARS.map((avatar, index) => {
         const selected = avatar.id === value
         return (
@@ -53,7 +71,7 @@ export default function AvatarPicker({ value, onChange, t, orientation = 'grid',
             aria-label={t('Avatar {0} of {1}', index + 1, AVATARS.length)}
             tabIndex={selected ? 0 : -1}
             data-avatar-index={index}
-            onClick={() => { if (!disabled) onChange(avatar.id) }}
+            onClick={() => { if (!disabled && !drag.current.moved) onChange(avatar.id); drag.current.moved = false }}
             onKeyDown={event => onKeyDown(event, index)}
           >
             <img src={avatar.src} alt="" loading={index < 12 ? 'eager' : 'lazy'} decoding="async" draggable="false" />

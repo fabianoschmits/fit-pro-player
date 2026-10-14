@@ -52,4 +52,9 @@ it('renders the avatar picker as a horizontal scroller', async () => {
   expect(picker.className).toContain('is-disabled')
   await act(async () => container.querySelector('[data-profile-field="avatarId"] .personal-edit').click())
   expect(picker.className).not.toContain('is-disabled')
+  await act(async () => {
+    picker.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 240, pointerId: 1, pointerType: 'touch' }))
+    picker.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 80, pointerId: 1, pointerType: 'touch' }))
+  })
+  expect(picker.scrollLeft).toBe(160)
 })
