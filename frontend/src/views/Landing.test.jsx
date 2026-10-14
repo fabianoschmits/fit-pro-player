@@ -59,6 +59,7 @@ beforeEach(() => {
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.navigator })
   for (const key of ['HTMLElement', 'HTMLIFrameElement', 'Node', 'Element', 'Event', 'MouseEvent', 'KeyboardEvent']) globalThis[key] = dom[key]
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  dom.HTMLElement.prototype.scrollBy = vi.fn()
   container = document.createElement('div')
   document.body.append(container)
   root = createRoot(container)
@@ -137,6 +138,14 @@ describe('public landing page', () => {
     await act(async () => { button('Pausar animações').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
     expect(button('Continuar animações')).toBeTruthy()
     expect(container.querySelector('.landing-exercise-track').classList.contains('is-paused')).toBe(true)
+  })
+
+  it('exposes previous and next controls for the exercise carousel', async () => {
+    await act(async () => { root.render(<Landing />) })
+    const controls = [...container.querySelectorAll('.landing-carousel-control')]
+    expect(controls).toHaveLength(2)
+    await act(async () => { controls[1].dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
+    expect(dom.HTMLElement.prototype.scrollBy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }))
   })
 
   it('builds a marked one-month weight-loss series', () => {
