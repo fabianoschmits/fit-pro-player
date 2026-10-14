@@ -8,10 +8,9 @@ import { t } from '../lib/i18n.js'
 import { planSetupProgress, smartDefaultConfig } from '../lib/ux.js'
 import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
 import { Thumb } from '../components/Media.jsx'
-import { glyphPicker, exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
+import { exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
-import { glyphOf } from '../lib/glyphs.js'
 import { Button, SelectRow } from '../components/ui.jsx'
 import { POLICIES_FOR, POLICY_NAME, POLICY_DESC } from '../lib/progression.js'
 import BodyMap from '../components/BodyMap.jsx'
@@ -84,7 +83,7 @@ export default function RoutineEdit() {
           onBlur={e => update(s => { s.routines.find(x => x.id === id).name = e.target.value.trim() || t('Routine') })}
           aria-label={t('Routine')} />
       </div>
-      <button className="iconbtn" aria-label={t('Pick an icon')} onClick={() => glyphPicker(r.emoji, g => update(s => { s.routines.find(x => x.id === id).emoji = g }))}><Icon name={glyphOf(r.emoji)} /></button>
+      <span className="routine-builder-head-thumb" aria-hidden="true"><RoutineMuscleThumb routine={r} body={S.body} /></span>
     </div>
 
     <div className="row between routine-section-head">

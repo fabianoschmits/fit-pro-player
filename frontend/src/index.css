@@ -154,7 +154,7 @@ button,.chip,.tile,.item,.wday,.cal-d,.swatch,.hm-c,.lrow,.seg button,.stp butto
   fill:none;stroke:currentColor;stroke-width:var(--icon-stroke);
   stroke-linecap:round;stroke-linejoin:round;
 }
-.plan-routine-body-thumb{display:flex;width:100%;height:100%;align-items:center;justify-content:center;overflow:hidden;background:transparent;--bm-base:color-mix(in srgb,var(--label) 24%,var(--surface))}.plan-routine-body-thumb .bm-v{width:100%;height:100%;max-height:none;flex:none}.plan-routine-body-thumb .bm-ph{width:100%;height:100%}.plan-routine-body-thumb .bm-sil{fill:color-mix(in srgb,var(--label) 52%,var(--surface))}.plan-routine-body-thumb .bm-m.l0{fill:color-mix(in srgb,var(--label) 25%,var(--surface))}.plan-routine-body-thumb .bm-m.l1{fill:color-mix(in srgb,var(--acc) 42%,var(--bm-base))}.plan-routine-body-thumb .bm-m.l2{fill:color-mix(in srgb,var(--acc) 68%,var(--bm-base))}.plan-routine-body-thumb .bm-m.l3{fill:color-mix(in srgb,var(--acc) 86%,var(--bm-base))}.plan-routine-body-thumb .bm-m.l4{fill:var(--acc)}.plan-routine-list .lrow-i{width:42px;height:48px;border-radius:0;background:transparent;color:inherit;overflow:hidden}.plan-routine-list .lrow-i .plan-routine-body-thumb{width:42px;height:48px}.plan-day-icon .plan-routine-body-thumb{width:22px;height:28px}.daily-plan-icon .plan-routine-body-thumb{width:34px;height:38px}
+.plan-routine-body-thumb{display:flex;width:100%;height:100%;align-items:center;justify-content:center;overflow:hidden;background:transparent;--bm-base:color-mix(in srgb,var(--label) 24%,var(--surface))}.plan-routine-body-thumb .bm-v{width:100%;height:100%;max-height:none;flex:none}.plan-routine-body-thumb .bm-ph{width:100%;height:100%}.plan-routine-body-thumb .bm-sil{fill:color-mix(in srgb,var(--label) 52%,var(--surface))}.plan-routine-body-thumb .bm-m.l0{fill:color-mix(in srgb,var(--label) 25%,var(--surface))}.plan-routine-body-thumb .bm-m.l1{fill:color-mix(in srgb,var(--acc) 42%,var(--bm-base))}.plan-routine-body-thumb .bm-m.l2{fill:color-mix(in srgb,var(--acc) 68%,var(--bm-base))}.plan-routine-body-thumb .bm-m.l3{fill:color-mix(in srgb,var(--acc) 86%,var(--bm-base))}.plan-routine-body-thumb .bm-m.l4{fill:var(--acc)}.plan-routine-list .lrow-i{width:42px;height:48px;border-radius:0;background:transparent;color:inherit;overflow:hidden}.plan-routine-list .lrow-i .plan-routine-body-thumb{width:42px;height:48px}.plan-day-icon .plan-routine-body-thumb{width:22px;height:28px}.daily-plan-icon .plan-routine-body-thumb{width:34px;height:38px}.routine-builder-head-thumb{display:flex;width:34px;height:38px;align-items:center;justify-content:center;overflow:hidden;color:var(--acc)}.routine-builder-head-thumb .plan-routine-body-thumb{width:34px;height:38px}.routine-builder-head-thumb .bm-v{width:100%;height:100%}
 
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
@@ -738,8 +738,8 @@ h4.sec{
   .profile-hero-name{font-size:clamp(20px,5.7vw,25px)}
 }
 .thumb.exercise-muscle-thumb{
-  display:flex;width:50px;height:50px;min-width:50px;padding:2px;gap:0;
-  align-items:center;justify-content:center;background:var(--surface-2);overflow:hidden;
+  display:flex;width:50px;height:50px;min-width:50px;padding:0;gap:0;
+  align-items:center;justify-content:center;background:transparent;border-radius:0;overflow:hidden;
 }
 .exercise-muscle-thumb .bm-v{width:100%;height:100%;max-height:none;flex:none}
 .exercise-muscle-thumb .bm-ph{width:100%;height:100%}
@@ -1780,7 +1780,8 @@ h4.sec{
 .library-list{gap:0;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:8px;background:var(--surface)}
 .library-list>.item{min-height:58px;border-radius:0;background:transparent;transform:none}
 .library-list>.item+.item{border-top:var(--hair) solid var(--sep-op)}
-.library-list .thumb{width:42px;height:42px;border-radius:7px}
+.library-list .thumb{width:42px;height:42px;border-radius:0}
+.library-list .thumb.exercise-muscle-thumb{background:transparent;padding:0}
 .library-list .picker-item{padding-block:7px}
 .library-list .picker-item-main{gap:10px}
 .library-list .picker-item>.btn{flex:none;padding-inline:9px}
