@@ -23,6 +23,7 @@ function PrivacyNotice() {
     <p>Dados de saúde, medidas e objetivos podem ser dados pessoais sensíveis. O sistema aplica minimização, controle de acesso e separação entre a conta do aluno e as projeções autorizadas ao profissional.</p>
     <h2>Finalidades e bases</h2><p>As finalidades incluem criar e proteger a conta, sincronizar dados, executar treinos, manter histórico, permitir vínculos autorizados, responder solicitações, prevenir fraude e cumprir obrigações legais. A base legal aplicável deve ser confirmada pelo controlador para cada finalidade.</p>
     <h2>Compartilhamento e operadores</h2><p>{c.operators}</p><p>{c.transferSummary}</p>
+    <h2>Privacidade e cookies</h2><p>Usamos armazenamento local e tecnologias necessárias para manter a sessão, proteger a conta e guardar preferências. No primeiro acesso, você pode aceitar ou personalizar as categorias opcionais de preferências, medição de uso e comunicações. A escolha fica salva no dispositivo e, quando houver conta, também na conta para sincronização entre dispositivos.</p>
     <h2>Retenção e segurança</h2><p>{c.retentionSummary}</p><p>Adotamos autenticação, RLS, isolamento por conta, cópias de conflito, exclusão autenticada e controles de acesso. Nenhuma medida técnica substitui a gestão contínua de incidentes e acessos.</p>
     <h2>Seus direitos</h2><p>Você pode solicitar confirmação, acesso, correção, informação sobre compartilhamento, portabilidade quando aplicável, eliminação, revogação de consentimentos e revisão de decisões automatizadas quando aplicável.</p>
   </Shell>
