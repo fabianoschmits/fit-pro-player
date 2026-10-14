@@ -21,7 +21,8 @@ function EditableField({ name, label, value, onChange, children, inputProps = {}
 
 export default function PersonalData() {
   const nav = useNavigate()
-  const { S, update } = useStore(state => ({ S: state.S, update: state.update }))
+  const S = useStore(state => state.S)
+  const update = useStore(state => state.update)
   const profile = normalizeProfile(S.profile, S.body)
   const commit = (key, value) => update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), [key]: value }; if (key === 'sex') state.body = value })
   return <main className="narrow personal-data-page">
