@@ -11,6 +11,7 @@ import { Button } from './ui.jsx'
 import '../workout-themes.css'
 import '../workout-share-layouts.css'
 import { LayoutMinimal, LayoutReceipt, LayoutBrutal, LayoutPolaroid } from './WorkoutShareLayouts.jsx'
+import { shareWorkoutImage } from '../lib/workout-share.js'
 
 const THEMES = [
   { id: 't1', name: 'Original', layout: 'dashboard' },
@@ -167,13 +168,6 @@ function WorkoutStoryPreview({ w, st, innerRef, themeId }) {
   return <LayoutDashboard w={w} st={st} innerRef={innerRef} themeId={themeId} />
 }
 
-// ── helpers ────────────────────────────────────────────────────────────────
-async function dataUrlToFile(dataUrl, name) {
-  const res = await fetch(dataUrl)
-  const blob = await res.blob()
-  return new File([blob], name, { type: 'image/png' })
-}
-
 // ── Main modal component ───────────────────────────────────────────────────
 export function WorkoutShareModal({ w, onClose }) {
   const st = useStore(s => s.S)
@@ -242,49 +236,36 @@ export function WorkoutShareModal({ w, onClose }) {
     document.body.removeChild(a)
   }
 
-  // ── Share via native dialog ───────────────────────────────────────────────
+  // The platform-specific adapters are loaded only when the share action is used.
+  // This keeps the web bundle independent from native plugin initialization.
   const shareNative = async (dataUrl) => {
-    const fileName = `treino-fpp-${Date.now()}.png`
-    const title = 'Meu treino no Fit Pro Player 💪'
-
-    // 1) Capacitor native (Android / iOS app)
-    try {
-      const { Capacitor } = await import('@capacitor/core')
-      if (Capacitor.isNativePlatform()) {
-        const { Filesystem, Directory } = await import('@capacitor/filesystem')
-        const { Share: CapShare } = await import('@capacitor/share')
-        const base64 = dataUrl.split(',')[1]
-        const saved = await Filesystem.writeFile({
-          path: fileName,
-          data: base64,
-          directory: Directory.Cache,
-        })
-        await CapShare.share({ title, url: saved.uri, dialogTitle: t('Compartilhar treino') })
-        return
-      }
-    } catch (_) { /* not native — continue */ }
-
-    // 2) Web Share API with file attachment (PWA on Android/iOS)
-    try {
-      const file = await dataUrlToFile(dataUrl, fileName)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title, files: [file] })
-        return
-      }
-    } catch (e) {
-      if (e?.name === 'AbortError') return // user cancelled
-      console.warn('[share] Web Share API failed:', e)
-    }
-
-    // 3) Fallback: just download
-    saveToDevice(dataUrl)
+    const [core, filesystemModule, shareModule] = await Promise.all([
+      import('@capacitor/core'),
+      import('@capacitor/filesystem'),
+      import('@capacitor/share'),
+    ])
+    return shareWorkoutImage(dataUrl, {
+      capacitor: core.Capacitor,
+      filesystem: filesystemModule.Filesystem,
+      directory: filesystemModule.Directory.Cache,
+      share: shareModule.Share,
+      dialogTitle: t('Compartilhar treino'),
+    })
   }
 
   const onShare = async (platform) => {
     const dataUrl = await generateImage()
     if (!dataUrl) return
     if (platform === 'save') saveToDevice(dataUrl)
-    else shareNative(dataUrl)
+    else {
+      try {
+        await shareNative(dataUrl)
+      } catch (e) {
+        if (e?.name === 'AbortError') return
+        console.error('[share] failed:', e)
+        setError(t('Não foi possível abrir o compartilhamento. Tente novamente.'))
+      }
+    }
   }
 
   return (
