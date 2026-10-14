@@ -20,6 +20,6 @@ describe('public privacy pages', () => {
   it('renders the titular rights page with a request action', async () => {
     await act(async () => root.render(<MemoryRouter><PrivacyPages kind="rights" /></MemoryRouter>))
     expect(container.querySelector('h1')?.textContent).toContain('Direitos dos titulares')
-    expect(container.querySelector('a[href^="mailto:contato@appconfilar.com.br"]')).toBeTruthy()
+    expect(container.querySelector('a[href^="mailto:privacidade@appconfilar.com.br"]')).toBeTruthy()
   })
 })

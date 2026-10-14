@@ -5,7 +5,7 @@ export const PRIVACY_DOCUMENT_VERSION = '2026-10-13'
 export function getPrivacyConfig(env = import.meta.env || {}) {
   return {
     controllerName: env.VITE_PRIVACY_CONTROLLER_NAME || DEFAULT_CONTROLLER,
-    dpoEmail: env.VITE_PRIVACY_DPO_EMAIL || 'contato@appconfilar.com.br',
+    dpoEmail: env.VITE_PRIVACY_DPO_EMAIL || 'privacidade@appconfilar.com.br',
     controllerAddress: env.VITE_PRIVACY_CONTROLLER_ADDRESS || 'Venâncio Aires, Rio Grande do Sul, Brasil',
     retentionSummary: env.VITE_PRIVACY_RETENTION || 'Os dados da conta serão excluídos imediatamente após a solicitação, ressalvadas obrigações legais de conservação.',
     operators: env.VITE_PRIVACY_OPERATORS || 'Supabase (infraestrutura e armazenamento).',
