@@ -1946,3 +1946,43 @@ body.landing-mode #tabbar {
     animation: none;
   }
 }
+
+/* -------------------------------------------------------------------------
+   Studio direction — the public page is intentionally its own surface. It
+   should feel like a training journal / product studio, not another app shell.
+   ------------------------------------------------------------------------- */
+.landing-page{
+  --landing-ink:#101722;--landing-paper:#f4f0e7;--landing-paper-2:#ebe5d8;
+  --landing-coral:#ff6347;--landing-blue:#2f62d8;--landing-acid:#c7f05b;
+  color:var(--landing-ink);background:var(--landing-paper);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  overflow:hidden;
+}
+.landing-page::selection{background:var(--landing-acid);color:var(--landing-ink)}
+.landing-page .landing-nav-shell{position:relative;background:var(--landing-paper);border-bottom:1px solid rgba(16,23,34,.16)}
+.landing-page .landing-nav{height:76px;max-width:1320px;width:calc(100% - 64px);grid-template-columns:1fr auto auto;gap:42px}
+.landing-page .landing-nav-brand{color:var(--landing-ink);font-size:11px;font-weight:850;letter-spacing:.04em}.landing-page .landing-nav-brand img{width:40px;height:40px;object-fit:contain}
+.landing-page .landing-nav nav{gap:28px}.landing-page .landing-nav nav a{color:rgba(16,23,34,.68);font-size:12px}.landing-page .landing-nav nav a:hover{color:var(--landing-coral)}
+.landing-page .landing-nav-cta{min-height:40px;padding:0 19px;border-radius:999px;background:var(--landing-ink);color:#fff;font-weight:750;letter-spacing:0}
+.landing-page .landing-hero{max-width:1320px;width:calc(100% - 64px);min-height:740px;padding:90px 0 46px;grid-template-columns:minmax(0,.92fr) minmax(480px,1.08fr);gap:80px;position:relative}
+.landing-page .landing-hero::before{content:"FIT / TRAIN / REPEAT";position:absolute;right:0;top:34px;color:rgba(16,23,34,.28);font-size:10px;letter-spacing:.2em;font-weight:800}
+.landing-page .landing-hero-copy{max-width:610px;align-self:center}.landing-page .landing-hero-logo{display:none}.landing-page .landing-eyebrow,.landing-page .landing-section-index{color:var(--landing-coral);font-size:11px;font-weight:850;letter-spacing:.08em;margin-bottom:21px}
+.landing-page .landing-hero h1{max-width:620px;color:var(--landing-ink);font-size:clamp(58px,7.3vw,112px);line-height:.89;letter-spacing:-.075em;font-weight:850}
+.landing-page .landing-hero-copy>p{max-width:470px;margin-top:28px;color:rgba(16,23,34,.7);font-size:17px;line-height:1.5}
+.landing-page .landing-actions{margin-top:34px;display:flex;align-items:center;gap:22px}.landing-page .landing-actions .btn{border-radius:999px;min-height:54px;padding-inline:24px;background:var(--landing-coral);color:#fff;font-weight:800}.landing-page .landing-secondary-action{color:var(--landing-ink);font-weight:750;border-bottom:1px solid var(--landing-ink);padding-bottom:3px}.landing-page .landing-secondary-action .icn{display:none}
+.landing-page .landing-account-actions button{color:var(--landing-blue)}
+.landing-page .landing-hero-visual{padding:18px 0 0}.landing-page .landing-demo-label{color:rgba(16,23,34,.56);border-bottom-color:rgba(16,23,34,.18)}.landing-page .landing-demo-label span{background:var(--landing-coral)}.landing-page .landing-demo-label b{color:var(--landing-blue)}
+.landing-page .landing-home-preview,.landing-page .landing-phone,.landing-page .landing-product-card{border:1px solid rgba(16,23,34,.18);border-radius:2px;background:#fffdf8;box-shadow:14px 16px 0 rgba(16,23,34,.08)}
+.landing-page .landing-home-preview{transform:rotate(1.2deg);overflow:hidden}.landing-page .landing-profile-preview{background:var(--landing-ink)}.landing-page .landing-profile-copy>strong{color:#fff}.landing-page .landing-profile-copy>p{color:var(--landing-acid)}.landing-page .landing-profile-goal i b{background:var(--landing-acid)}
+.landing-page .landing-trust{border-top:1px solid rgba(16,23,34,.2);border-bottom:1px solid rgba(16,23,34,.2)}.landing-page .landing-trust span{border-color:rgba(16,23,34,.18)}.landing-page .landing-trust b{color:var(--landing-blue)}.landing-page .landing-trust small{color:rgba(16,23,34,.6)}
+.landing-page .landing-section{max-width:1320px;width:calc(100% - 64px);padding:132px 0}.landing-page .landing-section h2,.landing-page .landing-final-cta h2{color:var(--landing-ink);font-size:clamp(44px,5.6vw,80px);line-height:.94;letter-spacing:-.065em;font-weight:850}
+.landing-page .landing-workout-section{max-width:none;width:100%;padding:132px max(32px,calc((100% - 1320px)/2));background:var(--landing-ink);color:#fff;grid-template-columns:minmax(280px,.7fr) minmax(420px,1.3fr);gap:120px}.landing-page .landing-workout-copy h2{color:#fff}.landing-page .landing-workout-copy>p,.landing-page .landing-workout-copy li p small{color:rgba(255,255,255,.62)}.landing-page .landing-workout-copy li{border-color:rgba(255,255,255,.2)}.landing-page .landing-workout-copy li>span{color:var(--landing-acid)}
+.landing-page .landing-workout-visual{border-left:1px solid rgba(255,255,255,.2);padding-left:56px}.landing-page .landing-phone{box-shadow:14px 16px 0 var(--landing-coral)}
+.landing-page .landing-exercises{max-width:none;width:100%;background:var(--landing-paper-2);padding-inline:max(32px,calc((100% - 1320px)/2))}.landing-page .landing-exercises .landing-section-head{max-width:1320px;margin:0 auto}.landing-page .landing-exercise-card{border:1px solid rgba(16,23,34,.18);border-radius:2px;background:#fffdf8}.landing-page .landing-exercise-media{background:var(--landing-ink)}.landing-page .landing-exercise-copy strong{color:var(--landing-ink)}.landing-page .landing-carousel-control{border-color:rgba(16,23,34,.28);border-radius:2px;color:var(--landing-ink);background:transparent}.landing-page .landing-carousel-control:hover{background:var(--landing-coral);color:#fff}
+.landing-page .landing-progress-section,.landing-page .landing-stats-section{border-top:1px solid rgba(16,23,34,.18)}.landing-page .landing-mini-metrics{border-top:1px solid rgba(16,23,34,.18);border-bottom:1px solid rgba(16,23,34,.18)}.landing-page .landing-mini-metrics strong{color:var(--landing-blue)}
+.landing-page .landing-stats-card{box-shadow:14px 16px 0 var(--landing-acid)}.landing-page .landing-preview-live{color:var(--landing-blue)}.landing-page .landing-preview-live i{background:var(--landing-blue)}
+.landing-page .landing-feature-section{border-top:1px solid rgba(16,23,34,.18)}.landing-page .landing-feature-list article{border-color:rgba(16,23,34,.18)}.landing-page .landing-feature-icon{border-color:rgba(16,23,34,.24);border-radius:2px;color:var(--landing-coral);background:transparent}
+.landing-page .landing-final-cta{border:1px solid rgba(16,23,34,.22);border-radius:2px;background:var(--landing-coral);box-shadow:14px 16px 0 var(--landing-ink)}.landing-page .landing-final-cta h2,.landing-page .landing-final-cta p,.landing-page .landing-final-cta .landing-section-index{color:#fff}.landing-page .landing-final-actions .btn{background:#fff;color:var(--landing-ink);border-radius:999px}.landing-page .landing-final-actions>span{color:rgba(255,255,255,.7)}
+.landing-page .landing-footer{border-color:rgba(16,23,34,.18);color:rgba(16,23,34,.62)}.landing-page .landing-footer-brand{color:var(--landing-ink)}.landing-page .landing-footer nav a{color:var(--landing-ink)}
+@media(max-width:980px){.landing-page .landing-nav{width:calc(100% - 40px)}.landing-page .landing-hero,.landing-page .landing-section{width:calc(100% - 40px)}.landing-page .landing-workout-section,.landing-page .landing-exercises{width:100%}.landing-page .landing-workout-visual{border-left:0;padding-left:0}}
+@media(max-width:600px){.landing-page .landing-nav{height:64px;width:calc(100% - 32px)}.landing-page .landing-nav nav{display:none}.landing-page .landing-hero{width:calc(100% - 32px);padding-top:64px;gap:48px}.landing-page .landing-hero::before{display:none}.landing-page .landing-hero h1{font-size:clamp(52px,15vw,76px)}.landing-page .landing-actions{display:grid;gap:16px}.landing-page .landing-actions .btn,.landing-page .landing-secondary-action{justify-content:center;text-align:center;width:100%}.landing-page .landing-section{width:calc(100% - 32px);padding:86px 0}.landing-page .landing-workout-section,.landing-page .landing-exercises{padding-inline:16px;width:100%}.landing-page .landing-workout-section{gap:48px}.landing-page .landing-final-cta{box-shadow:8px 10px 0 var(--landing-ink)}}
