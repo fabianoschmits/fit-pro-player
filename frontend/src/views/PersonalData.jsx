@@ -16,7 +16,7 @@ function EditableField({ name, label, value, summary = value, onChange, children
   const [draft, setDraft] = useState(value ?? '')
   const save = () => { onChange(draft); setEditing(false); onSaved?.() }
   return <section className={`personal-field ${editing ? 'is-editing' : ''}`} data-profile-field={name}>
-    <div className="personal-field-head"><span>{label}</span>{editing ? <button type="button" className="personal-save" onClick={save}><Icon name="check" /> Salvar</button> : <button type="button" className="personal-edit" onClick={() => { setDraft(value ?? ''); setEditing(true) }} aria-label={`Editar ${label}`}><Icon name="edit" /><span>Editar</span></button>}</div>
+    <div className="personal-field-head"><span>{label}</span>{editing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setDraft(value ?? ''); setEditing(false) }}>Cancelar</button><button type="button" className="personal-save" onClick={save}><Icon name="check" /> Salvar</button></span> : <button type="button" className="personal-edit" onClick={() => { setDraft(value ?? ''); setEditing(true) }} aria-label={`Editar ${label}`}><Icon name="edit" /><span>Editar</span></button>}</div>
     <div className="personal-field-summary">{summary || 'Não informado'}</div>
     <div className="personal-field-editor" aria-hidden={!editing}>{children ? children({ editing, value: draft, setValue: setDraft }) : <TextField {...inputProps} disabled={!editing} value={draft} onChange={event => setDraft(event.target.value)} />}</div>
   </section>
@@ -27,7 +27,7 @@ function MeasuresField({ height, weight, onSave }) {
   const [draft, setDraft] = useState({ height, weight })
   const save = () => { onSave(draft); setEditing(false) }
   return <section className={`personal-field personal-measures-field ${editing ? 'is-editing' : ''}`} data-profile-field="measures">
-    <div className="personal-field-head"><span>Medidas</span>{editing ? <button type="button" className="personal-save" onClick={save}><Icon name="check" /> Salvar</button> : <button type="button" className="personal-edit" onClick={() => { setDraft({ height, weight }); setEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
+    <div className="personal-field-head"><span>Medidas</span>{editing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setDraft({ height, weight }); setEditing(false) }}>Cancelar</button><button type="button" className="personal-save" onClick={save}><Icon name="check" /> Salvar</button></span> : <button type="button" className="personal-edit" onClick={() => { setDraft({ height, weight }); setEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
     <div className="personal-field-summary">{height} m · {weight} kg</div>
     <div className="personal-field-editor"><div className="personal-measures-editor"><label>Altura<input className="field" inputMode="decimal" value={draft.height} onChange={event => setDraft(current => ({ ...current, height: event.target.value }))} /></label><label>Peso<input className="field" inputMode="decimal" value={draft.weight} onChange={event => setDraft(current => ({ ...current, weight: event.target.value }))} /></label></div></div>
   </section>
@@ -46,7 +46,7 @@ export default function PersonalData() {
     <AppHeader title="Dados pessoais" subtitle="Mantenha seu perfil atualizado" />
     <button type="button" className="personal-back" onClick={() => nav('/more')}><Icon name="chevronLeft" /> Voltar</button>
     <section className={`personal-avatar-card ${avatarEditing ? 'is-editing' : ''}`} data-profile-field="avatarId">
-      <div className="personal-field-head"><span>Seu avatar</span>{avatarEditing ? <button type="button" className="personal-save" onClick={() => { commit('avatarId', avatarDraft); setAvatarEditing(false) }}><Icon name="check" /> Salvar</button> : <button type="button" className="personal-edit" onClick={() => { setAvatarDraft(profile.avatarId); setAvatarEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
+      <div className="personal-field-head"><span>Seu avatar</span>{avatarEditing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setAvatarDraft(profile.avatarId); setAvatarEditing(false) }}>Cancelar</button><button type="button" className="personal-save" onClick={() => { commit('avatarId', avatarDraft); setAvatarEditing(false) }}><Icon name="check" /> Salvar</button></span> : <button type="button" className="personal-edit" onClick={() => { setAvatarDraft(profile.avatarId); setAvatarEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
       <div className="personal-avatar-summary"><AvatarImage avatarId={profile.avatarId} alt="" /><span>{avatarEditing ? 'Arraste para os lados e escolha seu avatar' : 'Avatar atual'}</span></div>
       <div className="personal-avatar-editor" aria-hidden={!avatarEditing}><AvatarPicker value={avatarEditing ? avatarDraft : profile.avatarId} onChange={setAvatarDraft} t={t} orientation="horizontal" disabled={!avatarEditing} /></div>
     </section>

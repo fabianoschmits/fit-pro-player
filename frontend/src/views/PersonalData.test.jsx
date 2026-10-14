@@ -24,7 +24,7 @@ it('keeps personal fields locked until the user chooses to edit them', async () 
   expect(name.disabled).toBe(true)
   await act(async () => container.querySelector('[data-profile-field="name"] button').click())
   expect(name.disabled).toBe(false)
-  expect(container.querySelector('[data-profile-field="name"] button').textContent).toContain('Salvar')
+  expect([...container.querySelectorAll('[data-profile-field="name"] button')].find(button => button.textContent.includes('Salvar'))).toBeTruthy()
 })
 
 it('saves only the edited personal field', async () => {
