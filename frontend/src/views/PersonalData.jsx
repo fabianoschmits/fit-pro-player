@@ -26,13 +26,16 @@ export default function PersonalData() {
   const update = useStore(state => state.update)
   const toast = useUI(state => state.toast)
   const profile = normalizeProfile(S.profile, S.body)
+  const [avatarEditing, setAvatarEditing] = useState(false)
+  const [avatarDraft, setAvatarDraft] = useState(profile.avatarId)
   const commit = (key, value) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), [key]: value }; if (key === 'sex') state.body = value }); toast('Salvo com sucesso') }
   return <main className="narrow personal-data-page">
     <AppHeader title="Dados pessoais" subtitle="Mantenha seu perfil atualizado" />
     <button type="button" className="personal-back" onClick={() => nav('/more')}><Icon name="chevronLeft" /> Voltar</button>
-    <section className="personal-avatar-card">
-      <div><strong>Seu avatar</strong><span>Deslize para escolher outro</span></div>
-      <AvatarPicker value={profile.avatarId} onChange={avatarId => commit('avatarId', avatarId)} t={t} orientation="horizontal" />
+    <section className={`personal-avatar-card ${avatarEditing ? 'is-editing' : ''}`} data-profile-field="avatarId">
+      <div className="personal-field-head"><span>Seu avatar</span>{avatarEditing ? <button type="button" className="personal-save" onClick={() => { commit('avatarId', avatarDraft); setAvatarEditing(false) }}><Icon name="check" /> Salvar</button> : <button type="button" className="personal-edit" onClick={() => { setAvatarDraft(profile.avatarId); setAvatarEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
+      <span className="personal-avatar-help">{avatarEditing ? 'Arraste para os lados e escolha seu avatar' : 'Avatar atual'}</span>
+      <AvatarPicker value={avatarEditing ? avatarDraft : profile.avatarId} onChange={setAvatarDraft} t={t} orientation="horizontal" disabled={!avatarEditing} />
     </section>
     <div className="personal-fields">
       <EditableField name="name" label="Nome" value={formatPersonName(profile.name || '')} onChange={value => commit('name', formatPersonName(value))} inputProps={{ autoComplete: 'name' }} />

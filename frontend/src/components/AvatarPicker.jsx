@@ -4,7 +4,7 @@ import Icon from './Icon.jsx'
 
 const COLUMNS = 4
 
-export default function AvatarPicker({ value, onChange, t, orientation = 'grid' }) {
+export default function AvatarPicker({ value, onChange, t, orientation = 'grid', disabled = false }) {
   const gridRef = useRef(null)
   const selectedRef = useRef(null)
 
@@ -39,7 +39,7 @@ export default function AvatarPicker({ value, onChange, t, orientation = 'grid' 
   }
 
   return (
-    <div ref={gridRef} data-orientation={orientation} className={`avatar-picker-grid ${orientation === 'horizontal' ? 'avatar-picker-horizontal' : ''}`} role="radiogroup" aria-label={t('Available avatars')}>
+    <div ref={gridRef} data-orientation={orientation} className={`avatar-picker-grid ${orientation === 'horizontal' ? 'avatar-picker-horizontal' : ''} ${disabled ? 'is-disabled' : ''}`} role="radiogroup" aria-label={t('Available avatars')} aria-disabled={disabled}>
       {AVATARS.map((avatar, index) => {
         const selected = avatar.id === value
         return (
@@ -53,7 +53,7 @@ export default function AvatarPicker({ value, onChange, t, orientation = 'grid' 
             aria-label={t('Avatar {0} of {1}', index + 1, AVATARS.length)}
             tabIndex={selected ? 0 : -1}
             data-avatar-index={index}
-            onClick={() => onChange(avatar.id)}
+            onClick={() => { if (!disabled) onChange(avatar.id) }}
             onKeyDown={event => onKeyDown(event, index)}
           >
             <img src={avatar.src} alt="" loading={index < 12 ? 'eager' : 'lazy'} decoding="async" draggable="false" />

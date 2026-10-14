@@ -49,4 +49,7 @@ it('renders the avatar picker as a horizontal scroller', async () => {
   const picker = container.querySelector('.avatar-picker-grid')
   expect(picker.getAttribute('data-orientation')).toBe('horizontal')
   expect(picker.className).toContain('avatar-picker-horizontal')
+  expect(picker.className).toContain('is-disabled')
+  await act(async () => container.querySelector('[data-profile-field="avatarId"] .personal-edit').click())
+  expect(picker.className).not.toContain('is-disabled')
 })
