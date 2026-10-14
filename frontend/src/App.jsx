@@ -24,6 +24,7 @@ import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 import PrivacyPages from './views/PrivacyPages.jsx'
 import PrivacySettings from './views/PrivacySettings.jsx'
+import PrivacyConsentModal from './components/PrivacyConsentModal.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
@@ -434,6 +435,7 @@ function Shell() {
       <RestTimer />
       <Modals />
       <Toast />
+      <PrivacyConsentModal />
     </>
   )
 }
