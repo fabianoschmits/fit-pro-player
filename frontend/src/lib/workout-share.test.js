@@ -11,6 +11,13 @@ describe('workout sharing', () => {
     expect(file.type).toBe('image/png')
   })
 
+  it('converts a data URL locally without using fetch or the network', async () => {
+    const file = await dataUrlToPngFile(image, 'offline.png', () => { throw new Error('network must not be used') })
+    expect(file.name).toBe('offline.png')
+    expect(file.type).toBe('image/png')
+    expect(await file.arrayBuffer()).toBeInstanceOf(ArrayBuffer)
+  })
+
   it('opens the native Capacitor share sheet with a cache URI', async () => {
     const writeFile = vi.fn(async () => ({ uri: 'file:///cache/workout.png' }))
     const nativeShare = vi.fn()

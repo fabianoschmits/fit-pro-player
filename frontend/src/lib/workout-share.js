@@ -2,9 +2,16 @@ export async function dataUrlToPngFile(dataUrl, filename = `treino-fpp-${Date.no
   if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png')) {
     throw new Error('invalid-image')
   }
-  const response = await fetchImpl(dataUrl)
-  if (!response?.ok && response?.ok !== undefined) throw new Error('image-read-failed')
-  const blob = await response.blob()
+  const [header, payload = ''] = dataUrl.split(',', 2)
+  let blob
+  if (/;base64$/i.test(header)) {
+    const binary = atob(payload)
+    const bytes = new Uint8Array(binary.length)
+    for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index)
+    blob = new Blob([bytes], { type: 'image/png' })
+  } else {
+    blob = new Blob([decodeURIComponent(payload)], { type: 'image/png' })
+  }
   return new File([blob], filename, { type: 'image/png' })
 }
 

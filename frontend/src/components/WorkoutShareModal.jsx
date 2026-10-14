@@ -13,13 +13,6 @@ import '../workout-share-layouts.css'
 import { LayoutDashboard as ShareCardLayout } from './WorkoutShareLayouts.jsx'
 import { shareWorkoutImage } from '../lib/workout-share.js'
 
-const THEMES = [
-  { id: 't1', name: 'Performance' },
-  { id: 't29', name: 'Clean' },
-  { id: 't30', name: 'Night' },
-  { id: 't5', name: 'Ocean' }
-]
-
 // The Dashboard layout is the default "gamer card" layout
 function LayoutDashboard({ w, st, innerRef, themeId }) {
   const dur = w.end - w.start
@@ -142,7 +135,6 @@ export function WorkoutShareModal({ w, onClose }) {
   const st = useStore(s => s.S)
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState(null)
-  const [selectedTheme, setSelectedTheme] = useState(THEMES[0].id)
   const canvasRef = useRef(null)   // points to .workout-story-canvas (1080×1920)
   const outerRef = useRef(null)    // points to the visible scaler container
 
@@ -166,10 +158,6 @@ export function WorkoutShareModal({ w, onClose }) {
     setError(null)
     setGenerating(true)
 
-    // Store current visual transform, reset to scale(1) so html-to-image sees full size
-    const prevTransform = canvasRef.current.style.transform
-    canvasRef.current.style.transform = 'scale(1)'
-
     // Wait for BodyMap SVG paths to be fully painted
     await new Promise(r => setTimeout(r, 400))
 
@@ -179,8 +167,7 @@ export function WorkoutShareModal({ w, onClose }) {
         height: 1920,
         pixelRatio: 1,
         cacheBust: true,
-        // The background color is now defined by the theme css
-        // inline all styles so SVG colours are captured
+        style: { transform: 'none', transformOrigin: 'top left' },
         includeQueryParams: true,
       })
       return dataUrl
@@ -189,8 +176,6 @@ export function WorkoutShareModal({ w, onClose }) {
       setError(t('Não foi possível gerar a imagem. Tente novamente.'))
       return null
     } finally {
-      // Restore visual scale
-      canvasRef.current.style.transform = prevTransform
       setGenerating(false)
     }
   }
@@ -208,13 +193,11 @@ export function WorkoutShareModal({ w, onClose }) {
   // The platform-specific adapters are loaded only when the share action is used.
   // This keeps the web bundle independent from native plugin initialization.
   const shareNative = async (dataUrl) => {
-    const [core, filesystemModule, shareModule] = await Promise.all([
-      import('@capacitor/core'),
-      import('@capacitor/filesystem'),
-      import('@capacitor/share'),
-    ])
+    const { Capacitor } = await import('@capacitor/core')
+    if (!Capacitor.isNativePlatform()) return shareWorkoutImage(dataUrl, { dialogTitle: t('Compartilhar treino') })
+    const [filesystemModule, shareModule] = await Promise.all([import('@capacitor/filesystem'), import('@capacitor/share')])
     return shareWorkoutImage(dataUrl, {
-      capacitor: core.Capacitor,
+      capacitor: Capacitor,
       filesystem: filesystemModule.Filesystem,
       directory: filesystemModule.Directory.Cache,
       share: shareModule.Share,
@@ -240,30 +223,15 @@ export function WorkoutShareModal({ w, onClose }) {
   return (
     <div className="workout-share-sheet">
       <div className="workout-share-heading">
-        <div><h2>{t('Compartilhar treino')}</h2><p>{t('Escolha um estilo e compartilhe seu resultado.')}</p></div>
+        <div><h2>{t('Compartilhar treino')}</h2><p>{t('Sua imagem principal está pronta para compartilhar.')}</p></div>
         <span className="workout-share-heading-mark"><Icon name="upload" /></span>
       </div>
       {/* Story preview frame */}
       <div className="workout-share-preview-area">
         <div ref={outerRef} className="workout-share-scaler-outer">
           <div className="workout-share-scaler-inner">
-            <WorkoutStoryPreview w={w} st={st} innerRef={canvasRef} themeId={selectedTheme} />
+            <WorkoutStoryPreview w={w} st={st} innerRef={canvasRef} themeId="t1" />
           </div>
-        </div>
-      </div>
-
-      {/* Theme selector */}
-      <div className="workout-share-themes">
-        <div className="workout-share-themes-scroll">
-          {THEMES.map(t => (
-            <button
-              key={t.id}
-              className={`theme-btn ${t.id === selectedTheme ? 'active' : ''} ${t.id}`}
-              onClick={() => setSelectedTheme(t.id)}
-            >
-              {t.name}
-            </button>
-          ))}
         </div>
       </div>
 
