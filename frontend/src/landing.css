@@ -883,6 +883,7 @@ body.landing-mode #tabbar {
   overflow-x: auto;
   scrollbar-width: none;
 }
+.landing-exercise-carousel{display:grid;grid-template-columns:42px minmax(0,1fr) 42px;align-items:center;gap:10px}.landing-carousel-control{width:42px;height:42px;border:1px solid var(--surface-border);border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--label-2);transition:color .18s,background .18s,transform .18s}.landing-carousel-control:hover{color:var(--acc);background:var(--acc-soft)}.landing-carousel-control:active{transform:scale(.92)}
 
 .landing-exercise-marquee::-webkit-scrollbar {
   display: none;
@@ -1560,6 +1561,7 @@ body.landing-mode #tabbar {
     padding-inline: 20px;
     scroll-snap-type: x mandatory;
   }
+  .landing-exercise-carousel{grid-template-columns:1fr;position:relative}.landing-carousel-control{position:absolute;z-index:2;top:50%;transform:translateY(-50%);box-shadow:0 8px 20px rgba(0,0,0,.22)}.landing-carousel-control:active{transform:translateY(-50%) scale(.92)}.landing-carousel-control:first-child{left:23px}.landing-carousel-control:last-child{right:23px}
 
   .landing-exercise-track {
     width: max-content;

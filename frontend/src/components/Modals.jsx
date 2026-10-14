@@ -141,7 +141,7 @@ function Sheet({ sheet, exiting }) {
   return (
     <div className={'modal-layer' + (exiting ? ' is-closing' : '')}>
       <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
-      <div className="sheet" ref={ref} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
+      <div className={'sheet ' + (sheet.className || '')} ref={ref} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
         role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>
         <div className="grab" />

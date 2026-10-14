@@ -93,8 +93,15 @@ function useReducedMotion() {
 }
 
 function ExerciseShowcase({ paused, reduced }) {
+  const viewport = useRef(null)
+  const move = direction => {
+    const card = viewport.current?.querySelector('.landing-exercise-card')
+    viewport.current?.scrollBy({ left: direction * ((card?.getBoundingClientRect().width || 260) + 16), behavior: 'smooth' })
+  }
   return (
-    <div className="landing-exercise-marquee">
+    <div className="landing-exercise-carousel">
+      <button className="landing-carousel-control" type="button" aria-label="Exercício anterior" onClick={() => move(-1)}><Icon name="chevronLeft" /></button>
+      <div className="landing-exercise-marquee" ref={viewport}>
       <div className={'landing-exercise-track' + (paused || reduced ? ' is-paused' : '')}>
         <div className="landing-exercise-set">
           {SHOWCASE_EXERCISES.map((exercise, index) => (
@@ -110,6 +117,8 @@ function ExerciseShowcase({ paused, reduced }) {
           ))}
         </div>
       </div>
+      </div>
+      <button className="landing-carousel-control" type="button" aria-label="Próximo exercício" onClick={() => move(1)}><Icon name="chevronRight" /></button>
     </div>
   )
 }

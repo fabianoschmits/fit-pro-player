@@ -5,6 +5,7 @@ import { t } from '../lib/i18n.js';
 import { useUI } from '../store/useUI.js';
 import { useStore } from '../store/useStore.js';
 import { Button } from './ui.jsx';
+import Icon from './Icon.jsx';
 import { PRIVACY_DOCUMENT_VERSION } from '../lib/privacy-config.js'
 
 const ERROR_COPY = {
@@ -28,7 +29,7 @@ const operationFor = {
 const initial = mode => ['entry', 'sign_in', 'sign_up', 'forgot_password', 'reset_password'].includes(mode) ? mode : 'entry';
 
 export function openAuthSheet(initialMode = 'entry') {
-  return useUI.getState().openSheet(close => <AuthSheet close={close} initialMode={initialMode} />);
+  return useUI.getState().openSheet(close => <AuthSheet close={close} initialMode={initialMode} />, { className: 'auth-fullscreen' });
 }
 
 export function AuthSheet({ close, initialMode = 'entry' }) {
@@ -39,6 +40,8 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
   const alertRef = useRef(null);
   const busy = auth.operation === operationFor[mode];
 
@@ -62,6 +65,8 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     setMode(next);
     setError('');
     setNotice('');
+    setShowPassword(false);
+    setShowConfirmation(false);
   };
   const showError = code => setError(t(ERROR_COPY[code] || ERROR_COPY.auth_unavailable));
 
@@ -101,13 +106,12 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   };
 
   if (mode === 'entry') {
-    return <>
-      <h3>{t('Protect your training')}</h3>
-      <p className="muted small">{t('Create an account to sign in on another device. Your training stays on this device.')}</p>
+    return <div className="auth-form auth-entry">
+      <div className="auth-form-head"><span className="auth-kicker">FIT PRO PLAYER · SEU TREINO</span><h3>{t('Protect your training')}</h3><p>Seu histórico merece continuar com você. Entre para sincronizar seus treinos ou crie uma conta em menos de um minuto.</p></div>
       <Button variant="primary" onClick={() => showMode('sign_in')}>{t('Sign in')}</Button>
-      <div style={{ height: 10 }} />
       <Button onClick={() => showMode('sign_up')}>{t('Create account')}</Button>
-    </>;
+      <button type="button" className="link" onClick={close}>Continuar sem conta</button>
+    </div>;
   }
 
   const isSignUp = mode === 'sign_up';
@@ -116,8 +120,15 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const title = isSignUp ? 'Create account' : isRecovery ? 'Recover your password' : isReset ? 'Reset password' : 'Sign in';
   const submitLabel = isSignUp ? 'Create account' : isRecovery ? 'Send recovery email' : isReset ? 'Reset password' : 'Sign in';
 
-  return <form onSubmit={submit}>
-    <h3>{t(title)}</h3>
+  const passwordScore = values.password.length < 8 ? 0 : [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(pattern => pattern.test(values.password)).length + 1
+  const passwordLabel = passwordScore < 2 ? 'Fraca' : passwordScore < 4 ? 'Boa' : 'Forte'
+
+  return <form className="auth-form" onSubmit={submit}>
+    <div className="auth-form-head">
+      <span className="auth-kicker">FIT PRO PLAYER · CONTA</span>
+      <h3>{t(title)}</h3>
+      <p>{isSignUp ? 'Salve seu histórico e leve seu treino para onde você estiver.' : isRecovery ? 'Enviaremos um link para recuperar seu acesso.' : 'Seu treino continua no ponto em que você deixou.'}</p>
+    </div>
     {isSignUp && <>
       <label>{t('Name')}<input className="input" aria-label={t('Name')} autoComplete="name" required value={values.name} onChange={change('name')} /></label>
       <div style={{ height: 10 }} />
@@ -132,10 +143,11 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       <div style={{ height: 10 }} />
     </>}
     {!isRecovery && <>
-      <label>{t(isSignUp || isReset ? 'New password' : 'Password')}<input className="input" type="password" aria-label={t(isSignUp || isReset ? 'New password' : 'Password')} autoComplete={isSignUp || isReset ? 'new-password' : 'current-password'} required minLength={8} aria-describedby="auth-error" value={values.password} onChange={change('password')} /></label>
+      <label>{t(isSignUp || isReset ? 'New password' : 'Password')}<span className="auth-password-field"><input className="input" type={showPassword ? 'text' : 'password'} aria-label={t(isSignUp || isReset ? 'New password' : 'Password')} autoComplete={isSignUp || isReset ? 'new-password' : 'current-password'} required minLength={8} aria-describedby="auth-error" value={values.password} onChange={change('password')} /><button type="button" aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} onClick={() => setShowPassword(value => !value)}><Icon name={showPassword ? 'eyeSlash' : 'eye'} /></button></span></label>
+      {(isSignUp || isReset) && values.password && <div className="auth-password-strength" aria-live="polite"><span><i style={{ width: `${Math.min(100, passwordScore * 20)}%` }} /></span><b>{passwordLabel}</b></div>}
       {(isSignUp || isReset) && <>
         <div style={{ height: 10 }} />
-        <label>{t('Confirm password')}<input className="input" type="password" aria-label={t('Confirm password')} autoComplete="new-password" required minLength={8} aria-describedby="auth-error" value={values.confirmation} onChange={change('confirmation')} /></label>
+        <label>{t('Confirm password')}<span className="auth-password-field"><input className="input" type={showConfirmation ? 'text' : 'password'} aria-label={t('Confirm password')} autoComplete="new-password" required minLength={8} aria-describedby="auth-error" value={values.confirmation} onChange={change('confirmation')} /><button type="button" aria-label={showConfirmation ? 'Ocultar confirmação' : 'Mostrar confirmação'} onClick={() => setShowConfirmation(value => !value)}><Icon name={showConfirmation ? 'eyeSlash' : 'eye'} /></button></span></label>
       </>}
     </>}
     {isSignUp && <label className="auth-consent"><input type="checkbox" checked={privacyAccepted} onChange={event => setPrivacyAccepted(event.target.checked)} /> <span>Aceito o <a href="#/privacy" target="_blank" rel="noreferrer">Aviso de Privacidade</a> e os <a href="#/terms" target="_blank" rel="noreferrer">Termos de Uso</a>.</span></label>}

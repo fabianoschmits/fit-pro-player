@@ -96,6 +96,19 @@ describe('AuthSheet', () => {
     expect(input('Confirm password')).toBeTruthy();
   });
 
+  it('shows password strength and toggles password visibility', async () => {
+    await render('sign_up');
+    await setValue(input('New password'), 'Short1!');
+    expect(container.querySelector('.auth-password-strength')).toBeTruthy();
+    expect(container.textContent).toContain('Fraca');
+    await setValue(input('New password'), 'MuchStronger1!');
+    expect(container.textContent).toContain('Forte');
+    const toggle = container.querySelector('button[aria-label="Mostrar senha"]');
+    expect(input('New password').type).toBe('password');
+    await click(toggle);
+    expect(input('New password').type).toBe('text');
+  });
+
   it('lets signup choose a professional account without assigning roles in the browser', async () => {
     await render('sign_up');
     const accountType = container.querySelector('select[aria-label="Account type"]');
