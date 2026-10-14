@@ -1,6 +1,6 @@
 import BodyMap from './BodyMap.jsx'
 import { musclesOf } from '../lib/muscles.js'
-import { exerciseBodyView } from '../lib/exercise-body-view.js'
+import { exerciseBodyRegion, exerciseBodyView } from '../lib/exercise-body-view.js'
 import { useStore } from '../store/useStore.js'
 
 export default function ExerciseMuscleThumb({ ex, full = false, popup = false }) {
@@ -12,6 +12,7 @@ export default function ExerciseMuscleThumb({ ex, full = false, popup = false })
       load={musclesOf(ex)}
       body={body}
       view={popup ? 'both' : exerciseBodyView(ex)}
+      region={popup ? 'full' : exerciseBodyRegion(ex)}
       decorative={!full && !popup}
     />
   )

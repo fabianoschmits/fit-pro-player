@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { routineBodyRegion, routineBodyView } from './exercise-body-view.js'
+import { exerciseBodyRegion, routineBodyRegion, routineBodyView } from './exercise-body-view.js'
 
 describe('routineBodyView', () => {
   it('chooses the front for chest routines', () => {
@@ -22,5 +22,15 @@ describe('routineBodyRegion', () => {
 
   it('keeps a balanced routine full body', () => {
     expect(routineBodyRegion({ ex: [{ muscleWeights: { chest: 1, quadriceps: 1 } }] })).toBe('full')
+  })
+})
+
+describe('exerciseBodyRegion', () => {
+  it('uses the focused upper region for a chest exercise', () => {
+    expect(exerciseBodyRegion({ muscleWeights: { chest: 1, deltoids: .4 } })).toBe('upper')
+  })
+
+  it('uses the focused lower region for a leg exercise', () => {
+    expect(exerciseBodyRegion({ muscleWeights: { quadriceps: 1, hamstring: .3 } })).toBe('lower')
   })
 })
