@@ -59,7 +59,7 @@ export default function More() {
       {consoleAccess && <Row icon="gear" iconTint="var(--label)" title="Central" subtitle="Operação da plataforma"
         accessory="chevron" onClick={() => nav('/console')} />}
       <Row icon="shield" iconTint="var(--blue)" title="Privacidade e dados" subtitle="Aviso, direitos dos titulares e solicitações LGPD"
-        accessory="chevron" onClick={() => nav('/data-rights')} />
+        accessory="chevron" onClick={() => nav('/privacy-settings')} />
     </Section>
   </div>
 }

@@ -23,6 +23,7 @@ import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
 import PrivacyPages from './views/PrivacyPages.jsx'
+import PrivacySettings from './views/PrivacySettings.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
@@ -393,6 +394,7 @@ function Shell() {
                 <Route path="/privacy" element={<PrivacyPages kind="privacy" />} />
                 <Route path="/terms" element={<PrivacyPages kind="terms" />} />
                 <Route path="/data-rights" element={<PrivacyPages kind="rights" />} />
+                <Route path="/privacy-settings" element={<PrivacySettings />} />
                 <Route path="/plan" element={<Plan />} />
                 <Route path="/plan/r/:id" element={<RoutineEdit />} />
                 <Route path="/workout" element={<Workout />} />
