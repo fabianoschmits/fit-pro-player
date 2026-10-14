@@ -8,67 +8,65 @@
 
 ## Sobre o projeto
 
-Aplicação web progressiva para planejamento e acompanhamento de treinos. O produto possui modo local/demo, sincronização opcional com Supabase, autenticação, histórico, estatísticas, BodyMap, notificações e fluxos para alunos e profissionais.
+O Fit Pro Player é uma plataforma de treino e evolução física criada para organizar a rotina de exercícios de forma simples, visual e personalizada.
 
-## Stack
+O aplicativo combina planejamento de treinos, acompanhamento de desempenho e histórico de evolução em uma experiência única para quem treina. A identidade visual, o BodyMap e as animações de exercícios foram desenvolvidos para tornar cada etapa mais clara e intuitiva.
 
-- React 19 + Vite
-- Zustand para estado no frontend
-- Supabase Auth, PostgreSQL, RLS, RPCs, Edge Functions e Storage conforme o recurso
-- PWA e Capacitor para Android/iOS
-- Vercel para publicação web
+## Principais recursos
 
-## Executar localmente
+- Planejamento semanal e diário de treinos.
+- Criação, edição e organização de exercícios.
+- Registro de cargas, repetições, séries e observações.
+- Histórico completo dos treinos realizados.
+- Estatísticas de evolução e acompanhamento de desempenho.
+- Registro e acompanhamento do peso corporal.
+- BodyMap interativo com músculos e regiões trabalhadas.
+- Visualização anatômica frontal e posterior.
+- Demonstrações animadas dos exercícios.
+- Modo claro e escuro.
+- Personalização de cores de destaque.
+- Funcionamento como aplicativo web progressivo.
+- Suporte a experiências mobile para Android e iOS.
+- Área profissional para organização de alunos, programas e vínculos.
+- Notificações e lembretes relacionados à rotina de treino.
 
-Requisitos: Node.js 22.x e npm.
+## Experiência do produto
 
-```powershell
-Copy-Item .env.example frontend/.env.local
-# preencha VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY quando quiser sincronização
-npm run setup
-npm run dev
-```
+O Fit Pro Player foi pensado para acompanhar diferentes momentos da jornada de treino:
 
-Sem as variáveis do Supabase, o frontend pode ser usado no modo local/demo. Os dados permanecem no dispositivo e podem ser exportados pelo próprio aplicativo.
+- **Plano:** organização dos dias e sessões da semana.
+- **Treino:** execução guiada, exercícios, séries, cargas e descanso.
+- **Exercícios:** consulta visual, músculos trabalhados e instruções.
+- **Histórico:** registro das sessões concluídas e evolução ao longo do tempo.
+- **Estatísticas:** visão do desempenho e da consistência do usuário.
+- **BodyMap:** identificação visual das regiões e músculos envolvidos.
+- **Área profissional:** acompanhamento de alunos e organização de programas.
 
-## Comandos
+## Arquitetura do produto
 
-```powershell
-npm test                              # testes unitários/integrados do frontend
-npm run build                         # build web
-npm run build:vercel                  # build usado pela Vercel
-npm run check:supabase                # fronteiras e migrations do Supabase
-npm run check:database                # testes PostgreSQL, quando PG_BIN estiver configurado
-npm run audit                         # auditoria de dependências
-npm --prefix frontend run check:i18n  # validações de tradução
-npm run test:e2e                      # testes end-to-end
-```
+O projeto utiliza uma aplicação React moderna, com experiência PWA e suporte mobile por meio do Capacitor. Os recursos de conta, sincronização, dados e fluxos profissionais são integrados ao Supabase.
 
-## Publicação
+### Tecnologias principais
 
-O deploy web é configurado em [`vercel.json`](vercel.json). Na Vercel, configure apenas:
+- React 19
+- Vite
+- Zustand
+- Supabase Auth e PostgreSQL
+- PWA
+- Capacitor para Android e iOS
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
-
-As migrations são versionadas em [`supabase/migrations`](supabase/migrations) e precisam ser aplicadas ao projeto Supabase separadamente do deploy do frontend. Segredos como chaves VAPID e credenciais de push ficam somente no ambiente servidor/Edge Functions.
-
-## Estrutura
+## Estrutura do projeto
 
 ```text
-frontend/     aplicação React, PWA, testes e projetos Capacitor
-supabase/     migrations, funções, testes e operações do banco
-scripts/      verificações de limites, banco e identidade da marca
+frontend/     aplicação principal e experiência mobile
+supabase/     dados, autenticação e recursos de backend
 assets/       identidade visual e materiais oficiais
-docs/         operação mobile, notificações e prontidão profissional
+docs/         documentação do produto
+scripts/      ferramentas internas do projeto
 ```
 
-As rotas profissionais incluem `/professional`, `/professional/students`, `/professional/invites`, `/professional/programs` e `/student/professionals`. O alias `/connect` permanece por compatibilidade.
+## Identidade
 
-## Segurança
+O produto utiliza uma linguagem visual própria, baseada em superfícies escuras e claras, destaque em tons de teal, silhuetas anatômicas e visualização direta dos músculos trabalhados.
 
-Não versione `.env`, tokens, chaves privadas, dados de usuários ou artefatos de deploy. Consulte [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
-
-## Licença
-
-Código, identidade visual e animações de exercícios são proprietários. Todos os direitos reservados.
+Código, identidade visual, animações e materiais do Fit Pro Player são proprietários. Todos os direitos reservados.
