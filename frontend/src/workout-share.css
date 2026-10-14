@@ -201,7 +201,17 @@
 .share-card-exercise strong { min-width: 110px; text-align: right; color: var(--share-accent); }
 
 /* Preserve the original editorial composition while keeping the new data model. */
-.share-card-backdrop { background: radial-gradient(circle at 78% 18%, rgba(128, 190, 63, .28), transparent 34%), linear-gradient(145deg, rgba(255,255,255,.045), transparent 45%); }
+.share-card { background: #050708; }
+.share-card-backdrop { background: radial-gradient(circle at 76% 18%, rgba(183, 239, 84, .16), transparent 34%), linear-gradient(145deg, rgba(255,255,255,.025), transparent 45%); }
+.share-card-brand img { width: 280px; max-height: 108px; filter: saturate(1.08) contrast(1.04); }
+.share-card-stats { grid-template-columns: repeat(3, 1fr); }
+.share-card-stat, .share-card-exercises { background: transparent; border: 0; border-radius: 0; backdrop-filter: none; }
+.share-card-stat { border-top: 2px solid rgba(183, 239, 84, .42); border-bottom: 1px solid rgba(255,255,255,.10); }
+.share-card-stat.is-accent { border-top-color: var(--share-accent); }
+.share-card-exercises { border-top: 1px solid rgba(255,255,255,.18); border-bottom: 1px solid rgba(255,255,255,.18); }
+.share-card-exercise { border-top-color: rgba(255,255,255,.14); }
+.share-card-footer { border-top: 0; }
+.share-card-backdrop { background: radial-gradient(circle at 78% 18%, rgba(128, 190, 63, .16), transparent 34%), linear-gradient(145deg, rgba(255,255,255,.025), transparent 45%); }
 .share-card-map { inset: 620px 30px 470px 500px; opacity: .19; }
 .share-card-content { padding: 78px 72px 56px 92px; }
 .share-card-brand { flex-direction: row; justify-content: space-between; gap: 24px; text-align: left; }
@@ -223,7 +233,7 @@
   .share-card-content { padding: 58px 52px 44px 70px; }
   .share-card-rail { display: none; }
   .share-card-brand { font-size: 20px; }
-  .share-card-brand img { width: 165px; }
+  .share-card-brand img { width: 220px; }
   .share-card-hero { margin-top: 120px; }
   .share-card-hero h1 { font-size: 74px; }
   .share-card-stats { gap: 9px; }
