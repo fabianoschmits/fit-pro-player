@@ -1,94 +1,74 @@
 <div align="center">
+  <img src="frontend/public/brand-logo.png" alt="Logo oficial" width="420">
 
-<img src="assets/banner.svg" alt="Fit Pro Player" width="880">
+  <p>Planeje treinos, acompanhe cargas, registre o peso corporal e visualize sua evolução.</p>
 
-Planeje treinos, acompanhe cargas, registre o peso corporal e visualize sua evolução.
-
-[Fit Pro Player](https://www.fitpp.com.br)
-
+  <p><a href="https://www.fitpp.com.br">Abrir o aplicativo</a></p>
 </div>
 
-## Arquitetura
+## Sobre o projeto
 
-O Fit Pro Player é uma PWA React hospedada na Vercel e integrada diretamente ao Supabase:
+Aplicação web progressiva para planejamento e acompanhamento de treinos. O produto possui modo local/demo, sincronização opcional com Supabase, autenticação, histórico, estatísticas, BodyMap, notificações e fluxos para alunos e profissionais.
 
-- Supabase Auth cria e autentica contas comuns e profissionais.
-- PostgreSQL, RLS e RPCs protegem perfis, funções e sincronização.
-- O frontend mantém cache local isolado por conta e suporta uso anônimo no navegador.
-- Edge Functions, Storage e Realtime permanecem opcionais e só serão adicionados quando houver necessidade real.
+## Stack
 
-Não existe backend Node, API `/api`, Docker ou armazenamento JSON de produção neste projeto.
+- React 19 + Vite
+- Zustand para estado no frontend
+- Supabase Auth, PostgreSQL, RLS, RPCs, Edge Functions e Storage conforme o recurso
+- PWA e Capacitor para Android/iOS
+- Vercel para publicação web
 
-## Desenvolvimento local
+## Executar localmente
 
-Requisitos: Node.js 22+ e npm.
+Requisitos: Node.js 22.x e npm.
 
 ```powershell
 Copy-Item .env.example frontend/.env.local
-# preencha apenas VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY
+# preencha VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY quando quiser sincronização
 npm run setup
 npm run dev
 ```
 
-Comandos úteis:
+Sem as variáveis do Supabase, o frontend pode ser usado no modo local/demo. Os dados permanecem no dispositivo e podem ser exportados pelo próprio aplicativo.
+
+## Comandos
 
 ```powershell
-npm test
-npm run build
-npm run check:supabase
-npm run audit
-npm --prefix frontend run check:i18n
-npm --prefix frontend run test:e2e
-npm --prefix frontend run test:e2e:pwa
-npm run check:database
+npm test                              # testes unitários/integrados do frontend
+npm run build                         # build web
+npm run build:vercel                  # build usado pela Vercel
+npm run check:supabase                # fronteiras e migrations do Supabase
+npm run check:database                # testes PostgreSQL, quando PG_BIN estiver configurado
+npm run audit                         # auditoria de dependências
+npm --prefix frontend run check:i18n  # validações de tradução
+npm run test:e2e                      # testes end-to-end
 ```
 
-Para o modo demo/local, o frontend também pode ser executado sem variáveis Supabase. Nesse modo os dados ficam no dispositivo e podem ser exportados em JSON.
+## Publicação
 
-## Deploy
-
-O projeto é publicado na Vercel. Configure no projeto Vercel apenas:
+O deploy web é configurado em [`vercel.json`](vercel.json). Na Vercel, configure apenas:
 
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_PUBLISHABLE_KEY`
 
-Chaves privadas do Supabase não pertencem ao frontend e não são lidas pelo Vite. Migrations versionadas em `supabase/migrations` são aplicadas separadamente ao projeto Supabase.
-
-A migration `202610020014_professional_readiness.sql` é necessária para a versão profissional: o frontend usa RPCs para criar/editar programas e iniciar/concluir/abandonar execuções. Aplique e valide migrations antes de publicar esse frontend. O push do código não aplica migrations ao banco remoto.
-
-Veja [operação e validação da versão profissional](docs/PROFESSIONAL_READINESS.md) para sincronização, preparação offline, recuperação e testes.
-
-## Notificações
-
-A central em Configurações separa alertas locais dos timers e avisos importantes em segundo plano. Descanso e séries cronometradas não são enviados ao Supabase. PWA usa avisos locais sujeitos à suspensão do navegador; APK Android agenda esses prazos no sistema.
-
-Avisos remotos exigem a migration `202610040015_notifications.sql`, o worker `supabase/functions/push-dispatch` e a instalação administrativa [Cron/Vault](supabase/operations/notifications.sql). Configure somente no servidor `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` e `PUSH_DISPATCH_SECRET`. A chave pública chega ao cliente via RPC. A fila ociosa não invoca a Edge Function.
-
-FCM no APK permanece desativado até configurar Firebase. Veja [integração Android futura](docs/notifications-android-setup.md). Testes de envio: `npm run test:notifications`; testes PostgreSQL: `PG_BIN` apontando para os binários e `NOTIFICATIONS_REQUIRE_DB=1 node --test scripts/check-notification-migration.test.mjs`.
+As migrations são versionadas em [`supabase/migrations`](supabase/migrations) e precisam ser aplicadas ao projeto Supabase separadamente do deploy do frontend. Segredos como chaves VAPID e credenciais de push ficam somente no ambiente servidor/Edge Functions.
 
 ## Estrutura
 
-- `frontend/`: React, Vite, Zustand, PWA e projetos Capacitor.
-- `supabase/`: migrations, testes SQL e validações de fronteira.
+```text
+frontend/     aplicação React, PWA, testes e projetos Capacitor
+supabase/     migrations, funções, testes e operações do banco
+scripts/      verificações de limites, banco e identidade da marca
+assets/       identidade visual e materiais oficiais
+docs/         operação mobile, notificações e prontidão profissional
+```
 
-## Workspaces profissionais
-
-Contas profissionais continuam podendo treinar normalmente e recebem uma workspace separada:
-
-- `/professional`: visão geral;
-- `/professional/students`: alunos com vínculo ativo;
-- `/professional/students/:studentId`: resumo, treino, histórico e vínculo;
-- `/professional/invites`: criação, compartilhamento e revogação de convites;
-- `/professional/programs`: programas e versões;
-- `/student/professionals`: profissionais vinculados e aceite de convites.
-
-`/connect` permanece apenas como redirect compatível para `/student/professionals`. Profissionais administram somente alunos vinculados; não administram contas, senhas, emails ou roles.
-- `docs/MOBILE.md`: notas para builds móveis.
+As rotas profissionais incluem `/professional`, `/professional/students`, `/professional/invites`, `/professional/programs` e `/student/professionals`. O alias `/connect` permanece por compatibilidade.
 
 ## Segurança
 
-Nunca versione `.env`, credenciais, tokens, chaves privadas, dados de usuários ou artefatos de deploy. Consulte [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
+Não versione `.env`, tokens, chaves privadas, dados de usuários ou artefatos de deploy. Consulte [SECURITY.md](SECURITY.md) para reportar vulnerabilidades.
 
-## Direitos
+## Licença
 
-Código, identidade visual e animações de exercícios do Fit Pro Player são proprietários. Todos os direitos reservados.
+Código, identidade visual e animações de exercícios são proprietários. Todos os direitos reservados.
