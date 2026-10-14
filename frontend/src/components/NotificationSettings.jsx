@@ -42,7 +42,7 @@ export default function NotificationSettings({ S, update, toast }) {
 
   return <div className="notification-settings" role="group" aria-label={t('Notifications')}>
     <div role="group" aria-label={t('Local timer alerts')}>
-      <Section title={t('Local timer alerts')} footer={MOBILE ? t('In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.') : t('Timer alerts require the browser to keep running. On iPhone, they may wait until you return to the app.')}>
+      <Section collapsible defaultOpen={false} title={t('Local timer alerts')} footer={MOBILE ? t('In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.') : t('Timer alerts require the browser to keep running. On iPhone, they may wait until you return to the app.')}>
         <Row icon="timer" iconTint="var(--orange)" title={t('Rest completed')}>
           <Switch ariaLabel={t('Rest completed')} checked={preferences.rest} onChange={value => setPreference('rest', value)} />
         </Row>
@@ -52,7 +52,7 @@ export default function NotificationSettings({ S, update, toast }) {
       </Section>
     </div>
     <div role="group" aria-label={t('Background reminders and updates')}>
-    <Section title={t('Background reminders and updates')} footer={t('Background delivery depends on your connection and device.')}>
+    <Section collapsible defaultOpen={false} title={t('Background reminders and updates')} footer={t('Background delivery depends on your connection and device.')}>
       <div className="notification-delivery">
         <Row icon="bell" iconTint="var(--pink)" title={t('Background notifications')} subtitle={deliveryStatus} />
         {signedIn && status.supported && <button type="button" className="btn notification-device-action" disabled={busy || !status.enabled && (status.ready === false || status.permission === 'denied')} onClick={changeBackground}>

@@ -106,7 +106,7 @@ export default function Settings() {
     rd.readAsText(f)
   }
 
-  return <div className="narrow">
+  return <div className="narrow settings-page">
     <AppHeader title={t('Settings')} backTo="/more" />
 
     <Section collapsible title={STANDALONE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
