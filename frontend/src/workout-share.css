@@ -200,11 +200,30 @@
 .share-card-exercise small { width: 170px; color: var(--share-muted); font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .share-card-exercise strong { min-width: 110px; text-align: right; color: var(--share-accent); }
 
+/* Preserve the original editorial composition while keeping the new data model. */
+.share-card-backdrop { background: radial-gradient(circle at 78% 18%, rgba(128, 190, 63, .28), transparent 34%), linear-gradient(145deg, rgba(255,255,255,.045), transparent 45%); }
+.share-card-map { inset: 620px 30px 470px 500px; opacity: .19; }
+.share-card-content { padding: 78px 72px 56px 92px; }
+.share-card-brand { flex-direction: row; justify-content: space-between; gap: 24px; text-align: left; }
+.share-card-brand img { width: 190px; max-height: 72px; object-position: left center; }
+.share-card-brand span { font-size: 25px; }
+.share-card-hero { margin: 170px 0 54px; max-width: 860px; text-align: left; }
+.share-card-kicker { justify-content: flex-start; }
+.share-card-hero h1 { max-width: 850px; font-size: 92px; }
+.share-card-stats { gap: 16px; }
+.share-card-stat { min-height: 132px; padding: 20px; border-top-width: 1px; }
+.share-card-stat-copy strong { font-size: 40px; }
+.share-card-exercises { padding: 28px 30px; }
+.share-card-exercise { min-height: 64px; gap: 18px; }
+.share-card-exercise-name { font-size: 27px; }
+.share-card-exercise small { width: 145px; font-size: 17px; }
+.share-card-footer { margin-top: 28px; }
+
 @media (max-width: 560px) {
   .share-card-content { padding: 58px 52px 44px 70px; }
   .share-card-rail { display: none; }
   .share-card-brand { font-size: 20px; }
-  .share-card-brand img { width: 250px; }
+  .share-card-brand img { width: 165px; }
   .share-card-hero { margin-top: 120px; }
   .share-card-hero h1 { font-size: 74px; }
   .share-card-stats { gap: 9px; }
@@ -214,6 +233,7 @@
   .share-card-stat-copy small { font-size: 17px; }
   .share-card-exercises { padding: 20px 18px; }
   .share-card-exercise-name { font-size: 23px; }
+  .share-card-exercise small { width: 90px; font-size: 14px; }
   .share-card-footer { font-size: 15px; }
 }
 
