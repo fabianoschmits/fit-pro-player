@@ -1,0 +1,4 @@
+import { FPP_ICON_MANIFEST } from '../assets/icons/fpp/index.js'
+import FppIcon from '../components/FppIcon.jsx'
+const sizes = [16, 20, 24, 32, 48]
+export default function FppIconGallery() { return <main className="fpp-gallery"><header><p className="fpp-gallery-kicker">FPP Icons</p><h1>Icon Gallery</h1><p className="muted">Reference family for visual review.</p></header>{['light', 'dark'].map(theme => <section className={`fpp-gallery-surface ${theme}`} key={theme}><h2>{theme}</h2><div className="fpp-gallery-grid">{FPP_ICON_MANIFEST.map(icon => <article key={icon.id}><div className="fpp-gallery-icon-row">{sizes.map(size => <span key={size}><FppIcon name={icon.id} size={size}/><small>{size}</small></span>)}</div><strong>{icon.id}</strong><div className="fpp-gallery-accent"><FppIcon name={icon.id} size={32}/></div></article>)}</div></section>)}</main> }

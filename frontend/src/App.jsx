@@ -10,6 +10,7 @@ import { ACCENTS } from './lib/format.js'
 import { DEFAULT_LANG, setLang, useLang, t } from './lib/i18n.js'
 import { setNav, nav } from './lib/nav.js'
 import { initBackButton } from './lib/back.js'
+import FppIconGallery from './views/FppIconGallery.jsx'
 import { useWakeLock } from './lib/wakelock.js'
 import Icon from './components/Icon.jsx'
 import TabBar from './components/TabBar.jsx'
@@ -393,6 +394,7 @@ function Shell() {
         <ErrorBoundary>
           {publicPrivacyPath ? <PrivacyPages kind={loc.pathname === '/terms' ? 'terms' : loc.pathname === '/data-rights' ? 'rights' : 'privacy'} /> : !(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
             <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
+                {import.meta.env.DEV && <Route path="/dev/fpp-icons" element={<FppIconGallery />} />}
                 <Route path="/home" element={<Home />} />
                 <Route path="/privacy" element={<PrivacyPages kind="privacy" />} />
                 <Route path="/terms" element={<PrivacyPages kind="terms" />} />
