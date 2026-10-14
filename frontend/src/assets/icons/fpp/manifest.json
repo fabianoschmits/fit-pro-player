@@ -1,0 +1,5 @@
+[
+  {"id":"workout-push","file":"workouts/workout-push.svg","name":"Push","namePtBr":"Empurrar","category":"workout"},
+  {"id":"workout-pull","file":"workouts/workout-pull.svg","name":"Pull","namePtBr":"Puxar","category":"workout"},
+  {"id":"workout-legs","file":"workouts/workout-legs.svg","name":"Legs","namePtBr":"Pernas","category":"workout"}
+]
