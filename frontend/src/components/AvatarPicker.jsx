@@ -4,7 +4,7 @@ import Icon from './Icon.jsx'
 
 const COLUMNS = 4
 
-export default function AvatarPicker({ value, onChange, t }) {
+export default function AvatarPicker({ value, onChange, t, orientation = 'grid' }) {
   const gridRef = useRef(null)
   const selectedRef = useRef(null)
 
@@ -39,7 +39,7 @@ export default function AvatarPicker({ value, onChange, t }) {
   }
 
   return (
-    <div ref={gridRef} className="avatar-picker-grid" role="radiogroup" aria-label={t('Available avatars')}>
+    <div ref={gridRef} data-orientation={orientation} className={`avatar-picker-grid ${orientation === 'horizontal' ? 'avatar-picker-horizontal' : ''}`} role="radiogroup" aria-label={t('Available avatars')}>
       {AVATARS.map((avatar, index) => {
         const selected = avatar.id === value
         return (

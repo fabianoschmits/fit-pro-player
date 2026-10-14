@@ -50,14 +50,14 @@ export default function More() {
   return <div className="narrow more-page">
     <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
 
-    <button type="button" className="more-account-card" onClick={() => nav('/plan?profile=edit')}>
+    <button type="button" className="more-account-card" onClick={() => nav('/personal-data')}>
       <span className="more-account-avatar"><AvatarImage avatarId={profile.avatarId} alt="" /></span>
       <span className="more-account-copy"><strong>{displayName}</strong><span>{email}</span><em>{account ? 'Ver conta' : 'Editar perfil'} <Icon name="chevronRight" /></em></span>
       <Icon name="chevronRight" className="more-account-chevron" />
     </button>
 
     <Section title="Geral" className="more-section">
-      <MenuRow icon="person" tint="var(--teal)" title="Dados pessoais" subtitle="Seus dados e informações" onClick={() => nav('/plan?profile=edit')} />
+      <MenuRow icon="person" tint="var(--teal)" title="Dados pessoais" subtitle="Seus dados e informações" onClick={() => nav('/personal-data')} />
       <MenuRow icon="gear" tint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')} onClick={() => nav('/settings')} />
       <MenuRow icon="info" tint="var(--blue)" title="Ajuda e suporte" subtitle="Dúvidas e suporte" onClick={() => { window.location.href = 'mailto:contato@appconfilar.com.br' }} />
       {consoleAccess && <MenuRow icon="gear" tint="var(--purple)" title="Central da plataforma" subtitle="Operação da plataforma" onClick={() => nav('/console')} />}
