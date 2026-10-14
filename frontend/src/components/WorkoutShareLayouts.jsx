@@ -1,4 +1,3 @@
-import React from 'react'
 import { t } from '../lib/i18n.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { fmtDate, fmtVol, fmtDur } from '../lib/format.js'
@@ -6,222 +5,50 @@ import { loadOfWorkouts } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
 
-// Shared helper
-function getStats(w) {
-  const dur = w.end - w.start
-  const setsCount = w.entries.reduce((acc, e) => acc + (e.sets ? e.sets.length : 0), 0)
-  const load = loadOfWorkouts([w])
-  return { dur, setsCount, load }
+export function buildWorkoutShareSummary(w, st) {
+  const entries = Array.isArray(w?.entries) ? w.entries : []
+  const exerciseRows = entries.map(entry => ({
+    name: EXIDX[entry.id] ? exerciseName(EXIDX[entry.id]) : (entry.n || entry.id || t('Exercise')),
+    sets: Array.isArray(entry.sets) ? entry.sets.length : 0,
+  }))
+  return {
+    name: w?.name?.trim() || t('Treino'),
+    date: w?.d ? fmtDate(w.d, true) : '',
+    duration: fmtDur(Math.max(0, (w?.end || 0) - (w?.start || 0))),
+    exercises: entries.length,
+    sets: exerciseRows.reduce((total, row) => total + row.sets, 0),
+    volume: w?.vol > 0 ? fmtVol(w.vol, st?.unit) : '—',
+    exerciseRows,
+    load: loadOfWorkouts([w]),
+  }
 }
 
-// ── LAYOUT 1: MINIMAL ───────────────────────────────────────────────────────
-// Centered, very clean, lots of whitespace.
-export function LayoutMinimal({ w, st, innerRef, themeId }) {
-  const { dur, setsCount, load } = getStats(w)
+function Stat({ icon, value, label, accent = false }) {
+  return <div className={'share-card-stat' + (accent ? ' is-accent' : '')}>
+    <span className="share-card-stat-icon"><Icon name={icon} /></span>
+    <span className="share-card-stat-copy"><strong>{value}</strong><small>{label}</small></span>
+  </div>
+}
 
-  return (
-    <div ref={innerRef} className={`workout-story-canvas layout-minimal ${themeId}`}>
-      <div className="wsc-bg" />
-      <div className="wsc-bodymap-wrap">
-        <BodyMap load={load} body={st.body || 'male'} view="front" decorative className="wsc-bodymap" />
-      </div>
-
-      <div className="lm-content">
-        <div className="lm-logo"><img src="/brand-logo.png" alt="Logo" /></div>
-        
-        <div className="lm-header">
-          <p className="lm-date">{fmtDate(w.d, true)}</p>
-          <h2 className="lm-title">{t('Treino Finalizado')}</h2>
-          <p className="lm-dur">{fmtDur(dur)}</p>
-        </div>
-
-        <div className="lm-stats">
-          <div className="lm-stat">
-            <span className="lm-val">{w.entries.length}</span>
-            <span className="lm-lbl">{t('Exercícios')}</span>
-          </div>
-          <div className="lm-stat">
-            <span className="lm-val">{setsCount}</span>
-            <span className="lm-lbl">{t('Séries')}</span>
-          </div>
-          {w.vol > 0 && (
-            <div className="lm-stat">
-              <span className="lm-val">{fmtVol(w.vol, st.unit)}</span>
-              <span className="lm-lbl">{t('Volume')}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="lm-exercises">
-          {w.entries.slice(0, 6).map((e, idx) => {
-            const exData = EXIDX[e.id]
-            const name = exData ? exerciseName(exData) : e.id
-            const totalSets = e.sets ? e.sets.length : 0
-            return (
-              <div key={idx} className="lm-ex-row">
-                <span className="lm-ex-name">{name}</span>
-                <span className="lm-ex-sets">{totalSets} {t('séries')}</span>
-              </div>
-            )
-          })}
-          {w.entries.length > 6 && <div className="lm-ex-more">+ {w.entries.length - 6}</div>}
-        </div>
-
-        <div className="lm-footer">FITPPLAYER.COM.BR</div>
-      </div>
+function PerformanceCard({ w, st, innerRef, themeId }) {
+  const summary = buildWorkoutShareSummary(w, st)
+  return <div ref={innerRef} className={`workout-story-canvas share-card ${themeId}`}>
+    <div className="share-card-backdrop" />
+    <div className="share-card-grain" />
+    <div className="share-card-rail" />
+    <div className="share-card-map"><BodyMap load={summary.load} body={st.body || 'male'} view="front" decorative /></div>
+    <div className="share-card-content">
+      <header className="share-card-brand"><img src="/brand-logo.png" alt="Fit Pro Player" /><span>{summary.date}</span></header>
+      <section className="share-card-hero"><p className="share-card-kicker"><span /> {t('Treino concluído')}</p><h1>{summary.name}</h1><div className="share-card-time"><Icon name="clock" /> {summary.duration}</div></section>
+      <section className="share-card-stats" aria-label={t('Workout summary')}><Stat icon="list" value={summary.exercises} label={t('Exercícios')} /><Stat icon="repeat" value={summary.sets} label={t('Séries')} /><Stat icon="dumbbell" value={summary.volume} label={t('Volume')} accent /></section>
+      <section className="share-card-exercises"><div className="share-card-section-title"><span>{t('O que você treinou')}</span><b>{summary.exercises}</b></div><div className="share-card-exercise-list">{summary.exerciseRows.map((row, index) => <div className="share-card-exercise" key={`${row.name}-${index}`}><span className="share-card-index">{String(index + 1).padStart(2, '0')}</span><span className="share-card-exercise-name">{row.name}</span><strong>{row.sets}×</strong></div>)}{!summary.exerciseRows.length && <p className="share-card-empty">{t('Nenhum exercício registrado')}</p>}</div></section>
+      <footer className="share-card-footer"><span>{t('Consistência gera resultado')}</span><b>FIT PRO PLAYER</b></footer>
     </div>
-  )
+  </div>
 }
 
-// ── LAYOUT 2: RECEIPT ───────────────────────────────────────────────────────
-// Looks like a printed store receipt. Monospaced vibe.
-export function LayoutReceipt({ w, st, innerRef, themeId }) {
-  const { dur, setsCount, load } = getStats(w)
-
-  return (
-    <div ref={innerRef} className={`workout-story-canvas layout-receipt ${themeId}`}>
-      <div className="wsc-bg" />
-      
-      <div className="lr-paper">
-        <div className="lr-logo"><img src="/brand-logo.png" alt="Logo" /></div>
-        <div className="lr-header">
-          <h2>FIT PRO PLAYER</h2>
-          <p>--------------------------------</p>
-          <p>RECIBO DE TREINO</p>
-          <p>DATA: {fmtDate(w.d, true)}</p>
-          <p>TEMPO: {fmtDur(dur)}</p>
-          <p>--------------------------------</p>
-        </div>
-
-        <div className="lr-stats">
-          <div className="lr-row"><span>EXERCÍCIOS:</span><span>{w.entries.length}</span></div>
-          <div className="lr-row"><span>SÉRIES:</span><span>{setsCount}</span></div>
-          {w.vol > 0 && <div className="lr-row"><span>VOLUME:</span><span>{fmtVol(w.vol, st.unit)}</span></div>}
-        </div>
-
-        <p className="lr-divider">--------------------------------</p>
-
-        <div className="lr-exercises">
-          {w.entries.slice(0, 8).map((e, idx) => {
-            const exData = EXIDX[e.id]
-            const name = exData ? exerciseName(exData) : e.id
-            const totalSets = e.sets ? e.sets.length : 0
-            return (
-              <div key={idx} className="lr-ex-row">
-                <span className="lr-ex-name">{name}</span>
-                <span className="lr-ex-sets">x{totalSets}</span>
-              </div>
-            )
-          })}
-        </div>
-
-        <p className="lr-divider">--------------------------------</p>
-        <div className="lr-footer">
-          <p>OBRIGADO POR TREINAR!</p>
-          <p>FITPPLAYER.COM.BR</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── LAYOUT 3: BRUTALISM ─────────────────────────────────────────────────────
-// Huge typography, sharp edges, no padding, aggressive.
-export function LayoutBrutal({ w, st, innerRef, themeId }) {
-  const { dur, setsCount, load } = getStats(w)
-
-  return (
-    <div ref={innerRef} className={`workout-story-canvas layout-brutal ${themeId}`}>
-      <div className="wsc-bg" />
-      
-      <div className="lb-bodymap-wrap">
-        <BodyMap load={load} body={st.body || 'male'} view="front" decorative className="lb-bodymap" />
-      </div>
-
-      <div className="lb-content">
-        <div className="lb-top">
-          <img src="/brand-logo.png" alt="Logo" className="lb-logo" />
-          <h1 className="lb-title">TREINO<br/>FEITO.</h1>
-        </div>
-
-        <div className="lb-marquee">
-          <span>{fmtDate(w.d, true).toUpperCase()} // {fmtDur(dur)} // </span>
-        </div>
-
-        <div className="lb-stats">
-          <div className="lb-stat">
-            <div className="lb-val">{w.entries.length}</div>
-            <div className="lb-lbl">EX</div>
-          </div>
-          <div className="lb-stat">
-            <div className="lb-val">{setsCount}</div>
-            <div className="lb-lbl">SÉRIES</div>
-          </div>
-          {w.vol > 0 && (
-            <div className="lb-stat">
-              <div className="lb-val">{fmtVol(w.vol, st.unit)}</div>
-              <div className="lb-lbl">KG</div>
-            </div>
-          )}
-        </div>
-
-        <div className="lb-exercises">
-          {w.entries.slice(0, 6).map((e, idx) => {
-            const exData = EXIDX[e.id]
-            const name = exData ? exerciseName(exData) : e.id
-            const totalSets = e.sets ? e.sets.length : 0
-            return (
-              <div key={idx} className="lb-ex-row">
-                <div className="lb-ex-sets">{totalSets}</div>
-                <div className="lb-ex-name">{name}</div>
-              </div>
-            )
-          })}
-        </div>
-        
-        <div className="lb-footer">FITPPLAYER.COM.BR</div>
-      </div>
-    </div>
-  )
-}
-
-// ── LAYOUT 4: POLAROID ──────────────────────────────────────────────────────
-// Looks like an instant photo of the bodymap with scribbled text below.
-export function LayoutPolaroid({ w, st, innerRef, themeId }) {
-  const { dur, setsCount, load } = getStats(w)
-
-  return (
-    <div ref={innerRef} className={`workout-story-canvas layout-polaroid ${themeId}`}>
-      <div className="wsc-bg" />
-      
-      <div className="lp-frame">
-        <div className="lp-photo">
-          <BodyMap load={load} body={st.body || 'male'} view="front" decorative className="lp-bodymap" />
-          <div className="lp-photo-overlay">
-            <img src="/brand-logo.png" alt="Logo" />
-          </div>
-        </div>
-        
-        <div className="lp-text">
-          <h2 className="lp-title">{t('Treino Finalizado')}</h2>
-          <p className="lp-date">{fmtDate(w.d, true)} - {fmtDur(dur)}</p>
-          
-          <div className="lp-stats">
-            <span>{w.entries.length} Ex</span>
-            <span>{setsCount} Séries</span>
-            {w.vol > 0 && <span>{fmtVol(w.vol, st.unit)} Vol</span>}
-          </div>
-
-          <div className="lp-exercises">
-            {w.entries.slice(0, 4).map((e, idx) => {
-              const exData = EXIDX[e.id]
-              const name = exData ? exerciseName(exData) : e.id
-              return <div key={idx} className="lp-ex">• {name}</div>
-            })}
-            {w.entries.length > 4 && <div className="lp-ex">...e mais {w.entries.length - 4}</div>}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+export function LayoutDashboard(props) { return <PerformanceCard {...props} /> }
+export function LayoutMinimal(props) { return <PerformanceCard {...props} /> }
+export function LayoutReceipt(props) { return <PerformanceCard {...props} /> }
+export function LayoutBrutal(props) { return <PerformanceCard {...props} /> }
+export function LayoutPolaroid(props) { return <PerformanceCard {...props} /> }
