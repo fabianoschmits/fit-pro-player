@@ -100,7 +100,7 @@ export default function Settings() {
   return <div className="narrow settings-page">
     <AppHeader title={t('Settings')} backTo="/more" />
 
-    <Section collapsible title={STANDALONE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
+    <Section collapsible defaultOpen={false} title={STANDALONE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
       {STANDALONE ? <>
         <Row icon="lock" iconTint="var(--acc)" title={t('Guest mode — data lives only in this browser.')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
       </> : DEMO ? <>

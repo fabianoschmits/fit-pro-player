@@ -403,6 +403,7 @@ function Shell() {
                 <Route path="/workout" element={<Workout />} />
                 <Route path="/stats" element={<Stats />} />
                 <Route path="/body-progress" element={<BodyProgress />} />
+                <Route path="/stats/body-progress" element={<BodyProgress />} />
                 <Route path="/professional-profile" element={<ProfessionalProfile />} />
                 <Route path="/professional/profile" element={<ProfessionalProfile />} />
                 <Route path="/professional/profile/edit" element={<ProfessionalProfile />} />
