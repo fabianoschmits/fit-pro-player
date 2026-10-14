@@ -9,7 +9,9 @@ import { ensureStarterRoutines, routineName } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { dayAssignSheet, dayOverrideSheet, planToolsSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
-import FppIcon from '../components/FppIcon.jsx'
+import BodyMap from '../components/BodyMap.jsx'
+import { loadOfRoutine } from '../lib/muscles.js'
+import { routineBodyView } from '../lib/exercise-body-view.js'
 import { Button } from '../components/ui.jsx'
 import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
@@ -19,17 +21,14 @@ import AppHeader from '../components/AppHeader.jsx'
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 const DEFAULT_DAYS = [1, 3, 5]
 
-export function routineFppIcon(routine) {
-  const value = `${routine?.starterKey || ''} ${routine?.name || ''} ${routine?.emoji || ''}`.toLowerCase()
-  if (/push|chest|peito|peitoral/.test(value)) return 'workout-push'
-  if (/pull|back|costas|dorsal/.test(value)) return 'workout-pull'
-  if (/leg|perna|quads|quadríceps|lower/.test(value) || routine?.emoji === 'legs' || routine?.emoji === '🦵') return 'workout-legs'
-  return null
-}
-
-function RoutineGlyph({ routine, className }) {
-  const icon = routineFppIcon(routine)
-  return icon ? <FppIcon name={icon} size="1em" className={className} aria-hidden="true" /> : <Icon name={glyphOf(routine?.emoji)} className={className} />
+function RoutineMuscleThumb({ routine, body, className }) {
+  return <BodyMap
+    className={`plan-routine-body-thumb ${className || ''}`.trim()}
+    load={loadOfRoutine(routine)}
+    body={body}
+    view={routineBodyView(routine)}
+    decorative
+  />
 }
 
 export default function Plan() {
@@ -83,7 +82,7 @@ export default function Plan() {
     <div className="list plan-routine-list">{S.routines.map(routine => {
       const days = WEEK_DAYS.filter(day => S.week[day] === routine.id)
       return <button key={routine.id} className="item" onClick={() => nav('/plan/r/' + routine.id)}>
-        <span className="lrow-i"><RoutineGlyph routine={routine} /></span>
+        <span className="lrow-i"><RoutineMuscleThumb routine={routine} body={S.body} /></span>
         <span className="grow">
           <span className="tt">{routineName(routine)}</span>
           <span className="ss">{exCount(routine.ex.length)}{mode === 'weekly' && days.length ? ` · ${days.map(day => t(DAYS[day])).join(' · ')}` : ''}</span>
@@ -116,7 +115,7 @@ export default function Plan() {
                 aria-label={`${t(DAYN[day])}: ${routine ? routineName(routine) : t('Rest')}`}
                 aria-pressed={!!routine} onClick={() => dayAssignSheet(day)}>
                 <span className="plan-day-label">{t(DAYS[day])}</span>
-                <span className="plan-day-icon">{routine ? <RoutineGlyph routine={routine} /> : <Icon name="moon" />}</span>
+                <span className="plan-day-icon">{routine ? <RoutineMuscleThumb routine={routine} body={S.body} /> : <Icon name="moon" />}</span>
                 <span className="plan-day-name">{routine ? routineName(routine) : t('Rest')}</span>
               </button>
             })}
@@ -131,7 +130,7 @@ export default function Plan() {
           <span className="tag acc">{fmtDate(today, true)}</span>
         </div>
         <button className={'card daily-plan-today' + (todayRoutine ? ' has-routine' : '')} onClick={() => dayOverrideSheet(today)}>
-          <span className="daily-plan-icon">{todayRoutine ? <RoutineGlyph routine={todayRoutine} /> : <Icon name="plus" />}</span>
+          <span className="daily-plan-icon">{todayRoutine ? <RoutineMuscleThumb routine={todayRoutine} body={S.body} /> : <Icon name="plus" />}</span>
           <span className="grow"><small>{t('Your choice for today')}</small><strong>{todayRoutine ? routineName(todayRoutine) : t("Choose today's workout")}</strong>{todayRoutine && <i>{exCount(todayRoutine.ex.length)}</i>}</span>
           <Icon name="chevronRight" className="chev" />
         </button>

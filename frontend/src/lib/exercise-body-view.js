@@ -1,4 +1,4 @@
-import { musclesOf } from './muscles.js'
+import { loadOfRoutine, musclesOf } from './muscles.js'
 
 // At list-thumbnail size, one anatomical view is much clearer than two. Use the
 // side where the target muscle has its most useful visible surface.
@@ -25,4 +25,15 @@ export function exerciseBodyView(ex) {
   if (back > front) return 'back'
   if (front > back) return 'front'
   return ex?.bp === 'back' || ex?.bp === 'lower legs' ? 'back' : 'front'
+}
+
+export function routineBodyView(routine) {
+  const load = loadOfRoutine(routine)
+  let front = 0
+  let back = 0
+  for (const [muscle, weight] of Object.entries(load)) {
+    if (FRONT_MUSCLES.has(muscle)) front += weight
+    if (BACK_MUSCLES.has(muscle)) back += weight
+  }
+  return back > front ? 'back' : 'front'
 }
