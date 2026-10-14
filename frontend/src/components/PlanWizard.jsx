@@ -16,6 +16,7 @@ import BodyMap from './BodyMap.jsx'
 import DateWheelPicker from './DateWheelPicker.jsx'
 import AvatarPicker from './AvatarPicker.jsx'
 import Icon from './Icon.jsx'
+import RoutineMuscleThumb from './RoutineMuscleThumb.jsx'
 import { Button, Segmented, TextField } from './ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
 
@@ -291,7 +292,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
           const key = routine.personalizedKey || routine.starterKey || `custom:${routine.id}`
           const selected = dailyRoutineKey === key || dailyRoutineKey === routine.starterKey
           return <button type="button" key={routine.id} className={selected ? 'on' : ''} aria-pressed={selected} onClick={() => setDailyRoutineKey(key)}>
-          <span><Icon name={glyphOf(routine.emoji)} /></span><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)}</small>
+          <span className="lrow-i"><RoutineMuscleThumb routine={routine} body={S.body} /></span><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)}</small>
           </button>
         })}
       </div>}

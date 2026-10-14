@@ -41,6 +41,16 @@ export function pathMatchesSelectedSide(index, count, selectedSide, viewName) {
   return anatomicalSideForPath(index, count, viewName) === selectedSide
 }
 
+export function regionalViewBox(vb, region) {
+  if (region === 'full' || !region) return vb
+  const [x, y, width, height] = String(vb).trim().split(/\s+/).map(Number)
+  if (![x, y, width, height].every(Number.isFinite)) return vb
+  const overlap = height * .08
+  if (region === 'upper') return `${x} ${y} ${width} ${height * .56}`
+  if (region === 'lower') return `${x} ${y + height * .44 - overlap} ${width} ${height * .56 + overlap}`
+  return vb
+}
+
 export function shapeScaleForPath(shapeScales, slug, index, count, viewName) {
   const configured = shapeScales?.[slug]
   const rawScale = configured && typeof configured === 'object'
@@ -50,7 +60,7 @@ export function shapeScaleForPath(shapeScales, slug, index, count, viewName) {
   return Number.isFinite(scale) ? Math.min(1.4, Math.max(.72, scale)) : 1
 }
 
-export function BodyMapView({ view, viewName, levels, onMuscle, selected, selectedSide, decorative, shapeScales, shapeInstant, captureSafe }) {
+export function BodyMapView({ view, viewName, levels, onMuscle, selected, selectedSide, decorative, shapeScales, shapeInstant, captureSafe, region }) {
   const selectedMuscles = new Set(Array.isArray(selected) ? selected : selected ? [selected] : [])
   const pathIsSelected = (slug, index, count) => selectedMuscles.has(slug)
     && (!SIDE_AWARE_SLUGS.has(slug) || pathMatchesSelectedSide(index, count, selectedSide, viewName))
@@ -67,7 +77,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
   return (
     <svg
       className={`bm-v${shapeInstant ? ' bm-shape-instant' : ''}`}
-      viewBox={view.vb}
+      viewBox={regionalViewBox(view.vb, region)}
       role={decorative ? undefined : onMuscle ? 'group' : 'img'}
       aria-hidden={decorative ? 'true' : undefined}
       aria-label={decorative ? undefined : t('Body diagram')}
@@ -116,6 +126,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
 export default function BodyMap({
   load = {}, thresholds, body = 'male', onMuscle, selected, selectedSide, className = '',
   view = 'both', decorative = false, shapeScales, shapeInstant = false, captureSafe = false,
+  region = 'full',
 }) {
   const paths = useBodyPaths()
   const levels = levelsOf(load, thresholds)
@@ -137,6 +148,7 @@ export default function BodyMap({
               shapeScales={shapeScales}
               shapeInstant={shapeInstant}
               captureSafe={captureSafe}
+              region={region}
             />
           ))
         : <div className="bm-ph" aria-hidden="true" />}
