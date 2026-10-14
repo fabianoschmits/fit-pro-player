@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -18,7 +18,6 @@ import { Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
-import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import OfflineControls from '../components/OfflineControls.jsx'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 import NotificationSettings from '../components/NotificationSettings.jsx'
@@ -41,14 +40,6 @@ export default function Settings() {
   const importRef = useRef(null)
   const wakeOK = wakeLockSupported()
   const supabaseConfigured = auth.configured
-  const professionalRepository = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const [professional, setProfessional] = useState(null)
-  useEffect(() => {
-    if (auth.status !== 'authenticated' || !auth.user?.id) { setProfessional(null); return undefined }
-    let active = true
-    professionalRepository.professionalRole(auth.user.id).then(role => { if (active) setProfessional(role) }).catch(() => { if (active) setProfessional(false) })
-    return () => { active = false }
-  }, [auth.status, auth.user?.id, professionalRepository])
 
   const openManualSync = async () => {
     if (auth.status !== 'authenticated' || !auth.user?.id || syncBusy) return
@@ -155,13 +146,6 @@ export default function Settings() {
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
 
     <Section collapsible defaultOpen={false} title={t('Offline')}><OfflineControls /></Section>
-    <Section collapsible defaultOpen={false} title={t('Personal profile')}>
-      <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
-        subtitle={t('Name, birth date, body, measurements and training goal')}
-        accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
-      {auth.status === 'authenticated' && professional === false && <Row icon="personCircle" iconTint="var(--purple)" title={t('Tornar-se profissional')} subtitle={t('Crie seu perfil para enviar treinos e convites')} accessory="chevron" onClick={() => nav('/professional-profile?onboarding=1')} />}
-    </Section>
-
     {/* ---------- general ---------- */}
     <Section collapsible defaultOpen={false} title={t('General')} footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
       <SelectRow

@@ -56,26 +56,26 @@ export default function More() {
       <Icon name="chevronRight" className="more-account-chevron" />
     </button>
 
-    <Section title="Geral" className="more-section">
+    <Section title="Geral" className="more-section" collapsible defaultOpen>
       <MenuRow icon="person" tint="var(--teal)" title="Dados pessoais" subtitle="Seus dados e informações" onClick={() => nav('/personal-data')} />
       <MenuRow icon="gear" tint="var(--acc)" title={t('Settings')} subtitle={t('Language, units, backup & preferences')} onClick={() => nav('/settings')} />
       <MenuRow icon="info" tint="var(--blue)" title="Ajuda e suporte" subtitle="Dúvidas e suporte" onClick={() => { window.location.href = 'mailto:contato@appconfilar.com.br' }} />
       {consoleAccess && <MenuRow icon="gear" tint="var(--purple)" title="Central da plataforma" subtitle="Operação da plataforma" onClick={() => nav('/console')} />}
     </Section>
 
-    <Section title="Treino" className="more-section">
+    <Section title="Treino" className="more-section" collapsible defaultOpen={false}>
       <MenuRow icon="list" tint="var(--teal)" title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)} onClick={() => nav('/library')} />
       <MenuRow icon="history" tint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')} onClick={() => nav('/history')} />
       <MenuRow icon="chartLine" tint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo" onClick={() => nav('/body-progress')} />
     </Section>
 
-    {(account || professional) && <Section title="Profissional" className="more-section">
+    {(account || professional) && <Section title="Profissional" className="more-section" collapsible defaultOpen={false}>
       {account && <MenuRow icon="personCircle" tint="var(--teal)" title="Meus profissionais" subtitle="Programas e prescrições dos seus profissionais" onClick={() => nav('/student/professionals')} />}
       {professional && <MenuRow icon="clipboard" tint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas" onClick={() => nav('/professional')} />}
       {professional && <MenuRow icon="personCircle" tint="var(--purple)" title="Perfil profissional" subtitle="Sua apresentação para os alunos" onClick={() => nav('/professional/profile')} />}
     </Section>}
 
-    <Section title="Sobre o Fit Pro Player" className="more-section">
+    <Section title="Sobre o Fit Pro Player" className="more-section" collapsible defaultOpen={false}>
       <MenuRow icon="info" tint="var(--blue)" title="Sobre o Fit Pro Player" subtitle="Informações do aplicativo" onClick={() => nav('/privacy')} />
       <MenuRow icon="shield" tint="var(--teal)" title="Termos e privacidade" subtitle="Privacidade, cookies e direitos LGPD" onClick={() => nav('/privacy-settings')} />
       {account && <MenuRow icon="signOut" tint="var(--red)" title="Sair da conta" subtitle="Encerrar a sessão neste dispositivo" danger onClick={signOut} />}
