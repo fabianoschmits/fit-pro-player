@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
+import { GLYPHS } from '../lib/glyphs.js'
 import { t } from '../lib/i18n.js'
 import ExerciseGuideAnimation from '../components/ExerciseGuideAnimation.jsx'
 import AvatarImage from '../components/AvatarImage.jsx'
@@ -125,6 +126,9 @@ function ExerciseShowcase({ paused, reduced }) {
 }
 
 function HomePreview() {
+  const routineGlyphs = GLYPHS.filter(name => ['figureStrength', 'arm', 'legs', 'pullup'].includes(name))
+  const [activeGlyph, setActiveGlyph] = useState('figureStrength')
+
   return (
     <div className="landing-home-preview" aria-label="Prévia da tela inicial do aplicativo">
       <div className="landing-home-preview-top">
@@ -148,7 +152,20 @@ function HomePreview() {
       <div className="landing-today-preview">
         <div className="landing-today-heading"><span>PLANO DE HOJE</span><small>6 EXERCÍCIOS</small></div>
         <div className="landing-today-row">
-          <span className="landing-today-icon"><Icon name="figureStrength" /></span>
+          <div className="landing-today-glyphs" role="group" aria-label="Escolher silhueta da rotina">
+            {routineGlyphs.map(glyph => (
+              <button
+                key={glyph}
+                type="button"
+                className={'landing-today-icon' + (activeGlyph === glyph ? ' is-active' : '')}
+                aria-label={`Usar silhueta ${glyph}`}
+                aria-pressed={activeGlyph === glyph}
+                onClick={() => setActiveGlyph(glyph)}
+              >
+                <Icon name={glyph} />
+              </button>
+            ))}
+          </div>
           <div><strong>Dia de Peito</strong><small>Peitorais · última vez há 6 dias</small></div>
           <span className="landing-today-action">Começar <Icon name="chevronRight" /></span>
         </div>
