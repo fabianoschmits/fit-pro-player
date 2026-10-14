@@ -155,8 +155,6 @@ export default function Settings() {
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
 
     <Section collapsible defaultOpen={false} title={t('Offline')}><OfflineControls /></Section>
-    <Section collapsible defaultOpen={false} title={t('Diagnostics')}><DiagnosticsControls /></Section>
-
     <Section collapsible defaultOpen={false} title={t('Personal profile')}>
       <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
         subtitle={t('Name, birth date, body, measurements and training goal')}
@@ -289,6 +287,7 @@ export default function Settings() {
         },
       })} />}
     </Section>
+    <Section collapsible defaultOpen={false} title={t('Diagnostics')}><DiagnosticsControls /></Section>
     <input ref={fileRef} type="file" accept=".json,application/json" style={{ display: 'none' }} onChange={doImport} />
     {/* Reset after reading so picking the same file twice still fires onChange. */}
     <input ref={importRef} type="file" accept=".csv,.xml,text/csv,text/xml" style={{ display: 'none' }}
