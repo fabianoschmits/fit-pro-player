@@ -254,6 +254,7 @@ h4.sec{
   font-size:12px;font-weight:500;color:var(--label-2);
   letter-spacing:0;padding:0 4px 7px;display:block;
 }
+.sect-toggle{width:100%;border:0;background:none;text-align:left;display:flex;align-items:center;justify-content:space-between;min-height:44px;cursor:pointer;margin:0}.sect-toggle svg{width:16px;height:16px;transition:transform .18s ease;color:var(--label-3)}.sect-toggle.open svg{transform:rotate(180deg)}.sect-toggle:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:6px}
 .sect-b{background:var(--surface);border-radius:var(--r-card);overflow:hidden;border:var(--hair) solid var(--surface-border);box-shadow:none}
 .sect-f{font-size:13px;color:var(--label-2);padding:7px 4px 0;line-height:1.38}
 

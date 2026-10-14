@@ -109,7 +109,7 @@ export default function Settings() {
   return <div className="narrow">
     <AppHeader title={t('Settings')} backTo="/more" />
 
-    <Section title={STANDALONE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
+    <Section collapsible title={STANDALONE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
       {STANDALONE ? <>
         <Row icon="lock" iconTint="var(--acc)" title={t('Guest mode — data lives only in this browser.')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
       </> : DEMO ? <>
@@ -134,7 +134,7 @@ export default function Settings() {
           accessory="chevron" onClick={() => openAuthSheet('entry')} />
       </> : <Row icon="lock" iconTint="var(--grey)" title={t('Guest mode — data lives only in this browser.')} />}
     </Section>
-    {(auth.status === 'authenticated' || persistence.state === 'error') && <Section title={t('Storage and sync')}>
+    {(auth.status === 'authenticated' || persistence.state === 'error') && <Section collapsible defaultOpen={false} title={t('Storage and sync')}>
       <div className="lrow" role="status" aria-live="polite" style={{ display: 'block' }}>
         <p>{persistence.state === 'error' ? t('Could not save on this device. Export a backup before closing the app.') : t('Saved on this device')}</p>
         {auth.status === 'authenticated' && <p>{t(SYNC_LABELS[accountSync.state] || 'Waiting to sync')}</p>}
@@ -154,10 +154,10 @@ export default function Settings() {
     </Section>}
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
 
-    <Section title={t('Offline')}><OfflineControls /></Section>
-    <Section title={t('Diagnostics')}><DiagnosticsControls /></Section>
+    <Section collapsible defaultOpen={false} title={t('Offline')}><OfflineControls /></Section>
+    <Section collapsible defaultOpen={false} title={t('Diagnostics')}><DiagnosticsControls /></Section>
 
-    <Section title={t('Personal profile')}>
+    <Section collapsible defaultOpen={false} title={t('Personal profile')}>
       <Row icon="person" iconTint="var(--teal)" title={S.profile?.name || t('Personal data')}
         subtitle={t('Name, birth date, body, measurements and training goal')}
         accessory="chevron" onClick={() => nav('/plan?profile=edit')} />
@@ -165,7 +165,7 @@ export default function Settings() {
     </Section>
 
     {/* ---------- general ---------- */}
-    <Section title={t('General')} footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
+    <Section collapsible defaultOpen={false} title={t('General')} footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
       <SelectRow
         icon="globe" iconTint="var(--blue)" title={t('Language')}
         value={S.lang || DEFAULT_LANG} onChange={v => update(s => { s.lang = v })}
@@ -185,7 +185,7 @@ export default function Settings() {
     </Section>
 
     {/* ---------- during a workout ---------- */}
-    <Section title={t('During a workout')} footer={wakeOK ? t('The screen stays on while a workout is running, so you don’t have to unlock your phone between sets.') : null}>
+    <Section collapsible defaultOpen={false} title={t('During a workout')} footer={wakeOK ? t('The screen stays on while a workout is running, so you don’t have to unlock your phone between sets.') : null}>
       <TipOnce id="effort-tip">
         <span>{t('RIR counts reps left in the tank; RPE rates effort from 1–10. Both are optional — turn them on only if you use them.')}</span>
       </TipOnce>
@@ -223,7 +223,7 @@ export default function Settings() {
     <NotificationSettings S={S} update={update} toast={toast} />
 
     {/* ---------- appearance ---------- */}
-    <Section title={t('Appearance')}>
+    <Section collapsible defaultOpen={false} title={t('Appearance')}>
       <Row icon="moon" iconTint="var(--indigo)" title={t('Theme')}>
         <Segmented
           className="seg-inline"
@@ -253,7 +253,7 @@ export default function Settings() {
     </Section>
 
     {/* ---------- data: fill it, bring things over, back it up, wipe it ---------- */}
-    <Section title={t('Data')}>
+    <Section collapsible defaultOpen={false} title={t('Data')}>
       <Row icon="dumbbell" iconTint="var(--acc)" title={t('Load starter plan (PPL)')} accessory="chevron" onClick={loadStarterPlan} />
       <Row icon="shuffle" iconTint="var(--teal)" title={t('Import from another app')}
         subtitle={t('FitNotes, Strong, Hevy — or body weight from Apple Health')}
@@ -295,7 +295,7 @@ export default function Settings() {
       onChange={ev => { const f = ev.target.files[0]; if (f) importFromApp(f); ev.target.value = '' }} />
 
     {/* "Add to Home screen" makes no sense inside the native app */}
-    {!MOBILE && <Section title={t('Tip')}>
+    {!MOBILE && <Section collapsible defaultOpen={false} title={t('Tip')}>
       <Row icon="lightbulb" iconTint="var(--yellow)"
         title={IS_ANDROID ? t('In Chrome: ⋮ menu → Add to Home screen') : t('In Safari: Share → Add to Home Screen')}
         subtitle={t('to install Fit Pro Player as a full-screen app.') + ' ' + (auth.user ? t('Your data syncs with your profile — sign in anywhere to see it.') : t('Guest data stays on this device — export a backup now and then!'))} />

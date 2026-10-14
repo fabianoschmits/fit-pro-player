@@ -244,12 +244,13 @@ export function Check({ checked, onChange, className = '', size, playMode = fals
 // The inset-grouped list is the app's main structural primitive: a titled
 // section holding rows separated by hairlines that stop short of the leading
 // edge, so the icon column reads as a continuous rail.
-export function Section({ title, footer, children, className = '' }) {
+export function Section({ title, footer, children, className = '', collapsible = false, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
     <section className={'sect ' + className}>
-      {title && <h2 className="sect-t">{title}</h2>}
-      <div className="sect-b">{children}</div>
-      {footer && <p className="sect-f">{footer}</p>}
+      {title && (collapsible ? <button type="button" className={'sect-t sect-toggle' + (open ? ' open' : '')} aria-expanded={open} onClick={() => setOpen(value => !value)}><span>{title}</span><Icon name="chevronDown" /></button> : <h2 className="sect-t">{title}</h2>)}
+      {(!collapsible || open) && <div className="sect-b">{children}</div>}
+      {footer && (!collapsible || open) && <p className="sect-f">{footer}</p>}
     </section>
   )
 }
