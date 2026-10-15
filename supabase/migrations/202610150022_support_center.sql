@@ -65,6 +65,9 @@ alter table public.support_tickets enable row level security;
 alter table public.support_messages enable row level security;
 alter table public.support_ticket_events enable row level security;
 
+revoke all on table public.support_categories, public.support_faq_articles, public.support_tickets, public.support_messages, public.support_ticket_events from anon, authenticated;
+grant select on table public.support_categories, public.support_faq_articles to authenticated;
+
 drop policy if exists support_categories_read on public.support_categories;
 create policy support_categories_read on public.support_categories for select to authenticated using (is_active);
 drop policy if exists support_faq_read on public.support_faq_articles;
