@@ -8,6 +8,7 @@ import { Button, TextArea, TextField } from '../components/ui.jsx'
 import LineChart from '../components/LineChart.jsx'
 import { ManagementAvatar, ManagementEmpty } from '../components/ManagementUI.jsx'
 import useManagementNavVisibility from '../components/useManagementNavVisibility.js'
+import { createSupportRepository } from '../lib/support.js'
 
 /* ── motion presets ──────────────────────────────────────── */
 const EASE = [0.32, 0.72, 0, 1]
@@ -168,9 +169,13 @@ const NAV_ITEMS = [
   { key: 'overview', label: 'Visão geral', to: '/console', exact: true },
   { key: 'users', label: 'Usuários', to: '/console/users' },
   { key: 'professionals', label: 'Profissionais', to: '/console/professionals' },
+  { key: 'support', label: 'Suporte', to: '/console/support' },
 ]
 
+export const supportStatusLabel = { unread: 'Não lida', read: 'Lida', pending: 'Pendente', answered: 'Respondida', resolved: 'Resolvida', archived: 'Arquivada' }
+
 function activeKey(pathname) {
+  if (pathname.startsWith('/console/support')) return 'support'
   if (pathname.startsWith('/console/professionals')) return 'professionals'
   if (pathname.startsWith('/console/users')) return 'users'
   return 'overview'
@@ -957,4 +962,16 @@ export function ConsoleUserPage() {
       </ConsoleShell>
     </AccessGate>
   )
+}
+
+export function ConsoleSupport() {
+  const { repo: consoleRepo, allowed } = useConsoleAccess()
+  const supportRepo = useMemo(() => createSupportRepository({ client: getBrowserSupabaseClient() }), [])
+  const [stats, setStats] = useState(null); const [tickets, setTickets] = useState([]); const [selected, setSelected] = useState(null); const [filters, setFilters] = useState({ status: '', query: '' }); const [reply, setReply] = useState(''); const [busy, setBusy] = useState(true); const [error, setError] = useState('')
+  const load = async () => { setBusy(true); try { const [overview, rows] = await Promise.all([supportRepo.overview(), supportRepo.listTickets({ ...filters, status: filters.status || null })]); setStats(overview); setTickets(rows); setError('') } catch (e) { setError(e.message || 'Não foi possível carregar o suporte.') } finally { setBusy(false) } }
+  useEffect(() => { if (allowed) load() }, [allowed, filters.status])
+  const open = async ticket => { setSelected(await supportRepo.adminTicketDetail(ticket.ticketId)); await supportRepo.markRead(ticket.ticketId); load() }
+  const sendReply = async e => { e.preventDefault(); if (!reply.trim() || !selected) return; await supportRepo.reply(selected.ticket?.id || selected.ticketId, reply); setReply(''); open({ ticketId: selected.ticket?.id || selected.ticketId }) }
+  const update = async status => { if (!selected) return; await supportRepo.updateTicket(selected.ticket?.id || selected.ticketId, { status }); open({ ticketId: selected.ticket?.id || selected.ticketId }) }
+  return <AccessGate allowed={allowed}><ConsoleShell>{busy && !stats ? <div className="cx-page-body"><Loading label="Carregando suporte…" /></div> : <div className="cx-page-body cx-support-page"><div className="cx-page-heading"><div><h1>Suporte</h1><p>Organize dúvidas, críticas e sugestões dos usuários.</p></div></div>{error && <p className="cx-error">{error}</p>}<div className="cx-metric-grid">{[['unreadCount','Não lidas'],['pendingCount','Pendentes'],['answeredCount','Respondidas'],['resolvedCount','Resolvidas']].map(([key,label]) => <div className="cx-metric-card" key={key}><div className="cx-metric-value">{stats?.[key] || 0}</div><div className="cx-metric-label">{label}</div></div>)}</div><div className="cx-support-toolbar"><input className="field" placeholder="Buscar por assunto ou e-mail" value={filters.query} onChange={e => setFilters({ ...filters, query: e.target.value })} onKeyDown={e => e.key === 'Enter' && load()} /><select className="field" value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })}><option value="">Todos os status</option>{Object.entries(supportStatusLabel).map(([id,label]) => <option key={id} value={id}>{label}</option>)}</select></div><div className="cx-support-layout"><div className="cx-support-list">{tickets.map(ticket => <button className={`cx-support-row${selected?.ticket?.id === ticket.ticketId ? ' is-selected' : ''}`} key={ticket.ticketId} onClick={() => open(ticket)}><span><strong>{ticket.subject}</strong><small>{ticket.displayName || ticket.email} · {ticket.categoryLabel}</small></span><em className={`support-status support-status--${ticket.status}`}>{supportStatusLabel[ticket.status]}</em></button>)}{!tickets.length && <Empty title="Nenhum chamado encontrado" sub="Ajuste os filtros ou aguarde novas mensagens." />}</div>{selected && <aside className="cx-support-detail"><div className="cx-support-detail-head"><div><h2>{selected.ticket?.subject}</h2><p>{selected.ticket?.email || selected.ticket?.user_id}</p></div><select className="field" value={selected.ticket?.status || ''} onChange={e => update(e.target.value)}>{Object.entries(supportStatusLabel).map(([id,label]) => <option key={id} value={id}>{label}</option>)}</select></div><div className="support-thread">{(selected.messages || []).map(message => <div key={message.id} className={`support-message support-message--${message.author_kind}`}><p>{message.body}</p><small>{new Date(message.created_at).toLocaleString('pt-BR')}</small></div>)}</div>{selected.ticket?.status !== 'archived' && <form className="support-reply" onSubmit={sendReply}><TextArea value={reply} onChange={e => setReply(e.target.value)} rows={4} placeholder="Responder ao usuário…" /><Button type="submit" variant="primary" disabled={!reply.trim()}>Responder</Button></form>}</aside>}</div></div>}</ConsoleShell></AccessGate>
 }

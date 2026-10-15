@@ -956,6 +956,19 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .cx-empty-title { font-size: 17px; font-weight: 600; color: var(--label-2); }
 .cx-empty-sub { font-size: 14px; color: var(--label-3); }
 
+.cx-support-page { padding-bottom: 48px; }
+.cx-support-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 10px; margin: 20px 0; }
+.cx-support-layout { display: grid; grid-template-columns: minmax(280px, .9fr) minmax(320px, 1.1fr); gap: 16px; }
+.cx-support-list { display: grid; gap: 8px; align-content: start; }
+.cx-support-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); color: var(--ink); padding: 14px; cursor: pointer; }
+.cx-support-row.is-selected { border-color: var(--acc); }
+.cx-support-row > span { display: grid; gap: 4px; flex: 1; }
+.cx-support-row small, .cx-support-detail-head p { color: var(--muted); }
+.cx-support-detail { border: 1px solid var(--line); border-radius: 18px; padding: 18px; background: var(--panel); min-height: 360px; }
+.cx-support-detail-head { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.cx-support-detail-head h2 { margin: 0; font-size: 18px; }
+@media (max-width: 760px) { .cx-support-toolbar, .cx-support-layout { grid-template-columns: 1fr; } .cx-support-detail { order: -1; } }
+
 /* ── spacing utils ───────────────────────────────── */
 .cx-mt-4 { margin-top: 4px; }
 .cx-mt-12 { margin-top: 12px; }

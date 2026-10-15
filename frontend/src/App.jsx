@@ -88,6 +88,7 @@ const ConsoleHome = lazy(loadConsole)
 const ConsoleUsers = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUsers })))
 const ConsoleProfessionals = lazy(() => loadConsole().then(module => ({ default: module.ConsoleProfessionals })))
 const ConsoleUserPage = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUserPage })))
+const ConsoleSupport = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupport })))
 const Support = lazy(loadSupport)
 const SupportComposer = lazy(() => loadSupport().then(module => ({ default: module.SupportComposer })))
 const SupportTickets = lazy(loadSupportTickets)
@@ -441,6 +442,7 @@ function Shell() {
                 <Route path="/console/users" element={<ConsoleUsers />} />
                 <Route path="/console/users/:userId" element={<ConsoleUserPage />} />
                 <Route path="/console/professionals" element={<ConsoleProfessionals />} />
+                <Route path="/console/support" element={<ConsoleSupport />} />
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes></Suspense></>
           )}
