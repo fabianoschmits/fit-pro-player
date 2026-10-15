@@ -57,6 +57,9 @@ const loadStudentProfessionals = () => import('./views/StudentProfessionals.jsx'
 const loadStudentProfessionalDetail = () => import('./views/StudentProfessionalDetail.jsx')
 const loadStudentProfessionalMaterials = () => import('./views/StudentProfessionalMaterials.jsx')
 const loadConsole = () => import('./views/Console.jsx')
+const loadSupport = () => import('./views/Support.jsx')
+const loadSupportTickets = () => import('./views/SupportTickets.jsx')
+const loadSupportTicket = () => import('./views/SupportTicket.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Home = lazy(loadHome)
@@ -85,6 +88,10 @@ const ConsoleHome = lazy(loadConsole)
 const ConsoleUsers = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUsers })))
 const ConsoleProfessionals = lazy(() => loadConsole().then(module => ({ default: module.ConsoleProfessionals })))
 const ConsoleUserPage = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUserPage })))
+const Support = lazy(loadSupport)
+const SupportComposer = lazy(() => loadSupport().then(module => ({ default: module.SupportComposer })))
+const SupportTickets = lazy(loadSupportTickets)
+const SupportTicket = lazy(loadSupportTicket)
 
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
@@ -424,6 +431,10 @@ function Shell() {
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/more" element={<More />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/support/tickets" element={<SupportTickets />} />
+                <Route path="/support/tickets/new" element={<SupportComposer />} />
+                <Route path="/support/tickets/:ticketId" element={<SupportTicket />} />
                 <Route path="/personal-data" element={<PersonalData />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/console" element={<ConsoleHome />} />

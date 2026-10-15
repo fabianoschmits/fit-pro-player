@@ -1,0 +1,35 @@
+.support-page { padding-bottom: 48px; }
+.support-actions { display: grid; gap: 12px; margin: 18px 0 26px; }
+.support-action-card, .support-ticket-row { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); color: var(--ink); text-decoration: none; }
+.support-action-card > span, .support-ticket-row > span { display: grid; gap: 4px; flex: 1; }
+.support-action-card small, .support-ticket-row small { color: var(--muted); }
+.support-section { display: grid; gap: 14px; }
+.support-search { width: 100%; box-sizing: border-box; }
+.support-category-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.support-filter { border: 1px solid var(--line); color: var(--muted); background: transparent; border-radius: 999px; padding: 8px 12px; white-space: nowrap; cursor: pointer; }
+.support-filter.active { color: var(--ink); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); }
+.support-faq-list, .support-ticket-list { display: grid; gap: 8px; }
+.support-faq-item { border-bottom: 1px solid var(--line); }
+.support-faq-item button { width: 100%; border: 0; background: transparent; color: var(--ink); display: flex; justify-content: space-between; text-align: left; padding: 15px 2px; font: inherit; cursor: pointer; }
+.support-faq-item p { color: var(--muted); line-height: 1.55; margin: 0 4px 16px; white-space: pre-wrap; }
+.support-form, .support-reply { display: grid; gap: 16px; margin-top: 18px; }
+.support-form label { display: grid; gap: 8px; color: var(--muted); font-size: .9rem; }
+.support-form select { appearance: none; }
+.support-field-error, .support-error { color: var(--red, #ff6b6b); }
+.support-success { color: var(--teal, #55d6be); }
+.support-list-actions { display: flex; justify-content: flex-end; margin: 18px 0; }
+.support-ticket-row strong { color: var(--ink); }
+.support-status { border-radius: 999px; padding: 5px 9px; font-size: .75rem; white-space: nowrap; background: var(--panel-2); color: var(--muted); }
+.support-status--unread, .support-status--pending { color: var(--orange, #f5b75d); }
+.support-status--answered { color: var(--blue, #78b7ff); }
+.support-status--resolved { color: var(--teal, #55d6be); }
+.support-status--archived { opacity: .65; }
+.support-empty { display: grid; gap: 10px; padding: 26px; border: 1px dashed var(--line); border-radius: 18px; color: var(--muted); }
+.support-empty a { color: var(--acc); }
+.support-ticket-meta { display: flex; gap: 10px; align-items: center; color: var(--muted); margin: 18px 0; }
+.support-thread { display: grid; gap: 12px; }
+.support-message { max-width: 82%; padding: 13px 15px; border-radius: 16px; background: var(--panel); color: var(--ink); }
+.support-message--admin { justify-self: start; border: 1px solid color-mix(in srgb, var(--teal) 30%, var(--line)); }
+.support-message--user { justify-self: end; background: color-mix(in srgb, var(--acc) 18%, var(--panel)); }
+.support-message p { white-space: pre-wrap; margin: 0 0 8px; line-height: 1.5; }
+.support-message small { color: var(--muted); }
