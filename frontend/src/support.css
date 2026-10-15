@@ -4,7 +4,9 @@
 .support-action-card > span, .support-ticket-row > span { display: grid; gap: 4px; flex: 1; }
 .support-action-card small, .support-ticket-row small { color: var(--muted); }
 .support-section { display: grid; gap: 14px; }
-.support-search { width: 100%; box-sizing: border-box; }
+.support-section .sect-b { background: var(--bg); border-color: transparent; }
+.support-search { width: 100%; box-sizing: border-box; background: var(--bg); border-color: var(--surface-border); }
+.support-search:focus { background: var(--bg); }
 .support-category-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
 .support-filter { border: 1px solid var(--line); color: var(--muted); background: transparent; border-radius: 999px; padding: 8px 12px; white-space: nowrap; cursor: pointer; }
 .support-filter.active { color: var(--ink); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); }
