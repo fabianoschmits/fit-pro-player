@@ -28,6 +28,12 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
       ]
+    },
+    {
+      "source": "/(apple-touch-icon|apple-touch-icon-v21|icon-180|icon-192|icon-512|icon-maskable-192|icon-maskable-512).png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
     }
   ]
 }

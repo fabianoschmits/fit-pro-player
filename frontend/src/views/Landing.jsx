@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
+import { GLYPHS } from '../lib/glyphs.js'
 import { t } from '../lib/i18n.js'
 import ExerciseGuideAnimation from '../components/ExerciseGuideAnimation.jsx'
 import AvatarImage from '../components/AvatarImage.jsx'
@@ -124,6 +126,9 @@ function ExerciseShowcase({ paused, reduced }) {
 }
 
 function HomePreview() {
+  const routineGlyphs = GLYPHS.filter(name => ['figureStrength', 'arm', 'legs', 'pullup'].includes(name))
+  const [activeGlyph, setActiveGlyph] = useState('figureStrength')
+
   return (
     <div className="landing-home-preview" aria-label="Prévia da tela inicial do aplicativo">
       <div className="landing-home-preview-top">
@@ -147,7 +152,20 @@ function HomePreview() {
       <div className="landing-today-preview">
         <div className="landing-today-heading"><span>PLANO DE HOJE</span><small>6 EXERCÍCIOS</small></div>
         <div className="landing-today-row">
-          <span className="landing-today-icon"><Icon name="figureStrength" /></span>
+          <div className="landing-today-glyphs" role="group" aria-label="Escolher silhueta da rotina">
+            {routineGlyphs.map(glyph => (
+              <button
+                key={glyph}
+                type="button"
+                className={'landing-today-icon' + (activeGlyph === glyph ? ' is-active' : '')}
+                aria-label={`Usar silhueta ${glyph}`}
+                aria-pressed={activeGlyph === glyph}
+                onClick={() => setActiveGlyph(glyph)}
+              >
+                <Icon name={glyph} />
+              </button>
+            ))}
+          </div>
           <div><strong>Dia de Peito</strong><small>Peitorais · última vez há 6 dias</small></div>
           <span className="landing-today-action">Começar <Icon name="chevronRight" /></span>
         </div>
@@ -258,6 +276,20 @@ function WorkoutPreview({ playing }) {
   )
 }
 
+const reveal = reduced => {
+  const canObserve = !reduced
+    && typeof window !== 'undefined'
+    && typeof window.IntersectionObserver === 'function'
+    && typeof globalThis.IntersectionObserver === 'function'
+  if (!canObserve) return { initial: false, transition: { duration: 0 } }
+  return {
+    initial: { opacity: 0, y: 24, filter: 'blur(8px)' },
+    whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' },
+    viewport: { once: true, amount: .18 },
+    transition: { type: 'spring', duration: .7, bounce: 0 },
+  }
+}
+
 export default function Landing({ invitePath = false }) {
   const auth = useAuth()
   const enterApp = useStore(s => s.enterApp || s.setGuest)
@@ -323,7 +355,7 @@ export default function Landing({ invitePath = false }) {
       </header>
 
       <section className="landing-hero" id="top">
-        <div className="landing-hero-copy">
+        <motion.div className="landing-hero-copy" initial={reduced ? false : { opacity: 0, x: -22, filter: 'blur(8px)' }} animate={reduced ? undefined : { opacity: 1, x: 0, filter: 'blur(0px)' }} transition={reduced ? { duration: 0 } : { type: 'spring', duration: .8, bounce: 0 }}>
           <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
           <div className="landing-eyebrow">SEU TREINO, SEM RUÍDO</div>
           <h1>Treine com contexto. Evolua com clareza.</h1>
@@ -336,11 +368,11 @@ export default function Landing({ invitePath = false }) {
              {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
             {canGuest && <button onClick={enter}>Continuar sem conta</button>}
           </div>}
-        </div>
-        <div className="landing-hero-visual">
+        </motion.div>
+        <motion.div className="landing-hero-visual" initial={reduced ? false : { opacity: 0, x: 24, rotate: 1.8 }} animate={reduced ? undefined : { opacity: 1, x: 0, rotate: 1.2 }} transition={reduced ? { duration: 0 } : { type: 'spring', duration: .9, bounce: .04, delay: .08 }}>
           <div className="landing-demo-label"><span /> SUA ROTINA, EM CONTEXTO <b>PRÉVIA DO APP</b></div>
           <HomePreview />
-        </div>
+        </motion.div>
         <div className="landing-trust">
           <span><b>156</b><small>exercícios animados</small></span>
           <span><b>100%</b><small>funcional offline</small></span>
@@ -348,7 +380,7 @@ export default function Landing({ invitePath = false }) {
         </div>
       </section>
 
-      <section className="landing-section landing-workout-section" id="treino">
+      <motion.section className="landing-section landing-workout-section" id="treino" {...reveal(reduced)}>
         <div className="landing-workout-copy">
           <span className="landing-section-index">TREINO GUIADO</span>
           <h2>Da primeira à última série, sem perder o foco.</h2>
@@ -363,9 +395,9 @@ export default function Landing({ invitePath = false }) {
           <div className="landing-demo-label"><span /> TREINO EM ANDAMENTO <b>TERÇA · 09:41</b></div>
           <WorkoutPreview playing={!paused && !reduced} />
         </div>
-      </section>
+      </motion.section>
 
-      <section className="landing-section landing-exercises" id="exercicios">
+      <motion.section className="landing-section landing-exercises" id="exercicios" {...reveal(reduced)}>
         <div className="landing-section-head">
           <div><span className="landing-section-index">BIBLIOTECA VISUAL</span><h2>O movimento certo, na hora que você precisa.</h2></div>
           <div className="landing-section-side">
@@ -376,9 +408,9 @@ export default function Landing({ invitePath = false }) {
           </div>
         </div>
         <ExerciseShowcase paused={paused} reduced={reduced} />
-      </section>
+      </motion.section>
 
-      <section className="landing-section landing-progress-section" id="progresso">
+      <motion.section className="landing-section landing-progress-section" id="progresso" {...reveal(reduced)}>
         <div className="landing-progress-copy">
           <span className="landing-section-index">PROGRESSO</span>
           <h2>Um mês inteiro, entendido em poucos segundos.</h2>
@@ -390,9 +422,9 @@ export default function Landing({ invitePath = false }) {
           </div>
         </div>
         <WeightPreview />
-      </section>
+      </motion.section>
 
-      <section className="landing-section landing-stats-section" id="estatisticas">
+      <motion.section className="landing-section landing-stats-section" id="estatisticas" {...reveal(reduced)}>
         <div className="landing-stats-copy">
           <span className="landing-section-index">ANÁLISE CORPORAL</span>
           <h2>Mais contexto para decidir o próximo treino.</h2>
@@ -404,9 +436,9 @@ export default function Landing({ invitePath = false }) {
           </ul>
         </div>
         <StatsPreview />
-      </section>
+      </motion.section>
 
-      <section className="landing-section landing-feature-section">
+      <motion.section className="landing-section landing-feature-section" {...reveal(reduced)}>
         <div className="landing-flow-head"><span className="landing-section-index">COMO FUNCIONA</span><h2>Da agenda à próxima decisão.</h2><p>O histórico nasce durante o treino. Nada depende de preencher planilhas depois.</p></div>
         <div className="landing-feature-list">
           {FEATURES.map(({ step, icon, title, label, copy }) => <article key={title}>
@@ -416,15 +448,15 @@ export default function Landing({ invitePath = false }) {
             <p>{copy}</p>
           </article>)}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="landing-final-cta">
+      <motion.section className="landing-final-cta" {...reveal(reduced)}>
         <div><span className="landing-section-index">COMECE PELO PRÓXIMO TREINO</span><h2>Menos tempo organizando. Mais clareza para evoluir.</h2><p>Abra o Fit Pro Player e monte a sua primeira rotina em poucos minutos.</p></div>
         <div className="landing-final-actions">
           <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>{primaryLabel}</Button>
           <span>{localEntry ? 'Os dados ficam salvos neste navegador.' : 'Protegido pela sua conta Supabase.'}</span>
         </div>
-      </section>
+      </motion.section>
 
       <footer className="landing-footer">
         <a className="landing-footer-brand" href="#top"><img src={BRAND_LOGO} alt="" /><span>FIT PRO PLAYER</span></a>

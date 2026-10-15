@@ -1984,5 +1984,219 @@ body.landing-mode #tabbar {
 .landing-page .landing-feature-section{border-top:1px solid rgba(16,23,34,.18)}.landing-page .landing-feature-list article{border-color:rgba(16,23,34,.18)}.landing-page .landing-feature-icon{border-color:rgba(16,23,34,.24);border-radius:2px;color:var(--landing-coral);background:transparent}
 .landing-page .landing-final-cta{border:1px solid rgba(16,23,34,.22);border-radius:2px;background:var(--landing-coral);box-shadow:14px 16px 0 var(--landing-ink)}.landing-page .landing-final-cta h2,.landing-page .landing-final-cta p,.landing-page .landing-final-cta .landing-section-index{color:#fff}.landing-page .landing-final-actions .btn{background:#fff;color:var(--landing-ink);border-radius:999px}.landing-page .landing-final-actions>span{color:rgba(255,255,255,.7)}
 .landing-page .landing-footer{border-color:rgba(16,23,34,.18);color:rgba(16,23,34,.62)}.landing-page .landing-footer-brand{color:var(--landing-ink)}.landing-page .landing-footer nav a{color:var(--landing-ink)}
-@media(max-width:980px){.landing-page .landing-nav{width:calc(100% - 40px)}.landing-page .landing-hero,.landing-page .landing-section{width:calc(100% - 40px)}.landing-page .landing-workout-section,.landing-page .landing-exercises{width:100%}.landing-page .landing-workout-visual{border-left:0;padding-left:0}}
-@media(max-width:600px){.landing-page .landing-nav{height:64px;width:calc(100% - 32px)}.landing-page .landing-nav nav{display:none}.landing-page .landing-hero{width:calc(100% - 32px);padding-top:64px;gap:48px}.landing-page .landing-hero::before{display:none}.landing-page .landing-hero h1{font-size:clamp(52px,15vw,76px)}.landing-page .landing-actions{display:grid;gap:16px}.landing-page .landing-actions .btn,.landing-page .landing-secondary-action{justify-content:center;text-align:center;width:100%}.landing-page .landing-section{width:calc(100% - 32px);padding:86px 0}.landing-page .landing-workout-section,.landing-page .landing-exercises{padding-inline:16px;width:100%}.landing-page .landing-workout-section{gap:48px}.landing-page .landing-final-cta{box-shadow:8px 10px 0 var(--landing-ink)}}
+@media(max-width:980px){.landing-page .landing-nav{width:calc(100% - 40px)}.landing-page .landing-hero,.landing-page .landing-section{width:calc(100% - 40px)}.landing-page .landing-hero,.landing-page .landing-workout-section,.landing-page .landing-progress-section,.landing-page .landing-stats-section{grid-template-columns:minmax(0,1fr)}.landing-page .landing-workout-section,.landing-page .landing-exercises{width:100%}.landing-page .landing-workout-visual{border-left:0;padding-left:0}.landing-page .landing-hero-visual,.landing-page .landing-product-card,.landing-page .landing-phone{min-width:0;max-width:100%;width:100%;box-sizing:border-box}.landing-page .landing-home-preview{width:100%;max-width:100%;box-sizing:border-box}.landing-page .landing-final-cta{min-width:0}}
+@media(max-width:600px){.landing-page .landing-nav{height:64px;width:calc(100% - 32px)}.landing-page .landing-nav nav{display:none}.landing-page .landing-hero{width:calc(100% - 32px);padding-top:64px;gap:48px;grid-template-columns:minmax(0,1fr)}.landing-page .landing-hero::before{display:none}.landing-page .landing-hero h1{font-size:clamp(52px,15vw,76px);overflow-wrap:anywhere}.landing-page .landing-actions{display:grid;gap:16px}.landing-page .landing-actions .btn,.landing-page .landing-secondary-action{justify-content:center;text-align:center;width:100%}.landing-page .landing-section{width:calc(100% - 32px);padding:86px 0}.landing-page .landing-workout-section,.landing-page .landing-exercises{padding-inline:16px;width:100%}.landing-page .landing-workout-section{gap:48px;grid-template-columns:minmax(0,1fr)}.landing-page .landing-phone{width:100%;min-width:0;overflow:hidden}.landing-page .landing-phone-title strong{overflow-wrap:anywhere}.landing-page .landing-section h2,.landing-page .landing-final-cta h2{overflow-wrap:anywhere}.landing-page .landing-final-cta{box-shadow:8px 10px 0 var(--landing-ink);min-width:0}.landing-page .landing-footer{overflow-wrap:anywhere}}
+
+@media (max-width: 980px) {
+  .landing-page .landing-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-page .landing-hero-copy,
+  .landing-page .landing-hero-visual {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .landing-page .landing-home-preview {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* The studio direction uses explicit colors, so dark mode needs its own
+   semantic layer instead of relying on the app's generic label tokens. */
+:root[data-theme="dark"] .landing-page {
+  --landing-ink: #f6f1e8;
+  --landing-paper: #101722;
+  --landing-paper-2: #182230;
+  --landing-coral: #ff806a;
+  --landing-blue: #a9c2ff;
+  --landing-acid: #d4f77b;
+  color: var(--landing-ink);
+  background: var(--landing-paper);
+}
+
+:root[data-theme="dark"] .landing-page .landing-nav-shell {
+  background: rgba(16, 23, 34, .9);
+  border-color: rgba(246, 241, 232, .16);
+}
+
+:root[data-theme="dark"] .landing-page .landing-nav nav a,
+:root[data-theme="dark"] .landing-page .landing-footer,
+:root[data-theme="dark"] .landing-page .landing-footer nav a {
+  color: rgba(246, 241, 232, .68);
+}
+
+:root[data-theme="dark"] .landing-page .landing-nav nav a:hover,
+:root[data-theme="dark"] .landing-page .landing-footer nav a:hover {
+  color: var(--landing-coral);
+}
+
+:root[data-theme="dark"] .landing-page .landing-hero::before,
+:root[data-theme="dark"] .landing-page .landing-hero-copy > p,
+:root[data-theme="dark"] .landing-page .landing-demo-label,
+:root[data-theme="dark"] .landing-page .landing-trust small {
+  color: rgba(246, 241, 232, .68);
+}
+
+:root[data-theme="dark"] .landing-page .landing-secondary-action {
+  color: var(--landing-ink);
+  border-color: rgba(246, 241, 232, .78);
+}
+
+:root[data-theme="dark"] .landing-page .landing-hero-visual,
+:root[data-theme="dark"] .landing-page .landing-workout-visual {
+  border-color: rgba(246, 241, 232, .16);
+  background: rgba(246, 241, 232, .035);
+}
+
+:root[data-theme="dark"] .landing-page .landing-demo-label {
+  border-color: rgba(246, 241, 232, .18);
+}
+
+:root[data-theme="dark"] .landing-page .landing-trust,
+:root[data-theme="dark"] .landing-page .landing-trust span,
+:root[data-theme="dark"] .landing-page .landing-progress-section,
+:root[data-theme="dark"] .landing-page .landing-stats-section,
+:root[data-theme="dark"] .landing-page .landing-feature-section,
+:root[data-theme="dark"] .landing-page .landing-footer {
+  border-color: rgba(246, 241, 232, .18);
+}
+
+:root[data-theme="dark"] .landing-page .landing-home-preview,
+:root[data-theme="dark"] .landing-page .landing-phone,
+:root[data-theme="dark"] .landing-page .landing-product-card,
+:root[data-theme="dark"] .landing-page .landing-exercise-card {
+  border-color: rgba(246, 241, 232, .2);
+  background: #171f2c;
+  box-shadow: 14px 16px 0 rgba(0, 0, 0, .28);
+}
+
+:root[data-theme="dark"] .landing-page .landing-exercises {
+  background: var(--landing-paper-2);
+}
+
+:root[data-theme="dark"] .landing-page .landing-exercise-copy strong,
+:root[data-theme="dark"] .landing-page .landing-weight-heading > div > strong,
+:root[data-theme="dark"] .landing-page .landing-muscle-row > strong,
+:root[data-theme="dark"] .landing-page .landing-feature-list h3,
+:root[data-theme="dark"] .landing-page .landing-feature-list p,
+:root[data-theme="dark"] .landing-page .landing-stats-head h3 {
+  color: var(--landing-ink);
+}
+
+:root[data-theme="dark"] .landing-page .landing-exercise-copy span,
+:root[data-theme="dark"] .landing-page .landing-section-side p,
+:root[data-theme="dark"] .landing-page .landing-progress-copy > p,
+:root[data-theme="dark"] .landing-page .landing-stats-copy > p,
+:root[data-theme="dark"] .landing-page .landing-feature-list small,
+:root[data-theme="dark"] .landing-page .landing-feature-list p,
+:root[data-theme="dark"] .landing-page .landing-muscle-row > span,
+:root[data-theme="dark"] .landing-page .landing-stats-head p {
+  color: rgba(246, 241, 232, .68);
+}
+
+:root[data-theme="dark"] .landing-page .landing-exercise-card,
+:root[data-theme="dark"] .landing-page .landing-feature-list article,
+:root[data-theme="dark"] .landing-page .landing-mini-metrics,
+:root[data-theme="dark"] .landing-page .landing-stat-tabs button {
+  border-color: rgba(246, 241, 232, .2);
+}
+
+:root[data-theme="dark"] .landing-page .landing-carousel-control {
+  color: var(--landing-ink);
+  border-color: rgba(246, 241, 232, .35);
+}
+
+:root[data-theme="dark"] .landing-page .landing-carousel-control:hover {
+  color: #101722;
+}
+
+:root[data-theme="dark"] .landing-page .landing-stat-tabs button,
+:root[data-theme="dark"] .landing-page .landing-footer > span {
+  color: rgba(246, 241, 232, .68);
+}
+
+:root[data-theme="dark"] .landing-page .landing-stat-tabs button.is-active {
+  color: var(--landing-ink);
+}
+
+/* Routine glyphs are the interactive silhouette system used by the app. */
+.landing-today-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.landing-today-glyphs {
+  grid-column: 1 / -1;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.landing-today-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform .18s cubic-bezier(.2, .8, .2, 1), background-color .18s, color .18s, border-color .18s;
+}
+
+.landing-today-icon:hover,
+.landing-today-icon:focus-visible {
+  border-color: var(--acc);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.landing-today-icon.is-active {
+  background: var(--acc);
+  color: var(--on-acc);
+  border-color: var(--acc);
+}
+
+.landing-today-row > div:not(.landing-today-glyphs) {
+  grid-column: 1;
+}
+
+.landing-today-action {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+@media (max-width: 600px) {
+  .landing-today-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .landing-today-action {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+.landing-page .landing-workout-section {
+  background: #101722;
+  color: #fff;
+}
+
+.landing-page .landing-profile-preview {
+  background: #101722;
+  color: #fff;
+}
+
+.landing-page .landing-profile-copy > strong {
+  color: #fff;
+}
+
+.landing-page .landing-profile-copy > p {
+  color: var(--landing-acid);
+}
+
+.landing-page .landing-profile-copy > span,
+.landing-page .landing-profile-goal small {
+  color: rgba(255, 255, 255, .68);
+}

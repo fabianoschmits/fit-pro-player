@@ -7,6 +7,7 @@ import { useStore } from '../store/useStore.js';
 import { Button } from './ui.jsx';
 import Icon from './Icon.jsx';
 import { PRIVACY_DOCUMENT_VERSION } from '../lib/privacy-config.js'
+import { clearSignUpRateLimit, getSignUpRateLimitState, recordSignUpAttempt, signUpRateLimitConfig } from '../auth/rate-limit.js'
 
 const ERROR_COPY = {
   invalid_credentials: 'Email or password is incorrect.',
@@ -42,8 +43,10 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
+  const [rateLimitRevision, setRateLimitRevision] = useState(0)
   const alertRef = useRef(null);
   const busy = auth.operation === operationFor[mode];
+  const signUpLimit = mode === 'sign_up' ? getSignUpRateLimitState(values.email) : null
 
   useEffect(() => {
     setMode(initial(initialMode));
@@ -80,6 +83,10 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       return;
     }
     if (mode === 'sign_up' && !privacyAccepted) { setError('Aceite o Aviso de Privacidade e os Termos para criar a conta.'); return }
+    if (mode === 'sign_up' && signUpLimit?.blocked) {
+      setError('Muitas tentativas de cadastro. Aguarde alguns minutos antes de tentar novamente.');
+      return
+    }
 
     let result;
     if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
@@ -88,9 +95,14 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     if (mode === 'reset_password') result = await auth.updatePassword(values.password);
 
     if (result?.kind === 'error') {
+      if (mode === 'sign_up') {
+        recordSignUpAttempt(values.email)
+        setRateLimitRevision(value => value + 1)
+      }
       showError(result.error);
       return;
     }
+    if (mode === 'sign_up') clearSignUpRateLimit(values.email)
     if (mode === 'sign_up' && result?.kind === 'confirmation_required') {
       setNotice(t('Check your email to confirm your account.'));
       return;
@@ -129,6 +141,11 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       <h3>{t(title)}</h3>
       <p>{isSignUp ? 'Salve seu histórico e leve seu treino para onde você estiver.' : isRecovery ? 'Enviaremos um link para recuperar seu acesso.' : 'Seu treino continua no ponto em que você deixou.'}</p>
     </div>
+    {isSignUp && <div className={'auth-security-status' + (signUpLimit?.blocked ? ' is-blocked' : '')} role="status" aria-live="polite">
+      <span className="auth-security-icon"><Icon name="shield" /></span>
+      <span><strong>{signUpLimit?.blocked ? 'Proteção temporariamente acionada' : 'Proteção anti-brute-force ativa'}</strong><small>{signUpLimit?.blocked ? 'Novas tentativas serão liberadas em alguns minutos.' : `Até ${signUpRateLimitConfig().maxAttempts} tentativas por janela para proteger seu cadastro.`}</small></span>
+      <b>{signUpLimit?.blocked ? 'Aguardar' : 'Ativa'}</b>
+    </div>}
     {isSignUp && <>
       <label>{t('Name')}<input className="input" aria-label={t('Name')} autoComplete="name" required value={values.name} onChange={change('name')} /></label>
       <div style={{ height: 10 }} />
