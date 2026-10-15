@@ -290,6 +290,64 @@ const reveal = reduced => {
   }
 }
 
+function LandingPromoVideo({ reduced }) {
+  const sectionRef = useRef(null)
+  const videoRef = useRef(null)
+
+  useEffect(() => {
+    const section = sectionRef.current
+    const video = videoRef.current
+    if (!section || !video || reduced) return undefined
+
+    const play = () => {
+      const result = video.play?.()
+      result?.catch?.(() => {})
+    }
+    const pause = () => video.pause?.()
+    const observer = typeof IntersectionObserver === 'undefined'
+      ? null
+      : new IntersectionObserver(([entry]) => {
+          if (entry?.isIntersecting) play()
+          else pause()
+        }, { threshold: .55 })
+
+    observer?.observe(section)
+    const activateWithGesture = () => {
+      if (video.paused) play()
+      else pause()
+    }
+    const activateWithKeyboard = event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return
+      event.preventDefault()
+      activateWithGesture()
+    }
+    video.addEventListener('click', activateWithGesture)
+    video.addEventListener('keydown', activateWithKeyboard)
+
+    return () => {
+      observer?.disconnect()
+      video.removeEventListener('click', activateWithGesture)
+      video.removeEventListener('keydown', activateWithKeyboard)
+      pause()
+    }
+  }, [reduced])
+
+  return (
+    <section ref={sectionRef} className="landing-promo-video" data-landing-promo-video>
+      <video
+        ref={videoRef}
+        src="/fit-pro-player-1min.mp4"
+        poster="/fit-pro-player-1min.jpg"
+        playsInline
+        preload="metadata"
+        controls={false}
+        tabIndex="0"
+        aria-label="Vídeo de apresentação do Fit Pro Player"
+      />
+    </section>
+  )
+}
+
 export default function Landing({ invitePath = false }) {
   const auth = useAuth()
   const enterApp = useStore(s => s.enterApp || s.setGuest)
@@ -350,7 +408,7 @@ export default function Landing({ invitePath = false }) {
             <a href="#progresso">Progresso</a>
             <a href="#estatisticas">Análise corporal</a>
           </nav>
-          <button className="landing-nav-cta" disabled={entryUnavailable} onClick={primaryAction}>{localEntry ? 'Abrir aplicativo' : 'Entrar'}</button>
+          <button className="landing-nav-cta landing-nav-cta--accent" disabled={entryUnavailable} onClick={primaryAction}>{localEntry ? 'Abrir aplicativo' : 'Entrar'}</button>
         </div>
       </header>
 
@@ -379,6 +437,7 @@ export default function Landing({ invitePath = false }) {
           <span><b>0</b><small>anúncios</small></span>
         </div>
       </section>
+      <LandingPromoVideo reduced={reduced} />
 
       <motion.section className="landing-section landing-workout-section" id="treino" {...reveal(reduced)}>
         <div className="landing-workout-copy">

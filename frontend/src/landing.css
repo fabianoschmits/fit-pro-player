@@ -159,6 +159,27 @@ body.landing-mode #tabbar {
   letter-spacing: -.012em;
 }
 
+.landing-promo-video {
+  width: min(calc(100% - 40px), 430px);
+  margin: 0 auto 108px;
+}
+
+.landing-promo-video video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  border-radius: var(--r-card);
+  background: #101722;
+  cursor: pointer;
+  outline: none;
+}
+
+.landing-promo-video video:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 72%, transparent);
+}
+
 .landing-actions {
   display: flex;
   align-items: center;
@@ -1963,7 +1984,40 @@ body.landing-mode #tabbar {
 .landing-page .landing-nav{height:76px;max-width:1320px;width:calc(100% - 64px);grid-template-columns:1fr auto auto;gap:42px}
 .landing-page .landing-nav-brand{color:var(--landing-ink);font-size:11px;font-weight:850;letter-spacing:.04em}.landing-page .landing-nav-brand img{width:40px;height:40px;object-fit:contain}
 .landing-page .landing-nav nav{gap:28px}.landing-page .landing-nav nav a{color:rgba(16,23,34,.68);font-size:12px}.landing-page .landing-nav nav a:hover{color:var(--landing-coral)}
-.landing-page .landing-nav-cta{min-height:40px;padding:0 19px;border-radius:999px;background:var(--landing-ink);color:#fff;font-weight:750;letter-spacing:0}
+.landing-page .landing-nav-cta--accent {
+  min-height: 40px;
+  padding: 0 19px;
+  border: 1px solid var(--landing-ink);
+  border-radius: 999px;
+  background: var(--landing-coral);
+  color: var(--landing-ink);
+  font-weight: 800;
+  letter-spacing: 0;
+  box-shadow: 4px 4px 0 var(--landing-ink);
+  transition: transform 160ms cubic-bezier(.2, .8, .2, 1), filter 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+.landing-page .landing-nav-cta--accent:hover {
+  filter: saturate(1.08) brightness(1.04);
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--landing-ink);
+}
+.landing-page .landing-nav-cta--accent:active {
+  transform: translate(2px, 2px) scale(.98);
+  box-shadow: 1px 1px 0 var(--landing-ink);
+}
+.landing-page .landing-nav-cta--accent:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--landing-coral) 56%, var(--landing-ink));
+  outline-offset: 4px;
+}
+.landing-page .landing-nav-cta--accent:disabled {
+  background: color-mix(in srgb, var(--landing-coral) 42%, var(--landing-paper));
+  color: color-mix(in srgb, var(--landing-ink) 62%, var(--landing-paper));
+  border-color: color-mix(in srgb, var(--landing-ink) 42%, transparent);
+  box-shadow: none;
+  filter: none;
+  transform: none;
+  opacity: 1;
+}
 .landing-page .landing-hero{max-width:1320px;width:calc(100% - 64px);min-height:740px;padding:90px 0 46px;grid-template-columns:minmax(0,.92fr) minmax(480px,1.08fr);gap:80px;position:relative}
 .landing-page .landing-hero::before{content:"FIT / TRAIN / REPEAT";position:absolute;right:0;top:34px;color:rgba(16,23,34,.28);font-size:10px;letter-spacing:.2em;font-weight:800}
 .landing-page .landing-hero-copy{max-width:610px;align-self:center}.landing-page .landing-hero-logo{display:none}.landing-page .landing-eyebrow,.landing-page .landing-section-index{color:var(--landing-coral);font-size:11px;font-weight:850;letter-spacing:.08em;margin-bottom:21px}
