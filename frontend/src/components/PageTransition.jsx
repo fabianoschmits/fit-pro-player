@@ -11,12 +11,15 @@ const MOBILE_LIKE = MOBILE || (typeof window !== 'undefined' && (
 export default function PageTransition({ children }) {
   const loc = useLocation()
   const reduced = useReducedMotion()
+  // The Central owns its page navigation. Keep its workspace mounted so an
+  // outgoing animation cannot briefly duplicate a new conversation's composer.
+  const pageKey = loc.pathname === '/console' || loc.pathname.startsWith('/console/') ? '/console' : loc.pathname
 
   return (
     <AnimatePresence mode={MOBILE_LIKE ? 'sync' : 'wait'} initial={false}>
       <motion.div
         id="app"
-        key={loc.pathname}
+        key={pageKey}
         initial={reduced ? false : { opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         // WKWebView can leave the outgoing page mounted without completing its

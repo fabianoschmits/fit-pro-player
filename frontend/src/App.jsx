@@ -89,6 +89,9 @@ const ConsoleUsers = lazy(() => loadConsole().then(module => ({ default: module.
 const ConsoleProfessionals = lazy(() => loadConsole().then(module => ({ default: module.ConsoleProfessionals })))
 const ConsoleUserPage = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUserPage })))
 const ConsoleSupport = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupport })))
+const ConsoleSupportTicket = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupportTicket })))
+const ConsoleFaq = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaq })))
+const ConsoleFaqEditor = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaqEditor })))
 const Support = lazy(loadSupport)
 const SupportComposer = lazy(() => loadSupport().then(module => ({ default: module.SupportComposer })))
 const SupportTickets = lazy(loadSupportTickets)
@@ -443,12 +446,15 @@ function Shell() {
                 <Route path="/console/users/:userId" element={<ConsoleUserPage />} />
                 <Route path="/console/professionals" element={<ConsoleProfessionals />} />
                 <Route path="/console/support" element={<ConsoleSupport />} />
+                <Route path="/console/support/:ticketId" element={<ConsoleSupportTicket />} />
+                <Route path="/console/faq" element={<ConsoleFaq />} />
+                <Route path="/console/faq/:articleId" element={<ConsoleFaqEditor />} />
                 <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes></Suspense></>
           )}
         </ErrorBoundary>
       </PageTransition>
-      <TabBar onStart={startFlow} />
+      {!loc.pathname.startsWith('/console') && <TabBar onStart={startFlow} />}
       <RestTimer />
       <Modals />
       <Toast />
