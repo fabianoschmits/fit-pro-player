@@ -10,6 +10,7 @@ const navigation = [
   { to: '/console/professionals', label: 'Profissionais', description: 'Perfis e verificações', icon: 'personCircle', group: 'Plataforma' },
   { to: '/console/support', label: 'Mensagens', description: 'Caixa de entrada da equipe', icon: 'list', group: 'Atendimento' },
   { to: '/console/faq', label: 'FAQ', description: 'Perguntas e respostas', icon: 'clipboard', group: 'Atendimento' },
+  { to: '/motion-feedback', label: 'Laboratório de botões', description: 'Ações, estados e animações do PWA', icon: 'sparkles', group: 'Testes' },
 ]
 
 export default function ConsoleShell({ children, back, backLabel = 'Voltar', userId, allowed = false }) {
@@ -23,7 +24,7 @@ export default function ConsoleShell({ children, back, backLabel = 'Voltar', use
     <div className="console-frame">
       <aside className="console-sidebar">
         <nav ref={navRef} className="console-navigation" aria-label="Navegação da Central">
-          {['Plataforma', 'Atendimento'].map(group => <div className="console-navigation-group" key={group}>
+          {['Plataforma', 'Atendimento', 'Testes'].map(group => <div className="console-navigation-group" key={group}>
             <p>{group}</p>
             {navigation.filter(item => item.group === group).map(item => {
               const active = item.to === '/console' ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + '/')
