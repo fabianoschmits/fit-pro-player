@@ -9,13 +9,16 @@ import { Button } from './ui.jsx'
  * a workout referencing an exercise the build doesn't know would white-screen and, since
  * the running workout is persisted, do it again on every reload.
  *
- * Sits inside #app so the tab bar stays usable; the shell keys this subtree on the route,
- * so switching tabs re-mounts it and clears the error by itself.
+ * Sits inside #app. Route changes reset a failed page, while healthy workspace
+ * pages keep their state without a competing outgoing animation.
  */
 export default class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { failed: false } }
   static getDerivedStateFromError() { return { failed: true } }
   componentDidCatch(err) { console.error('Fit Pro Player render error:', err) }
+  componentDidUpdate(previous) {
+    if (this.state.failed && previous.resetKey !== this.props.resetKey) this.setState({ failed: false })
+  }
 
   render() {
     if (!this.state.failed) return this.props.children

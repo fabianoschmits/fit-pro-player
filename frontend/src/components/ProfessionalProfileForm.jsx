@@ -20,7 +20,7 @@ export default function ProfessionalProfileForm({ profile, onSave, onCancel, sav
       <legend>{t('Apresentação')}</legend>
       <label htmlFor={`${id}-name`}>{t('Nome profissional')}<TextField id={`${id}-name`} ref={nameRef} name="professionalName" autoComplete="name" value={draft.professionalName} onChange={event => { update('professionalName', event.target.value); setNameError(false) }} maxLength={120} required aria-invalid={nameError || undefined} aria-describedby={nameError ? `${id}-name-error` : undefined} /></label>
       {nameError && <p id={`${id}-name-error`} role="alert" className="management-error">{t('Informe seu nome profissional.')}</p>}
-      <label htmlFor={`${id}-bio`}>{t('Bio')}<TextArea id={`${id}-bio`} name="bio" value={draft.bio || ''} onChange={event => update('bio', event.target.value)} maxLength={2000} rows={5} /></label>
+      <label htmlFor={`${id}-bio`}>{t('Bio')}<TextArea id={`${id}-bio`} name="bio" value={draft.bio || ''} onChange={event => update('bio', event.target.value)} maxLength={2000} rows={3} /></label>
     </fieldset>
     <fieldset disabled={saving} className="management-form-group">
       <legend>{t('Atuação')}</legend>

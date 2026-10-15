@@ -26,6 +26,41 @@ const rpc = {
   preview_professional_invite:[{ professional_name:name, bio:professionals[0].bio, specialties:['força'], verification_status:'verified' }],
 }
 
+test.beforeEach(async ({page}) => {
+  await page.addInitScript(() => localStorage.setItem('fpp_privacy_consent_v1', JSON.stringify({version:'2026-10-13', necessary:true, preferences:false, analytics:false, communications:false, acceptedAt:'2026-10-15T12:00:00Z'})))
+})
+
+test('a narrow workspace keeps readable flat sections and prioritizes the next workout', async ({page}) => {
+  await page.setViewportSize({width:320,height:780})
+  await seed(page,{professional:true,rpc})
+  await page.goto('/#/student/professionals')
+  await expect(page.getByRole('heading',{name:'Programa atual',level:2,exact:true})).toBeVisible()
+  const headings = await page.locator('.management-content h2').allTextContents()
+  expect(headings.indexOf('Próximo treino')).toBeLessThan(headings.findIndex(text => text.startsWith('Profissionais vinculados')))
+  const panel = page.locator('.management-panel').first()
+  expect(await panel.evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
+  expect(await panel.evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThanOrEqual(280)
+  const person = page.locator('.management-person-link h3').first()
+  expect(await person.evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(190)
+  const active = page.locator('.management-nav [aria-current="page"]')
+  expect(await active.evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
+  expect(await active.evaluate(el => getComputedStyle(el).boxShadow)).toBe('none')
+  await page.getByRole('link',{name:'Voltar ao aplicativo',exact:true}).click()
+  await expect(page).toHaveURL(/#\/more$/)
+})
+
+test('browser Back recovers a workspace after a failed page import', async ({page}) => {
+  await seed(page,{professional:true,rpc})
+  await page.route('**/src/views/ProfessionalPrograms.jsx*', route => route.fulfill({contentType:'application/javascript',body:'throw new Error("Fixture program unavailable"); export default function Page() { return null }'}))
+  await page.goto('/#/professional')
+  await page.getByRole('navigation',{name:'Navegação da área profissional'}).getByRole('link',{name:'Programas',exact:true}).click()
+  await expect(page).toHaveURL(/#\/professional\/programs$/)
+  await expect(page.locator('.management-layout')).toHaveCount(0)
+  await expect(page.getByRole('button',{name:/Recarregar/})).toBeVisible()
+  await page.goBack()
+  await expect(page.getByRole('heading',{name:'Área profissional',level:1,exact:true})).toBeVisible()
+})
+
 test('reserved routes, aliases and handoff queries resolve through the application shell', async ({page}) => {
   await seed(page,{professional:true,rpc})
   for (const route of ['/professional-profile?onboarding=1','/professional/profile/edit','/professional/programs/new','/student/professionals/materials','/student/professionals/add?code=A1B2C3D4E5','/connect?code=A1B2C3D4E5','/student/professionals?code=A1B2C3D4E5','/invite/A1B2C3D4E5']) {
@@ -126,7 +161,7 @@ test('empty and failed management reads retain navigation, retry and keyboard fo
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2)).toBe(false)
 })
 
-for (const width of [360,390,1280,1440]) for (const theme of ['light','dark']) test(`management visual matrix ${width}px ${theme}`, async ({page},testInfo) => {
+for (const width of [320,360,390,1280,1440]) for (const theme of ['light','dark']) test(`management visual matrix ${width}px ${theme}`, async ({page},testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Matrix sizes are explicit; run once per size/theme.')
   test.setTimeout(90000)
   await page.setViewportSize({width,height:1000}); await page.emulateMedia({reducedMotion:'reduce'})
@@ -144,7 +179,11 @@ for (const width of [360,390,1280,1440]) for (const theme of ['light','dark']) t
       return [...content.children].every(child => child.getBoundingClientRect().right <= bounds.right + 2)
     }),`Content must not be clipped: ${route}`).toBe(true)
     const selected = page.locator('.management-nav [aria-current="page"]')
-    if (await selected.count()) await expect.poll(async () => selected.evaluate(link => {const a=link.getBoundingClientRect(),b=link.closest('nav').getBoundingClientRect();return a.left>=b.left-2 && a.right<=b.right+2}),{message:route}).toBe(true)
+    if (await selected.count()) {
+      await expect.poll(async () => selected.evaluate(link => {const a=link.getBoundingClientRect(),b=link.closest('nav').getBoundingClientRect();return a.left>=b.left-2 && a.right<=b.right+2}),{message:route}).toBe(true)
+      expect(await selected.evaluate(el => getComputedStyle(el).backgroundColor),route).toBe('rgba(0, 0, 0, 0)')
+      expect(await selected.evaluate(el => getComputedStyle(el).boxShadow),route).toBe('none')
+    }
     await page.screenshot({path:testInfo.outputPath(`management-${width}-${theme}-${index}.png`),fullPage:true})
     await page.evaluate(() => sessionStorage.removeItem('fpp-pending-invite'))
   }

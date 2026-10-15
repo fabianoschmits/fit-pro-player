@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { t } from '../lib/i18n.js'
 import AppHeader from './AppHeader.jsx'
+import Icon from './Icon.jsx'
 import ProfessionalWorkspaceNav from './ProfessionalWorkspaceNav.jsx'
 import useManagementNavVisibility from './useManagementNavVisibility.js'
 
@@ -18,11 +19,18 @@ function StudentWorkspaceNav() {
 
 export default function ManagementLayout({ title, subtitle, backTo, action, audience = 'professional', children, className = '', nav }) {
   const navigation = nav === undefined ? (audience === 'student' ? <StudentWorkspaceNav /> : <ProfessionalWorkspaceNav />) : nav
+  const home = audience === 'student' ? '/student/professionals' : '/professional'
   return <div className={`management-layout ${className}`.trim()}>
-    <AppHeader title={title} subtitle={subtitle} backTo={backTo} action={action} className="management-header" />
+    <header className="management-topbar">
+      <Link className="management-brand" to={home}><span className="management-brand-mark"><Icon name={audience === 'student' ? 'personCircle' : 'clipboard'} /></span><span>{t(audience === 'student' ? 'Meus profissionais' : 'Área profissional')}<small>Fit Pro Player</small></span></Link>
+      <Link className="management-return" to="/more" aria-label={t('Back to app')}><Icon name="chevronLeft" /><span>{t('Back to app')}</span></Link>
+    </header>
     <div className={`management-workspace${navigation ? '' : ' management-workspace-solo'}`}>
       {navigation && <aside className="management-sidebar">{navigation}</aside>}
-      <div className="management-content">{children}</div>
+      <main className="management-main">
+        <AppHeader title={title} subtitle={subtitle} backTo={backTo} action={action} className="management-header" />
+        <div className="management-content">{children}</div>
+      </main>
     </div>
   </div>
 }

@@ -11,9 +11,10 @@ const MOBILE_LIKE = MOBILE || (typeof window !== 'undefined' && (
 export default function PageTransition({ children }) {
   const loc = useLocation()
   const reduced = useReducedMotion()
-  // The Central owns its page navigation. Keep its workspace mounted so an
-  // outgoing animation cannot briefly duplicate a new conversation's composer.
-  const pageKey = loc.pathname === '/console' || loc.pathname.startsWith('/console/') ? '/console' : loc.pathname
+  // Workspaces own their navigation. Keep the shell mounted so an outgoing
+  // animation cannot duplicate the destination's form or steal input focus.
+  const workspace = /^\/(console|professional|professional-profile|student\/professionals|invite|connect)(\/|$)/.exec(loc.pathname)?.[1]
+  const pageKey = workspace ? (['invite', 'connect', 'student/professionals'].includes(workspace) ? '/student/professionals' : workspace === 'professional-profile' ? '/professional' : `/${workspace}`) : loc.pathname
 
   return (
     <AnimatePresence mode={MOBILE_LIKE ? 'sync' : 'wait'} initial={false}>

@@ -12,6 +12,12 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 const render = (children, route = '/professional/profile/edit') => act(async () => root.render(<MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>))
 
 describe('management workspace', () => {
+  it('lets students and professionals return to the app without losing the contextual back destination', async () => {
+    await render(<ManagementLayout title="Editar perfil" backTo="/professional/profile">Conteúdo</ManagementLayout>)
+    expect(container.querySelector('a[aria-label="Voltar ao aplicativo"]')?.getAttribute('href')).toBe('/more')
+    expect(container.querySelector('main h1')?.textContent).toBe('Editar perfil')
+    expect(container.querySelector('button[aria-label="Voltar"]')).not.toBeNull()
+  })
   it('provides a contextual header, professional destinations and active profile on an edit deep link', async () => {
     await render(<ManagementLayout title="Editar perfil" subtitle="Sua apresentação" backTo="/professional/profile" action={<a href="/action">Ação</a>}><p>Conteúdo</p></ManagementLayout>)
     expect(container.querySelector('h1').textContent).toBe('Editar perfil')

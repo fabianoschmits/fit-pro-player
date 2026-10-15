@@ -19,6 +19,13 @@ it('opens the canonical profile workspace from More', async () => {
   await act(async () => row.click())
   expect(container.querySelector('output').textContent).toBe('/professional/profile')
 })
+it('offers profile creation to an account without professional access', async () => {
+  mocks.role.mockResolvedValue(false); await render()
+  const row=[...container.querySelectorAll('button')].find(element => element.textContent.includes('Tornar-se profissional'))
+  expect(row).toBeTruthy()
+  await act(async () => row.click())
+  expect(container.querySelector('output').textContent).toBe('/professional/profile')
+})
 it('does not expose professional entries from a previous account response', async () => {
   let resolve; mocks.role.mockImplementationOnce(() => new Promise(done => { resolve=done })).mockResolvedValue(false)
   await render(); mocks.auth={status:'authenticated',user:{id:'b'}}; await render()

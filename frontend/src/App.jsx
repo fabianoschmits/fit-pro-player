@@ -398,10 +398,9 @@ function Shell() {
 
   return (
     <>
-      {/* keyed on the route: a view that throws is contained, and switching tabs
-          re-mounts the boundary, so the tab bar is always a way out */}
+      {/* Navigation clears failed renders without remounting a healthy workspace. */}
       <PageTransition>
-        <ErrorBoundary>
+        <ErrorBoundary resetKey={`${loc.pathname}${loc.search}`}>
           {publicPrivacyPath ? <PrivacyPages kind={loc.pathname === '/terms' ? 'terms' : loc.pathname === '/data-rights' ? 'rights' : 'privacy'} /> : !(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
             <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
@@ -454,7 +453,7 @@ function Shell() {
           )}
         </ErrorBoundary>
       </PageTransition>
-      {!loc.pathname.startsWith('/console') && <TabBar onStart={startFlow} />}
+      {!(/^\/(console|professional|professional-profile|student\/professionals|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
       <RestTimer />
       <Modals />
       <Toast />

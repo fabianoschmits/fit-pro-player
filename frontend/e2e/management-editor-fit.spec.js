@@ -2,6 +2,25 @@ import {test,expect} from '@playwright/test'
 import {seed,USER,STUDENT} from './fixtures.test.js'
 const id='33333333-3333-4333-8333-333333333333'
 
+test.beforeEach(async ({page}) => {
+  await page.addInitScript(() => localStorage.setItem('fpp_privacy_consent_v1', JSON.stringify({version:'2026-10-13', necessary:true, preferences:false, analytics:false, communications:false, acceptedAt:'2026-10-15T12:00:00Z'})))
+})
+
+test('editing a program prioritizes its week and keeps metadata one tap away', async ({page}) => {
+  let metadata = null
+  await page.setViewportSize({width:320,height:780})
+  await seed(page,{professional:true,rpc:{programs:[{id,professional_user_id:USER,title:'Programa prático',archived:false}],program_versions:[],update_program:args=>{metadata=args;return {}}}})
+  await page.goto(`/#/professional/programs/${id}/edit`)
+  const title = page.getByRole('textbox',{name:'Nome do programa',exact:true})
+  await expect(page.getByRole('button',{name:'Adicionar exercício',exact:true})).toBeInViewport()
+  await expect(title).not.toBeVisible()
+  await page.locator('.professional-program-metadata summary').click()
+  await title.fill('Programa revisado')
+  await page.getByRole('button',{name:'Salvar dados do programa',exact:true}).click()
+  await expect.poll(()=>metadata?.p_title).toBe('Programa revisado')
+  await expect(page.getByText('Dados do programa salvos.',{exact:true})).toBeVisible()
+})
+
 test('a professional previews animation, publishes a program and sends that exact version to a student', async ({page}) => {
   const versionId='44444444-4444-4444-8444-444444444444'
   let published=null, assignment=null

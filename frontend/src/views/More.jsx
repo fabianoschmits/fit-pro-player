@@ -68,10 +68,11 @@ export default function More() {
       <MenuRow icon="chartLine" tint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo" onClick={() => nav('/body-progress')} />
     </Section>
 
-    {(account || professional) && <Section title="Profissional" className="more-section" collapsible defaultOpen={false}>
+    {(account || professional) && <Section title="Profissional" className="more-section" collapsible defaultOpen>
       {account && <MenuRow icon="personCircle" tint="var(--teal)" title="Meus profissionais" subtitle="Programas e prescrições dos seus profissionais" onClick={() => nav('/student/professionals')} />}
       {professional && <MenuRow icon="clipboard" tint="var(--purple)" title="Área profissional" subtitle="Alunos, convites e programas" onClick={() => nav('/professional')} />}
       {professional && <MenuRow icon="personCircle" tint="var(--purple)" title="Perfil profissional" subtitle="Sua apresentação para os alunos" onClick={() => nav('/professional/profile')} />}
+      {account && !professional && <MenuRow icon="clipboard" tint="var(--purple)" title={t('Tornar-se profissional')} subtitle={t('Create your profile to coach students')} onClick={() => nav('/professional/profile')} />}
     </Section>}
 
     <Section title="Sobre o Fit Pro Player" className="more-section" collapsible defaultOpen={false}>

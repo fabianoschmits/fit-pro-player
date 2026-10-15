@@ -2,6 +2,9 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // German UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Back to app": "Zurück zur App",
+  "Organize days": "Tage organisieren",
+  "Create your profile to coach students": "Erstelle dein Profil, um Schüler zu betreuen",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "In der Android-App können lokale Timer-Benachrichtigungen auch bei minimierter App ankommen. Dafür gelten die Benachrichtigungsberechtigung und Systemeinstellungen.",
   "Background notifications will be available after the Android service is configured.": "Hintergrundbenachrichtigungen sind verfügbar, sobald der Android-Dienst eingerichtet ist.",
   "Local timer alerts": "Lokale Timer-Hinweise",

@@ -2,6 +2,9 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Back to app": "返回应用",
+  "Organize days": "安排训练日",
+  "Create your profile to coach students": "创建个人资料以指导学员",
   "In the Android app, local timer alerts can arrive while minimized. Notification permission and system settings apply.": "在 Android 应用中，即使应用已最小化，本地计时器提醒也可能送达，具体取决于通知权限和系统设置。",
   "Background notifications will be available after the Android service is configured.": "配置 Android 服务后，即可使用后台通知。",
   "Local timer alerts": "本地计时器提醒",
