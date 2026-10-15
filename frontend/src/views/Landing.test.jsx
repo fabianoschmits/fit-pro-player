@@ -75,11 +75,48 @@ afterEach(async () => {
 const button = label => [...container.querySelectorAll('button')].find(item => item.textContent.trim() === label)
 
 describe('public landing page', () => {
+  it('places an invisible-control promo video below the hero statistics', async () => {
+    const observers = []
+    dom.IntersectionObserver = class {
+      constructor(callback) {
+        this.callback = callback
+        this.targets = []
+        observers.push(this)
+      }
+      observe = vi.fn(target => this.targets.push(target))
+      unobserve = vi.fn(() => {})
+      disconnect = vi.fn(() => {})
+    }
+    globalThis.IntersectionObserver = dom.IntersectionObserver
+
+    await act(async () => { root.render(<Landing />) })
+
+    const stats = container.querySelector('.landing-trust')
+    const videoSection = container.querySelector('[data-landing-promo-video]')
+    const video = videoSection.querySelector('video')
+    video.play = vi.fn().mockResolvedValue(undefined)
+    video.pause = vi.fn()
+    expect(stats.closest('.landing-hero').nextElementSibling).toBe(videoSection)
+    expect(video.getAttribute('src')).toBe('/fit-pro-player-1min.mp4')
+    expect(video.controls).toBe(false)
+    expect(video.muted).toBe(false)
+    expect(video.hasAttribute('playsinline')).toBe(true)
+
+    const videoObserver = observers.find(item => item.targets.includes(videoSection))
+    expect(videoObserver).toBeTruthy()
+    await act(async () => { videoObserver.callback([{ isIntersecting: true }]) })
+    expect(video.play).toHaveBeenCalled()
+    await act(async () => { videoObserver.callback([{ isIntersecting: false }]) })
+    expect(video.pause).toHaveBeenCalled()
+    expect(videoObserver.disconnect).toBeTruthy()
+  })
+
   it('shows the product story and enters the standalone app explicitly', async () => {
     await act(async () => { root.render(<Landing />) })
 
     expect(container.querySelector('h1').textContent).toContain('Treine com contexto')
     expect(container.querySelector('.landing-hero-copy').firstElementChild.classList.contains('landing-hero-logo')).toBe(true)
+    expect(container.querySelector('.landing-nav-cta').classList.contains('landing-nav-cta--accent')).toBe(true)
     expect(container.querySelector('.landing-hero-logo').nextElementSibling.classList.contains('landing-eyebrow')).toBe(true)
     expect(container.querySelector('[data-avatar]').getAttribute('data-avatar')).toBe('avatar-27')
     expect(container.querySelectorAll('[data-exercise]').length).toBe(6)
