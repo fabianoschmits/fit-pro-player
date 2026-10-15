@@ -5,7 +5,7 @@ import { DAYN } from '../lib/format.js'
 import { MOBILE } from '../lib/mobile.js'
 import { normalizeNotificationPreferences } from '../lib/notification-preferences.js'
 import { useNotificationStatus, enableBackgroundNotifications, disableBackgroundNotifications } from '../lib/notification-client.js'
-import { Section, Row, SelectRow, Switch } from './ui.jsx'
+import { Button, Section, Row, SelectRow, Switch } from './ui.jsx'
 
 export default function NotificationSettings({ S, update, toast }) {
   const auth = useAuth()
@@ -22,14 +22,14 @@ export default function NotificationSettings({ S, update, toast }) {
     state.notifications = { ...current, quietHours: { ...current.quietHours, [key]: value } }
   })
   const changeBackground = async () => {
-    if (busy) return
+    if (busy) return false
     setChanging(true)
     setActionError(false)
     try {
       // Call immediately from the click so the browser permission request retains the user gesture.
       const result = await (status.enabled ? disableBackgroundNotifications() : enableBackgroundNotifications())
-      if (!result) setActionError(true)
-    } catch { setActionError(true); toast?.(t('Could not change notification settings. Try again.')) }
+      if (!result) throw new Error('notification-settings-failed')
+    } catch (error) { setActionError(true); toast?.(t('Could not change notification settings. Try again.')); throw error }
     finally { setChanging(false) }
   }
   let deliveryStatus = t('Not enabled on this device')
@@ -55,9 +55,9 @@ export default function NotificationSettings({ S, update, toast }) {
     <Section collapsible defaultOpen={false} title={t('Background reminders and updates')} footer={t('Background delivery depends on your connection and device.')}>
       <div className="notification-delivery">
         <Row icon="bell" iconTint="var(--pink)" title={t('Background notifications')} subtitle={deliveryStatus} />
-        {signedIn && status.supported && <button type="button" className="btn notification-device-action" disabled={busy || !status.enabled && (status.ready === false || status.permission === 'denied')} onClick={changeBackground}>
-          {busy ? t('Updating…') : status.enabled ? t('Disable on this device') : t('Enable on this device')}
-        </button>}
+        {signedIn && status.supported && <Button variant="" className="notification-device-action" state={status.busy ? 'processing' : undefined} disabled={!status.enabled && (status.ready === false || status.permission === 'denied')} onAction={changeBackground} loadingLabel={t('Updating…')} successLabel={t('Done')}>
+          {status.enabled ? t('Disable on this device') : t('Enable on this device')}
+        </Button>}
         {!status.supported && iPhone && <p className="notification-note">{t('On iPhone, add this app to the Home Screen in Safari and open it there to enable notifications.')}</p>}
         {(actionError || status.error) && <p className="notification-note notification-error" role="alert">{t('Could not change notification settings. Try again.')}</p>}
       </div>

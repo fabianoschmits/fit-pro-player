@@ -1,4 +1,6 @@
 import { motion } from 'framer-motion'
+import { Button } from '../../components/ui.jsx'
+import { FppSkeleton } from '../../components/FppFeedback.jsx'
 /* ── motion presets ──────────────────────────────────────── */
 export const EASE = [0.32, 0.72, 0, 1]
 export const SPRING = { type: 'spring', stiffness: 380, damping: 36 }
@@ -140,6 +142,11 @@ export function Empty({ title, sub }) {
 }
 
 /* ── loading dots ────────────────────────────────────────── */
-export function Loading({ label = 'A carregar…' }) {
-  return <div className="cx-loading" role="status">{label}</div>
+export function Loading({ label = 'Carregando…' }) {
+  return <FppSkeleton className="cx-loading" label={label} />
+}
+
+// Keep console styling while sharing the action lifetime and accessible signals.
+export function CxButton(props) {
+  return <Button appearance="custom" {...props} />
 }

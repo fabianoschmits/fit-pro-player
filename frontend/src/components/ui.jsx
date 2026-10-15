@@ -15,6 +15,7 @@
 
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, forwardRef, useId, Children, cloneElement, isValidElement } from 'react'
 import Icon from './Icon.jsx'
+import FppPerformanceButton from './FppPerformanceButton.jsx'
 import { t } from '../lib/i18n.js'
 
 /* ============================ text ============================ */
@@ -86,7 +87,9 @@ export function Switch({ checked, onChange, disabled, ariaLabel, ...rest }) {
       aria-label={ariaLabel || rest['aria-label']}
       {...rest}
       disabled={disabled}
-      className={'sw' + (checked ? ' on' : '')}
+      className={'sw fpp-quick-control' + (checked ? ' on' : '')}
+      onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') event.currentTarget.dataset.input = 'keyboard'; rest.onKeyDown?.(event) }}
+      onPointerDown={event => { event.currentTarget.dataset.input = 'pointer'; rest.onPointerDown?.(event) }}
       onClick={() => onChange(!checked)}
     >
       <span className="knob" />
@@ -230,9 +233,11 @@ export function Check({ checked, onChange, className = '', size, playMode = fals
       aria-label={ariaLabel}
       aria-describedby={ariaDescribedBy}
       disabled={disabled}
-      className={'chk' + (checked ? ' on' : '') + (playMode && !checked ? ' play-mode' : '') + ' ' + className}
+      className={'chk fpp-quick-control' + (checked ? ' on' : '') + (playMode && !checked ? ' play-mode' : '') + ' ' + className}
       style={size ? { width: size, height: size } : null}
       onClick={() => onChange(!checked)}
+      onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') event.currentTarget.dataset.input = 'keyboard' }}
+      onPointerDown={event => { event.currentTarget.dataset.input = 'pointer' }}
     >
       {checked ? <Icon name="check" /> : uncheckedIcon ? <Icon name={uncheckedIcon} /> : null}
     </button>
@@ -255,13 +260,13 @@ export function Section({ title, footer, children, className = '', collapsible =
   )
 }
 
-export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none', onClick, danger, children, className = '' }) {
+export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none', onClick, danger, children, className = '', ...rest }) {
   const titleId = useId()
   const controls = Children.map(children, child => isValidElement(child) && [Switch, Slider, Stepper].includes(child.type)
     ? cloneElement(child, { ariaLabel: child.props.ariaLabel || (typeof title === 'string' ? title : undefined), ...(!child.props.ariaLabel && typeof title !== 'string' ? { 'aria-labelledby': titleId } : {}) }) : child)
   const Tag = onClick ? 'button' : 'div'
   return (
-    <Tag {...(onClick ? { type: 'button' } : {})} className={'lrow' + (onClick ? ' tap' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick}>
+    <Tag {...rest} {...(onClick ? { type: 'button' } : {})} className={'lrow' + (onClick ? ' tap' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick}>
       {icon && <span className="lrow-i" style={iconTint ? { '--tint': iconTint } : null}><Icon name={icon} /></span>}
       {title && <span className="lrow-m">
         <span className="lrow-t" id={titleId}>{title}</span>
@@ -318,12 +323,5 @@ function require_ui() {
 
 /* ============================ buttons ============================ */
 
-export function Button({ variant = 'plain', size, icon, trailingIcon, children, className = '', ...rest }) {
-  return (
-    <button type="button" className={`btn ${variant}${size ? ' ' + size : ''} ${className}`} {...rest}>
-      {icon && <Icon name={icon} />}
-      {children && <span>{children}</span>}
-      {trailingIcon && <Icon name={trailingIcon} />}
-    </button>
-  )
-}
+export const Button = FppPerformanceButton
+export { FppPerformanceButton }

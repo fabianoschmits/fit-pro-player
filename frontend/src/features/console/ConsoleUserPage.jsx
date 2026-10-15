@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { VERIFICATION_LABELS, verificationTone } from '../../lib/console.js'
 import LineChart from '../../components/LineChart.jsx'
 import ConsoleShell from './ConsoleLayout.jsx'
 import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
-import { Avatar, Chip, SectionBody, Kv, Loading, Empty, Alert, SPRING, fmtDate, weekSchedule, workoutVolumePoints, bodyweightPoints } from './ConsoleUI.jsx'
+import { Avatar, Chip, SectionBody, Kv, Loading, Empty, Alert, fmtDate, weekSchedule, workoutVolumePoints, bodyweightPoints, CxButton } from './ConsoleUI.jsx'
+import { useFppAction } from '../../components/useFppAction.js'
 
 export function ConsoleUserPage() {
   const { userId: targetId } = useParams()
@@ -54,12 +54,22 @@ export function ConsoleUserPage() {
     return () => { owner.current = null }
   }, [userId, allowed, targetId, navigationKey])
 
-  const run = async (key, action, success) => {
-    setActing(key); setMessage('')
-    try { await action(); setMessage(success); await refresh() }
-    catch (err) { setError(err?.message || 'A operação falhou.') }
-    finally { setActing('') }
-  }
+  const operation = useFppAction({ onAction: async ({ key, perform, success }) => {
+    setActing(key); setMessage(''); setError('')
+    try {
+      await perform()
+      if (owner.current !== identity) return false
+      setMessage(success)
+      if (key === 'delete') navigate('/console/users')
+      else await refresh()
+      return true
+    } catch (err) {
+      if (owner.current === identity) setError(err?.message || 'A operação falhou.')
+      throw err
+    }
+  } })
+  const run = (key, perform, success) => operation.run({ key, perform, success })
+  const actionState = key => acting === key ? operation.state : 'idle'
 
   const isPro = (user?.roles || []).includes('professional')
   const isAdmin = (user?.roles || []).includes('admin')
@@ -201,13 +211,12 @@ export function ConsoleUserPage() {
                     value={displayName}
                     onChange={e => setDisplayName(e.target.value)}
                   />
-                  <motion.button
+                  <CxButton
                     type="button"
                     className="cx-pill-btn cx-pill-btn--accent"
-                    disabled={acting === 'name'}
+                    state={actionState('name')} disabled={operation.locked}
                     onClick={() => run('name', () => repo.setDisplayName(user.userId, displayName), 'Nome atualizado.')}
-                    whileTap={{ scale: 0.95 }}
-                  >Salvar nome</motion.button>
+                  >Salvar nome</CxButton>
                 </div>
               </SectionBody>}
 
@@ -215,35 +224,32 @@ export function ConsoleUserPage() {
               {section === 'account' && <SectionBody>
                 <div className="cx-section-label">Ações</div>
                 <div className="cx-action-list">
-                  <motion.button type="button" className="cx-action-item cx-action-item--primary"
-                    disabled={acting === 'pro' || isAdmin}
+                  <CxButton type="button" className="cx-action-item cx-action-item--primary"
+                    state={actionState('pro')} disabled={operation.locked || isAdmin}
                     onClick={() => run('pro', () => repo.setProfessionalRole(user.userId, !isPro),
                       isPro ? 'Acesso profissional removido.' : 'Acesso profissional concedido.')}
-                    whileTap={{ scale: 0.98 }}
                   >
                     {isPro ? 'Remover acesso profissional' : 'Conceder acesso profissional'}
-                  </motion.button>
+                  </CxButton>
 
                   {!isAdmin && (
-                    <motion.button type="button" className="cx-action-item"
-                      disabled={acting === 'suspend'}
+                    <CxButton type="button" className="cx-action-item"
+                      state={actionState('suspend')} disabled={operation.locked}
                       onClick={() => run('suspend', () => repo.setSuspended(user.userId, !user.suspendedAt),
                         user.suspendedAt ? 'Conta reativada.' : 'Conta suspensa.')}
-                      whileTap={{ scale: 0.98 }}
                     >
                       {user.suspendedAt ? 'Reativar conta' : 'Suspender conta'}
-                    </motion.button>
+                    </CxButton>
                   )}
 
                   {!isAdmin && user.userId !== userId && (
-                    <motion.button type="button" className="cx-action-item cx-action-item--danger"
-                      disabled={acting === 'delete'}
+                    <CxButton type="button" className="cx-action-item cx-action-item--danger" intent="critical"
+                      state={actionState('delete')} disabled={operation.locked}
                       onClick={() => {
                         if (!window.confirm('Apagar permanentemente esta conta? Esta ação não pode ser desfeita.')) return
-                        run('delete', async () => { await repo.deleteUser(user.userId); navigate('/console/users') }, 'Conta apagada.')
+                        run('delete', () => repo.deleteUser(user.userId), 'Conta apagada.')
                       }}
-                      whileTap={{ scale: 0.98 }}
-                    >Apagar conta</motion.button>
+                    >Apagar conta</CxButton>
                   )}
                 </div>
               </SectionBody>}
@@ -280,28 +286,25 @@ export function ConsoleUserPage() {
                     </label>
                   </div>
                   <div className="cx-action-list cx-action-list--row cx-mt-12">
-                    <motion.button type="button" className="cx-pill-btn cx-pill-btn--accent"
-                      disabled={acting === 'pro-save'}
+                    <CxButton type="button" className="cx-pill-btn cx-pill-btn--accent"
+                      state={actionState('pro-save')} disabled={operation.locked}
                       onClick={() => run('pro-save', () => repo.updateProfessionalProfile(user.userId, {
                         professionalName: proName, bio, cityRegion: city,
                         registrationType: regType, registrationNumber: regNumber,
                         specialties: specialtiesText.split(',').map(p => p.trim().toLowerCase()).filter(Boolean),
                       }), 'Perfil atualizado.')}
-                      whileTap={{ scale: 0.95 }}
-                    >Salvar perfil</motion.button>
+                    >Salvar perfil</CxButton>
                     {user.verificationStatus !== 'verified' && (
-                      <motion.button type="button" className="cx-pill-btn"
-                        disabled={acting === 'verify'}
+                      <CxButton type="button" className="cx-pill-btn"
+                        state={actionState('verify')} disabled={operation.locked}
                         onClick={() => run('verify', () => repo.setVerification(user.userId, 'verified'), 'Aprovado.')}
-                        whileTap={{ scale: 0.95 }}
-                      >Aprovar</motion.button>
+                      >Aprovar</CxButton>
                     )}
                     {user.verificationStatus !== 'rejected' && (
-                      <motion.button type="button" className="cx-pill-btn cx-pill-btn--danger"
-                        disabled={acting === 'reject'}
+                      <CxButton type="button" className="cx-pill-btn cx-pill-btn--danger"
+                        state={actionState('reject')} disabled={operation.locked}
                         onClick={() => run('reject', () => repo.setVerification(user.userId, 'rejected'), 'Rejeitado.')}
-                        whileTap={{ scale: 0.95 }}
-                      >Rejeitar</motion.button>
+                      >Rejeitar</CxButton>
                     )}
                   </div>
                 </SectionBody>

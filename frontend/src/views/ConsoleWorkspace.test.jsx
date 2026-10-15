@@ -109,3 +109,47 @@ it('edits an FAQ article while preserving publication and category', async () =>
   await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
   expect(mocks.support.saveFaqArticle).toHaveBeenCalledWith(expect.objectContaining({ articleId: 'faq-1', answer: 'Abra o Plano e escolha uma rotina.', categorySlug: 'question', isPublished: true }))
 })
+
+it('blocks duplicate console replies and retries a preserved draft after failure', async () => {
+  let reject
+  mocks.support.reply.mockImplementationOnce(() => new Promise((_, no) => { reject = no })).mockResolvedValueOnce(true)
+  await render('/console/support/ticket-1')
+  await input(container.querySelector('textarea'), 'Resposta preservada')
+  const submit = () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  act(() => { submit(); submit() })
+  expect(mocks.support.reply).toHaveBeenCalledTimes(1)
+  expect(container.querySelector('[type="submit"]').getAttribute('aria-busy')).toBe('true')
+  await act(async () => reject(new Error('offline')))
+  expect(container.querySelector('textarea').value).toBe('Resposta preservada')
+  expect(container.querySelector('[type="submit"]').getAttribute('data-state')).toBe('error')
+  await act(async () => submit())
+  expect(mocks.support.reply).toHaveBeenCalledTimes(2)
+  expect(container.querySelector('textarea').value).toBe('')
+})
+
+it('blocks duplicate FAQ saves and retains the editor for retry on failure', async () => {
+  let reject
+  mocks.support.saveFaqArticle.mockImplementationOnce(() => new Promise((_, no) => { reject = no }))
+  await render('/console/faq/faq-1')
+  await input(container.querySelector('textarea'), 'Resposta revisada')
+  const submit = () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  act(() => { submit(); submit() })
+  expect(mocks.support.saveFaqArticle).toHaveBeenCalledTimes(1)
+  expect(container.querySelector('[type="submit"]').getAttribute('aria-busy')).toBe('true')
+  await act(async () => reject(new Error('offline')))
+  expect(container.querySelector('textarea').value).toBe('Resposta revisada')
+  expect(container.querySelector('[type="submit"]').disabled).toBe(false)
+  expect(container.querySelector('[type="submit"]').getAttribute('data-state')).toBe('error')
+})
+
+it('keeps archive feedback idle when only assignment changes', async () => {
+  let resolve
+  mocks.support.updateTicket.mockImplementationOnce(() => new Promise(yes => { resolve = yes }))
+  await render('/console/support/ticket-1')
+  const find = label => [...container.querySelectorAll('button')].find(item => item.textContent === label)
+  act(() => find('Remover atribuição').click())
+  expect(find('Arquivar chamado').getAttribute('aria-busy')).toBeNull()
+  await act(async () => resolve(true))
+  expect(find('Arquivar chamado').getAttribute('data-state')).toBe('idle')
+  expect(find('Arquivar chamado').disabled).toBe(false)
+})

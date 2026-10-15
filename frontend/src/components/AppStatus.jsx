@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
+import { Button } from './ui.jsx'
+import { FppStatusAnimation } from './FppFeedback.jsx'
 
 export default function AppStatus() {
   const sync = useStore(s => s.accountSync), persistence = useStore(s => s.persistence)
@@ -53,21 +55,22 @@ export default function AppStatus() {
   }, [state])
 
   const updateConflict = async () => {
-    if (syncing) return
+    if (syncing) return false
     setSyncing(true); setSyncFeedback(null)
     try {
       const ok = await useStore.getState().resolveSyncConflict('cloud', getBrowserSupabaseClient())
-      if (!ok) { setSyncFeedback('error'); return }
+      if (!ok) { setSyncFeedback('error'); throw new Error('sync-failed') }
       setSyncFeedback('success')
       window.setTimeout(() => setSyncFeedback(null), 1800)
-    } catch {
+    } catch (error) {
       setSyncFeedback('error')
+      throw error
     } finally { setSyncing(false) }
   }
 
   if (!state && !syncFeedback) return null
   if (syncFeedback === 'success') return <aside className="app-status app-status-global" data-state="success" role="status">
-    <span className="status-dot" />
+    <FppStatusAnimation state="success" />
     <span>{t('Sync updated')}</span>
   </aside>
   const text = state === 'error' ? t('Data could not be saved on this device.')
@@ -80,10 +83,10 @@ export default function AppStatus() {
   const syncError = syncFeedback === 'error' && t('Could not finish sync. Your copies were preserved.')
 
   return <aside ref={asideRef} className="app-status app-status-global" data-state={state} role="status">
-    <span className="status-dot" />
+    <FppStatusAnimation state={state === 'offline' ? 'offline' : state === 'error' || state === 'sync-error' ? 'error' : 'warning'} />
     <span>{syncError || text}</span>
     <a href="#/settings">{t('Settings')}</a>
-    {state === 'conflict' && <button type="button" className="app-status-action" disabled={syncing} onClick={updateConflict}>{syncing ? t('Syncing') : t('Sync now')}</button>}
+    {state === 'conflict' && <Button size="sm" className="app-status-action" onAction={updateConflict} loadingLabel={t('Syncing…')} successLabel={t('Sync updated')}>{t('Sync now')}</Button>}
     {state === 'update' && <button type="button" className="app-status-dismiss" aria-label={t('Close')} onClick={() => setUpdateDismissed(true)}>×</button>}
   </aside>
 }

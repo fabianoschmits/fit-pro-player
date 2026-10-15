@@ -25,6 +25,27 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
 describe('professional profile workspace', () => {
+  it('locks native submissions immediately and keeps a failed profile save editable for retry', async () => {
+    let fail
+    mocks.save.mockImplementationOnce(() => new Promise((_, reject) => { fail = reject }))
+    await render('/professional/profile/edit')
+    const form = container.querySelector('form')
+    await act(async () => {
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    })
+    expect(mocks.save).toHaveBeenCalledTimes(1)
+    const action = container.querySelector('button[type="submit"]')
+    expect(action.getAttribute('aria-busy')).toBe('true')
+    await act(async () => fail(new Error('offline')))
+    expect(action.getAttribute('data-state')).toBe('error')
+    expect(container.querySelector('[name="professionalName"]').disabled).toBe(false)
+    expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile/edit')
+    await act(async () => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })))
+    expect(mocks.save).toHaveBeenCalledTimes(2)
+    expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile')
+  })
+
   it('opens saved values directly in the addressable edit page', async () => {
     await render('/professional/profile/edit')
     expect(container.querySelector('input[name="professionalName"]')?.value).toBe('Ana Silva')
@@ -70,7 +91,7 @@ describe('professional profile workspace', () => {
   it('ignores a late save from the previous account', async () => {
     let resolveSave; mocks.save.mockImplementationOnce(() => new Promise(resolve => { resolveSave = resolve }))
     await render('/professional/profile/edit'); await click('Salvar perfil')
-    expect([...container.querySelectorAll('button')].find(button => button.textContent === 'Salvando…').disabled).toBe(true)
+    expect(container.querySelector('button[type="submit"][aria-busy="true"]').disabled).toBe(true)
     mocks.auth = { status: 'authenticated', user: { id: 'professional-b' } }; mocks.own.mockResolvedValue({ ...saved, professionalName: 'Bruna' }); await render()
     await act(async () => resolveSave({ ...saved, professionalName: 'Ana antiga' }))
     expect(container.querySelector('[name="professionalName"]').value).toBe('Bruna')

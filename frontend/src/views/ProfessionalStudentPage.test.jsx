@@ -18,6 +18,51 @@ beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = 
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional student detail', () => {
+  it('locks assignment and ending together, then retries a failed assignment without losing its selection', async () => {
+    let fail
+    mocks.repo.assignProgramVersion.mockImplementationOnce(() => new Promise((_, reject) => { fail = reject }))
+    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [{ id: 'a1', status: 'active' }], executions: [] })
+    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Força' }])
+    mocks.repo.versions.mockResolvedValueOnce([{ id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: {} }])
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?section=training&program=p1&version=v1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Encerrar programa ativo').click())
+    const send = [...container.querySelectorAll('button')].find(button => button.textContent === 'Enviar versão')
+    const end = container.querySelector('.danger-confirm .btn.danger')
+    await act(async () => { send.click(); end.click() })
+    expect(mocks.repo.assignProgramVersion).toHaveBeenCalledTimes(1)
+    expect(mocks.repo.revokeAssignment).not.toHaveBeenCalled()
+    expect(send.getAttribute('aria-busy')).toBe('true')
+    await act(async () => fail(new Error('offline')))
+    expect(send.getAttribute('data-state')).toBe('error')
+    expect(container.querySelector('select[aria-label="Versão do programa"]').value).toBe('v1')
+    expect(container.querySelector('[role="alert"]').textContent).toContain('Não foi possível enviar esta versão.')
+    await act(async () => send.click())
+    expect(mocks.repo.assignProgramVersion).toHaveBeenCalledTimes(2)
+    expect(container.querySelector('[role="alert"]')).toBeNull()
+  })
+
+  it.each([
+    ['relationship', 'Encerrar vínculo', 'revokeRelationship', 'Não foi possível encerrar o vínculo.'],
+    ['training', 'Encerrar programa ativo', 'revokeAssignment', 'Não foi possível encerrar o programa.'],
+  ])('keeps the confirmed %s action available after a failure and blocks repeat submissions', async (section, label, method, failure) => {
+    let fail
+    mocks.repo[method].mockImplementationOnce(() => new Promise((_, reject) => { fail = reject })).mockResolvedValueOnce({})
+    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [{ id: 'a1', status: 'active' }], executions: [] })
+    await act(async () => root.render(<MemoryRouter initialEntries={[`/professional/students/s1?section=${section}`]}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /><Route path="/professional/students" element={<p>Students destination</p>} /></Routes></MemoryRouter>))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === label).click())
+    const confirm = container.querySelector('.danger-confirm .btn.danger')
+    await act(async () => { confirm.click(); confirm.click() })
+    expect(mocks.repo[method]).toHaveBeenCalledTimes(1)
+    expect(confirm.getAttribute('aria-busy')).toBe('true')
+    await act(async () => fail(new Error('offline')))
+    expect(confirm.getAttribute('data-state')).toBe('error')
+    expect(confirm.disabled).toBe(false)
+    expect(container.querySelector('[role="alert"]').textContent).toContain(failure)
+    await act(async () => confirm.click())
+    expect(mocks.repo[method]).toHaveBeenCalledTimes(2)
+    expect(container.querySelector('[role="alert"]')).toBeNull()
+  })
+
   it('preserves the current history section when a pending version assignment finishes', async () => {
     let finishAssignment
     mocks.repo.assignProgramVersion.mockImplementationOnce(() => new Promise(resolve => { finishAssignment = resolve }))

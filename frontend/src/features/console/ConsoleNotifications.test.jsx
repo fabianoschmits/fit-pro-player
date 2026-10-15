@@ -39,3 +39,19 @@ it('does not load project notifications before admin access is confirmed', async
   expect(mocks.list).not.toHaveBeenCalled()
   expect(container.querySelector('button')).toBeNull()
 })
+
+it('guards duplicate mark-all writes and permits retry after failure', async () => {
+  let reject
+  mocks.markRead.mockImplementationOnce(() => new Promise((_, no) => { reject = no })).mockResolvedValueOnce(true)
+  await render(true)
+  await act(async () => container.querySelector('button').click())
+  const action = () => [...document.querySelectorAll('[role="dialog"] button')].find(el => el.textContent === 'Marcar todas como lidas' || el.dataset.state === 'error')
+  act(() => { action().click(); action().click() })
+  expect(mocks.markRead).toHaveBeenCalledTimes(1)
+  expect(action().getAttribute('aria-busy')).toBe('true')
+  await act(async () => reject(new Error('offline')))
+  expect(action().disabled).toBe(false)
+  expect(action().getAttribute('data-state')).toBe('error')
+  await act(async () => action().click())
+  expect(mocks.markRead).toHaveBeenCalledTimes(2)
+})

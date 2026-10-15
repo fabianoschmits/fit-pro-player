@@ -23,6 +23,9 @@ export async function seed(page,{professional=false,authenticated=professional,s
   await page.addInitScript(({authenticated,state,user})=>{
     if(localStorage.getItem('e2e_initialized'))return
     localStorage.setItem('e2e_initialized','1')
+    // Functional flows start after the separate privacy-choice screen.
+    // Keep optional purposes disabled without interacting with real accounts.
+    localStorage.setItem('fpp_privacy_consent_v1',JSON.stringify({version:'2026-10-13',necessary:true,preferences:false,analytics:false,communications:false,acceptedAt:'2026-10-15T12:00:00Z'}))
     if(authenticated){
       const header=btoa(JSON.stringify({alg:'HS256',typ:'JWT'})), payload=btoa(JSON.stringify({sub:user.id,exp:Math.floor(Date.now()/1000)+3600,role:'authenticated'}))
       localStorage.setItem('sb-fitpp-test-auth-token',JSON.stringify({access_token:`${header}.${payload}.fixture`,refresh_token:'browser-test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user}))

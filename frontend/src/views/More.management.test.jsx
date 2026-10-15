@@ -8,6 +8,7 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth:() => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({getBrowserSupabaseClient:() => null}))
 vi.mock('../lib/professional-workflow.js', () => ({createProfessionalWorkflowRepository:() => ({professionalRole:mocks.role})}))
 import More from './More.jsx'
+import { useStore } from '../store/useStore.js'
 let root, container
 function Location() { return <output>{useLocation().pathname}</output> }
 const render = () => act(async () => root.render(<MemoryRouter><More /><Location /></MemoryRouter>))
@@ -25,6 +26,26 @@ it('offers profile creation to an account without professional access', async ()
   expect(row).toBeTruthy()
   await act(async () => row.click())
   expect(container.querySelector('output').textContent).toBe('/professional/profile')
+})
+it.each([
+  ['', 'Conectado à sua conta'],
+  ['   ', 'Conectado à sua conta'],
+  ['Ana Silva', 'Ana Silva'],
+])('identifies a signed-in account with profile name %j without a guest label', async (name, expected) => {
+  mocks.role.mockResolvedValue(false)
+  mocks.auth.user.email = 'ana@example.com'
+  useStore.setState({ S: { ...useStore.getState().S, profile: { name } } })
+  await render()
+  expect(container.querySelector('.more-account-copy strong').textContent).toBe(expected)
+  expect(container.querySelector('.more-account-copy > span').textContent).toBe('ana@example.com')
+  expect(container.querySelector('.more-account-card').textContent).not.toContain('Modo convidado')
+})
+it('keeps guest identification for an anonymous account without a name', async () => {
+  mocks.auth = { status: 'anonymous', user: null }
+  useStore.setState({ S: { ...useStore.getState().S, profile: { name: '' } } })
+  await render()
+  expect(container.querySelector('.more-account-copy strong').textContent).toBe('Modo convidado')
+  expect(container.querySelector('.more-account-card').textContent).not.toContain('Conectado à sua conta')
 })
 it('does not expose professional entries from a previous account response', async () => {
   let resolve; mocks.role.mockImplementationOnce(() => new Promise(done => { resolve=done })).mockResolvedValue(false)

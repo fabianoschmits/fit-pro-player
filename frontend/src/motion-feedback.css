@@ -1,0 +1,64 @@
+/* Shared action signals inherit the established FPP surfaces and accent. */
+.fpp-button{position:relative;isolation:isolate;overflow:hidden;transition:transform 100ms cubic-bezier(.2,.8,.2,1),background 180ms cubic-bezier(.2,.8,.2,1),opacity 180ms cubic-bezier(.2,.8,.2,1)}
+.fpp-button-labels{display:inline-grid;align-items:center;justify-items:center;min-width:0}
+.fpp-button-label,.fpp-button-reserve{grid-area:1/1;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.fpp-button-reserve{visibility:hidden;pointer-events:none;user-select:none;white-space:pre-wrap}
+.fpp-button-reserve::after{content:attr(data-label)}
+.fpp-button-reserve[data-symbol=true]::before{content:'';width:19px;flex:none}
+.fpp-button.sm .fpp-button-reserve[data-symbol=true]::before{width:16px}
+.fpp-button[data-state=loading]:disabled,.fpp-button[data-state=processing]:disabled,.fpp-button[data-state=uploading]:disabled,.fpp-button[data-state=syncing]:disabled{opacity:1;cursor:progress}
+.fpp-button[data-visual-state=error]{box-shadow:inset 0 0 0 1px currentColor}
+.fpp-button[data-visual-state=error]:not(.primary){color:var(--red)}
+.fpp-button[data-visual-state=success]:not(.primary){color:var(--acc)}
+.fpp-button[data-visual-state=warning]:not(.primary){color:var(--orange)}
+.fpp-button[data-visual-state=offline]:not(.primary){color:var(--label-2)}
+.fpp-button[data-intent=quick]{transition-duration:0ms}
+.fpp-button[data-visual-state=pressed]{transform:scale(.975)}
+.fpp-energy-rail{position:absolute;inset:auto 0 0;height:3px;overflow:hidden;pointer-events:none;background:color-mix(in srgb,currentColor 10%,transparent)}
+.fpp-energy-rail>span{display:block;height:100%;background:currentColor;opacity:.65;transform-origin:left;transition:transform 200ms cubic-bezier(.2,.8,.2,1)}
+.fpp-energy-rail[data-indeterminate=true]>span{opacity:.3;transform:scaleX(.35);animation:fpp-energy 1.25s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes fpp-energy{0%{transform:translateX(-35%) scaleX(.35)}100%{transform:translateX(100%) scaleX(.35)}}
+.fpp-status-animation{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;flex:none}
+.fpp-button.sm .fpp-status-animation{width:16px;height:16px}
+.fpp-status-animation .icn{width:100%;height:100%;font-size:inherit}
+.work-set-overlay__done-icon > .fpp-status-animation{width:1em;height:1em}
+.fpp-status-animation[data-state=success]{animation:fpp-confirm 360ms cubic-bezier(.16,1,.3,1) both}
+@keyframes fpp-confirm{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.fpp-status-busy{height:3px;border-radius:2px;overflow:hidden;background:color-mix(in srgb,currentColor 15%,transparent)}
+.fpp-status-busy>span{height:100%;width:100%;background:currentColor;opacity:.5;transform:scaleX(.4);animation:fpp-energy 1.25s cubic-bezier(.45,0,.55,1) infinite}
+.fpp-progress{height:4px;overflow:hidden;border-radius:99px;background:var(--surface-3);color:var(--acc)}
+.fpp-progress-fill{display:block;height:100%;background:currentColor;transform-origin:left;transition:transform 200ms cubic-bezier(.2,.8,.2,1)}
+.fpp-progress[data-indeterminate=true] .fpp-progress-fill{opacity:.45;transform:scaleX(.35);animation:fpp-energy 1.25s cubic-bezier(.45,0,.55,1) infinite}
+.fpp-skeleton{display:grid;gap:1px;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:var(--r-card);background:var(--surface)}
+.fpp-skeleton-row{display:flex;align-items:center;gap:12px;min-height:70px;padding:14px 16px}
+.fpp-skeleton-row+.fpp-skeleton-row{border-top:var(--hair) solid var(--surface-border)}
+.fpp-skeleton-glyph{width:36px;height:36px;flex:none;border-radius:9px;background:var(--surface-2)}
+.fpp-skeleton-copy{display:grid;gap:8px;flex:1}
+.fpp-skeleton-copy>span{display:block;height:10px;border-radius:4px;background:var(--surface-2);width:72%}
+.fpp-skeleton-copy>span+span{width:44%;height:8px}
+.fpp-action-feedback{display:flex;align-items:center;gap:8px;color:var(--label-2);font-size:13px;line-height:1.45;min-height:22px}
+.fpp-action-feedback[data-state=success]{color:var(--acc)}
+.fpp-action-feedback[data-state=error]{color:var(--red)}
+.fpp-action-feedback[data-state=warning]{color:var(--orange)}
+.fpp-spinner{display:inline-flex;width:19px;height:19px;color:var(--acc)}
+.fpp-spinner svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-dasharray:42 15;animation:fpp-spin 800ms linear infinite}
+@keyframes fpp-spin{to{transform:rotate(360deg)}}
+#toast.fpp-toast{display:flex;align-items:center;justify-content:center;gap:8px}
+#toast.fpp-toast[data-tone=error] .fpp-status-animation{color:var(--red)}
+#toast.fpp-toast[data-tone=success] .fpp-status-animation{color:var(--acc)}
+.fpp-quick-control{transition-duration:100ms}
+.fpp-quick,[data-action-intent=quick]{transition:transform 100ms cubic-bezier(.2,.8,.2,1),opacity 180ms cubic-bezier(.2,.8,.2,1)}
+.fpp-quick:active:not(:disabled),[data-action-intent=quick]:active:not(:disabled){transform:scale(.975)}
+.fpp-quick:focus-visible:active,[data-action-intent=quick]:focus-visible:active{transform:none}
+.fpp-quick-control .knob{transition:transform 180ms cubic-bezier(.2,.8,.2,1)}
+.fpp-quick-control[data-input=keyboard],.fpp-button[data-input=keyboard],.fpp-button[data-input=keyboard] *,.fpp-quick-control[data-input=keyboard] *{animation:none!important;transition:none!important}
+.fpp-button[data-input=keyboard]:active,.fpp-quick-control[data-input=keyboard]:active{transform:none}
+.sw.fpp-quick-control[data-input=keyboard]:active .knob{transform:none}
+.sw.fpp-quick-control.on[data-input=keyboard]:active .knob{transform:translateX(20px)}
+@media(prefers-reduced-motion:reduce){
+  .fpp-button,.fpp-button *,.fpp-progress *,.fpp-status-animation,.fpp-status-animation *,.fpp-spinner *,.fpp-quick-control,.fpp-quick-control *,.fpp-quick,[data-action-intent=quick]{animation:none!important;transition:none!important}
+  .fpp-button:active,.chk.fpp-quick-control:active,.fpp-quick:active,[data-action-intent=quick]:active{transform:none}
+  .sw.fpp-quick-control:active .knob{transform:none}
+  .sw.fpp-quick-control.on:active .knob{transform:translateX(20px)}
+  .fpp-energy-rail[data-indeterminate=true]>span,.fpp-progress[data-indeterminate=true] .fpp-progress-fill,.fpp-status-busy>span{transform:scaleX(.4);opacity:.5}
+}

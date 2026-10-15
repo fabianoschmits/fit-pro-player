@@ -10,6 +10,7 @@ import ManagementLayout from './ManagementLayout.jsx'
 import { ManagementPanel, ManagementAvatar } from './ManagementUI.jsx'
 import useStudentManagementRequest from './useStudentManagementRequest.js'
 import { studentVerificationLabel } from './StudentProfessionalVerification.jsx'
+import { FppSkeleton } from './FppFeedback.jsx'
 
 export default function StudentProfessionalInvite({ inviteCode }) {
   const auth = useAuth(); const [params] = useSearchParams()
@@ -38,15 +39,15 @@ function InviteWorkspace({ initialCode }) {
     setCode(value); setSubmitted(previous => ({ code: value, revision: previous.revision + 1 }))
   }
   const accept = async () => {
-    if (!preview || acceptancePending.current || !auth.user?.id || data.code !== code) return
+    if (!preview || acceptancePending.current || !auth.user?.id || data.code !== code) return false
     acceptancePending.current = true
     setAccepting(true); setActionError('')
     try {
       await withTimeout(repo.acceptInvite(data.code), 10000)
-      if (!alive.current) return
+      if (!alive.current) return false
       sessionStorage.removeItem('fpp-pending-invite')
       navigate('/student/professionals?invite=accepted', { replace: true })
-    } catch { if (alive.current) setActionError(t('Não foi possível aceitar este convite. Ele pode ter expirado ou já ter sido utilizado.')) }
+    } catch (cause) { if (alive.current) setActionError(t('Não foi possível aceitar este convite. Ele pode ter expirado ou já ter sido utilizado.')); throw cause }
     finally { acceptancePending.current = false; if (alive.current) setAccepting(false) }
   }
   return <ManagementLayout audience="student" className="student-invite-page" title={t('Adicionar profissional')} subtitle={t('Confira o perfil antes de aceitar o convite')} backTo="/student/professionals">
@@ -54,8 +55,8 @@ function InviteWorkspace({ initialCode }) {
     <ManagementPanel title={t('Código do convite')} description={t('Digite o código recebido e confira o perfil antes de vincular.')}>
       <form onSubmit={previewInvite} className="management-invite-form"><label htmlFor="student-invite-code">{t('Código do profissional')}</label><TextField id="student-invite-code" placeholder={t('Ex.: A1B2C3D4E5')} autoComplete="off" value={code} disabled={accepting || !auth.user?.id} onChange={event => { setCode(normalizeInviteCode(event.target.value)); setSubmitted({ code: '', revision: submitted.revision + 1 }); setActionError('') }} /><div className="row-actions"><Button type="submit" disabled={busy || accepting || !auth.user?.id}>{t('Continuar')}</Button><Link className="management-button" to="/student/professionals">{t('Cancelar')}</Link></div></form>
     </ManagementPanel>
-    {busy && <p role="status">{t('Consultando convite…')}</p>}
+    {busy && <FppSkeleton label={t('Consultando convite…')} rows={2} />}
     {!busy && data && !preview && data.code === code && <ManagementPanel title={t('Convite indisponível')}><p role="alert">{t('Convite inválido ou expirado.')}</p><p className="muted">{t('Peça um novo código ao profissional.')}</p></ManagementPanel>}
-    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" disabled={accepting || busy} onClick={accept}>{t(accepting ? 'Vinculando…' : 'Vincular a este profissional')}</Button></ManagementPanel>}
+    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" intent="primary" disabled={accepting || busy} onAction={accept} loadingLabel={t('Vinculando…')} errorLabel={t('Tentar novamente')}>{t('Vincular a este profissional')}</Button></ManagementPanel>}
   </ManagementLayout>
 }

@@ -8,13 +8,17 @@ const mocks = vi.hoisted(() => ({
   state: { S: { body: 'male', targetW: 70, unit: 'kg', profile: { name: 'Ana', avatarId: 'avatar-1', birthDate: '1990-01-01', sex: 'female', heightCm: 167, startWeight: 71, goal: 'lose_weight', experience: 'intermediate' }, bodyweight: [] } },
   update: vi.fn(), toast: vi.fn(),
 }))
-vi.mock('../store/useStore.js', () => ({ useStore: selector => selector({ ...mocks.state, update: mocks.update }) }))
+vi.mock('../store/useStore.js', () => {
+  const useStore = selector => selector({ ...mocks.state, update: mocks.update })
+  useStore.getState = () => mocks.state
+  return { useStore }
+})
 vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }))
 
 import PersonalData from './PersonalData.jsx'
 
 let root, container
-beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container); mocks.update.mockReset(); mocks.toast.mockReset() })
+beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container); mocks.update.mockReset(); mocks.toast.mockReset(); mocks.state.persistence = { state: 'saved' } })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 const render = () => act(async () => root.render(<MemoryRouter><PersonalData /></MemoryRouter>) )
 
@@ -34,7 +38,22 @@ it('saves only the edited personal field', async () => {
   await act(async () => { const input = field.querySelector('input'); input.value = 'Beatriz'; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })) })
   await act(async () => [...field.querySelectorAll('button')].find(button => button.textContent.includes('Salvar')).click())
   expect(mocks.update).toHaveBeenCalledTimes(1)
-  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso')
+  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso', { tone: 'success' })
+})
+
+it('keeps a failed local profile save editable and reports error without a success toast', async () => {
+  mocks.update.mockImplementation(() => { mocks.state.persistence = { state: 'error' } })
+  await render()
+  const field = container.querySelector('[data-profile-field="name"]')
+  await act(async () => field.querySelector('.personal-edit').click())
+  await act(async () => field.querySelector('.personal-save').click())
+  expect(field.querySelector('input').disabled).toBe(false)
+  expect(field.querySelector('[data-state="error"]')).not.toBeNull()
+  expect(mocks.toast).not.toHaveBeenCalled()
+  mocks.update.mockImplementation(() => { mocks.state.persistence = { state: 'saved' } })
+  await act(async () => field.querySelector('.personal-save').click())
+  expect(field.querySelector('input').disabled).toBe(true)
+  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso', { tone: 'success' })
 })
 
 it('keeps the birth date controls disabled until editing is activated', async () => {

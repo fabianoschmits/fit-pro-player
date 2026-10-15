@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import { t } from '../lib/i18n.js'
+import { FppSkeleton } from '../components/FppFeedback.jsx'
 import { professionalDate } from '../lib/professional-ux.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from '../lib/assigned-program.js'
 import { useStore } from '../store/useStore.js'
@@ -67,7 +68,7 @@ function ProfessionalsOverview() {
   }
   return <ManagementLayout audience="student" className="student-professionals-page" title={t('Meus profissionais')} subtitle={t('Pessoas que acompanham seu treino')} backTo="/more" action={<Link className="management-button management-button-primary" to="/student/professionals/add">{t('Adicionar profissional')}</Link>}>
     {error && <p role="alert" className="management-error">{error} <Button onClick={refresh}>{t('Tentar novamente')}</Button></p>}
-    {busy ? <p role="status">{t('Carregando…')}</p> : data && <>
+    {busy ? <FppSkeleton label={t('Carregando…')} /> : data && <>
       {data.overview.program ? <StudentProgramOverview overview={data.overview} onStart={start} managementCompact trainingTo={`/student/professionals/${data.active.professional_user_id}?section=training`} /> : <ManagementPanel title={t('Programa profissional')}><p className="muted">{t('Você ainda não recebeu um programa ativo.')}</p></ManagementPanel>}
       <ManagementPanel title={t('Profissionais vinculados ({0})', data.professionals.length)}>{data.professionals.length ? <div className="management-person-list">{data.professionals.map(person => <Link className="management-person-link" to={`/student/professionals/${person.professionalId}`} key={person.professionalId}>
         <ManagementAvatar name={person.professionalName} /><div><h3>{person.professionalName}</h3>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}<p>{person.activeProgramTitle || t('Sem programa ativo')}</p><small className="muted">{t('Desde {0}', professionalDate(person.linkedAt))}</small></div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus>

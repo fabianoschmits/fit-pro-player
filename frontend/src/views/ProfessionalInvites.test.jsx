@@ -16,9 +16,42 @@ function CurrentLocation() { return <output data-location>{useLocation().search}
 
 let dom, root, container
 beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = new Window({ url: 'https://app.example/#/professional/invites' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
-afterEach(async () => { await act(async () => root.unmount()); dom.close() })
+afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); dom.close() })
 
 describe('professional invites page', () => {
+  it('does not confirm a failed copy and clears the failure after a successful retry', async () => {
+    vi.stubGlobal('navigator', { clipboard: null })
+    document.execCommand = vi.fn().mockReturnValueOnce(false).mockReturnValue(true)
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/invites']}><ProfessionalInvites /></MemoryRouter>))
+    const action = [...container.querySelectorAll('button')].find(button => button.textContent === 'Copiar código')
+    await act(async () => action.click())
+    expect(action.getAttribute('data-state')).toBe('error')
+    expect(container.textContent).not.toContain('Código copiado.')
+    expect(container.querySelector('[role="alert"]').textContent).toContain('Não foi possível compartilhar')
+    expect(document.querySelector('textarea')).toBeNull()
+    await act(async () => action.click())
+    expect(action.getAttribute('data-state')).toBe('success')
+    expect(container.querySelector('[role="alert"]')).toBeNull()
+    expect(container.textContent).toContain('Código copiado.')
+  })
+
+  it('locks creation immediately and offers local retry after a failed creation', async () => {
+    let fail
+    mocks.repo.createInvite.mockImplementationOnce(() => new Promise((_, reject) => { fail = reject }))
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/invites?section=create']}><ProfessionalInvites /></MemoryRouter>))
+    const action = container.querySelector('.row-actions button')
+    await act(async () => { action.click(); action.click() })
+    expect(mocks.repo.createInvite).toHaveBeenCalledTimes(1)
+    expect(action.getAttribute('aria-busy')).toBe('true')
+    await act(async () => fail(new Error('offline')))
+    expect(action.getAttribute('data-state')).toBe('error')
+    expect(action.disabled).toBe(false)
+    expect(container.querySelector('[role="alert"]').textContent).toContain('Não foi possível criar o convite.')
+    await act(async () => action.click())
+    expect(mocks.repo.createInvite).toHaveBeenCalledTimes(2)
+    expect(container.textContent).toContain('ZX98YU76')
+  })
+
   it('keeps the invitation list open when a pending creation finishes after Cancel', async () => {
     let finishCreation
     mocks.repo.createInvite.mockImplementationOnce(() => new Promise(resolve => { finishCreation = resolve }))

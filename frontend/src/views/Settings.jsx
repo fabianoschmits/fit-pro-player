@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -14,13 +14,15 @@ import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
 import { MAX_BACKUP_BYTES, validateBackup } from '../lib/backup-state.js'
 import TipOnce from '../components/TipOnce.jsx'
 import Icon from '../components/Icon.jsx'
-import { Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
+import { Button, Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import OfflineControls from '../components/OfflineControls.jsx'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 import NotificationSettings from '../components/NotificationSettings.jsx'
+import { FppActionFeedback, FppStatusAnimation } from '../components/FppFeedback.jsx'
+import { useFppAction } from '../components/useFppAction.js'
 
 export default function Settings() {
   const nav = useNavigate()
@@ -38,13 +40,25 @@ export default function Settings() {
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
   const importRef = useRef(null)
+  const readerRef = useRef(null)
+  const [importState, setImportState] = useState('idle')
+  const [importError, setImportError] = useState('')
+  const exportAction = useFppAction({ onAction: () => doExport(), onError: () => toast(t('Could not export the backup'), { tone: 'error' }) })
   const wakeOK = wakeLockSupported()
   const supabaseConfigured = auth.configured
+  useEffect(() => () => {
+    const reader = readerRef.current
+    if (reader) { reader.onload = null; reader.onerror = null; reader.onabort = null; if (reader.readyState === 1) reader.abort() }
+  }, [])
 
   const openManualSync = async () => {
-    if (auth.status !== 'authenticated' || !auth.user?.id || syncBusy) return
+    if (auth.status !== 'authenticated' || !auth.user?.id || syncBusy) return false
     setSyncBusy(true)
-    try { await useStore.getState().syncAccount(getBrowserSupabaseClient()) }
+    try {
+      const result = await useStore.getState().syncAccount(getBrowserSupabaseClient())
+      if (result?.state === 'ERROR') throw new Error(t('Could not finish sync. Your copies were preserved.'))
+      if (['CONFLICT', 'OFFLINE', 'IDLE'].includes(result?.state)) return false
+    }
     finally { setSyncBusy(false) }
   }
   const resolveConflict = choice => confirmSheet({
@@ -55,13 +69,15 @@ export default function Settings() {
       setSyncBusy(true)
       try {
         const ok = await useStore.getState().resolveSyncConflict(choice, getBrowserSupabaseClient())
-        toast(ok ? t('Sync updated') : t('Could not finish sync. Your copies were preserved.'))
+        if (!ok) throw new Error(t('Could not finish sync. Your copies were preserved.'))
+        toast(t('Sync updated'), { tone: 'success' })
       } finally { setSyncBusy(false) }
     },
   })
   const exportConflict = async kind => {
     const state = useStore.getState().getSyncCopy(kind)
-    if (state) await doExport(state, kind)
+    if (!state) return false
+    return doExport(state, kind)
   }
 
   const doExport = async (state = S, suffix = '') => {
@@ -69,32 +85,39 @@ export default function Settings() {
     const name = 'fitproplayer-backup-' + todayISO() + (suffix ? '-' + suffix : '') + '.json'
     // WKWebView can't download blob URLs — the native build hands the file to the share sheet.
     if (MOBILE) {
-      try { await shareExport(json, name); toast(t('Backup exported')) } catch { toast(t('Could not export the backup')) }
+      try { await shareExport(json, name); toast(t('Backup exported'), { tone: 'success' }) }
+      catch (error) { if (error?.name === 'AbortError') return false; throw error }
       return
     }
     const blob = new Blob([json], { type: 'application/json' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click()
     window.setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-    toast(t('Backup exported'))
+    toast(t('Backup exported'), { tone: 'success' })
   }
   const doImport = ev => {
     const f = ev.target.files[0]; ev.target.value = ''; if (!f) return
+    if (readerRef.current?.readyState === 1) return
     const token = useStore.getState().getScopeToken()
     if (f.size > MAX_BACKUP_BYTES) { toast(t('Import failed: {0}', 'file is larger than 5 MB')); return }
     const rd = new FileReader()
+    readerRef.current = rd
+    setImportState('processing'); setImportError('')
     rd.onload = () => {
+      setImportState('idle')
       if (!useStore.getState().isScopeCurrent(token)) return
       try {
         const data = validateBackup(JSON.parse(rd.result))
         confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => {
-          if (!useStore.getState().isScopeCurrent(token)) return
+          if (!useStore.getState().isScopeCurrent(token)) return false
           const saved = replaceState(data, true)
-          toast(saved ? t('Backup imported') : t('Could not save on this device. Export a backup before closing the app.'))
+          if (!saved) throw new Error(t('Could not save on this device. Export a backup before closing the app.'))
+          toast(t('Backup imported'), { tone: 'success' })
         } })
-      } catch (e) { toast(t('Import failed: {0}', e.message)) }
+      } catch (e) { setImportState('error'); setImportError(t('Import failed: {0}', e.message)) }
     }
-    rd.onerror = () => toast(t('Could not read that file'))
-    rd.readAsText(f)
+    rd.onerror = () => { setImportState('error'); setImportError(t('Could not read that file')) }
+    rd.onabort = () => setImportState('idle')
+    try { rd.readAsText(f) } catch { rd.onerror() }
   }
 
   return <div className="narrow settings-page">
@@ -109,15 +132,16 @@ export default function Settings() {
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
       </> : auth.status === 'authenticated' ? <>
         <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
-        <Row icon="shuffle" iconTint="var(--blue)" title={t('Account sync')} subtitle={t('Sync automatically or retry now. Conflicts keep both copies.')}
-          accessory="chevron" onClick={openManualSync} />
+        <Row icon="shuffle" iconTint="var(--blue)" title={t('Account sync')} subtitle={t('Sync automatically or retry now. Conflicts keep both copies.')}>
+          <Button size="sm" onAction={openManualSync} loadingLabel={t('Syncing…')} successLabel={t('Sync updated')}>{t('Sync now')}</Button>
+        </Row>
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
           title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
           confirmText: t('Sign out'), danger: true,
           onConfirm: async () => {
             const result = await auth.signOut()
             if (result.kind === 'success') nav('/home')
-            else toast(t('Could not sync your data — you are still signed in.'))
+            else { toast(t('Could not sync your data — you are still signed in.'), { tone: 'error' }); return false }
           },
         })} />
       </> : supabaseConfigured ? <>
@@ -136,8 +160,8 @@ export default function Settings() {
             <button className="btn" disabled={syncBusy || !accountSync.conflict?.remote} onClick={() => resolveConflict('cloud')}>{t('Use cloud copy')}</button>
           </div>
           <div className="btn-row">
-            <button className="btn ghost" onClick={() => exportConflict('local')}>{t('Export device copy')}</button>
-            <button className="btn ghost" disabled={!accountSync.conflict?.remote} onClick={() => exportConflict('cloud')}>{t('Export cloud copy')}</button>
+            <Button variant="ghost" onAction={() => exportConflict('local')} successLabel={t('Backup exported')}>{t('Export device copy')}</Button>
+            <Button variant="ghost" disabled={!accountSync.conflict?.remote} onAction={() => exportConflict('cloud')} successLabel={t('Backup exported')}>{t('Export cloud copy')}</Button>
           </div>
         </>}
         {persistence.state === 'error' && <button className="btn" onClick={() => useStore.getState().flushPersistence()}>{t('Retry saving')}</button>}
@@ -241,7 +265,12 @@ export default function Settings() {
         subtitle={t('FitNotes, Strong, Hevy — or body weight from Apple Health')}
         accessory="chevron" onClick={() => importRef.current.click()} />
       <Row icon="upload" iconTint="var(--blue)" title={t('Import backup')} accessory="chevron" onClick={() => fileRef.current.click()} />
-      <Row icon="download" iconTint="var(--blue)" title={t('Export backup (JSON)')} accessory="chevron" onClick={() => doExport()} />
+      {importState !== 'idle' && <FppActionFeedback state={importState}>{importError || t('Loading…')}</FppActionFeedback>}
+      <Row icon="download" iconTint="var(--blue)" title={t('Export backup (JSON)')} accessory="chevron" onClick={exportAction.run}
+        disabled={exportAction.locked} aria-busy={exportAction.busy || undefined} data-state={exportAction.state} aria-live="polite"
+        value={exportAction.visualState === 'loading' ? t('Loading…') : exportAction.state === 'success' ? t('Backup exported') : exportAction.state === 'error' ? t('Try again') : null}>
+        <FppStatusAnimation state={exportAction.visualState} />
+      </Row>
       <Row icon="trash" iconTint="var(--red)" title={t('Clear data on this device')} danger onClick={() => confirmSheet({
         title: t('Clear data on this device?'),
         message: t('Deletes your plan, workouts and body weight on this device. This cannot be undone.'),
@@ -250,7 +279,7 @@ export default function Settings() {
         onConfirm: async () => {
           if (auth.status === 'authenticated' && useStore.getState?.().getActiveLocalScope?.()?.userId !== auth.user.id) return
           const cleared = auth.status === 'authenticated' ? clearLocalScope(auth.user.id) : clearAnonymousState?.()
-          if (cleared === false) { toast(t('Could not clear device data. Please try again.')); return }
+          if (cleared === false) throw new Error(t('Could not clear device data. Please try again.'))
           await useStore.getState?.().flushPersistence?.()
           leaveApp?.()
           nav('/')
@@ -264,7 +293,7 @@ export default function Settings() {
           const accountId = auth.user.id
           if (useStore.getState?.().getActiveLocalScope?.()?.userId !== accountId) return
           const result = await auth.deleteAccount()
-          if (result.kind !== 'success') { toast(t('Could not delete your account. Please try again.')); return }
+          if (result.kind !== 'success') { toast(t('Could not delete your account. Please try again.'), { tone: 'error' }); return false }
           clearLocalScope(accountId)
           await useStore.getState?.().flushPersistence?.()
           leaveApp?.(); nav('/'); toast(t('Account deleted'))

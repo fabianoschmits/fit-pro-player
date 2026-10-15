@@ -13,12 +13,30 @@ import StudentProfessionalDetail from './StudentProfessionalDetail.jsx'
 import { assignedPlanToState } from '../lib/assigned-program.js'
 const detail = id => ({ professional: { professionalId: id, professionalName: id === 'p1' ? 'Ana Silva' : 'João Reis', specialties: ['Força'], bio: 'Acompanhamento', cityRegion: 'São Paulo', registrationType: 'CREF', registrationNumber: '123' }, relationship: { id: `r-${id}`, status: 'active', linkedAt: '2026-09-01' }, materials: [{ assignmentId: `a-${id}`, title: `Programa ${id}`, status: 'replaced', versionNumber: 1, weeklyPlan: { monday: [{ exerciseId: 'squat', sets: 3, reps: 10 }] } }], executions: [{ id: 'e1', day_key: 'monday', status: 'completed', started_at: '2026-10-01', payload: {} }] })
 let root, container
-beforeEach(() => { vi.clearAllMocks(); mocks.auth = { status: 'authenticated', user: { id: 's1' } }; mocks.scopeToken = { scope: { kind: 'account', userId: 's1' }, generation: 1 }; mocks.state = {}; mocks.replace.mockImplementation(value => { mocks.state = value }); mocks.repo.studentProfessionalDetail.mockImplementation(id => Promise.resolve(detail(id))); mocks.repo.revokeRelationship.mockResolvedValue({}); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
+beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; vi.clearAllMocks(); mocks.auth = { status: 'authenticated', user: { id: 's1' } }; mocks.scopeToken = { scope: { kind: 'account', userId: 's1' }, generation: 1 }; mocks.state = {}; mocks.replace.mockImplementation(value => { mocks.state = value }); mocks.repo.studentProfessionalDetail.mockImplementation(id => Promise.resolve(detail(id))); mocks.repo.revokeRelationship.mockResolvedValue({}); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 function CurrentRoute() { const location = useLocation(); return <span data-route>{location.pathname}{location.search}</span> }
 const render = async path => act(async () => root.render(<MemoryRouter initialEntries={[path]}><CurrentRoute /><Link to="/student/professionals/p2?section=training">Select João</Link><Routes><Route path="/student/professionals/:professionalId" element={<StudentProfessionalDetail />} /><Route path="/student/professionals/materials" element={<p>Materials destination</p>} /><Route path="/student/professionals" element={<p>Overview destination</p>} /></Routes></MemoryRouter>))
 it('opens the history section directly with the recent window and comparison', async () => { await render('/student/professionals/p1?section=history'); expect(container.querySelector('a[aria-current="page"][href$="?section=history"]')).not.toBeNull(); expect(container.textContent).toContain('Até 100 execuções recentes'); expect(container.textContent).toContain('Prescrito'); expect(container.textContent).toContain('Realizado') })
 it('requires explicit confirmation to end a relationship', async () => { await render('/student/professionals/p1?section=relationship'); await act(async () => [...container.querySelectorAll('button')].find(x => x.textContent === 'Desvincular').click()); expect(mocks.repo.revokeRelationship).not.toHaveBeenCalled(); expect(container.textContent).toContain('Desvincular este profissional?'); await act(async () => [...container.querySelectorAll('button')].find(x => x.textContent === 'Confirmar').click()); expect(mocks.repo.revokeRelationship).toHaveBeenCalledWith('r-p1'); expect(container.textContent).toContain('Overview destination') })
+it('keeps a failed unlink on its confirmation action and retries without reconciling local data early', async () => {
+  let fail
+  mocks.repo.revokeRelationship.mockImplementationOnce(() => new Promise((_, reject) => { fail = reject }))
+  await render('/student/professionals/p1?section=relationship')
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Desvincular').click())
+  const confirm = container.querySelector('.danger-confirm .btn.danger')
+  await act(async () => { confirm.click(); confirm.click() })
+  expect(mocks.repo.revokeRelationship).toHaveBeenCalledTimes(1)
+  expect(confirm.getAttribute('aria-busy')).toBe('true')
+  await act(async () => fail(new Error('offline')))
+  expect(confirm.getAttribute('data-state')).toBe('error')
+  expect(confirm.disabled).toBe(false)
+  expect(mocks.replace).not.toHaveBeenCalled()
+  expect(container.textContent).not.toContain('Overview destination')
+  await act(async () => confirm.click())
+  expect(mocks.repo.revokeRelationship).toHaveBeenCalledTimes(2)
+  expect(container.textContent).toContain('Overview destination')
+})
 it('does not start or synchronize a historical material', async () => { await render('/student/professionals/p1?section=training&material=a-p1'); expect(container.textContent).toContain('Programa p1'); expect([...container.querySelectorAll('button')].some(x => x.textContent === 'Iniciar')).toBe(false); expect(mocks.replace).not.toHaveBeenCalled(); expect(mocks.start).not.toHaveBeenCalled() })
 it('clears an earlier professional while the selected person is loading', async () => { await render('/student/professionals/p1?section=training'); let resolve; mocks.repo.studentProfessionalDetail.mockReturnValueOnce(new Promise(r => { resolve = r })); await act(async () => [...container.querySelectorAll('a')].find(x => x.textContent === 'Select João').click()); expect(container.textContent).not.toContain('Programa p1'); await act(async () => resolve(detail('p2'))); expect(container.textContent).toContain('João Reis'); expect(container.textContent).toContain('Programa p2'); expect(container.textContent).not.toContain('Programa p1') })
 it('offers retry and return on selected-person failure', async () => { mocks.repo.studentProfessionalDetail.mockRejectedValue(new Error('offline')); await render('/student/professionals/p1'); expect(container.textContent).toContain('Não foi possível carregar este profissional.'); expect(container.textContent).toContain('Voltar para meus profissionais'); expect(container.textContent).toContain('Tentar novamente') })

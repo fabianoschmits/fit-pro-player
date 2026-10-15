@@ -144,6 +144,7 @@ describe('notification settings center', () => {
     expect(mocks.disable).toHaveBeenCalledTimes(1)
     mocks.status.busy = true
     await render()
-    expect(button('Updating…').disabled).toBe(true)
+    expect(container.querySelector('.notification-device-action').disabled).toBe(true)
+    expect(container.querySelector('.notification-device-action').getAttribute('aria-busy')).toBe('true')
   })
 })

@@ -2,6 +2,7 @@ import { useUI } from '../store/useUI.js'
 import { t } from '../lib/i18n.js'
 import { Button } from './ui.jsx'
 import Icon from './Icon.jsx'
+import { FppProgress, FppStatusAnimation } from './FppFeedback.jsx'
 
 const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0')
 
@@ -16,7 +17,6 @@ export default function WorkSetOverlay({ entryIdx }) {
   const isDone = phase === 'done'
   const left = isRest ? work.restLeft : work.left
   const total = isRest ? work.restTotal : work.total
-  const pct = total ? (left / total) * 100 : 0
 
   // 'done' phase: set just finished, overlay stays open
   if (isDone) {
@@ -26,7 +26,7 @@ export default function WorkSetOverlay({ entryIdx }) {
         <button type="button" className="work-set-overlay__backdrop" aria-label={t('Close')} onClick={stopWork} />
         <div className="work-set-overlay__card is-done">
           <div className="work-set-overlay__done-icon">
-            <Icon name="check" />
+            <FppStatusAnimation state="success" />
           </div>
           <div className="work-set-overlay__done-title">
             {hasNext ? t('Set complete!') : t('Exercise done!')}
@@ -67,13 +67,13 @@ export default function WorkSetOverlay({ entryIdx }) {
             {work.label && <div className="work-set-overlay__label">{work.label}</div>}
           </>
         )}
-        <div className="work-set-overlay__bar" aria-hidden="true">
-          <i style={{ '--progress': isRest ? 1 - pct / 100 : pct / 100 }} />
+        <div className="work-set-overlay__bar">
+          <FppProgress value={isRest ? total - left : left} max={total} label={t(isRest ? 'Rest now' : 'Hold it!')} aria-valuetext={clock(left)} style={{ height: '100%' }} />
         </div>
         <div className="work-set-overlay__actions">
           {isRest ? (
             <>
-              <Button variant="ghost" onClick={skipWorkRest}>{t('Skip rest')}</Button>
+              <Button variant="ghost" intent="quick" onClick={skipWorkRest}>{t('Skip rest')}</Button>
             </>
           ) : (
             <>

@@ -186,7 +186,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
     )}
     {/* Collapsed completion banner */}
     {allDone && (
-      <button className="ex-done-banner" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? t('Expand sets') : t('Collapse')} aria-expanded={!collapsed}>
+      <button className="ex-done-banner" data-action-intent="quick" onClick={() => setCollapsed(value => !value)} aria-label={collapsed ? t('Expand sets') : t('Collapse')} aria-expanded={!collapsed}>
         <span className="ex-done-banner__icon"><Icon name="check" /></span>
         <span className="ex-done-banner__label">{t('Exercise complete')} · {entry.sets.length} {entry.sets.length === 1 ? t('set') : t('sets')}</span>
         <span className="ex-done-banner__expand"><Icon name={collapsed ? 'expand' : 'minimize'} /></span>
@@ -221,7 +221,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
           return <div key={i}>
             {isFirstWarmup && <div className="setph">{t('Warm-up')}</div>}
             {!warm && warmBefore && <div className="setsep" />}
-            {ready && <button type="button" className="set-start-action" aria-label={`${t('Start set')} ${phaseNum}`}
+            {ready && <button type="button" className="set-start-action" data-action-intent="quick" aria-label={`${t('Start set')} ${phaseNum}`}
               onClick={() => timed ? onStartTimed(i) : useUI.getState().startManualSet(`${S.active.id}:${S.active.start}`, entryIdx, i)}>
               <Icon name="play" /><span>{t('Start set')} {phaseNum}</span>
             </button>}
@@ -232,7 +232,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
               {col3 && cell(s, i, col3, 'eff')}
               {s.done ? <Check checked onChange={() => onToggle(i)} playMode disabled={locked || anyRunning}
                 className="set-action" ariaLabel={`${warm ? t('Warm-up') : t('Sets')} ${phaseNum}: ${t('Done')}`} />
-                : <button type="button" className={'chk play-mode set-action' + (executing ? ' is-executing' : currentField && resting ? ' is-resting' : '')}
+                : <button type="button" data-action-intent="quick" className={'chk play-mode set-action' + (executing ? ' is-executing' : currentField && resting ? ' is-resting' : '')}
                   disabled={!executing} aria-describedby={showHint ? hintId : undefined}
                   aria-label={`${executing ? t('Stop set') : t('Start set')} ${phaseNum}`}
                   onClick={() => timedRunning ? useUI.getState().finishWorkEarly() : onToggle(i)}>

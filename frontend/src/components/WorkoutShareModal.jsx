@@ -12,6 +12,7 @@ import '../workout-themes.css'
 import '../workout-share-layouts.css'
 import { LayoutDashboard as ShareCardLayout } from './WorkoutShareLayouts.jsx'
 import { shareWorkoutImage } from '../lib/workout-share.js'
+import { FppActionFeedback } from './FppFeedback.jsx'
 
 // The Dashboard layout is the default "gamer card" layout
 function LayoutDashboard({ w, st, innerRef, themeId }) {
@@ -134,7 +135,10 @@ function WorkoutStoryPreview({ w, st, innerRef, themeId }) {
 export function WorkoutShareModal({ w, onClose }) {
   const st = useStore(s => s.S)
   const [generating, setGenerating] = useState(false)
+  const [phase, setPhase] = useState('generating')
+  const [shareOutcomes, setShareOutcomes] = useState({ share: 'shared', more: 'shared' })
   const [error, setError] = useState(null)
+  const operation = useRef(false)
   const canvasRef = useRef(null)   // points to .workout-story-canvas (1080×1920)
   const outerRef = useRef(null)    // points to the visible scaler container
 
@@ -154,15 +158,13 @@ export function WorkoutShareModal({ w, onClose }) {
 
   // ── Generate PNG ─────────────────────────────────────────────────────────
   const generateImage = async () => {
-    if (!canvasRef.current) return null
-    setError(null)
-    setGenerating(true)
+    const canvas = canvasRef.current
+    if (!canvas) return null
 
     // html-to-image clones the node. Make every async resource ready first;
     // otherwise the clone can contain the fallback silhouette and omit the logo.
-    await new Promise(r => setTimeout(r, 400))
     await document.fonts?.ready
-    const images = [...canvasRef.current.querySelectorAll('img')]
+    const images = [...canvas.querySelectorAll('img')]
     await Promise.all(images.map(image => {
       if (!image.complete) return new Promise(resolve => {
         image.addEventListener('load', resolve, { once: true })
@@ -173,30 +175,21 @@ export function WorkoutShareModal({ w, onClose }) {
     await new Promise(resolve => {
       const started = performance.now()
       const check = () => {
-        const paths = canvasRef.current.querySelectorAll('.share-card-map svg path')
+        const paths = canvas.querySelectorAll('.share-card-map svg path')
         if (paths.length || performance.now() - started > 2000) return resolve()
         requestAnimationFrame(check)
       }
       check()
     })
 
-    try {
-      const dataUrl = await toPng(canvasRef.current, {
-        width: 1080,
-        height: 1920,
-        pixelRatio: 1,
-        cacheBust: true,
-        style: { transform: 'none', transformOrigin: 'top left' },
-        includeQueryParams: true,
-      })
-      return dataUrl
-    } catch (err) {
-      console.error('[share] toPng error:', err)
-      setError(t('Não foi possível gerar a imagem. Tente novamente.'))
-      return null
-    } finally {
-      setGenerating(false)
-    }
+    return toPng(canvas, {
+      width: 1080,
+      height: 1920,
+      pixelRatio: 1,
+      cacheBust: true,
+      style: { transform: 'none', transformOrigin: 'top left' },
+      includeQueryParams: true,
+    })
   }
 
   // ── Save to device ────────────────────────────────────────────────────────
@@ -225,17 +218,30 @@ export function WorkoutShareModal({ w, onClose }) {
   }
 
   const onShare = async (platform) => {
-    const dataUrl = await generateImage()
-    if (!dataUrl) return
-    if (platform === 'save') saveToDevice(dataUrl)
-    else {
-      try {
-        await shareNative(dataUrl)
-      } catch (e) {
-        if (e?.name === 'AbortError') return
-        console.error('[share] failed:', e)
-        setError(t('Não foi possível abrir o compartilhamento. Tente novamente.'))
+    if (operation.current || !canvasRef.current) return false
+    operation.current = true
+    setGenerating(true)
+    setPhase('generating')
+    setError(null)
+    let sharing = false
+    try {
+      const dataUrl = await generateImage()
+      if (!dataUrl) return false
+      if (platform === 'save') saveToDevice(dataUrl)
+      else {
+        sharing = true
+        setPhase('sharing')
+        const result = await shareNative(dataUrl)
+        setShareOutcomes(current => ({ ...current, [platform]: result?.method === 'download' ? 'saved' : 'shared' }))
       }
+      return true
+    } catch (e) {
+      if (e?.name === 'AbortError') return false
+      setError(t(sharing ? 'Não foi possível abrir o compartilhamento. Tente novamente.' : 'Não foi possível gerar a imagem. Tente novamente.'))
+      throw e
+    } finally {
+      operation.current = false
+      setGenerating(false)
     }
   }
 
@@ -256,30 +262,36 @@ export function WorkoutShareModal({ w, onClose }) {
 
       {/* Error */}
       {error && (
-        <p className="workout-share-error">{error}</p>
+        <FppActionFeedback state="error" className="workout-share-error">{error}</FppActionFeedback>
       )}
 
       {/* Pinned action buttons */}
       <div className="workout-share-actions">
         <Button
           variant="primary"
-          onClick={() => onShare('share')}
+          onAction={() => onShare('share')}
+          loadingLabel={t(phase === 'sharing' ? 'Compartilhando…' : 'Gerando imagem...')}
+          successLabel={t(shareOutcomes.share === 'saved' ? 'Imagem salva' : 'Compartilhado')}
           disabled={generating}
           className="share-btn-ig"
         >
-          {generating ? t('Gerando imagem...') : t('Compartilhar imagem')}
+          {t('Compartilhar imagem')}
         </Button>
         <div className="workout-share-row">
           <Button
             variant="secondary"
-            onClick={() => onShare('save')}
+            onAction={() => onShare('save')}
+            loadingLabel={t('Gerando imagem...')}
+            successLabel={t('Imagem salva')}
             disabled={generating}
           >
             {t('Baixar PNG')}
           </Button>
           <Button
             variant="ghost"
-            onClick={() => onShare('share')}
+            onAction={() => onShare('more')}
+            loadingLabel={t(phase === 'sharing' ? 'Compartilhando…' : 'Gerando imagem...')}
+            successLabel={t(shareOutcomes.more === 'saved' ? 'Imagem salva' : 'Compartilhado')}
             disabled={generating}
           >
             {t('Mais opções')}

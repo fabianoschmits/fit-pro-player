@@ -34,21 +34,132 @@ import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import { enqueueProfessionalEvent, flushProfessionalEvents } from './lib/professional-events.js'
 import { assignedSessionEntries } from './lib/assigned-program.js'
 import { WorkoutShareModal } from './components/WorkoutShareModal.jsx'
+import { FppActionFeedback, FppStatusAnimation } from './components/FppFeedback.jsx'
 
 const S = () => useStore.getState().S
 const update = (...a) => useStore.getState().update(...a)
 const ui = () => useUI.getState()
 const toast = m => ui().toast(m)
 const snd = () => S().sound
+const requireLocalSave = () => {
+  if (useStore.getState().persistence?.state === 'error') throw new Error(t('Não foi possível salvar neste dispositivo. Tente novamente.'))
+}
+const flushLocalSave = async () => {
+  if (!(await useStore.getState().flushPersistence())) throw new Error(t('Não foi possível salvar neste dispositivo. Tente novamente.'))
+}
+
+// A local mutation can reach memory while its disk write fails. Keep its
+// continuation until a retry saves that state; never apply the mutation twice.
+function useLocalSheetSave(sheetId) {
+  const locked = useRef(false)
+  const pending = useRef(null)
+  const [needsPersistence, setNeedsPersistence] = useState(false)
+  const [error, setError] = useState('')
+  const mounted = useRef(true)
+  const scopeToken = useRef(useStore.getState().getScopeToken?.())
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false; pending.current = null }
+  }, [])
+  const isLive = () => {
+    const store = useStore.getState()
+    const scopeOk = !scopeToken.current || !store.isScopeCurrent || store.isScopeCurrent(scopeToken.current)
+    const sheetOk = !sheetId || useUI.getState().sheets.some(sheet => sheet.id === sheetId)
+    return mounted.current && scopeOk && sheetOk
+  }
+  const run = (mutate, complete) => {
+    if (locked.current) return false
+    locked.current = true
+    setError('')
+    if (pending.current) {
+      if (!isLive()) { pending.current = null; locked.current = false; return false }
+      return flushLocalSave().then(() => {
+        if (!isLive()) { pending.current = null; locked.current = false; return false }
+        const finish = pending.current
+        pending.current = null
+        finish()
+        return true
+      }).catch(failure => { locked.current = false; throw failure })
+    }
+    try {
+      const value = mutate?.()
+      if (value === false || !mutate) { locked.current = false; return false }
+      const finish = () => { if (isLive()) complete?.(value) }
+      if (useStore.getState().persistence?.state === 'error') {
+        pending.current = finish
+        setNeedsPersistence(true)
+        requireLocalSave()
+      }
+      // On the native build the WebView mirror is the durable copy. Await the
+      // real write before announcing success, while keeping the same retry path
+      // if that write fails after the in-memory mutation.
+      if (MOBILE) {
+        return flushLocalSave().then(() => {
+          if (!isLive()) return false
+          finish()
+          return true
+        }).catch(failure => {
+          pending.current = finish
+          setNeedsPersistence(true)
+          locked.current = false
+          throw failure
+        })
+      }
+      finish()
+      return true
+    } catch (failure) { locked.current = false; throw failure }
+  }
+  return { run, retry: () => run(), needsPersistence, error, onError: () => setError(t('Não foi possível salvar neste dispositivo. Tente novamente.')) }
+}
 
 /* ============================ custom confirm dialog ============================ */
 function ConfirmDialog({ title, message, confirmText, cancelText, danger, onConfirm, close }) {
+  const inFlight = useRef(false)
+  const retryPersistence = useRef(false)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const confirm = () => {
+    if (inFlight.current) return false
+    inFlight.current = true
+    setError('')
+    const before = S()
+    let completed = false
+    let asynchronous = false
+    const finish = result => {
+      if (result === false) return false
+      if (S() !== before && useStore.getState().persistence?.state === 'error') {
+        // The mutation already reached memory. Retry durability without
+        // deleting a second item or replaying an external request.
+        retryPersistence.current = true
+        requireLocalSave()
+      }
+      completed = true
+      close()
+      return result
+    }
+    const release = () => {
+      if (!completed) { inFlight.current = false; setPending(false) }
+    }
+    try {
+      const result = retryPersistence.current ? flushLocalSave() : onConfirm?.()
+      if (result && typeof result.then === 'function') {
+        asynchronous = true
+        setPending(true)
+        return Promise.resolve(result).then(finish).finally(release)
+      }
+      return finish(result)
+    } finally {
+      if (!asynchronous) release()
+    }
+  }
   return <div style={{ textAlign: 'center', padding: '4px 0' }}>
     {title && <h3 style={{ marginBottom: 8 }}>{title}</h3>}
     <div className="muted" style={{ marginBottom: 18, lineHeight: 1.5 }}>{message}</div>
-    <button className={'btn ' + (danger ? 'danger' : 'primary')} onClick={() => { close(); onConfirm && onConfirm() }}>{confirmText || t('Confirm')}</button>
+    {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
+    <Button variant={danger ? 'danger' : 'primary'} intent={danger ? 'critical' : 'primary'} disabled={pending} onAction={confirm}
+      loadingLabel={t('Processando…')} onError={() => setError(t('Não foi possível concluir a ação. Tente novamente.'))}>{confirmText || t('Confirm')}</Button>
     <div style={{ height: 8 }} />
-    <Button variant="ghost" className="dim" onClick={close}>{cancelText || t('Cancel')}</Button>
+    <Button variant="ghost" className="dim" disabled={pending} onClick={close}>{cancelText || t('Cancel')}</Button>
   </div>
 }
 // Themed replacement for window.confirm — callback-based (no blocking).
@@ -100,8 +211,9 @@ function WeightInput({ value, setValue, unit }) {
 }
 
 /* ============================ body weight ============================ */
-function BwSheet({ required, onDone, close, date }) {
+function BwSheet({ required, onDone, close, date, sheetId }) {
   const st = useStore(s => s.S)
+  const action = useLocalSheetSave(sheetId)
   const unit = st.unit
   const [selectedDate, setSelectedDate] = useState(date || todayISO())
   const existingForDate = st.bodyweight.find(b => b.d === selectedDate)
@@ -117,9 +229,9 @@ function BwSheet({ required, onDone, close, date }) {
     next.setDate(next.getDate() + days)
     return isoOf(next)
   })
-  const save = () => {
+  const save = () => action.run(() => {
     const n = Math.round((v || 0) * 10) / 10
-    if (!n || n <= 0) { toast(t('Enter a valid weight')); return }
+    if (!n || n <= 0) { toast(t('Enter a valid weight')); return false }
     update(s => {
       const iso = required ? todayISO() : selectedDate
       const ex = s.bodyweight.find(b => b.d === iso)
@@ -127,15 +239,18 @@ function BwSheet({ required, onDone, close, date }) {
       s.bodyweight.sort((a, b) => (a.d < b.d ? -1 : 1))
       syncProfileWeightFromBodyweight(s)
     })
+    return n
+  }, n => {
     close()
     if (onDone) onDone(n); else toast(t('Weight saved'))
-  }
+  })
   const recent = [...st.bodyweight].reverse().slice(0, 3)
   const delEntry = d => update(s => {
     s.bodyweight = s.bodyweight.filter(b => b.d !== d)
     syncProfileWeightFromBodyweight(s)
   })
   return <>
+    <fieldset disabled={action.needsPersistence} style={{ display: 'contents' }}>
     <h3>{required ? t('Quick check-in') : existingForDate ? t('Edit body weight') : t('Log body weight')}</h3>
     {required ? (
       <div className="muted small">{t('Slide or tap to set your weight — tracked before every workout so your curve stays honest.')}</div>
@@ -150,10 +265,12 @@ function BwSheet({ required, onDone, close, date }) {
       </div>
     )}
     <WeightInput value={v} setValue={setV} unit={unit} />
+    </fieldset>
     <div style={{ height: 14 }} />
-    <Button variant="primary" onClick={save}>{required ? t('Save & start workout') : t('Save')}</Button>
+    {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : required ? t('Save & start workout') : t('Save')}</Button>
     {required && <>
-      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={() => { close(); onDone && onDone(null) }}>{t('Start without weighing in')}</Button>
+      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" disabled={action.needsPersistence} onClick={() => { close(); onDone && onDone(null) }}>{t('Start without weighing in')}</Button>
       <div style={{ height: 2 }} /><Button variant="ghost" className="dim" icon="reset" onClick={() => { close(); nav('/workout') }}>{t('Choose a different workout')}</Button>
     </>}
     {!required && recent.length > 0 && <>
@@ -162,14 +279,16 @@ function BwSheet({ required, onDone, close, date }) {
         {recent.map(b => <div key={b.d} className="row between" style={{ padding: '9px 2px', borderBottom: '1px solid var(--sep)' }}>
           <span className="small muted">{fmtDate(b.d, true)}</span>
           <span className="row" style={{ gap: 12 }}><b>{fmtNum(b.w)} {unit}</b>
-            <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }} onClick={() => delEntry(b.d)} aria-label={t('Delete')}><Icon name="trash" /></button></span>
+            <button className="iconbtn" disabled={action.needsPersistence} style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }} onClick={() => delEntry(b.d)} aria-label={t('Delete')}><Icon name="trash" /></button></span>
         </div>)}
       </div>
     </>}
   </>
 }
 export function bwSheet(opts = {}) {
-  const h = ui().openSheet(close => <BwSheet {...opts} close={close} />, { locked: !!opts.required })
+  let sheetId
+  const h = ui().openSheet((close, context) => <BwSheet {...opts} sheetId={context?.id || sheetId} close={close} />, { locked: !!opts.required })
+  sheetId = h.id
   return h
 }
 
@@ -274,25 +393,31 @@ export function bwDeltaColor(delta, currentW) {
   const up = S().targetW > currentW
   return (delta > 0) === up ? 'var(--acc)' : 'var(--red)'
 }
-function GoalSheet({ close }) {
+function GoalSheet({ close, sheetId }) {
   const st = S()
+  const action = useLocalSheetSave(sheetId)
   const bw = lastBW(st)
   const [v, setV] = useState(st.targetW || (bw ? bw.w : 70))
+  const save = () => action.run(() => {
+    const n = Math.round((v || 0) * 10) / 10
+    if (!n || n <= 0) { toast(t('Enter a valid weight')); return false }
+    update(s => { s.targetW = n })
+    return n
+  }, n => {
+    close()
+    const b = lastBW(S()); toast(t('Goal set: {0}', fmtNum(n) + ' ' + st.unit) + (b ? ' (' + t('{0} to go', fmtNum(Math.abs(n - b.w))) + ')' : ''))
+  })
   return <>
     <h3>{t('Target weight')}</h3>
     <div className="muted small">{t('Your goal is drawn as a line through the weight charts, and gains/losses are colored by whether they move toward it.')}</div>
-    <WeightInput value={v} setValue={setV} unit={st.unit} />
+    <fieldset disabled={action.needsPersistence} style={{ display: 'contents' }}><WeightInput value={v} setValue={setV} unit={st.unit} /></fieldset>
     <div style={{ height: 14 }} />
-    <Button variant="primary" onClick={() => {
-      const n = Math.round((v || 0) * 10) / 10
-      if (!n || n <= 0) { toast(t('Enter a valid weight')); return }
-      update(s => { s.targetW = n }); close()
-      const b = lastBW(S()); toast(t('Goal set: {0}', fmtNum(n) + ' ' + st.unit) + (b ? ' (' + t('{0} to go', fmtNum(Math.abs(n - b.w))) + ')' : ''))
-    }}>{t('Save goal')}</Button>
-    {st.targetW && <><div style={{ height: 8 }} /><Button variant="danger" onClick={() => { update(s => { s.targetW = null }); close(); toast(t('Goal removed')) }}>{t('Remove goal')}</Button></>}
+    {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save goal')}</Button>
+    {st.targetW && <><div style={{ height: 8 }} /><Button variant="danger" disabled={action.needsPersistence} onClick={() => { update(s => { s.targetW = null }); close(); toast(t('Goal removed')) }}>{t('Remove goal')}</Button></>}
   </>
 }
-export const goalSheet = () => ui().openSheet(close => <GoalSheet close={close} />)
+export const goalSheet = () => { let sheetId; const h = ui().openSheet((close, context) => <GoalSheet sheetId={context?.id || sheetId} close={close} />); sheetId = h.id; return h }
 
 /* ============================ exercise detail ============================ */
 // Estimated 1RM for one exercise (issue #18): what the log already implies, plus a calculator
@@ -492,16 +617,17 @@ export const addToRoutineSheet = ex => ui().openSheet(close => <AddToRoutine ex=
 /* ============================ custom exercises (issue #11) ============================ */
 // Name + body part is all it takes — the exercise then behaves like any built-in one
 // (planning, logging, PRs, stats), just without an animation.
-function CustomExForm({ existing, prefill, onDone, close }) {
+function CustomExForm({ existing, prefill, onDone, close, sheetId }) {
+  const action = useLocalSheetSave(sheetId)
   const [n, setN] = useState(existing ? existing.n : (prefill || ''))
   const [bp, setBp] = useState(existing ? existing.bp : '')
   const [desc, setDesc] = useState(existing ? (existing.desc || '') : '')
-  const save = () => {
+  const save = () => action.run(() => {
     const name = n.trim()
-    if (!name) { toast(t('Give it a name')); return }
-    if (!bp) { toast(t('Pick a body part')); return }
+    if (!name) { toast(t('Give it a name')); return false }
+    if (!bp) { toast(t('Pick a body part')); return false }
     const dup = allExercises(S()).find(e => e.n.toLowerCase() === name.toLowerCase() && e.id !== (existing || {}).id)
-    if (dup) { toast(t('“{0}” already exists', dup.n)); return }
+    if (dup) { toast(t('“{0}” already exists', dup.n)); return false }
     const d = desc.trim().slice(0, 1000)
     let id = existing && existing.id
     if (existing) update(s => { const c = (s.customEx || []).find(x => x.id === id); if (c) { c.n = name; c.bp = bp; c.desc = d } })
@@ -509,11 +635,14 @@ function CustomExForm({ existing, prefill, onDone, close }) {
       id = 'c' + uid()
       update(s => { (s.customEx = s.customEx || []).push({ id, n: name, bp, desc: d, tg: '', eq: 'custom', custom: true }) })
     }
+    return { id, name }
+  }, result => {
     close()
-    toast(existing ? t('Saved') : t('“{0}” created', name))
-    onDone && onDone(EXIDX[id])
-  }
+    toast(existing ? t('Saved') : t('“{0}” created', result.name))
+    onDone && onDone(EXIDX[result.id])
+  })
   return <>
+    <fieldset disabled={action.needsPersistence} style={{ display: 'contents' }}>
     <h3>{existing ? t('Edit custom exercise') : t('Create your own exercise')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{t('Name it and pick a body part — it behaves like any other exercise, just without an animation.')}</div>
     <input className="input" aria-label={t('Exercise name')} placeholder={t('Exercise name')} value={n} onChange={e => setN(e.target.value)} />
@@ -523,12 +652,14 @@ function CustomExForm({ existing, prefill, onDone, close }) {
     {bp === 'cardio' && <div className="small dim row" style={{ marginBottom: 10, gap: 5 }}><Icon name="figureRun" style={{ fontSize: 13 }} />{t('Cardio exercises log time + speed instead of weight × reps.')}</div>}
     <textarea className="input" rows={4} maxLength={1000} aria-label={t('Description (optional) — setup, cues, anything you want to remember')} placeholder={t('Description (optional) — setup, cues, anything you want to remember')}
       value={desc} onChange={e => setDesc(e.target.value)} />
+    </fieldset>
     <div style={{ height: 14 }} />
-    <Button variant="primary" onClick={save}>{existing ? t('Save') : t('Create exercise')}</Button>
-    {existing && <><div style={{ height: 8 }} /><Button variant="danger" icon="trash" onClick={() => { close(); deleteCustomEx(existing) }}>{t('Delete exercise')}</Button></>}
+    {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : existing ? t('Save') : t('Create exercise')}</Button>
+    {existing && <><div style={{ height: 8 }} /><Button variant="danger" icon="trash" disabled={action.needsPersistence} onClick={() => { close(); deleteCustomEx(existing) }}>{t('Delete exercise')}</Button></>}
   </>
 }
-export const customExSheet = (existing, onDone, prefill) => ui().openSheet(close => <CustomExForm existing={existing} prefill={prefill} onDone={onDone} close={close} />)
+export const customExSheet = (existing, onDone, prefill) => { let sheetId; const h = ui().openSheet((close, context) => <CustomExForm existing={existing} prefill={prefill} onDone={onDone} sheetId={context?.id || sheetId} close={close} />); sheetId = h.id; return h }
 
 export function deleteCustomEx(ex, afterDelete) {
   if (S().active?.entries.some(e => e.id === ex.id)) { toast(t('Finish your current workout first')); return }
@@ -709,6 +840,8 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
     }
     return cfg
   })
+  const [saveError, setSaveError] = useState('')
+  const [localSavePending, setLocalSavePending] = useState(false)
   const reduced = useReducedMotion()
   // Cardio keeps its own duration+speed form; the reps/time choice (issue #16) is offered for
   // everything else, which is where the gap was — planks, hangs, wall sits, loaded carries.
@@ -719,7 +852,8 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
   // Keep whatever the other mode already had (sets, weight) and fill only what is missing.
   const setMode = m => setC(x => ({ ...defaultConfig(ex.id, m), ...x, mode: m }))
   const save = () => {
-    close()
+    setSaveError('')
+    if (localSavePending) return flushLocalSave().then(close)
     const sets = Math.max(1, Math.round(c.sets) || (cardio ? 1 : 3))
     // Only carry progression settings that differ from the inherited default, so a plan file
     // stays readable and "follow the routine" keeps meaning exactly that.
@@ -746,8 +880,14 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
       if (bw && !(out.weight > 0) && c.repsMax > 0) out.repsMax = Math.max(reps, Math.round(c.repsMax))
       onSave(out)
     }
+    if (useStore.getState().persistence?.state === 'error') {
+      setLocalSavePending(true)
+      requireLocalSave()
+    }
+    close()
   }
   return <>
+    <fieldset disabled={localSavePending} style={{ display: 'contents' }}>
     <h3 className="capitalize">{exerciseName(ex)}</h3>
     <Media ex={ex} compact />
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0 14px' }}>
@@ -824,9 +964,12 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
     <ProgressionFields ex={ex} mode={mode} c={c} setC={setC} routine={routine} unit={st.unit} />
       </div>
     </details>
-    <Button variant="primary" onClick={save}>{saveLabel || (existing ? t('Save') : t('Add to routine'))}</Button>
-    {ex.custom && <><div style={{ height: 8 }} /><Button icon="pencil" onClick={() => { close(); customExSheet(ex) }}>{t('Edit or delete this exercise')}</Button></>}
-    {onDelete && <><div style={{ height: 8 }} /><Button variant="danger" onClick={() => { close(); onDelete() }}>{t('Remove from routine')}</Button></>}
+    </fieldset>
+    {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
+    <Button variant="primary" onAction={save} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+      onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{saveLabel || (existing ? t('Save') : t('Add to routine'))}</Button>
+    {ex.custom && <><div style={{ height: 8 }} /><Button icon="pencil" disabled={localSavePending} onClick={() => { close(); customExSheet(ex) }}>{t('Edit or delete this exercise')}</Button></>}
+    {onDelete && <><div style={{ height: 8 }} /><Button variant="danger" disabled={localSavePending} onClick={() => { close(); onDelete() }}>{t('Remove from routine')}</Button></>}
   </>
 }
 export const exConfigSheet = (ex, existing, onSave, onDelete, routine, initial, saveLabel) => ui().openSheet(close => <ExConfig ex={ex} existing={existing} initial={initial} onSave={onSave} onDelete={onDelete} routine={routine} saveLabel={saveLabel} close={close} />)
@@ -861,31 +1004,57 @@ export const planToolsSheet = () => ui().openSheet(close => <PlanTools close={cl
 function PlanTools({ close }) {
   const st = useStore(s => s.S)
   const fileRef = useRef(null)
+  const readingFile = useRef(false)
+  const activeReader = useRef(null)
+  const [reading, setReading] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => () => {
+    const reader = activeReader.current
+    if (!reader) return
+    reader.onload = null; reader.onerror = null; reader.onabort = null
+    reader.abort?.()
+  }, [])
   const hasRoutines = (st.routines || []).some(r => r.ex && r.ex.length)
 
   const exportFile = async () => {
+    setError('')
     const bundle = buildPlanBundle(st, '')
     const json = JSON.stringify(bundle, null, 2)
     const name = 'fitproplayer-plan-' + todayISO() + '.json'
-    if (MOBILE) { try { await shareExport(json, name) } catch (e) { /* dismissed */ } close(); return }
+    if (MOBILE) {
+      try { await shareExport(json, name) }
+      catch (e) { if (e?.name === 'AbortError' || /cancel|dismiss/i.test(e?.message || '')) return false; throw e }
+      close()
+      return true
+    }
     const blob = new Blob([json], { type: 'application/json' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href)
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name
+    try { a.click() } finally { URL.revokeObjectURL(a.href) }
     close(); toast(t('Plan file saved — send it to a friend'))
   }
   const pickFile = ev => {
     const f = ev.target.files[0]; ev.target.value = ''; if (!f) return
+    if (readingFile.current) return
+    readingFile.current = true
+    setReading(true); setError('')
     const rd = new FileReader()
+    activeReader.current = rd
+    const finishRead = () => { activeReader.current = null; readingFile.current = false; setReading(false) }
     rd.onload = () => {
       try { const bundle = parsePlan(rd.result); close(); planImportSheet(bundle) }
-      catch (e) { toast(t('Import failed: {0}', e.message)) }
+      catch (e) { setError(t('Import failed: {0}', e.message)) }
+      finally { finishRead() }
     }
-    rd.readAsText(f)
+    rd.onerror = () => { setError(t('Could not read that file')); finishRead() }
+    rd.onabort = finishRead
+    try { rd.readAsText(f) } catch { rd.onerror() }
   }
 
   return <>
     <h3>{t('Share your plan')}</h3>
     <div className="muted small" style={{ marginBottom: 16 }}>{t('Send your routines to a friend, or put your week on paper.')}</div>
-    <Button variant="primary" icon="upload" onClick={exportFile} disabled={!hasRoutines}>{t('Export plan file')}</Button>
+    <Button variant="primary" icon="upload" onAction={exportFile} onError={() => setError(t('Não foi possível concluir a ação. Tente novamente.'))} disabled={!hasRoutines || reading} loadingLabel={t('Loading…')} successLabel={t('Saved')}>{t('Export plan file')}</Button>
+    {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
     <div className="dim small" style={{ margin: '7px 2px 0', lineHeight: 1.4 }}>{t('A small file a friend imports into their own Fit Pro Player — routines only, none of your workouts or weigh-ins.')}</div>
     {!MOBILE && <>
       <div style={{ height: 12 }} />
@@ -894,21 +1063,23 @@ function PlanTools({ close }) {
     </>}
     {!hasRoutines && <div className="dim small" style={{ margin: '12px 2px 0' }}>{t('Add an exercise to a routine first — an empty plan has nothing to share.')}</div>}
     <h4 className="sec">{t('Got a plan from a friend?')}</h4>
-    <Button variant="ghost" icon="folder" onClick={() => fileRef.current?.click()}>{t('Import a plan file')}</Button>
-    <input ref={fileRef} type="file" accept="application/json,.json" onChange={pickFile} hidden />
+    <Button variant="ghost" icon="folder" state={reading ? 'loading' : undefined} loadingLabel={t('Loading…')} onClick={() => fileRef.current?.click()}>{t('Import a plan file')}</Button>
+    <input ref={fileRef} type="file" accept="application/json,.json" disabled={reading} onChange={pickFile} hidden />
   </>
 }
 
-export const planImportSheet = bundle => ui().openSheet(close => <PlanImport bundle={bundle} close={close} />)
+export const planImportSheet = bundle => { let sheetId; const h = ui().openSheet((close, context) => <PlanImport bundle={bundle} sheetId={context?.id || sheetId} close={close} />); sheetId = h.id; return h }
 
-function PlanImport({ bundle, close }) {
+function PlanImport({ bundle, close, sheetId }) {
+  const action = useLocalSheetSave(sheetId)
   const [schedule, setSchedule] = useState(false)
-  const apply = () => {
+  const apply = () => action.run(() => {
     update(s => mergePlan(s, bundle, { schedule }))
+  }, () => {
     close()
     toast(t('Added {0} routines to your plan', bundle.routineCount))
     nav('/plan')
-  }
+  })
   return <>
     <h3>{bundle.name ? t('Import “{0}”', bundle.name) : t('Import this plan')}</h3>
     <div className="muted small" style={{ marginBottom: 14 }}>
@@ -926,9 +1097,10 @@ function PlanImport({ bundle, close }) {
     </div>}
     {bundle.scheduledDays > 0 && <div className="row between" style={{ padding: '10px 2px', borderTop: '1px solid var(--sep)', borderBottom: '1px solid var(--sep)', marginBottom: 16, gap: 12 }}>
       <div><div className="tt" style={{ fontSize: 15 }}>{t('Use this weekly schedule')}</div><div className="small dim">{t('Replaces your current Mon–Sun assignments.')}</div></div>
-      <Switch checked={schedule} onChange={setSchedule} />
+      <Switch checked={schedule} disabled={action.needsPersistence} onChange={setSchedule} />
     </div>}
-    <Button variant="primary" onClick={apply}>{t('Add to my plan')}</Button>
+    {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : apply} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Add to my plan')}</Button>
     <div style={{ height: 8 }} />
     <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
   </>
@@ -1189,8 +1361,9 @@ export function abandonWorkout() {
   update(state => { queueAbandon(state); state.active = null })
   flushEvents()
 }
-function TopWeight({ entryIdx, close }) {
+function TopWeight({ entryIdx, close, sheetId }) {
   const st = useStore(s => s.S)
+  const action = useLocalSheetSave(sheetId)
   const A = st.active
   // The workout can end underneath this sheet: finishing from the last exercise clears
   // `active`, and this re-renders before the sheet is torn down. Everything below is
@@ -1211,33 +1384,35 @@ function TopWeight({ entryIdx, close }) {
   const isLastUnit = unitIdx === units.length - 1
   if (!entry || !ex) return null
 
-  const commit = advance => {
+  const commit = advance => action.run(() => {
     const n = Math.round((v || 0) * 10) / 10
-    if (!isFinite(n) || n < 0) { toast(t('Enter a valid weight')); return }
+    if (!isFinite(n) || n < 0) { toast(t('Enter a valid weight')); return false }
     update(s => {
       s.active.entries[entryIdx].topW = n
       const cur = s.exWeights[entry.id]
       s.exWeights[entry.id] = { w: Math.max(n, cur ? cur.w : 0), d: todayISO() }
     })
+  }, () => {
     close()
     if (advance && unitDone) {
       if (isLastUnit) workoutCompleteSheet()               // whole workout done → finish/continue prompt
       else update(s => { s.active.cur = units[unitIdx + 1][0] })
     } else toast(t('Tracked — next time starts at {0}', fmtNum(S().exWeights[entry.id].w) + ' ' + st.unit))
-  }
+  })
   return <>
     <h3 className="capitalize row" style={{ gap: 8 }}><Icon name="checkCircle" style={{ color: 'var(--acc)' }} />{t('{0} done', exerciseName(ex))}</h3>
     <div className="muted small">{t('Confirm the weight you worked with — your highest becomes the default next time.')}{!unitDone && unit.length > 1 ? ' ' + t('Then finish the superset partner.') : ''}</div>
-    <WeightInput value={v} setValue={setV} unit={st.unit} />
+    <fieldset disabled={action.needsPersistence} style={{ display: 'contents' }}><WeightInput value={v} setValue={setV} unit={st.unit} /></fieldset>
     <div style={{ height: 10 }} />
     {prevBest > 0 ? <div className="small dim" style={{ textAlign: 'center', marginBottom: 12 }}>{t('Previous best:')} {fmtNum(prevBest)} {st.unit}{maxSet > prevBest && <span style={{ color: 'var(--yellow)' }}> — {t('new record!')}</span>}</div> : <div style={{ height: 4 }} />}
+    {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
     {unitDone ? <>
-      <Button variant="primary" trailingIcon={isLastUnit ? null : 'chevronRight'} onClick={() => commit(true)}>{isLastUnit ? t('Save') : t('Save & next exercise')}</Button>
-      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" onClick={() => commit(false)}>{t('Just close')}</Button>
-    </> : <Button variant="primary" onClick={() => commit(false)}>{t('Save weight')}</Button>}
+      <Button variant="primary" trailingIcon={isLastUnit ? null : 'chevronRight'} onAction={action.needsPersistence ? action.retry : () => commit(true)} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : isLastUnit ? t('Save') : t('Save & next exercise')}</Button>
+      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" disabled={action.needsPersistence} onAction={() => commit(false)} onError={action.onError}>{t('Just close')}</Button>
+    </> : <Button variant="primary" onAction={action.needsPersistence ? action.retry : () => commit(false)} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save weight')}</Button>}
   </>
 }
-export const topWeightSheet = entryIdx => ui().openSheet(close => <TopWeight entryIdx={entryIdx} close={close} />)
+export const topWeightSheet = entryIdx => { let sheetId; const h = ui().openSheet((close, context) => <TopWeight entryIdx={entryIdx} sheetId={context?.id || sheetId} close={close} />); sheetId = h.id; return h }
 
 // Shown when the last exercise's last set is checked — finish, or keep going.
 function WorkoutComplete({ close }) {
@@ -1256,11 +1431,16 @@ export const workoutCompleteSheet = () => ui().openSheet(close => <WorkoutComple
 
 function FinishSummary({ w, prs, e1prs = [], close }) {
   const st = useStore(s => s.S)
+  const persistenceError = useStore(s => s.persistence?.state === 'error')
+  const retrySave = async () => {
+    await flushLocalSave()
+  }
   return <div className="finish-summary">
     <div className="finish-summary-heading">
-      <Icon name="checkCircle" />
+      <FppStatusAnimation className="icn" state={persistenceError ? 'warning' : 'success'} />
       <div><h3>{t('Workout complete!')}</h3><span>{fmtDate(w.d, true)}</span></div>
     </div>
+    {persistenceError && <><FppActionFeedback state="error">{t('Não foi possível salvar neste dispositivo. Tente novamente.')}</FppActionFeedback><Button onAction={retrySave} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}>{t('Tentar novamente')}</Button></>}
     <div className="finish-metrics">
       <div className="finish-metric"><div className="l">{t('Duration')}</div><div className="v">{fmtDur(w.end - w.start)}</div></div>
       <div className="finish-metric"><div className="l">{t('Exercises')}</div><div className="v">{w.entries.length}</div></div>

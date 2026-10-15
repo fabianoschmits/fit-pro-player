@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 import { VERIFICATION_LABELS, verificationTone } from '../../lib/console.js'
 import ConsoleShell from './ConsoleLayout.jsx'
 import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
-import { Avatar, Chip, Loading, Empty, Alert, SPRING } from './ConsoleUI.jsx'
+import { Avatar, Chip, Loading, Empty, Alert, SPRING, CxButton } from './ConsoleUI.jsx'
+import { useFppAction } from '../../components/useFppAction.js'
 
 export function ConsoleProfessionals() {
   const { userId, repo, allowed } = useConsoleAccess()
@@ -34,12 +35,20 @@ export function ConsoleProfessionals() {
     return () => { owner.current = null }
   }, [userId, allowed, query, status, limit])
 
-  const setVerification = async (targetId, nextStatus) => {
-    setActing(`${targetId}:${nextStatus}`)
-    try { await repo.setVerification(targetId, nextStatus); await refresh() }
-    catch { setError('Não foi possível atualizar a verificação.') }
-    finally { setActing('') }
-  }
+  const operation = useFppAction({ onAction: async ({ targetId, nextStatus }) => {
+    setActing(`${targetId}:${nextStatus}`); setError('')
+    try {
+      await repo.setVerification(targetId, nextStatus)
+      if (owner.current !== userId) return false
+      await refresh()
+      return true
+    } catch (err) {
+      if (owner.current === userId) setError('Não foi possível atualizar a verificação.')
+      throw err
+    }
+  } })
+  const setVerification = (targetId, nextStatus) => operation.run({ targetId, nextStatus })
+  const actionState = (targetId, nextStatus) => acting === `${targetId}:${nextStatus}` ? operation.state : 'idle'
 
   const filters = [
     ['', 'Todos'], ['pending', 'Pendentes'], ['verified', 'Verificados'],
@@ -113,25 +122,22 @@ export function ConsoleProfessionals() {
                       <div className="cx-pro-actions">
                         <Link className="cx-pill-btn" to={`/console/users/${pro.userId}`}>Ver perfil</Link>
                         {pro.verificationStatus !== 'verified' && (
-                          <motion.button type="button" className="cx-pill-btn cx-pill-btn--accent"
-                            disabled={acting === `${pro.userId}:verified`}
+                          <CxButton type="button" className="cx-pill-btn cx-pill-btn--accent"
+                            state={actionState(pro.userId, 'verified')} disabled={operation.locked}
                             onClick={() => setVerification(pro.userId, 'verified')}
-                            whileTap={{ scale: 0.95 }}
-                          >Aprovar</motion.button>
+                          >Aprovar</CxButton>
                         )}
                         {pro.verificationStatus !== 'rejected' && (
-                          <motion.button type="button" className="cx-pill-btn cx-pill-btn--danger"
-                            disabled={acting === `${pro.userId}:rejected`}
+                          <CxButton type="button" className="cx-pill-btn cx-pill-btn--danger"
+                            state={actionState(pro.userId, 'rejected')} disabled={operation.locked}
                             onClick={() => setVerification(pro.userId, 'rejected')}
-                            whileTap={{ scale: 0.95 }}
-                          >Rejeitar</motion.button>
+                          >Rejeitar</CxButton>
                         )}
                         {pro.verificationStatus !== 'pending' && (
-                          <motion.button type="button" className="cx-pill-btn"
-                            disabled={acting === `${pro.userId}:pending`}
+                          <CxButton type="button" className="cx-pill-btn"
+                            state={actionState(pro.userId, 'pending')} disabled={operation.locked}
                             onClick={() => setVerification(pro.userId, 'pending')}
-                            whileTap={{ scale: 0.95 }}
-                          >Pendente</motion.button>
+                          >Pendente</CxButton>
                         )}
                       </div>
                     </motion.div>

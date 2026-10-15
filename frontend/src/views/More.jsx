@@ -40,7 +40,8 @@ export default function More() {
   }, [account?.id, repo, consoleRepo])
 
   const guestName = MOBILE || STANDALONE ? t('Guest mode') : DEMO ? t('Demo') : t('Guest mode')
-  const displayName = profile.name || guestName
+  const profileName = typeof profile.name === 'string' ? profile.name.trim() : ''
+  const displayName = profileName || (account ? t('Signed in to your account') : guestName)
   const email = account?.email || (account ? t('Signed in to your account') : t('Local profile'))
   const signOut = () => confirmSheet({
     title: 'Sair da conta?', message: 'Sua sessão será encerrada neste dispositivo.', confirmText: 'Sair', danger: true,

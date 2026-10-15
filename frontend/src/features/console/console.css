@@ -1,5 +1,7 @@
 @import './console-base.css';
 
+.cx-loading.fpp-skeleton{display:grid;align-items:stretch;padding:0;text-align:initial}
+
 .console-workspace { --console-divider: var(--surface-border); max-width: 1440px; margin: 0 auto; color: var(--label); padding-bottom: calc(24px + var(--sab, 0px)); }
 .console-topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--console-divider); position: sticky; top: 0; z-index: 40; background: var(--bg); }
 .console-topbar-actions { display: flex; align-items: center; gap: 20px; }

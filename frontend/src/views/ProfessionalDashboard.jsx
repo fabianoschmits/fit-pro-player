@@ -6,6 +6,7 @@ import { createProfessionalWorkflowRepository } from '../lib/professional-workfl
 import { attentionReasons, professionalDate, statusLabel } from '../lib/professional-ux.js'
 import { professionalDayLabel } from '../components/ProfessionalPrescription.jsx'
 import { t } from '../lib/i18n.js'
+import { FppSkeleton } from '../components/FppFeedback.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementPanel, ManagementEmpty, ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
 
@@ -33,7 +34,7 @@ function DashboardWorkspace({ userId }) {
   const attention = data.clients.map(client => ({ ...client, reasons: attentionReasons(client) })).filter(client => client.reasons.length)
   return <ManagementLayout className="professional-page professional-dashboard" title={t('Área profissional')} subtitle={t('Acompanhe seus alunos e organize os próximos treinos.')} action={professional && <Link className="management-button management-button-primary" to="/professional/invites?section=create">{t('Convidar aluno')}</Link>}>
     {error && <p role="alert" className="management-error">{error} <button className="link" onClick={refresh}>{t('Tentar novamente')}</button></p>}
-    {busy ? <p role="status">{t('Carregando área profissional…')}</p> : !professional ? error ? null : <ManagementEmpty title={t('Esta área está disponível apenas para contas profissionais.')} /> : <>
+    {busy ? <FppSkeleton label={t('Carregando área profissional…')} /> : !professional ? error ? null : <ManagementEmpty title={t('Esta área está disponível apenas para contas profissionais.')} /> : <>
       <div className="management-overview"><Link to="/professional/students"><strong>{data.clients.length}</strong><span>{t('alunos ativos')}</span></Link><Link to="/professional/invites"><strong>{pendingInvites}</strong><span>{t('convites pendentes')}</span></Link><Link to="/professional/programs"><strong>{data.programs.filter(item => !item.archived).length}</strong><span>{t('programas disponíveis')}</span></Link></div>
       <ManagementPanel title={t('Alunos que precisam de atenção')} description={t('Sem programa, último treino abandonado ou 7 dias sem treinar. Treinos abertos há mais de 24 horas também aparecem aqui.')} action={<ManagementStatus tone={attention.length ? 'warning' : 'neutral'}>{attention.length}</ManagementStatus>}>
         {attention.length ? <div className="management-record-list">{attention.slice(0, 10).map(client => <Link className="management-record" to={`/professional/students/${client.studentUserId}`} key={client.studentUserId}><ManagementAvatar name={client.displayName} /><div><strong>{client.displayName || t('Aluno')}</strong><p>{client.reasons.map(reason => t(reason)).join(' · ')}</p></div><span aria-hidden="true">›</span></Link>)}</div> : <ManagementEmpty title={t(data.clients.length ? 'Nenhuma pendência identificada.' : 'Você ainda não possui alunos ativos.')} action={!data.clients.length && <Link className="management-button" to="/professional/invites?section=create">{t('Convidar primeiro aluno')}</Link>} />}

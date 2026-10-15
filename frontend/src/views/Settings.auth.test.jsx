@@ -37,17 +37,6 @@ afterEach(async () => { await act(async () => root.unmount()); dom.close(); });
 const renderSettings = async () => { await act(async () => root.render(<Settings />)); await act(async () => container.querySelectorAll('.sect-toggle').forEach(toggle => { if (!toggle.classList.contains('open')) toggle.click() })) }
 
 describe('Settings Supabase logout', () => {
-  it('offers professional onboarding to an authenticated account without the professional capability', async () => {
-    await renderSettings();
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) });
-
-    const becomeProfessional = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Tornar-se profissional'));
-    expect(becomeProfessional).toBeTruthy();
-    await act(async () => becomeProfessional.click());
-
-    expect(mocks.navigate).toHaveBeenCalledWith('/professional-profile?onboarding=1');
-  });
-
   it('returns to the public landing after resetting all local account data', async () => {
     await renderSettings();
     const reset = [...container.querySelectorAll('button')].find(button => button.textContent.includes(t('Clear data on this device')));
@@ -104,6 +93,7 @@ describe('Settings Supabase logout', () => {
 
     expect(container.textContent).toContain('ana@example.com');
     expect(container.textContent).toContain('Conectado à sua conta');
+    expect(container.querySelector('.more-account-card').textContent).not.toContain('Modo convidado');
     expect(container.textContent).not.toContain('Signed in with passkey');
     expect(container.textContent).not.toContain('Admin dashboard');
   });

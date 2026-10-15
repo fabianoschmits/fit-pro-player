@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, TextArea, TextField } from './ui.jsx'
 import { ManagementPanel as Section } from './ManagementUI.jsx'
 import Dialog from './Dialog.jsx'
@@ -26,6 +26,7 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
   const [copyConfirmation, setCopyConfirmation] = useState(null)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const pendingRef = useRef(false)
   const [draftError, setDraftError] = useState(false)
   const current = draft[day] || []
   useEffect(() => {
@@ -51,32 +52,34 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
   const editEntries = fn => setDraft(state => ({ ...state, [day]: fn([...(state[day] || [])]) }))
   const move = (index, delta) => editEntries(entries => { const other = index + delta; [entries[index], entries[other]] = [entries[other], entries[index]]; return entries })
   const publish = async () => {
-    if (pending) return
+    if (pendingRef.current) return false
     const result = validateWeeklyPlan(draft)
-    if (!result.ok) { setError(t(result.error === 'weekly-plan-empty' ? 'Adicione pelo menos um exercício antes de publicar.' : 'Revise os exercícios e os valores informados.')); return }
-    if (initialMetadata && !metadata.title?.trim()) { setError(t('Informe o nome do programa.')); return }
+    if (!result.ok) { setError(t(result.error === 'weekly-plan-empty' ? 'Adicione pelo menos um exercício antes de publicar.' : 'Revise os exercícios e os valores informados.')); return false }
+    if (initialMetadata && !metadata.title?.trim()) { setError(t('Informe o nome do programa.')); return false }
+    pendingRef.current = true
     setError(''); setPending(true)
     try {
-      if (initialMetadata) await onPublish(result.value, metadata)
-      else await onPublish(result.value)
+      const published = initialMetadata ? await onPublish(result.value, metadata) : await onPublish(result.value)
+      if (published === false) return false
       if (draftKey) useStore.getState().update(state => { delete state.professionalProgramDrafts?.[draftKey] })
-    } catch { setError(t('Não foi possível publicar. Seu rascunho foi mantido; tente novamente.')) }
-    finally { setPending(false) }
+    } catch (cause) { setError(t('Não foi possível publicar. Seu rascunho foi mantido; tente novamente.')); throw cause }
+    finally { pendingRef.current = false; setPending(false) }
   }
   const field = (entry, index, key, label, fallback = 0) => <label>{t(label)}<TextField type="number" step="any" min="0" value={entry[key] ?? fallback} disabled={pending} onChange={event => update(index, key, event.target.value)} /></label>
   const saveMetadata = async () => {
-    if (pending || !metadata.title?.trim()) return
+    if (pendingRef.current || !metadata.title?.trim()) return false
+    pendingRef.current = true
     setPending(true); setError('')
-    try { await onSaveMetadata(metadata) }
-    catch { setError(t('Não foi possível salvar os dados. Seu rascunho foi mantido.')) }
-    finally { setPending(false) }
+    try { return await onSaveMetadata(metadata) }
+    catch (cause) { setError(t('Não foi possível salvar os dados. Seu rascunho foi mantido.')); throw cause }
+    finally { pendingRef.current = false; setPending(false) }
   }
   return <div className="professional-program-editor">
     <div className="row between"><div><h3>{t('Montar semana')}</h3><p className="muted small">{t('Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.')}</p></div><Button disabled={pending} onClick={onCancel}>{t('Cancelar')}</Button></div>
     {saved && <p role="status">{t('Rascunho recuperado.')}</p>}
     {draftKey && <p className="muted small" role="status">{t(draftError ? 'Não foi possível salvar o rascunho neste dispositivo.' : 'Rascunho salvo neste dispositivo.')}</p>}
     {error && <p role="alert" className="error">{error}</p>}
-    {initialMetadata && <details className="professional-program-metadata"><summary>{t('Dados do programa')}</summary><div className="professional-metadata-fields"><label>{t('Nome do programa')}<TextField maxLength={160} value={metadata.title || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, title: event.target.value })} /></label><label>{t('Descrição do programa')}<TextArea maxLength={2000} value={metadata.description || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, description: event.target.value })} /></label>{onSaveMetadata && <Button disabled={pending || !metadata.title?.trim()} onClick={saveMetadata}>{t('Salvar dados do programa')}</Button>}</div></details>}
+    {initialMetadata && <details className="professional-program-metadata"><summary>{t('Dados do programa')}</summary><div className="professional-metadata-fields"><label>{t('Nome do programa')}<TextField maxLength={160} value={metadata.title || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, title: event.target.value })} /></label><label>{t('Descrição do programa')}<TextArea maxLength={2000} value={metadata.description || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, description: event.target.value })} /></label>{onSaveMetadata && <Button disabled={pending || !metadata.title?.trim()} onAction={saveMetadata} loadingLabel={t('Salvando…')} successLabel={t('Saved')} errorLabel={t('Tentar novamente')}>{t('Salvar dados do programa')}</Button>}</div></details>}
     <div className="chips" role="tablist" aria-label={t('Dias do programa')}>{DAYS.map(item => <button type="button" role="tab" key={item} disabled={pending} className={'chip' + (day === item ? ' on' : '')} aria-selected={day === item} onClick={() => setDay(item)}>{t(labels[item])}<span className="professional-day-count">{draft[item]?.length || 0}</span></button>)}</div>
     <Section title={t('{0} · {1} exercício(s)', t(labels[day]), current.length)}>
       <details className="professional-day-tools"><summary>{t('Organize days')}</summary><div className="row-actions"><label>{t('Dia de destino')}<select value={copyTo} disabled={pending} onChange={event => setCopyTo(event.target.value)}>{DAYS.map(item => <option key={item} value={item}>{t(labels[item])}</option>)}</select></label><Button disabled={pending || copyTo === day || !current.length} onClick={copyDay}>{t('Copiar dia')}</Button><Button disabled={pending || copyTo === day} onClick={() => setDraft(state => ({ ...state, [copyTo]: state[day] || [], [day]: state[copyTo] || [] }))}>{t('Trocar dias')}</Button></div></details>
@@ -105,6 +108,6 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
       <div className="row-actions"><Button variant="primary" onClick={() => { setDraft(state => ({ ...state, [copyConfirmation.target]: structuredClone(state[copyConfirmation.source] || []) })); setCopyConfirmation(null) }}>{t('Substituir dia')}</Button><Button onClick={() => setCopyConfirmation(null)}>{t('Cancelar')}</Button></div>
     </Dialog>}
     <p className="muted small">{t('Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.')}</p>
-    <Button variant="primary" disabled={pending} onClick={publish}>{t(pending ? 'Publicando…' : 'Publicar nova versão')}</Button>
+    <Button variant="primary" intent="primary" disabled={pending} onAction={publish} loadingLabel={t('Publicando…')} successLabel={t('Nova versão publicada.')} errorLabel={t('Tentar novamente')}>{t('Publicar nova versão')}</Button>
   </div>
 }

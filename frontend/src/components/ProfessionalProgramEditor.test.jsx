@@ -19,6 +19,22 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional program editor', () => {
+  it('reports failed publication on the action, preserves its draft and allows immediate retry', async () => {
+    let fail
+    const publish = vi.fn().mockImplementationOnce(() => new Promise((_, reject) => { fail = reject })).mockResolvedValueOnce(undefined)
+    await act(async () => root.render(<ProfessionalProgramEditor draftKey="retry-program" initialPlan={{ monday: [{ exerciseId: '9997', sets: 3, reps: 8 }] }} onPublish={publish} onCancel={vi.fn()} />))
+    const action = () => [...container.querySelectorAll('button')].find(button => button.textContent.includes('Publicar') || button.getAttribute('data-state') === 'error')
+    await act(async () => { action().click(); action().click() })
+    expect(publish).toHaveBeenCalledTimes(1)
+    expect(action().getAttribute('aria-busy')).toBe('true')
+    await act(async () => fail(new Error('offline')))
+    expect(action().getAttribute('data-state')).toBe('error')
+    expect(useStore.getState().S.professionalProgramDrafts['retry-program']).toBeTruthy()
+    await act(async () => action().click())
+    expect(publish).toHaveBeenCalledTimes(2)
+    expect(useStore.getState().S.professionalProgramDrafts['retry-program']).toBeUndefined()
+  })
+
   it.each([['time', { sec: 45 }], ['cardio', { min: 20, speed: 8 }]])('publishes the displayed defaults after switching to %s', async (mode, expected) => {
     const publish = vi.fn()
     await act(async () => root.render(<ProfessionalProgramEditor initialPlan={{ monday: [{ exerciseId: '9997', sets: 3, reps: 8 }] }} onPublish={publish} onCancel={vi.fn()} />))
@@ -85,7 +101,7 @@ describe('professional program editor', () => {
     const props = { draftKey: 'program', exercises: [{ id: '9997', n: 'Agachamento' }], initialPlan: { monday: [{ exerciseId: '9997', sets: 3, reps: 8, rest: 75 }] }, onPublish: publish, onCancel: vi.fn() }
     await act(async () => root.render(<ProfessionalProgramEditor {...props} />))
     await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent.includes('Publicar')).click())
-    expect([...container.querySelectorAll('button')].find(button => button.textContent.includes('Publicando')).disabled).toBe(true)
+    expect(container.querySelector('button[aria-busy="true"]').disabled).toBe(true)
     await act(async () => reject(new Error('offline')))
     expect(container.querySelector('[role="alert"]').textContent).toContain('rascunho')
     expect(useStore.getState().S.professionalProgramDrafts.program.plan.monday[0].rest).toBe(75)

@@ -45,8 +45,13 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [rateLimitRevision, setRateLimitRevision] = useState(0)
   const alertRef = useRef(null);
-  const busy = auth.operation === operationFor[mode];
+  const submitLock = useRef(false);
+  const mounted = useRef(true);
+  const [submitState, setSubmitState] = useState('idle');
+  const busy = submitState === 'loading' || auth.operation === operationFor[mode];
   const signUpLimit = mode === 'sign_up' ? getSignUpRateLimitState(values.email) : null
+
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, []);
 
   useEffect(() => {
     setMode(initial(initialMode));
@@ -65,7 +70,9 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
 
   const change = key => event => setValues(current => ({ ...current, [key]: event.target.value }));
   const showMode = next => {
+    if (submitLock.current) return;
     setMode(next);
+    setSubmitState('idle');
     setError('');
     setNotice('');
     setShowPassword(false);
@@ -75,6 +82,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
 
   const submit = async event => {
     event.preventDefault();
+    if (submitLock.current || busy) return;
     setError('');
     setNotice('');
 
@@ -88,33 +96,42 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       return
     }
 
-    let result;
-    if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
-    if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType, privacyVersion: PRIVACY_DOCUMENT_VERSION });
-    if (mode === 'forgot_password') result = await auth.sendPasswordRecovery(values.email);
-    if (mode === 'reset_password') result = await auth.updatePassword(values.password);
+    submitLock.current = true;
+    setSubmitState('loading');
+    try {
+      let result;
+      if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
+      if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType, privacyVersion: PRIVACY_DOCUMENT_VERSION });
+      if (mode === 'forgot_password') result = await auth.sendPasswordRecovery(values.email);
+      if (mode === 'reset_password') result = await auth.updatePassword(values.password);
+      if (!mounted.current) return;
 
-    if (result?.kind === 'error') {
-      if (mode === 'sign_up') {
-        recordSignUpAttempt(values.email)
-        setRateLimitRevision(value => value + 1)
+      if (result?.kind === 'error') {
+        setSubmitState('error');
+        if (mode === 'sign_up') {
+          recordSignUpAttempt(values.email)
+          setRateLimitRevision(value => value + 1)
+        }
+        showError(result.error);
+        return;
       }
-      showError(result.error);
-      return;
-    }
-    if (mode === 'sign_up') clearSignUpRateLimit(values.email)
-    if (mode === 'sign_up' && result?.kind === 'confirmation_required') {
-      setNotice(t('Check your email to confirm your account.'));
-      return;
-    }
-    if (mode === 'forgot_password') {
-      setNotice(t('If an account exists for this email, we sent recovery instructions.'));
-      return;
-    }
-    if (mode === 'reset_password' || mode === 'sign_in' || mode === 'sign_up') {
-      if (mode === 'sign_in' || mode === 'sign_up') useStore.getState?.().enterApp?.();
-      close();
-    }
+      setSubmitState('success');
+      if (mode === 'sign_up') clearSignUpRateLimit(values.email)
+      if (mode === 'sign_up' && result?.kind === 'confirmation_required') {
+        setNotice(t('Check your email to confirm your account.'));
+        return;
+      }
+      if (mode === 'forgot_password') {
+        setNotice(t('If an account exists for this email, we sent recovery instructions.'));
+        return;
+      }
+      if (mode === 'reset_password' || mode === 'sign_in' || mode === 'sign_up') {
+        if (mode === 'sign_in' || mode === 'sign_up') useStore.getState?.().enterApp?.();
+        close();
+      }
+    } catch {
+      if (mounted.current) { showError('network_unavailable'); setSubmitState('error') }
+    } finally { submitLock.current = false }
   };
 
   if (mode === 'entry') {
@@ -170,7 +187,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     {isSignUp && <label className="auth-consent"><input type="checkbox" checked={privacyAccepted} onChange={event => setPrivacyAccepted(event.target.checked)} /> <span>Aceito o <a href="#/privacy" target="_blank" rel="noreferrer">Aviso de Privacidade</a> e os <a href="#/terms" target="_blank" rel="noreferrer">Termos de Uso</a>.</span></label>}
     <p id="auth-error" ref={alertRef} role="alert" tabIndex="-1">{error}</p>
     {notice && <p role="status">{notice}</p>}
-    <Button variant="primary" type="submit" disabled={busy}>{t(submitLabel)}</Button>
+    <Button variant="primary" type="submit" state={busy ? 'loading' : submitState} loadingLabel={t('Loading…')} successLabel={t('Done')}>{t(submitLabel)}</Button>
     {mode === 'sign_in' && <button type="button" className="link" onClick={() => showMode('forgot_password')}>{t('Forgot password?')}</button>}
     {(mode === 'sign_in' || mode === 'sign_up' || mode === 'forgot_password') && <button type="button" className="link" onClick={() => showMode(mode === 'sign_up' ? 'sign_in' : 'sign_up')}>{t(mode === 'sign_up' ? 'Already have an account? Sign in' : 'Need an account? Create one')}</button>}
   </form>;

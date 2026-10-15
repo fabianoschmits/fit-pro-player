@@ -16,7 +16,7 @@ export async function dataUrlToPngFile(dataUrl, filename = `treino-fpp-${Date.no
 }
 
 export async function shareWorkoutImage(dataUrl, {
-  title = 'Meu treino no Fit Pro Player 💪',
+  title = 'Meu treino no Fit Pro Player',
   dialogTitle = 'Compartilhar treino',
   fileName = `treino-fpp-${Date.now()}.png`,
   capacitor,

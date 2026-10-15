@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
 import { Button } from './ui.jsx'
+import { FppProgress } from './FppFeedback.jsx'
 
 const clock = sec => Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0')
 
@@ -23,7 +24,6 @@ export default function RestTimer() {
     return () => document.body.classList.remove('resting')
   }, [!!on])
   if (!on) return null
-  const pct = (on.left / on.total) * 100
   let upcoming = null
   if (active?.entries?.length) {
     const current = Math.min(active.cur || 0, active.entries.length - 1)
@@ -40,12 +40,12 @@ export default function RestTimer() {
       <div className="head">
         <div className="rest-label">{t('Rest')}{upcoming && <span>{exerciseName(exOr(upcoming.entry.id))} · {t('Sets')} {upcoming.setIndex + 1}</span>}</div>
         <div className="t">{clock(timer.left)}</div>
-        <div className="bar"><i style={{ '--progress': pct / 100 }} /></div>
+        <div className="bar"><FppProgress value={timer.left} max={timer.total} label={t('Rest')} aria-valuetext={clock(timer.left)} style={{ height: '100%' }} /></div>
       </div>
       <div className="acts">
-        <Button size="sm" icon="minus" aria-label={`${t('Decrease')} 15s`} onClick={() => addRest(-15)}>15s</Button>
-        <Button size="sm" icon="plus" aria-label={`${t('Increase')} 15s`} onClick={() => addRest(15)}>15s</Button>
-        <Button size="sm" variant="primary" className="skip" onClick={stopRest}>{t('Skip')}</Button>
+        <Button size="sm" intent="quick" icon="minus" aria-label={`${t('Decrease')} 15s`} onClick={() => addRest(-15)}>15s</Button>
+        <Button size="sm" intent="quick" icon="plus" aria-label={`${t('Increase')} 15s`} onClick={() => addRest(15)}>15s</Button>
+        <Button size="sm" intent="quick" variant="primary" className="skip" onClick={stopRest}>{t('Skip')}</Button>
       </div>
     </div>
   )

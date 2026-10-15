@@ -1,5 +1,7 @@
 import { useUI } from '../store/useUI.js'
+import { FppToast } from './FppFeedback.jsx'
 export default function Toast() {
   const msg = useUI(s => s.toastMsg)
-  return <div id="toast" className={msg ? 'show' : ''} role="status" aria-live="polite" aria-atomic="true">{msg}</div>
+  const tone = useUI(s => s.toastTone || 'neutral')
+  return <FppToast message={msg} tone={tone} />
 }

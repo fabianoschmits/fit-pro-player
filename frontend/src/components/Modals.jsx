@@ -134,7 +134,7 @@ function Sheet({ sheet, exiting }) {
     return (
       <div className={'modal-layer' + (exiting ? ' is-closing' : '')}>
         <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
-        <div className="center" ref={ref} role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>{sheet.render(close)}</div>
+        <div className="center" ref={ref} role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>{sheet.render(close, { id: sheet.id, exiting })}</div>
       </div>
     )
   }
@@ -145,7 +145,7 @@ function Sheet({ sheet, exiting }) {
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
         role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>
         <div className="grab" />
-        {sheet.render(close)}
+        {sheet.render(close, { id: sheet.id, exiting })}
       </div>
     </div>
   )

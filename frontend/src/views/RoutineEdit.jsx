@@ -17,6 +17,7 @@ import BodyMap from '../components/BodyMap.jsx'
 import PlanProgress from '../components/PlanProgress.jsx'
 import { loadOfRoutine, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
 import { routineName } from '../lib/starter.js'
+import { FppActionFeedback } from '../components/FppFeedback.jsx'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 const MUSCLE_ANCHORS = {
@@ -47,6 +48,7 @@ export default function RoutineEdit() {
   const update = useStore(s => s.update)
   const [organizing, setOrganizing] = useState(false)
   const [selectedMuscle, setSelectedMuscle] = useState(null)
+  const [saveError, setSaveError] = useState('')
   const muscleMapRef = useRef(null)
   const r = S.routines.find(x => x.id === id)
   useEffect(() => { if (!r) nav('/plan') }, [!!r])
@@ -94,6 +96,11 @@ export default function RoutineEdit() {
     update(state => { state.routines.push(copy) })
     useUI.getState().toast(t('Routine duplicated'))
     nav('/plan/r/' + copy.id)
+  }
+  const saveRoutine = async () => {
+    setSaveError('')
+    if (!(await useStore.getState().flushPersistence())) throw new Error('local-write-failed')
+    nav('/plan')
   }
 
   const units = supersetUnits(r.ex)
@@ -169,7 +176,9 @@ export default function RoutineEdit() {
       </div>
     </div>
 
-    <Button variant="primary" icon="check" onClick={() => nav('/plan')}>{t('Done')}</Button>
+    {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
+    <Button variant="primary" icon="check" onAction={saveRoutine} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+      onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
 
     {r.ex.length > 0 && (() => {
       const load = loadOfRoutine(r)

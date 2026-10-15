@@ -13,9 +13,11 @@ const mocks = vi.hoisted(() => ({
   toast: vi.fn(),
 }))
 
-vi.mock('../store/useStore.js', () => ({
-  useStore: selector => selector({ S: mocks.S, update: mocks.update }),
-}))
+vi.mock('../store/useStore.js', () => {
+  const useStore = selector => selector({ S: mocks.S, update: mocks.update })
+  useStore.getState = () => ({ S: mocks.S, persistence: mocks.persistence })
+  return { useStore }
+})
 vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ toast: mocks.toast }) } }))
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('../sheets.jsx', () => ({ confirmSheet: vi.fn() }))
@@ -49,6 +51,7 @@ beforeEach(() => {
   window.matchMedia = () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })
   window.requestAnimationFrame = callback => callback()
   mocks.S = { body: 'female', bodyMeasurements: [], bodyMeasurementGoals: {} }
+  mocks.persistence = { state: 'saved' }
   mocks.update.mockImplementation(mutator => mutator(mocks.S))
   container = document.createElement('div')
   document.body.append(container)
@@ -64,6 +67,21 @@ afterEach(async () => {
 })
 
 describe('body progress page', () => {
+  it('reports a failed measurement write locally and allows retry without showing saved', async () => {
+    await render()
+    await click(partButton('Circunferência do tórax'))
+    await inputValue(container.querySelector('#body-measurement-value'), '101,5')
+    mocks.persistence = { state: 'error' }
+    await click(button('Salvar medida'))
+    expect(mocks.toast).not.toHaveBeenCalled()
+    expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).toBe('error')
+    expect(container.querySelector('.fpp-action-feedback[data-state="error"]')).not.toBeNull()
+    mocks.persistence = { state: 'saved' }
+    await click(container.querySelector('button[type="submit"]'))
+    expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).toBe('success')
+    expect(mocks.S.bodyMeasurements).toHaveLength(1)
+  })
+
   it('starts empty and uses the configured real-body wrapper in both views', async () => {
     await render()
     expect(container.textContent).toContain('0 de 14 circunferências')

@@ -78,6 +78,7 @@ const validManualSet = (manualSet, active) => {
 export const useUI = create((set, get) => ({
   sheets: [],          // { id, render:(close)=>JSX, kind:'sheet'|'center', locked }
   toastMsg: '',
+  toastTone: 'neutral',
   timer: null,         // rest countdown between sets — { left, total, endsAt }
   work: null,          // work countdown DURING a timed set (issue #16) — { left, total, endsAt, label }
   manualSet: null,     // transient execution — { sessionId, entryIdx, setIdx, exerciseId }
@@ -93,8 +94,8 @@ export const useUI = create((set, get) => ({
   closeSheet(id) { set(s => ({ sheets: s.sheets.filter(x => x.id !== id) })) },
   closeAll() { set({ sheets: [] }) },
 
-  toast(msg) {
-    set({ toastMsg: msg })
+  toast(msg, { tone = 'neutral' } = {}) {
+    set({ toastMsg: msg, toastTone: ['neutral', 'success', 'error', 'warning', 'offline'].includes(tone) ? tone : 'neutral' })
     clearTimeout(toastTm)
     toastTm = setTimeout(() => set({ toastMsg: '' }), 2200)
   },

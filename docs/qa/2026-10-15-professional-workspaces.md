@@ -21,16 +21,17 @@ Não houve alteração de banco, permissões, vínculo, prescrição ou sincroni
 - Matriz: 20 rotas em 320, 360, 390, 1280 e 1440 px, nos temas claro e escuro, verificando overflow, navegação ativa visível e ausência de fundo/sombra na navegação.
 - Após o ajuste final de recuperação de erros: 11 testes de navegador aprovados, incluindo publicação/envio, materiais, criação de programas, layout de 320 px e recuperação com Voltar, em desktop e celular; uma repetição da matriz ignorada intencionalmente.
 - Regressão da Central da plataforma: quatro testes de navegador aprovados.
-- Suíte completa Vitest: 984 testes aprovados e duas falhas preexistentes, descritas abaixo.
+- Suíte completa Vitest após a correção das duas falhas iniciais: 989 testes aprovados, sem falhas, em 125 arquivos.
+- Identificação e acesso profissional: 14 testes unitários direcionados e dois testes de navegador aprovados, cobrindo desktop e celular.
 - Pacotes de tradução: 11 idiomas com 1.439 chaves sincronizadas; verificação de português aprovada. Os três textos novos foram incluídos em todos os idiomas.
 - Revisão independente: um problema de recuperação de erro identificado e corrigido, com testes unitários e de navegador.
 
-## Pendências preexistentes, fora do escopo visual
+## Duas falhas iniciais corrigidas
 
-`frontend/src/views/Settings.auth.test.jsx`:
+- A verificação antiga de onboarding em `Settings.auth.test.jsx` foi substituída pela cobertura da navegação atual: o teste unitário de Mais verifica a rota `/professional/profile`, e o teste de navegador confirma que o clique em **Mais → Profissional → Tornar-se profissional** abre o formulário de criação em desktop e celular.
+- O teste de identidade de conta em `Settings.auth.test.jsx` agora passa sem remover suas verificações. A interface usa “Conectado à sua conta” quando o nome está vazio ou contém apenas espaços, preserva nomes preenchidos e continua identificando contas anônimas como convidadas. Foram adicionados testes de regressão para esses casos.
 
-- `offers professional onboarding to an authenticated account without the professional capability`: espera uma entrada de onboarding dentro de Configurações. A entrada profissional atual fica em Mais.
-- `uses the Supabase email as the account identity without exposing legacy admin UI`: espera também o texto “Conectado à sua conta”, além do e-mail exibido atualmente em Mais.
+## Pendência de tradução preexistente, fora desta correção
 
 `node scripts/check-source-strings.mjs --strict` ainda encontra 18 textos sem definição nos pacotes: 17 da interface de compartilhamento de treinos e `Local profile` em Mais. Nenhum dos três textos novos desta refatoração permanece sem tradução.
 

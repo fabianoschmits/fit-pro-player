@@ -78,6 +78,25 @@ afterEach(async () => {
 });
 
 describe('AuthSheet', () => {
+  it('locks native form submissions immediately and exposes pending feedback before auth state updates', async () => {
+    let resolve;
+    mocks.auth.signIn.mockReturnValue(new Promise(done => { resolve = done }));
+    await render();
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    const form = container.querySelector('form');
+    await act(async () => {
+      form.dispatchEvent(new dom.Event('submit', { bubbles: true, cancelable: true }));
+      form.dispatchEvent(new dom.Event('submit', { bubbles: true, cancelable: true }));
+    });
+    expect(mocks.auth.signIn).toHaveBeenCalledTimes(1);
+    expect(form.querySelector('[type="submit"]').getAttribute('aria-busy')).toBe('true');
+    await act(async () => resolve({ kind: 'error', error: 'network_unavailable' }));
+    expect(form.querySelector('[type="submit"]').disabled).toBe(false);
+    await act(async () => form.dispatchEvent(new dom.Event('submit', { bubbles: true, cancelable: true })));
+    expect(mocks.auth.signIn).toHaveBeenCalledTimes(2);
+  });
+
   it('provides accessible email/password sign-in controls', async () => {
     await render();
 

@@ -17,6 +17,7 @@ import PageTransition from './components/PageTransition.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
 import Toast from './components/Toast.jsx'
+import { FppSkeleton } from './components/FppFeedback.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
@@ -71,6 +72,7 @@ const History = lazy(loadHistory)
 const Library = lazy(loadLibrary)
 const Settings = lazy(loadSettings)
 const More = lazy(loadMore)
+const MotionFeedback = lazy(() => import('./views/MotionFeedback.jsx'))
 const PersonalData = lazy(loadPersonalData)
 const BodyProgress = lazy(loadBodyProgress)
 const ProfessionalProfile = lazy(loadProfessionalProfile)
@@ -143,7 +145,7 @@ function applyPrefs(theme, accent) {
 }
 
 function RouteFallback() {
-  return <div className="route-loading" role="status"><Icon name="dumbbell" /><span className="sr-only">{t('Loading…')}</span></div>
+  return <div className="narrow"><FppSkeleton label={t('Loading…')} rows={3} /></div>
 }
 
 export function ProfileHeader({ S, preview }) {
@@ -440,6 +442,7 @@ function Shell() {
                 <Route path="/support/tickets/:ticketId" element={<SupportTicket />} />
                 <Route path="/personal-data" element={<PersonalData />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/motion-feedback" element={<MotionFeedback />} />
                 <Route path="/console" element={<ConsoleHome />} />
                 <Route path="/console/users" element={<ConsoleUsers />} />
                 <Route path="/console/users/:userId" element={<ConsoleUserPage />} />

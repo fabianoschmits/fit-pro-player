@@ -9,6 +9,7 @@ import AppStatus from './components/AppStatus.jsx'
 import { installDiagnostics } from './lib/diagnostics.js'
 import './index.css'
 import './professional.css'
+import './motion-feedback.css'
 
 installDiagnostics()
 

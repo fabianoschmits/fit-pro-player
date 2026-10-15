@@ -5,7 +5,8 @@ import { createSupportRepository } from '../../lib/support.js'
 import ConsoleShell from './ConsoleLayout.jsx'
 import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
 import useConsoleResource from './useConsoleResource.js'
-import { Alert, SectionBody, Chip, Empty, Loading } from './ConsoleUI.jsx'
+import { Alert, SectionBody, Chip, Empty, Loading, CxButton } from './ConsoleUI.jsx'
+import { useFppAction } from '../../components/useFppAction.js'
 
 export default function ConsoleFaq() {
   const { userId, allowed } = useConsoleAccess()
@@ -28,8 +29,8 @@ export function ConsoleFaqEditor() {
   const repo = useMemo(() => createSupportRepository({ client: getBrowserSupabaseClient() }), [])
   const identity = `${userId}:${articleId}`
   const current = useRef(identity); current.current = identity
-  const [draft, setDraft] = useState(null), [saving, setSaving] = useState(false), [saveError, setSaveError] = useState('')
-  useEffect(() => { setDraft(null); setSaveError(''); setSaving(false) }, [identity])
+  const [draft, setDraft] = useState(null), [saveError, setSaveError] = useState('')
+  useEffect(() => { current.current = identity; setDraft(null); setSaveError(''); return () => { current.current = null } }, [identity])
   const { data, busy, error, refresh } = useConsoleResource({ userId, allowed, resourceKey: 'faq:' + articleId, load: async () => {
     const [categories, articles] = await Promise.all([repo.listCategories(), articleId === 'new' ? Promise.resolve([]) : repo.listFaqAdmin()])
     const article = articleId === 'new' ? { ...emptyArticle, categorySlug: categories[0]?.slug || '' } : articles.find(item => item.articleId === articleId)
@@ -38,15 +39,17 @@ export function ConsoleFaqEditor() {
   } })
   const form = draft || data?.article
   const field = (key, value) => setDraft({ ...form, [key]: value })
-  const save = async e => {
-    e.preventDefault()
-    if (saving) return
-    if (!form.categorySlug || form.question.trim().length < 3 || form.answer.trim().length < 3) { setSaveError('Preencha a categoria, a pergunta e a resposta com pelo menos 3 caracteres.'); return }
-    setSaving(true); setSaveError('')
-    try { await repo.saveFaqArticle({ ...form, question: form.question.trim(), answer: form.answer.trim() }); if (current.current === identity) nav('/console/faq') }
-    catch { if (current.current === identity) setSaveError('Não foi possível salvar a pergunta. Seu texto foi mantido.') }
-    finally { if (current.current === identity) setSaving(false) }
-  }
+  const operation = useFppAction({
+    onAction: async () => {
+      if (!form?.categorySlug || form.question.trim().length < 3 || form.answer.trim().length < 3) { setSaveError('Preencha a categoria, a pergunta e a resposta com pelo menos 3 caracteres.'); return false }
+      setSaveError('')
+      await repo.saveFaqArticle({ ...form, question: form.question.trim(), answer: form.answer.trim() })
+      return current.current === identity
+    },
+    onSuccess: () => nav('/console/faq'),
+    onError: () => { if (current.current === identity) setSaveError('Não foi possível salvar a pergunta. Seu texto foi mantido.') },
+  })
+  const save = event => { event.preventDefault(); void operation.run(event) }
   return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed} back="/console/faq" backLabel="Perguntas frequentes"><div className="cx-page-body">
     <div className="cx-page-head"><h1 className="cx-page-title">{articleId === 'new' ? 'Nova pergunta' : 'Editar pergunta'}</h1><p className="cx-page-sub">Escreva uma resposta clara e escolha como ela aparece no FAQ.</p></div>
     {error && <Alert onRetry={refresh}>{error}</Alert>}{saveError && <Alert>{saveError}</Alert>}
@@ -60,7 +63,7 @@ export function ConsoleFaqEditor() {
         <label className="cx-label">Ordem de exibição<input className="cx-field" type="number" min={0} step={1} value={form.sortOrder} onChange={e => field('sortOrder', Math.max(0, Number(e.target.value) || 0))} /></label>
         <label className="console-checkbox"><input type="checkbox" checked={form.isFeatured} onChange={e => field('isFeatured', e.target.checked)} /><span>Destacar entre as perguntas mais importantes</span></label>
         <label className="console-checkbox"><input type="checkbox" checked={form.isPublished} onChange={e => field('isPublished', e.target.checked)} /><span>Publicar em Ajuda e suporte</span></label>
-      </div></SectionBody></section><div className="console-editor-actions"><Link className="cx-pill-btn" to="/console/faq">Cancelar</Link><button className="cx-pill-btn cx-pill-btn--accent" type="submit" disabled={saving}>{saving ? 'Salvando…' : 'Salvar pergunta'}</button></div>
+      </div></SectionBody></section><div className="console-editor-actions"><Link className="cx-pill-btn" to="/console/faq">Cancelar</Link><CxButton className="cx-pill-btn cx-pill-btn--accent" type="submit" state={operation.state} loadingLabel="Salvando…">Salvar pergunta</CxButton></div>
     </form>}
   </div></ConsoleShell></AccessGate>
 }

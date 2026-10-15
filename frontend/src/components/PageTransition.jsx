@@ -16,18 +16,20 @@ export default function PageTransition({ children }) {
   const workspace = /^\/(console|professional|professional-profile|student\/professionals|invite|connect)(\/|$)/.exec(loc.pathname)?.[1]
   const pageKey = workspace ? (['invite', 'connect', 'student/professionals'].includes(workspace) ? '/student/professionals' : workspace === 'professional-profile' ? '/professional' : `/${workspace}`) : loc.pathname
 
+  // A retained outgoing Routes tree also reads the current router location.
+  // Keep one surface on touch devices and with reduced motion so navigation
+  // never mounts duplicate destination forms or competing action handlers.
+  if (MOBILE_LIKE || reduced) return <div id="app">{children}</div>
+
   return (
-    <AnimatePresence mode={MOBILE_LIKE ? 'sync' : 'wait'} initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         id="app"
         key={pageKey}
-        initial={reduced ? false : { opacity: 0, y: 4 }}
+        initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        // WKWebView can leave the outgoing page mounted without completing its
-        // exit animation. Keeping the old page visible until the new route is
-        // ready can otherwise leave the app shell black and unresponsive.
-        exit={MOBILE_LIKE || reduced ? undefined : { opacity: 0 }}
-        transition={{ duration: reduced ? 0 : 0.12, ease: EASE }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.12, ease: EASE }}
       >
         {children}
       </motion.div>

@@ -30,6 +30,20 @@ test.beforeEach(async ({page}) => {
   await page.addInitScript(() => localStorage.setItem('fpp_privacy_consent_v1', JSON.stringify({version:'2026-10-13', necessary:true, preferences:false, analytics:false, communications:false, acceptedAt:'2026-10-15T12:00:00Z'})))
 })
 
+test('an account without professional access opens onboarding from More', async ({page}) => {
+  await seed(page,{authenticated:true,rpc:{professional_profiles:null}})
+  await page.goto('/#/more')
+  const account = page.locator('.more-account-card')
+  await expect(account).toContainText('Pessoa Teste')
+  await expect(account).toContainText('browser-test@example.invalid')
+  await expect(account).not.toContainText('Modo convidado')
+  await page.getByRole('button',{name:/Tornar-se profissional/}).click()
+  await expect(page).toHaveURL(/#\/professional\/profile$/)
+  await expect(page.getByRole('heading',{name:'Tornar-se profissional',level:1,exact:true})).toBeVisible()
+  await expect(page.getByRole('textbox',{name:'Nome profissional',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Criar perfil profissional',exact:true})).toBeVisible()
+})
+
 test('a narrow workspace keeps readable flat sections and prioritizes the next workout', async ({page}) => {
   await page.setViewportSize({width:320,height:780})
   await seed(page,{professional:true,rpc})
