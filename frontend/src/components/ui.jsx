@@ -252,11 +252,27 @@ export function Check({ checked, onChange, className = '', size, playMode = fals
 // edge, so the icon column reads as a continuous rail.
 export function Section({ title, footer, children, className = '', collapsible = false, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
+  const [rendered, setRendered] = useState(defaultOpen)
+  const [closing, setClosing] = useState(false)
+  const closeTimer = useRef(null)
+  useEffect(() => () => clearTimeout(closeTimer.current), [])
+  const toggle = () => {
+    if (open) {
+      setOpen(false)
+      setClosing(true)
+      closeTimer.current = setTimeout(() => { setRendered(false); setClosing(false) }, 180)
+      return
+    }
+    clearTimeout(closeTimer.current)
+    setRendered(true)
+    setClosing(false)
+    setOpen(true)
+  }
+  const content = <><div className="sect-b">{children}</div>{footer && <p className="sect-f">{footer}</p>}</>
   return (
     <section className={'sect ' + className}>
-      {title && (collapsible ? <button type="button" className={'sect-t sect-toggle' + (open ? ' open' : '')} aria-expanded={open} onClick={() => setOpen(value => !value)}><span>{title}</span><Icon name="chevronDown" /></button> : <h2 className="sect-t">{title}</h2>)}
-      {(!collapsible || open) && <div className="sect-b">{children}</div>}
-      {footer && (!collapsible || open) && <p className="sect-f">{footer}</p>}
+      {title && (collapsible ? <button type="button" className={'sect-t sect-toggle' + (open ? ' open' : '')} aria-expanded={open} onClick={toggle}><span>{title}</span><Icon name="chevronDown" /></button> : <h2 className="sect-t">{title}</h2>)}
+      {!collapsible ? content : rendered && <div className={'sect-motion' + (closing ? ' closing' : '')}>{content}</div>}
     </section>
   )
 }
