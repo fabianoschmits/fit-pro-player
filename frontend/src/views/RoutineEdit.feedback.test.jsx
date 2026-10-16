@@ -28,7 +28,7 @@ afterEach(() => {
 
 it('stays on the routine when local persistence fails and permits a successful save retry', async () => {
   const write = vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('quota') })
-  const save = () => container.querySelector('.routine-builder > button.primary')
+  const save = () => container.querySelector('.routine-completion-actions button.primary')
   await act(async () => save().click())
   expect(mocks.navigate).not.toHaveBeenCalled()
   expect(container.querySelector('[role="status"][data-state="error"]')).not.toBeNull()
@@ -38,4 +38,17 @@ it('stays on the routine when local persistence fails and permits a successful s
   await act(async () => save().click())
   expect(useStore.getState().persistence.state).toBe('saved')
   expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith('/plan')
+})
+
+it('shows deletion for a user-created routine directly below the ready action', () => {
+  const actions = container.querySelector('.routine-completion-actions')
+  expect(actions).not.toBeNull()
+  expect(actions.textContent).toContain('Pronto')
+  expect(actions.textContent).toContain('Excluir treino')
+})
+
+it('does not offer deletion for a generated starter routine', () => {
+  useStore.setState({ S: { ...structuredClone(DEF), routines: [{ id: 'routine', name: 'Treino A', starterKey: 'starter-a', ex: [] }] }, persistence: { state: 'saved', error: null } })
+  act(() => root.render(<RoutineEdit />))
+  expect(container.querySelector('.routine-completion-actions').textContent).not.toContain('Excluir treino')
 })

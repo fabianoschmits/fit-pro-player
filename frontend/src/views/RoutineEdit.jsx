@@ -101,6 +101,17 @@ export default function RoutineEdit() {
     setSaveError('')
     if (!(await useStore.getState().flushPersistence())) throw new Error('local-write-failed')
   }
+  const deleteRoutine = () => confirmSheet({
+    title: t('Delete routine?'), message: t('“{0}” and its exercises will be removed.', displayName), confirmText: t('Delete'), danger: true,
+    onConfirm: () => {
+      update(s => {
+        s.routines = s.routines.filter(x => x.id !== id)
+        Object.keys(s.week).forEach(k => { if (s.week[k] === id) delete s.week[k] })
+        Object.keys(s.dayPlan).forEach(k => { if (s.dayPlan[k] === id) delete s.dayPlan[k] })
+      })
+      return true
+    },
+  })
 
   const units = supersetUnits(r.ex)
   const unitFirst = new Set(units.filter(u => u.length > 1).map(u => u[0]))
@@ -108,6 +119,7 @@ export default function RoutineEdit() {
   const assignedDays = WEEK_DAYS.filter(day => S.week[day] === id)
   const planProgress = planSetupProgress(S)
   const displayName = routineName(r)
+  const canDelete = !r.starterKey && !r.planGenerated
 
   return <div className="narrow routine-builder">
     {planProgress && <PlanProgress progress={planProgress} />}
@@ -176,8 +188,11 @@ export default function RoutineEdit() {
     </div>
 
     {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
-    <Button variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => nav('/plan')} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
-      onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
+    <div className="routine-completion-actions">
+      <Button variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => nav('/plan')} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+        onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
+      {canDelete && <Button variant="danger" icon="trash" onClick={deleteRoutine}>{t('Delete routine')}</Button>}
+    </div>
 
     {r.ex.length > 0 && (() => {
       const load = loadOfRoutine(r)
@@ -202,18 +217,6 @@ export default function RoutineEdit() {
             options={POLICIES_FOR.reps.map(p => ({ value: p, label: t(POLICY_NAME[p]), subtitle: t(POLICY_DESC[p]) }))} />
         </div>
         <div className="small dim routine-advanced-copy">{t('Applies to every exercise in this routine that does not set its own rule.')}</div>
-        <div style={{ height: 10 }} />
-        <Button variant="danger" onClick={() => confirmSheet({
-          title: t('Delete routine?'), message: t('“{0}” and its exercises will be removed.', displayName), confirmText: t('Delete'), danger: true,
-          onConfirm: () => {
-            update(s => {
-              s.routines = s.routines.filter(x => x.id !== id)
-              Object.keys(s.week).forEach(k => { if (s.week[k] === id) delete s.week[k] })
-              Object.keys(s.dayPlan).forEach(k => { if (s.dayPlan[k] === id) delete s.dayPlan[k] })
-            })
-            nav('/plan')
-          }
-        })}>{t('Delete routine')}</Button>
       </div>
     </details>
   </div>

@@ -1799,6 +1799,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 
 .routine-builder-actions{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px}
 .routine-builder-actions .btn{min-width:0;padding-inline:8px}
+.routine-completion-actions{display:grid;gap:8px;margin-top:14px}.routine-completion-actions .btn{width:100%}
 .routine-builder .routine-name{min-height:44px;padding:8px 4px;border-radius:0;background:transparent;box-shadow:inset 0 -1px 0 var(--sep);letter-spacing:0}
 .routine-builder .routine-name:focus{box-shadow:inset 0 -2px 0 var(--acc)}
 .exercise-picker-help{margin:0 2px 8px;line-height:1.35}
