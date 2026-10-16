@@ -1,7 +1,7 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
    Media (img/gif) cache-first; everything else network-first with offline fallback.
    Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v19'
+const CACHE = 'fit-pro-player-rt-v20'
 const MEDIA_LIMIT = 256
 async function remember(request, response, media = false) {
   const cache = await caches.open(CACHE)
@@ -146,7 +146,7 @@ self.addEventListener('push', event => {
         href: safeNotificationHref(payload.href) }
       // Apple's userVisibleOnly subscription requires visible feedback for accepted pushes.
       await self.registration.showNotification(payload.title, {
-        body: payload.body, icon: '/icon-180.png', tag: `fit-pro-player:${payload.id}`, data,
+        body: payload.body, icon: '/icon-192-v22.png', tag: `fit-pro-player:${payload.id}`, data,
       })
       state.seen = [...seen, { id: payload.id, expiresAt: Date.parse(payload.expiresAt) }].slice(-NOTIFICATION_HISTORY_LIMIT)
       await writeNotificationState(state)
