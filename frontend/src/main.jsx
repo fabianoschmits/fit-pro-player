@@ -8,11 +8,14 @@ import { canReloadForUpdate } from './lib/reload-safety.js'
 import AppStatus from './components/AppStatus.jsx'
 import { installDiagnostics } from './lib/diagnostics.js'
 import { installPwaViewport } from './lib/pwa-viewport.js'
+import { pwaInstaller } from './lib/pwa-install.js'
 import './index.css'
 import './professional.css'
 import './motion-feedback.css'
 
 installPwaViewport({ native: MOBILE })
+// Capture the browser offer at startup, before the lazy settings page mounts.
+if (!MOBILE) pwaInstaller.start()
 installDiagnostics()
 
 createRoot(document.getElementById('root')).render(

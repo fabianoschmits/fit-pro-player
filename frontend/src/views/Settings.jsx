@@ -5,7 +5,6 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 import { useUI } from '../store/useUI.js'
 import { ACCENTS, todayISO } from '../lib/format.js'
 import { effortOf } from '../lib/history.js'
-const IS_ANDROID = /Android/.test(navigator.userAgent)
 import { wakeLockSupported } from '../lib/wakelock.js'
 import { t, LANGS, DEFAULT_LANG, INSTR_LANGS } from '../lib/i18n.js'
 import { DEMO, STANDALONE } from '../lib/demo.js'
@@ -21,6 +20,7 @@ import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import OfflineControls from '../components/OfflineControls.jsx'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 import NotificationSettings from '../components/NotificationSettings.jsx'
+import PwaInstallGuide from '../components/PwaInstallGuide.jsx'
 import { FppActionFeedback, FppStatusAnimation } from '../components/FppFeedback.jsx'
 import { useFppAction } from '../components/useFppAction.js'
 
@@ -307,10 +307,9 @@ export default function Settings() {
       onChange={ev => { const f = ev.target.files[0]; if (f) importFromApp(f); ev.target.value = '' }} />
 
     {/* "Add to Home screen" makes no sense inside the native app */}
-    {!MOBILE && <Section collapsible defaultOpen={false} title={t('Tip')}>
-      <Row icon="lightbulb" iconTint="var(--yellow)"
-        title={IS_ANDROID ? t('In Chrome: ⋮ menu → Add to Home screen') : t('In Safari: Share → Add to Home Screen')}
-        subtitle={t('to install Fit Pro Player as a full-screen app.') + ' ' + (auth.user ? t('Your data syncs with your profile — sign in anywhere to see it.') : t('Guest data stays on this device — export a backup now and then!'))} />
+    {!MOBILE && <Section collapsible defaultOpen={false} title="Dicas e instalação">
+      <PwaInstallGuide />
+      <p className="sect-f">{auth.user ? t('Your data syncs with your profile — sign in anywhere to see it.') : t('Guest data stays on this device — export a backup now and then!')}</p>
     </Section>}
 
     <div className="dim small" style={{ textAlign: 'center', marginTop: 4, lineHeight: 1.6 }}>
