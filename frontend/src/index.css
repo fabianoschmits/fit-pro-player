@@ -59,7 +59,7 @@
 
   /* motion */
   --ease:cubic-bezier(.32,.72,0,1);
-  --fast:140ms; --med:220ms; --page:320ms;
+  --fast:180ms; --med:260ms; --page:360ms;
 
   --sab:env(safe-area-inset-bottom,0px);
   --sat:env(safe-area-inset-top,0px);

@@ -27,7 +27,7 @@ it('sends the chosen category to the support repository and preserves drafts on 
 })
 
 function Location() { return <output>{useLocation().pathname}</output> }
-it('guards native duplicate submissions, preserves an errored draft and navigates immediately after retry', async () => {
+it('guards native duplicate submissions, preserves an errored draft and shows success before navigating after retry', async () => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   let reject, resolve
   mocks.createTicket.mockImplementationOnce(() => new Promise((_, no) => { reject = no })).mockImplementationOnce(() => new Promise(yes => { resolve = yes }))
@@ -49,5 +49,6 @@ it('guards native duplicate submissions, preserves an errored draft and navigate
   act(submit)
   await act(async () => resolve('ticket-2'))
   expect(mocks.createTicket).toHaveBeenCalledTimes(2)
+  await act(async () => { await new Promise(resolveAfterPresentation => setTimeout(resolveAfterPresentation, 320)) })
   expect(container.querySelector('output').textContent).toBe('/support/tickets/ticket-2')
 })

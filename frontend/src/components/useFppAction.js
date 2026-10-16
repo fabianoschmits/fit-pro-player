@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 const BUSY_STATES = new Set(['loading', 'processing', 'uploading', 'syncing'])
+const BUSY_VISUAL_DELAY = 220
+const SUCCESS_HOLD_MS = 280
+const SUCCESS_VISIBLE_MS = 900
 export const isFppBusy = state => BUSY_STATES.has(state)
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
+const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 // The operation owns its lifetime. Timers affect presentation only and can never
 // release an outstanding write. The ref closes the gap before React re-renders.
@@ -23,7 +28,7 @@ export function useFppAction({ onAction, onSuccess, onError, state: controlledSt
 
   useEffect(() => {
     if (!busy) { setVisualBusy(false); return undefined }
-    const timer = setTimeout(() => setVisualBusy(true), 160)
+    const timer = setTimeout(() => setVisualBusy(true), BUSY_VISUAL_DELAY)
     return () => clearTimeout(timer)
   }, [busy])
 
@@ -48,9 +53,11 @@ export function useFppAction({ onAction, onSuccess, onError, state: controlledSt
     if (!mounted.current) return result
     if (result === false) { setManagedState('idle'); return false }
     setManagedState('success')
+    if (!reducedMotion()) await wait(SUCCESS_HOLD_MS)
+    if (!mounted.current) return result
     resetTimer.current = setTimeout(() => {
       if (mounted.current) setManagedState('idle')
-    }, 600)
+    }, SUCCESS_VISIBLE_MS)
     try { await onSuccess?.(result) } catch { /* The operation already succeeded. */ }
     return result
   }, [onAction, onSuccess, onError, locked])

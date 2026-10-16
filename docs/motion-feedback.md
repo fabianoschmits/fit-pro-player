@@ -39,8 +39,8 @@ Estados aceitos: `idle`, `pressed`, `loading`, `processing`, `success`, `error`,
 
 ## Regras de apresentação e segurança de execução
 
-- Pressão de 100 ms; transições de 180–220 ms; confirmação de 360 ms. O sucesso permanece brevemente visível e volta ao rótulo normal após 600 ms.
-- O bloqueio e `aria-busy` são imediatos. A faixa/texto de processamento só aparecem depois de 160 ms, se a operação continuar pendente. A operação e a navegação não são atrasadas.
+- Pressão de 100 ms; transições de 180–260 ms; confirmação de 480 ms. O resultado bem-sucedido permanece visível por cerca de 900 ms, com uma sustentação de 280 ms antes de callbacks de sucesso que permanecem na mesma tela.
+- O bloqueio e `aria-busy` são imediatos. A faixa/texto de processamento aparece depois de 220 ms, se a operação continuar pendente. O atraso pertence à apresentação; a mutação local e o pedido de rede continuam começando no mesmo clique.
 - Os rótulos reservam sua largura natural com conteúdo CSS invisível. Não duplicam o nome acessível nem texto oculto no DOM.
 - Não liberar uma gravação ainda pendente por causa de um temporizador de animação. As camadas de serviço continuam responsáveis por cancelamento e timeout de suas requisições.
 - Respeitar `prefers-reduced-motion` e interação por teclado. Texto e ícones continuam indicando o resultado com movimento desativado.

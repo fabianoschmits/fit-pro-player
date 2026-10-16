@@ -11,7 +11,7 @@
 **Spec:** `docs/superpowers/specs/2026-10-15-motion-feedback-design.md`
 
 ## Global constraints
-Preserve dirty files and business/backend behavior. No new dependencies. No emojis or artificial action delays. Press 100 ms, transitions 180–220 ms, success check 360 ms. Busy visuals start after 160 ms only if still pending. Honor prefers-reduced-motion. Use current theme/accent tokens and i18n conventions.
+Preserve dirty files and business/backend behavior. No new dependencies. No emojis. Use a deliberate presentation hold so feedback can be read: press 100 ms, transitions 180–260 ms, success check 480 ms, success visible about 900 ms, and busy visuals start after 220 ms only if still pending. Honor prefers-reduced-motion and skip the hold for reduced-motion users. Use current theme/accent tokens and i18n conventions.
 
 ## Review focus
 - Duplicate click or Enter within one event turn must execute once.

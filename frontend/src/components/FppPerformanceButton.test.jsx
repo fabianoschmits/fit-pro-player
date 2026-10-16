@@ -8,7 +8,7 @@ let root, host
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no }); return { promise, resolve, reject } }
 const render = props => act(() => root.render(<Button {...props}>Salvar</Button>))
 const click = () => host.querySelector('button').click()
-const settle = async fn => act(async () => { fn(); await Promise.resolve() })
+const settle = async fn => act(async () => { fn(); await Promise.resolve(); await Promise.resolve() })
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -28,14 +28,15 @@ describe('action feedback lifetime', () => {
     expect(button.getAttribute('aria-busy')).toBe('true')
     expect(button.getAttribute('aria-disabled')).toBe('true')
     expect(button.textContent).toBe('Salvar')
-    act(() => vi.advanceTimersByTime(159))
+    act(() => vi.advanceTimersByTime(219))
     expect(button.textContent).toBe('Salvar')
     act(() => vi.advanceTimersByTime(1))
     expect(button.textContent).toBe('Salvando…')
     await settle(() => pending.resolve('written'))
+    await act(async () => { vi.advanceTimersByTime(280); await Promise.resolve(); await Promise.resolve() })
     expect(button.getAttribute('data-state')).toBe('success')
     expect(button.disabled).toBe(false)
-    act(() => vi.advanceTimersByTime(600))
+    await act(async () => { vi.advanceTimersByTime(900); await Promise.resolve(); await Promise.resolve() })
     expect(button.textContent).toBe('Salvar')
   })
 
@@ -44,9 +45,10 @@ describe('action feedback lifetime', () => {
     render({ onAction: () => pending.promise, onSuccess: result => values.push(result), successLabel: 'Salvo', loadingLabel: 'Salvando…' })
     act(click)
     await settle(() => pending.resolve(42))
+    await act(async () => { vi.advanceTimersByTime(280); await Promise.resolve(); await Promise.resolve() })
     expect(host.querySelector('button').textContent).toBe('Salvo')
     expect(values).toEqual([42])
-    act(() => vi.advanceTimersByTime(160))
+    act(() => vi.advanceTimersByTime(220))
     expect(host.querySelector('button').textContent).toBe('Salvo')
   })
 
@@ -62,6 +64,7 @@ describe('action feedback lifetime', () => {
     act(click)
     expect(attempts).toBe(2)
     await settle(() => retried.resolve(true))
+    await act(async () => { vi.advanceTimersByTime(280); await Promise.resolve(); await Promise.resolve() })
     expect(host.querySelector('button').textContent).toBe('Salvo')
   })
 
@@ -81,7 +84,7 @@ describe('action feedback lifetime', () => {
     expect(button.disabled).toBe(true)
     expect(button.getAttribute('aria-busy')).toBe('true')
     expect(button.textContent).toBe('Salvar')
-    act(() => vi.advanceTimersByTime(160))
+    act(() => vi.advanceTimersByTime(220))
     expect(button.textContent).toBe('Enviando…')
     expect(button.querySelector('.fpp-energy-rail')).not.toBeNull()
     render({ state: 'error', errorLabel: 'Tentar novamente' })
@@ -93,7 +96,7 @@ describe('action feedback lifetime', () => {
     render({ state: 'processing', disabled: true, loadingLabel: 'Processando…' })
     const button = host.querySelector('button')
     expect(button.getAttribute('aria-busy')).toBe('true')
-    act(() => vi.advanceTimersByTime(160))
+    act(() => vi.advanceTimersByTime(220))
     expect(button.textContent).toBe('Processando…')
   })
 
@@ -122,6 +125,7 @@ describe('action feedback lifetime', () => {
   it('keeps settled operation status and retry when a feedback callback fails', async () => {
     render({ onAction: () => true, onSuccess: () => { throw new Error('observer failed') } })
     await act(async () => { click(); await Promise.resolve() })
+    await act(async () => { vi.advanceTimersByTime(280); await Promise.resolve(); await Promise.resolve() })
     expect(host.querySelector('button').getAttribute('data-state')).toBe('success')
     expect(host.querySelector('button').disabled).toBe(false)
     render({ onAction: () => { throw new Error('write failed') }, onError: async () => { throw new Error('observer failed') } })
@@ -138,6 +142,7 @@ describe('shared control compatibility', () => {
     expect(button.classList.contains('btn')).toBe(false)
     expect(button.classList.contains('personal-save')).toBe(true)
     await act(async () => { button.click(); await Promise.resolve() })
+    act(() => vi.advanceTimersByTime(280))
     expect(button.getAttribute('data-state')).toBe('success')
     expect(button.textContent).toBe('Salvo')
   })
