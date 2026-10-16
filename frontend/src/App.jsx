@@ -116,6 +116,14 @@ const PROFILE_MOTIVATION_MESSAGES = [
   'Keep showing up.',
 ]
 
+function randomMotivationMessageIndex(exclude = null) {
+  if (PROFILE_MOTIVATION_MESSAGES.length < 2 || exclude == null) {
+    return Math.floor(Math.random() * PROFILE_MOTIVATION_MESSAGES.length)
+  }
+  const index = Math.floor(Math.random() * (PROFILE_MOTIVATION_MESSAGES.length - 1))
+  return index >= exclude ? index + 1 : index
+}
+
 function weightGoalProgressPercent(S) {
   const current = currentProfileWeight(S)
   const target = Number(S.targetW) || null
@@ -149,7 +157,7 @@ function RouteFallback() {
 }
 
 export function ProfileHeader({ S, preview }) {
-  const [messageIndex, setMessageIndex] = useState(0)
+  const [messageIndex, setMessageIndex] = useState(randomMotivationMessageIndex)
   const [messageIsVisible, setMessageIsVisible] = useState(true)
   const reduceMotion = useReducedMotion()
   const profile = preview ? { ...S.profile, ...preview } : S.profile
@@ -164,7 +172,7 @@ export function ProfileHeader({ S, preview }) {
   ]
   useEffect(() => {
     setMessageIsVisible(true)
-    if (S.motivationTone !== 'rotating' || reduceMotion) return undefined
+    if (S.motivationTone !== 'rotating') return undefined
 
     let hideTimer
     let showTimer
@@ -172,12 +180,7 @@ export function ProfileHeader({ S, preview }) {
       hideTimer = window.setTimeout(() => {
         setMessageIsVisible(false)
         showTimer = window.setTimeout(() => {
-          setMessageIndex(index => {
-            if (PROFILE_MOTIVATION_MESSAGES.length < 2) return index
-            let next = index
-            while (next === index) next = Math.floor(Math.random() * PROFILE_MOTIVATION_MESSAGES.length)
-            return next
-          })
+          setMessageIndex(randomMotivationMessageIndex)
           setMessageIsVisible(true)
           scheduleNextMessage()
         }, 800)
@@ -188,7 +191,7 @@ export function ProfileHeader({ S, preview }) {
       window.clearTimeout(hideTimer)
       window.clearTimeout(showTimer)
     }
-  }, [S.motivationTone, reduceMotion])
+  }, [S.motivationTone])
   if (!S.onboardingDone || !profile?.name) return null
   return <header className="profile-hero" aria-label={profile.name}>
     <div className="profile-hero-avatar">
@@ -215,7 +218,7 @@ export function ProfileHeader({ S, preview }) {
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -2, scale: 0.99 }}
             transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
           >
-            {t(PROFILE_MOTIVATION_MESSAGES[S.motivationTone === 'rotating' ? messageIndex : 0])}
+            {t(PROFILE_MOTIVATION_MESSAGES[messageIndex])}
           </motion.span>}
         </AnimatePresence>
       </div>}
