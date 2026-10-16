@@ -16,14 +16,16 @@ let PENDING = null
 
 function useBodyPaths() {
   const [paths, setPaths] = useState(CACHE)
+  const [failed, setFailed] = useState(false)
+  const [retry, setRetry] = useState(0)
   useEffect(() => {
     if (CACHE) return
     let alive = true
-    PENDING = PENDING || import('../lib/body-paths.js').then(m => (CACHE = m.default))
-    PENDING.then(p => { if (alive) setPaths(p) }).catch(() => {})
+    PENDING = PENDING || import('../lib/body-paths.js').then(m => (CACHE = m.default)).catch(error => { PENDING = null; throw error })
+    PENDING.then(p => { if (alive) { setPaths(p); setFailed(false) } }).catch(() => { if (alive) setFailed(true) })
     return () => { alive = false }
-  }, [])
-  return paths
+  }, [retry])
+  return { paths, failed, retry: () => { setFailed(false); setRetry(value => value + 1) } }
 }
 
 const LOCAL_SHAPE_SLUGS = new Set(['biceps', 'triceps', 'forearm', 'quadriceps', 'hamstring', 'calves', 'tibialis', 'adductors'])
@@ -128,7 +130,7 @@ export default function BodyMap({
   view = 'both', decorative = false, shapeScales, shapeInstant = false, captureSafe = false,
   region = 'full',
 }) {
-  const paths = useBodyPaths()
+  const { paths, failed, retry } = useBodyPaths()
   const levels = levelsOf(load, thresholds)
   const g = paths && (paths[body] || paths.male)
   const views = g && (view === 'front' ? [g.front] : view === 'back' ? [g.back] : [g.front, g.back])
@@ -151,7 +153,9 @@ export default function BodyMap({
               region={region}
             />
           ))
-        : <div className="bm-ph" aria-hidden="true" />}
+        : failed && !decorative
+          ? <div className="bm-ph bm-load-error" role="status"><span>{t('Could not load the body diagram.')}</span><button type="button" onClick={retry}>{t('Try again')}</button></div>
+          : <div className="bm-ph" aria-hidden="true" />}
     </div>
   )
 }
