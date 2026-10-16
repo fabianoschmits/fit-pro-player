@@ -39,9 +39,7 @@
   --acc-line: color-mix(in srgb, var(--acc) 38%, transparent);
 
   /* ambience */
-  --bg-grad:
-    radial-gradient(ellipse 130% 90% at 50% -18%, color-mix(in srgb, var(--acc) 7%, transparent), transparent 58%),
-    linear-gradient(180deg, #0a0a0c 0%, var(--bg) 38%);
+  --bg-grad:linear-gradient(180deg, #0a0a0c 0%, var(--bg) 38%);
   --overlay: rgba(0,0,0,.48);
 
   /* card shadow */
@@ -90,9 +88,7 @@
   --acc-2:#0a6466;
   --on-acc:#ffffff;
 
-  --bg-grad:
-    radial-gradient(ellipse 120% 75% at 50% -12%, color-mix(in srgb, var(--acc) 10%, #fff), transparent 52%),
-    linear-gradient(180deg, #f4f7fb 0%, var(--bg) 42%);
+  --bg-grad:linear-gradient(180deg, #f4f7fb 0%, var(--bg) 42%);
   --overlay: rgba(15,23,42,.32);
 
   --card-shadow: 0 2px 8px rgba(15,23,42,.07);

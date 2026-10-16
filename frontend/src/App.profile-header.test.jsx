@@ -118,12 +118,14 @@ describe('ProfileHeader editorial hero', () => {
     expect(avatar.contains(messageStage)).toBe(true)
     expect(messageStage.querySelector('.profile-hero-message').textContent).not.toBe('')
   })
-  it('chooses a fresh phrase on opening, keeps calm mode still, and lets the user hide messages', async () => {
-    const random = vi.spyOn(Math, 'random')
+  it('chooses a fresh phrase on opening, rotates every six seconds by default, and lets the user hide messages', async () => {
+    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
     act(() => root.render(<ProfileHeader S={stateAt(75)} />))
+    const firstMessage = container.querySelector('.profile-hero-message').textContent
     const callsAfterOpening = random.mock.calls.length
-    await act(async () => { await vi.advanceTimersByTimeAsync(14000) })
-    expect(random).toHaveBeenCalledTimes(callsAfterOpening)
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000) })
+    expect(random.mock.calls.length).toBeGreaterThan(callsAfterOpening)
+    expect(container.querySelector('.profile-hero-message').textContent).not.toBe(firstMessage)
     act(() => root.render(<ProfileHeader S={{...stateAt(75),motivationTone:'off'}} />))
     expect(container.querySelector('.profile-hero-message-stage')).toBeNull()
   })

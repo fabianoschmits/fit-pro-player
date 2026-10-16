@@ -172,10 +172,11 @@ export function ProfileHeader({ S, preview }) {
   ]
   useEffect(() => {
     setMessageIsVisible(true)
-    if (S.motivationTone !== 'rotating') return undefined
+    if (S.motivationTone === 'off') return undefined
 
     let hideTimer
     let showTimer
+    const visibleFor = 5200
     const scheduleNextMessage = () => {
       hideTimer = window.setTimeout(() => {
         setMessageIsVisible(false)
@@ -184,7 +185,7 @@ export function ProfileHeader({ S, preview }) {
           setMessageIsVisible(true)
           scheduleNextMessage()
         }, 800)
-      }, 6200)
+      }, visibleFor)
     }
     scheduleNextMessage()
     return () => {
