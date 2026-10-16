@@ -150,6 +150,7 @@ function RouteFallback() {
 
 export function ProfileHeader({ S, preview }) {
   const [messageIndex, setMessageIndex] = useState(0)
+  const [messageIsVisible, setMessageIsVisible] = useState(true)
   const reduceMotion = useReducedMotion()
   const profile = preview ? { ...S.profile, ...preview } : S.profile
   const goalProgressPercent = weightGoalProgressPercent(S)
@@ -162,24 +163,40 @@ export function ProfileHeader({ S, preview }) {
     `${currentWeight ? weightText(currentWeight) : '--'} ${S.unit}`,
   ]
   useEffect(() => {
-    if (S.motivationTone !== 'rotating' || reduceMotion) return
-    const interval = window.setInterval(() => {
-      setMessageIndex(index => {
-        if (PROFILE_MOTIVATION_MESSAGES.length < 2) return index
-        let next = index
-        while (next === index) next = Math.floor(Math.random() * PROFILE_MOTIVATION_MESSAGES.length)
-        return next
-      })
-    }, 7000)
-    return () => window.clearInterval(interval)
+    setMessageIsVisible(true)
+    if (S.motivationTone !== 'rotating' || reduceMotion) return undefined
+
+    let hideTimer
+    let showTimer
+    const scheduleNextMessage = () => {
+      hideTimer = window.setTimeout(() => {
+        setMessageIsVisible(false)
+        showTimer = window.setTimeout(() => {
+          setMessageIndex(index => {
+            if (PROFILE_MOTIVATION_MESSAGES.length < 2) return index
+            let next = index
+            while (next === index) next = Math.floor(Math.random() * PROFILE_MOTIVATION_MESSAGES.length)
+            return next
+          })
+          setMessageIsVisible(true)
+          scheduleNextMessage()
+        }, 800)
+      }, 6200)
+    }
+    scheduleNextMessage()
+    return () => {
+      window.clearTimeout(hideTimer)
+      window.clearTimeout(showTimer)
+    }
   }, [S.motivationTone, reduceMotion])
   if (!S.onboardingDone || !profile?.name) return null
   return <header className="profile-hero" aria-label={profile.name}>
-    <div className="profile-hero-avatar" aria-hidden="true">
+    <div className="profile-hero-avatar">
       <AnimatePresence mode="sync">
         <motion.span
           key={profile.avatarId}
           className="profile-hero-avatar-enter"
+          aria-hidden="true"
           initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -14 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
@@ -188,24 +205,24 @@ export function ProfileHeader({ S, preview }) {
           <AvatarImage avatarId={profile.avatarId} />
         </motion.span>
       </AnimatePresence>
+      {S.motivationTone !== 'off' && <div className="profile-hero-message-stage">
+        <AnimatePresence mode="wait" initial={false}>
+          {messageIsVisible && <motion.span
+            key={messageIndex}
+            className="profile-hero-message"
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 5, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -2, scale: 0.99 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
+          >
+            {t(PROFILE_MOTIVATION_MESSAGES[S.motivationTone === 'rotating' ? messageIndex : 0])}
+          </motion.span>}
+        </AnimatePresence>
+      </div>}
     </div>
     <div className="profile-hero-content">
       <div className="profile-hero-copy">
         <strong className="profile-hero-name">{profile.name}</strong>
-        {S.motivationTone !== 'off' && <div className="profile-hero-message-stage">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key={messageIndex}
-              className="profile-hero-message"
-              initial={reduceMotion ? { opacity: 1 } : { x: 6, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={reduceMotion ? { opacity: 0 } : { x: -3, opacity: 0 }}
-              transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: [0.2, 0.8, 0.2, 1] }}
-            >
-              {t(PROFILE_MOTIVATION_MESSAGES[S.motivationTone === 'rotating' ? messageIndex : 0])}
-            </motion.span>
-          </AnimatePresence>
-        </div>}
       </div>
       <div className="profile-hero-facts">{facts.join(' · ')}</div>
       <div className="profile-hero-goal">

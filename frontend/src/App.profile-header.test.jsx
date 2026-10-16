@@ -108,6 +108,14 @@ describe('ProfileHeader editorial hero', () => {
     expect(random).toHaveBeenCalled()
     expect(container.querySelector('.profile-hero-message-stage').hasAttribute('aria-live')).toBe(false)
   })
+  it('anchors the motivational phrase above the avatar as a compact tip', () => {
+    act(() => root.render(<ProfileHeader S={stateAt(75)} />))
+
+    const avatar = container.querySelector('.profile-hero-avatar')
+    const messageStage = container.querySelector('.profile-hero-message-stage')
+    expect(avatar.contains(messageStage)).toBe(true)
+    expect(messageStage.querySelector('.profile-hero-message').textContent).not.toBe('')
+  })
   it('keeps the default calm and lets the user hide messages', async () => {
     const random = vi.spyOn(Math, 'random')
     act(() => root.render(<ProfileHeader S={stateAt(75)} />))
