@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Check, Switch } from '../components/ui.jsx'
-import { FppActionFeedback, FppProgress, FppSkeleton, FppSpinner, FppStatusAnimation } from '../components/FppFeedback.jsx'
+import { Button, Check, Section, Switch } from '../components/ui.jsx'
+import { FppActionFeedback, FppProgress, FppSkeleton, FppSpinner, FppStatusAnimation, FppToast } from '../components/FppFeedback.jsx'
 import { ACCENTS } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import AppHeader from '../components/AppHeader.jsx'
@@ -12,6 +12,8 @@ const LAB_TABS = [
   { id: 'buttons', label: 'Botões', hint: 'Pressão, resultado e ações críticas' },
   { id: 'flows', label: 'Fluxos', hint: 'Ordem entre confirmação e ação' },
   { id: 'states', label: 'Estados', hint: 'Progresso, status e carregamento' },
+  { id: 'structures', label: 'Estruturas', hint: 'Seções, detalhes e painel de treino' },
+  { id: 'recovery', label: 'Recuperação', hint: 'Toast, falha de leitura e nova tentativa' },
 ]
 
 function Sample({ name, action, animation, children, className = '', dataSample }) {
@@ -28,6 +30,9 @@ export default function MotionFeedback() {
   const [checked, setChecked] = useState(false), [enabled, setEnabled] = useState(false)
   const [count, setCount] = useState(0), [pending, setPending] = useState(false), [criticalCount, setCriticalCount] = useState(0)
   const [tab, setTab] = useState('buttons')
+  const [toast, setToast] = useState('')
+  const [exercise, setExercise] = useState('Agachamento')
+  const [recoveryAttempt, setRecoveryAttempt] = useState(0)
   const settle = useRef(null)
   useEffect(() => {
     const root = document.documentElement, original = { theme: root.dataset.theme, accent: root.dataset.accent }
@@ -94,6 +99,33 @@ export default function MotionFeedback() {
       <div className="motion-showcase-controls"><FppStatusAnimation state="warning" /><FppSpinner label={t('Loading…')} /></div>
       <FppSkeleton label={t('Loading…')} rows={3} />
     </section>
+    </section>}
+    {tab === 'structures' && <section role="tabpanel" id="motion-panel-structures" aria-labelledby="motion-tab-structures" aria-label="Estruturas">
+      <section className="motion-showcase-panel">
+        <div className="motion-showcase-label"><strong>Seção expansível</strong><code>Section collapsible</code><span>entrada e saída de 180 ms</span></div>
+        <Section collapsible defaultOpen={false} title="Ajustes do treino" footer="O conteúdo permanece acessível sem movimento reduzido."><p className="muted small">Controles, explicações e resultados entram sem deslocar bruscamente a leitura.</p></Section>
+      </section>
+      <section className="motion-showcase-panel">
+        <div className="motion-showcase-label"><strong>Detalhe nativo</strong><code>details → conteúdo</code><span>revelação curta de 180 ms</span></div>
+        <details><summary>Ver prescrição de exemplo</summary><p className="muted small">3 séries · 8–12 repetições · descanso de 90 segundos.</p></details>
+      </section>
+      <section className="motion-showcase-panel">
+        <div className="motion-showcase-label"><strong>Painel de treino</strong><code>troca de exercício</code><span>contexto entra em 200 ms · séries continuam imediatas</span></div>
+        <div className="motion-showcase-controls"><Button size="sm" intent="quick" onClick={() => setExercise('Agachamento')}>Agachamento</Button><Button size="sm" intent="quick" onClick={() => setExercise('Supino')}>Supino</Button></div>
+        <div key={exercise} className="motion-showcase-workout-stage"><strong>{exercise}</strong><span>3 séries · próxima ação permanece pronta</span></div>
+      </section>
+    </section>}
+    {tab === 'recovery' && <section role="tabpanel" id="motion-panel-recovery" aria-labelledby="motion-tab-recovery" aria-label="Recuperação">
+      <section className="motion-showcase-panel">
+        <div className="motion-showcase-label"><strong>Toast com saída</strong><code>mensagem preservada</code><span>continua visível durante os 180 ms de saída</span></div>
+        <div className="motion-showcase-controls"><Button size="sm" intent="quick" onClick={() => setToast('Alteração salva neste dispositivo')}>Mostrar toast</Button><Button size="sm" intent="quick" onClick={() => setToast('')}>Ocultar toast</Button></div>
+        <FppToast id="showcase-toast" message={toast} tone="success" />
+      </section>
+      <section className="motion-showcase-panel">
+        <div className="motion-showcase-label"><strong>Leitura recuperável</strong><code>falha → tentar novamente</code><span>a tela não fica presa em carregamento</span></div>
+        <FppActionFeedback state={recoveryAttempt ? 'success' : 'error'}>{recoveryAttempt ? `Mapa corporal carregado na tentativa ${recoveryAttempt}.` : 'Não foi possível carregar o mapa corporal.'}</FppActionFeedback>
+        <Button size="sm" onAction={() => { setRecoveryAttempt(value => value + 1); return true }} successLabel="Carregado">Tentar novamente</Button>
+      </section>
     </section>}
   </main>
 }

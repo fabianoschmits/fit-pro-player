@@ -42,7 +42,7 @@ it('makes messages and FAQ directly accessible from the platform overview', asyn
   expect(container.querySelector('h1').textContent).toContain('Central da plataforma')
   expect(container.querySelector('a[href="/console/support"]')).not.toBeNull()
   expect(container.querySelector('a[href="/console/faq"]')).not.toBeNull()
-  expect(container.querySelector('nav a[href="/motion-feedback"]')?.textContent).toContain('Laboratório de botões')
+  expect(container.querySelector('nav a[href="/motion-feedback"]')?.textContent).toContain('Laboratório de interações')
   expect(container.textContent).toContain('Testes')
   expect(container.textContent).toContain('100')
 })

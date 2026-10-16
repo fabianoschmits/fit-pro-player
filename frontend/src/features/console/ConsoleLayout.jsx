@@ -10,7 +10,7 @@ const navigation = [
   { to: '/console/professionals', label: 'Profissionais', description: 'Perfis e verificações', icon: 'personCircle', group: 'Plataforma' },
   { to: '/console/support', label: 'Mensagens', description: 'Caixa de entrada da equipe', icon: 'list', group: 'Atendimento' },
   { to: '/console/faq', label: 'FAQ', description: 'Perguntas e respostas', icon: 'clipboard', group: 'Atendimento' },
-  { to: '/motion-feedback', label: 'Laboratório de botões', description: 'Ações, estados e animações do PWA', icon: 'sparkles', group: 'Testes' },
+  { to: '/motion-feedback', label: 'Laboratório de interações', description: 'Botões, fluxos, estados e recuperação do PWA', icon: 'sparkles', group: 'Testes' },
 ]
 
 export default function ConsoleShell({ children, back, backLabel = 'Voltar', userId, allowed = false }) {

@@ -11,6 +11,8 @@ test('all action states preserve geometry in both themes and every account accen
   await expect(page.getByRole('tab', { name: 'Botões' })).toHaveAttribute('aria-selected', 'true')
   await expect(page.getByRole('tab', { name: 'Fluxos' })).toBeVisible()
   await expect(page.getByRole('tab', { name: 'Estados' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Estruturas' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Recuperação' })).toBeVisible()
   for (const theme of ['dark', 'light']) {
     await page.getByLabel('Tema do showcase').selectOption(theme)
     for (const accent of ['lime', 'sky', 'orange', 'violet', 'pink', 'red', 'teal', 'gold', 'caramel']) {

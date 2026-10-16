@@ -35,7 +35,7 @@ export function FppSpinner({ label = t('Loading…'), className = '', ...rest })
   return <span {...rest} className={`fpp-spinner ${className}`} role="status" aria-label={label}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /></svg></span>
 }
 
-export function FppToast({ message, tone = 'neutral' }) {
+export function FppToast({ message, tone = 'neutral', id = 'toast' }) {
   const [shown, setShown] = useState(() => ({ message, tone }))
   const [leaving, setLeaving] = useState(false)
   useEffect(() => {
@@ -50,7 +50,7 @@ export function FppToast({ message, tone = 'neutral' }) {
     return () => clearTimeout(timer)
   }, [message, tone, shown.message])
   const state = shown.tone === 'neutral' ? 'idle' : shown.tone
-  return <div id="toast" className={`${shown.message && !leaving ? 'show ' : ''}${leaving ? 'is-leaving ' : ''}fpp-toast`} data-tone={shown.tone} role="status" aria-live="polite" aria-atomic="true">
+  return <div id={id} className={`${shown.message && !leaving ? 'show ' : ''}${leaving ? 'is-leaving ' : ''}fpp-toast`} data-tone={shown.tone} role="status" aria-live="polite" aria-atomic="true">
     {shown.message && <><FppStatusAnimation state={state} /><span>{shown.message}</span></>}
   </div>
 }
