@@ -29,16 +29,17 @@ export default function Support() {
   const [open, setOpen] = useState(null)
   const [busy, setBusy] = useState(true)
   const [error, setError] = useState('')
+  const [reload, setReload] = useState(0)
   const repo = useMemo(repoFor, [])
-  useEffect(() => { let live = true; setBusy(true); repo.listFaq({ query, category }).then(rows => live && setFaq(rows)).catch(e => live && setError(e.message || 'Não foi possível carregar a ajuda.')).finally(() => live && setBusy(false)); return () => { live = false } }, [repo, query, category])
+  useEffect(() => { let live = true; setBusy(true); setError(''); repo.listFaq({ query, category }).then(rows => live && setFaq(rows)).catch(e => live && setError(e.message || 'Não foi possível carregar a ajuda.')).finally(() => live && setBusy(false)); return () => { live = false } }, [repo, query, category, reload])
   return <div className="narrow support-page">
     <AppHeader title="Ajuda e suporte" subtitle="Encontre respostas ou fale com o administrador." />
     <div className="support-actions"><Link className="support-action-card" to="/support/tickets/new"><Icon name="chat" /><span><strong>Fale com a equipe</strong><small>Envie dúvidas, sugestões, críticas ou relatos de problemas.</small></span><Icon name="chevronRight" /></Link><Link className="support-action-card" to="/support/tickets"><Icon name="history" /><span><strong>Meus chamados</strong><small>Acompanhe suas mensagens e respostas.</small></span><Icon name="chevronRight" /></Link></div>
     <Section title="Perguntas frequentes" className="support-section">
       <TextField className="support-search" placeholder="Buscar no FAQ" value={query} onChange={e => setQuery(e.target.value)} aria-label="Buscar no FAQ" />
       <div className="support-category-row"><button className={!category ? 'support-filter active' : 'support-filter'} onClick={() => setCategory(null)}>Todos</button>{SUPPORT_CATEGORIES.map(([id, label]) => <button key={id} className={category === id ? 'support-filter active' : 'support-filter'} onClick={() => setCategory(id)}>{label}</button>)}</div>
-      {error && <p role="alert" className="support-error">{error}</p>}{busy && <FppSkeleton label="Carregando perguntas…" />}{!busy && !error && faq.length === 0 && <p className="muted">Nenhuma pergunta encontrada.</p>}
-      <div className="support-faq-list">{faq.map(item => <article key={item.articleId} className="support-faq-item"><button type="button" onClick={() => setOpen(open === item.articleId ? null : item.articleId)}><span>{item.question}</span><Icon name={open === item.articleId ? 'chevronUp' : 'chevronDown'} /></button>{open === item.articleId && <p>{item.answer}</p>}</article>)}</div>
+      {error && <p role="alert" className="support-error">{error} <button type="button" className="link" onClick={() => setReload(value => value + 1)}>Tentar novamente</button></p>}{busy && <FppSkeleton label="Carregando perguntas…" />}{!busy && !error && faq.length === 0 && <p className="muted">Nenhuma pergunta encontrada.</p>}
+      <div className="support-faq-list">{faq.map(item => <article key={item.articleId} className="support-faq-item"><button type="button" onClick={() => setOpen(open === item.articleId ? null : item.articleId)}><span>{item.question}</span><Icon name={open === item.articleId ? 'chevronUp' : 'chevronDown'} /></button>{open === item.articleId && <p className="support-faq-answer">{item.answer}</p>}</article>)}</div>
     </Section>
   </div>
 }

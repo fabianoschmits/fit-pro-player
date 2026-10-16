@@ -14,6 +14,7 @@
 .support-faq-item { border-bottom: 1px solid var(--line); }
 .support-faq-item button { width: 100%; border: 0; background: transparent; color: var(--ink); display: flex; justify-content: space-between; text-align: left; padding: 15px 2px; font: inherit; cursor: pointer; }
 .support-faq-item p { color: var(--muted); line-height: 1.55; margin: 0 4px 16px; white-space: pre-wrap; }
+.support-faq-answer { animation: support-answer-enter .18s cubic-bezier(.2,.8,.2,1) both; } @keyframes support-answer-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 .support-form, .support-reply { display: grid; gap: 16px; margin-top: 18px; }
 .support-form label { display: grid; gap: 8px; color: var(--muted); font-size: .9rem; }
 .support-form select { appearance: none; }
