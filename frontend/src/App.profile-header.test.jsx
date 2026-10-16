@@ -118,6 +118,21 @@ describe('ProfileHeader editorial hero', () => {
     expect(avatar.contains(messageStage)).toBe(true)
     expect(messageStage.querySelector('.profile-hero-message').textContent).not.toBe('')
   })
+  it('includes the original profile-card phrases in the avatar lottery', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(15.5 / 84)
+    act(() => root.render(<ProfileHeader S={stateAt(75)} />))
+
+    expect(container.querySelector('.profile-hero-message').textContent).toBe('Um treino por vez.')
+  })
+  it('draws restored gym phrases and rotates without immediately repeating them', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.9999)
+    act(() => root.render(<ProfileHeader S={stateAt(75)} />))
+    expect(container.querySelector('.profile-hero-message').textContent).toBe('Treina agora, reclama depois.')
+
+    await act(async () => { await vi.advanceTimersByTimeAsync(6000) })
+
+    expect(container.querySelector('.profile-hero-message').textContent).toBe('Desistir não queima calorias.')
+  })
   it('chooses a fresh phrase on opening, rotates every six seconds by default, and lets the user hide messages', async () => {
     const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
     act(() => root.render(<ProfileHeader S={stateAt(75)} />))

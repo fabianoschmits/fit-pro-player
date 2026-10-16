@@ -36,6 +36,7 @@ import { MOBILE } from './lib/mobile.js'
 import { Capacitor } from '@capacitor/core'
 import { cancelNativeTimer, scheduleNativeTimer } from './lib/native-timer-notifications.js'
 import { normalizeNotificationPreferences } from './lib/notification-preferences.js'
+import { PROFILE_MOTIVATION_MESSAGES, profileMotivationMessage } from './lib/profile-motivation.js'
 const loadHome = () => import('./views/Home.jsx')
 const loadPlan = () => import('./views/Plan.jsx')
 const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
@@ -109,24 +110,6 @@ export const preloadCoreRoutes = () => Promise.allSettled([
 const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))
 
 bindUI(useUI)   // lets the shared controls open sheets without importing the store at module scope
-
-const PROFILE_MOTIVATION_MESSAGES = [
-  'Build consistency, one workout at a time.',
-  'Train at your own pace.',
-  'Keep showing up.',
-  'One set at a time.',
-  'Today counts.',
-  'Small steps build strong results.',
-  'Focus on the next repetition.',
-  'Your pace still moves you forward.',
-  'Progress starts with showing up.',
-  'The next set is yours.',
-  'Recovery is part of progress.',
-  'Strong habits build strong bodies.',
-  'Keep the promise you made to yourself.',
-  'Your routine is working for you.',
-  'Consistency beats intensity alone.',
-]
 
 function randomMotivationMessageIndex(exclude = null) {
   if (PROFILE_MOTIVATION_MESSAGES.length < 2 || exclude == null) {
@@ -231,7 +214,7 @@ export function ProfileHeader({ S, preview }) {
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -2, scale: 0.99 }}
             transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
           >
-            {t(PROFILE_MOTIVATION_MESSAGES[messageIndex])}
+            {profileMotivationMessage(messageIndex)}
           </motion.span>}
         </AnimatePresence>
       </div>}
