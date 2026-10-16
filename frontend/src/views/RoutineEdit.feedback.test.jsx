@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import RoutineEdit from './RoutineEdit.jsx'
+import RoutineEdit, { RoutineTemplatePicker } from './RoutineEdit.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }))
@@ -47,8 +47,26 @@ it('shows deletion for a user-created routine directly below the ready action', 
   expect(actions.textContent).toContain('Excluir treino')
 })
 
-it('does not offer deletion for a generated starter routine', () => {
+it('shows deletion for a generated starter routine too', () => {
   useStore.setState({ S: { ...structuredClone(DEF), routines: [{ id: 'routine', name: 'Treino A', starterKey: 'starter-a', ex: [] }] }, persistence: { state: 'saved', error: null } })
   act(() => root.render(<RoutineEdit />))
-  expect(container.querySelector('.routine-completion-actions').textContent).not.toContain('Excluir treino')
+  expect(container.querySelector('.routine-completion-actions').textContent).toContain('Excluir treino')
+})
+
+it('offers an understated picker for suggested or existing routines while creating an empty routine', () => {
+  expect(container.textContent).toContain('Começar com um treino sugerido ou existente')
+})
+
+it('loads a copy of the selected suggested routine into the editable draft', async () => {
+  const close = vi.fn()
+  act(() => root.render(<RoutineTemplatePicker currentId="routine" close={close} />))
+  const suggested = container.querySelector('.routine-template-option')
+  await act(async () => {
+    suggested.click()
+    await new Promise(resolve => setTimeout(resolve, 350))
+  })
+  const draft = useStore.getState().S.routines.find(routine => routine.id === 'routine')
+  expect(draft.ex.length).toBeGreaterThan(0)
+  expect(draft.starterKey).toBeUndefined()
+  expect(close).toHaveBeenCalledOnce()
 })

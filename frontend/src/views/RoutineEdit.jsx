@@ -16,7 +16,8 @@ import { POLICIES_FOR, POLICY_NAME, POLICY_DESC } from '../lib/progression.js'
 import BodyMap from '../components/BodyMap.jsx'
 import PlanProgress from '../components/PlanProgress.jsx'
 import { loadOfRoutine, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
-import { routineName } from '../lib/starter.js'
+import { routineName, starterRoutines } from '../lib/starter.js'
+import { DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
@@ -39,6 +40,47 @@ const MUSCLE_ANCHORS = {
   'hip-flexors': { front: { x: 42, y: 62 } },
   calves: { back: { x: 42, y: 86 }, front: { x: 58, y: 86 } },
   tibialis: { front: { x: 42, y: 86 }, back: { x: 58, y: 86 } },
+}
+
+export function RoutineTemplatePicker({ currentId, close }) {
+  const S = useStore(s => s.S)
+  const update = useStore(s => s.update)
+  const suggested = starterRoutines(S)
+  const existing = S.routines.filter(routine => routine.id !== currentId && !routine.starterKey && !routine.planGenerated)
+
+  const choose = source => {
+    update(state => {
+      const target = state.routines.find(routine => routine.id === currentId)
+      if (!target) return
+      target.name = routineName(source)
+      target.emoji = source.emoji || DEFAULT_GLYPH
+      target.ex = (source.ex || []).map(entry => ({ ...entry }))
+      delete target.starterKey
+      delete target.planGenerated
+      delete target.personalizedKey
+      target.starterCustomName = true
+    })
+    close()
+    useUI.getState().toast(t('Modelo carregado. Ajuste o treino antes de concluir.'))
+  }
+
+  const option = (source, label) => <Button key={source.id} appearance="custom" className="routine-template-option" onClick={() => choose(source)}>
+    <span className="routine-template-icon" aria-hidden="true"><RoutineMuscleThumb routine={source} body={S.body} /></span>
+    <span className="routine-template-copy"><strong>{routineName(source)}</strong><small>{label}</small></span>
+    <Icon name="chevronRight" className="chev" />
+  </Button>
+
+  return <div className="routine-template-picker">
+    <h3>{t('Escolha um treino para começar')}</h3>
+    <p className="dim">{t('Carregue uma cópia, edite como quiser e conclua quando estiver pronto.')}</p>
+    <h4>{t('Sugeridos pelo sistema')}</h4>
+    <div className="routine-template-list">{suggested.map(routine => option(routine, t('Modelo recomendado')))}</div>
+    <h4>{t('Meus treinos')}</h4>
+    {existing.length
+      ? <div className="routine-template-list">{existing.map(routine => option(routine, t('{0} exercícios', routine.ex?.length || 0)))}</div>
+      : <p className="small dim routine-template-empty">{t('Você ainda não possui outro treino para reutilizar.')}</p>}
+    <Button variant="plain" className="routine-template-cancel" onClick={close}>{t('Cancel')}</Button>
+  </div>
 }
 
 export default function RoutineEdit() {
@@ -112,6 +154,7 @@ export default function RoutineEdit() {
       return true
     },
   })
+  const openTemplatePicker = () => useUI.getState().openSheet(close => <RoutineTemplatePicker currentId={id} close={close} />)
 
   const units = supersetUnits(r.ex)
   const unitFirst = new Set(units.filter(u => u.length > 1).map(u => u[0]))
@@ -119,7 +162,7 @@ export default function RoutineEdit() {
   const assignedDays = WEEK_DAYS.filter(day => S.week[day] === id)
   const planProgress = planSetupProgress(S)
   const displayName = routineName(r)
-  const canDelete = !r.starterKey && !r.planGenerated
+  const canDelete = !r.assigned
 
   return <div className="narrow routine-builder">
     {planProgress && <PlanProgress progress={planProgress} />}
@@ -166,6 +209,7 @@ export default function RoutineEdit() {
       <Button variant="tinted" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
       <Button variant="plain" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
     </div>
+    {!r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Começar com um treino sugerido ou existente')}</Button>}
 
     <div className="card routine-week-card">
       <div className="row between routine-card-title">
