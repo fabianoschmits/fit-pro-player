@@ -389,17 +389,9 @@ function Shell() {
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
 
-  if (!ready && !authed) return (
-    <div id="app">
-      <div className="boot-loading">
-        <Icon name="dumbbell" />
-        <span className="muted small">{t('Loading…')}</span>
-      </div>
-    </div>
-  )
-
   return (
     <>
+      {!ready && !authed ? <div id="app"><div className="boot-loading"><Icon name="dumbbell" /><span className="muted small">{t('Loading…')}</span></div></div> : <>
       {/* Navigation clears failed renders without remounting a healthy workspace. */}
       <PageTransition>
         <ErrorBoundary resetKey={`${loc.pathname}${loc.search}`}>
@@ -458,9 +450,10 @@ function Shell() {
       </PageTransition>
       {!(/^\/(console|professional|professional-profile|student\/professionals|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
       <RestTimer />
+      </>}
       <Modals />
       <Toast />
-      <PrivacyConsentModal />
+      {(ready || authed) && <PrivacyConsentModal />}
     </>
   )
 }

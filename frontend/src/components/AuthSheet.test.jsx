@@ -74,10 +74,79 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   dom.close();
+  vi.useRealTimers();
   vi.clearAllMocks();
 });
 
 describe('AuthSheet', () => {
+  it('keeps pointer sign-in open through activation and success confirmation', async () => {
+    vi.useFakeTimers();
+    await render();
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    const submit = container.querySelector('[type="submit"]');
+    await act(async () => {
+      submit.dispatchEvent(new dom.PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
+      submit.dispatchEvent(new dom.MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+    });
+    expect(mocks.auth.signIn).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(319));
+    expect(mocks.auth.signIn).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(1));
+    expect(mocks.auth.signIn).toHaveBeenCalledTimes(1);
+    expect(submit.dataset.state).toBe('success');
+    expect(close).not.toHaveBeenCalled();
+    expect(mocks.enterApp).not.toHaveBeenCalled();
+    await act(async () => container.querySelector('form').dispatchEvent(new dom.Event('submit', { bubbles: true, cancelable: true })));
+    expect(mocks.auth.signIn).toHaveBeenCalledTimes(1);
+    await act(async () => vi.advanceTimersByTimeAsync(519));
+    expect(close).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(1));
+    expect(mocks.enterApp).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not enter or close after unmount during pointer success confirmation', async () => {
+    vi.useFakeTimers();
+    await render();
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    await act(async () => container.querySelector('[type="submit"]').dispatchEvent(new dom.MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })));
+    await act(async () => vi.advanceTimersByTimeAsync(320));
+    expect(mocks.auth.signIn).toHaveBeenCalledTimes(1);
+    await act(async () => root.render(null));
+    await act(async () => vi.advanceTimersByTimeAsync(520));
+    expect(mocks.enterApp).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('keeps reduced-motion pointer sign-in immediate', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(dom, 'matchMedia').mockReturnValue({ matches: true });
+    await render();
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    await act(async () => container.querySelector('[type="submit"]').dispatchEvent(new dom.MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })));
+    expect(mocks.auth.signIn).toHaveBeenCalledTimes(1);
+    expect(mocks.enterApp).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not close a different account after pointer success confirmation', async () => {
+    vi.useFakeTimers();
+    mocks.auth = auth({ user: { id: 'account-a' }, signIn: vi.fn().mockResolvedValue({ kind: 'success', data: { user: { id: 'account-a' } } }) });
+    await render();
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    await act(async () => container.querySelector('[type="submit"]').dispatchEvent(new dom.MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })));
+    await act(async () => vi.advanceTimersByTimeAsync(320));
+    mocks.auth = auth({ user: { id: 'account-b' } });
+    await render();
+    await act(async () => vi.advanceTimersByTimeAsync(520));
+    expect(mocks.enterApp).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+  });
+
   it('locks native form submissions immediately and exposes pending feedback before auth state updates', async () => {
     let resolve;
     mocks.auth.signIn.mockReturnValue(new Promise(done => { resolve = done }));
@@ -148,6 +217,16 @@ describe('AuthSheet', () => {
 
   it('enters the app immediately after sign-in', async () => {
     await render('sign_in');
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    await click(button('Sign in'));
+    expect(mocks.enterApp).toHaveBeenCalledTimes(1);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('enters after immediate sign-in while the new account context is still rendering', async () => {
+    mocks.auth = auth({ user: null, signIn: vi.fn().mockResolvedValue({ kind: 'success', data: { user: { id: 'new-account' } } }) });
+    await render();
     await setValue(input('Email'), 'ana@example.com');
     await setValue(input('Password'), 'long-enough-password');
     await click(button('Sign in'));

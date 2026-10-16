@@ -3,6 +3,11 @@
 .motion-showcase-controls>label{display:grid;gap:6px;color:var(--label-2);font-size:13px;flex:1;min-width:120px}
 .motion-showcase-controls select{padding:10px;border:1px solid var(--sep);border-radius:var(--r);background:var(--surface);color:var(--label);min-height:44px}
 .motion-showcase-controls .btn{width:auto}
+.motion-showcase-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:8px;margin:22px 0 6px}
+.motion-showcase-tabs [role=tab]{display:grid;gap:3px;text-align:left;padding:12px 14px;border:1px solid var(--surface-border);border-radius:var(--r);background:var(--surface);color:var(--label-2);cursor:pointer;transition:transform 180ms cubic-bezier(.2,.8,.2,1),border-color 180ms cubic-bezier(.2,.8,.2,1),color 180ms cubic-bezier(.2,.8,.2,1)}
+.motion-showcase-tabs [role=tab][aria-selected=true]{border-color:var(--acc);color:var(--label);box-shadow:inset 3px 0 0 var(--acc)}
+.motion-showcase-tabs [role=tab]:active{transform:scale(.98)}
+.motion-showcase-tabs small{font-size:11px;line-height:1.25}
 .motion-showcase-section-heading{display:grid;gap:4px;margin:22px 0 10px}
 .motion-showcase-section-heading h2{font-size:18px}
 .motion-showcase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;margin-block:20px}
@@ -16,3 +21,4 @@
 .motion-showcase-panel{margin-block:16px;display:grid;gap:12px}
 .motion-showcase-panel h2{font-size:17px}
 .motion-showcase-panel>[data-probe-action]{justify-self:start;width:auto;max-width:100%}
+@media (prefers-reduced-motion:reduce){.motion-showcase-tabs [role=tab]{transition:none}}

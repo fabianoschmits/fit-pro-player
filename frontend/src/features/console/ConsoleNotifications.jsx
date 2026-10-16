@@ -12,6 +12,9 @@ import { useFppAction } from '../../components/useFppAction.js'
 export default function ConsoleNotifications({ userId, allowed }) {
   const repo = useMemo(() => createConsoleNotificationRepository({ client: getBrowserSupabaseClient() }), [])
   const [open, setOpen] = useState(false), [page, setPage] = useState(0), [actionError, setActionError] = useState('')
+  const identity = `${userId}:${allowed}:${page}`
+  const current = useRef(identity); current.current = identity
+  useEffect(() => { current.current = identity; return () => { current.current = null } }, [identity])
   const { data, busy, error, refresh } = useConsoleResource({ userId, allowed, resourceKey: 'notifications:' + page, load: () => repo.list({ limit: 25, offset: page * 25 }) })
   const close = () => setOpen(false)
   const dialog = useRef(null), titleId = useId()
@@ -28,12 +31,14 @@ export default function ConsoleNotifications({ userId, allowed }) {
     setActionError('')
     try {
       await repo.markRead(null)
-      refresh()
-      return true
+      if (current.current !== identity) return false
+      return { identity }
     } catch (failure) {
-      setActionError('Não foi possível marcar as notificações. Tente novamente.')
+      if (current.current === identity) setActionError('Não foi possível marcar as notificações. Tente novamente.')
       throw failure
     }
+  }, onSuccess: result => {
+    if (current.current === result.identity) refresh()
   } })
   if (!allowed) return null
   return <>
@@ -41,7 +46,7 @@ export default function ConsoleNotifications({ userId, allowed }) {
     {open && createPortal(<div className="console-notification-overlay" onClick={e => { if (e.target === e.currentTarget) close() }}>
       <div ref={dialog} className="console-notification-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1}>
         <header><div><h2 id={titleId}>Notificações da plataforma</h2><p>Mensagens, cadastros e atividades do projeto.</p></div><button type="button" className="iconbtn" onClick={close} aria-label="Fechar notificações"><Icon name="xmark" /></button></header>
-        <div className="console-notification-tools"><span>{data?.unreadCount || 0} não lidas</span><CxButton type="button" className="console-text-button" state={markAllAction.state} disabled={!data?.unreadCount || markAllAction.locked} onAction={markAllAction.run}>Marcar todas como lidas</CxButton></div>
+        <div className="console-notification-tools"><span>{data?.unreadCount || 0} não lidas</span><CxButton type="button" className="console-text-button" state={markAllAction.state} disabled={!data?.unreadCount || markAllAction.locked} onClick={markAllAction.run}>Marcar todas como lidas</CxButton></div>
         <div className="console-notification-feed">
           {(error || actionError) && <div className="cx-alert" role="alert"><span>{actionError || error}</span><button className="console-text-button" onClick={refresh}>Tentar novamente</button></div>}
           {busy ? <Loading label="Carregando notificações…" /> : !data?.items.length && !error ? <p className="console-notification-empty">Nenhuma notificação por aqui.</p> : data?.items.map(item => <Link key={item.id} to={item.targetPath} className={`console-notification-item${item.readAt ? '' : ' is-unread'}`} onClick={() => { close(); repo.markRead(item.id).then(refresh).catch(() => {}) }}>

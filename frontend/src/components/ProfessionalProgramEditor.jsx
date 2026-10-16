@@ -16,7 +16,7 @@ const modeDefaults = entry => ({ ...entry, rest: entry.rest ?? 90,
 })
 const editorPlan = plan => Object.fromEntries(Object.entries(plan).map(([day, entries]) => [day, entries.map(modeDefaults)]))
 
-export default function ProfessionalProgramEditor({ exercises = [], initialPlan = {}, initialMetadata, draftKey, onPublish, onSaveMetadata, onCancel }) {
+export default function ProfessionalProgramEditor({ exercises = [], initialPlan = {}, initialMetadata, draftKey, onPublish, onPublished, onSaveMetadata, onCancel }) {
   const [saved] = useState(() => draftKey ? useStore.getState().S.professionalProgramDrafts?.[draftKey] : null)
   const [day, setDay] = useState('monday')
   const [copyTo, setCopyTo] = useState('tuesday')
@@ -62,6 +62,7 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
       const published = initialMetadata ? await onPublish(result.value, metadata) : await onPublish(result.value)
       if (published === false) return false
       if (draftKey) useStore.getState().update(state => { delete state.professionalProgramDrafts?.[draftKey] })
+      return published
     } catch (cause) { setError(t('Não foi possível publicar. Seu rascunho foi mantido; tente novamente.')); throw cause }
     finally { pendingRef.current = false; setPending(false) }
   }
@@ -75,7 +76,7 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
     finally { pendingRef.current = false; setPending(false) }
   }
   return <div className="professional-program-editor">
-    <div className="row between"><div><h3>{t('Montar semana')}</h3><p className="muted small">{t('Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.')}</p></div><Button disabled={pending} onClick={onCancel}>{t('Cancelar')}</Button></div>
+    <div className="row between"><div><h3>{t('Montar semana')}</h3><p className="muted small">{t('Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.')}</p></div><Button activation="immediate" disabled={pending} onClick={onCancel}>{t('Cancelar')}</Button></div>
     {saved && <p role="status">{t('Rascunho recuperado.')}</p>}
     {draftKey && <p className="muted small" role="status">{t(draftError ? 'Não foi possível salvar o rascunho neste dispositivo.' : 'Rascunho salvo neste dispositivo.')}</p>}
     {error && <p role="alert" className="error">{error}</p>}
@@ -105,9 +106,9 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
     {pickerOpen && <ProfessionalExercisePicker exercises={exercises} selectedIds={selectedIds} exerciseCount={current.length} dayLabel={t(labels[day])} onAdd={add} onClose={() => setPickerOpen(false)} />}
     {copyConfirmation && <Dialog title={t('Substituir exercícios do dia?')} onClose={() => setCopyConfirmation(null)}>
       <p>{t('Os exercícios de {0} serão substituídos pelos de {1}.', t(labels[copyConfirmation.target]), t(labels[copyConfirmation.source]))}</p>
-      <div className="row-actions"><Button variant="primary" onClick={() => { setDraft(state => ({ ...state, [copyConfirmation.target]: structuredClone(state[copyConfirmation.source] || []) })); setCopyConfirmation(null) }}>{t('Substituir dia')}</Button><Button onClick={() => setCopyConfirmation(null)}>{t('Cancelar')}</Button></div>
+      <div className="row-actions"><Button variant="primary" onClick={() => { setDraft(state => ({ ...state, [copyConfirmation.target]: structuredClone(state[copyConfirmation.source] || []) })); setCopyConfirmation(null) }}>{t('Substituir dia')}</Button><Button activation="immediate" onClick={() => setCopyConfirmation(null)}>{t('Cancelar')}</Button></div>
     </Dialog>}
     <p className="muted small">{t('Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.')}</p>
-    <Button variant="primary" intent="primary" disabled={pending} onAction={publish} loadingLabel={t('Publicando…')} successLabel={t('Nova versão publicada.')} errorLabel={t('Tentar novamente')}>{t('Publicar nova versão')}</Button>
+    <Button variant="primary" intent="primary" disabled={pending} onAction={publish} onSuccess={onPublished} loadingLabel={t('Publicando…')} successLabel={t('Nova versão publicada.')} errorLabel={t('Tentar novamente')}>{t('Publicar nova versão')}</Button>
   </div>
 }

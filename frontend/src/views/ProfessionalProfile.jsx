@@ -9,6 +9,7 @@ import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementAvatar, ManagementPanel, ManagementStatus } from '../components/ManagementUI.jsx'
 import ProfessionalProfileForm from '../components/ProfessionalProfileForm.jsx'
 import { FppActionFeedback, FppSkeleton } from '../components/FppFeedback.jsx'
+import { waitForFppConfirmation } from '../components/fpp-action-timing.js'
 
 const EMPTY = { professionalName: '', bio: '', specialties: [], cityRegion: '', registrationType: '', registrationNumber: '', verificationStatus: 'unverified' }
 
@@ -33,12 +34,13 @@ function ProfileWorkspace({ auth }) {
   const [notice, setNotice] = useState('')
   const [attempt, setAttempt] = useState(0)
   const active = useRef(false)
+  const confirmation = useRef(null)
   const authenticated = auth.status === 'authenticated' && !!auth.user?.id
   const editing = pathname === '/professional/profile/edit'
 
   useEffect(() => {
     active.current = true
-    return () => { active.current = false }
+    return () => { active.current = false; confirmation.current?.abort() }
   }, [])
 
   useEffect(() => {
@@ -54,7 +56,7 @@ function ProfileWorkspace({ auth }) {
 
   useEffect(() => { setError(''); setSaveState('idle') }, [pathname])
 
-  const persist = async draft => {
+  const persist = async (draft, event) => {
     if (savingRef.current) return false
     savingRef.current = true
     const provisioning = !capability
@@ -62,9 +64,13 @@ function ProfileWorkspace({ auth }) {
     try {
       const next = await (provisioning ? repository.provision(auth.user.id, draft) : repository.save(auth.user.id, draft))
       if (!active.current) return false
+      setSaveState('success')
+      confirmation.current = new AbortController()
+      const confirmed = await waitForFppConfirmation(event, { signal: confirmation.current.signal })
+      confirmation.current = null
+      if (!confirmed || !active.current) return false
       setProfile({ ...EMPTY, ...next }); setCapability(true)
       setNotice(provisioning ? t('Perfil profissional criado.') : t('Perfil salvo.'))
-      setSaveState('success')
       navigate(provisioning ? '/professional-profile' : '/professional/profile', { replace: true })
     } catch (cause) {
       if (!active.current) return false

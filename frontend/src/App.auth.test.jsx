@@ -19,7 +19,7 @@ vi.mock('./views/Landing.jsx', () => ({ default: ({ invitePath }) => <main class
 vi.mock('./store/useStore.js', () => ({
   useStore: Object.assign(selector => {
     const state = {
-    S: { theme: 'dark', accent: 'lime', lang: 'pt', onboardingDone: mocks.onboardingDone, active: null, keepAwake: false },
+    S: { theme: 'dark', accent: 'lime', lang: 'pt', onboardingDone: mocks.onboardingDone, active: null, keepAwake: false, routines: [], week: {}, dayPlan: {} },
     user: null,
     ready: mocks.ready,
     boot: mocks.boot,
@@ -30,6 +30,7 @@ vi.mock('./store/useStore.js', () => ({
   }));
 
 import App from './App.jsx';
+import { useUI } from './store/useUI.js';
 
 let dom;
 let root;
@@ -60,6 +61,23 @@ afterEach(async () => {
 });
 
 describe('App Auth boot coordination', () => {
+  it('preserves an open auth surface and its draft across account boot', async () => {
+    mocks.ready = true;
+    mocks.auth = { status: 'anonymous', user: null };
+    await act(async () => root.render(<App />));
+    await act(async () => useUI.getState().openSheet(() => <input data-auth-draft defaultValue="Rascunho" />));
+    const draft = container.querySelector('[data-auth-draft]');
+    draft.value = 'Confirmando acesso';
+    mocks.ready = false;
+    mocks.auth = { status: 'authenticated', user: { id: 'supabase-user' } };
+    await act(async () => root.render(<App />));
+    expect(container.querySelector('[data-auth-draft]')).toBe(draft);
+    expect(draft.value).toBe('Confirmando acesso');
+    mocks.ready = true;
+    await act(async () => root.render(<App />));
+    expect(container.querySelector('[data-auth-draft]')).toBe(draft);
+    await act(async () => useUI.getState().closeAll());
+  });
   it.each(['/connect', '/student/professionals/add', '/connect?code=A1B2C3D4E5', '/student/professionals?code=A1B2C3D4E5', '/student/professionals/add?code=A1B2C3D4E5', '/invite/A1B2C3D4E5'])('retains anonymous invitation context through boot for %s', async route => {
     window.location.hash = `#${route}`;
     mocks.ready = true;

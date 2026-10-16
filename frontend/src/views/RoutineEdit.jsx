@@ -100,7 +100,6 @@ export default function RoutineEdit() {
   const saveRoutine = async () => {
     setSaveError('')
     if (!(await useStore.getState().flushPersistence())) throw new Error('local-write-failed')
-    nav('/plan')
   }
 
   const units = supersetUnits(r.ex)
@@ -177,7 +176,7 @@ export default function RoutineEdit() {
     </div>
 
     {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
-    <Button variant="primary" icon="check" onAction={saveRoutine} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+    <Button variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => nav('/plan')} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
       onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
 
     {r.ex.length > 0 && (() => {

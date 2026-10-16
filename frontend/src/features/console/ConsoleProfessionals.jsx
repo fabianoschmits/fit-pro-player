@@ -6,6 +6,7 @@ import ConsoleShell from './ConsoleLayout.jsx'
 import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
 import { Avatar, Chip, Loading, Empty, Alert, SPRING, CxButton } from './ConsoleUI.jsx'
 import { useFppAction } from '../../components/useFppAction.js'
+import { fppActionInput } from '../../components/fpp-action-timing.js'
 
 export function ConsoleProfessionals() {
   const { userId, repo, allowed } = useConsoleAccess()
@@ -17,11 +18,12 @@ export function ConsoleProfessionals() {
   const [error, setError] = useState('')
   const [limit, setLimit] = useState(50)
   const [acting, setActing] = useState('')
-  const owner = useRef(userId)
-  owner.current = userId
+  const identity = JSON.stringify([userId, query, status, limit])
+  const owner = useRef(identity)
+  owner.current = identity
 
   const refresh = async () => {
-    const id = userId; setBusy(true)
+    const id = identity; setBusy(true)
     try {
       const next = await repo.listProfessionals({ query, status: status || null, limit })
       if (owner.current === id) { setRows(next); setError('') }
@@ -30,7 +32,7 @@ export function ConsoleProfessionals() {
   }
 
   useEffect(() => {
-    owner.current = userId
+    owner.current = identity
     if (userId && allowed) refresh()
     return () => { owner.current = null }
   }, [userId, allowed, query, status, limit])
@@ -39,15 +41,16 @@ export function ConsoleProfessionals() {
     setActing(`${targetId}:${nextStatus}`); setError('')
     try {
       await repo.setVerification(targetId, nextStatus)
-      if (owner.current !== userId) return false
-      await refresh()
-      return true
+      if (owner.current !== identity) return false
+      return { identity }
     } catch (err) {
-      if (owner.current === userId) setError('Não foi possível atualizar a verificação.')
+      if (owner.current === identity) setError('Não foi possível atualizar a verificação.')
       throw err
     }
+  }, onSuccess: result => {
+    if (owner.current === result.identity) return refresh()
   } })
-  const setVerification = (targetId, nextStatus) => operation.run({ targetId, nextStatus })
+  const setVerification = (event, targetId, nextStatus) => operation.run({ targetId, nextStatus, fppInput: fppActionInput(event) })
   const actionState = (targetId, nextStatus) => acting === `${targetId}:${nextStatus}` ? operation.state : 'idle'
 
   const filters = [
@@ -124,19 +127,19 @@ export function ConsoleProfessionals() {
                         {pro.verificationStatus !== 'verified' && (
                           <CxButton type="button" className="cx-pill-btn cx-pill-btn--accent"
                             state={actionState(pro.userId, 'verified')} disabled={operation.locked}
-                            onClick={() => setVerification(pro.userId, 'verified')}
+                            onClick={event => setVerification(event, pro.userId, 'verified')}
                           >Aprovar</CxButton>
                         )}
                         {pro.verificationStatus !== 'rejected' && (
                           <CxButton type="button" className="cx-pill-btn cx-pill-btn--danger"
                             state={actionState(pro.userId, 'rejected')} disabled={operation.locked}
-                            onClick={() => setVerification(pro.userId, 'rejected')}
+                            onClick={event => setVerification(event, pro.userId, 'rejected')}
                           >Rejeitar</CxButton>
                         )}
                         {pro.verificationStatus !== 'pending' && (
                           <CxButton type="button" className="cx-pill-btn"
                             state={actionState(pro.userId, 'pending')} disabled={operation.locked}
-                            onClick={() => setVerification(pro.userId, 'pending')}
+                            onClick={event => setVerification(event, pro.userId, 'pending')}
                           >Pendente</CxButton>
                         )}
                       </div>

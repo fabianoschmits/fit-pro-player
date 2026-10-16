@@ -19,7 +19,24 @@ beforeEach(() => {
     listProfessionals: vi.fn().mockResolvedValue([{ userId: 'user-1', professionalName: 'Ana', email: 'ana@example.com', verificationStatus: 'pending', studentLinks: 0 }]), setVerification: vi.fn(),
   }
 })
-afterEach(async () => { await act(async () => root.unmount()); host.remove(); delete window.confirm; vi.restoreAllMocks() })
+afterEach(async () => { await act(async () => root.unmount()); host.remove(); delete window.confirm; vi.useRealTimers(); vi.restoreAllMocks() })
+
+it.each(['account', 'verification'])('keeps a pointer result visible before refreshing the %s surface', async surface => {
+  vi.useFakeTimers()
+  await act(async () => root.render(<MemoryRouter initialEntries={['/console/users/user-1']}><Routes><Route path="/console/users/:userId" element={surface === 'account' ? <ConsoleUserPage /> : <ConsoleProfessionals />} /></Routes></MemoryRouter>))
+  const reads = surface === 'account' ? mocks.repo.userDetail : mocks.repo.listProfessionals
+  const action = button(surface === 'account' ? 'Salvar nome' : 'Aprovar')
+  await act(async () => action.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+  await act(async () => vi.advanceTimersByTimeAsync(320))
+
+  expect(reads).toHaveBeenCalledTimes(1)
+  expect(host.querySelector('[data-state="success"]')).not.toBeNull()
+  expect(host.textContent).toContain('Ana')
+  await act(async () => vi.advanceTimersByTimeAsync(519))
+  expect(reads).toHaveBeenCalledTimes(1)
+  await act(async () => vi.advanceTimersByTimeAsync(1))
+  expect(reads).toHaveBeenCalledTimes(2)
+})
 
 it('locks account writes across controls and leaves a failed name edit available for retry', async () => {
   let reject

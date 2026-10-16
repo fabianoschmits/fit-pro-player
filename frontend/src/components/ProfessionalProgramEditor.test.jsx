@@ -19,6 +19,23 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional program editor', () => {
+  it('keeps pointer publication confirmation visible before completing the editor', async () => {
+    vi.useFakeTimers()
+    try {
+      const publish = vi.fn().mockResolvedValue({ id: 'version-2' })
+      const published = vi.fn()
+      await act(async () => root.render(<ProfessionalProgramEditor initialPlan={{ monday: [{ exerciseId: '9997', sets: 3, reps: 8 }] }} onPublish={publish} onPublished={published} onCancel={vi.fn()} />))
+      const button = [...container.querySelectorAll('button')].find(item => item.textContent.includes('Publicar'))
+      await act(async () => button.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+      expect(publish).not.toHaveBeenCalled()
+      await act(async () => { vi.advanceTimersByTime(320); await Promise.resolve() })
+      expect(publish).toHaveBeenCalledTimes(1)
+      expect(button.getAttribute('data-state')).toBe('success')
+      expect(published).not.toHaveBeenCalled()
+      await act(async () => { vi.advanceTimersByTime(520); await Promise.resolve() })
+      expect(published).toHaveBeenCalledWith({ id: 'version-2' })
+    } finally { vi.useRealTimers() }
+  })
   it('reports failed publication on the action, preserves its draft and allows immediate retry', async () => {
     let fail
     const publish = vi.fn().mockImplementationOnce(() => new Promise((_, reject) => { fail = reject })).mockResolvedValueOnce(undefined)

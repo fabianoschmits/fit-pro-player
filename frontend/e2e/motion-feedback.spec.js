@@ -8,6 +8,9 @@ test.beforeEach(async ({ page }) => {
 })
 
 test('all action states preserve geometry in both themes and every account accent', async ({ page }, testInfo) => {
+  await expect(page.getByRole('tab', { name: 'Botões' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('tab', { name: 'Fluxos' })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Estados' })).toBeVisible()
   for (const theme of ['dark', 'light']) {
     await page.getByLabel('Tema do showcase').selectOption(theme)
     for (const accent of ['lime', 'sky', 'orange', 'violet', 'pink', 'red', 'teal', 'gold', 'caramel']) {
@@ -27,7 +30,20 @@ test('all action states preserve geometry in both themes and every account accen
   }
 })
 
+test('laboratory separates test families and delays a pointer mutation until its press feedback is visible', async ({ page }) => {
+  await page.getByRole('tab', { name: 'Fluxos' }).click()
+  const action = page.locator('[data-probe-action]')
+  await action.click()
+  await expect(action).toHaveAttribute('data-visual-state', 'pressed')
+  await expect(page.locator('[data-probe-count]')).toHaveText('0')
+  await expect(page.locator('[data-probe-count]')).toHaveText('1')
+  await expect(page.getByRole('tabpanel', { name: 'Fluxos' })).toBeVisible()
+  await page.getByRole('tab', { name: 'Botões' }).click()
+  await expect(page.locator('[data-probe-action]')).toHaveCount(0)
+})
+
 test('pending action blocks repeats, keeps width stable and supports error then retry', async ({ page }) => {
+  await page.getByRole('tab', { name: 'Fluxos' }).click()
   const action = page.locator('[data-probe-action]')
   const width = (await action.boundingBox()).width
   await action.dblclick()

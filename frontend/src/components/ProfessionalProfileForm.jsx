@@ -13,7 +13,7 @@ export default function ProfessionalProfileForm({ profile, onSave, onCancel, sav
     if (saving) return
     if (!draft.professionalName.trim()) { setNameError(true); nameRef.current?.focus(); return }
     setNameError(false)
-    onSave({ ...draft, professionalName: draft.professionalName.trim(), specialties: draft.specialties.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8) })
+    onSave({ ...draft, professionalName: draft.professionalName.trim(), specialties: draft.specialties.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8) }, event)
   }
   return <form className="management-profile-form" onSubmit={submit} aria-busy={saving || undefined} noValidate>
     <fieldset disabled={saving} className="management-form-group">
@@ -37,8 +37,8 @@ export default function ProfessionalProfileForm({ profile, onSave, onCancel, sav
       <p className="management-help">{t('Salvar exige conexão. O status de verificação é controlado pelo sistema.')}</p>
     </fieldset>
     <div className="management-form-actions">
-      <Button type="submit" variant="primary" intent="primary" state={saving ? 'loading' : state} loadingLabel={provisioning ? t('Criando…') : t('Salvando…')} successLabel={t('Perfil salvo.')} errorLabel={t('Tentar novamente')} disabled={saving}>{provisioning ? t('Criar perfil profissional') : t('Salvar perfil')}</Button>
-      <Button type="button" disabled={saving} onClick={onCancel}>{t('Cancelar')}</Button>
+      <Button type="submit" variant="primary" intent="primary" state={state === 'success' ? state : saving ? 'loading' : state} loadingLabel={provisioning ? t('Criando…') : t('Salvando…')} successLabel={t('Perfil salvo.')} errorLabel={t('Tentar novamente')} disabled={saving}>{provisioning ? t('Criar perfil profissional') : t('Salvar perfil')}</Button>
+      <Button type="button" activation="immediate" disabled={saving} onClick={onCancel}>{t('Cancelar')}</Button>
     </div>
   </form>
 }

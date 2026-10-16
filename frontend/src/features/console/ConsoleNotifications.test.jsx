@@ -12,8 +12,27 @@ import ConsoleNotifications from './ConsoleNotifications.jsx'
 let root, container
 function Location() { return <output>{useLocation().pathname}</output> }
 beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.list.mockReset().mockResolvedValue({ items: [{ id: 'support:m1', title: 'Nova mensagem', body: 'Dúvida sobre treino', targetPath: '/console/support/t1', createdAt: '2026-10-15T10:00:00Z', readAt: null, kind: 'support' }], unreadCount: 1, hasMore: false }); mocks.markRead.mockReset().mockResolvedValue(); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
-afterEach(async () => { await act(async () => root.unmount()); container.remove() })
+afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.useRealTimers() })
 const render = allowed => act(async () => root.render(<MemoryRouter initialEntries={['/console']}><ConsoleNotifications allowed={allowed} userId="admin-1" /><Location /></MemoryRouter>))
+
+it('keeps the notification result and feed visible before the pointer success refresh', async () => {
+  vi.useFakeTimers()
+  await render(true)
+  await act(async () => container.querySelector('button').click())
+  const reads = mocks.list.mock.calls.length
+  const action = [...document.querySelectorAll('[role="dialog"] button')].find(el => el.textContent === 'Marcar todas como lidas')
+  await act(async () => action.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+  await act(async () => vi.advanceTimersByTimeAsync(320))
+
+  expect(mocks.markRead).toHaveBeenCalledExactlyOnceWith(null)
+  expect(mocks.list).toHaveBeenCalledTimes(reads)
+  expect(action.getAttribute('data-state')).toBe('success')
+  expect(document.querySelector('.console-notification-item')).not.toBeNull()
+  await act(async () => vi.advanceTimersByTimeAsync(519))
+  expect(mocks.list).toHaveBeenCalledTimes(reads)
+  await act(async () => vi.advanceTimersByTimeAsync(1))
+  expect(mocks.list).toHaveBeenCalledTimes(reads + 1)
+})
 
 it('opens the notification dialog and follows a notification to the correct page', async () => {
   await render(true)

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { useStore } from '../store/useStore.js'
+import { Button } from './ui.jsx'
 
 const REQUESTS = [['access', 'Acessar meus dados'], ['correction', 'Corrigir meus dados'], ['portability', 'Exportar meus dados'], ['sharing_information', 'Saber com quem meus dados são compartilhados'], ['consent_revocation', 'Revogar um consentimento'], ['deletion', 'Solicitar exclusão da conta']]
 
@@ -23,7 +24,7 @@ export default function PrivacyControls({ toast }) {
     <section className="privacy-control-section" aria-labelledby="privacy-request-title">
       <h2 id="privacy-request-title">Solicitar atendimento LGPD</h2>
       <p className="muted">Escolha um direito e descreva o que precisa ser analisado. O atendimento autenticado gera um protocolo.</p>
-      <form onSubmit={submit}><label>Tipo de solicitação<select className="input" value={type} onChange={event => setType(event.target.value)}>{REQUESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Detalhes<textarea className="input" value={details} maxLength={4000} onChange={event => setDetails(event.target.value)} placeholder="Explique o que precisa ser analisado." /></label><button className="btn" type="submit" disabled={busy}>{busy ? 'Registrando...' : 'Registrar solicitação'}</button></form>
+      <form onSubmit={submit}><label>Tipo de solicitação<select className="input" value={type} onChange={event => setType(event.target.value)}>{REQUESTS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label>Detalhes<textarea className="input" value={details} maxLength={4000} onChange={event => setDetails(event.target.value)} placeholder="Explique o que precisa ser analisado." /></label><Button variant="primary" type="submit" state={busy ? 'loading' : 'idle'} loadingLabel="Registrando…">Registrar solicitação</Button></form>
       {protocol && <p role="status">Solicitação registrada. Protocolo: <strong>{protocol}</strong></p>}{error && <p role="alert" className="error">{error}</p>}
     </section>
   </div>

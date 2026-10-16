@@ -6,6 +6,7 @@ import { createProfessionalWorkflowRepository } from '../lib/professional-workfl
 import { professionalDate, statusLabel, withTimeout } from '../lib/professional-ux.js'
 import { t } from '../lib/i18n.js'
 import { FppSkeleton } from '../components/FppFeedback.jsx'
+import { useFppAction } from '../components/useFppAction.js'
 import { Button } from '../components/ui.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementPanel, ManagementEmpty, ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
@@ -49,12 +50,16 @@ function DetailWorkspace({ professionalId }) {
       if (ownsState) store.invalidateAssignedProgramReads(requestScope)
       if (ownsState && state.assignedProgram?.assignmentId && revokedAssignments.has(state.assignedProgram.assignmentId)) store.replaceState(clearAssignedProgramFromState({ ...state }))
       if (!alive.current || !ownsState) return false
-      if (currentQuery.current === requestQuery) navigate('/student/professionals', { replace: true })
-      else { setConfirm(false); await refresh() }
+      return requestQuery
     }
     catch (cause) { if (alive.current) setActionError(t('Não foi possível encerrar o vínculo.')); throw cause }
     finally { mutationPending.current = false; if (alive.current) setSaving(false) }
   }
+  const revokeAction = useFppAction({ onAction: revoke, onSuccess: async requestQuery => {
+    if (!alive.current) return
+    if (currentQuery.current === requestQuery) navigate('/student/professionals', { replace: true })
+    else { setConfirm(false); await refresh() }
+  } })
   if (busy || !data) return <ManagementLayout audience="student" title={t('Profissional')} backTo="/student/professionals">{busy ? <FppSkeleton label={t('Carregando profissional…')} /> : <ManagementEmpty title={error || t('Profissional não encontrado.')} action={<div className="row-actions">{error && <Button onClick={refresh}>{t('Tentar novamente')}</Button>}<Link className="management-button" to="/student/professionals">{t('Voltar para meus profissionais')}</Link></div>} />}</ManagementLayout>
   const person = data.professional
   const materials = data.materials || []; const materialId = params.get('material')
@@ -72,6 +77,6 @@ function DetailWorkspace({ professionalId }) {
     {section === 'history' && <ManagementPanel title={t('Histórico de treinos')} description={t('Até 100 execuções recentes deste profissional.')}>
       {data.executions?.length ? data.executions.map(item => <details className="management-material-detail" key={item.id}><summary><strong>{professionalDayLabel(item.day_key)}</strong><span className="muted">{statusLabel(item.status)} · {professionalDate(item.started_at, true)}</span></summary><ProfessionalSessionDetail execution={item} /></details>) : <p className="muted">{t('Nenhuma execução registrada.')}</p>}
     </ManagementPanel>}
-    {section === 'relationship' && <ManagementPanel title={t('Vínculo')}><p>{t('Desde {0}', professionalDate(data.relationship.linkedAt))}</p><p>{t('Vínculo ativo')}</p><p className="muted">{t('Desvincular encerra os programas deste profissional. Seu histórico pessoal é preservado.')}</p>{confirm ? <div className="danger-confirm"><strong>{t('Desvincular este profissional?')}</strong><Button variant="danger" intent="critical" disabled={saving} onAction={revoke} loadingLabel={t('Desvinculando…')} successLabel={t('Vínculo encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button disabled={saving} onClick={() => setConfirm(false)}>{t('Cancelar')}</Button></div> : <Button variant="ghost" disabled={saving} onClick={() => setConfirm(true)}>{t('Desvincular')}</Button>}</ManagementPanel>}
+    {section === 'relationship' && <ManagementPanel title={t('Vínculo')}><p>{t('Desde {0}', professionalDate(data.relationship.linkedAt))}</p><p>{t('Vínculo ativo')}</p><p className="muted">{t('Desvincular encerra os programas deste profissional. Seu histórico pessoal é preservado.')}</p>{confirm ? <div className="danger-confirm"><strong>{t('Desvincular este profissional?')}</strong><Button variant="danger" intent="critical" state={revokeAction.state} disabled={saving || revokeAction.locked} onClick={revokeAction.run} loadingLabel={t('Desvinculando…')} successLabel={t('Vínculo encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button activation="immediate" disabled={saving || revokeAction.locked} onClick={() => setConfirm(false)}>{t('Cancelar')}</Button></div> : <Button variant="ghost" disabled={saving || revokeAction.locked} onClick={() => setConfirm(true)}>{t('Desvincular')}</Button>}</ManagementPanel>}
   </ManagementLayout>
 }

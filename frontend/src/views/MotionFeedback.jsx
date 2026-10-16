@@ -8,6 +8,11 @@ import { confirmSheet } from '../sheets.jsx'
 import '../motion-showcase.css'
 
 const states = ['idle', 'pressed', 'loading', 'processing', 'success', 'error', 'disabled', 'uploading', 'syncing', 'offline', 'warning']
+const LAB_TABS = [
+  { id: 'buttons', label: 'Botões', hint: 'Pressão, resultado e ações críticas' },
+  { id: 'flows', label: 'Fluxos', hint: 'Ordem entre confirmação e ação' },
+  { id: 'states', label: 'Estados', hint: 'Progresso, status e carregamento' },
+]
 
 function Sample({ name, action, animation, children, className = '', dataSample }) {
   return <article className={`motion-showcase-sample ${className}`.trim()} data-sample={dataSample}>
@@ -22,6 +27,7 @@ export default function MotionFeedback() {
   const [accent, setAccent] = useState(() => document.documentElement.dataset.accent || 'lime')
   const [checked, setChecked] = useState(false), [enabled, setEnabled] = useState(false)
   const [count, setCount] = useState(0), [pending, setPending] = useState(false), [criticalCount, setCriticalCount] = useState(0)
+  const [tab, setTab] = useState('buttons')
   const settle = useRef(null)
   useEffect(() => {
     const root = document.documentElement, original = { theme: root.dataset.theme, accent: root.dataset.accent }
@@ -45,10 +51,16 @@ export default function MotionFeedback() {
       <label>{t('Theme')}<select aria-label="Tema do showcase" value={theme} onChange={event => setTheme(event.target.value)}><option value="dark">{t('Dark')}</option><option value="light">{t('Light')}</option></select></label>
       <label>{t('Accent color')}<select aria-label="Cor de destaque do showcase" value={accent} onChange={event => setAccent(event.target.value)}>{Object.keys(ACCENTS).map(value => <option key={value}>{value}</option>)}</select></label>
     </div>
+    <div className="motion-showcase-tabs" role="tablist" aria-label="Categorias de testes">
+      {LAB_TABS.map(item => <button key={item.id} type="button" role="tab" id={`motion-tab-${item.id}`} aria-selected={tab === item.id} aria-controls={`motion-panel-${item.id}`} onClick={() => setTab(item.id)}>
+        <strong>{item.label}</strong><small>{item.hint}</small>
+      </button>)}
+    </div>
+    {tab === 'buttons' && <section role="tabpanel" id="motion-panel-buttons" aria-labelledby="motion-tab-buttons" aria-label="Botões">
     <section aria-label={t('Action states')}>
       <div className="motion-showcase-section-heading"><h2>{t('Action states')}</h2><p className="muted small">{t('Every button keeps its width and announces its result.')}</p></div>
       <div className="motion-showcase-grid">
-        {states.map(state => <Sample key={state} dataSample={state} name={state} action={`state=${state}`} animation={state === 'success' ? 'check 360ms' : state === 'error' ? 'retry stays available' : state === 'disabled' ? 'no interaction' : 'energy rail after 160ms'}>
+        {states.map(state => <Sample key={state} dataSample={state} name={state} action={`state=${state}`} animation={state === 'success' ? 'check 480ms' : state === 'error' ? 'retry stays available' : state === 'disabled' ? 'no interaction' : 'press 320ms · rail after 220ms'}>
           <Button variant="primary" size="sm" state={state} loadingLabel={t('Saving…')} successLabel={t('Saved')} errorLabel={t('Try again')}>{t('Save')}</Button>
         </Sample>)}
       </div>
@@ -57,10 +69,11 @@ export default function MotionFeedback() {
       <Sample name="primary" action="intent=primary · Save" animation="press + rail + check"><Button variant="primary" size="sm" intent="primary" onAction={() => true} successLabel={t('Saved')}>{t('Save')}</Button></Sample>
       <Sample name="quick" action="intent=quick · Copy" animation="instant local check"><Button variant="secondary" size="sm" intent="quick" onAction={() => true} successLabel={t('Done')}>{t('Copy')}</Button></Sample>
       <Sample name="critical" action="intent=critical · Delete" animation="confirmation before commit"><Button variant="danger" size="sm" intent="critical" onClick={() => confirmSheet({ title: t('Delete'), message: t('Confirm'), confirmText: t('Delete'), danger: true, onConfirm: () => { setCriticalCount(value => value + 1); return true } })}>{t('Delete')} <span className="sr-only">{criticalCount}</span></Button></Sample>
-    </section>
+    </section></section>}
+    {tab === 'flows' && <section role="tabpanel" id="motion-panel-flows" aria-labelledby="motion-tab-flows" aria-label="Fluxos">
     <section className="motion-showcase-panel">
-      <div className="motion-showcase-label"><strong>{t('Try an action')}</strong><code>onAction → Promise</code><span>loading → success/error → retry</span></div>
-      <p className="muted small">{t('Start the action, then confirm the result or simulate an error.')}</p>
+      <div className="motion-showcase-label"><strong>{t('Try an action')}</strong><code>press → onAction → success → continuation</code><span>press 320ms · result visible 520ms</span></div>
+      <p className="muted small">A contagem só muda depois da pressão. Confirme o resultado para testar sucesso, erro e repetição.</p>
       <Button variant="primary" size="sm" data-probe-action onAction={probe} loadingLabel={t('Saving…')} successLabel={t('Saved')} errorLabel={t('Try again')}>{t('Save')}</Button>
       <div className="motion-showcase-controls"><Button size="sm" disabled={!pending} onClick={() => complete(false)}>{t('Confirm result')}</Button><Button size="sm" disabled={!pending} intent="critical" onClick={() => complete(true)}>{t('Simulate error')}</Button></div>
       <p className="muted small">{t('Executions')}: <output data-probe-count>{count}</output></p>
@@ -69,6 +82,8 @@ export default function MotionFeedback() {
       <div className="motion-showcase-label"><strong>{t('Quick actions')}</strong><code>Check · Switch · intent=quick</code><span>immediate local feedback</span></div>
       <div className="motion-showcase-controls"><Check checked={checked} onChange={setChecked} ariaLabel={t('Complete set')} /><Switch checked={enabled} onChange={setEnabled} ariaLabel={t('Notifications')} /><Button size="sm" intent="quick" onAction={() => true} successLabel={t('Done')}>{t('Copy')}</Button></div>
     </section>
+    </section>}
+    {tab === 'states' && <section role="tabpanel" id="motion-panel-states" aria-labelledby="motion-tab-states" aria-label="Estados">
     <section className="motion-showcase-panel">
       <h2>{t('Progress and status')}</h2>
       <FppProgress value={60} label={t('Progress')} />
@@ -79,5 +94,6 @@ export default function MotionFeedback() {
       <div className="motion-showcase-controls"><FppStatusAnimation state="warning" /><FppSpinner label={t('Loading…')} /></div>
       <FppSkeleton label={t('Loading…')} rows={3} />
     </section>
+    </section>}
   </main>
 }

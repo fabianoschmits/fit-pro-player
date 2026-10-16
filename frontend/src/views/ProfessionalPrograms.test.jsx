@@ -19,6 +19,23 @@ beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = 
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional programs page', () => {
+  it('keeps the editor visible until a pointer publication has shown its confirmation', async () => {
+    vi.useFakeTimers()
+    try {
+      await act(async () => root.render(page('/professional/programs/p1/edit')))
+      const action = [...container.querySelectorAll('button')].find(button => button.textContent === 'Publicar nova versão')
+      await act(async () => action.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })))
+      expect(mocks.repo.publishProgramVersion).not.toHaveBeenCalled()
+      await act(async () => { vi.advanceTimersByTime(320); await Promise.resolve() })
+      expect(mocks.repo.publishProgramVersion).toHaveBeenCalledTimes(1)
+      expect(action.getAttribute('data-state')).toBe('success')
+      expect(container.querySelector('.professional-program-editor')).not.toBeNull()
+      await act(async () => { vi.advanceTimersByTime(520); await Promise.resolve() })
+      expect(container.querySelector('.professional-program-editor')).toBeNull()
+      expect(container.textContent).toContain('Nova versão publicada.')
+    } finally { vi.useRealTimers() }
+  })
+
   it('separates archived programs without loading their versions', async () => {
     mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Disponível' }, { id: 'p2', title: 'Programa antigo', archived: true }])
     await act(async () => root.render(page()))

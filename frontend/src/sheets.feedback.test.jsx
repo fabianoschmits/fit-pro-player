@@ -29,10 +29,29 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount())
   container.remove()
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 
 describe('confirmed action feedback', () => {
+  it('keeps a pointer confirmation visible through its successful feedback before closing', async () => {
+    vi.useFakeTimers()
+    let removals = 0
+    confirmSheet({ danger: true, onConfirm: () => { removals++ } })
+    const id = mountSheet()
+    const button = container.querySelector('button.danger')
+    await act(async () => button.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+    await act(async () => vi.advanceTimersByTimeAsync(320))
+
+    expect(removals).toBe(1)
+    expect(button.getAttribute('data-state')).toBe('success')
+    expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(true)
+    await act(async () => vi.advanceTimersByTimeAsync(519))
+    expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(true)
+    await act(async () => vi.advanceTimersByTimeAsync(1))
+    expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(false)
+  })
+
   it('keeps a cancelled or invalid confirmation neutral and available', async () => {
     confirmSheet({ danger: true, onConfirm: () => false })
     const id = mountSheet()
@@ -95,6 +114,22 @@ describe('confirmed action feedback', () => {
 })
 
 describe('local workout persistence feedback', () => {
+  it('keeps a saved pointer exercise configuration open for the success confirmation', async () => {
+    vi.useFakeTimers()
+    useStore.getState().update(s => { s.routines = [{ id: 'r', ex: [] }] })
+    exConfigSheet({ id: '0025', n: 'Agachamento' }, { sets: 3, reps: 8, weight: 0 }, cfg => useStore.getState().update(s => { s.routines[0].ex.push(cfg) }))
+    const id = mountSheet()
+    const button = container.querySelector('button.primary')
+    await act(async () => button.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+    await act(async () => vi.advanceTimersByTimeAsync(320))
+
+    expect(useStore.getState().S.routines[0].ex).toHaveLength(1)
+    expect(button.getAttribute('data-state')).toBe('success')
+    expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(true)
+    await act(async () => vi.advanceTimersByTimeAsync(520))
+    expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(false)
+  })
+
   it('keeps exercise configuration open when saving locally fails, then retries without cloud work', async () => {
     useStore.getState().update(s => { s.routines = [{ id: 'r', ex: [] }] })
     exConfigSheet({ id: '0025', n: 'Agachamento' }, { sets: 3, reps: 8, weight: 0 }, cfg => useStore.getState().update(s => { s.routines[0].ex.push(cfg) }))

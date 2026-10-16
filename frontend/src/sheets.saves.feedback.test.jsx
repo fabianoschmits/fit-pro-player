@@ -37,11 +37,60 @@ afterEach(() => {
   if (root) act(() => root.unmount())
   container.remove()
   vi.restoreAllMocks()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   useStore.setState({ flushPersistence: originalFlushPersistence })
 })
 
 describe('additional local sheet saves', () => {
+  it.each(['dismissed sheet', 'changed account'])('does not apply a stale pointer save during activation feedback (%s)', async cancellation => {
+    vi.useFakeTimers()
+    const started = []
+    bwSheet({ required: true, onDone: value => started.push(value) })
+    const id = mount()
+    await act(async () => primary().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+    if (cancellation === 'dismissed sheet') act(() => useUI.getState().closeSheet(id))
+    else await act(async () => useStore.getState().activateLocalScope('00000000-0000-4000-8000-000000000004'))
+    await act(async () => vi.advanceTimersByTimeAsync(1000))
+
+    expect(useStore.getState().S.bodyweight).toEqual([])
+    expect(started).toEqual([])
+  })
+
+  it('does not continue a successful pointer weigh-in after its sheet is dismissed', async () => {
+    vi.useFakeTimers()
+    const started = []
+    bwSheet({ required: true, onDone: value => started.push(value) })
+    const id = mount()
+    await act(async () => primary().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+    await act(async () => vi.advanceTimersByTimeAsync(320))
+    expect(useStore.getState().S.bodyweight).toHaveLength(1)
+    act(() => useUI.getState().closeSheet(id))
+    await act(async () => vi.advanceTimersByTimeAsync(520))
+
+    expect(started).toEqual([])
+    expect(useStore.getState().S.bodyweight).toHaveLength(1)
+  })
+
+  it('shows successful pointer weigh-in feedback before closing and starting the workout', async () => {
+    vi.useFakeTimers()
+    const started = []
+    bwSheet({ required: true, onDone: value => started.push(value) })
+    const id = mount()
+    await act(async () => primary().dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+    await act(async () => vi.advanceTimersByTimeAsync(320))
+
+    expect(useStore.getState().S.bodyweight).toHaveLength(1)
+    expect(primary().getAttribute('data-state')).toBe('success')
+    expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(true)
+    expect(started).toEqual([])
+    await act(async () => vi.advanceTimersByTimeAsync(519))
+    expect(started).toEqual([])
+    await act(async () => vi.advanceTimersByTimeAsync(1))
+    expect(started).toEqual([70])
+    expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(false)
+  })
+
   it.each(['mounted exit', 'unmounted'])('does not continue a plan import after cancel during a deferred retry (%s)', async dismissal => {
     const bundle = parsePlan({ fitproplayer_plan: 1, routines: [{ id: 'shared', name: 'Plano recebido', ex: [{ id: '0025', sets: 3, reps: 8 }] }] })
     planImportSheet(bundle)

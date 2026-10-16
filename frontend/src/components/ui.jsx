@@ -16,6 +16,7 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, forwardRef, useId, Children, cloneElement, isValidElement } from 'react'
 import Icon from './Icon.jsx'
 import FppPerformanceButton from './FppPerformanceButton.jsx'
+import { useFppActivation } from './useFppActivation.js'
 import { t } from '../lib/i18n.js'
 
 /* ============================ text ============================ */
@@ -260,13 +261,14 @@ export function Section({ title, footer, children, className = '', collapsible =
   )
 }
 
-export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none', onClick, danger, children, className = '', ...rest }) {
+export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none', onClick, danger, children, className = '', activation = 'animated', disabled = false, ...rest }) {
   const titleId = useId()
+  const trigger = useFppActivation({ onActivate: onClick, disabled: disabled || !onClick, activation })
   const controls = Children.map(children, child => isValidElement(child) && [Switch, Slider, Stepper].includes(child.type)
     ? cloneElement(child, { ariaLabel: child.props.ariaLabel || (typeof title === 'string' ? title : undefined), ...(!child.props.ariaLabel && typeof title !== 'string' ? { 'aria-labelledby': titleId } : {}) }) : child)
   const Tag = onClick ? 'button' : 'div'
   return (
-    <Tag {...rest} {...(onClick ? { type: 'button' } : {})} className={'lrow' + (onClick ? ' tap' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick}>
+    <Tag {...rest} {...(onClick ? { type: 'button', disabled: disabled || trigger.pressed, 'aria-busy': trigger.pressed || rest['aria-busy'] || undefined, 'data-visual-state': trigger.pressed ? 'pressed' : undefined } : {})} className={'lrow' + (onClick ? ' tap fpp-action-trigger' : '') + (danger ? ' danger' : '') + ' ' + className} onClick={onClick ? trigger.run : undefined}>
       {icon && <span className="lrow-i" style={iconTint ? { '--tint': iconTint } : null}><Icon name={icon} /></span>}
       {title && <span className="lrow-m">
         <span className="lrow-t" id={titleId}>{title}</span>

@@ -45,7 +45,12 @@ export default function More() {
   const email = account?.email || (account ? t('Signed in to your account') : t('Local profile'))
   const signOut = () => confirmSheet({
     title: 'Sair da conta?', message: 'Sua sessão será encerrada neste dispositivo.', confirmText: 'Sair', danger: true,
-    onConfirm: async () => { await auth.signOut(); nav('/') },
+    onConfirm: async () => {
+      const result = await auth.signOut()
+      if (result?.kind && result.kind !== 'success') throw new Error('sign_out_failed')
+      nav('/')
+      return true
+    },
   })
 
   return <div className="narrow more-page">

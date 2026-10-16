@@ -67,26 +67,27 @@ function useLocalSheetSave(sheetId) {
     const sheetOk = !sheetId || useUI.getState().sheets.some(sheet => sheet.id === sheetId)
     return mounted.current && scopeOk && sheetOk
   }
-  const run = (mutate, complete) => {
-    if (locked.current) return false
+  const complete = () => {
+    const finish = pending.current
+    pending.current = null
+    try { if (isLive()) finish?.() }
+    finally { locked.current = false }
+  }
+  const run = (mutate, onComplete) => {
+    if (locked.current || !isLive()) return false
     locked.current = true
     setError('')
     if (pending.current) {
-      if (!isLive()) { pending.current = null; locked.current = false; return false }
       return flushLocalSave().then(() => {
         if (!isLive()) { pending.current = null; locked.current = false; return false }
-        const finish = pending.current
-        pending.current = null
-        finish()
         return true
       }).catch(failure => { locked.current = false; throw failure })
     }
     try {
       const value = mutate?.()
       if (value === false || !mutate) { locked.current = false; return false }
-      const finish = () => { if (isLive()) complete?.(value) }
+      pending.current = () => onComplete?.(value)
       if (useStore.getState().persistence?.state === 'error') {
-        pending.current = finish
         setNeedsPersistence(true)
         requireLocalSave()
       }
@@ -95,37 +96,49 @@ function useLocalSheetSave(sheetId) {
       // if that write fails after the in-memory mutation.
       if (MOBILE) {
         return flushLocalSave().then(() => {
-          if (!isLive()) return false
-          finish()
+          if (!isLive()) { pending.current = null; locked.current = false; return false }
           return true
         }).catch(failure => {
-          pending.current = finish
           setNeedsPersistence(true)
           locked.current = false
           throw failure
         })
       }
-      finish()
       return true
     } catch (failure) { locked.current = false; throw failure }
   }
-  return { run, retry: () => run(), needsPersistence, error, onError: () => setError(t('Não foi possível salvar neste dispositivo. Tente novamente.')) }
+  return { run, complete, retry: () => run(), needsPersistence, error, onError: () => setError(t('Não foi possível salvar neste dispositivo. Tente novamente.')) }
 }
 
 /* ============================ custom confirm dialog ============================ */
-function ConfirmDialog({ title, message, confirmText, cancelText, danger, onConfirm, close }) {
+function ConfirmDialog({ title, message, confirmText, cancelText, danger, onConfirm, close, sheetId }) {
   const inFlight = useRef(false)
   const retryPersistence = useRef(false)
+  const mounted = useRef(true)
+  const scopeToken = useRef(useStore.getState().getScopeToken?.())
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
+  }, [])
+  const isLive = () => mounted.current
+    && (!sheetId || ui().sheets.some(sheet => sheet.id === sheetId))
+    && (!scopeToken.current || !useStore.getState().isScopeCurrent || useStore.getState().isScopeCurrent(scopeToken.current))
+  const complete = () => {
+    if (isLive()) close()
+    inFlight.current = false
+  }
   const confirm = () => {
-    if (inFlight.current) return false
+    if (inFlight.current || !isLive()) return false
     inFlight.current = true
+    setPending(true)
     setError('')
     const before = S()
     let completed = false
     let asynchronous = false
     const finish = result => {
+      if (!isLive()) return false
       if (result === false) return false
       if (S() !== before && useStore.getState().persistence?.state === 'error') {
         // The mutation already reached memory. Retry durability without
@@ -134,7 +147,6 @@ function ConfirmDialog({ title, message, confirmText, cancelText, danger, onConf
         requireLocalSave()
       }
       completed = true
-      close()
       return result
     }
     const release = () => {
@@ -156,15 +168,18 @@ function ConfirmDialog({ title, message, confirmText, cancelText, danger, onConf
     {title && <h3 style={{ marginBottom: 8 }}>{title}</h3>}
     <div className="muted" style={{ marginBottom: 18, lineHeight: 1.5 }}>{message}</div>
     {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
-    <Button variant={danger ? 'danger' : 'primary'} intent={danger ? 'critical' : 'primary'} disabled={pending} onAction={confirm}
+    <Button variant={danger ? 'danger' : 'primary'} intent={danger ? 'critical' : 'primary'} onAction={confirm} onSuccess={complete}
       loadingLabel={t('Processando…')} onError={() => setError(t('Não foi possível concluir a ação. Tente novamente.'))}>{confirmText || t('Confirm')}</Button>
     <div style={{ height: 8 }} />
-    <Button variant="ghost" className="dim" disabled={pending} onClick={close}>{cancelText || t('Cancel')}</Button>
+    <Button variant="ghost" className="dim" activation="immediate" disabled={pending} onClick={close}>{cancelText || t('Cancel')}</Button>
   </div>
 }
 // Themed replacement for window.confirm — callback-based (no blocking).
 export function confirmSheet(opts) {
-  ui().openSheet(close => <ConfirmDialog {...opts} close={close} />, { kind: 'center' })
+  let sheetId
+  const handle = ui().openSheet((close, context) => <ConfirmDialog {...opts} close={close} sheetId={context?.id || sheetId} />, { kind: 'center' })
+  sheetId = handle.id
+  return handle
 }
 
 /* ============================ starter plan ============================ */
@@ -268,10 +283,10 @@ function BwSheet({ required, onDone, close, date, sheetId }) {
     </fieldset>
     <div style={{ height: 14 }} />
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : required ? t('Save & start workout') : t('Save')}</Button>
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : required ? t('Save & start workout') : t('Save')}</Button>
     {required && <>
-      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" disabled={action.needsPersistence} onClick={() => { close(); onDone && onDone(null) }}>{t('Start without weighing in')}</Button>
-      <div style={{ height: 2 }} /><Button variant="ghost" className="dim" icon="reset" onClick={() => { close(); nav('/workout') }}>{t('Choose a different workout')}</Button>
+      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" activation="immediate" disabled={action.needsPersistence} onClick={() => { close(); onDone && onDone(null) }}>{t('Start without weighing in')}</Button>
+      <div style={{ height: 2 }} /><Button variant="ghost" className="dim" activation="immediate" icon="reset" onClick={() => { close(); nav('/workout') }}>{t('Choose a different workout')}</Button>
     </>}
     {!required && recent.length > 0 && <>
       <h4 className="sec">{t('Recent weigh-ins')}</h4>
@@ -363,7 +378,7 @@ function ImportSummary({ parsed, close }) {
       {fresh ? t('Import') : t('Nothing new to import')}
     </Button>
     <div style={{ height: 8 }} />
-    <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
+    <Button variant="ghost" className="dim" activation="immediate" onClick={close}>{t('Cancel')}</Button>
   </>
 }
 
@@ -413,7 +428,7 @@ function GoalSheet({ close, sheetId }) {
     <fieldset disabled={action.needsPersistence} style={{ display: 'contents' }}><WeightInput value={v} setValue={setV} unit={st.unit} /></fieldset>
     <div style={{ height: 14 }} />
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save goal')}</Button>
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save goal')}</Button>
     {st.targetW && <><div style={{ height: 8 }} /><Button variant="danger" disabled={action.needsPersistence} onClick={() => { update(s => { s.targetW = null }); close(); toast(t('Goal removed')) }}>{t('Remove goal')}</Button></>}
   </>
 }
@@ -655,7 +670,7 @@ function CustomExForm({ existing, prefill, onDone, close, sheetId }) {
     </fieldset>
     <div style={{ height: 14 }} />
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : existing ? t('Save') : t('Create exercise')}</Button>
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : existing ? t('Save') : t('Create exercise')}</Button>
     {existing && <><div style={{ height: 8 }} /><Button variant="danger" icon="trash" disabled={action.needsPersistence} onClick={() => { close(); deleteCustomEx(existing) }}>{t('Delete exercise')}</Button></>}
   </>
 }
@@ -748,7 +763,7 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
   return <>
     <div className="row between sheet-title-row">
       <h3>{title || t('Add exercise')}</h3>
-      <Button size="sm" variant="tinted" icon="check" onClick={close}>{t('Done')}</Button>
+      <Button size="sm" variant="tinted" activation="immediate" icon="check" onClick={close}>{t('Done')}</Button>
     </div>
     <div className="muted small exercise-picker-help">{t('Tap an exercise to preview it before choosing.')}</div>
     <div className="search exercise-picker-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
@@ -829,8 +844,9 @@ function ProgressionFields({ ex, mode, c, setC, routine, unit }) {
   </>
 }
 
-function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, saveLabel }) {
+function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, saveLabel, sheetId }) {
   const st = useStore(s => s.S)
+  const action = useLocalSheetSave(sheetId)
   const cardio = isCardio(ex.id)
   const [c, setC] = useState(() => {
     let cfg = existing || initial
@@ -840,8 +856,7 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
     }
     return cfg
   })
-  const [saveError, setSaveError] = useState('')
-  const [localSavePending, setLocalSavePending] = useState(false)
+  const localSavePending = action.needsPersistence
   const reduced = useReducedMotion()
   // Cardio keeps its own duration+speed form; the reps/time choice (issue #16) is offered for
   // everything else, which is where the gap was — planks, hangs, wall sits, loaded carries.
@@ -851,9 +866,7 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
   const perSide = isPerSide(c)
   // Keep whatever the other mode already had (sets, weight) and fill only what is missing.
   const setMode = m => setC(x => ({ ...defaultConfig(ex.id, m), ...x, mode: m }))
-  const save = () => {
-    setSaveError('')
-    if (localSavePending) return flushLocalSave().then(close)
+  const save = () => action.run(() => {
     const sets = Math.max(1, Math.round(c.sets) || (cardio ? 1 : 3))
     // Only carry progression settings that differ from the inherited default, so a plan file
     // stays readable and "follow the routine" keeps meaning exactly that.
@@ -880,12 +893,7 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
       if (bw && !(out.weight > 0) && c.repsMax > 0) out.repsMax = Math.max(reps, Math.round(c.repsMax))
       onSave(out)
     }
-    if (useStore.getState().persistence?.state === 'error') {
-      setLocalSavePending(true)
-      requireLocalSave()
-    }
-    close()
-  }
+  }, close)
   return <>
     <fieldset disabled={localSavePending} style={{ display: 'contents' }}>
     <h3 className="capitalize">{exerciseName(ex)}</h3>
@@ -965,14 +973,19 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
       </div>
     </details>
     </fieldset>
-    {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
-    <Button variant="primary" onAction={save} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
-      onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{saveLabel || (existing ? t('Save') : t('Add to routine'))}</Button>
+    {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+      onError={action.onError}>{saveLabel || (existing ? t('Save') : t('Add to routine'))}</Button>
     {ex.custom && <><div style={{ height: 8 }} /><Button icon="pencil" disabled={localSavePending} onClick={() => { close(); customExSheet(ex) }}>{t('Edit or delete this exercise')}</Button></>}
     {onDelete && <><div style={{ height: 8 }} /><Button variant="danger" disabled={localSavePending} onClick={() => { close(); onDelete() }}>{t('Remove from routine')}</Button></>}
   </>
 }
-export const exConfigSheet = (ex, existing, onSave, onDelete, routine, initial, saveLabel) => ui().openSheet(close => <ExConfig ex={ex} existing={existing} initial={initial} onSave={onSave} onDelete={onDelete} routine={routine} saveLabel={saveLabel} close={close} />)
+export const exConfigSheet = (ex, existing, onSave, onDelete, routine, initial, saveLabel) => {
+  let sheetId
+  const handle = ui().openSheet((close, context) => <ExConfig ex={ex} existing={existing} initial={initial} onSave={onSave} onDelete={onDelete} routine={routine} saveLabel={saveLabel} close={close} sheetId={context?.id || sheetId} />)
+  sheetId = handle.id
+  return handle
+}
 
 /* ============================ glyph picker ============================ */
 // Grouped by what the glyph means for a training day, so picking one is a scan
@@ -1024,13 +1037,15 @@ function PlanTools({ close }) {
     if (MOBILE) {
       try { await shareExport(json, name) }
       catch (e) { if (e?.name === 'AbortError' || /cancel|dismiss/i.test(e?.message || '')) return false; throw e }
-      close()
       return true
     }
     const blob = new Blob([json], { type: 'application/json' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name
     try { a.click() } finally { URL.revokeObjectURL(a.href) }
-    close(); toast(t('Plan file saved — send it to a friend'))
+  }
+  const completeExport = () => {
+    close()
+    if (!MOBILE) toast(t('Plan file saved — send it to a friend'))
   }
   const pickFile = ev => {
     const f = ev.target.files[0]; ev.target.value = ''; if (!f) return
@@ -1053,17 +1068,17 @@ function PlanTools({ close }) {
   return <>
     <h3>{t('Share your plan')}</h3>
     <div className="muted small" style={{ marginBottom: 16 }}>{t('Send your routines to a friend, or put your week on paper.')}</div>
-    <Button variant="primary" icon="upload" onAction={exportFile} onError={() => setError(t('Não foi possível concluir a ação. Tente novamente.'))} disabled={!hasRoutines || reading} loadingLabel={t('Loading…')} successLabel={t('Saved')}>{t('Export plan file')}</Button>
+    <Button variant="primary" icon="upload" activation="immediate" onAction={exportFile} onSuccess={completeExport} onError={() => setError(t('Não foi possível concluir a ação. Tente novamente.'))} disabled={!hasRoutines || reading} loadingLabel={t('Loading…')} successLabel={t('Saved')}>{t('Export plan file')}</Button>
     {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
     <div className="dim small" style={{ margin: '7px 2px 0', lineHeight: 1.4 }}>{t('A small file a friend imports into their own Fit Pro Player — routines only, none of your workouts or weigh-ins.')}</div>
     {!MOBILE && <>
       <div style={{ height: 12 }} />
-      <Button variant="tinted" icon="download" onClick={() => { close(); printPlan(st, '') }} disabled={!hasRoutines}>{t('Print / Save as PDF')}</Button>
+      <Button variant="tinted" icon="download" activation="immediate" onClick={() => { close(); printPlan(st, '') }} disabled={!hasRoutines}>{t('Print / Save as PDF')}</Button>
       <div className="dim small" style={{ margin: '7px 2px 0', lineHeight: 1.4 }}>{t('A clean one-page-per-plan printout — no exercise ever splits across a page.')}</div>
     </>}
     {!hasRoutines && <div className="dim small" style={{ margin: '12px 2px 0' }}>{t('Add an exercise to a routine first — an empty plan has nothing to share.')}</div>}
     <h4 className="sec">{t('Got a plan from a friend?')}</h4>
-    <Button variant="ghost" icon="folder" state={reading ? 'loading' : undefined} loadingLabel={t('Loading…')} onClick={() => fileRef.current?.click()}>{t('Import a plan file')}</Button>
+    <Button variant="ghost" icon="folder" activation="immediate" state={reading ? 'loading' : undefined} loadingLabel={t('Loading…')} onClick={() => fileRef.current?.click()}>{t('Import a plan file')}</Button>
     <input ref={fileRef} type="file" accept="application/json,.json" disabled={reading} onChange={pickFile} hidden />
   </>
 }
@@ -1100,9 +1115,9 @@ function PlanImport({ bundle, close, sheetId }) {
       <Switch checked={schedule} disabled={action.needsPersistence} onChange={setSchedule} />
     </div>}
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : apply} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Add to my plan')}</Button>
+    <Button variant="primary" onAction={action.needsPersistence ? action.retry : apply} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Add to my plan')}</Button>
     <div style={{ height: 8 }} />
-    <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
+    <Button variant="ghost" className="dim" activation="immediate" onClick={close}>{t('Cancel')}</Button>
   </>
 }
 
@@ -1407,9 +1422,9 @@ function TopWeight({ entryIdx, close, sheetId }) {
     {prevBest > 0 ? <div className="small dim" style={{ textAlign: 'center', marginBottom: 12 }}>{t('Previous best:')} {fmtNum(prevBest)} {st.unit}{maxSet > prevBest && <span style={{ color: 'var(--yellow)' }}> — {t('new record!')}</span>}</div> : <div style={{ height: 4 }} />}
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
     {unitDone ? <>
-      <Button variant="primary" trailingIcon={isLastUnit ? null : 'chevronRight'} onAction={action.needsPersistence ? action.retry : () => commit(true)} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : isLastUnit ? t('Save') : t('Save & next exercise')}</Button>
-      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" disabled={action.needsPersistence} onAction={() => commit(false)} onError={action.onError}>{t('Just close')}</Button>
-    </> : <Button variant="primary" onAction={action.needsPersistence ? action.retry : () => commit(false)} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save weight')}</Button>}
+      <Button variant="primary" trailingIcon={isLastUnit ? null : 'chevronRight'} onAction={action.needsPersistence ? action.retry : () => commit(true)} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : isLastUnit ? t('Save') : t('Save & next exercise')}</Button>
+      <div style={{ height: 8 }} /><Button variant="ghost" className="dim" disabled={action.needsPersistence} onAction={() => commit(false)} onSuccess={action.complete} onError={action.onError}>{t('Just close')}</Button>
+    </> : <Button variant="primary" onAction={action.needsPersistence ? action.retry : () => commit(false)} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save weight')}</Button>}
   </>
 }
 export const topWeightSheet = entryIdx => { let sheetId; const h = ui().openSheet((close, context) => <TopWeight entryIdx={entryIdx} sheetId={context?.id || sheetId} close={close} />); sheetId = h.id; return h }

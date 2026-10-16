@@ -7,6 +7,7 @@ import { professionalDate, statusLabel } from '../lib/professional-ux.js'
 import { t } from '../lib/i18n.js'
 import { Button, TextField } from '../components/ui.jsx'
 import { FppSkeleton } from '../components/FppFeedback.jsx'
+import { useFppAction } from '../components/useFppAction.js'
 import { ProfessionalPrescription, ProfessionalSessionDetail, professionalDayLabel } from '../components/ProfessionalPrescription.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementPanel as Section, ManagementEmpty, ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
@@ -63,7 +64,7 @@ function StudentWorkspace({ userId, studentId }) {
     const version = versions.find(item => item.id === versionId); if (!version || mutationPending.current) return false
     mutationPending.current = true
     const requestOwner = identity; setSaving(true); setError('')
-    try { await repo.assignProgramVersion({ programId: version.program_id, versionId: version.id, studentUserId: studentId }); if (owner.current !== requestOwner) return false; const next = new URLSearchParams(currentParams.current); if (next.get('version') === version.id) { next.delete('version'); if (!next.has('section')) next.set('section', 'training') } setParams(next, { replace: true }); await refresh() }
+    try { await repo.assignProgramVersion({ programId: version.program_id, versionId: version.id, studentUserId: studentId }); if (owner.current !== requestOwner) return false; return version.id }
     catch (cause) { if (owner.current === requestOwner) setError(t('Não foi possível enviar esta versão.')); throw cause }
     finally { mutationPending.current = false; if (owner.current === requestOwner) setSaving(false) }
   }
@@ -71,7 +72,7 @@ function StudentWorkspace({ userId, studentId }) {
     const relationship = detail?.relationship; if (!relationship?.id || mutationPending.current) return false
     mutationPending.current = true
     const requestOwner = identity; setSaving(true); setError('')
-    try { await repo.revokeRelationship(relationship.id); if (owner.current !== requestOwner) return false; navigate('/professional/students', { replace: true }) }
+    try { await repo.revokeRelationship(relationship.id); if (owner.current !== requestOwner) return false; return true }
     catch (cause) { if (owner.current === requestOwner) setError(t('Não foi possível encerrar o vínculo.')); throw cause }
     finally { mutationPending.current = false; if (owner.current === requestOwner) setSaving(false) }
   }
@@ -79,10 +80,23 @@ function StudentWorkspace({ userId, studentId }) {
     if (!id || mutationPending.current) return false
     mutationPending.current = true
     const requestOwner = identity; setSaving(true); setError('')
-    try { await repo.revokeAssignment(id); if (owner.current !== requestOwner) return false; setConfirmEnd(false); await refresh() }
+    try { await repo.revokeAssignment(id); if (owner.current !== requestOwner) return false; return true }
     catch (cause) { if (owner.current === requestOwner) setError(t('Não foi possível encerrar o programa.')); throw cause }
     finally { mutationPending.current = false; if (owner.current === requestOwner) setSaving(false) }
   }
+  // Keep completion attached to the person workspace when a pending action's tab changes.
+  const assignmentAction = useFppAction({ onAction: assign, onSuccess: async assignedVersionId => {
+    if (owner.current !== identity) return
+    const next = new URLSearchParams(currentParams.current)
+    if (next.get('version') === assignedVersionId) { next.delete('version'); if (!next.has('section')) next.set('section', 'training') }
+    setParams(next, { replace: true }); await refresh()
+  } })
+  const revokeAction = useFppAction({ onAction: revoke, onSuccess: () => { if (owner.current === identity) navigate('/professional/students', { replace: true }) } })
+  const endingAction = useFppAction({ onAction: () => endAssignment(detail?.assignments?.find(item => item.status === 'active')?.id), onSuccess: async () => {
+    if (owner.current !== identity) return
+    setConfirmEnd(false); await refresh()
+  } })
+  const operationLocked = saving || assignmentAction.locked || revokeAction.locked || endingAction.locked
   if (!userId || busy || !client || !detail) return <ManagementLayout className="professional-page" title={t('Aluno')} backTo="/professional/students">{busy ? <FppSkeleton label={t('Carregando aluno…')} /> : <ManagementEmpty title={!userId ? t('Entre na sua conta para continuar.') : error || t('Aluno não encontrado.')} action={<div className="row-actions">{error && <Button onClick={refresh}>{t('Tentar novamente')}</Button>}<Link className="management-button" to="/professional/students">{t('Voltar para alunos')}</Link></div>} />}</ManagementLayout>
   const executions = detail.executions || []; const latestExecution = executions[0]
   const active = detail.assignments?.find(assignment => assignment.status === 'active')
@@ -94,13 +108,13 @@ function StudentWorkspace({ userId, studentId }) {
     <nav className="management-section-nav" aria-label={t('Detalhe do aluno')}>{TABS.map(([value, label]) => <Link to={sectionUrl(value)} aria-current={tab === value ? 'page' : undefined} key={value}>{t(label)}</Link>)}</nav>
     {tab === 'summary' && <Section title={t('Resumo')}><dl className="management-summary-facts"><div><dt>{t('programa atual')}</dt><dd>{client.programTitle || t('Sem programa ativo')}</dd></div><div><dt>{t('último treino')}</dt><dd>{latestExecution ? statusLabel(latestExecution.status) : t('Nenhum treino registrado')}</dd>{latestExecution && <dd className="muted small">{professionalDate(latestExecution.started_at, true)}</dd>}</div><div><dt>{t('execuções')}</dt><dd>{executions.length}</dd></div></dl><div className="row-actions"><Link className="management-button management-button-primary" to={sectionUrl('training')}>{t('Gerenciar treino')}</Link><Link className="management-button" to={sectionUrl('history')}>{t('Histórico de treinos')}</Link></div></Section>}
     {tab === 'training' && <Section title={t('Gerenciar treino')}>{trainingError && <p role="alert" className="management-error">{trainingError} <button className="link" onClick={() => setTrainingReload(value => value + 1)}>{t('Tentar novamente')}</button></p>}{trainingBusy && <FppSkeleton label={t('Carregando versões…')} rows={2} />}<div className="professional-current-prescription"><h3>{t('Programa atual')}</h3><p>{client.programTitle || t('Nenhum programa enviado')}</p>{assignedVersion && <ProfessionalPrescription plan={assignedVersion.weekly_plan} />}</div>
-      <div className="professional-send-prescription"><h3>{t('Enviar nova versão')}</h3><label>{t('Programa')}<select aria-label={t('Programa')} value={programId} disabled={saving || trainingBusy} onChange={event => choose('program', event.target.value)}><option value="">{t('Selecione um programa')}</option>{programs.map(program => <option key={program.id} value={program.id}>{program.title}</option>)}</select></label>
-      <label>{t('Enviar nova versão')}<select aria-label={t('Versão do programa')} value={versionId} disabled={saving || trainingBusy || !programId} onChange={event => choose('version', event.target.value)}><option value="">{t('Selecione uma versão')}</option>{versions.map(version => <option key={version.id} value={version.id}>{version.programTitle} / {t('Versão {0}', version.version_number)}</option>)}</select></label>
+      <div className="professional-send-prescription"><h3>{t('Enviar nova versão')}</h3><label>{t('Programa')}<select aria-label={t('Programa')} value={programId} disabled={operationLocked || trainingBusy} onChange={event => choose('program', event.target.value)}><option value="">{t('Selecione um programa')}</option>{programs.map(program => <option key={program.id} value={program.id}>{program.title}</option>)}</select></label>
+      <label>{t('Enviar nova versão')}<select aria-label={t('Versão do programa')} value={versionId} disabled={operationLocked || trainingBusy || !programId} onChange={event => choose('version', event.target.value)}><option value="">{t('Selecione uma versão')}</option>{versions.map(version => <option key={version.id} value={version.id}>{version.programTitle} / {t('Versão {0}', version.version_number)}</option>)}</select></label>
       {selectedVersion && <div className="management-prescription-preview"><strong>{selectedVersion.programTitle} / {t('Versão {0}', selectedVersion.version_number)}</strong><ProfessionalPrescription plan={selectedVersion.weekly_plan} /><p className="muted">{t('Ao enviar, o programa ativo anterior será encerrado.')}</p></div>}
-      <div className="row-actions"><Button variant="primary" intent="primary" disabled={!selectedVersion || saving || trainingBusy || !detail.relationship} onAction={assign} loadingLabel={t('Enviando…')} errorLabel={t('Tentar novamente')}>{t('Enviar versão')}</Button><Button onClick={() => navigate('/professional/programs')}>{t('Abrir programas')}</Button>{active && <Button variant="ghost" disabled={saving} onClick={() => setConfirmEnd(true)}>{t('Encerrar programa ativo')}</Button>}</div>
-      </div>{confirmEnd && active && <div className="danger-confirm"><p>{t('Encerrar programa ativo?')}</p><Button variant="danger" intent="critical" disabled={saving} onAction={() => endAssignment(active.id)} loadingLabel={t('Salvando…')} successLabel={t('Encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button disabled={saving} onClick={() => setConfirmEnd(false)}>{t('Cancelar')}</Button></div>}
+      <div className="row-actions"><Button variant="primary" intent="primary" state={assignmentAction.state} disabled={!selectedVersion || operationLocked || trainingBusy || !detail.relationship} onClick={assignmentAction.run} loadingLabel={t('Enviando…')} errorLabel={t('Tentar novamente')}>{t('Enviar versão')}</Button><Button onClick={() => navigate('/professional/programs')}>{t('Abrir programas')}</Button>{active && <Button variant="ghost" disabled={operationLocked} onClick={() => setConfirmEnd(true)}>{t('Encerrar programa ativo')}</Button>}</div>
+      </div>{confirmEnd && active && <div className="danger-confirm"><p>{t('Encerrar programa ativo?')}</p><Button variant="danger" intent="critical" state={endingAction.state} disabled={operationLocked} onClick={endingAction.run} loadingLabel={t('Salvando…')} successLabel={t('Encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button activation="immediate" disabled={operationLocked} onClick={() => setConfirmEnd(false)}>{t('Cancelar')}</Button></div>}
     </Section>}
     {tab === 'history' && <Section title={t('Histórico de treinos')}><TextField aria-label={t('Buscar execução')} placeholder={t('Buscar por dia ou status')} value={query} onChange={event => { setQuery(event.target.value); setLimit(20) }} />{visible.length ? visible.slice(0, limit).map(item => <details className="management-history-entry" key={item.id}><summary><strong>{professionalDayLabel(item.day_key)}</strong><span className="muted"> {statusLabel(item.status)} · {professionalDate(item.started_at, true)}</span></summary><ProfessionalSessionDetail execution={item} /></details>) : <p className="muted">{t('Nenhuma execução registrada.')}</p>}{visible.length > limit && <Button onClick={() => setLimit(value => value + 20)}>{t('Carregar mais')}</Button>}</Section>}
-    {tab === 'relationship' && <Section title={t('Vínculo')}><p>{t(detail.relationship ? 'Profissional e aluno estão vinculados.' : 'Vínculo encerrado')}</p><p className="muted">{t('Encerrar o vínculo também encerra as atribuições e o acesso profissional às execuções. O histórico pessoal do aluno é preservado.')}</p>{confirmRevoke ? <div className="danger-confirm"><span>{t('Encerrar vínculo?')}</span><Button variant="danger" intent="critical" disabled={saving} onAction={revoke} loadingLabel={t('Desvinculando…')} successLabel={t('Vínculo encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button disabled={saving} onClick={() => setConfirmRevoke(false)}>{t('Cancelar')}</Button></div> : <Button variant="ghost" disabled={!detail.relationship || saving} onClick={() => setConfirmRevoke(true)}>{t('Encerrar vínculo')}</Button>}</Section>}
+    {tab === 'relationship' && <Section title={t('Vínculo')}><p>{t(detail.relationship ? 'Profissional e aluno estão vinculados.' : 'Vínculo encerrado')}</p><p className="muted">{t('Encerrar o vínculo também encerra as atribuições e o acesso profissional às execuções. O histórico pessoal do aluno é preservado.')}</p>{confirmRevoke ? <div className="danger-confirm"><span>{t('Encerrar vínculo?')}</span><Button variant="danger" intent="critical" state={revokeAction.state} disabled={operationLocked} onClick={revokeAction.run} loadingLabel={t('Desvinculando…')} successLabel={t('Vínculo encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button activation="immediate" disabled={operationLocked} onClick={() => setConfirmRevoke(false)}>{t('Cancelar')}</Button></div> : <Button variant="ghost" disabled={!detail.relationship || operationLocked} onClick={() => setConfirmRevoke(true)}>{t('Encerrar vínculo')}</Button>}</Section>}
   </ManagementLayout>
 }

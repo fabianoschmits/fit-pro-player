@@ -1,29 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { waitForFppConfirmation } from './fpp-action-timing.js'
 
 const BUSY_STATES = new Set(['loading', 'processing', 'uploading', 'syncing'])
 const BUSY_VISUAL_DELAY = 220
-const SUCCESS_HOLD_MS = 280
 const SUCCESS_VISIBLE_MS = 900
 export const isFppBusy = state => BUSY_STATES.has(state)
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
-const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 
 // The operation owns its lifetime. Timers affect presentation only and can never
 // release an outstanding write. The ref closes the gap before React re-renders.
 export function useFppAction({ onAction, onSuccess, onError, state: controlledState, disabled = false } = {}) {
   const [managedState, setManagedState] = useState('idle')
   const [visualBusy, setVisualBusy] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const running = useRef(false)
   const mounted = useRef(true)
   const resetTimer = useRef(null)
+  const completion = useRef(null)
   const requestedState = controlledState ?? managedState
-  const state = disabled && !isFppBusy(requestedState) ? 'disabled' : requestedState
+  const state = disabled && requestedState === 'idle' ? 'disabled' : requestedState
   const busy = isFppBusy(state) || managedState === 'loading'
-  const locked = disabled || state === 'disabled' || busy
+  const locked = disabled || state === 'disabled' || busy || confirming
 
   useEffect(() => {
     mounted.current = true
-    return () => { mounted.current = false; clearTimeout(resetTimer.current) }
+    return () => { mounted.current = false; clearTimeout(resetTimer.current); completion.current?.abort() }
   }, [])
 
   useEffect(() => {
@@ -49,16 +49,23 @@ export function useFppAction({ onAction, onSuccess, onError, state: controlledSt
       }
       return false
     }
-    running.current = false
-    if (!mounted.current) return result
-    if (result === false) { setManagedState('idle'); return false }
+    if (!mounted.current) { running.current = false; return result }
+    if (result === false) { running.current = false; setManagedState('idle'); return false }
     setManagedState('success')
-    if (!reducedMotion()) await wait(SUCCESS_HOLD_MS)
-    if (!mounted.current) return result
+    if (onSuccess) {
+      setConfirming(true)
+      completion.current = new AbortController()
+      const confirmed = await waitForFppConfirmation(event, { signal: completion.current.signal })
+      completion.current = null
+      if (!confirmed || !mounted.current) { running.current = false; return result }
+      try { await onSuccess(result) } catch { /* The operation already succeeded. */ }
+      if (!mounted.current) { running.current = false; return result }
+      setConfirming(false)
+    }
+    running.current = false
     resetTimer.current = setTimeout(() => {
       if (mounted.current) setManagedState('idle')
     }, SUCCESS_VISIBLE_MS)
-    try { await onSuccess?.(result) } catch { /* The operation already succeeded. */ }
     return result
   }, [onAction, onSuccess, onError, locked])
 

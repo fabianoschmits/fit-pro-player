@@ -8,6 +8,7 @@ import { todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { startTabShortLabel } from '../lib/ux.js'
 import Icon from './Icon.jsx'
+import { useFppActivation } from './useFppActivation.js'
 
 const TABS = [
   { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
@@ -28,14 +29,18 @@ function isActive(cur, k) {
 }
 
 function TabItem({ featured, active, icon, label, recording, onClick, tabKey, tabRef, reduced }) {
+  const trigger = useFppActivation({ onActivate: onClick })
   if (featured) {
     return (
       <button
         type="button"
         ref={tabRef}
         data-tab-key={tabKey}
-        className={'tab-item tab-item--start' + (active ? ' on' : '') + (recording ? ' rec' : '')}
-        onClick={onClick}
+        className={'tab-item tab-item--start fpp-action-trigger' + (active ? ' on' : '') + (recording ? ' rec' : '')}
+        onClick={trigger.run}
+        disabled={trigger.pressed}
+        aria-busy={trigger.pressed || undefined}
+        data-visual-state={trigger.pressed ? 'pressed' : undefined}
         aria-label={label}
         aria-current={active ? 'page' : undefined}
       >
@@ -54,8 +59,11 @@ function TabItem({ featured, active, icon, label, recording, onClick, tabKey, ta
       type="button"
       ref={tabRef}
       data-tab-key={tabKey}
-      className={'tab-item' + (active ? ' on' : '')}
-      onClick={onClick}
+      className={'tab-item fpp-action-trigger' + (active ? ' on' : '')}
+      onClick={trigger.run}
+      disabled={trigger.pressed}
+      aria-busy={trigger.pressed || undefined}
+      data-visual-state={trigger.pressed ? 'pressed' : undefined}
       aria-label={label}
       aria-current={active ? 'page' : undefined}
     >

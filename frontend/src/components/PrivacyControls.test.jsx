@@ -13,6 +13,17 @@ beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.rpc.mockRes
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
 describe('PrivacyControls', () => {
+  it('keeps a pointer submission in press feedback before creating the request', async () => {
+    mocks.rpc.mockResolvedValue({ data: { protocol: 'LGPD-ABC123' }, error: null })
+    await act(async () => root.render(<PrivacyControls />))
+    const submit = container.querySelector('button[type="submit"]')
+    await act(async () => submit.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })))
+    expect(mocks.rpc).not.toHaveBeenCalled()
+    expect(submit.getAttribute('data-visual-state')).toBe('pressed')
+    await act(async () => new Promise(resolve => setTimeout(resolve, 340)))
+    expect(mocks.rpc).toHaveBeenCalledOnce()
+  })
+
   it('creates a rights request and shows its protocol', async () => {
     mocks.rpc.mockResolvedValue({ data: { protocol: 'LGPD-ABC123' }, error: null })
     await act(async () => root.render(<PrivacyControls />))

@@ -6,6 +6,7 @@ import ConsoleShell from './ConsoleLayout.jsx'
 import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
 import { Avatar, Chip, SectionBody, Kv, Loading, Empty, Alert, fmtDate, weekSchedule, workoutVolumePoints, bodyweightPoints, CxButton } from './ConsoleUI.jsx'
 import { useFppAction } from '../../components/useFppAction.js'
+import { fppActionInput } from '../../components/fpp-action-timing.js'
 
 export function ConsoleUserPage() {
   const { userId: targetId } = useParams()
@@ -60,15 +61,17 @@ export function ConsoleUserPage() {
       await perform()
       if (owner.current !== identity) return false
       setMessage(success)
-      if (key === 'delete') navigate('/console/users')
-      else await refresh()
-      return true
+      return { key, identity }
     } catch (err) {
       if (owner.current === identity) setError(err?.message || 'A operação falhou.')
       throw err
     }
+  }, onSuccess: async result => {
+    if (owner.current !== result.identity) return
+    if (result.key === 'delete') navigate('/console/users')
+    else await refresh()
   } })
-  const run = (key, perform, success) => operation.run({ key, perform, success })
+  const run = (event, key, perform, success) => operation.run({ key, perform, success, fppInput: fppActionInput(event) })
   const actionState = key => acting === key ? operation.state : 'idle'
 
   const isPro = (user?.roles || []).includes('professional')
@@ -215,7 +218,7 @@ export function ConsoleUserPage() {
                     type="button"
                     className="cx-pill-btn cx-pill-btn--accent"
                     state={actionState('name')} disabled={operation.locked}
-                    onClick={() => run('name', () => repo.setDisplayName(user.userId, displayName), 'Nome atualizado.')}
+                    onClick={event => run(event, 'name', () => repo.setDisplayName(user.userId, displayName), 'Nome atualizado.')}
                   >Salvar nome</CxButton>
                 </div>
               </SectionBody>}
@@ -226,7 +229,7 @@ export function ConsoleUserPage() {
                 <div className="cx-action-list">
                   <CxButton type="button" className="cx-action-item cx-action-item--primary"
                     state={actionState('pro')} disabled={operation.locked || isAdmin}
-                    onClick={() => run('pro', () => repo.setProfessionalRole(user.userId, !isPro),
+                    onClick={event => run(event, 'pro', () => repo.setProfessionalRole(user.userId, !isPro),
                       isPro ? 'Acesso profissional removido.' : 'Acesso profissional concedido.')}
                   >
                     {isPro ? 'Remover acesso profissional' : 'Conceder acesso profissional'}
@@ -235,7 +238,7 @@ export function ConsoleUserPage() {
                   {!isAdmin && (
                     <CxButton type="button" className="cx-action-item"
                       state={actionState('suspend')} disabled={operation.locked}
-                      onClick={() => run('suspend', () => repo.setSuspended(user.userId, !user.suspendedAt),
+                      onClick={event => run(event, 'suspend', () => repo.setSuspended(user.userId, !user.suspendedAt),
                         user.suspendedAt ? 'Conta reativada.' : 'Conta suspensa.')}
                     >
                       {user.suspendedAt ? 'Reativar conta' : 'Suspender conta'}
@@ -245,9 +248,9 @@ export function ConsoleUserPage() {
                   {!isAdmin && user.userId !== userId && (
                     <CxButton type="button" className="cx-action-item cx-action-item--danger" intent="critical"
                       state={actionState('delete')} disabled={operation.locked}
-                      onClick={() => {
+                      onClick={event => {
                         if (!window.confirm('Apagar permanentemente esta conta? Esta ação não pode ser desfeita.')) return
-                        run('delete', () => repo.deleteUser(user.userId), 'Conta apagada.')
+                        run(event, 'delete', () => repo.deleteUser(user.userId), 'Conta apagada.')
                       }}
                     >Apagar conta</CxButton>
                   )}
@@ -288,7 +291,7 @@ export function ConsoleUserPage() {
                   <div className="cx-action-list cx-action-list--row cx-mt-12">
                     <CxButton type="button" className="cx-pill-btn cx-pill-btn--accent"
                       state={actionState('pro-save')} disabled={operation.locked}
-                      onClick={() => run('pro-save', () => repo.updateProfessionalProfile(user.userId, {
+                      onClick={event => run(event, 'pro-save', () => repo.updateProfessionalProfile(user.userId, {
                         professionalName: proName, bio, cityRegion: city,
                         registrationType: regType, registrationNumber: regNumber,
                         specialties: specialtiesText.split(',').map(p => p.trim().toLowerCase()).filter(Boolean),
@@ -297,13 +300,13 @@ export function ConsoleUserPage() {
                     {user.verificationStatus !== 'verified' && (
                       <CxButton type="button" className="cx-pill-btn"
                         state={actionState('verify')} disabled={operation.locked}
-                        onClick={() => run('verify', () => repo.setVerification(user.userId, 'verified'), 'Aprovado.')}
+                        onClick={event => run(event, 'verify', () => repo.setVerification(user.userId, 'verified'), 'Aprovado.')}
                       >Aprovar</CxButton>
                     )}
                     {user.verificationStatus !== 'rejected' && (
                       <CxButton type="button" className="cx-pill-btn cx-pill-btn--danger"
                         state={actionState('reject')} disabled={operation.locked}
-                        onClick={() => run('reject', () => repo.setVerification(user.userId, 'rejected'), 'Rejeitado.')}
+                        onClick={event => run(event, 'reject', () => repo.setVerification(user.userId, 'rejected'), 'Rejeitado.')}
                       >Rejeitar</CxButton>
                     )}
                   </div>

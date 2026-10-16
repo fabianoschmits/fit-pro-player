@@ -6,14 +6,15 @@
 .fpp-button-reserve::after{content:attr(data-label)}
 .fpp-button-reserve[data-symbol=true]::before{content:'';width:19px;flex:none}
 .fpp-button.sm .fpp-button-reserve[data-symbol=true]::before{width:16px}
-.fpp-button[data-state=loading]:disabled,.fpp-button[data-state=processing]:disabled,.fpp-button[data-state=uploading]:disabled,.fpp-button[data-state=syncing]:disabled{opacity:1;cursor:progress}
+.fpp-button[data-state=pressed]:disabled,.fpp-button[data-state=success]:disabled,.fpp-button[data-state=loading]:disabled,.fpp-button[data-state=processing]:disabled,.fpp-button[data-state=uploading]:disabled,.fpp-button[data-state=syncing]:disabled{opacity:1;cursor:progress}
 .fpp-button[data-visual-state=error]{box-shadow:inset 0 0 0 1px currentColor}
 .fpp-button[data-visual-state=error]:not(.primary){color:var(--red)}
 .fpp-button[data-visual-state=success]:not(.primary){color:var(--acc)}
 .fpp-button[data-visual-state=warning]:not(.primary){color:var(--orange)}
 .fpp-button[data-visual-state=offline]:not(.primary){color:var(--label-2)}
 .fpp-button[data-intent=quick]{transition-duration:120ms}
-.fpp-button[data-visual-state=pressed]{transform:scale(.975)}
+.fpp-button[data-visual-state=pressed],.fpp-action-trigger[data-visual-state=pressed]{animation:fpp-activate 320ms cubic-bezier(.2,.8,.2,1) both}
+@keyframes fpp-activate{0%{transform:scale(1)}30%,75%{transform:scale(.965)}100%{transform:scale(1)}}
 .fpp-energy-rail{position:absolute;inset:auto 0 0;height:3px;overflow:hidden;pointer-events:none;background:color-mix(in srgb,currentColor 10%,transparent)}
 .fpp-energy-rail>span{display:block;height:100%;background:currentColor;opacity:.65;transform-origin:left;transition:transform 280ms cubic-bezier(.2,.8,.2,1)}
 .fpp-energy-rail[data-indeterminate=true]>span{opacity:.3;transform:scaleX(.35);animation:fpp-energy 1.25s cubic-bezier(.45,0,.55,1) infinite}
@@ -56,7 +57,7 @@
 .sw.fpp-quick-control[data-input=keyboard]:active .knob{transform:none}
 .sw.fpp-quick-control.on[data-input=keyboard]:active .knob{transform:translateX(20px)}
 @media(prefers-reduced-motion:reduce){
-  .fpp-button,.fpp-button *,.fpp-progress *,.fpp-status-animation,.fpp-status-animation *,.fpp-spinner *,.fpp-quick-control,.fpp-quick-control *,.fpp-quick,[data-action-intent=quick]{animation:none!important;transition:none!important}
+  .fpp-button,.fpp-button *,.fpp-progress *,.fpp-status-animation,.fpp-status-animation *,.fpp-spinner *,.fpp-quick-control,.fpp-quick-control *,.fpp-quick,[data-action-intent=quick],.fpp-action-trigger{animation:none!important;transition:none!important}
   .fpp-button:active,.chk.fpp-quick-control:active,.fpp-quick:active,[data-action-intent=quick]:active{transform:none}
   .sw.fpp-quick-control:active .knob{transform:none}
   .sw.fpp-quick-control.on:active .knob{transform:translateX(20px)}

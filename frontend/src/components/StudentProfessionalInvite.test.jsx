@@ -14,6 +14,24 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 function Destination() { const { search } = useLocation(); return <p>Overview {search}</p> }
 const render = async (path = '/student/professionals/add?code=AB12') => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Link to="/student/professionals/add?code=CD34">Other code</Link><Routes><Route path="/student/professionals/add" element={<StudentProfessionalInvite />} /><Route path="/student/professionals" element={<Destination />} /></Routes></MemoryRouter>))
 it('previews the code-bearing add route and requires explicit acceptance', async () => { await render(); expect(mocks.repo.previewInvite).toHaveBeenCalledWith('AB12'); expect(container.textContent).toContain('Ana Silva'); expect(mocks.repo.acceptInvite).not.toHaveBeenCalled(); await act(async () => [...container.querySelectorAll('button')].find(x => x.textContent === 'Vincular a este profissional').click()); expect(mocks.repo.acceptInvite).toHaveBeenCalledWith('AB12'); expect(container.textContent).toContain('Overview ?invite=accepted') })
+it('shows pointer press before acceptance and confirms success before opening the overview', async () => {
+  vi.useFakeTimers()
+  try {
+    await render()
+    const button = [...container.querySelectorAll('button')].find(x => x.textContent === 'Vincular a este profissional')
+    await act(async () => button.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 })))
+    expect(mocks.repo.acceptInvite).not.toHaveBeenCalled()
+    expect(container.textContent).not.toContain('Overview ?invite=accepted')
+    await act(async () => { vi.advanceTimersByTime(320); await Promise.resolve() })
+    expect(mocks.repo.acceptInvite).toHaveBeenCalledTimes(1)
+    expect(button.getAttribute('data-state')).toBe('success')
+    expect(container.textContent).toContain('Ana Silva')
+    await act(async () => { vi.advanceTimersByTime(519); await Promise.resolve() })
+    expect(container.textContent).not.toContain('Overview ?invite=accepted')
+    await act(async () => { vi.advanceTimersByTime(1); await Promise.resolve() })
+    expect(container.textContent).toContain('Overview ?invite=accepted')
+  } finally { vi.useRealTimers() }
+})
 it('locks acceptance immediately against repeated clicks', async () => { let resolve; mocks.repo.acceptInvite.mockReturnValue(new Promise(r => { resolve = r })); await render(); const button = [...container.querySelectorAll('button')].find(x => x.textContent === 'Vincular a este profissional'); await act(async () => { button.click(); button.click() }); expect(mocks.repo.acceptInvite).toHaveBeenCalledTimes(1); expect(button.getAttribute('aria-busy')).toBe('true'); await act(async () => resolve({})) })
 it('discards delayed previews when the query code changes', async () => { let resolve; mocks.repo.previewInvite.mockReturnValueOnce(new Promise(r => { resolve = r })); await render(); await act(async () => [...container.querySelectorAll('a')].find(x => x.textContent === 'Other code').click()); await act(async () => resolve([{ professional_name: 'Stale professional' }])); expect(container.textContent).not.toContain('Stale professional'); expect(container.querySelector('input').value).toBe('CD34') })
 it('does not navigate after accepting an earlier query code', async () => { let resolve; mocks.repo.acceptInvite.mockReturnValueOnce(new Promise(r => { resolve = r })); await render(); await act(async () => [...container.querySelectorAll('button')].find(x => x.textContent === 'Vincular a este profissional').click()); await act(async () => [...container.querySelectorAll('a')].find(x => x.textContent === 'Other code').click()); await act(async () => resolve({})); expect(container.textContent).not.toContain('Overview ?invite=accepted'); expect(container.querySelector('input').value).toBe('CD34') })

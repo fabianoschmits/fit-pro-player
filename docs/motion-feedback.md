@@ -7,6 +7,7 @@ O sistema estende o design system existente. Cores, superfícies, tipografia, ta
 | Componente | Responsabilidade |
 | --- | --- |
 | `Button` / `FppPerformanceButton` | Ação primária, rápida ou crítica; bloqueio de repetição e feedback dentro do botão |
+| `useFppActivation` | Porta de ativação para toque/mouse: apresenta a pressão antes de liberar a ação |
 | `useFppAction` | Ciclo de execução, erro/nova tentativa e limpeza dos temporizadores de apresentação |
 | `FppActionFeedback` | Mensagem local com texto, ícone e região de anúncio acessível |
 | `FppProgress` | Progresso real, ou faixa indeterminada sem inventar porcentagens |
@@ -15,7 +16,7 @@ O sistema estende o design system existente. Cores, superfícies, tipografia, ta
 | `FppToast` | Apresentação do toast existente, com tom opcional |
 | `FppStatusAnimation` | Check, erro, aviso e offline; animação curta de confirmação |
 
-Os componentes estão em `frontend/src/components`; o CSS compartilhado é `frontend/src/motion-feedback.css`. O showcase está em `#/motion-feedback`: permite alternar tema e as nove accent colors sem gravar preferências da conta. Ao sair, restaura as cores originais.
+Os componentes estão em `frontend/src/components`; o CSS compartilhado é `frontend/src/motion-feedback.css`. O laboratório está em `#/motion-feedback`: permite alternar tema e as nove accent colors sem gravar preferências da conta. As abas `Botões`, `Fluxos` e `Estados` isolam cada família de teste; novas famílias entram como uma aba própria. Ao sair, restaura as cores originais.
 
 ## Uso de ações
 
@@ -39,8 +40,8 @@ Estados aceitos: `idle`, `pressed`, `loading`, `processing`, `success`, `error`,
 
 ## Regras de apresentação e segurança de execução
 
-- Pressão de 100 ms; transições de 180–260 ms; confirmação de 480 ms. O resultado bem-sucedido permanece visível por cerca de 900 ms, com uma sustentação de 280 ms antes de callbacks de sucesso que permanecem na mesma tela.
-- O bloqueio e `aria-busy` são imediatos. A faixa/texto de processamento aparece depois de 220 ms, se a operação continuar pendente. O atraso pertence à apresentação; a mutação local e o pedido de rede continuam começando no mesmo clique.
+- Toque ou mouse mostram a pressão por 320 ms antes de iniciar a mutação, navegação ou pedido de rede. A confirmação de sucesso permanece 520 ms antes de callbacks que fecham uma folha ou mudam de tela. O resultado bem-sucedido permanece visível por cerca de 900 ms.
+- O bloqueio e `aria-busy` são imediatos. A faixa/texto de processamento aparece depois de 220 ms, se a operação continuar pendente. Teclado, `intent="quick"`, movimento reduzido e ações que dependem de gesto nativo (`activation="immediate"`, como compartilhamento, download, impressão e seletor de arquivo) seguem imediatamente.
 - Os rótulos reservam sua largura natural com conteúdo CSS invisível. Não duplicam o nome acessível nem texto oculto no DOM.
 - Não liberar uma gravação ainda pendente por causa de um temporizador de animação. As camadas de serviço continuam responsáveis por cancelamento e timeout de suas requisições.
 - Respeitar `prefers-reduced-motion` e interação por teclado. Texto e ícones continuam indicando o resultado com movimento desativado.

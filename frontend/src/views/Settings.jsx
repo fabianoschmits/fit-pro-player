@@ -263,10 +263,10 @@ export default function Settings() {
       <Row icon="dumbbell" iconTint="var(--acc)" title={t('Load starter plan (PPL)')} accessory="chevron" onClick={loadStarterPlan} />
       <Row icon="shuffle" iconTint="var(--teal)" title={t('Import from another app')}
         subtitle={t('FitNotes, Strong, Hevy — or body weight from Apple Health')}
-        accessory="chevron" onClick={() => importRef.current.click()} />
-      <Row icon="upload" iconTint="var(--blue)" title={t('Import backup')} accessory="chevron" onClick={() => fileRef.current.click()} />
+        accessory="chevron" activation="immediate" onClick={() => importRef.current.click()} />
+      <Row icon="upload" iconTint="var(--blue)" title={t('Import backup')} accessory="chevron" activation="immediate" onClick={() => fileRef.current.click()} />
       {importState !== 'idle' && <FppActionFeedback state={importState}>{importError || t('Loading…')}</FppActionFeedback>}
-      <Row icon="download" iconTint="var(--blue)" title={t('Export backup (JSON)')} accessory="chevron" onClick={exportAction.run}
+      <Row icon="download" iconTint="var(--blue)" title={t('Export backup (JSON)')} accessory="chevron" activation="immediate" onClick={exportAction.run}
         disabled={exportAction.locked} aria-busy={exportAction.busy || undefined} data-state={exportAction.state} aria-live="polite"
         value={exportAction.visualState === 'loading' ? t('Loading…') : exportAction.state === 'success' ? t('Backup exported') : exportAction.state === 'error' ? t('Try again') : null}>
         <FppStatusAnimation state={exportAction.visualState} />

@@ -269,6 +269,7 @@ export function WorkoutShareModal({ w, onClose }) {
       <div className="workout-share-actions">
         <Button
           variant="primary"
+          activation="immediate"
           onAction={() => onShare('share')}
           loadingLabel={t(phase === 'sharing' ? 'Compartilhando…' : 'Gerando imagem...')}
           successLabel={t(shareOutcomes.share === 'saved' ? 'Imagem salva' : 'Compartilhado')}
@@ -280,6 +281,7 @@ export function WorkoutShareModal({ w, onClose }) {
         <div className="workout-share-row">
           <Button
             variant="secondary"
+            activation="immediate"
             onAction={() => onShare('save')}
             loadingLabel={t('Gerando imagem...')}
             successLabel={t('Imagem salva')}
@@ -289,6 +291,7 @@ export function WorkoutShareModal({ w, onClose }) {
           </Button>
           <Button
             variant="ghost"
+            activation="immediate"
             onAction={() => onShare('more')}
             loadingLabel={t(phase === 'sharing' ? 'Compartilhando…' : 'Gerando imagem...')}
             successLabel={t(shareOutcomes.more === 'saved' ? 'Imagem salva' : 'Compartilhado')}

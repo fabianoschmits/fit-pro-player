@@ -46,7 +46,7 @@ function InviteWorkspace({ initialCode }) {
       await withTimeout(repo.acceptInvite(data.code), 10000)
       if (!alive.current) return false
       sessionStorage.removeItem('fpp-pending-invite')
-      navigate('/student/professionals?invite=accepted', { replace: true })
+      return true
     } catch (cause) { if (alive.current) setActionError(t('Não foi possível aceitar este convite. Ele pode ter expirado ou já ter sido utilizado.')); throw cause }
     finally { acceptancePending.current = false; if (alive.current) setAccepting(false) }
   }
@@ -57,6 +57,6 @@ function InviteWorkspace({ initialCode }) {
     </ManagementPanel>
     {busy && <FppSkeleton label={t('Consultando convite…')} rows={2} />}
     {!busy && data && !preview && data.code === code && <ManagementPanel title={t('Convite indisponível')}><p role="alert">{t('Convite inválido ou expirado.')}</p><p className="muted">{t('Peça um novo código ao profissional.')}</p></ManagementPanel>}
-    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" intent="primary" disabled={accepting || busy} onAction={accept} loadingLabel={t('Vinculando…')} errorLabel={t('Tentar novamente')}>{t('Vincular a este profissional')}</Button></ManagementPanel>}
+    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" intent="primary" disabled={accepting || busy} onAction={accept} onSuccess={() => { if (alive.current) navigate('/student/professionals?invite=accepted', { replace: true }) }} loadingLabel={t('Vinculando…')} errorLabel={t('Tentar novamente')}>{t('Vincular a este profissional')}</Button></ManagementPanel>}
   </ManagementLayout>
 }

@@ -8,6 +8,7 @@ import { Button } from './ui.jsx';
 import Icon from './Icon.jsx';
 import { PRIVACY_DOCUMENT_VERSION } from '../lib/privacy-config.js'
 import { clearSignUpRateLimit, getSignUpRateLimitState, recordSignUpAttempt, signUpRateLimitConfig } from '../auth/rate-limit.js'
+import { waitForFppConfirmation } from './fpp-action-timing.js'
 
 const ERROR_COPY = {
   invalid_credentials: 'Email or password is incorrect.',
@@ -47,11 +48,14 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const alertRef = useRef(null);
   const submitLock = useRef(false);
   const mounted = useRef(true);
+  const confirmation = useRef(null)
+  const latestAuth = useRef(auth);
+  latestAuth.current = auth;
   const [submitState, setSubmitState] = useState('idle');
   const busy = submitState === 'loading' || auth.operation === operationFor[mode];
   const signUpLimit = mode === 'sign_up' ? getSignUpRateLimitState(values.email) : null
 
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, []);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; confirmation.current?.abort() } }, []);
 
   useEffect(() => {
     setMode(initial(initialMode));
@@ -98,6 +102,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
 
     submitLock.current = true;
     setSubmitState('loading');
+    const initialUserId = auth.user?.id;
     try {
       let result;
       if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
@@ -126,6 +131,14 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
         return;
       }
       if (mode === 'reset_password' || mode === 'sign_in' || mode === 'sign_up') {
+        const knownAccountId = latestAuth.current.user?.id || initialUserId;
+        const accountId = result?.data?.user?.id || result?.data?.session?.user?.id || knownAccountId;
+        confirmation.current = new AbortController()
+        const confirmed = await waitForFppConfirmation(event, { signal: confirmation.current.signal })
+        confirmation.current = null
+        if (!confirmed) return
+        const currentAccountId = latestAuth.current.user?.id;
+        if (!mounted.current || (knownAccountId && !currentAccountId) || (accountId && currentAccountId && currentAccountId !== accountId)) return;
         if (mode === 'sign_in' || mode === 'sign_up') useStore.getState?.().enterApp?.();
         close();
       }

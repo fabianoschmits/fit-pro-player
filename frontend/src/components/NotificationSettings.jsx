@@ -55,7 +55,7 @@ export default function NotificationSettings({ S, update, toast }) {
     <Section collapsible defaultOpen={false} title={t('Background reminders and updates')} footer={t('Background delivery depends on your connection and device.')}>
       <div className="notification-delivery">
         <Row icon="bell" iconTint="var(--pink)" title={t('Background notifications')} subtitle={deliveryStatus} />
-        {signedIn && status.supported && <Button variant="" className="notification-device-action" state={status.busy ? 'processing' : undefined} disabled={!status.enabled && (status.ready === false || status.permission === 'denied')} onAction={changeBackground} loadingLabel={t('Updating…')} successLabel={t('Done')}>
+        {signedIn && status.supported && <Button variant="" activation="immediate" className="notification-device-action" state={status.busy ? 'processing' : undefined} disabled={!status.enabled && (status.ready === false || status.permission === 'denied')} onAction={changeBackground} loadingLabel={t('Updating…')} successLabel={t('Done')}>
           {status.enabled ? t('Disable on this device') : t('Enable on this device')}
         </Button>}
         {!status.supported && iPhone && <p className="notification-note">{t('On iPhone, add this app to the Home Screen in Safari and open it there to enable notifications.')}</p>}

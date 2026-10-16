@@ -25,6 +25,43 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 
 describe('professional profile workspace', () => {
+  it('keeps native pointer save confirmation visible before navigating away', async () => {
+    vi.useFakeTimers()
+    try {
+      await render('/professional/profile/edit')
+      const action = container.querySelector('button[type="submit"]')
+      await act(async () => action.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 })))
+      expect(mocks.save).not.toHaveBeenCalled()
+      await act(async () => { vi.advanceTimersByTime(320); await Promise.resolve() })
+      expect(mocks.save).toHaveBeenCalledTimes(1)
+      expect(action.getAttribute('data-state')).toBe('success')
+      expect(action.disabled).toBe(true)
+      expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile/edit')
+      await act(async () => { vi.advanceTimersByTime(519); await Promise.resolve() })
+      expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile/edit')
+      await act(async () => { vi.advanceTimersByTime(1); await Promise.resolve() })
+      expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile')
+    } finally { vi.useRealTimers() }
+  })
+
+  it('cancels the previous account confirmation without navigating the new profile', async () => {
+    vi.useFakeTimers()
+    try {
+      await render('/professional/profile/edit')
+      const action = container.querySelector('button[type="submit"]')
+      action.dataset.input = 'pointer'
+      await act(async () => container.querySelector('form').dispatchEvent(new SubmitEvent('submit', { bubbles: true, cancelable: true, submitter: action })))
+      expect(action.getAttribute('data-state')).toBe('success')
+      mocks.auth = { status: 'authenticated', user: { id: 'professional-b' } }
+      mocks.own.mockResolvedValue({ ...saved, professionalName: 'Bruna' })
+      await render('/professional/profile/edit')
+      await act(async () => { vi.advanceTimersByTime(520); await Promise.resolve() })
+      expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile/edit')
+      expect(container.querySelector('[name="professionalName"]').value).toBe('Bruna')
+      expect(container.textContent).not.toContain('Perfil salvo.')
+    } finally { vi.useRealTimers() }
+  })
+
   it('locks native submissions immediately and keeps a failed profile save editable for retry', async () => {
     let fail
     mocks.save.mockImplementationOnce(() => new Promise((_, reject) => { fail = reject }))

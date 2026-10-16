@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 import { Button } from './ui.jsx'
+import { confirmSheet } from '../sheets.jsx'
 
 /**
  * Last line of defence: one bad render used to blank the whole app, with no way back —
@@ -33,10 +34,10 @@ export default class ErrorBoundary extends Component {
         <Button variant="primary" icon="reset" onClick={() => location.reload()}>{t('Reload Fit Pro Player')}</Button>
         {active && <>
           <div style={{ height: 8 }} />
-          <Button variant="danger" icon="trash" onClick={() => {
-            useStore.getState().update(s => { s.active = null })
-            location.reload()
-          }}>{t('Discard the running workout')}</Button>
+          <Button variant="danger" icon="trash" onClick={() => confirmSheet({
+            title: t('Discard the running workout'), message: t('This cannot be undone.'), confirmText: t('Discard'), danger: true,
+            onConfirm: () => { useStore.getState().update(s => { s.active = null }); location.reload(); return true },
+          })}>{t('Discard the running workout')}</Button>
         </>}
       </div>
     )
