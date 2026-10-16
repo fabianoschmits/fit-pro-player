@@ -114,6 +114,18 @@ const PROFILE_MOTIVATION_MESSAGES = [
   'Build consistency, one workout at a time.',
   'Train at your own pace.',
   'Keep showing up.',
+  'One set at a time.',
+  'Today counts.',
+  'Small steps build strong results.',
+  'Focus on the next repetition.',
+  'Your pace still moves you forward.',
+  'Progress starts with showing up.',
+  'The next set is yours.',
+  'Recovery is part of progress.',
+  'Strong habits build strong bodies.',
+  'Keep the promise you made to yourself.',
+  'Your routine is working for you.',
+  'Consistency beats intensity alone.',
 ]
 
 function randomMotivationMessageIndex(exclude = null) {

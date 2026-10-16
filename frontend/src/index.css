@@ -39,7 +39,7 @@
   --acc-line: color-mix(in srgb, var(--acc) 38%, transparent);
 
   /* ambience */
-  --bg-grad:linear-gradient(180deg, #0a0a0c 0%, var(--bg) 38%);
+  --bg-grad:none;
   --overlay: rgba(0,0,0,.48);
 
   /* card shadow */
@@ -88,7 +88,7 @@
   --acc-2:#0a6466;
   --on-acc:#ffffff;
 
-  --bg-grad:linear-gradient(180deg, #f4f7fb 0%, var(--bg) 42%);
+  --bg-grad:none;
   --overlay: rgba(15,23,42,.32);
 
   --card-shadow: 0 2px 8px rgba(15,23,42,.07);
@@ -125,7 +125,7 @@ html{
   transition:background-color .4s var(--ease);
 }
 body{
-  background:var(--bg);background-image:var(--bg-grad);background-attachment:fixed;
+  background:var(--bg);background-image:none;
   color:var(--label);
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Segoe UI',Roboto,system-ui,sans-serif;
   font-size:17px;line-height:1.29;letter-spacing:0;
