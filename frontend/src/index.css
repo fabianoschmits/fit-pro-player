@@ -622,14 +622,14 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 /* --------------------------------------------------- profile hero -- */
 .profile-hero{
   position:relative;width:100%;min-height:156px;margin:12px 0 6px;padding:24px 20px 20px 158px;
-  display:block;overflow:visible;background:transparent;text-align:left;
+  z-index:30;isolation:isolate;display:block;overflow:visible;background:transparent;text-align:left;
 }
 .profile-hero::after{
   content:"";position:absolute;left:158px;right:8px;bottom:0;height:1px;
   background:color-mix(in srgb,var(--label) 9%,transparent);pointer-events:none;
 }
 .profile-hero-avatar{
-  position:absolute;left:2px;bottom:0;width:146px;height:174px;display:block;pointer-events:none;
+  position:absolute;z-index:1;left:2px;bottom:0;width:146px;height:174px;display:block;pointer-events:none;
 }
 .profile-hero-avatar-enter{position:absolute;inset:0;display:block;transform-origin:50% 100%}
 .profile-avatar-image{
@@ -644,7 +644,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   white-space:nowrap;text-overflow:ellipsis;
 }
 .profile-hero-message-stage{
-  position:absolute;z-index:2;left:50%;bottom:calc(100% - 12px);width:max-content;max-width:100%;
+  position:absolute;z-index:3;left:50%;bottom:calc(100% - 12px);width:max-content;max-width:100%;
   transform:translateX(-50%);pointer-events:none;
 }
 .profile-hero-message{
