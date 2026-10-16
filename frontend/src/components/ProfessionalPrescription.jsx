@@ -1,6 +1,7 @@
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { normalizeWeeklyPlan } from '../lib/professional-program.js'
 import { t } from '../lib/i18n.js'
+import { workoutDuration } from '../lib/format.js'
 
 const dayNames = { sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça', wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado' }
 export const professionalDayLabel = day => t(dayNames[day] || day || '—')
@@ -29,6 +30,6 @@ export function ProfessionalSessionDetail({ execution }) {
         {entry.replacedFrom && <span>{t('Substituiu {0}', nameOf(entry.replacedFrom))}</span>}
       </div>
     }) : <p className="muted">{t('Nenhuma série realizada recebida.')}</p>}</div>
-    {payload.start && payload.end && <p className="muted">{t('Duração realizada (min)')}: {Math.max(0, Math.round((payload.end - payload.start) / 60000))}</p>}
+    {payload.start && payload.end && <p className="muted">{t('Duração realizada (min)')}: {Math.max(0, Math.round(workoutDuration(payload) / 60000))}</p>}
   </div>
 }

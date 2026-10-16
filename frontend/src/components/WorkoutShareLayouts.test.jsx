@@ -21,6 +21,12 @@ describe('workout share summary', () => {
     expect(summary.topLoad).toMatchObject({ weight: 55, exercise: 'custom-1' })
   })
 
+  it('uses the active duration when the person paused before sharing', () => {
+    const summary = buildWorkoutShareSummary({ start: 0, end: 3_600_000, durationMs: 45_000, entries: [] }, { unit: 'kg' })
+
+    expect(summary.duration).toBe('0 min')
+  })
+
   it('does not expose a blank title when historical data has no name', () => {
     const summary = buildWorkoutShareSummary({ start: 0, end: 60_000, entries: [] }, { unit: 'kg' })
     expect(summary.name).toBe('Treino')

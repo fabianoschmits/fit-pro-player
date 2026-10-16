@@ -1,6 +1,6 @@
 import { t } from '../lib/i18n.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
-import { fmtDate, fmtDur, fmtNum } from '../lib/format.js'
+import { fmtDate, fmtDur, fmtNum, workoutDuration } from '../lib/format.js'
 import { loadOfWorkouts } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
 
@@ -15,7 +15,7 @@ export function buildWorkoutShareSummary(w, st) {
     return { name: exercise ? exerciseName(exercise) : (entry.n || entry.id || t('Exercise')), equipment: exercise?.eq || entry.eq || '', sets: Array.isArray(entry.sets) ? entry.sets.length : 0, maxWeight: maxLoad(entry) }
   })
   const topLoad = exerciseRows.reduce((best, row) => row.maxWeight > best.weight ? { weight: row.maxWeight, exercise: row.name, equipment: row.equipment } : best, { weight: 0, exercise: '', equipment: '' })
-  return { name: w?.name?.trim() || t('Treino'), date: w?.d ? fmtDate(w.d, true) : '', duration: fmtDur(Math.max(0, (w?.end || 0) - (w?.start || 0))), exercises: entries.length, sets: exerciseRows.reduce((total, row) => total + row.sets, 0), topLoad, topLoadLabel: topLoad.weight > 0 ? `${fmtNum(topLoad.weight)} ${st?.unit || 'kg'}` : t('Peso corporal'), exerciseRows, load: loadOfWorkouts([w]) }
+  return { name: w?.name?.trim() || t('Treino'), date: w?.d ? fmtDate(w.d, true) : '', duration: fmtDur(workoutDuration(w)), exercises: entries.length, sets: exerciseRows.reduce((total, row) => total + row.sets, 0), topLoad, topLoadLabel: topLoad.weight > 0 ? `${fmtNum(topLoad.weight)} ${st?.unit || 'kg'}` : t('Peso corporal'), exerciseRows, load: loadOfWorkouts([w]) }
 }
 
 function Stat({ value, label, accent = false }) { return <div className={'share-card-stat' + (accent ? ' is-accent' : '')}><span className="share-card-stat-copy"><strong>{value}</strong><small>{label}</small></span></div> }

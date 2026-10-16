@@ -91,13 +91,24 @@ function StartChooser() {
 }
 
 /* ---------- elapsed clock (isolated so the workout tree doesn't re-render every second) ---------- */
-function Elapsed({ start }) {
+function Elapsed({ active }) {
+  const timer = useUI(s => s.timer)
+  const work = useUI(s => s.work)
+  const manualSet = useUI(s => s.manualSet)
   const [t, setT] = useState('0:00')
   useEffect(() => {
-    if (!start) { setT('0:00'); return undefined }
-    const tick = () => { const s = Math.floor((Date.now() - start) / 1000); setT(Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0')) }
+    const tick = () => {
+      const now = Date.now()
+      let extra = 0
+      if (manualSet?.startedAt) extra = now - manualSet.startedAt
+      else if (timer?.startedAt) extra = Math.min(timer.total * 1000, now - timer.startedAt)
+      else if (work?.phase === 'work' && work.startedAt) extra = Math.min(work.total * 1000, now - work.startedAt)
+      else if (work?.phase === 'rest' && work.restStartedAt) extra = Math.min(work.restTotal * 1000, now - work.restStartedAt)
+      const s = Math.max(0, Math.floor(((active.durationMs || 0) + extra) / 1000))
+      setT(Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'))
+    }
     tick(); const iv = setInterval(tick, 1000); return () => clearInterval(iv)
-  }, [start])
+  }, [active.durationMs, manualSet?.startedAt, timer?.startedAt, work?.startedAt, work?.restStartedAt])
   return <span>{t}</span>
 }
 
@@ -342,7 +353,7 @@ function ActiveWorkout() {
       || entry?.id !== manualSet.exerciseId || !entry?.sets[manualSet.setIdx] || entry.sets[manualSet.setIdx].done) stopManualSet()
   }, [A.id, A.start, A.entries, cur, manualSet, stopManualSet])
   const startWorkout = () => update(s => {
-    if (s.active && !s.active.start) s.active.start = Date.now()
+    if (s.active && !s.active.start) { s.active.start = Date.now(); s.active.durationMs = Math.max(0, Number(s.active.durationMs) || 0) }
   })
   // Superset flow: keep the active exercise in view - completing a set scrolls to the
   // next exercise in the group, then back up to the first exercise of the next round.
@@ -522,7 +533,9 @@ function ActiveWorkout() {
   }
 
   const toggle = (idx, i) => {
-    useUI.getState().stopManualSet()
+    const runningManualSet = useUI.getState().manualSet
+    const completesManualSet = runningManualSet?.sessionId === `${A.id}:${A.start}` && runningManualSet.entryIdx === idx && runningManualSet.setIdx === i
+    useUI.getState().stopManualSet(completesManualSet)
     const m = modeAt(idx)
     const cardioEntry = m === 'cardio'
     const isLastUnit = unitIdx >= units.length - 1
@@ -610,7 +623,7 @@ function ActiveWorkout() {
     <div className="workout-session-bar">
       <div className="hdr workout-session-header">
         <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { abandonWorkout(); nav('/home') } })}><Icon name="xmark" /></button>
-        <div className="workout-session-title"><strong>{A.name}</strong><span><Elapsed start={A.start} /> · {t('{0} sets', done + '/' + total)}</span></div>
+        <div className="workout-session-title"><strong>{A.name}</strong><span><Elapsed active={A} /> · {t('{0} sets', done + '/' + total)}</span></div>
       </div>
       <div className="wprog"><i style={{ '--progress': total ? done / total : 0 }} /></div>
       {A.entries.length > 0 && <div className="workout-exercise-rail" aria-label={t('Exercises')}>

@@ -55,7 +55,8 @@ describe('manual set execution state', () => {
 
     expect(useUI.getState().startManualSet?.(sessionId, 1, 0)).toBe(true)
 
-    expect(useUI.getState().manualSet).toEqual({ sessionId, entryIdx: 1, setIdx: 0, exerciseId: 'row' })
+    expect(useUI.getState().manualSet).toMatchObject({ sessionId, entryIdx: 1, setIdx: 0, exerciseId: 'row' })
+    expect(useUI.getState().manualSet.startedAt).toEqual(expect.any(Number))
     expect(useStore.getState().S).toEqual(before)
     expect(localStorage.length).toBe(0)
     vi.advanceTimersByTime(120_000)
@@ -104,7 +105,7 @@ describe('manual set execution state', () => {
     useUI.setState({ manualSet: runningSet })
 
     expect(useUI.getState().startManualSet?.(sessionId, 0, 1)).toBe(false)
-    expect(useUI.getState().manualSet).toEqual(runningSet)
+    expect(useUI.getState().manualSet).toMatchObject(runningSet)
   })
 
   it('rejects manual execution during rest', () => {
@@ -132,14 +133,14 @@ describe('manual set execution state', () => {
     expect(useUI.getState().startManualSet?.(sessionId, 0, 0)).toBe(true)
 
     expect(useUI.getState().work).toBeNull()
-    expect(useUI.getState().manualSet).toEqual(runningSet)
+    expect(useUI.getState().manualSet).toMatchObject(runningSet)
   })
 
   it('replaces execution state belonging to an earlier session', () => {
     useUI.setState({ manualSet: { ...runningSet, sessionId: 'manual-test:999' } })
 
     expect(useUI.getState().startManualSet?.(sessionId, 0, 1)).toBe(true)
-    expect(useUI.getState().manualSet).toEqual({ ...runningSet, setIdx: 1 })
+    expect(useUI.getState().manualSet).toMatchObject({ ...runningSet, setIdx: 1 })
   })
 
   it('replaces execution state whose exercise was removed', () => {
@@ -160,6 +161,48 @@ describe('manual set execution state', () => {
     expect(useUI.getState().manualSet).toBeNull()
     expect(useUI.getState().timer.left).toBe(90)
     expect(useStore.getState().S).toEqual(before)
+  })
+
+  it('adds only the time spent executing a manual set to the workout duration', () => {
+    useStore.getState().S.active.durationMs = 0
+    useUI.setState({ manualSet: { ...runningSet, startedAt: Date.now() } })
+
+    vi.advanceTimersByTime(12_000)
+    useUI.getState().stopManualSet(true)
+
+    expect(useStore.getState().S.active.durationMs).toBe(12_000)
+  })
+
+  it('adds a completed rest period but never the idle time after it ends', () => {
+    useStore.getState().S.active.durationMs = 0
+
+    useUI.getState().startRest(30)
+    vi.advanceTimersByTime(30_000)
+    vi.advanceTimersByTime(120_000)
+
+    expect(useStore.getState().S.active.durationMs).toBe(30_000)
+  })
+
+  it('adds the actual portion of a timed set when it is stopped early', () => {
+    useStore.getState().S.active.durationMs = 0
+
+    useUI.getState().startWork(45, 'Hold')
+    vi.advanceTimersByTime(12_000)
+    useUI.getState().finishWorkEarly()
+
+    expect(useStore.getState().S.active.durationMs).toBe(12_000)
+  })
+
+  it('caps the timed-flow rest at its configured duration after the countdown ends', () => {
+    useStore.getState().S.active.durationMs = 0
+
+    useUI.getState().startWork(10, 'Hold')
+    vi.advanceTimersByTime(10_000)
+    useUI.getState().startRest(30)
+    vi.advanceTimersByTime(30_000)
+    vi.advanceTimersByTime(120_000)
+
+    expect(useStore.getState().S.active.durationMs).toBe(40_000)
   })
 
   it('starting rest clears manual execution and finishing rest waits for another Play', () => {

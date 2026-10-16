@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { toPng } from 'html-to-image'
 import { t } from '../lib/i18n.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
-import { fmtDate, fmtVol, fmtDur } from '../lib/format.js'
+import { fmtDate, fmtVol, fmtDur, workoutDuration } from '../lib/format.js'
 import { useStore } from '../store/useStore.js'
 import { loadOfWorkouts } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
@@ -16,7 +16,7 @@ import { FppActionFeedback } from './FppFeedback.jsx'
 
 // The Dashboard layout is the default "gamer card" layout
 function LayoutDashboard({ w, st, innerRef, themeId }) {
-  const dur = w.end - w.start
+  const dur = workoutDuration(w)
   const setsCount = w.entries.reduce((acc, e) => acc + (e.sets ? e.sets.length : 0), 0)
   const load = loadOfWorkouts([w])
 

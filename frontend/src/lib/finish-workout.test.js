@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildCompletedWorkout } from './finish-workout.js'
+import { workoutDuration } from './format.js'
 
 describe('completed workout boundary', () => {
   it('retains execution, assignment and immutable prescription identifiers in personal history', () => {
@@ -59,6 +60,17 @@ describe('completed workout boundary', () => {
     }
 
     expect(buildCompletedWorkout(active, { end: 2000, endedEarly: true })).toMatchObject({ endedEarly: true })
+  })
+
+  it('persists the accumulated active duration instead of the wall-clock gap', () => {
+    const active = { id: 'active-1', d: '2026-08-08', start: 1_000, durationMs: 45_000, entries: [] }
+
+    expect(buildCompletedWorkout(active, { end: 3_600_000 })).toMatchObject({ durationMs: 45_000 })
+  })
+
+  it('prefers an accumulated duration while retaining wall-clock timing for legacy history', () => {
+    expect(workoutDuration({ start: 1_000, end: 3_600_000, durationMs: 45_000 })).toBe(45_000)
+    expect(workoutDuration({ start: 1_000, end: 61_000 })).toBe(60_000)
   })
 
   it('keeps superset and replacement context without changing ordinary records', () => {

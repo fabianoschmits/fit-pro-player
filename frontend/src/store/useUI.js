@@ -75,6 +75,17 @@ const validManualSet = (manualSet, active) => {
   return !!row && !row.done && entry.id === manualSet.exerciseId
 }
 
+// Active duration is deliberately accumulated at phase boundaries. A wall-clock
+// start/end difference would include time spent away from the next Play button.
+const addActiveDuration = ms => {
+  const elapsed = Math.max(0, Math.round(Number(ms) || 0))
+  if (!elapsed) return
+  useStore.getState().update(state => {
+    if (!state.active) return
+    state.active.durationMs = Math.max(0, Number(state.active.durationMs) || 0) + elapsed
+  }, true)
+}
+
 export const useUI = create((set, get) => ({
   sheets: [],          // { id, render:(close)=>JSX, kind:'sheet'|'center', locked }
   toastMsg: '',
@@ -110,10 +121,14 @@ export const useUI = create((set, get) => ({
     const { timer, work, manualSet } = get()
     if (timer || work?.phase === 'work' || work?.phase === 'rest' || validManualSet(manualSet, active)) return false
     if (work?.phase === 'done') get().stopWork()
-    set({ manualSet: { sessionId, entryIdx, setIdx, exerciseId: entry.id } })
+    set({ manualSet: { sessionId, entryIdx, setIdx, exerciseId: entry.id, startedAt: Date.now() } })
     return true
   },
-  stopManualSet() { set({ manualSet: null }) },
+  stopManualSet(completed = false) {
+    const manualSet = get().manualSet
+    if (completed && manualSet?.startedAt) addActiveDuration(Date.now() - manualSet.startedAt)
+    set({ manualSet: null })
+  },
 
   startRest(sec, onDone) {
     get().stopManualSet()
@@ -136,6 +151,7 @@ export const useUI = create((set, get) => ({
           restLeft: sec,
           restTotal: sec,
           restEndsAt: endsAt,
+          restStartedAt: Date.now(),
         },
       })
       return
@@ -146,7 +162,7 @@ export const useUI = create((set, get) => ({
     }
     const endsAt = Date.now() + sec * 1000
     timerDone = onDone
-    set({ timer: { left: sec, total: sec, endsAt } })
+    set({ timer: { left: sec, total: sec, endsAt, startedAt: Date.now() } })
     scheduleLocalTimer('rest', endsAt)
     timerTick = () => {
       const tm = get().timer
@@ -184,6 +200,8 @@ export const useUI = create((set, get) => ({
     if (MOBILE && !completed) void cancelNativeTimer('rest')
     if (timerInt) clearInterval(timerInt); timerInt = null
     if (timerTick) document.removeEventListener('visibilitychange', timerTick); timerTick = null
+    const timer = get().timer
+    if (timer?.startedAt) addActiveDuration(Math.min(timer.total * 1000, Date.now() - timer.startedAt))
     const cb = triggerCb ? timerDone : null
     timerDone = null
     set({ timer: null })
@@ -207,6 +225,7 @@ export const useUI = create((set, get) => ({
         left: total,
         total,
         endsAt,
+        startedAt: Date.now(),
         label,
         phase: 'work',
         entryIdx: opts.entryIdx,
@@ -239,6 +258,7 @@ export const useUI = create((set, get) => ({
       const left = Math.max(0, Math.ceil((wk.endsAt - Date.now()) / 1000))
       if (left === wk.left) return
       if (left <= 0) {
+        addActiveDuration(wk.total * 1000)
         localCompletionSound('timed_set', snd)
         if (timerAlertsEnabled('timed_set')) maybeRestNotification('timed_set')
         const done = workDone
@@ -259,7 +279,8 @@ export const useUI = create((set, get) => ({
     const wk = get().work
     if (!wk || wk.phase !== 'work') return
     if (MOBILE) void cancelNativeTimer('timed_set')
-    const elapsed = Math.max(1, wk.total - wk.left)
+    const elapsed = Math.max(1, Math.min(wk.total, Math.round((Date.now() - wk.startedAt) / 1000)))
+    addActiveDuration(elapsed * 1000)
     const done = workDone
     workDone = null
     vibrate(30)
@@ -281,6 +302,8 @@ export const useUI = create((set, get) => ({
     }
     if (workInt) clearInterval(workInt); workInt = null
     if (workTick) document.removeEventListener('visibilitychange', workTick); workTick = null
+    const work = get().work
+    if (work?.phase === 'rest' && work.restStartedAt) addActiveDuration(Math.min(work.restTotal * 1000, Date.now() - work.restStartedAt))
     workDone = null
     workRestDone = null
     set({ work: null })

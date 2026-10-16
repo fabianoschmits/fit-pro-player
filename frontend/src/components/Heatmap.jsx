@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { fmtDur, fmtVol, isoOf, todayISO, MONTHS_LONG } from '../lib/format.js'
+import { fmtDur, fmtVol, isoOf, todayISO, MONTHS_LONG, workoutDuration } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 
@@ -11,7 +11,7 @@ export default function Heatmap({ S, onDay }) {
     S.workouts.forEach(w => {
       const a = byDay[w.d] = byDay[w.d] || { n: 0, vol: 0, min: 0 }
       a.n++; a.vol += w.vol || 0
-      a.min += Math.max(0, Math.round(((w.end || w.start) - w.start) / 60000))
+      a.min += Math.max(0, Math.round(workoutDuration(w) / 60000))
     })
     const mins = Object.values(byDay).map(a => a.min).filter(v => v > 0).sort((a, b) => a - b)
     const q = p => (mins.length ? mins[Math.min(mins.length - 1, Math.floor(p * mins.length))] : 0)

@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText } from './lib/exercises.js'
-import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, isoOf, uid, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase } from './lib/format.js'
+import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, isoOf, uid, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase, workoutDuration } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps, suggestedWeightFor } from './lib/history.js'
 import { shouldWeighBeforeWorkout, hasWeighedToday } from './lib/ux.js'
 import { beep, vibrate } from './lib/sound.js'
@@ -1184,7 +1184,7 @@ function WorkoutDetail({ w, close }) {
   const reduced = useReducedMotion()
   return <>
     <h3>{w.name}</h3>
-    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
+    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(workoutDuration(w)), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
     {w.entries.map((e, i) => {
       const ex = EXIDX[e.id]
       const hasAnimation = ex && hasExerciseGuideAsset(ex)
@@ -1237,7 +1237,7 @@ function Calendar({ start, close }) {
   const daysIn = new Date(y, mo + 1, 0).getDate()
   const monthWs = st.workouts.filter(w => w.d.startsWith(y + '-' + String(mo + 1).padStart(2, '0')))
   const monthVol = monthWs.reduce((a, w) => a + (w.vol || 0), 0)
-  const monthMs = monthWs.reduce((a, w) => a + Math.max(0, (w.end || w.start) - w.start), 0)
+  const monthMs = monthWs.reduce((a, w) => a + workoutDuration(w), 0)
   const cells = []
   for (let i = 0; i < startOffset; i++) cells.push(<div key={'e' + i} />)
   for (let d = 1; d <= daysIn; d++) {
@@ -1275,7 +1275,7 @@ export function WorkoutRow({ w, onClick }) {
   return <button type="button" className="item workout-row" onClick={onClick}>
     <span className="lrow-i workout-row-icon">{routine ? <RoutineMuscleThumb routine={routine} body={st.body} /> : <Icon name="clipboard" />}</span>
     <div className="grow"><div className="tt">{w.name}</div>
-      <div className="ss">{[fmtDate(w.d, true), ...durPart(w.end - w.start), t('{0} sets', setsDone(w)), fmtVol(w.vol, st.unit)].join(' · ')}</div></div>
+      <div className="ss">{[fmtDate(w.d, true), ...durPart(workoutDuration(w)), t('{0} sets', setsDone(w)), fmtVol(w.vol, st.unit)].join(' · ')}</div></div>
     {w.prs && w.prs.length > 0 && <span className="pr"><Icon name="trophy" />{w.prs.length} {getLang() === 'pt' ? 'RP' : 'PR'}</span>}
     <Icon name="chevronRight" className="chev" />
   </button>
@@ -1340,7 +1340,7 @@ function beginWorkoutFromHistory(workout, bw) {
   stopWorkoutExecution()
   update(state => {
     queueAbandon(state)
-    state.active = { id: uid(), d: todayISO(), start: null, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
+    state.active = { id: uid(), d: todayISO(), start: null, durationMs: 0, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
   })
   nav('/workout')
 }
@@ -1358,7 +1358,7 @@ export function beginWorkout(routineId, bw, professionalExecutionId = null) {
   update(s => {
     queueAbandon(s)
     const executionId = r?.assigned ? (professionalExecutionId || crypto.randomUUID()) : null
-    s.active = { id: uid(), d: todayISO(), start: null, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId: executionId,
+    s.active = { id: uid(), d: todayISO(), start: null, durationMs: 0, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId: executionId,
       ...(r?.assigned ? { assignmentId: r.assignmentId, programVersionId: r.programVersionId, assignedDayKey: r.assignedDayKey, prescribedEntries: structuredClone(r.ex), unit: s.unit } : {}) }
     if (executionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId, assignmentId: r.assignmentId, type: 'start', dayKey: r.assignedDayKey, payload: { source: 'professional-program', workoutId: s.active.id, prescription: s.active.prescribedEntries, unit: s.unit } })
   })
@@ -1457,7 +1457,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     </div>
     {persistenceError && <><FppActionFeedback state="error">{t('Não foi possível salvar neste dispositivo. Tente novamente.')}</FppActionFeedback><Button onAction={retrySave} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}>{t('Tentar novamente')}</Button></>}
     <div className="finish-metrics">
-      <div className="finish-metric"><div className="l">{t('Duration')}</div><div className="v">{fmtDur(w.end - w.start)}</div></div>
+      <div className="finish-metric"><div className="l">{t('Duration')}</div><div className="v">{fmtDur(workoutDuration(w))}</div></div>
       <div className="finish-metric"><div className="l">{t('Exercises')}</div><div className="v">{w.entries.length}</div></div>
       <div className="finish-metric"><div className="l">{t('Volume')}</div><div className="v">{fmtVol(w.vol, st.unit)}</div></div>
       <div className="finish-metric"><div className="l">{t('Sets')}</div><div className="v">{setsDone(w)}</div></div>
@@ -1486,6 +1486,7 @@ export function finishWorkout() {
   doFinishWorkout()
 }
 function doFinishWorkout() {
+  stopWorkoutExecution()
   const st = S()
   const A = st.active
   if (!A) return
@@ -1514,10 +1515,9 @@ function doFinishWorkout() {
       if (mx > 0) { const cur = s.exWeights[e.id]; if (!cur || mx > cur.w) s.exWeights[e.id] = { w: mx, d: w.d } }
     })
     s.workouts.push(w)
-    if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, unit: A.unit, prescription: A.prescribedEntries, entries: A.entries } })
+    if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, durationMs: w.durationMs, unit: A.unit, prescription: A.prescribedEntries, entries: A.entries } })
     s.active = null
   })
-  stopWorkoutExecution()
   flushEvents()
   beep(snd(), 880, 0.15); beep(snd(), 1100, 0.15, 0.18); beep(snd(), 1320, 0.3, 0.36)
   ui().openSheet(close => <FinishSummary w={w} prs={prs} e1prs={e1prs} close={close} />, { kind: 'center', locked: true })

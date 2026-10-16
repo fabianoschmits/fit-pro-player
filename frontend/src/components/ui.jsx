@@ -253,26 +253,33 @@ export function Check({ checked, onChange, className = '', size, playMode = fals
 export function Section({ title, footer, children, className = '', collapsible = false, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   const [rendered, setRendered] = useState(defaultOpen)
-  const [closing, setClosing] = useState(false)
+  const [expanded, setExpanded] = useState(defaultOpen)
   const closeTimer = useRef(null)
-  useEffect(() => () => clearTimeout(closeTimer.current), [])
+  const expandFrame = useRef(null)
+  useEffect(() => () => {
+    clearTimeout(closeTimer.current)
+    if (expandFrame.current != null) cancelAnimationFrame(expandFrame.current)
+  }, [])
   const toggle = () => {
     if (open) {
+      if (expandFrame.current != null) cancelAnimationFrame(expandFrame.current)
       setOpen(false)
-      setClosing(true)
-      closeTimer.current = setTimeout(() => { setRendered(false); setClosing(false) }, 180)
+      setExpanded(false)
+      closeTimer.current = setTimeout(() => setRendered(false), 240)
       return
     }
     clearTimeout(closeTimer.current)
     setRendered(true)
-    setClosing(false)
+    setExpanded(false)
     setOpen(true)
+    // Render the collapsed grid first, then let CSS interpolate to its natural height.
+    expandFrame.current = requestAnimationFrame(() => setExpanded(true))
   }
   const content = <><div className="sect-b">{children}</div>{footer && <p className="sect-f">{footer}</p>}</>
   return (
     <section className={'sect ' + className}>
       {title && (collapsible ? <button type="button" className={'sect-t sect-toggle' + (open ? ' open' : '')} aria-expanded={open} onClick={toggle}><span>{title}</span><Icon name="chevronDown" /></button> : <h2 className="sect-t">{title}</h2>)}
-      {!collapsible ? content : rendered && <div className={'sect-motion' + (closing ? ' closing' : '')}>{content}</div>}
+      {!collapsible ? content : rendered && <div className={'sect-motion' + (expanded ? ' open' : '')}><div className="sect-motion-inner">{content}</div></div>}
     </section>
   )
 }

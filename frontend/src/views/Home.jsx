@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, workoutVolume, setsDone, setsDoneActive } from '../lib/history.js'
-import { fmtNum, fmtDate, fmtDur, fmtVol, todayISO, isoOf, weekKey, DAYS, exCount, sentenceCase } from '../lib/format.js'
+import { fmtNum, fmtDate, fmtDur, fmtVol, todayISO, isoOf, weekKey, DAYS, exCount, sentenceCase, workoutDuration } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor, repeatWorkout, WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
@@ -124,7 +124,7 @@ export default function Home() {
         <b>{exCount(routine.ex.length)}</b>
         {routineMuscles.map(muscle => <span key={muscle}>{sentenceCase(t(muscle))}</span>)}
       </div>
-      {matchingPrevious && matchingPrevious.end > matchingPrevious.start && <div className="home-last-session"><span>{t('Last time')}</span><b>{fmtDur(matchingPrevious.end - matchingPrevious.start)}</b><small>{fmtDate(matchingPrevious.d, true)}</small></div>}
+      {matchingPrevious && workoutDuration(matchingPrevious) > 0 && <div className="home-last-session"><span>{t('Last time')}</span><b>{fmtDur(workoutDuration(matchingPrevious))}</b><small>{fmtDate(matchingPrevious.d, true)}</small></div>}
       <div className="home-now-actions">
         <Button variant="primary" icon="play" onClick={() => startFlow(routine.id)}>{t('Start {0}', routineName(routine))}</Button>
       </div>

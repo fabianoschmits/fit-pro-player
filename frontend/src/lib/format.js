@@ -20,6 +20,11 @@ export function fmtDur(ms) {
   const m = Math.floor(ms / 60000)
   return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + ' min'
 }
+// New sessions persist only active exercise and rest time. Older history retains
+// its start/end estimate so existing records stay readable.
+export const workoutDuration = workout => Number.isFinite(workout?.durationMs)
+  ? Math.max(0, workout.durationMs)
+  : Math.max(0, (workout?.end || workout?.start || 0) - (workout?.start || 0))
 // Imported history has no clock — an unknown duration is left out rather than shown as "0 min".
 export const durPart = ms => (ms >= 60000 ? [fmtDur(ms)] : [])
 // Numbers follow the UI language, like the dates above — a hardcoded locale put Swiss

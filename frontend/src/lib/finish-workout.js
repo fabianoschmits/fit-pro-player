@@ -29,6 +29,7 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
     bw: active.bw,
     entries,
     prs,
+    ...(Number.isFinite(active?.durationMs) ? { durationMs: Math.max(0, Math.round(active.durationMs)) } : {}),
     ...(endedEarly ? { endedEarly: true } : {}),
     ...(active.professionalExecutionId ? {
       professionalExecutionId: active.professionalExecutionId,
