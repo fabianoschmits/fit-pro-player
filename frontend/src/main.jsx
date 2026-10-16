@@ -7,10 +7,12 @@ import { useStore } from './store/useStore.js'
 import { canReloadForUpdate } from './lib/reload-safety.js'
 import AppStatus from './components/AppStatus.jsx'
 import { installDiagnostics } from './lib/diagnostics.js'
+import { installPwaViewport } from './lib/pwa-viewport.js'
 import './index.css'
 import './professional.css'
 import './motion-feedback.css'
 
+installPwaViewport({ native: MOBILE })
 installDiagnostics()
 
 createRoot(document.getElementById('root')).render(

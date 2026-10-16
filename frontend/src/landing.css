@@ -6,7 +6,7 @@ body.landing-mode {
 
 body.landing-mode #app {
   max-width: none;
-  padding: 0;
+  padding: var(--sat) 0 0;
 }
 
 body.landing-mode #tabbar {
