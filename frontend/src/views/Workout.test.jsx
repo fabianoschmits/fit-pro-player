@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
     workoutCompleteSheet: vi.fn(),
     exercisePicker: vi.fn(),
     exConfigSheet: vi.fn(),
+    startFlow: vi.fn(),
     navigate: vi.fn(),
   }
   state.storeSnapshot = () => ({
@@ -57,7 +58,7 @@ vi.mock('../store/useUI.js', () => {
 })
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
 vi.mock('../sheets.jsx', () => ({
-  startFlow: vi.fn(),
+  startFlow: mocks.startFlow,
   exercisePicker: mocks.exercisePicker,
   exConfigSheet: mocks.exConfigSheet,
   exerciseDetailSheet: vi.fn(),
@@ -445,7 +446,7 @@ describe('Workout set completion flow', () => {
     expect(container.querySelector('.set-action.is-executing').disabled).toBe(false)
   })
 
-  it('shows only freestyle and today-plan actions on rest days', async () => {
+  it('shows the available routines to run when today has no scheduled workout', async () => {
     await mountState({
       unit: 'kg', restSec: 90, sound: false, effort: 'none', mediaSize: 'full',
       workouts: [], exWeights: {}, week: {}, dayPlan: {}, active: null,
@@ -455,18 +456,41 @@ describe('Workout set completion flow', () => {
       ],
     })
 
-    expect(container.textContent).toContain('Treino livre')
-    expect(container.textContent).toContain('Criar um plano para hoje')
-    expect(container.textContent).not.toContain('Outros treinos')
+    expect(container.textContent).toContain('Hoje não é dia de treino')
+    expect(container.textContent).toContain('Escolha um treino para hoje')
+    expect(container.textContent).toContain('Push')
+    expect(container.textContent).toContain('Pull')
 
-    const create = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Criar um plano para hoje'))
-    expect(create).toBeTruthy()
-    await act(async () => { create.dispatchEvent(new dom.Event('click', { bubbles: true })) })
+    const push = [...container.querySelectorAll('.item')].find(item => item.textContent.includes('Push'))
+    expect(push).toBeTruthy()
+    await act(async () => { push.dispatchEvent(new dom.Event('click', { bubbles: true })) })
+    expect(mocks.startFlow).toHaveBeenCalledWith('push')
+  })
 
-    const created = mocks.S.routines.find(r => r.name === 'Plano de hoje')
-    expect(created).toBeTruthy()
-    expect(mocks.S.dayPlan[todayISO()]).toBe(created.id)
-    expect(mocks.navigate).toHaveBeenCalledWith('/plan/r/' + created.id)
+  it('shows the scheduled workout as complete after it is saved today', async () => {
+    const day = new Date().getDay()
+    await mountState({
+      unit: 'kg', restSec: 90, sound: false, effort: 'none', mediaSize: 'full', planMode: 'weekly',
+      exWeights: {}, dayPlan: {}, active: null, week: { [day]: 'push' },
+      routines: [{ id: 'push', name: 'Push', emoji: 'dumbbell', ex: [{ id: 'plain-bench', sets: 3, reps: 8, weight: 60 }] }],
+      workouts: [{ id: 'done', d: todayISO(), routineId: 'push', name: 'Push', start: 1, end: 2, entries: [] }],
+    })
+
+    expect(container.textContent).toContain('Treino do dia concluído')
+    expect(container.textContent).toContain('Executar outro treino')
+    expect(container.textContent).not.toContain('Começar Push')
+  })
+
+  it('labels an early completion only for the scheduled workout completed today', async () => {
+    const day = new Date().getDay()
+    await mountState({
+      unit: 'kg', restSec: 90, sound: false, effort: 'none', mediaSize: 'full', planMode: 'weekly',
+      exWeights: {}, dayPlan: {}, active: null, week: { [day]: 'push' },
+      routines: [{ id: 'push', name: 'Push', emoji: 'dumbbell', ex: [{ id: 'plain-bench', sets: 3, reps: 8, weight: 60 }] }],
+      workouts: [{ id: 'early', d: todayISO(), routineId: 'push', name: 'Push', start: 1, end: 2, endedEarly: true, entries: [] }],
+    })
+
+    expect(container.textContent).toContain('Treino do dia encerrado mais cedo')
   })
 
   it('lets an empty freestyle workout add its first exercise before the timer starts', async () => {

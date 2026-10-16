@@ -52,6 +52,15 @@ describe('completed workout boundary', () => {
     expect(completed.end).toBe(2000)
   })
 
+  it('marks an incomplete session that was deliberately finished early', () => {
+    const active = {
+      id: 'active-1', d: '2026-08-08', start: 1000,
+      entries: [{ id: '0025', sets: [{ done: true }, { done: false }] }],
+    }
+
+    expect(buildCompletedWorkout(active, { end: 2000, endedEarly: true })).toMatchObject({ endedEarly: true })
+  })
+
   it('keeps superset and replacement context without changing ordinary records', () => {
     const active = {
       id: 'active-1', d: '2026-08-08', start: 1000,

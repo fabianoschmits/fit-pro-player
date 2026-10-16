@@ -1489,6 +1489,8 @@ function doFinishWorkout() {
   const st = S()
   const A = st.active
   if (!A) return
+  const totalSets = A.entries.reduce((count, entry) => count + entry.sets.length, 0)
+  const endedEarly = setsDoneActive(A) < totalSets
   const prs = []
   const e1prs = []
   A.entries.forEach(e => {
@@ -1502,6 +1504,7 @@ function doFinishWorkout() {
   const w = buildCompletedWorkout(A, {
     end: Date.now(),
     prs,
+    endedEarly,
     snapshotFor: e => EXIDX[e.id]?.custom ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
   })
   w.vol = workoutVolume(w)
