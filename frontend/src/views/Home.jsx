@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, workoutVolume, setsDone, setsDoneActive } from '../lib/history.js'
@@ -36,6 +37,8 @@ export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const [weekOffset, setWeekOffset] = useState(0)
+  const [weightExpanded, setWeightExpanded] = useState(false)
+  const reducedMotion = useReducedMotion()
 
   const today = new Date()
   const isoToday = todayISO()
@@ -73,7 +76,11 @@ export default function Home() {
     : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} - ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
   const workoutsThisWeek = S.workouts.filter(workout => weekKey(workout.d) === weekKey(isoToday)).length
   const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(key => S.week[key]).length
-  const bwPoints = S.bodyweight.slice(-30).map(entry => ({ t: entry.t || new Date(entry.d).getTime(), y: entry.w, d: entry.d, iso: entry.d }))
+  const bwPoints = S.bodyweight.slice(-90).map(entry => ({ t: entry.t || new Date(entry.d).getTime(), y: entry.w, d: entry.d, iso: entry.d }))
+  const weightStart = bwPoints[0]
+  const weightTrend = weightStart && bw ? bw.w - weightStart.y : null
+  const chartHeight = weightExpanded ? 228 : 104
+  const weightTransition = { type: 'spring', duration: 0.42, bounce: 0 }
 
   const active = S.active
   const activeTotal = active?.entries.reduce((count, entry) => count + entry.sets.length, 0) || 0
@@ -183,12 +190,15 @@ export default function Home() {
       <div className="week home-week-strip">{strip}</div>
     </section>
 
-    <section className="home-weight-block">
+    <motion.section layout={!reducedMotion} transition={weightTransition} className={'home-weight-block' + (weightExpanded ? ' is-expanded' : '')}>
       <div className="home-section-head">
         <div><h2>{t('Body weight')}</h2>{bw && <span>{fmtDate(bw.d, true)}</span>}</div>
         <div className="row home-weight-actions">
           <Button size="sm" variant="ghost" icon="target" style={S.targetW ? { color: 'var(--yellow)' } : undefined} onClick={goalSheet}>{S.targetW ? fmtNum(S.targetW) : t('Goal')}</Button>
           <Button size="sm" variant="tinted" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button>
+          {bw && <button type="button" className="home-weight-expand" aria-expanded={weightExpanded} aria-label={t(weightExpanded ? 'Collapse' : 'Expand')} onClick={() => setWeightExpanded(expanded => !expanded)}>
+            <Icon name={weightExpanded ? 'chevronUp' : 'chevronDown'} />
+          </button>}
         </div>
       </div>
       {bw ? <>
@@ -199,9 +209,16 @@ export default function Home() {
           {!!delta && <span style={{ color: bwDeltaColor(delta, bw.w) }}><Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} />{fmtNum(Math.abs(delta))} {S.unit}</span>}
           {S.targetW && <small><Icon name="target" />{Math.abs(S.targetW - bw.w) < 0.05 ? t('reached!') : t(S.targetW > bw.w ? '{0} to gain' : '{0} to lose', `${fmtNum(Math.abs(S.targetW - bw.w))} ${S.unit}`)}</small>}
         </div>
-        <div className="chart home-weight-chart"><LineChart points={bwPoints} h={104} unit={S.unit} goal={S.targetW} onPointEdit={point => bwSheet({ date: point.iso || point.d || isoToday })} /></div>
+        <motion.div layout={!reducedMotion} transition={weightTransition} className="chart home-weight-chart">
+          <LineChart points={bwPoints} h={chartHeight} unit={S.unit} goal={S.targetW} animateGeometry={!reducedMotion} onPointEdit={point => bwSheet({ date: point.iso || point.d || isoToday })} />
+        </motion.div>
+        {weightExpanded && <motion.div className="home-weight-details" initial={reducedMotion ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={reducedMotion ? undefined : { opacity: 0, y: -3 }} transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.2, 0.8, 0.2, 1] }}>
+          <span><small>{t('Progress')}</small><b style={{ color: weightTrend == null ? 'var(--label)' : bwDeltaColor(weightTrend, bw.w) }}>{weightTrend == null || Math.abs(weightTrend) < 0.05 ? '—' : `${weightTrend > 0 ? '+' : '−'}${fmtNum(Math.abs(weightTrend))} ${S.unit}`}</b></span>
+          <span><small>{t('Goal')}</small><b>{S.targetW ? `${fmtNum(S.targetW)} ${S.unit}` : '—'}</b></span>
+          <span><small>{t('Last time')}</small><b>{weightStart ? fmtDate(weightStart.iso, true) : '—'}</b></span>
+        </motion.div>}
       </> : <div className="home-weight-empty"><span>{t("No entries yet — log your weight to start the curve. It's also asked before every workout.")}</span><Button size="sm" variant="primary" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button></div>}
-    </section>
+    </motion.section>
 
     {recentWorkouts.length > 0 && <section className="home-recent-block">
       <div className="home-section-head">

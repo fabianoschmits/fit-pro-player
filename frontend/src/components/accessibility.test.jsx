@@ -57,3 +57,15 @@ it('moves through consecutive chart points by keyboard across rerenders', () => 
   for (const key of ['Home', 'ArrowRight', 'ArrowRight', 'Enter']) act(() => chart.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })))
   expect(edit).toHaveBeenLastCalledWith(expect.objectContaining({ iso: '2026-10-03', v: 30 }))
 })
+
+it('keeps the weight curve mounted while its chart grows for the detailed view', () => {
+  const points = [1, 2, 3].map(day => ({ t: +new Date(`2026-10-0${day}T12:00:00`), d: `2026-10-0${day}`, y: 70 + day }))
+  act(() => root.render(<LineChart points={points} h={104} animateGeometry />))
+  const curve = host.querySelector('[data-chart-geometry="curve"]')
+  expect(curve).not.toBeNull()
+
+  act(() => root.render(<LineChart points={points} h={228} animateGeometry />))
+
+  expect(host.querySelector('[data-chart-geometry="curve"]')).toBe(curve)
+  expect(host.querySelector('svg').getAttribute('viewBox')).toBe('0 0 340 228')
+})

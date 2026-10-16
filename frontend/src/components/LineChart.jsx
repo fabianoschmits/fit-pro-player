@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
+import { motion } from 'framer-motion'
 import { fmtNum, fmtDate, MONTHS, isoOf } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 
@@ -12,7 +13,7 @@ const W = 340   // viewBox width; the svg stretches to its container, height com
 // opts: { h, unit, color, axes, goal, invert }
 //   invert flips the y axis, for a scale that counts down as it gets harder (RIR). Without it
 //   a curve of reps-in-reserve reads upside down, with the hardest sets at the floor.
-export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit, selectedDate = null, label }) {
+export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit, selectedDate = null, label, animateGeometry = false }) {
   const svgRef = useRef(null)
   const wrapRef = useRef(null)
   const tipRef = useRef(null)
@@ -39,6 +40,12 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
 
   if (!points || points.length === 0) return <div className="empty small">{t('No data yet')}</div>
   const H = h
+  const GraphPath = animateGeometry ? motion.path : 'path'
+  const GraphLine = animateGeometry ? motion.line : 'line'
+  const GraphCircle = animateGeometry ? motion.circle : 'circle'
+  const GraphText = animateGeometry ? motion.text : 'text'
+  const geometryTransition = { duration: 0.34, ease: [0.2, 0.8, 0.2, 1] }
+  const geometry = values => animateGeometry ? { initial: false, animate: values, transition: geometryTransition } : {}
   const P = { l: axes ? 34 : 8, r: 12, t: 10, b: axes ? 22 : 8 }
   const single = points.length === 1
   const pts = single ? [points[0], points[0]] : points
@@ -63,8 +70,8 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
     for (let v = Math.ceil(ymin / step) * step; v <= ymax + 1e-9; v += step) {
       const y = Y(v)
       gridlines.push(<g key={'y' + v}>
-        <line x1={P.l} y1={y} x2={W - P.r} y2={y} stroke="var(--sep-op)" strokeWidth="1" strokeDasharray="2 4" />
-        <text x={P.l - 5} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="var(--label-2)">{fmtNum(v)}</text>
+        <GraphLine x1={P.l} y1={y} x2={W - P.r} y2={y} stroke="var(--sep-op)" strokeWidth="1" strokeDasharray="2 4" {...geometry({ y1: y, y2: y })} />
+        <GraphText x={P.l - 5} y={y + 3.5} textAnchor="end" fontSize="9.5" fill="var(--label-2)" {...geometry({ y: y + 3.5 })}>{fmtNum(v)}</GraphText>
       </g>)
     }
     const d0 = new Date(t0), d1 = new Date(t1)
@@ -82,15 +89,16 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
       if (i % every) return
       const x = X(tk.t)
       gridlines.push(<g key={'x' + i}>
-        <line x1={x} y1={P.t} x2={x} y2={H - P.b} stroke="var(--sep-op)" strokeWidth="1" strokeDasharray="2 4" />
-        <text x={x} y={H - 7} textAnchor={tk.anchor || 'middle'} fontSize="9.5" fill="var(--label-2)">{tk.txt}</text>
+        <GraphLine x1={x} y1={P.t} x2={x} y2={H - P.b} stroke="var(--sep-op)" strokeWidth="1" strokeDasharray="2 4" {...geometry({ x1: x, x2: x, y2: H - P.b })} />
+        <GraphText x={x} y={H - 7} textAnchor={tk.anchor || 'middle'} fontSize="9.5" fill="var(--label-2)" {...geometry({ x, y: H - 7 })}>{tk.txt}</GraphText>
       </g>)
     })
   }
 
-  const poly = pts.map(p => X(p.t).toFixed(1) + ',' + Y(p.y).toFixed(1)).join(' ')
+  const linePath = pts.map((p, index) => `${index ? 'L' : 'M'} ${X(p.t).toFixed(1)} ${Y(p.y).toFixed(1)}`).join(' ')
   const last = pts[pts.length - 1]
-  const gid = 'g' + Math.round(t0 % 1e7) + '_' + H
+  const areaPath = `${linePath} L ${X(last.t).toFixed(1)} ${H - P.b} L ${P.l} ${H - P.b} Z`
+  const gid = 'g' + Math.round(t0 % 1e7)
   const hoverPts = (single ? [points[0]] : points).map(p => {
     const iso = p.d || isoOf(new Date(p.t))
     return { x: X(p.t), y: Y(p.y), iso, v: p.y, note: p.note, selected: p.selected || (selectedDate && iso === selectedDate) }
@@ -133,23 +141,23 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
         </linearGradient></defs>
         {gridlines}
         {goal != null && isFinite(goal) && <>
-          <line x1={P.l} y1={Y(goal)} x2={W - P.r} y2={Y(goal)} stroke="var(--yellow)" strokeWidth="1.6" strokeDasharray="7 4" />
-          <text x={W - P.r - 2} y={Y(goal) - 5} textAnchor="end" fontSize="9.5" fontWeight="700" fill="var(--yellow)">{fmtNum(goal)}</text>
+          <GraphLine x1={P.l} y1={Y(goal)} x2={W - P.r} y2={Y(goal)} stroke="var(--yellow)" strokeWidth="1.6" strokeDasharray="7 4" {...geometry({ y1: Y(goal), y2: Y(goal) })} />
+          <GraphText x={W - P.r - 2} y={Y(goal) - 5} textAnchor="end" fontSize="9.5" fontWeight="700" fill="var(--yellow)" {...geometry({ y: Y(goal) - 5 })}>{fmtNum(goal)}</GraphText>
         </>}
-        <polygon points={`${P.l},${H - P.b} ${poly} ${X(last.t).toFixed(1)},${H - P.b}`} fill={`url(#${gid})`} />
-        <polyline points={poly} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        <GraphPath data-chart-geometry="area" d={areaPath} fill={`url(#${gid})`} {...geometry({ d: areaPath })} />
+        <GraphPath data-chart-geometry="curve" d={linePath} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" {...geometry({ d: linePath })} />
         {selectedPoint && <g className="chart-selected-point">
-          <line x1={selectedPoint.x} y1={P.t} x2={selectedPoint.x} y2={H - P.b} stroke={color} strokeWidth="1.2" strokeDasharray="3 3" opacity=".58" />
-          <circle cx={selectedPoint.x} cy={selectedPoint.y} r="7" fill="var(--surface)" stroke={color} strokeWidth="2" />
-          <circle cx={selectedPoint.x} cy={selectedPoint.y} r="2.5" fill={color} />
+          <GraphLine x1={selectedPoint.x} y1={P.t} x2={selectedPoint.x} y2={H - P.b} stroke={color} strokeWidth="1.2" strokeDasharray="3 3" opacity=".58" {...geometry({ x1: selectedPoint.x, x2: selectedPoint.x, y2: H - P.b })} />
+          <GraphCircle cx={selectedPoint.x} cy={selectedPoint.y} r="7" fill="var(--surface)" stroke={color} strokeWidth="2" {...geometry({ cx: selectedPoint.x, cy: selectedPoint.y })} />
+          <GraphCircle cx={selectedPoint.x} cy={selectedPoint.y} r="2.5" fill={color} {...geometry({ cx: selectedPoint.x, cy: selectedPoint.y })} />
         </g>}
         {marked && pts.map((p, i) => (p.m == null ? null :
-          <circle key={'m' + i} cx={X(p.t)} cy={Y(p.y)} r={2.4 + p.m * 3} fill={color} opacity={0.3 + p.m * 0.7} />))}
-        <circle cx={X(last.t)} cy={Y(last.y)} r="4" fill={color} />
+          <GraphCircle key={'m' + i} cx={X(p.t)} cy={Y(p.y)} r={2.4 + p.m * 3} fill={color} opacity={0.3 + p.m * 0.7} {...geometry({ cx: X(p.t), cy: Y(p.y) })} />))}
+        <GraphCircle cx={X(last.t)} cy={Y(last.y)} r="4" fill={color} {...geometry({ cx: X(last.t), cy: Y(last.y) })} />
         {hover && <g>
-          <line className="cvl" x1={hover.x} y1={P.t} x2={hover.x} y2={H - P.b} stroke="var(--label-3)" strokeWidth="1" strokeDasharray="3 3" />
-          <line className="chl" x1={P.l} y1={hover.y} x2={W - P.r} y2={hover.y} stroke="var(--label-3)" strokeWidth="1" strokeDasharray="3 3" />
-          <circle cx={hover.x} cy={hover.y} r="5" fill={color} stroke="var(--bg)" strokeWidth="2" />
+          <GraphLine className="cvl" x1={hover.x} y1={P.t} x2={hover.x} y2={H - P.b} stroke="var(--label-3)" strokeWidth="1" strokeDasharray="3 3" {...geometry({ x1: hover.x, x2: hover.x, y2: H - P.b })} />
+          <GraphLine className="chl" x1={P.l} y1={hover.y} x2={W - P.r} y2={hover.y} stroke="var(--label-3)" strokeWidth="1" strokeDasharray="3 3" {...geometry({ y1: hover.y, y2: hover.y })} />
+          <GraphCircle cx={hover.x} cy={hover.y} r="5" fill={color} stroke="var(--bg)" strokeWidth="2" {...geometry({ cx: hover.x, cy: hover.y })} />
         </g>}
       </svg>
       {hover && <div className="ctip" ref={tipRef} role="status" style={{ pointerEvents: 'auto' }}>
