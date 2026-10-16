@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { afterEach, beforeEach, expect, it } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { FppActionFeedback, FppProgress, FppSkeleton, FppSpinner, FppToast } from './FppFeedback.jsx'
 
 let root, host
@@ -55,4 +55,16 @@ it('keeps the toast live region mounted while messages change and leaves spinner
   expect(toast.classList.contains('show')).toBe(true)
   act(() => root.render(<FppSpinner label="Aguarde" />))
   expect(host.querySelector('[role="status"]').getAttribute('aria-label')).toBe('Aguarde')
+})
+
+it('keeps a toast message available through its short exit', () => {
+  vi.useFakeTimers()
+  act(() => root.render(<FppToast message="Salvo" tone="success" />))
+  const toast = host.querySelector('#toast')
+  act(() => root.render(<FppToast />))
+  expect(toast.textContent).toBe('Salvo')
+  expect(toast.classList.contains('is-leaving')).toBe(true)
+  act(() => vi.advanceTimersByTime(180))
+  expect(toast.textContent).toBe('')
+  vi.useRealTimers()
 })

@@ -1,4 +1,5 @@
 import Icon from './Icon.jsx'
+import { useEffect, useState } from 'react'
 import { t } from '../lib/i18n.js'
 import { isFppBusy } from './useFppAction.js'
 
@@ -35,8 +36,21 @@ export function FppSpinner({ label = t('Loading…'), className = '', ...rest })
 }
 
 export function FppToast({ message, tone = 'neutral' }) {
-  const state = tone === 'neutral' ? 'idle' : tone
-  return <div id="toast" className={message ? 'show fpp-toast' : 'fpp-toast'} data-tone={tone} role="status" aria-live="polite" aria-atomic="true">
-    {message && <><FppStatusAnimation state={state} /><span>{message}</span></>}
+  const [shown, setShown] = useState(() => ({ message, tone }))
+  const [leaving, setLeaving] = useState(false)
+  useEffect(() => {
+    if (message) {
+      setShown({ message, tone })
+      setLeaving(false)
+      return undefined
+    }
+    if (!shown.message) return undefined
+    setLeaving(true)
+    const timer = setTimeout(() => { setShown({ message: '', tone: 'neutral' }); setLeaving(false) }, 180)
+    return () => clearTimeout(timer)
+  }, [message, tone, shown.message])
+  const state = shown.tone === 'neutral' ? 'idle' : shown.tone
+  return <div id="toast" className={`${shown.message && !leaving ? 'show ' : ''}${leaving ? 'is-leaving ' : ''}fpp-toast`} data-tone={shown.tone} role="status" aria-live="polite" aria-atomic="true">
+    {shown.message && <><FppStatusAnimation state={state} /><span>{shown.message}</span></>}
   </div>
 }
