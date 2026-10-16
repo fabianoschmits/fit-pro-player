@@ -622,7 +622,7 @@ function ActiveWorkout() {
     {A.entries.length ? <>
       <div className="workout-unit-kicker">{isSuperset ? t('Superset {0} / {1}', unitIdx + 1, units.length) : t('Exercise {0} / {1}', unitIdx + 1, units.length)}</div>
       {isSuperset ? (
-        <div className="ss-card">
+        <div key={`superset-${unit.join('-')}`} className="workout-unit-stage ss-card">
           <div className="ss-hd" style={{ justifyContent: 'space-between' }}>
             <span className="row" style={{ gap: 5 }}><Icon name="link" />{t('Superset · do these back-to-back, rest when done')}</span>
           </div>
@@ -635,10 +635,11 @@ function ActiveWorkout() {
           </div>)}
         </div>
       ) : (
-        <ExerciseBlock entryIdx={cur}
+        <div key={`exercise-${cur}`} className="workout-unit-stage"><ExerciseBlock entryIdx={cur}
           locked={!workoutStarted}
           onStartWorkout={startWorkout}
           onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onStartTimed={i => startTimed(cur, i)} />
+        </div>
       )}
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 

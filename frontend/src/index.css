@@ -260,6 +260,7 @@ h4.sec{
 .settings-page .notification-settings>.sect{margin-bottom:10px;border:1px solid var(--surface-border);border-radius:var(--r-card);background:var(--surface);overflow:hidden}.settings-page .notification-settings>.sect>.sect-t{padding:0 16px;min-height:56px;display:flex;align-items:center;font-size:16px;font-weight:600;letter-spacing:.01em;color:var(--label)}.settings-page .notification-settings>.sect>.sect-b{border:0;border-top:1px solid var(--sep);border-radius:0}.settings-page .notification-settings>.sect>.sect-f{padding:10px 16px 14px;margin:0}.settings-page .notification-settings>.sect+.sect{margin-top:0}
 .sect-b{background:var(--surface);border-radius:var(--r-card);overflow:hidden;border:var(--hair) solid var(--surface-border);box-shadow:none}
 .sect-motion{animation:sect-reveal .18s cubic-bezier(.2,.8,.2,1) both}.sect-motion.closing{animation:sect-conceal .18s cubic-bezier(.2,.8,.2,1) both;pointer-events:none}@keyframes sect-reveal{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}@keyframes sect-conceal{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-3px)}}
+details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,1) both}@keyframes details-reveal{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 .sect-f{font-size:13px;color:var(--label-2);padding:7px 4px 0;line-height:1.38}
 
 .lrow{
@@ -989,6 +990,7 @@ h4.sec{
 .workout-exercise-tab.is-done{opacity:.72}.workout-exercise-tab.is-done>span{background:var(--acc-soft);color:var(--acc)}
 .workout-exercise-add{width:44px;min-width:44px;height:44px;display:grid;place-items:center;border-radius:6px;background:transparent;border:var(--hair) solid var(--sep-op);color:var(--acc);font-size:17px}
 .workout-exercise-add:disabled{opacity:.32}.workout-unit-kicker{margin:2px 2px 8px;color:var(--label-3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0}
+.workout-unit-stage{animation:workout-unit-enter .2s cubic-bezier(.2,.8,.2,1) both}@keyframes workout-unit-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .workout-exercise-heading{display:flex;align-items:center;gap:7px;margin-bottom:7px}
 .workout-exercise-heading>.grow{min-width:0}.workout-exercise-name{font-size:20px;font-weight:720;line-height:1.18;letter-spacing:0;overflow-wrap:anywhere}
 .workout-exercise-count{margin-top:3px;color:var(--label-2);font-size:11px}.workout-exercise-heading>.btn{width:auto;flex:none;padding-inline:7px}.workout-exercise-heading>.iconbtn{width:44px;height:44px;font-size:17px;box-shadow:none;background:transparent}
