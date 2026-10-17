@@ -65,6 +65,7 @@ const loadSupportTicket = () => import('./views/SupportTicket.jsx')
 const loadSheets = () => import('./sheets.jsx')
 
 const Home = lazy(loadHome)
+const HomeGlass = lazy(() => import('./experiments/home-glass/HomeGlass.jsx'))
 const Plan = lazy(loadPlan)
 const RoutineEdit = lazy(loadRoutineEdit)
 const Workout = lazy(loadWorkout)
@@ -262,7 +263,7 @@ function Shell() {
   const authenticated = auth.status === 'authenticated'
   const authed = (authenticated || isGuest) && appEntered
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
-  const showProfileHeader = loc.pathname === '/home' || profileEditorOpen
+  const showProfileHeader = loc.pathname === '/home' || loc.pathname === '/tests/home-glass' || profileEditorOpen
   const inviteEntry = ['/connect', '/student/professionals', '/student/professionals/add'].includes(loc.pathname)
   const queryInviteCode = inviteEntry ? new URLSearchParams(loc.search).get('code') || '' : ''
   const invitePath = loc.pathname.startsWith('/invite/') || loc.pathname === '/connect' || loc.pathname === '/student/professionals/add' || (inviteEntry && !!queryInviteCode)
@@ -414,6 +415,7 @@ function Shell() {
           {publicPrivacyPath ? <PrivacyPages kind={loc.pathname === '/terms' ? 'terms' : loc.pathname === '/data-rights' ? 'rights' : 'privacy'} /> : !(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
             <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
+                <Route path="/tests/home-glass" element={<HomeGlass />} />
                 <Route path="/privacy" element={<PrivacyPages kind="privacy" />} />
                 <Route path="/terms" element={<PrivacyPages kind="terms" />} />
                 <Route path="/data-rights" element={<PrivacyPages kind="rights" />} />

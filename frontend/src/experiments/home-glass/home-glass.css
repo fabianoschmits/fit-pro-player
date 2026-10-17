@@ -1,0 +1,359 @@
+/* This file may remain cached after navigation. Every rule requires the experiment
+   marker, including the shared shell and sheets rendered outside this component. */
+:root:has(.home-glass-experiment) {
+  --glass-ground: #0d202c;
+  --glass-light-a: rgb(75 185 187 / 37%);
+  --glass-light-b: rgb(113 156 208 / 31%);
+  --glass-light-c: rgb(158 223 207 / 17%);
+  --glass-fill: rgb(28 51 66 / 48%);
+  --glass-control: rgb(218 244 255 / 7%);
+  --glass-sheet: rgb(20 43 58 / 88%);
+  --glass-edge: rgb(224 250 255 / 22%);
+  --glass-shine: rgb(255 255 255 / 58%);
+  --glass-shadow: rgb(0 12 25 / 22%);
+  --label: #f3f9fc;
+  --label-2: #c2d7e3;
+  --label-3: #a8bfcd;
+  --label-4: rgb(215 235 244 / 35%);
+  --bg: var(--glass-ground);
+  --bg-el: #193342;
+  --surface: rgb(111 157 183 / 12%);
+  --surface-2: rgb(180 221 240 / 10%);
+  --surface-3: rgb(180 221 240 / 20%);
+  --surface-border: var(--glass-edge);
+  --sep: rgb(220 243 255 / 19%);
+  --sep-op: rgb(220 243 255 / 11%);
+  --field-fill: var(--glass-control);
+  --acc: #88e2dc;
+  --acc-2: #b2f0eb;
+  --acc-soft: rgb(136 226 220 / 14%);
+  --on-acc: #103836;
+  --yellow: #f5d793;
+  --overlay: rgb(5 18 29 / 30%);
+}
+
+:root[data-theme="light"]:has(.home-glass-experiment) {
+  --glass-ground: #e4eef3;
+  --glass-light-a: rgb(98 195 195 / 43%);
+  --glass-light-b: rgb(126 167 218 / 31%);
+  --glass-light-c: rgb(255 255 255 / 90%);
+  --glass-fill: rgb(255 255 255 / 39%);
+  --glass-control: rgb(255 255 255 / 35%);
+  --glass-sheet: rgb(238 248 252 / 88%);
+  --glass-edge: rgb(255 255 255 / 72%);
+  --glass-shine: #fff;
+  --glass-shadow: rgb(51 86 112 / 11%);
+  --label: #183444;
+  --label-2: #395c6b;
+  --label-3: #4b6d7b;
+  --label-4: rgb(26 64 83 / 30%);
+  --bg-el: #e5f0f5;
+  --surface: rgb(255 255 255 / 36%);
+  --surface-2: rgb(255 255 255 / 36%);
+  --surface-3: rgb(74 116 141 / 16%);
+  --sep: rgb(31 80 102 / 18%);
+  --sep-op: rgb(31 80 102 / 10%);
+  --acc: #126763;
+  --acc-2: #0c514e;
+  --acc-soft: rgb(15 139 141 / 10%);
+  --on-acc: #fff;
+  --yellow: #855716;
+  --overlay: rgb(38 72 94 / 22%);
+}
+
+body:has(.home-glass-experiment) {
+  isolation: isolate;
+  background: var(--glass-ground);
+}
+
+body:has(.home-glass-experiment)::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 0% 10%, var(--glass-light-a), transparent 52%),
+    radial-gradient(ellipse at 100% 56%, var(--glass-light-b), transparent 48%),
+    radial-gradient(ellipse at 35% 100%, var(--glass-light-c), transparent 50%),
+    linear-gradient(135deg, transparent 32%, rgb(220 247 255 / 8%) 32.2%, transparent 60%);
+}
+
+body:has(.home-glass-experiment) #app {
+  max-width: 680px;
+  padding-bottom: calc(126px + var(--sab));
+}
+body.resting:has(.home-glass-experiment) #app {
+  padding-bottom: calc(286px + var(--sab));
+}
+
+body:has(.home-glass-experiment) :is(
+  .profile-hero, .home-glass-toolbar, .home-titlebar, .home-now,
+  .home-week-block, .home-weight-block, .home-recent-block, .plan-progress
+) {
+  position: relative;
+  border: 1px solid var(--glass-edge);
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgb(255 255 255 / 10%), transparent 58%), var(--glass-fill);
+  box-shadow: 0 12px 32px -16px var(--glass-shadow),
+    inset 0 1px 0 var(--glass-shine), inset 0 -1px 0 rgb(255 255 255 / 7%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  backdrop-filter: blur(24px) saturate(145%);
+}
+
+/* A thin, directional reflection follows the curved edge, without covering inputs. */
+body:has(.home-glass-experiment) :is(
+  .profile-hero, .home-titlebar, .home-now, .home-week-block,
+  .home-weight-block, .home-recent-block
+)::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, var(--glass-shine), transparent 34%,
+    transparent 66%, rgb(164 228 241 / 55%) 85%, transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+body:has(.home-glass-experiment) .profile-hero {
+  margin-top: 22px;
+  margin-bottom: 14px;
+  padding-right: 22px;
+}
+body:has(.home-glass-experiment) .profile-hero::after { display: none; }
+body:has(.home-glass-experiment) .profile-hero-avatar { left: 4px; }
+body:has(.home-glass-experiment) .profile-hero-message {
+  border-color: var(--glass-edge);
+  background: var(--glass-sheet);
+  box-shadow: inset 0 1px 0 var(--glass-shine), 0 4px 12px var(--glass-shadow);
+}
+body:has(.home-glass-experiment) .profile-hero-message::after { background: var(--glass-sheet); }
+body:has(.home-glass-experiment) :is(.profile-hero-progress, .home-now-progress, .plan-progress-bar) {
+  height: 5px;
+  border-radius: 99px;
+  background: var(--surface-3);
+  box-shadow: inset 0 1px 2px var(--glass-shadow);
+}
+body:has(.home-glass-experiment) :is(.profile-hero-progress > span, .home-now-progress i, .plan-progress-bar i) {
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%);
+}
+
+body:has(.home-glass-experiment) .home-glass-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 58px;
+  margin-bottom: 20px;
+  padding: 7px;
+  border-radius: 21px;
+}
+body:has(.home-glass-experiment) .home-glass-toolbar a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 15px;
+  background: var(--glass-control);
+  color: var(--label-2);
+  font-size: 11px;
+  font-weight: 600;
+}
+body:has(.home-glass-experiment) .home-glass-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--label);
+  font-size: 12px;
+  font-weight: 700;
+}
+body:has(.home-glass-experiment) .home-glass-label > .icn { color: var(--acc); font-size: 18px; }
+body:has(.home-glass-experiment) .home-glass-label small {
+  display: block;
+  margin-top: 2px;
+  color: var(--label-3);
+  font-size: 9px;
+  font-weight: 500;
+}
+body:has(.home-glass-experiment) .home-view { max-width: none; }
+body:has(.home-glass-experiment) .home-titlebar { padding: 18px 22px; margin: 0 0 14px; }
+body:has(.home-glass-experiment) .home-titlebar h1 { font-size: 32px; }
+body:has(.home-glass-experiment) :is(.home-now, .home-week-block, .home-weight-block, .home-recent-block) {
+  padding: 22px;
+  margin-bottom: 14px;
+}
+body:has(.home-glass-experiment) .home-now h2 { margin-top: 6px; font-size: 25px; }
+body:has(.home-glass-experiment) .home-now-context { margin-top: 8px; }
+body:has(.home-glass-experiment) .home-now-actions { gap: 8px; margin-top: 18px; }
+body:has(.home-glass-experiment) .home-now-kicker { color: var(--label-2); }
+body:has(.home-glass-experiment) .home-now--active .home-now-kicker { color: var(--orange); }
+body:has(.home-glass-experiment) :is(.home-now--done, .home-now--planned) .home-now-kicker { color: var(--acc); }
+body:has(.home-glass-experiment) .home-section-head { gap: 8px; margin-bottom: 16px; }
+body:has(.home-glass-experiment) .home-section-head h2 { font-size: 17px; }
+
+body:has(.home-glass-experiment) :is(.btn, .iconbtn, .home-weight-expand) {
+  border: 1px solid var(--glass-edge);
+  border-radius: 15px;
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%), 0 3px 8px -5px var(--glass-shadow);
+}
+body:has(.home-glass-experiment) .btn.primary {
+  background: linear-gradient(150deg, rgb(255 255 255 / 28%), transparent 65%),
+    color-mix(in srgb, var(--acc) 80%, transparent);
+  color: var(--on-acc);
+  border-color: color-mix(in srgb, var(--acc) 60%, var(--glass-shine));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%), 0 6px 16px -9px var(--acc);
+}
+body:has(.home-glass-experiment) :is(.btn.tinted, .btn.ghost, .btn.plain) { color: var(--acc); }
+body:has(.home-glass-experiment) .btn.danger {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 35%, var(--glass-edge));
+  background: color-mix(in srgb, var(--red) 12%, var(--glass-control));
+}
+body:has(.home-glass-experiment) .home-now-actions .btn.plain { padding-inline: 12px; }
+body:has(.home-glass-experiment) .home-week-actions { gap: 4px; }
+body:has(.home-glass-experiment) .home-week-actions .iconbtn { border-radius: 50%; }
+body:has(.home-glass-experiment) .home-week-actions .iconbtn:last-child { margin-left: 0; }
+body:has(.home-glass-experiment) .home-week-strip { gap: 5px; }
+body:has(.home-glass-experiment) .wday {
+  min-width: 0;
+  padding: 10px 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: 17px;
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%);
+}
+body:has(.home-glass-experiment) .wday .lbl { font-size: 10px; text-transform: none; }
+body:has(.home-glass-experiment) .wday .num { font-weight: 600; }
+body:has(.home-glass-experiment) .wday.today {
+  background: var(--acc-soft);
+  border-color: color-mix(in srgb, var(--acc) 65%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-shine), 0 3px 10px -7px var(--acc);
+}
+body:has(.home-glass-experiment) .wday.today .num {
+  background: var(--acc);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 40%);
+}
+body:has(.home-glass-experiment) .home-weight-reading { margin: 20px 0 12px; flex-wrap: wrap; }
+body:has(.home-glass-experiment) .home-weight-reading > button strong { font-size: 42px; font-weight: 650; }
+body:has(.home-glass-experiment) :is(.home-weight-details > span, .home-now-metrics > span) {
+  padding: 12px 10px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 15px;
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 20%);
+}
+body:has(.home-glass-experiment) .home-weight-details small { text-transform: none; }
+body:has(.home-glass-experiment) .home-now-metrics { gap: 6px; border: 0; }
+body:has(.home-glass-experiment) .home-weight-empty { align-items: flex-start; }
+body:has(.home-glass-experiment) .home-recent-list {
+  border: 1px solid var(--glass-edge);
+  border-radius: 18px;
+  background: var(--glass-control);
+}
+body:has(.home-glass-experiment) .home-recent-list .workout-row { padding: 14px 12px; background: transparent; }
+body:has(.home-glass-experiment) .workout-row-icon { border-radius: 12px; background: var(--surface-2); }
+
+/* Floating glass dock, including the application's real workout button. */
+body:has(.home-glass-experiment) #tabbar {
+  left: 50%;
+  right: auto;
+  bottom: calc(12px + var(--sab));
+  width: min(530px, calc(100% - 24px));
+  transform: translateX(-50%);
+}
+body:has(.home-glass-experiment) .tabbar-nav { padding: 9px 8px 5px; }
+body:has(.home-glass-experiment) .tabbar-bg {
+  border: 1px solid var(--glass-edge);
+  border-radius: 30px;
+  background: linear-gradient(160deg, rgb(255 255 255 / 15%), transparent 65%), var(--glass-sheet);
+  box-shadow: 0 10px 30px var(--glass-shadow), inset 0 1px 0 var(--glass-shine);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+}
+body:has(.home-glass-experiment) .tab-active-pill {
+  left: 2px;
+  right: 2px;
+  bottom: 0;
+  height: 32px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 16px;
+  background: var(--acc-soft);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%);
+}
+body:has(.home-glass-experiment) .tab-item--start { margin-top: -8px; }
+body:has(.home-glass-experiment) .tab-start-cir {
+  border: 1px solid var(--glass-shine);
+  background: linear-gradient(140deg, rgb(255 255 255 / 35%), transparent 65%), var(--acc);
+  box-shadow: inset 0 1px 1px rgb(255 255 255 / 60%), 0 5px 15px -8px var(--acc);
+}
+body:has(.home-glass-experiment) .tab-item--start.rec .tab-start-cir {
+  background: linear-gradient(140deg, rgb(255 255 255 / 35%), transparent 65%), var(--orange);
+}
+body:has(.home-glass-experiment) #timer {
+  bottom: calc(100px + var(--sab));
+  border: 1px solid var(--glass-edge);
+  border-radius: 24px;
+  background: var(--glass-sheet);
+  box-shadow: inset 0 1px 0 var(--glass-shine), 0 8px 24px var(--glass-shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+  backdrop-filter: blur(24px) saturate(145%);
+}
+
+/* Sheets are portaled outside #app; scope their material to the same DOM marker. */
+body:has(.home-glass-experiment) :is(.sheet, .center) {
+  border: 1px solid var(--glass-edge);
+  background: linear-gradient(145deg, rgb(255 255 255 / 9%), transparent 60%), var(--glass-sheet);
+  box-shadow: inset 0 1px 0 var(--glass-shine), 0 -10px 45px var(--glass-shadow);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  backdrop-filter: blur(28px) saturate(140%);
+}
+body:has(.home-glass-experiment) .sheet { border-radius: 30px 30px 0 0; }
+body:has(.home-glass-experiment) :is(.field, .input, .seg, .card) {
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%);
+}
+body:has(.home-glass-experiment) .ctip {
+  border: 1px solid var(--glass-edge);
+  border-radius: 14px;
+  background: var(--glass-sheet);
+  box-shadow: inset 0 1px 0 var(--glass-shine), 0 6px 18px var(--glass-shadow);
+}
+body:has(.home-glass-experiment) :is(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 4px;
+}
+
+@media (max-width: 420px) {
+  body:has(.home-glass-experiment) #app { padding-inline: 12px; }
+  body:has(.home-glass-experiment) :is(.home-titlebar, .home-now, .home-week-block, .home-weight-block, .home-recent-block) { padding: 18px 14px; border-radius: 23px; }
+  body:has(.home-glass-experiment) .profile-hero { padding-right: 14px; border-radius: 23px; }
+  body:has(.home-glass-experiment) .home-section-head { flex-wrap: wrap; }
+  body:has(.home-glass-experiment) .home-weight-actions { margin-left: auto; }
+  body:has(.home-glass-experiment) .home-week-strip { gap: 3px; }
+  body:has(.home-glass-experiment) .wday { border-radius: 13px; }
+  body:has(.home-glass-experiment) .home-now-actions--rest { flex-wrap: wrap; }
+  body:has(.home-glass-experiment) .home-now-actions--rest .btn.primary { max-width: 100%; }
+  body:has(.home-glass-experiment) .home-glass-toolbar a { padding-inline: 7px; font-size: 10px; }
+  body:has(.home-glass-experiment) .home-glass-label { gap: 4px; font-size: 11px; }
+}
+
+/* Keep a readable solid material on engines without backdrop blur or when the
+   system requests less transparency. This does not add any animation. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root:has(.home-glass-experiment) { --glass-fill: var(--bg-el); --glass-sheet: var(--bg-el); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root:has(.home-glass-experiment) { --glass-fill: var(--bg-el); --glass-sheet: var(--bg-el); }
+  body:has(.home-glass-experiment)::before { display: none; }
+}

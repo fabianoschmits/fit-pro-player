@@ -43,7 +43,10 @@ it('makes messages and FAQ directly accessible from the platform overview', asyn
   expect(container.querySelector('a[href="/console/support"]')).not.toBeNull()
   expect(container.querySelector('a[href="/console/faq"]')).not.toBeNull()
   expect(container.querySelector('nav a[href="/motion-feedback"]')?.textContent).toContain('Laboratório de interações')
-  expect(container.textContent).toContain('Testes')
+  const testsGroup = [...container.querySelectorAll('.console-navigation-group')].find(group => group.querySelector('p')?.textContent === 'Testes')
+  const homeGlassLink = testsGroup?.querySelector('a[href="/tests/home-glass"]')
+  expect(homeGlassLink?.textContent || '').toContain('Home Glass')
+  expect(homeGlassLink?.querySelector('small')?.textContent).toBe('Home experimental com visual de vidro')
   expect(container.textContent).toContain('100')
 })
 

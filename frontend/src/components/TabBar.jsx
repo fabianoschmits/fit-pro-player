@@ -153,7 +153,7 @@ export default function TabBar({ onStart }) {
     return () => { row.removeEventListener('pointerdown', down); row.removeEventListener('pointermove', move); row.removeEventListener('pointerup', end); row.removeEventListener('pointercancel', end) }
   }, [])
 
-  const cur = loc.pathname.split('/')[1] || 'home'
+  const cur = loc.pathname === '/tests/home-glass' ? 'home' : loc.pathname.split('/')[1] || 'home'
 
   if (!(authenticated || isGuest) || !S.onboardingDone) return null
 
