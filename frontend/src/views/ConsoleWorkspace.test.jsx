@@ -9,7 +9,7 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/console.js', async importOriginal => ({ ...(await importOriginal()), createConsoleRepository: () => mocks.console }))
 vi.mock('../lib/support.js', () => ({ createSupportRepository: () => mocks.support }))
-import ConsoleHome, { ConsoleSupport, ConsoleSupportTicket, ConsoleFaq, ConsoleFaqEditor } from './Console.jsx'
+import ConsoleHome, { ConsoleSupport, ConsoleSupportTicket, ConsoleFaq, ConsoleFaqEditor, ConsoleLaboratory } from './Console.jsx'
 
 let root, container
 const ticket = () => ({ ticketId: 'ticket-1', userId: 'user-1', subject: 'Dúvida sobre o plano', status: 'pending', priority: 'normal', assignedAdminId: 'admin-1', categoryLabel: 'Dúvida', messages: [{ id: 'm1', author_kind: 'user', body: 'Como começar meu treino?', created_at: '2026-10-15T12:00:00Z' }], events: [] })
@@ -30,6 +30,7 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove() })
 const render = path => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Link data-test-notification to="/console/support/ticket-1">Notificação desta conversa</Link><Routes>
   <Route path="/console" element={<ConsoleHome />} />
+  <Route path="/console/laboratory" element={<ConsoleLaboratory />} />
   <Route path="/console/support" element={<ConsoleSupport />} />
   <Route path="/console/support/:ticketId" element={<ConsoleSupportTicket />} />
   <Route path="/console/faq" element={<ConsoleFaq />} />
@@ -42,12 +43,35 @@ it('makes messages and FAQ directly accessible from the platform overview', asyn
   expect(container.querySelector('h1').textContent).toContain('Central da plataforma')
   expect(container.querySelector('a[href="/console/support"]')).not.toBeNull()
   expect(container.querySelector('a[href="/console/faq"]')).not.toBeNull()
-  expect(container.querySelector('nav a[href="/motion-feedback"]')?.textContent).toContain('Laboratório de interações')
   const testsGroup = [...container.querySelectorAll('.console-navigation-group')].find(group => group.querySelector('p')?.textContent === 'Testes')
-  const homeGlassLink = testsGroup?.querySelector('a[href="/tests/home-glass"]')
-  expect(homeGlassLink?.textContent || '').toContain('Home Glass')
-  expect(homeGlassLink?.querySelector('small')?.textContent).toBe('Home experimental com visual de vidro')
+  expect(testsGroup?.querySelectorAll('a').length).toBe(1)
+  expect(testsGroup?.querySelector('a[href="/console/laboratory"]')?.textContent).toContain('Laboratório de testes')
+  expect(container.querySelector('main a[href="/console/laboratory"]')?.textContent).toContain('Laboratório de testes')
+  expect(container.querySelector('nav a[href="/motion-feedback"]')).toBeNull()
+  expect(container.querySelector('nav a[href="/tests/home-glass"]')).toBeNull()
   expect(container.textContent).toContain('100')
+})
+
+it('groups the experimental pages in the test laboratory and marks its navigation active', async () => {
+  await render('/console/laboratory')
+  expect(container.querySelector('h1').textContent).toBe('Laboratório de testes')
+  const pages = container.querySelector('section[aria-label="Páginas de testes"]')
+  expect(pages.querySelectorAll('a').length).toBe(2)
+  expect(pages.querySelector('a[href="/motion-feedback"]')?.textContent).toContain('Laboratório de interações')
+  expect(pages.querySelector('a[href="/tests/home-glass"]')?.textContent).toContain('Home Glass')
+  expect(container.querySelector('nav [aria-current="page"]')?.getAttribute('href')).toBe('/console/laboratory')
+  expect(container.querySelector('a.console-back')?.getAttribute('href')).toBe('/console')
+  expect(mocks.console.overview).not.toHaveBeenCalled()
+  expect(mocks.support.overview).not.toHaveBeenCalled()
+})
+
+it('keeps the test catalogue unavailable to accounts without admin access', async () => {
+  mocks.console.adminRole.mockResolvedValue(false)
+  await render('/console/laboratory')
+  expect(container.textContent).toContain('Sem acesso')
+  expect(container.querySelector('section[aria-label="Páginas de testes"]')).toBeNull()
+  expect(container.querySelector('a[href="/motion-feedback"]')).toBeNull()
+  expect(container.querySelector('a[href="/tests/home-glass"]')).toBeNull()
 })
 
 it('lists messages with dedicated conversation links and status filters', async () => {

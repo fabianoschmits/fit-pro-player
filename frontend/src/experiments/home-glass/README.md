@@ -1,7 +1,7 @@
 # Home Glass — teste de design
 
 Página experimental: `/#/tests/home-glass`.
-Acesso pelo admin: **Testes → Home Glass**.
+Acesso: **Admin → Laboratório de testes → Home Glass**.
 
 `HomeGlass.jsx` reutiliza a home atual, incluindo os dados reais e suas ações.
 O teste altera a apresentação; registrar peso ou iniciar um treino continua
@@ -12,12 +12,12 @@ Todo o visual do experimento fica em `home-glass.css`. Os seletores exigem
 janelas. Ao sair da página, esse marcador desaparece e os estilos deixam de
 se aplicar. A home original e sua folha de estilos não são modificadas.
 
-O visual acompanha o tema claro/escuro. Os botões **Admin** e **Home atual**
+O visual acompanha o tema claro/escuro. Os botões **Testes** e **Home atual**
 permitem sair do teste e comparar as versões.
 
 Integrações externas a esta pasta: registro lazy da rota e cabeçalho em
-`App.jsx`, indicação da aba Início em `TabBar.jsx` e link no grupo Testes de
-`ConsoleLayout.jsx`.
+`App.jsx`, indicação da aba Início em `TabBar.jsx` e link no catálogo de
+`ConsoleLaboratory.jsx`.
 
 Validação do experimento, executada a partir de `frontend` (PowerShell):
 

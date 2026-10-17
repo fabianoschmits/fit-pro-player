@@ -8,7 +8,7 @@ import './home-glass.css'
 export default function HomeGlass() {
   return <div className="home-glass-experiment">
     <nav className="home-glass-toolbar" aria-label="Teste da Home Glass">
-      <Link to="/console" aria-label="Voltar ao admin"><Icon name="chevronLeft" /><span>Admin</span></Link>
+      <Link to="/console/laboratory" aria-label="Voltar ao laboratório de testes"><Icon name="chevronLeft" /><span>Testes</span></Link>
       <span className="home-glass-label"><Icon name="sparkles" /><span>Home Glass<small>Design em teste</small></span></span>
       <Link to="/home" aria-label="Comparar com a home atual"><span>Home atual</span><Icon name="house" /></Link>
     </nav>

@@ -59,7 +59,7 @@ test('experimental home preserves current home content and account state', async
   await page.evaluate(() => { location.hash = '/tests/home-glass' })
   const experiment = page.locator('.home-glass-experiment')
   await expect(experiment).toBeVisible()
-  await expect(experiment.getByRole('link', { name: 'Voltar ao admin', exact: true })).toHaveAttribute('href', '#/console')
+  await expect(experiment.getByRole('link', { name: 'Voltar ao laboratório de testes', exact: true })).toHaveAttribute('href', '#/console/laboratory')
   await expect(experiment.getByRole('link', { name: 'Comparar com a home atual', exact: true })).toHaveAttribute('href', '#/home')
   await expect(page.locator('[data-tab-key="home"]')).toHaveAttribute('aria-current', 'page')
   await expect(experiment.locator('.home-view')).toHaveText(currentHome)

@@ -50,12 +50,52 @@ test('the platform workspace exposes messages, navigates from notifications and 
   await expect(page.getByRole('heading', { name: 'Mensagens dos usuários', level: 1 })).toBeVisible()
 })
 
+test('the test laboratory groups experiments and returns each one to its hub', async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await seedConsole(page)
+  const width = testInfo.project.name.includes('mobile') ? 320 : 1440
+  await page.setViewportSize({ width, height: 900 })
+  await page.goto('/#/console')
+  const tests = page.locator('.console-navigation-group').filter({ has: page.getByText('Testes', { exact: true }) })
+  await expect(tests.getByRole('link')).toHaveCount(1)
+  await expect(tests.getByRole('link', { name: /Laboratório de testes/ })).toHaveAttribute('href', '#/console/laboratory')
+  await page.locator('.console-main').getByRole('link', { name: /Laboratório de testes/ }).click()
+
+  const expectHub = async () => {
+    await expect(page).toHaveURL(/#\/console\/laboratory$/)
+    await expect(page.getByRole('heading', { name: 'Laboratório de testes', level: 1 })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Navegação principal', exact: true })).toHaveCount(0)
+    await expect(page.locator('[data-tab-key]')).toHaveCount(0)
+    const overflow = await page.locator('.console-main').evaluate(main => ({
+      document: document.documentElement.scrollWidth > innerWidth + 2,
+      links: [...main.querySelectorAll('a')].filter(link => {
+        const rect = link.getBoundingClientRect()
+        return rect.width > 0 && (rect.left < -1 || rect.right > innerWidth + 1)
+      }).map(link => link.textContent.trim()),
+    }))
+    expect(overflow.document).toBe(false)
+    expect(overflow.links).toEqual([])
+  }
+  await expectHub()
+  await page.screenshot({ path: testInfo.outputPath(`console-laboratory-${width}.png`), fullPage: true })
+  await page.locator('.console-main').getByRole('link', { name: /Laboratório de interações/ }).click()
+  await expect(page).toHaveURL(/#\/motion-feedback$/)
+  await expect(page.locator('[data-motion-showcase]')).toBeVisible()
+  await page.getByRole('button', { name: 'Voltar', exact: true }).click()
+  await expectHub()
+  await page.locator('.console-main').getByRole('link', { name: /Home Glass/ }).click()
+  await expect(page).toHaveURL(/#\/tests\/home-glass$/)
+  await expect(page.locator('.home-glass-experiment')).toBeVisible()
+  await page.getByRole('link', { name: 'Voltar ao laboratório de testes', exact: true }).click()
+  await expectHub()
+})
+
 test('the central pages fit small and large viewports and the FAQ has a separate editor', async ({ page }, testInfo) => {
   await seedConsole(page)
   const widths = testInfo.project.name.includes('mobile') ? [320, 390] : [1440]
   for (const width of widths) {
     await page.setViewportSize({ width, height: 900 })
-    for (const route of ['/console', '/console/users', '/console/professionals', '/console/support', '/console/faq', '/console/faq/faq-1', `/console/users/${STUDENT}?section=training`]) {
+    for (const route of ['/console', '/console/laboratory', '/console/users', '/console/professionals', '/console/support', '/console/faq', '/console/faq/faq-1', `/console/users/${STUDENT}?section=training`]) {
       await page.goto('/#' + route)
       await expect(page.locator('.console-main')).toBeVisible()
       await expect(page.locator('.console-main')).not.toContainText('Verificando acesso…')

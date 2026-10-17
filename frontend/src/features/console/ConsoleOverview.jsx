@@ -38,6 +38,9 @@ export default function ConsoleOverview() {
           <WorkspaceLink to="/console/professionals?status=pending" icon="shield" title="Aguardando verificação" description="Confira os perfis que precisam de análise." count={accounts?.pendingVerificationCount} />
         </SectionBody>
       </section>
+      <section aria-label="Laboratório de testes"><SectionTitle>Laboratório de testes</SectionTitle>
+        <SectionBody><WorkspaceLink to="/console/laboratory" icon="sparkles" title="Laboratório de testes" description="Acesse as páginas experimentais e os testes de interface." /></SectionBody>
+      </section>
     </>}
   </div></ConsoleShell></AccessGate>
 }

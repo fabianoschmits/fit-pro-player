@@ -89,6 +89,7 @@ const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ d
 const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
 const StudentProfessionalMaterials = lazy(loadStudentProfessionalMaterials)
 const ConsoleHome = lazy(loadConsole)
+const ConsoleLaboratory = lazy(() => loadConsole().then(module => ({ default: module.ConsoleLaboratory })))
 const ConsoleUsers = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUsers })))
 const ConsoleProfessionals = lazy(() => loadConsole().then(module => ({ default: module.ConsoleProfessionals })))
 const ConsoleUserPage = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUserPage })))
@@ -454,6 +455,7 @@ function Shell() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/motion-feedback" element={<MotionFeedback />} />
                 <Route path="/console" element={<ConsoleHome />} />
+                <Route path="/console/laboratory" element={<ConsoleLaboratory />} />
                 <Route path="/console/users" element={<ConsoleUsers />} />
                 <Route path="/console/users/:userId" element={<ConsoleUserPage />} />
                 <Route path="/console/professionals" element={<ConsoleProfessionals />} />

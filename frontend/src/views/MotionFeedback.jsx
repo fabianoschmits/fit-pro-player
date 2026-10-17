@@ -50,7 +50,7 @@ export default function MotionFeedback() {
     else current.resolve(true)
   }
   return <main className="narrow motion-showcase" data-motion-showcase>
-    <AppHeader title={t('Motion & feedback')} subtitle="FIT PRO PLAYER" backTo="/settings" />
+    <AppHeader title={t('Motion & feedback')} subtitle="FIT PRO PLAYER" backTo="/console/laboratory" />
     <p className="muted small">{t('Performance · progress · precision')}</p>
     <div className="motion-showcase-controls">
       <label>{t('Theme')}<select aria-label="Tema do showcase" value={theme} onChange={event => setTheme(event.target.value)}><option value="dark">{t('Dark')}</option><option value="light">{t('Light')}</option></select></label>
