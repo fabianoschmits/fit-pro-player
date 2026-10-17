@@ -394,8 +394,6 @@
   flex-direction: column;
   align-items: flex-start;
   margin-bottom: 80px;
-  padding-left: 20px;
-  border-left: 6px solid var(--wsc-accent, #0F8B8D);
 }
 .wsc-title-subtitle {
   color: var(--wsc-accent, #0F8B8D);

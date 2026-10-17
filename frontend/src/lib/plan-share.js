@@ -245,7 +245,7 @@ export function planPrintHTML(S, owner) {
   .ex-s { color: #3d424e; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .ex.empty, .none { color: #a2a8b6; }
 
-  .ss { break-inside: avoid; page-break-inside: avoid; border-left: 3px solid #cfe08a; padding-left: 12px; margin: 4px 0; }
+  .ss { break-inside: avoid; page-break-inside: avoid; padding-left: 12px; margin: 4px 0; }
   .ss-tag { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #6a7a3a; font-weight: 700; padding-top: 4px; }
   .ss .ex:first-of-type { padding-top: 2px; }
 

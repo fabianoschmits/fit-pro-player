@@ -5,7 +5,7 @@
 .motion-showcase-controls .btn{width:auto}
 .motion-showcase-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:8px;margin:22px 0 6px}
 .motion-showcase-tabs [role=tab]{display:grid;gap:3px;text-align:left;padding:12px 14px;border:1px solid var(--surface-border);border-radius:var(--r);background:var(--surface);color:var(--label-2);cursor:pointer;transition:transform 180ms cubic-bezier(.2,.8,.2,1),border-color 180ms cubic-bezier(.2,.8,.2,1),color 180ms cubic-bezier(.2,.8,.2,1)}
-.motion-showcase-tabs [role=tab][aria-selected=true]{border-color:var(--acc);color:var(--label);box-shadow:inset 3px 0 0 var(--acc)}
+.motion-showcase-tabs [role=tab][aria-selected=true]{border-color:var(--acc);color:var(--label)}
 .motion-showcase-tabs [role=tab]:active{transform:scale(.98)}
 .motion-showcase-tabs small{font-size:11px;line-height:1.25}
 .motion-showcase-section-heading{display:grid;gap:4px;margin:22px 0 10px}

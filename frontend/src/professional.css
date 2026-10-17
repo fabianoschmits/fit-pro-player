@@ -64,7 +64,7 @@
 .professional-picker-row:last-child{border-bottom:0}
 .professional-picker-row.is-selected{background:color-mix(in srgb,var(--acc) 6%,var(--surface))}
 .professional-picker-line{display:flex;align-items:center;gap:8px;padding:8px;min-width:0}
-.professional-picker-line .thumb{flex:none;width:40px;height:40px;border-radius:var(--r-sm)}
+.professional-picker-line .thumb{flex:none;width:40px;height:40px;border-radius:0}
 .professional-picker-name{flex:1;min-width:0}
 .professional-picker-name strong{display:block;font-size:13px;font-weight:550;line-height:1.4;overflow-wrap:anywhere}
 .professional-picker-name small{display:block;color:var(--label-2);font-size:11px;line-height:1.4;margin-top:2px;overflow-wrap:anywhere}
@@ -171,8 +171,8 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .management-form-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .management-help{font-size:12px;line-height:1.5;color:var(--management-muted);margin:0;max-width:66ch}
 .management-form-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px solid var(--sep)}
-.management-error,.management-notice,.management-success{margin:0;padding:10px 12px;border-left:2px solid var(--acc);background:var(--acc-soft);color:var(--label);overflow-wrap:anywhere;font-size:13px}
-.management-error{border-color:var(--red);background:transparent}
+.management-error,.management-notice,.management-success{margin:0;padding:10px 12px;background:var(--acc-soft);color:var(--label);overflow-wrap:anywhere;font-size:13px}
+.management-error{color:var(--red);background:transparent}
 .management-record-list,.management-person-list,.management-material-list{display:grid;min-width:0}
 .management-record{display:flex;align-items:center;gap:10px;min-width:0;min-height:60px;padding:12px 0;border-bottom:1px solid var(--sep);text-decoration:none;color:var(--label)}
 .management-record>div{flex:1;min-width:0}
@@ -319,7 +319,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 
 /* ── legacy compat ───────────────────────────────── */
 .app-status-dismiss{margin-left:auto;border:0;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px}
-.management-success{margin:0;border-left:3px solid var(--acc);padding:12px 16px;background:var(--acc-soft);color:var(--label)}
+.management-success{margin:0;padding:12px 16px;background:var(--acc-soft);color:var(--label)}
 .management-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .management-button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 14px;border-radius:10px;border:1px solid var(--sep);color:var(--label);background:var(--surface);font-size:14px;font-weight:600;text-decoration:none}
 .management-button-primary{background:var(--acc);color:var(--on-acc);border-color:transparent}

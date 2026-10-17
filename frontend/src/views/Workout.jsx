@@ -47,7 +47,7 @@ function StartChooser() {
       <h2 className="accent">{t(completedToday.endedEarly ? 'Treino do dia encerrado mais cedo' : 'Treino do dia concluído')}</h2>
       <div className="row between" style={{ marginBottom: 12 }}>
         <div><div className="big">{routineName(todayR)}</div><div className="muted small">{exCount(completedToday.entries?.length || 0)}</div></div>
-        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9 }}><RoutineMuscleThumb routine={todayR} body={S.body} /></span>
+        <span className="lrow-i" style={{ width: 38, height: 38 }}><RoutineMuscleThumb routine={todayR} body={S.body} /></span>
       </div>
       <Button variant="primary" icon="play" onClick={() => startFlow(null)}>{t('Executar outro treino')}</Button>
     </div>}
@@ -55,7 +55,7 @@ function StartChooser() {
       <h2 className="accent">{t("Today's plan")}{todayOvr ? ' · ' + t('rescheduled') : ''}</h2>
       <div className="row between" style={{ marginBottom: 12 }}>
         <div><div className="big">{routineName(todayR)}</div><div className="muted small">{exCount(todayR.ex.length)}</div></div>
-        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9 }}><RoutineMuscleThumb routine={todayR} body={S.body} /></span>
+        <span className="lrow-i" style={{ width: 38, height: 38 }}><RoutineMuscleThumb routine={todayR} body={S.body} /></span>
       </div>
       <Button variant="primary" icon="play" onClick={() => startFlow(todayR.id)}>{t('Start {0}', routineName(todayR))}</Button>
     </div>}
@@ -63,7 +63,7 @@ function StartChooser() {
       <h2>{t("Today's plan")}</h2>
       <div className="row between" style={{ marginBottom: 12 }}>
         <div><div className="big">{routineName(emptyToday)}</div><div className="muted small">{exCount(0)}</div></div>
-        <span className="lrow-i" style={{ width: 38, height: 38, borderRadius: 9 }}><RoutineMuscleThumb routine={emptyToday} body={S.body} /></span>
+        <span className="lrow-i" style={{ width: 38, height: 38 }}><RoutineMuscleThumb routine={emptyToday} body={S.body} /></span>
       </div>
       <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + emptyToday.id)}>{t('Add exercise')}</Button>
     </div>}
