@@ -1,7 +1,7 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
    Media (img/gif) cache-first; everything else network-first with offline fallback.
    Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v20'
+const CACHE = 'fit-pro-player-rt-v23'
 const MEDIA_LIMIT = 256
 async function remember(request, response, media = false) {
   const cache = await caches.open(CACHE)
@@ -146,7 +146,7 @@ self.addEventListener('push', event => {
         href: safeNotificationHref(payload.href) }
       // Apple's userVisibleOnly subscription requires visible feedback for accepted pushes.
       await self.registration.showNotification(payload.title, {
-        body: payload.body, icon: '/icon-192-v22.png', tag: `fit-pro-player:${payload.id}`, data,
+        body: payload.body, icon: '/icons/lion-794daf1cde13-192.png', tag: `fit-pro-player:${payload.id}`, data,
       })
       state.seen = [...seen, { id: payload.id, expiresAt: Date.parse(payload.expiresAt) }].slice(-NOTIFICATION_HISTORY_LIMIT)
       await writeNotificationState(state)
@@ -181,6 +181,17 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
   const sameOrigin = url.origin === location.origin
   if (!sameOrigin) return
+  // A previous runtime cache must never hide a newly published favicon or lion.
+  // Revalidate aliases as well: installed apps can still request older URLs.
+  const isBrand = url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json'
+    || /^\/(?:favicon[^/]*\.(?:ico|png)|apple-touch-icon[^/]*\.png|icon-[^/]*\.png|brand-logo\.png)$/.test(url.pathname)
+  if (isBrand) {
+    e.respondWith(fetch(new Request(e.request, { cache: 'no-cache' })).then(res => {
+      if (res.ok) e.waitUntil(remember(e.request, res.clone()))
+      return res
+    }).catch(() => caches.match(e.request, { ignoreVary: true }).then(hit => hit || Response.error())))
+    return
+  }
   const isMedia = url.pathname.includes('/img/') || url.pathname.includes('/gif/') || /\.(webp|png|jpg|jpeg|avif)$/.test(url.pathname)
   if (isMedia) {
     e.respondWith(caches.open(CACHE).then(c => caches.match(e.request, { ignoreVary: true }).then(hit =>

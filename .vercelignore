@@ -16,3 +16,10 @@ docs/
 supabase/
 .superpowers/
 .worktrees/
+.agents/
+brag-output*/
+film/
+skills-lock.json
+test-results/
+**/test-results*/
+**/playwright-report/
