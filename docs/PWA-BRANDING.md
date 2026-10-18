@@ -16,6 +16,25 @@ PWA, versões maskable com margem segura e uma prévia de compartilhamento de
 1200×630. Todos usam o mesmo leão, preservado inteiro, sobre fundo preto opaco.
 Também atualiza os nomes históricos para instalações que ainda os consultam.
 
+O Vite também incorpora o PNG Apple de 180 px no `head` como uma URL `data:`
+no link `apple-touch-icon-precomposed`. Esse suporte foi adicionado no Safari 26.
+O WebKit prefere o ícone precomposed quando os tamanhos são iguais; assim, a
+imagem chega junto com o HTML e a instalação não depende de uma segunda busca
+de imagem. O link comum `apple-touch-icon` continua apontando para o arquivo:
+versões anteriores ignoram a URL `data:` e conservam essa alternativa.
+O plugin lê `public/apple-touch-icon.png`, exportado pelo mesmo gerador; não
+mantenha uma cópia de base64 manualmente. O CSP já permite imagens `data:`.
+
+Referências: [suporte a ícones no Safari 26](https://webkit.org/blog/17333/webkit-features-in-safari-26-0/#svg-icons)
+e [seleção de ícones no WebKit](https://github.com/WebKit/WebKit/blob/main/Source/WebCore/html/LinkIconCollector.cpp).
+
+Na investigação de outubro de 2026, o iPhone mostrava o monograma F no Chrome
+e no Safari, embora abrisse o PNG correto pelo endereço direto. HTTP 200,
+manifesto válido e decodificação no WebKit não reproduzem a janela nativa de
+Adicionar à Tela de Início. A confirmação final dessa etapa deve ser feita no
+aparelho. O teste da transformação HTML verifica os bytes incorporados e a
+alternativa por URL; confira também o `dist/index.html` gerado e o HTML publicado.
+
 O nome `icons/lion-<hash>` depende da imagem original e das configurações de
 exportação. Ao trocar a fonte ou o enquadramento, use o novo prefixo retornado
 em `frontend/index.html`, `frontend/public/manifest.json` e no ícone de notificação

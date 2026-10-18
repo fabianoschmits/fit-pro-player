@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { configDefaults } from 'vitest/config'
+import { inlineAppleTouchIcon } from './build/inline-apple-touch-icon.js'
 
 const media = process.env.MEDIA_TARGET || 'http://127.0.0.1:8888'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [inlineAppleTouchIcon(), react()],
   test: { exclude: [...configDefaults.exclude, 'e2e/**'] },
   base: './',
   server: {
