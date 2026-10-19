@@ -110,6 +110,38 @@ create policy body_measurement_checkins_owner_read on public.body_measurement_ch
 create policy workout_sessions_owner_read on public.workout_sessions for select to authenticated using (user_id = auth.uid());
 create policy workout_session_operations_owner_read on public.workout_session_operations for select to authenticated using (user_id = auth.uid());
 
+create or replace function public.save_account_preferences(
+  p_expected_revision bigint,
+  p_display_unit text,
+  p_preferences jsonb
+) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare caller uuid := auth.uid(); result public.account_preferences;
+begin
+  if caller is null then raise exception 'authenticated identity required' using errcode = '42501'; end if;
+  if p_expected_revision is null or p_expected_revision < 0
+    or p_display_unit not in ('kg','lb')
+    or p_preferences is null or jsonb_typeof(p_preferences) <> 'object'
+    or octet_length(p_preferences::text) > 262144 then
+    raise exception 'invalid account preferences' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended('fitpp.preferences:' || caller::text, 0));
+  select * into result from public.account_preferences where user_id = caller for update;
+  if not found then
+    if p_expected_revision <> 0 then raise exception 'preference revision conflict' using errcode = '40001'; end if;
+    insert into public.account_preferences(user_id,display_unit,preferences)
+    values(caller,p_display_unit,p_preferences) returning * into result;
+    return to_jsonb(result);
+  end if;
+  if result.revision <> p_expected_revision then raise exception 'preference revision conflict' using errcode = '40001'; end if;
+  update public.account_preferences
+    set revision = revision + 1, display_unit = p_display_unit, preferences = p_preferences, updated_at = now()
+    where user_id = caller returning * into result;
+  return to_jsonb(result);
+end;
+$$;
+
 create or replace function public.start_workout_session(
   p_session_id uuid,
   p_prescription_snapshot jsonb,
@@ -229,10 +261,12 @@ begin
 end;
 $$;
 
+revoke all on function public.save_account_preferences(bigint,text,jsonb) from public, anon, authenticated;
 revoke all on function public.start_workout_session(uuid,jsonb,uuid,uuid) from public, anon, authenticated;
 revoke all on function public.append_workout_operation(uuid,uuid,bigint,uuid,text,jsonb) from public, anon, authenticated;
 revoke all on function public.take_over_workout_session(uuid,bigint) from public, anon, authenticated;
 revoke all on function public.complete_workout_session(uuid,uuid,bigint,uuid,jsonb) from public, anon, authenticated;
+grant execute on function public.save_account_preferences(bigint,text,jsonb) to authenticated;
 grant execute on function public.start_workout_session(uuid,jsonb,uuid,uuid) to authenticated;
 grant execute on function public.append_workout_operation(uuid,uuid,bigint,uuid,text,jsonb) to authenticated;
 grant execute on function public.take_over_workout_session(uuid,bigint) to authenticated;

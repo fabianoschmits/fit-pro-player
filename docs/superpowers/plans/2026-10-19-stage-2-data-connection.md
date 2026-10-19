@@ -45,7 +45,7 @@
 - [x] Run the new Node test and verify RED because the migration is absent.
 - [x] Add the schema and RPC migration with all quantities documented in kg.
 - [x] Run static checks and disposable PostgreSQL tests; record any environment skips. Static checks passed; three database-backed checks remain skipped because `PG_BIN` is unavailable.
-- [ ] Commit migration and checks with message `feat: add server-owned training domain`.
+- [x] Commit migration and checks with message `feat: add server-owned training domain` (`a72cca9`).
 
 ### Task 2: Add client repositories and DTO validation
 
@@ -59,11 +59,11 @@
 - Consumes: Task 1 RPCs.
 - Produces: validated `startSession`, `appendOperation`, `takeOverSession`, `completeSession`, `loadPlan`, `loadHistory`, and `savePreferences` methods.
 
-- [ ] Write failing tests for malformed responses, RPC argument names, conflict mapping, stale token, idempotent replay, and account-scope mismatch.
-- [ ] Implement DTO parsing without passing raw database rows into views.
-- [ ] Implement the repository with injected client and authenticated account ID.
-- [ ] Run repository tests and the full frontend suite.
-- [ ] Commit with message `feat: add training domain repository`.
+- [x] Write failing tests for malformed responses, RPC argument names, conflict mapping, stale token, idempotent replay, and account-scope mismatch.
+- [x] Implement DTO parsing without passing raw database rows into views.
+- [x] Implement the repository with injected client and authenticated account ID.
+- [x] Run repository tests and the full frontend suite. Focused: 13 tests; full frontend: 1,175 tests; Supabase: 31 pass and 3 environment skips.
+- [x] Commit with message `feat: add training domain repository`.
 
 ### Task 3: Establish canonical kg and display conversion
 
