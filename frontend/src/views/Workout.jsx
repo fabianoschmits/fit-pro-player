@@ -49,7 +49,7 @@ function StartChooser() {
         <div><div className="big">{routineName(todayR)}</div><div className="muted small">{exCount(completedToday.entries?.length || 0)}</div></div>
         <span className="lrow-i" style={{ width: 38, height: 38 }}><RoutineMuscleThumb routine={todayR} body={S.body} /></span>
       </div>
-      <Button variant="primary" icon="play" onClick={() => startFlow(null)}>{t('Executar outro treino')}</Button>
+      <Button variant="primary" icon="play" onClick={() => startFlow(null)}>{t('Start another workout')}</Button>
     </div>}
     {!completedToday && todayR && <div className="card" style={{ borderColor: 'var(--acc)' }}>
       <h2 className="accent">{t("Today's plan")}{todayOvr ? ' · ' + t('rescheduled') : ''}</h2>
@@ -74,9 +74,9 @@ function StartChooser() {
         <span className="tag acc">{t('Start')}</span></div>)}</div></>}
     <div style={{ height: 14 }} />
     {restDay && <div className="card">
-      <h2>{t('Hoje não é dia de treino')}</h2>
-      <div className="muted small" style={{ marginBottom: 12 }}>{t('Escolha um treino para hoje ou faça um treino livre.')}</div>
-      {availableRoutines.length > 0 && <><h4 className="sec">{t('Escolha um treino para hoje')}</h4><div className="list">{availableRoutines.map(r => <div key={r.id} className="item" onClick={() => startFlow(r.id)}>
+      <h2>{t('No workout scheduled today')}</h2>
+      <div className="muted small" style={{ marginBottom: 12 }}>{t('Choose a workout for today or do a freestyle workout.')}</div>
+      {availableRoutines.length > 0 && <><h4 className="sec">{t('Choose a workout for today')}</h4><div className="list">{availableRoutines.map(r => <div key={r.id} className="item" onClick={() => startFlow(r.id)}>
         <span className="lrow-i"><RoutineMuscleThumb routine={r} body={S.body} /></span>
         <div className="grow"><div className="tt">{routineName(r)}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         <span className="tag acc">{t('Start')}</span>

@@ -477,7 +477,7 @@ describe('Workout set completion flow', () => {
     })
 
     expect(container.textContent).toContain('Treino do dia concluído')
-    expect(container.textContent).toContain('Executar outro treino')
+    expect(container.textContent).toContain('Começar outro treino')
     expect(container.textContent).not.toContain('Começar Push')
   })
 

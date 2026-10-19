@@ -61,7 +61,7 @@ export function RoutineTemplatePicker({ currentId, close }) {
       target.starterCustomName = true
     })
     close()
-    useUI.getState().toast(t('Modelo carregado. Ajuste o treino antes de concluir.'))
+    useUI.getState().toast(t('Template loaded. Adjust the workout before finishing.'))
   }
 
   const option = (source, label) => <Button key={source.id} appearance="custom" className="routine-template-option" onClick={() => choose(source)}>
@@ -71,14 +71,14 @@ export function RoutineTemplatePicker({ currentId, close }) {
   </Button>
 
   return <div className="routine-template-picker">
-    <h3>{t('Escolha um treino para começar')}</h3>
-    <p className="dim">{t('Carregue uma cópia, edite como quiser e conclua quando estiver pronto.')}</p>
-    <h4>{t('Sugeridos pelo sistema')}</h4>
-    <div className="routine-template-list">{suggested.map(routine => option(routine, t('Modelo recomendado')))}</div>
-    <h4>{t('Meus treinos')}</h4>
+    <h3>{t('Choose a workout to get started')}</h3>
+    <p className="dim">{t('Load a copy, edit it as you like, and finish when ready.')}</p>
+    <h4>{t('Suggested by Fit Pro Player')}</h4>
+    <div className="routine-template-list">{suggested.map(routine => option(routine, t('Recommended template')))}</div>
+    <h4>{t('My workouts')}</h4>
     {existing.length
-      ? <div className="routine-template-list">{existing.map(routine => option(routine, t('{0} exercícios', routine.ex?.length || 0)))}</div>
-      : <p className="small dim routine-template-empty">{t('Você ainda não possui outro treino para reutilizar.')}</p>}
+      ? <div className="routine-template-list">{existing.map(routine => option(routine, t('{0} exercises', routine.ex?.length || 0)))}</div>
+      : <p className="small dim routine-template-empty">{t('You do not have another workout to reuse yet.')}</p>}
     <Button variant="plain" className="routine-template-cancel" onClick={close}>{t('Cancel')}</Button>
   </div>
 }
@@ -209,7 +209,7 @@ export default function RoutineEdit() {
       <Button variant="tinted" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
       <Button variant="plain" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
     </div>
-    {!r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Começar com um treino sugerido ou existente')}</Button>}
+    {!r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Start with a suggested or existing workout')}</Button>}
 
     <div className="card routine-week-card">
       <div className="row between routine-card-title">

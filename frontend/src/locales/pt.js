@@ -1364,5 +1364,18 @@ export default {
   "Treino concluído": "Treino concluído",
   "Try again": "Tentar novamente",
   "Try an action": "Experimente uma ação",
-  "exercícios": "exercícios"
+  "exercícios": "exercícios",
+  "Template loaded. Adjust the workout before finishing.": "Modelo carregado. Ajuste o treino antes de concluir.",
+  "Choose a workout to get started": "Escolha um treino para começar",
+  "Load a copy, edit it as you like, and finish when ready.": "Carregue uma cópia, edite como quiser e conclua quando estiver pronto.",
+  "Suggested by Fit Pro Player": "Sugeridos pelo Fit Pro Player",
+  "Recommended template": "Modelo recomendado",
+  "My workouts": "Meus treinos",
+  "You do not have another workout to reuse yet.": "Você ainda não possui outro treino para reutilizar.",
+  "Start with a suggested or existing workout": "Começar com um treino sugerido ou existente",
+  "No workout scheduled today": "Hoje não é dia de treino",
+  "Choose a workout for today or do a freestyle workout.": "Escolha um treino para hoje ou faça um treino livre.",
+  "Choose a workout for today": "Escolha um treino para hoje",
+  "Could not load the body diagram.": "Não foi possível carregar o diagrama corporal.",
+  "This cannot be undone.": "Esta ação não pode ser desfeita."
 }
