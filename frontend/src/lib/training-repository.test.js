@@ -97,6 +97,22 @@ describe('training repository', () => {
     expect(from).toHaveBeenCalledWith('workout_session_operations')
   })
 
+  it('saves a UUID-backed plan through its revision-checked RPC', async () => {
+    const { createTrainingRepository } = await load()
+    const rpc = vi.fn(async () => ({ data: { routines: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: 'account-1', revision: 1, title: 'Push', position: 0, prescription: { ex: [] }, created_at: 'a', updated_at: 'b' }], schedule: { user_id: 'account-1', revision: 1, mode: 'weekly', schedule: { week: {} }, updated_at: 'b' } }, error: null }))
+    const repo = createTrainingRepository({ client: { rpc }, accountId: 'account-1' })
+    await expect(repo.savePlan({ expectedRevision: 0, mode: 'weekly', schedule: { week: {} }, routines: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', title: 'Push', prescription: { ex: [] } }] })).resolves.toMatchObject({ routines: [{ title: 'Push' }] })
+    expect(rpc).toHaveBeenCalledWith('save_athlete_plan', { p_expected_revision: 0, p_mode: 'weekly', p_schedule: { week: {} }, p_routines: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', title: 'Push', prescription: { ex: [] } }] })
+  })
+
+  it('saves canonical body records through the authenticated body RPC', async () => {
+    const { createTrainingRepository } = await load()
+    const rpc = vi.fn(async () => ({ data: { weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80, created_at: 'a', updated_at: 'b' }], measurements: [] }, error: null }))
+    const repo = createTrainingRepository({ client: { rpc }, accountId: 'account-1' })
+    await expect(repo.saveBody({ weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2026-10-19', weightKg: 80 }], measurements: [] })).resolves.toMatchObject({ weights: [{ weightKg: 80 }] })
+    expect(rpc).toHaveBeenCalledWith('save_athlete_body', { p_weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2026-10-19', weightKg: 80 }], p_measurements: [] })
+  })
+
   it('loads the current active session before a writer takeover', async () => {
     const { createTrainingRepository } = await load()
     const query = data => ({

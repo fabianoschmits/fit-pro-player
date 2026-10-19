@@ -180,5 +180,18 @@ export function createTrainingRepository({ client, accountId }) {
         p_preferences: values,
       }, parsePreferences)
     },
+
+    savePlan({ expectedRevision, mode, schedule, routines }) {
+      return rpc('save_athlete_plan', {
+        p_expected_revision: expectedRevision,
+        p_mode: mode,
+        p_schedule: schedule,
+        p_routines: routines,
+      }, parsePlan)
+    },
+
+    saveBody({ weights, measurements }) {
+      return rpc('save_athlete_body', { p_weights: weights, p_measurements: measurements }, parseBodyData)
+    },
   }
 }

@@ -23,7 +23,7 @@ test('training domain migration owns athlete records and concurrent workout writ
   assert.match(migration, /create unique index workout_sessions_one_active_user_idx[\s\S]+where status = 'active'/i)
   assert.match(migration, /unique \(session_id, operation_id\)/i)
 
-  for (const fn of ['save_account_preferences', 'start_workout_session', 'append_workout_operation', 'take_over_workout_session', 'complete_workout_session', 'abandon_workout_session']) {
+  for (const fn of ['save_account_preferences', 'save_athlete_plan', 'save_athlete_body', 'start_workout_session', 'append_workout_operation', 'take_over_workout_session', 'complete_workout_session', 'abandon_workout_session']) {
     assert.match(migration, new RegExp(`create or replace function public\\.${fn}`, 'i'))
     assert.match(migration, new RegExp(`revoke all on function public\\.${fn}[^;]+from public, anon`, 'i'))
     assert.match(migration, new RegExp(`grant execute on function public\\.${fn}[^;]+to authenticated`, 'i'))
@@ -37,5 +37,7 @@ test('training domain migration owns athlete records and concurrent workout writ
   assert.match(migration, /for update/i)
   assert.match(migration, /stale workout writer/i)
   assert.match(migration, /workout revision conflict/i)
+  assert.match(migration, /p_routines jsonb/i)
+  assert.match(migration, /p_schedule jsonb/i)
   assert.doesNotMatch(migration, /grant (insert|update|delete) on .* to authenticated/i)
 })

@@ -142,6 +142,75 @@ begin
 end;
 $$;
 
+create or replace function public.save_athlete_plan(
+  p_expected_revision bigint,
+  p_mode text,
+  p_schedule jsonb,
+  p_routines jsonb
+) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare caller uuid := auth.uid(); result public.athlete_schedules;
+begin
+  if caller is null then raise exception 'authenticated identity required' using errcode = '42501'; end if;
+  if p_expected_revision is null or p_expected_revision < 0
+    or p_mode not in ('weekly','daily')
+    or p_schedule is null or jsonb_typeof(p_schedule) <> 'object'
+    or p_routines is null or jsonb_typeof(p_routines) <> 'array'
+    or jsonb_array_length(p_routines) > 200
+    or exists (
+      select 1 from jsonb_array_elements(p_routines) item
+      where jsonb_typeof(item) <> 'object'
+        or coalesce(item->>'id','') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+        or char_length(btrim(coalesce(item->>'title',''))) not between 1 and 160
+        or jsonb_typeof(coalesce(item->'prescription','null'::jsonb)) <> 'object'
+    ) then raise exception 'invalid athlete plan' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('fitpp.plan:' || caller::text, 0));
+  select * into result from public.athlete_schedules where user_id = caller for update;
+  if not found then
+    if p_expected_revision <> 0 then raise exception 'plan revision conflict' using errcode = '40001'; end if;
+    insert into public.athlete_schedules(user_id,mode,schedule) values(caller,p_mode,p_schedule) returning * into result;
+  else
+    if result.revision <> p_expected_revision then raise exception 'plan revision conflict' using errcode = '40001'; end if;
+    update public.athlete_schedules set revision = revision + 1, mode = p_mode, schedule = p_schedule, updated_at = now()
+      where user_id = caller returning * into result;
+  end if;
+  delete from public.athlete_routines where user_id = caller and id not in (select (item->>'id')::uuid from jsonb_array_elements(p_routines) item);
+  insert into public.athlete_routines(id,user_id,title,position,prescription)
+    select (item->>'id')::uuid, caller, item->>'title', ordinality - 1, item->'prescription'
+    from jsonb_array_elements(p_routines) with ordinality values(item, ordinality)
+  on conflict (id) do update set title = excluded.title, position = excluded.position, prescription = excluded.prescription,
+    revision = public.athlete_routines.revision + 1, updated_at = now()
+    where public.athlete_routines.user_id = caller;
+  return jsonb_build_object('routines', coalesce((select jsonb_agg(to_jsonb(r) order by r.position) from public.athlete_routines r where r.user_id = caller), '[]'::jsonb), 'schedule', to_jsonb(result));
+end;
+$$;
+
+create or replace function public.save_athlete_body(
+  p_weights jsonb,
+  p_measurements jsonb
+) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare caller uuid := auth.uid();
+begin
+  if caller is null then raise exception 'authenticated identity required' using errcode = '42501'; end if;
+  if p_weights is null or jsonb_typeof(p_weights) <> 'array' or jsonb_array_length(p_weights) > 2000
+    or p_measurements is null or jsonb_typeof(p_measurements) <> 'array' or jsonb_array_length(p_measurements) > 1000
+    or exists (select 1 from jsonb_array_elements(p_weights) item where jsonb_typeof(item) <> 'object' or coalesce(item->>'id','') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' or coalesce(item->>'date','') !~ '^\\d{4}-\\d{2}-\\d{2}$' or coalesce((item->>'weightKg')::numeric,0) <= 0)
+    or exists (select 1 from jsonb_array_elements(p_measurements) item where jsonb_typeof(item) <> 'object' or coalesce(item->>'id','') !~* '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' or coalesce(item->>'date','') !~ '^\\d{4}-\\d{2}-\\d{2}$' or jsonb_typeof(coalesce(item->'valuesCm','null'::jsonb)) <> 'object')
+  then raise exception 'invalid athlete body' using errcode = '22023'; end if;
+  perform pg_advisory_xact_lock(hashtextextended('fitpp.body:' || caller::text, 0));
+  delete from public.bodyweight_entries where user_id = caller;
+  insert into public.bodyweight_entries(id,user_id,measured_on,weight_kg)
+    select (item->>'id')::uuid, caller, (item->>'date')::date, (item->>'weightKg')::numeric from jsonb_array_elements(p_weights) item;
+  delete from public.body_measurement_checkins where user_id = caller;
+  insert into public.body_measurement_checkins(id,user_id,measured_on,measurements_cm,note)
+    select (item->>'id')::uuid, caller, (item->>'date')::date, item->'valuesCm', nullif(item->>'note','') from jsonb_array_elements(p_measurements) item;
+  return jsonb_build_object('weights', coalesce((select jsonb_agg(to_jsonb(w) order by w.measured_on) from public.bodyweight_entries w where w.user_id = caller), '[]'::jsonb), 'measurements', coalesce((select jsonb_agg(to_jsonb(m) order by m.measured_on) from public.body_measurement_checkins m where m.user_id = caller), '[]'::jsonb));
+end;
+$$;
+
 create or replace function public.start_workout_session(
   p_session_id uuid,
   p_prescription_snapshot jsonb,
@@ -296,12 +365,16 @@ end;
 $$;
 
 revoke all on function public.save_account_preferences(bigint,text,jsonb) from public, anon, authenticated;
+revoke all on function public.save_athlete_plan(bigint,text,jsonb,jsonb) from public, anon, authenticated;
+revoke all on function public.save_athlete_body(jsonb,jsonb) from public, anon, authenticated;
 revoke all on function public.start_workout_session(uuid,jsonb,uuid,uuid) from public, anon, authenticated;
 revoke all on function public.append_workout_operation(uuid,uuid,bigint,uuid,text,jsonb) from public, anon, authenticated;
 revoke all on function public.take_over_workout_session(uuid,bigint) from public, anon, authenticated;
 revoke all on function public.complete_workout_session(uuid,uuid,bigint,uuid,jsonb) from public, anon, authenticated;
 revoke all on function public.abandon_workout_session(uuid,uuid,bigint,uuid,jsonb) from public, anon, authenticated;
 grant execute on function public.save_account_preferences(bigint,text,jsonb) to authenticated;
+grant execute on function public.save_athlete_plan(bigint,text,jsonb,jsonb) to authenticated;
+grant execute on function public.save_athlete_body(jsonb,jsonb) to authenticated;
 grant execute on function public.start_workout_session(uuid,jsonb,uuid,uuid) to authenticated;
 grant execute on function public.append_workout_operation(uuid,uuid,bigint,uuid,text,jsonb) to authenticated;
 grant execute on function public.take_over_workout_session(uuid,bigint) to authenticated;

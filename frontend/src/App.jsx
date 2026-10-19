@@ -29,6 +29,8 @@ import PrivacySettings from './views/PrivacySettings.jsx'
 import PrivacyConsentModal from './components/PrivacyConsentModal.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
 import { createTrainingRepository } from './lib/training-repository.js'
+import { attachDomainFocusRefresh, createDomainRefresh } from './lib/domain-refresh.js'
+import { applyDomainState } from './lib/domain-state.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
 import { startNotificationCoordinator, syncNotificationPreferences, syncNotificationVisibility, reconnectNotifications, refreshNotificationReadiness, hasBackgroundNotifications, useNotificationStatus } from './lib/notification-client.js'
@@ -317,6 +319,26 @@ function Shell() {
       if (current.assignedProgram?.versionId !== version.id || current.assignedProgram?.assignmentId !== latest.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
     }).catch(() => {})
     return () => { disposed = true }
+  }, [auth.status, auth.user?.id, ready, appEntered])
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
+    const client = getBrowserSupabaseClient()
+    if (!client) return undefined
+    const accountId = auth.user.id
+    const token = useStore.getState().getScopeToken?.()
+    const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
+    const refresh = createDomainRefresh({
+      accountId,
+      repository: createTrainingRepository({ client, accountId }),
+      isCurrent: current,
+      apply: (domain, data) => {
+        if (!current(accountId)) return
+        const store = useStore.getState()
+        store.replaceState(applyDomainState(store.S, domain, data), false)
+      },
+    })
+    void refresh.boot()
+    return attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['plan', 'history', 'body'] })
   }, [auth.status, auth.user?.id, ready, appEntered])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
