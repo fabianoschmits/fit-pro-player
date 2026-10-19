@@ -23,7 +23,7 @@ A inspeção foi de código, rotas e documentação. Não representa auditoria v
 - Correções de histórico vazio, altura com vírgula e inclusão de exercício estão no diretório de trabalho. Os testes anteriores não substituem nova validação do conjunto final.
 - Kg/lb e concorrência entre abas foram especificados, mas não implementados. As quinze mensagens adicionais de localização também permanecem como pendência conhecida.
 
-O documento anterior de integridade contém uma ambiguidade: trata `S.unit` como preferência de exibição e também como indicador para reconverter dados. A implementação deve separar `displayUnit` de `massUnit: 'kg'` e da versão do esquema. Nunca reconverter um estado canônico só porque a exibição está em lb.
+O contrato de integridade foi esclarecido: `displayUnit` é a preferência de exibição, `massUnit: 'kg'` identifica a representação canônica e `stateSchemaVersion` identifica o formato persistido. Nunca reconverter um estado canônico só porque a exibição está em lb. Como os dados atuais são de teste, estados legados sem esses marcadores podem ser reiniciados em vez de sofrer conversão heurística.
 
 ## 3. Decisão sobre offline
 

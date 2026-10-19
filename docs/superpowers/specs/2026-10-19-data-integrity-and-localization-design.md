@@ -18,20 +18,20 @@ Ficam fora deste escopo novas funcionalidades de treino, páginas para profissio
 
 ## Dados em quilogramas
 
-`S.unit` passa a significar somente a unidade usada na interface. Todo valor persistido que represente massa ou carga é canônico em kg.
+O novo contrato separa três conceitos: `displayUnit` guarda a preferência visual (`kg` ou `lb`), `massUnit` identifica a unidade canônica do estado e tem sempre o valor `kg`, e `stateSchemaVersion` identifica o formato persistido. Todo valor persistido que represente massa ou carga é canônico em kg. O campo legado `S.unit` será removido depois que todos os consumidores usarem `displayUnit`.
 
-Ao selecionar `lb`, entradas e leituras serão convertidas na borda da interface. Ao confirmar uma alteração, a interface converte o valor para kg antes de chamar a store; ao renderizar, converte kg para lb. Nenhuma rotina de domínio, exportação, histórico ou sincronização dependerá da unidade de visualização.
+Ao selecionar `lb`, entradas e leituras serão convertidas na borda da interface. Ao confirmar uma alteração, a interface converte o valor para kg antes de chamar a store; ao renderizar, converte kg para lb. Nenhuma rotina de domínio, exportação, histórico ou sincronização dependerá da unidade de visualização. Alterar `displayUnit` nunca transforma os valores persistidos.
 
-`normalizeState` será a fronteira obrigatória de saneamento. Ela converterá o estado carregado quando `unit === 'lb'`, usando a unidade que vinha gravada no próprio estado como origem, e então persistirá `unit: 'kg'` como representação interna. As estruturas abrangidas são:
+`normalizeState` será a fronteira obrigatória de saneamento do formato atual. Um estado só pode ser tratado como canônico quando `massUnit === 'kg'` e `stateSchemaVersion` corresponder à versão nova. Como o ambiente contém apenas dados de teste, estados anteriores ou sem esses marcadores serão substituídos pelo estado inicial; não haverá inferência nem conversão heurística baseada em `S.unit`. As estruturas abrangidas no formato novo são:
 
 - `profile.startWeight`, `targetW` e cada `bodyweight[].w`;
 - `exWeights`;
 - cargas de exercícios de rotina e do treino ativo, incluindo metas e séries registradas;
 - cargas de cada treino concluído, inclusive séries históricas.
 
-Uma função única de conversão receberá um valor numérico e retornará um número arredondado a duas casas decimais. Ela será idempotente para estados que já usam kg. Como o ambiente é de teste, estados sem marcação histórica serão interpretados pela configuração `unit` atual; não haverá tentativa de inferir unidades por faixa de valores.
+Funções únicas de apresentação converterão kg para a unidade visual e a entrada visual para kg, com arredondamento definido por tipo de campo. Elas não percorrem nem reescrevem o estado. Importações com unidade explícita convertem cada valor para kg antes de persistir; arquivos ambíguos exigem que o usuário indique a unidade.
 
-Após essa normalização, a troca na configuração não converte mais o estado persistido: altera apenas `S.unit`, pois os valores internos já são kg. O texto da tela de configurações deixará de afirmar que apenas o rótulo muda.
+Após a adoção do contrato, a troca na configuração altera somente `displayUnit`. O texto da tela de configurações explicará que os números são apresentados na unidade escolhida e armazenados internamente em kg.
 
 ## Sincronização entre abas
 
