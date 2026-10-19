@@ -338,9 +338,12 @@ export function removeActiveExercise(idx) {
 }
 
 function ActiveWorkout() {
+  const update = useStore(s => s.update)
+  useEffect(() => {
+    update(state => { state.mediaSize = 'full' })
+  }, [update])
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const update = useStore(s => s.update)
   const recovery = useStore(s => s.sessionRecovery)
   const { startRest, stopRest, work, manualSet, stopManualSet } = useUI()
   const A = S.active

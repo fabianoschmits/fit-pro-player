@@ -17,7 +17,7 @@ export default function Media({ ex, id, compact, minimizable }) {
   const mediaSize = useStore(s => s.S.mediaSize)
   const update = useStore(s => s.update)
   const mini = minimizable && mediaSize === 'mini'
-  const [playing, setPlaying] = useState(() => !mini)
+  const [playing, setPlaying] = useState(true)
   const [musclesOpen, setMusclesOpen] = useState(false)
   const [musclesClosing, setMusclesClosing] = useState(false)
   const ignoreClickUntil = useRef(0)
@@ -29,7 +29,7 @@ export default function Media({ ex, id, compact, minimizable }) {
   const musclesTitleId = useId()
   useEffect(() => {
     window.clearTimeout(musclesCloseTimer.current)
-    setPlaying(!mini)
+    setPlaying(true)
     setMusclesOpen(false)
     setMusclesClosing(false)
     resumeAfterMuscles.current = false

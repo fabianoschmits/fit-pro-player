@@ -14,6 +14,7 @@ vi.mock('../lib/exercise-guide-assets.js', async importOriginal => ({
 
 import Media from './Media.jsx'
 import Dialog from './Dialog.jsx'
+import { useStore } from '../store/useStore.js'
 
 const EXERCISE = { id: '0001', name: 'Abdominal 3/4', name_pt: 'Abdominal 3/4' }
 let container
@@ -84,6 +85,15 @@ describe('Media SVG playback', () => {
     expect(button.getAttribute('aria-label')).toMatch(/reproduzir|play/i)
 
     act(() => container.querySelector('.exmedia').dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
+  })
+
+  it('continues playing after the user minimizes the animation', () => {
+    act(() => useStore.getState().update(state => { state.mediaSize = 'full' }))
+    act(() => root.render(<Media ex={EXERCISE} minimizable />))
+    const sizeToggle = container.querySelector('.media-size-toggle')
+    act(() => sizeToggle.dispatchEvent(new MouseEvent('click', { bubbles: true })))
+    expect(container.querySelector('.exmedia').classList.contains('mini')).toBe(true)
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('true')
   })
 
