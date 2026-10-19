@@ -18,7 +18,7 @@ A inspeção foi de código, rotas e documentação. Não representa auditoria v
 - A navegação do aluno tem Início, Plano, Treinar, Estatísticas e Mais. Histórico e evolução corporal também estão em Mais, dificultando a organização conceitual.
 - A área profissional já tem painel, alunos, programas, convites e perfil. Não precisa ser reconstruída do zero.
 - O adaptador profissional já oferece resumo do painel, paginação de alunos/programas/execuções, duplicação de programas e notas privadas. Telas inspecionadas ainda usam consultas antigas em parte desses fluxos. Reaproveitar após validar contratos e permissões.
-- Offline envolve snapshots da conta, cache de rotas/mídias, dados locais de convidado, espelho nativo e fila de eventos. Remover apenas o botão de download não remove essa arquitetura.
+- A persistência do aluno agora é separada por domínio: preferências, plano, corpo e sessões. O snapshot integral de conta, sua resolução de conflito e o download de plano foram removidos.
 - O service worker também atende notificações e atualização do aplicativo; removê-lo integralmente teria efeitos além do offline.
 - Correções de histórico vazio, altura com vírgula e inclusão de exercício foram consolidadas e verificadas na Etapa 0.
 - Kg/lb e concorrência entre abas foram especificados, mas ainda não implementados. As quinze mensagens adicionais de localização foram concluídas na Etapa 0.
@@ -46,6 +46,13 @@ Contrato proposto:
 - Cache de arquivos estáticos pode permanecer para desempenho. Push, instalação PWA e ciclo de atualização são avaliados separadamente do recurso de edição offline.
 
 Retirada gradual: implementar o novo caminho → validar a recuperação → trocar leituras e escritas → desativar convidados persistentes e download offline → remover sincronização integral/arquivos espelhados que ficarem sem uso → revisar testes e documentação. Não manter duas fontes oficiais nem escrita dupla permanente.
+
+### Registro da Etapa 2 — 19/10/2026
+
+- Concluídos: persistência canônica em kg, RPCs com proprietário e revisão para preferências/plano, recuperação idempotente do treino aberto, leituras por domínio e remoção do snapshot integral e do preparo de plano offline.
+- Mantidos: cache de recursos estáticos do PWA, atualização do aplicativo e notificações; eles não guardam nem reconciliam dados de treino.
+- Verificação automatizada: 38 testes focados de interface, store e repositório; 31 verificações Supabase aprovadas e 3 testes SQL descartáveis ignorados porque este computador não tem `PG_BIN`; build de produção e 11 pacotes de idioma aprovados.
+- Pendente fora desta etapa: homologação em um projeto Supabase descartável e em dispositivos físicos, incluindo troca de conta, retomada com rede oscilante e takeover entre dois dispositivos.
 
 ## 4. Arquitetura da informação
 

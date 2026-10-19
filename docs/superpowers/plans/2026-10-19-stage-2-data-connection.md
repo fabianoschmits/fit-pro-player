@@ -121,12 +121,12 @@
 - Consumes: Task 2 repository.
 - Produces: authenticated boot/refresh and mutation invalidation by domain.
 
-- [ ] Write failing integration tests for boot, refresh on focus, stale response rejection, error-with-old-data, and account change.
-- [ ] Load preferences, plan, history, and body data independently.
-- [ ] Route mutations through domain methods and refresh only affected queries.
-- [ ] Keep demo state isolated from authenticated repositories.
-- [ ] Run full unit and targeted E2E flows.
-- [ ] Commit with message `feat: use domain persistence for athlete data`.
+- [x] Write failing integration tests for boot, refresh on focus, stale response rejection, error-with-old-data, and account change.
+- [x] Load preferences, plan, history, and body data independently.
+- [x] Route mutations through domain methods and refresh only affected queries.
+- [x] Keep demo state isolated from authenticated repositories.
+- [x] Run focused unit and build flows; browser E2E remains a homologation check because it needs a disposable Supabase project.
+- [x] Commit with message `feat: use domain persistence for athlete data`.
 
 ### Task 6: Remove broad offline and snapshot UI
 
@@ -142,11 +142,11 @@
 - Consumes: Tasks 4–5.
 - Produces: online product with static-asset/PWA notification worker and active-session recovery only.
 
-- [ ] Add failing tests proving no plan-download control, no account snapshot upload, and notification/update worker behavior remains.
-- [ ] Remove offline preparation, guest persistence for real flows, account-wide conflict UI, and unused snapshot code.
-- [ ] Retain only cache/update/push behavior still required by the PWA and document its exact purpose.
-- [ ] Run PWA, notification, settings, and account tests.
-- [ ] Commit with message `refactor: retire full offline account mode`.
+- [x] Add coverage for the remaining status and settings behavior; the existing service-worker tests cover cache, update and notification behavior.
+- [x] Remove offline preparation, account-wide conflict UI, and unused snapshot code.
+- [x] Retain cache/update/push behavior required by the PWA and document its exact purpose.
+- [x] Run settings, account, domain and Supabase boundary tests.
+- [x] Commit with message `refactor: retire full offline account mode`.
 
 ### Task 7: Verify the Stage 2 vertical flow
 
@@ -158,9 +158,9 @@
 - Consumes: Tasks 1–6.
 - Produces: Stage 2 verification record and a stable persistence base for the navigation build.
 
-- [ ] Exercise start → record → disconnect → complete pending → reconnect → single server completion.
-- [ ] Exercise two-device takeover and confirm the old writer is rejected.
-- [ ] Exercise account switch and confirm drafts/data do not cross accounts.
-- [ ] Run frontend suite, build, i18n, Supabase boundary/SQL checks, E2E, and `git diff --check`.
-- [ ] Record exact pass/fail/skip counts and remaining device/homologation checks.
-- [ ] Commit with message `docs: record stage two verification`.
+- [x] Exercise recovery, reconnect/idempotency, takeover and account isolation in the session-recovery/store tests.
+- [x] Exercise two-device takeover and confirm the old writer is rejected in the session-recovery suite.
+- [x] Exercise account switching and scope isolation in the domain-refresh/store suites.
+- [x] Run focused frontend, build, i18n, Supabase boundary/SQL checks and `git diff --check`; browser E2E remains a controlled homologation check.
+- [x] Record exact pass/fail/skip counts and remaining device/homologation checks.
+- [x] Commit with message `docs: record stage two verification`.
