@@ -327,18 +327,78 @@ function Shell() {
     const accountId = auth.user.id
     const token = useStore.getState().getScopeToken?.()
     const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
+    let planRevision = 0
+    let preferenceRevision = 0
+    let planFingerprint = ''
+    let bodyFingerprint = ''
+    let preferenceFingerprint = ''
+    let timer = null
+    let bodyTimer = null
+    let preferenceTimer = null
+    const serializePlan = state => JSON.stringify({ mode: state.planMode, week: state.week, dayPlan: state.dayPlan, routines: state.routines })
+    const repository = createTrainingRepository({ client, accountId })
     const refresh = createDomainRefresh({
       accountId,
-      repository: createTrainingRepository({ client, accountId }),
+      repository,
       isCurrent: current,
       apply: (domain, data) => {
         if (!current(accountId)) return
+        if (domain === 'plan') planRevision = data.schedule?.revision || 0
+        if (domain === 'preferences') preferenceRevision = data.revision || 0
         const store = useStore.getState()
         store.replaceState(applyDomainState(store.S, domain, data), false)
       },
     })
     void refresh.boot()
-    return attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['plan', 'history', 'body'] })
+    const unsubscribe = useStore.subscribe((state, previous) => {
+      if (!current(accountId) || state.S === previous.S) return
+      const fingerprint = serializePlan(state.S)
+      if (fingerprint !== planFingerprint) {
+        planFingerprint = fingerprint
+        window.clearTimeout(timer)
+        timer = window.setTimeout(async () => {
+          const latest = useStore.getState().S
+          const plan = await repository.savePlan({
+            expectedRevision: planRevision,
+            mode: latest.planMode,
+            schedule: { week: latest.week, dayPlan: latest.dayPlan },
+            routines: latest.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
+          }).catch(() => null)
+          if (!plan || !current(accountId)) return
+          planRevision = plan.schedule?.revision || planRevision
+          useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'plan', plan), false)
+        }, 350)
+      }
+      const body = JSON.stringify({ weights: state.S.bodyweight, measurements: state.S.bodyMeasurements })
+      if (body !== bodyFingerprint) {
+        bodyFingerprint = body
+        window.clearTimeout(bodyTimer)
+        bodyTimer = window.setTimeout(async () => {
+          const latest = useStore.getState().S
+          const body = await repository.saveBody({
+            weights: latest.bodyweight.map(entry => ({ id: /^[0-9a-f-]{36}$/i.test(entry.id || '') ? entry.id : crypto.randomUUID(), date: entry.d, weightKg: entry.w })),
+            measurements: latest.bodyMeasurements.map(entry => ({ id: /^[0-9a-f-]{36}$/i.test(entry.id || '') ? entry.id : crypto.randomUUID(), date: entry.date, valuesCm: entry.values || {}, note: entry.notes || '' })),
+          }).catch(() => null)
+          if (!body || !current(accountId)) return
+          useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'body', body), false)
+        }, 350)
+      }
+      const { routines, week, dayPlan, planMode, bodyweight, bodyMeasurements, workouts, active, exWeights, ...preferences } = state.S
+      const preferencePayload = JSON.stringify(preferences)
+      if (preferencePayload === preferenceFingerprint) return
+      preferenceFingerprint = preferencePayload
+      window.clearTimeout(preferenceTimer)
+      preferenceTimer = window.setTimeout(async () => {
+        const currentState = useStore.getState().S
+        const { routines, week, dayPlan, planMode, bodyweight, bodyMeasurements, workouts, active, exWeights, ...values } = currentState
+        const saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values }).catch(() => null)
+        if (!saved || !current(accountId)) return
+        preferenceRevision = saved.revision
+        useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'preferences', saved), false)
+      }, 350)
+    })
+    const detach = attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['plan', 'history', 'body'] })
+    return () => { window.clearTimeout(timer); window.clearTimeout(bodyTimer); window.clearTimeout(preferenceTimer); unsubscribe(); detach() }
   }, [auth.status, auth.user?.id, ready, appEntered])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
@@ -362,7 +422,6 @@ function Shell() {
     const sync = () => {
       const state = useStore.getState()
       if (state.getActiveLocalScope?.().userId !== auth.user.id) return
-      void state.syncAccount?.(client)
       void flushProfessionalEvents({ client, store: useStore, userId: auth.user.id })
     }
     const timer = window.setTimeout(sync, 900)
