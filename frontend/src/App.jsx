@@ -49,7 +49,6 @@ const loadStats = () => import('./views/Stats.jsx')
 const loadHistory = () => import('./views/History.jsx')
 const loadLibrary = () => import('./views/Library.jsx')
 const loadSettings = () => import('./views/Settings.jsx')
-const loadMore = () => import('./views/More.jsx')
 const loadPersonalData = () => import('./views/PersonalData.jsx')
 const loadBodyProgress = () => import('./views/BodyProgress.jsx')
 const loadProfessionalProfile = () => import('./views/ProfessionalProfile.jsx')
@@ -77,7 +76,6 @@ const Stats = lazy(loadStats)
 const History = lazy(loadHistory)
 const Library = lazy(loadLibrary)
 const Settings = lazy(loadSettings)
-const More = lazy(loadMore)
 const MotionFeedback = lazy(() => import('./views/MotionFeedback.jsx'))
 const PersonalData = lazy(loadPersonalData)
 const BodyProgress = lazy(loadBodyProgress)
@@ -553,7 +551,7 @@ function Shell() {
                 <Route path="/student/professionals/:professionalId" element={<StudentProfessionalDetail />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
-                <Route path="/more" element={<More />} />
+                <Route path="/more" element={<Navigate to="/home" replace />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/support/tickets" element={<SupportTickets />} />
                 <Route path="/support/tickets/new" element={<SupportComposer />} />

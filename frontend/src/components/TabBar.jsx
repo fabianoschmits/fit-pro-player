@@ -1,203 +1,40 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence, LayoutGroup, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { startTabShortLabel } from '../lib/ux.js'
+import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
+import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
+import { createConsoleRepository } from '../lib/console.js'
+import { confirmSheet } from '../sheets.jsx'
 import Icon from './Icon.jsx'
 import { useFppActivation } from './useFppActivation.js'
 
-const TABS = [
-  { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
-  { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
-  { k: 'start', icon: S => S.active ? 'play' : 'dumbbell', action: true, featured: true, label: S => startTabShortLabel(S) },
-  { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
-  { k: 'more', icon: 'more', to: '/more', label: () => t('More') },
+const MAIN = [
+  { k: 'home', icon: 'house', to: '/home', label: () => t('Home') }, { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
+  { k: 'start', icon: s => s.active ? 'play' : 'dumbbell', action: true, label: s => startTabShortLabel(s) }, { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
 ]
+const activeMain = path => { const root = path.split('/')[1] || 'home'; return root === 'body-progress' ? 'stats' : root === 'workout' ? 'start' : MAIN.some(x => x.k === root) ? root : null }
 
-const QUICK = { duration: 0.16, ease: [0.2, 0.8, 0.2, 1] }
-const PILL = { duration: 0.18, ease: [0.2, 0.8, 0.2, 1], layout: QUICK }
-
-function isActive(cur, k) {
-  if (k === 'more') return cur === 'more' || cur === 'history' || cur === 'settings' || cur === 'library'
-  if (k === 'stats') return cur === 'stats' || cur === 'body-progress'
-  if (k === 'start') return cur === 'workout'
-  return cur === k
-}
-
-function TabItem({ featured, active, icon, label, recording, onClick, tabKey, tabRef, reduced }) {
-  const trigger = useFppActivation({ onActivate: onClick })
-  if (featured) {
-    return (
-      <button
-        type="button"
-        ref={tabRef}
-        data-tab-key={tabKey}
-        className={'tab-item tab-item--start fpp-action-trigger' + (active ? ' on' : '') + (recording ? ' rec' : '')}
-        onClick={trigger.run}
-        disabled={trigger.pressed}
-        aria-busy={trigger.pressed || undefined}
-        data-visual-state={trigger.pressed ? 'pressed' : undefined}
-        aria-label={label}
-        aria-current={active ? 'page' : undefined}
-      >
-        <div className="tab-start-wrap">
-          <span className="tab-start-cir">
-            <Icon name={icon} className="tab-icn" />
-          </span>
-        </div>
-        <span className="tab-label">{label}</span>
-      </button>
-    )
-  }
-
-  return (
-    <button
-      type="button"
-      ref={tabRef}
-      data-tab-key={tabKey}
-      className={'tab-item fpp-action-trigger' + (active ? ' on' : '')}
-      onClick={trigger.run}
-      disabled={trigger.pressed}
-      aria-busy={trigger.pressed || undefined}
-      data-visual-state={trigger.pressed ? 'pressed' : undefined}
-      aria-label={label}
-      aria-current={active ? 'page' : undefined}
-    >
-      <div className="tab-icon-slot">
-        <motion.div
-          className="tab-lift"
-          animate={{ y: active ? -4 : 0 }}
-          transition={reduced ? { duration: 0 } : QUICK}
-        >
-          <AnimatePresence>
-            {active && (
-              <motion.span
-                layoutId="active-pill"
-                className="tab-active-pill"
-                initial={reduced ? false : { opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scaleX: 1, scaleY: 1 }}
-                exit={reduced ? undefined : { opacity: 0, scale: 0.96 }}
-                transition={reduced ? { duration: 0 } : PILL}
-              />
-            )}
-          </AnimatePresence>
-          <motion.span
-            className="tab-icn-wrap"
-            animate={{ color: active ? 'var(--acc)' : 'var(--label-3)' }}
-            transition={{ duration: reduced ? 0 : 0.16 }}
-          >
-            <Icon name={icon} className={'tab-icn' + (active ? ' tab-icn--on' : '')} />
-          </motion.span>
-        </motion.div>
-      </div>
-      <span className="tab-label">{label}</span>
-    </button>
-  )
+function MainButton({ item, active, state, onSelect }) {
+  const trigger = useFppActivation({ onActivate: onSelect }); const icon = typeof item.icon === 'function' ? item.icon(state) : item.icon; const label = item.label(state)
+  return <button type="button" data-tab-key={item.k} className={'corner-nav-tab' + (item.action ? ' corner-nav-tab--start' : '') + (active ? ' is-active' : '')} onClick={trigger.run} aria-current={active ? 'page' : undefined}><span className="corner-nav-icon"><Icon name={icon} /></span><span>{label}</span></button>
 }
 
 export default function TabBar({ onStart }) {
-  const nav = useNavigate()
-  const loc = useLocation()
-  const S = useStore(s => s.S)
-  const isGuest = useStore(s => s.isGuest())
-  const authenticated = useAuth().status === 'authenticated'
-  const rowRef = useRef(null)
-  const tabRefs = useRef(new Map())
-  const [dragTab, setDragTab] = useState(null)
-  const reduced = useReducedMotion()
-
-  useEffect(() => {
-    const row = rowRef.current
-    if (!row) return
-    let pointerId = null
-    let moved = false
-    const nearest = x => {
-      let found = null, distance = Infinity
-      for (const [key, el] of tabRefs.current) {
-        const rect = el.getBoundingClientRect()
-        const d = Math.abs(x - (rect.left + rect.width / 2))
-        if (d < distance) { distance = d; found = key }
-      }
-      return found
-    }
-    const down = event => {
-      if (event.pointerType === 'mouse' && event.button !== 0) return
-      if (!event.target.closest('.tab-item')) return
-      pointerId = event.pointerId; row._startX = event.clientX; moved = false
-    }
-    const move = event => {
-      if (pointerId !== event.pointerId) return
-      if (!moved && Math.abs(event.clientX - row._startX) < 8) return
-      moved = true
-      row._startX ??= event.clientX
-      if (!row.hasPointerCapture(event.pointerId)) row.setPointerCapture(event.pointerId)
-      event.preventDefault()
-      setDragTab(nearest(event.clientX))
-    }
-    const end = event => {
-      if (pointerId !== event.pointerId) return
-      const target = moved ? nearest(event.clientX) : null
-      pointerId = null; row._startX = null
-      if (row.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId)
-      if (target) row.querySelector(`[data-tab-key="${target}"]`)?.click()
-      setDragTab(null)
-    }
-    row.addEventListener('pointerdown', down)
-    row.addEventListener('pointermove', move, { passive: false })
-    row.addEventListener('pointerup', end)
-    row.addEventListener('pointercancel', end)
-    return () => { row.removeEventListener('pointerdown', down); row.removeEventListener('pointermove', move); row.removeEventListener('pointerup', end); row.removeEventListener('pointercancel', end) }
-  }, [])
-
-  const cur = loc.pathname === '/tests/home-glass' ? 'home' : loc.pathname.split('/')[1] || 'home'
-
-  if (!(authenticated || isGuest) || !S.onboardingDone) return null
-
-  const startWorkout = () => {
-    if (S.active) { nav('/workout'); return }
-    if (!S.routines.length) { nav('/plan'); return }
-    const r = effectiveRoutine(S, todayISO())
-    if (r && r.ex.length) { onStart(r.id); return }
-    nav('/workout')
-  }
-
-  const onTab = tab => {
-    if (tab.action) startWorkout()
-    else nav(tab.to)
-  }
-
-  return (
-    <div id="tabbar">
-      <nav className="tabbar-nav" aria-label={t('Main navigation')}>
-        <div className="tabbar-bg" aria-hidden="true" />
-        <LayoutGroup>
-          <div ref={rowRef} className="tabbar-row tabbar-row-draggable">
-            {TABS.map(tab => {
-              const active = dragTab ? dragTab === tab.k : isActive(cur, tab.k)
-              const icon = typeof tab.icon === 'function' ? tab.icon(S) : tab.icon
-              const label = tab.label(S)
-              return (
-                <TabItem
-                key={tab.k}
-                tabKey={tab.k}
-                  tabRef={element => { if (element) tabRefs.current.set(tab.k, element); else tabRefs.current.delete(tab.k) }}
-                  featured={!!tab.featured}
-                  active={active}
-                  icon={icon}
-                  label={label}
-                  recording={tab.k === 'start' && !!S.active}
-                  onClick={() => onTab(tab)}
-                  reduced={reduced}
-                />
-              )
-            })}
-          </div>
-        </LayoutGroup>
-      </nav>
-    </div>
-  )
+  const nav = useNavigate(), loc = useLocation(), S = useStore(s => s.S), isGuest = useStore(s => s.isGuest()), auth = useAuth(), account = auth.status === 'authenticated' ? auth.user : null
+  const [open, setOpen] = useState(true), [moreOpen, setMoreOpen] = useState(false), [professional, setProfessional] = useState(false), [consoleAccess, setConsoleAccess] = useState(false)
+  const rootRef = useRef(null), moreTrigger = useRef(null), firstMore = useRef(null)
+  useEffect(() => { let alive = true; if (!account?.id) return () => { alive = false }; const client = getBrowserSupabaseClient(); createProfessionalWorkflowRepository({ client }).professionalRole(account.id).then(v => alive && setProfessional(v)).catch(() => {}); createConsoleRepository({ client }).adminRole(account.id).then(v => alive && setConsoleAccess(v)).catch(() => {}); return () => { alive = false } }, [account?.id])
+  useEffect(() => { if (!moreOpen) return; firstMore.current?.focus(); const close = e => { if (e.key === 'Escape') { setMoreOpen(false); moreTrigger.current?.focus() } else if (e.type === 'pointerdown' && rootRef.current && !rootRef.current.contains(e.target)) setMoreOpen(false) }; document.addEventListener('keydown', close); document.addEventListener('pointerdown', close); return () => { document.removeEventListener('keydown', close); document.removeEventListener('pointerdown', close) } }, [moreOpen])
+  if (!((auth.status === 'authenticated' || isGuest) && S.onboardingDone)) return null
+  const start = () => { if (S.active) return nav('/workout'); if (!S.routines.length) return nav('/plan'); const routine = effectiveRoutine(S, todayISO()); if (routine?.ex.length) return onStart(routine.id); nav('/workout') }
+  const go = to => { setMoreOpen(false); nav(to) }
+  const signOut = () => confirmSheet({ title: 'Sair da conta?', message: 'Sua sessão será encerrada neste dispositivo.', confirmText: 'Sair', danger: true, onConfirm: async () => { const result = await auth.signOut(); if (result?.kind && result.kind !== 'success') throw new Error('sign_out_failed'); nav('/'); return true } })
+  const groups = [['Geral', [{ icon: 'person', title: 'Dados pessoais', sub: 'Seus dados e informações', to: '/personal-data' }, { icon: 'gear', title: t('Settings'), sub: t('Language, units, backup & preferences'), to: '/settings' }, ...(consoleAccess ? [{ icon: 'gear', title: 'Central da plataforma', sub: 'Operação da plataforma', to: '/console' }] : [])]], ['Treino', [{ icon: 'list', title: t('Exercises'), sub: 'Catálogo completo', to: '/library' }, { icon: 'history', title: t('History'), sub: t('All your past workouts'), to: '/history' }, { icon: 'chartLine', title: 'Evolução corporal', sub: 'Medidas semanais e evolução do corpo', to: '/body-progress' }]], ...((account || professional) ? [['Profissional', [...(account ? [{ icon: 'personCircle', title: 'Meus profissionais', sub: 'Programas e prescrições', to: '/student/professionals' }] : []), { icon: 'clipboard', title: professional ? 'Área profissional' : 'Tornar-se profissional', sub: professional ? 'Alunos, convites e programas' : t('Create your profile to coach students'), to: professional ? '/professional' : '/professional/profile' }]]] : []), ['Sobre', [{ icon: 'info', title: 'Ajuda e suporte', sub: 'Dúvidas, críticas e sugestões', to: '/support' }, { icon: 'info', title: 'Sobre o Fit Pro Player', sub: 'Informações do aplicativo', to: '/privacy' }, { icon: 'shield', title: 'Termos e privacidade', sub: 'Privacidade, cookies e direitos LGPD', to: '/privacy-settings' }, ...(account ? [{ icon: 'signOut', title: 'Sair da conta', sub: 'Encerrar a sessão neste dispositivo', action: signOut }] : [])]]]
+  const current = activeMain(loc.pathname), currentItem = MAIN.find(x => x.k === current) || MAIN[0]
+  return <div id="tabbar" ref={rootRef} className={'corner-nav' + (open ? ' is-open' : '')}><nav className="corner-nav-rail" aria-label={t('Main navigation')}><div className="corner-nav-pivot">{open && <button type="button" ref={moreTrigger} className="corner-nav-more-trigger" aria-label="Abrir mais opções" aria-expanded={moreOpen} onClick={() => setMoreOpen(v => !v)}><Icon name="chevronUp" /></button>}<button type="button" className="corner-nav-toggle" onClick={() => { setOpen(v => !v); setMoreOpen(false) }}><Icon name={open ? 'xmark' : (typeof currentItem.icon === 'function' ? currentItem.icon(S) : currentItem.icon)} /><span>{open ? 'Fechar' : currentItem.label(S)}</span></button></div>{open && <div className="corner-nav-main">{MAIN.map(item => <MainButton key={item.k} item={item} state={S} active={current === item.k} onSelect={() => item.action ? start() : go(item.to)} />)}</div>}{moreOpen && <div className="corner-nav-more" role="menu">{groups.map(([group, links], groupIndex) => <section key={group}><h2>{group}</h2>{links.map((item, index) => <button ref={groupIndex === 0 && index === 0 ? firstMore : undefined} key={item.title} role="menuitem" type="button" className="corner-nav-more-item" onClick={() => item.action ? item.action() : go(item.to)}><Icon name={item.icon} /><span><strong>{item.title}</strong><small>{item.sub}</small></span></button>)}</section>)}</div>}</nav></div>
 }

@@ -56,15 +56,16 @@ describe('TabBar scroll stability', () => {
 
     const tabbar = container.querySelector('#tabbar')
     const before = tabbar.innerHTML
-    expect(tabbar.className).toBe('')
-    expect(container.querySelectorAll('.tab-label')).toHaveLength(5)
+    expect(tabbar.className).toBe('corner-nav is-open')
+    expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
+    expect(container.querySelector('[aria-label="Abrir mais opções"]')).not.toBeNull()
 
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 500 })
     act(() => window.dispatchEvent(new Event('scroll')))
 
-    expect(tabbar.className).toBe('')
+    expect(tabbar.className).toBe('corner-nav is-open')
     expect(tabbar.innerHTML).toBe(before)
-    expect(container.querySelectorAll('.tab-label')).toHaveLength(5)
+    expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
   })
 
   it('keeps Stats selected inside body progress', () => {
@@ -91,6 +92,6 @@ describe('TabBar scroll stability', () => {
       )
     })
 
-    expect(container.querySelectorAll('.tab-label')).toHaveLength(5)
+    expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
   })
 })
