@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
-import { DAYN, DAYS, uid, sentenceCase } from '../lib/format.js'
+import { DAYN, DAYS, uid, routineId, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { planSetupProgress, smartDefaultConfig } from '../lib/ux.js'
 import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
@@ -129,7 +129,7 @@ export default function RoutineEdit() {
   const duplicateRoutine = () => {
     const copy = {
       ...r,
-      id: uid(),
+      id: routineId(),
       name: `${displayName} 2`,
       ex: r.ex.map(entry => ({ ...entry })),
     }

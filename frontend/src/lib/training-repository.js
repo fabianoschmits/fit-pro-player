@@ -1,5 +1,7 @@
 import {
   parsePlan,
+  parseBodyData,
+  parseCompletedWorkoutRecords,
   parsePreferences,
   parseWorkoutHistory,
   parseWorkoutSession,
@@ -137,15 +139,38 @@ export function createTrainingRepository({ client, accountId }) {
       return parseResponse(parsePlan, { routines, schedule }, accountId)
     },
 
-    loadHistory({ limit = 50 } = {}) {
+    loadPreferences() {
       if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
-      const query = client.from('workout_sessions')
-        .select('*')
-        .eq('user_id', accountId)
-        .eq('status', 'completed')
-        .order('started_at', { ascending: false })
-        .limit(limit)
-      return read(query, parseWorkoutHistory)
+      const query = client.from('account_preferences').select('*').eq('user_id', accountId).maybeSingle()
+      return read(query, parsePreferences)
+    },
+
+    async loadBody() {
+      if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
+      const [weights, measurements] = await Promise.all([
+        read(client.from('bodyweight_entries').select('*').eq('user_id', accountId).order('measured_on', { ascending: true }).limit(1000), value => value),
+        read(client.from('body_measurement_checkins').select('*').eq('user_id', accountId).order('measured_on', { ascending: true }).limit(1000), value => value),
+      ])
+      return parseResponse(parseBodyData, { weights, measurements }, accountId)
+    },
+
+    async loadHistory({ limit = 50 } = {}) {
+      if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
+      const [sessions, operations] = await Promise.all([
+        read(client.from('workout_sessions')
+          .select('*')
+          .eq('user_id', accountId)
+          .eq('status', 'completed')
+          .order('started_at', { ascending: false })
+          .limit(limit), value => value),
+        read(client.from('workout_session_operations')
+          .select('session_id,user_id,kind,payload')
+          .eq('user_id', accountId)
+          .eq('kind', 'session_completed')
+          .order('id', { ascending: false })
+          .limit(limit), value => value),
+      ])
+      return parseResponse(parseCompletedWorkoutRecords, { sessions, operations }, accountId)
     },
 
     savePreferences({ expectedRevision, displayUnit, values }) {

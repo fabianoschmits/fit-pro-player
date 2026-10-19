@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, lastEntryFor, bestWeightFor, buildSets, freestyleConfig, defaultConfig, setsDoneActive, supersetUnits, unitOf, setLabel, modeOf, isBw, isPerSide, sideReps, repStep, EFFORT, effortOf, stepEffort, capEffort, cascadeWeight, insertWarmupRow, removeRowAt, pairAdjacent, unpairSuperset, cleanupSg } from '../lib/history.js'
-import { fmtNum, fmtDate, todayISO, exCount, DAYN, sentenceCase, uid } from '../lib/format.js'
+import { fmtNum, fmtDate, todayISO, exCount, DAYN, sentenceCase, routineId } from '../lib/format.js'
 import { beep, vibrate } from '../lib/sound.js'
 import { t } from '../lib/i18n.js'
 import { setProgressHighWater, supersetFlowStep } from '../lib/supersetFlow.js'
@@ -35,7 +35,7 @@ function StartChooser() {
   const completedToday = todayR ? [...S.workouts].reverse().find(workout => workout.d === today && workout.routineId === todayR.id) : null
   const availableRoutines = S.routines.filter(r => r.ex.length && (restDay || r !== todayR))
   const createTodayPlan = () => {
-    const r = { id: uid(), name: t("Today's plan"), emoji: DEFAULT_GLYPH, ex: [] }
+    const r = { id: routineId(), name: t("Today's plan"), emoji: DEFAULT_GLYPH, ex: [] }
     update(state => {
       state.routines.push(r)
       state.dayPlan[today] = r.id

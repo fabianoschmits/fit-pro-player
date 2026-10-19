@@ -55,4 +55,6 @@ export function weekKey(d) {
 export const localTZ = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { return 'UTC' } }
 
 export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7)
+export const routineId = () => globalThis.crypto?.randomUUID?.()
+  || '00000000-0000-4000-8000-000000000000'.replace(/[018]/g, digit => (Number(digit) ^ Math.floor(Math.random() * 16) & 15 >> Number(digit) / 4).toString(16))
 export const ACCENTS = { lime: '#0F8B8D', sky: '#0a84ff', orange: '#ff9f0a', violet: '#bf5af2', pink: '#ff375f', red: '#ff453a', teal: '#40c8e0', gold: '#ffd60a', caramel: '#c5802e' }

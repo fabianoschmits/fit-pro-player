@@ -36,4 +36,27 @@ describe('training DTOs', () => {
     expect(parseWorkoutHistory([row({ status: 'completed', completed_at: '2026-10-19T11:00:00Z' })], 'account-1')).toMatchObject([{ id: 'session-1', status: 'completed' }])
     expect(() => parsePreferences({ user_id: 'account-2' }, 'account-1')).toThrow('invalid-account-preferences')
   })
+
+  it('maps body records into the view contract and rejects foreign or malformed values', async () => {
+    const { parseBodyData } = await load()
+    expect(parseBodyData({
+      weights: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80.25, created_at: 'a', updated_at: 'b' }],
+      measurements: [{ id: 'measure-1', user_id: 'account-1', measured_on: '2026-10-19', measurements_cm: { chest: 100.5 }, note: 'after training', created_at: 'a', updated_at: 'b' }],
+    }, 'account-1')).toEqual({
+      weights: [{ id: 'weight-1', accountId: 'account-1', date: '2026-10-19', weightKg: 80.25, createdAt: 'a', updatedAt: 'b' }],
+      measurements: [{ id: 'measure-1', accountId: 'account-1', date: '2026-10-19', valuesCm: { chest: 100.5 }, note: 'after training', createdAt: 'a', updatedAt: 'b' }],
+    })
+    expect(() => parseBodyData({ weights: [{ id: 'weight-1', user_id: 'account-2' }], measurements: [] }, 'account-1')).toThrow('invalid-bodyweight-entry')
+    expect(() => parseBodyData({ weights: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-02-31', weight_kg: 80, created_at: 'a', updated_at: 'b' }], measurements: [] }, 'account-1')).toThrow('invalid-bodyweight-entry')
+    expect(() => parseBodyData({ weights: [], measurements: [{ id: 'measure-1', user_id: 'account-1', measured_on: 'x', measurements_cm: [] }] }, 'account-1')).toThrow('invalid-body-measurement-checkin')
+  })
+
+  it('pairs completed sessions with their immutable completion payload', async () => {
+    const { parseCompletedWorkoutRecords } = await load()
+    expect(parseCompletedWorkoutRecords({
+      sessions: [row({ status: 'completed', completed_at: '2026-10-19T11:00:00Z' })],
+      operations: [{ session_id: 'session-1', user_id: 'account-1', kind: 'session_completed', payload: { workout: { id: 'session-1', entries: [] } } }],
+    }, 'account-1')).toEqual([{ session: expect.objectContaining({ id: 'session-1', status: 'completed' }), workout: { id: 'session-1', entries: [] } }])
+    expect(() => parseCompletedWorkoutRecords({ sessions: [row({ status: 'completed' })], operations: [{ session_id: 'session-1', user_id: 'account-2', kind: 'session_completed', payload: {} }] }, 'account-1')).toThrow('invalid-workout-operation')
+  })
 })

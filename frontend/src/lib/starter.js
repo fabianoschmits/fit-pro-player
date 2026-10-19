@@ -1,5 +1,5 @@
 // The ready-made routines shared by onboarding, Settings and the demo build.
-import { uid } from './format.js'
+import { routineId } from './format.js'
 import { t } from './i18n-core.js'
 import { suggestedWeightFor } from './history.js'
 
@@ -33,7 +33,7 @@ const signatureIndex = routine => {
 // Fresh routine objects (new ids).
 export const starterRoutines = st =>
   SPEC.map(([name, emoji, list]) => ({
-    id: uid(), name: t(name), starterKey: name, emoji,
+    id: routineId(), name: t(name), starterKey: name, emoji,
     ex: list.map(([id, sets, reps]) => ({ id, sets, reps, weight: suggestedWeightFor(st, id) }))
   }))
 

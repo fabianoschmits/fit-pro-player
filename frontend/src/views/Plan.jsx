@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
-import { DAYN, DAYS, uid, exCount, fmtDate, todayISO } from '../lib/format.js'
+import { DAYN, DAYS, routineId, exCount, fmtDate, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { effectiveRoutine, effectiveRoutineId } from '../lib/history.js'
 import { EXPERIENCE_LABELS, PROFILE_GOAL_LABELS } from '../lib/profile.js'
@@ -33,7 +33,7 @@ export default function Plan() {
 
   const addRoutine = () => {
     const suffix = String.fromCharCode(65 + Math.min(S.routines.length, 25))
-    const r = { id: uid(), name: `${t('Routine')} ${suffix}`, emoji: DEFAULT_GLYPH, ex: [] }
+    const r = { id: routineId(), name: `${t('Routine')} ${suffix}`, emoji: DEFAULT_GLYPH, ex: [] }
     update(state => { state.routines.push(r) })
     nav('/plan/r/' + r.id)
   }

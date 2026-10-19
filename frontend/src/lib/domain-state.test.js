@@ -1,0 +1,21 @@
+import { describe, expect, it } from 'vitest'
+import { applyDomainState } from './domain-state.js'
+
+describe('domain state projection', () => {
+  it('keeps each domain boundary narrow when applying server data to the UI state', () => {
+    const state = { lang: 'en', routines: [{ id: 'old' }], week: { 1: 'old' }, dayPlan: {}, workouts: [{ id: 'old' }], bodyweight: [], bodyMeasurements: [], displayUnit: 'kg' }
+    const preferences = applyDomainState(state, 'preferences', { displayUnit: 'lb', massUnit: 'kg', values: { lang: 'pt', theme: 'light' } })
+    expect(preferences).toMatchObject({ lang: 'pt', theme: 'light', displayUnit: 'lb', routines: [{ id: 'old' }] })
+
+    const plan = applyDomainState(preferences, 'plan', { routines: [{ id: 'routine-1', title: 'Push', prescription: { emoji: 'fire', ex: [] } }], schedule: { mode: 'weekly', values: { week: { 1: 'routine-1' }, dayPlan: {} } } })
+    expect(plan).toMatchObject({ routines: [{ id: 'routine-1', name: 'Push', emoji: 'fire' }], week: { 1: 'routine-1' }, workouts: [{ id: 'old' }] })
+
+    const body = applyDomainState(plan, 'body', { weights: [{ id: 'weight-1', date: '2026-10-19', weightKg: 80, updatedAt: '2026-10-19T10:00:00Z' }], measurements: [{ id: 'checkin-1', date: '2026-10-19', valuesCm: { chest: 100 }, note: 'morning', createdAt: '2026-10-19T09:00:00Z', updatedAt: '2026-10-19T10:00:00Z' }] })
+    expect(body).toMatchObject({ bodyweight: [{ id: 'weight-1', d: '2026-10-19', w: 80 }], bodyMeasurements: [{ id: 'checkin-1', values: { chest: 100 }, notes: 'morning' }] })
+  })
+
+  it('uses only completion payloads for history and never invents a workout from session metadata', () => {
+    const result = applyDomainState({ workouts: [{ id: 'old' }] }, 'history', [{ session: { id: 'a' }, workout: null }, { session: { id: 'b' }, workout: { id: 'b', entries: [] } }])
+    expect(result.workouts).toEqual([{ id: 'b', entries: [] }])
+  })
+})
