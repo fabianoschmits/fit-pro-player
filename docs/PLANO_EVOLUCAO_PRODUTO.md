@@ -20,8 +20,8 @@ A inspeção foi de código, rotas e documentação. Não representa auditoria v
 - O adaptador profissional já oferece resumo do painel, paginação de alunos/programas/execuções, duplicação de programas e notas privadas. Telas inspecionadas ainda usam consultas antigas em parte desses fluxos. Reaproveitar após validar contratos e permissões.
 - Offline envolve snapshots da conta, cache de rotas/mídias, dados locais de convidado, espelho nativo e fila de eventos. Remover apenas o botão de download não remove essa arquitetura.
 - O service worker também atende notificações e atualização do aplicativo; removê-lo integralmente teria efeitos além do offline.
-- Correções de histórico vazio, altura com vírgula e inclusão de exercício estão no diretório de trabalho. Os testes anteriores não substituem nova validação do conjunto final.
-- Kg/lb e concorrência entre abas foram especificados, mas não implementados. As quinze mensagens adicionais de localização também permanecem como pendência conhecida.
+- Correções de histórico vazio, altura com vírgula e inclusão de exercício foram consolidadas e verificadas na Etapa 0.
+- Kg/lb e concorrência entre abas foram especificados, mas ainda não implementados. As quinze mensagens adicionais de localização foram concluídas na Etapa 0.
 
 O contrato de integridade foi esclarecido: `displayUnit` é a preferência de exibição, `massUnit: 'kg'` identifica a representação canônica e `stateSchemaVersion` identifica o formato persistido. Nunca reconverter um estado canônico só porque a exibição está em lb. Como os dados atuais são de teste, estados legados sem esses marcadores podem ser reiniciados em vez de sofrer conversão heurística.
 
@@ -167,6 +167,16 @@ Domínios propostos: perfil/preferências; planos e versões; atribuições; ses
 | 4 — Experiência profissional | Consultas existentes integradas, alunos, notas, editor, versões, prévia e atribuição | 2; validar integração com 3 | Convidar → aceitar → publicar → atribuir → executar → acompanhar completo |
 | 5 — Acompanhamento | Metas, feedback, check-ins, avisos, comparação e substituições | 3 e 4 | Aluno envia informação e profissional consegue agir sobre ela |
 | 6 — Consolidação | Relatório, acessibilidade, desempenho, observabilidade, documentação e homologação | 5 | Critérios de lançamento satisfeitos e operação preparada |
+
+### Registro da Etapa 0 — concluída em 19/10/2026
+
+- Regressões: 23 testes focados passaram; o cenário Playwright do editor profissional passou em desktop e mobile.
+- Localização: 11 idiomas com 1502 chaves cada, 1007 textos de interface cobertos e pt-BR completo.
+- Frontend: 140 arquivos e 1162 testes passaram.
+- Build: concluído em 6,66 s. Permanecem dois avisos não fatais de imports dinâmicos ineficazes para `@capacitor/core` e `sheets.jsx`; eles serão tratados na etapa de desempenho, se continuarem relevantes após a reorganização.
+- Supabase: 30 verificações passaram, 3 foram ignoradas e nenhuma falhou. As três ignoradas exigem binários PostgreSQL descartáveis (`PG_BIN`); portanto, as asserções SQL reais ainda precisam ser executadas em homologação/local preparado.
+- Integridade textual: `git diff --check` sem erros.
+- Próxima entrega: Etapa 1 — mapa de navegação, contratos de sessão/vínculo e protótipos mobile/desktop.
 
 Etapas 3 e 4 podem ser divididas em entregas menores; a integração de ponta a ponta é obrigatória antes de chamá-las concluídas. Não abrir vários módulos incompletos ao mesmo tempo.
 

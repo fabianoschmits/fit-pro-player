@@ -41,11 +41,11 @@
 - Consumes: `heightCmFromText(value)` from `frontend/src/lib/profile.js` and immediate button activation from `FppPerformanceButton`.
 - Produces: safe empty history, locale-aware height persistence, and synchronous exercise selection.
 
-- [ ] Verify the focused tests fail against the original behavior or retain the existing RED evidence in the task ledger.
-- [ ] Review the current diff for scope and correctness.
-- [ ] Run `npm --prefix frontend test -- src/views/PersonalData.test.jsx src/views/History.test.jsx src/components/ProfessionalProgramEditor.test.jsx` and expect all tests to pass.
-- [ ] Run the focused Playwright professional editor scenario and expect it to pass.
-- [ ] Commit only the five regression files with message `fix: stabilize core editing flows`.
+- [x] Verify the focused tests fail against the original behavior or retain the existing RED evidence in the task ledger.
+- [x] Review the current diff for scope and correctness.
+- [x] Run `npm --prefix frontend test -- src/views/PersonalData.test.jsx src/views/History.test.jsx src/components/ProfessionalProgramEditor.test.jsx` and expect all tests to pass.
+- [x] Run the focused Playwright professional editor scenario and expect it to pass.
+- [x] Commit only the five regression files with message `fix: stabilize core editing flows`.
 
 ### Task 2: Complete localization coverage
 
@@ -62,12 +62,12 @@
 - Consumes: `t(source, ...args)` with canonical source-language keys.
 - Produces: exact locale-key parity and no source string missing from every locale.
 
-- [ ] Preserve the current failing `check:i18n` output as RED evidence: fifteen source strings missing.
-- [ ] Replace Portuguese-only lookup keys with concise canonical English keys in the four source components.
-- [ ] Add those keys and accurate values to every locale, preserving `{0}` where present.
-- [ ] Run `npm --prefix frontend run check:i18n` and expect all three localization checks to pass.
-- [ ] Run the RoutineEdit, Workout, BodyMap, and ErrorBoundary component tests and expect them to pass.
-- [ ] Commit source and locale files with message `fix: complete localized interface copy`.
+- [x] Preserve the current failing `check:i18n` output as RED evidence: fifteen source strings missing.
+- [x] Replace Portuguese-only lookup keys with concise canonical English keys in the four source components.
+- [x] Add those keys and accurate values to every locale, preserving `{0}` where present.
+- [x] Run `npm --prefix frontend run check:i18n` and expect all three localization checks to pass.
+- [x] Run the RoutineEdit, Workout, BodyMap, and ErrorBoundary component tests and expect them to pass.
+- [x] Commit source and locale files with message `fix: complete localized interface copy`.
 
 ### Task 3: Correct the canonical-unit specification
 
@@ -78,11 +78,11 @@
 **Interfaces:**
 - Produces: the Stage 2 contract `massUnit: 'kg'`, `displayUnit: 'kg' | 'lb'`, and an explicit schema version for one-time normalization.
 
-- [ ] Replace the ambiguous use of `S.unit` as both stored unit and display preference.
-- [ ] Specify that canonical values are never converted because the display preference changes.
-- [ ] Specify that test data may be reset instead of heuristically migrated.
-- [ ] Run `rg -n "S\.unit.*intern|unit.*origem|reconvert|displayUnit|massUnit" docs/PLANO_EVOLUCAO_PRODUTO.md docs/superpowers/specs/2026-10-19-data-integrity-and-localization-design.md` and inspect all matches for consistency.
-- [ ] Commit both documents with message `docs: clarify canonical unit contract`.
+- [x] Replace the ambiguous use of `S.unit` as both stored unit and display preference.
+- [x] Specify that canonical values are never converted because the display preference changes.
+- [x] Specify that test data may be reset instead of heuristically migrated.
+- [x] Run `rg -n "S\.unit.*intern|unit.*origem|reconvert|displayUnit|massUnit" docs/PLANO_EVOLUCAO_PRODUTO.md docs/superpowers/specs/2026-10-19-data-integrity-and-localization-design.md` and inspect all matches for consistency.
+- [x] Commit both documents with message `docs: clarify canonical unit contract`.
 
 ### Task 4: Verify and close Stage 0
 
@@ -93,9 +93,9 @@
 - Consumes: Tasks 1–3.
 - Produces: recorded Stage 0 evidence and a clean starting point for the Stage 1 UX specification.
 
-- [ ] Run `npm --prefix frontend test` and expect the complete Vitest suite to pass.
-- [ ] Run `npm --prefix frontend run build` and expect a successful build; record non-fatal warnings.
-- [ ] Run `npm run check:supabase` and record pass, fail, and skipped counts accurately.
-- [ ] Run `git diff --check` and expect no whitespace errors.
-- [ ] Update the roadmap Stage 0 section with commands, results, and remaining external validation.
+- [x] Run `npm --prefix frontend test` and expect the complete Vitest suite to pass.
+- [x] Run `npm --prefix frontend run build` and expect a successful build; record non-fatal warnings.
+- [x] Run `npm run check:supabase` and record pass, fail, and skipped counts accurately.
+- [x] Run `git diff --check` and expect no whitespace errors.
+- [x] Update the roadmap Stage 0 section with commands, results, and remaining external validation.
 - [ ] Commit the verification record with message `docs: record stage zero verification`.
