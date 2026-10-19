@@ -1233,5 +1233,15 @@ export default {
   "Choose a workout for today or do a freestyle workout.": "Выберите тренировку на сегодня или проведите свободную тренировку.",
   "Choose a workout for today": "Выберите тренировку на сегодня",
   "Could not load the body diagram.": "Не удалось загрузить схему тела.",
-  "This cannot be undone.": "Это действие нельзя отменить."
+  "This cannot be undone.": "Это действие нельзя отменить.",
+  "Your previous workout is waiting to be sent. Try again when it is saved.": "Предыдущая тренировка ожидает отправки. Повторите попытку после её сохранения.",
+  "Waiting to send": "Ожидание отправки",
+  "This workout is open on another device.": "Эта тренировка открыта на другом устройстве.",
+  "Sign in again to send this workout.": "Войдите снова, чтобы отправить эту тренировку.",
+  "This workout could not be sent.": "Не удалось отправить эту тренировку.",
+  "This workout is open on another device. Continue it here to send your changes.": "Эта тренировка открыта на другом устройстве. Продолжите здесь, чтобы отправить изменения.",
+  "This workout could not be sent. Your changes remain on this device.": "Не удалось отправить эту тренировку. Изменения остаются на этом устройстве.",
+  "Workout waiting to send. It will retry when the connection returns.": "Тренировка ожидает отправки. Попытка повторится после восстановления соединения.",
+  "Saving workout…": "Сохранение тренировки…",
+  "Continue here": "Продолжить здесь"
 }

@@ -94,17 +94,20 @@
 - Modify: `frontend/src/sheets.jsx`
 - Modify: `frontend/src/store/useStore.js`
 - Modify: `frontend/src/components/AppStatus.jsx`
+- Modify: `frontend/src/App.jsx`
+- Modify: `frontend/src/lib/training-repository.js`
+- Modify: `supabase/migrations/202610190001_domain_training_state.sql`
 
 **Interfaces:**
 - Consumes: Task 2 repository and Task 3 canonical mass helpers.
 - Produces: account-scoped recovery draft, queued operation state, takeover flow, and saving status.
 
-- [ ] Write failing tests for account isolation, replay, lost completion response, expired authentication, stale writer token, and corrupt drafts.
-- [ ] Persist the minimal draft before dispatching each operation and remove confirmed operations only after the RPC response.
-- [ ] Add recovery/takeover UI and inline `Saving`, `Saved`, `Waiting to send`, and failure states.
-- [ ] Prevent a completed-but-pending session from being started again.
-- [ ] Run focused component/repository tests and full suite.
-- [ ] Commit with message `feat: recover interrupted workout sessions`.
+- [x] Write failing tests for account isolation, replay, lost completion response, expired authentication, stale writer token, and corrupt drafts.
+- [x] Persist the minimal draft before dispatching each operation and remove confirmed operations only after the RPC response.
+- [x] Add recovery/takeover UI and inline `Saving`, `Saved`, `Waiting to send`, and failure states.
+- [x] Prevent a completed-but-pending session from being started again.
+- [x] Run focused component/repository tests and full suite. Focused: 60 tests; full frontend: 1,196 tests; Supabase: 31 pass and 3 environment skips; 11 locale packs synchronized; production build passed.
+- [x] Commit with message `feat: recover interrupted workout sessions`.
 
 ### Task 5: Switch account data reads to domain records
 

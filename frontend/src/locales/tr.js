@@ -1233,5 +1233,15 @@ export default {
   "Choose a workout for today or do a freestyle workout.": "Bugün için bir antrenman seçin veya serbest antrenman yapın.",
   "Choose a workout for today": "Bugün için bir antrenman seçin",
   "Could not load the body diagram.": "Vücut şeması yüklenemedi.",
-  "This cannot be undone.": "Bu işlem geri alınamaz."
+  "This cannot be undone.": "Bu işlem geri alınamaz.",
+  "Your previous workout is waiting to be sent. Try again when it is saved.": "Önceki antrenmanın gönderilmeyi bekliyor. Kaydedildiğinde tekrar dene.",
+  "Waiting to send": "Gönderilmeyi bekliyor",
+  "This workout is open on another device.": "Bu antrenman başka bir cihazda açık.",
+  "Sign in again to send this workout.": "Bu antrenmanı göndermek için tekrar giriş yap.",
+  "This workout could not be sent.": "Bu antrenman gönderilemedi.",
+  "This workout is open on another device. Continue it here to send your changes.": "Bu antrenman başka bir cihazda açık. Değişikliklerini göndermek için burada devam et.",
+  "This workout could not be sent. Your changes remain on this device.": "Bu antrenman gönderilemedi. Değişikliklerin bu cihazda kalır.",
+  "Workout waiting to send. It will retry when the connection returns.": "Antrenman gönderilmeyi bekliyor. Bağlantı geri geldiğinde tekrar denenecek.",
+  "Saving workout…": "Antrenman kaydediliyor…",
+  "Continue here": "Burada devam et"
 }

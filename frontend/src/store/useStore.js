@@ -12,6 +12,7 @@ import { createAccountSyncService, readSyncConflict, writeSyncConflict, clearSyn
 import { recordDiagnostic } from '../lib/diagnostics.js'
 import { DEFAULT_NOTIFICATION_PREFERENCES, normalizeNotificationPreferences } from '../lib/notification-preferences.js'
 import { MASS_UNIT, STATE_SCHEMA_VERSION } from '../lib/mass.js'
+import { createSessionRecovery, hasPendingSessionFinalization } from '../lib/session-recovery.js'
 
 export const DEF = {
   displayUnit: 'kg', massUnit: MASS_UNIT, stateSchemaVersion: STATE_SCHEMA_VERSION,
@@ -30,6 +31,7 @@ export const DEF = {
   weighBeforeWorkout: true, onboardingDone: false, simpleMode: true, seenTips: {}, pendingProfessionalEvents: [], professionalProgramDrafts: {}
 }
 const clone = o => JSON.parse(JSON.stringify(o))
+const uuidOrNull = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '')) ? value : null
 
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 
@@ -100,6 +102,8 @@ export const useStore = create((set, get) => {
   let localDirty = false
   let saveTm = null
   let syncRunning = null
+  let sessionRecovery = null
+  let sessionRecoveryAccountId = null
   let nativePending = Promise.resolve(true)
   const scopeToken = () => ({ scope: activeScope, generation: scopeGeneration })
   const isCurrent = token => token.generation === scopeGeneration && token.scope === activeScope
@@ -165,11 +169,21 @@ export const useStore = create((set, get) => {
     ? `fpp_app_entered:${scope.userId}`
     : 'fpp_app_entered:anonymous'
 
+  const ensureSessionRecoveryDraft = () => {
+    if (!sessionRecovery) return false
+    if (sessionRecovery.getDraft()) return true
+    const active = get().S.active
+    if (!active) return false
+    get().startSessionRecovery(active)
+    return !!sessionRecovery.getDraft()
+  }
+
   return {
     S: (() => { const s = loadState(); registerCustom(s.customEx); return s })(),
     ready: false,
     persistence: { state: 'saved', error: null },
     accountSync: { state: 'IDLE', error: null, conflict: null },
+    sessionRecovery: { state: 'idle', pending: 0, error: null },
     getActiveLocalScope: () => activeScope,
     getScopeToken: scopeToken,
     isScopeCurrent: isCurrent,
@@ -180,6 +194,75 @@ export const useStore = create((set, get) => {
     isAssignedProgramReadCurrent: (token, userId) => isCurrent(token) && token.scope.kind === 'account' && token.scope.userId === userId && token.assignmentGeneration === assignedProgramGeneration,
     invalidateAssignedProgramReads(token) {
       if (isCurrent(token)) assignedProgramGeneration++
+    },
+    configureSessionRecovery(repository, accountId) {
+      if (activeScope.kind !== 'account' || activeScope.userId !== accountId) return null
+      if (sessionRecovery && sessionRecoveryAccountId === accountId) return sessionRecovery
+      sessionRecoveryAccountId = accountId
+      sessionRecovery = createSessionRecovery({
+        repository,
+        accountId,
+        onStatus: status => {
+          if (activeScope.kind === 'account' && activeScope.userId === accountId && sessionRecoveryAccountId === accountId) {
+            set({ sessionRecovery: { error: null, ...status } })
+          }
+        },
+      })
+      const draft = sessionRecovery.getDraft()
+      set({ sessionRecovery: draft
+        ? { state: hasPendingSessionFinalization(draft) ? 'waiting' : 'saved', pending: draft.pendingOperations.length, error: null }
+        : { state: 'idle', pending: 0, error: null } })
+      return sessionRecovery
+    },
+    releaseSessionRecovery(accountId) {
+      if (sessionRecoveryAccountId !== accountId) return
+      sessionRecovery = null
+      sessionRecoveryAccountId = null
+      set({ sessionRecovery: { state: 'idle', pending: 0, error: null } })
+    },
+    flushSessionRecovery() {
+      return sessionRecovery?.flush() || Promise.resolve({ state: 'idle', pending: 0 })
+    },
+    hasPendingSessionCompletion() {
+      return hasPendingSessionFinalization(sessionRecovery?.getDraft())
+    },
+    takeOverSessionRecovery() {
+      return sessionRecovery?.takeOver() || Promise.resolve({ state: 'idle', pending: 0 })
+    },
+    startSessionRecovery(active) {
+      if (!sessionRecovery || !active) return Promise.resolve({ state: 'idle', pending: 0 })
+      const prescriptionSnapshot = {
+        name: active.name || '',
+        bodyweightKg: active.bw ?? null,
+        massUnit: MASS_UNIT,
+        exercises: (active.entries || []).map(entry => ({
+          id: entry.id,
+          ...(entry.sg ? { sg: entry.sg } : {}),
+          target: clone(entry.target || {}),
+          plan: entry.plan ? clone(entry.plan) : null,
+        })),
+      }
+      return sessionRecovery.start({
+        sessionId: active.id,
+        prescriptionSnapshot,
+        routineId: uuidOrNull(active.routineId),
+        assignmentId: uuidOrNull(active.assignmentId),
+      })
+    },
+    queueSessionOperation({ kind = 'set_upserted', payload, operationId = crypto.randomUUID() }) {
+      if (!ensureSessionRecoveryDraft()) return Promise.resolve({ state: 'idle', pending: 0 })
+      return sessionRecovery.enqueue({ operationId, kind, payload: { ...clone(payload || {}), massUnit: MASS_UNIT } })
+    },
+    completeSessionRecovery(payload, operationId = crypto.randomUUID()) {
+      if (!ensureSessionRecoveryDraft()) return Promise.resolve({ state: 'idle', pending: 0 })
+      return sessionRecovery.complete({ operationId, kind: 'session_completed', payload: { ...clone(payload || {}), massUnit: MASS_UNIT } })
+    },
+    abandonSessionRecovery(payload, operationId = crypto.randomUUID()) {
+      if (!ensureSessionRecoveryDraft()) return { state: 'idle', pending: 0 }
+      return sessionRecovery.abandon({ operationId, kind: 'session_abandoned', payload: { ...clone(payload || {}), massUnit: MASS_UNIT } })
+    },
+    clearSessionRecovery() {
+      return sessionRecovery?.clear() || { state: 'idle', pending: 0 }
     },
     async flushPersistence() {
       clearTimeout(saveTm); saveTm = null
@@ -196,11 +279,13 @@ export const useStore = create((set, get) => {
       if (MOBILE && saveTm) saveNative(activeScope, get().S, scopeGeneration)
       const generation = ++scopeGeneration
       activeScope = scope
+      sessionRecovery = null
+      sessionRecoveryAccountId = null
       localDirty = readSyncMetadata(scope).dirty
       clearTimeout(saveTm); saveTm = null
       const local = readScopedState(scope, localStorage, DEF)
       const conflict = readSyncConflict(scope)
-      set({ S: normalizeState(local.state), ready: false, persistence: { state: local.status === 'invalid' || local.status === 'error' ? 'error' : 'saved', error: local.status === 'invalid' ? 'invalid-local-cache' : local.status === 'error' ? 'local-read-failed' : null }, accountSync: { state: conflict && !conflict.resolved ? 'CONFLICT' : 'IDLE', error: null, conflict: conflict && !conflict.resolved ? conflict : null } })
+      set({ S: normalizeState(local.state), ready: false, persistence: { state: local.status === 'invalid' || local.status === 'error' ? 'error' : 'saved', error: local.status === 'invalid' ? 'invalid-local-cache' : local.status === 'error' ? 'local-read-failed' : null }, accountSync: { state: conflict && !conflict.resolved ? 'CONFLICT' : 'IDLE', error: null, conflict: conflict && !conflict.resolved ? conflict : null }, sessionRecovery: { state: 'idle', pending: 0, error: null } })
       if (MOBILE) {
         const nativeState = await nativeLoad(scope)
         if (generation !== scopeGeneration || scope !== activeScope) return false

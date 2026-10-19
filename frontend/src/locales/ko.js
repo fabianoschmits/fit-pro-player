@@ -1233,5 +1233,15 @@ export default {
   "Choose a workout for today or do a freestyle workout.": "오늘의 운동을 선택하거나 자유 운동을 하세요.",
   "Choose a workout for today": "오늘의 운동을 선택하세요",
   "Could not load the body diagram.": "신체 도표를 불러오지 못했습니다.",
-  "This cannot be undone.": "이 작업은 되돌릴 수 없습니다."
+  "This cannot be undone.": "이 작업은 되돌릴 수 없습니다.",
+  "Your previous workout is waiting to be sent. Try again when it is saved.": "이전 운동이 전송 대기 중입니다. 저장된 후 다시 시도하세요.",
+  "Waiting to send": "전송 대기 중",
+  "This workout is open on another device.": "이 운동이 다른 기기에서 열려 있습니다.",
+  "Sign in again to send this workout.": "이 운동을 전송하려면 다시 로그인하세요.",
+  "This workout could not be sent.": "이 운동을 전송하지 못했습니다.",
+  "This workout is open on another device. Continue it here to send your changes.": "이 운동이 다른 기기에서 열려 있습니다. 변경 사항을 전송하려면 여기서 계속하세요.",
+  "This workout could not be sent. Your changes remain on this device.": "이 운동을 전송하지 못했습니다. 변경 사항은 이 기기에 남아 있습니다.",
+  "Workout waiting to send. It will retry when the connection returns.": "운동이 전송 대기 중입니다. 연결이 복구되면 다시 시도합니다.",
+  "Saving workout…": "운동 저장 중…",
+  "Continue here": "여기서 계속"
 }

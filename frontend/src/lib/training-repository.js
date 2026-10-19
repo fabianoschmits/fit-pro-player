@@ -29,7 +29,7 @@ function mapError(error) {
   if (code === '40001') {
     return new TrainingRepositoryError('revision-conflict', { code, retryable: true, cause: error })
   }
-  if (code === '42501') return new TrainingRepositoryError('forbidden', { code, cause: error })
+  if (code === '42501' || code === 'PGRST301' || error?.status === 401) return new TrainingRepositoryError('forbidden', { code, cause: error })
   if (code === '55000') return new TrainingRepositoryError('finalized', { code, cause: error })
   if (code === '23505') return new TrainingRepositoryError('active-session', { code, cause: error })
   return new TrainingRepositoryError('request-failed', { code, retryable: false, cause: error })
@@ -106,6 +106,26 @@ export function createTrainingRepository({ client, accountId }) {
         p_operation_id: operationId,
         p_payload: payload,
       }, parseWorkoutSession)
+    },
+
+    abandonSession({ sessionId, writerToken, expectedRevision, operationId, payload = {} }) {
+      return rpc('abandon_workout_session', {
+        p_session_id: sessionId,
+        p_writer_token: writerToken,
+        p_expected_revision: expectedRevision,
+        p_operation_id: operationId,
+        p_payload: payload,
+      }, parseWorkoutSession)
+    },
+
+    loadActiveSession() {
+      if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
+      const query = client.from('workout_sessions')
+        .select('*')
+        .eq('user_id', accountId)
+        .eq('status', 'active')
+        .maybeSingle()
+      return read(query, (value, ownerId) => value === null ? null : parseWorkoutSession(value, ownerId))
     },
 
     async loadPlan() {

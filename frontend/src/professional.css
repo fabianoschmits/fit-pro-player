@@ -19,6 +19,7 @@
 .app-status{margin:0 auto 12px;max-width:var(--content-max);background:var(--surface)}
 .app-status-global{position:fixed;bottom:calc(84px + var(--sab));left:16px;right:16px;z-index:60;box-shadow:var(--card-shadow)}
 .app-status[data-state="error"],.app-status[data-state="conflict"]{border-color:var(--red);color:var(--label)}
+.app-status[data-state="session-error"],.app-status[data-state="session-auth"],.app-status[data-state="session-takeover"]{border-color:var(--red);color:var(--label)}
 .app-status a{color:var(--label);text-decoration:underline}.app-status .status-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);flex:none}
 .app-status-action{margin-left:auto;border:1px solid var(--acc);border-radius:8px;padding:7px 10px;background:var(--acc-soft);color:var(--acc);font:inherit;font-weight:600;cursor:pointer}.app-status-action:disabled{opacity:.65;cursor:wait}
 .offline-controls{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.offline-controls progress{width:100%;accent-color:var(--acc)}
@@ -319,6 +320,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 
 /* ── legacy compat ───────────────────────────────── */
 .app-status-dismiss{margin-left:auto;border:0;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px}
+.workout-save-status{padding:7px 14px 8px;border-top:1px solid var(--sep);color:var(--label-2);font-size:12px;text-align:center}.workout-save-status[data-state="saved"]{color:var(--acc)}.workout-save-status[data-state="failed"],.workout-save-status[data-state="auth-required"],.workout-save-status[data-state="takeover-required"]{color:var(--red)}
 .management-success{margin:0;padding:12px 16px;background:var(--acc-soft);color:var(--label)}
 .management-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .management-button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 14px;border-radius:10px;border:1px solid var(--sep);color:var(--label);background:var(--surface);font-size:14px;font-weight:600;text-decoration:none}

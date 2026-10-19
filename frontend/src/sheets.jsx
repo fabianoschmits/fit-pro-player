@@ -1301,6 +1301,10 @@ function stopWorkoutExecution() {
   ui.stopManualSet()
 }
 export function startFlow(routineId, professionalExecutionId = null) {
+  if (useStore.getState().hasPendingSessionCompletion?.()) {
+    toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+    return false
+  }
   const st = S()
   if (shouldWeighBeforeWorkout(st)) {
     bwSheet({ required: true, onDone: bw => beginWorkout(routineId, bw, professionalExecutionId) })
@@ -1317,6 +1321,10 @@ export function repeatLastWorkout() {
 }
 export function repeatWorkout(workout) {
   if (!workout) return false
+  if (useStore.getState().hasPendingSessionCompletion?.()) {
+    toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+    return false
+  }
   const st = S()
   const begin = () => {
     const current = S()
@@ -1330,7 +1338,18 @@ export function repeatWorkout(workout) {
       message: t('The sets you logged in this session will be lost.'),
       confirmText: t('Repeat {0}', workout.name),
       danger: true,
-      onConfirm: begin,
+      onConfirm: () => {
+        const continueWith = result => {
+        if (!['idle', 'saved'].includes(result?.state)) {
+          toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+          return false
+        }
+        begin()
+        return true
+        }
+        const result = abandonWorkout()
+        return result && typeof result.then === 'function' ? result.then(continueWith) : continueWith(result)
+      },
     })
   } else begin()
   return true
@@ -1352,11 +1371,16 @@ function beginWorkoutFromHistory(workout, bw) {
   stopWorkoutExecution()
   update(state => {
     queueAbandon(state)
-    state.active = { id: uid(), d: todayISO(), start: null, durationMs: 0, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
+    state.active = { id: crypto.randomUUID(), d: todayISO(), start: null, durationMs: 0, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
   })
+  void useStore.getState().startSessionRecovery(S().active)
   nav('/workout')
 }
 export function beginWorkout(routineId, bw, professionalExecutionId = null) {
+  if (useStore.getState().hasPendingSessionCompletion?.()) {
+    toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+    return false
+  }
   const st = S()
   const r = routineId ? st.routines.find(x => x.id === routineId) : null
   // The prescription is applied as the session is built, so you walk up to the bar with the
@@ -1370,10 +1394,11 @@ export function beginWorkout(routineId, bw, professionalExecutionId = null) {
   update(s => {
     queueAbandon(s)
     const executionId = r?.assigned ? (professionalExecutionId || crypto.randomUUID()) : null
-    s.active = { id: uid(), d: todayISO(), start: null, durationMs: 0, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId: executionId,
+    s.active = { id: crypto.randomUUID(), d: todayISO(), start: null, durationMs: 0, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId: executionId,
       ...(r?.assigned ? { assignmentId: r.assignmentId, programVersionId: r.programVersionId, assignedDayKey: r.assignedDayKey, prescribedEntries: structuredClone(r.ex), massUnit: 'kg' } : {}) }
     if (executionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId, assignmentId: r.assignmentId, type: 'start', dayKey: r.assignedDayKey, payload: { source: 'professional-program', workoutId: s.active.id, prescription: s.active.prescribedEntries, massUnit: 'kg' } })
   })
+  void useStore.getState().startSessionRecovery(S().active)
   flushEvents()
   nav('/workout')
 }
@@ -1385,8 +1410,13 @@ function queueAbandon(state) {
 }
 export function abandonWorkout() {
   stopWorkoutExecution()
+  const active = S().active
+  const request = active
+    ? useStore.getState().abandonSessionRecovery({ reason: 'discarded', workoutId: active.id })
+    : { state: 'idle', pending: 0 }
   update(state => { queueAbandon(state); state.active = null })
   flushEvents()
+  return request
 }
 function TopWeight({ entryIdx, close, sheetId }) {
   const st = useStore(s => s.S)
@@ -1419,6 +1449,8 @@ function TopWeight({ entryIdx, close, sheetId }) {
       const cur = s.exWeights[entry.id]
       s.exWeights[entry.id] = { w: Math.max(n, cur ? cur.w : 0), d: todayISO() }
     })
+    const active = S().active
+    if (active) void useStore.getState().queueSessionOperation({ payload: { active } })
   }, () => {
     close()
     if (advance && unitDone) {
@@ -1521,6 +1553,12 @@ function doFinishWorkout() {
     snapshotFor: e => EXIDX[e.id]?.custom ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
   })
   w.vol = workoutVolume(w)
+  void useStore.getState().completeSessionRecovery({
+    workout: w,
+    endedEarly,
+    durationMs: w.durationMs,
+    entries: A.entries,
+  })
   update(s => {
     w.entries.forEach(e => {
       const mx = Math.max(0, ...e.sets.filter(x => x.done && !isWarmupRow(x)).map(x => x.w || 0), e.topW || 0)

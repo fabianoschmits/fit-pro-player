@@ -1233,5 +1233,15 @@ export default {
   "Choose a workout for today or do a freestyle workout.": "Elige un entrenamiento para hoy o haz un entrenamiento libre.",
   "Choose a workout for today": "Elige un entrenamiento para hoy",
   "Could not load the body diagram.": "No se pudo cargar el diagrama corporal.",
-  "This cannot be undone.": "Esta acción no se puede deshacer."
+  "This cannot be undone.": "Esta acción no se puede deshacer.",
+  "Your previous workout is waiting to be sent. Try again when it is saved.": "Tu entrenamiento anterior está pendiente de envío. Inténtalo de nuevo cuando se haya guardado.",
+  "Waiting to send": "Pendiente de envío",
+  "This workout is open on another device.": "Este entrenamiento está abierto en otro dispositivo.",
+  "Sign in again to send this workout.": "Inicia sesión de nuevo para enviar este entrenamiento.",
+  "This workout could not be sent.": "No se pudo enviar este entrenamiento.",
+  "This workout is open on another device. Continue it here to send your changes.": "Este entrenamiento está abierto en otro dispositivo. Continúa aquí para enviar tus cambios.",
+  "This workout could not be sent. Your changes remain on this device.": "No se pudo enviar este entrenamiento. Tus cambios permanecen en este dispositivo.",
+  "Workout waiting to send. It will retry when the connection returns.": "Entrenamiento pendiente de envío. Se volverá a intentar cuando regrese la conexión.",
+  "Saving workout…": "Guardando entrenamiento…",
+  "Continue here": "Continuar aquí"
 }

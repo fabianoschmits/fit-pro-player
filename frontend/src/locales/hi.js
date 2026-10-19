@@ -1233,5 +1233,15 @@ export default {
   "Choose a workout for today or do a freestyle workout.": "आज के लिए वर्कआउट चुनें या फ्रीस्टाइल वर्कआउट करें।",
   "Choose a workout for today": "आज के लिए वर्कआउट चुनें",
   "Could not load the body diagram.": "शरीर का आरेख लोड नहीं हो सका।",
-  "This cannot be undone.": "इसे पूर्ववत नहीं किया जा सकता।"
+  "This cannot be undone.": "इसे पूर्ववत नहीं किया जा सकता।",
+  "Your previous workout is waiting to be sent. Try again when it is saved.": "आपका पिछला वर्कआउट भेजे जाने की प्रतीक्षा में है। सेव होने के बाद फिर प्रयास करें।",
+  "Waiting to send": "भेजे जाने की प्रतीक्षा में",
+  "This workout is open on another device.": "यह वर्कआउट किसी दूसरे डिवाइस पर खुला है।",
+  "Sign in again to send this workout.": "यह वर्कआउट भेजने के लिए फिर से साइन इन करें।",
+  "This workout could not be sent.": "यह वर्कआउट नहीं भेजा जा सका।",
+  "This workout is open on another device. Continue it here to send your changes.": "यह वर्कआउट किसी दूसरे डिवाइस पर खुला है। अपने बदलाव भेजने के लिए इसे यहाँ जारी रखें।",
+  "This workout could not be sent. Your changes remain on this device.": "यह वर्कआउट नहीं भेजा जा सका। आपके बदलाव इस डिवाइस पर सुरक्षित हैं।",
+  "Workout waiting to send. It will retry when the connection returns.": "वर्कआउट भेजे जाने की प्रतीक्षा में है। कनेक्शन लौटने पर फिर प्रयास होगा।",
+  "Saving workout…": "वर्कआउट सेव हो रहा है…",
+  "Continue here": "यहाँ जारी रखें"
 }

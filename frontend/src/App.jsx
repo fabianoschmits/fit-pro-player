@@ -28,6 +28,7 @@ import PrivacyPages from './views/PrivacyPages.jsx'
 import PrivacySettings from './views/PrivacySettings.jsx'
 import PrivacyConsentModal from './components/PrivacyConsentModal.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
+import { createTrainingRepository } from './lib/training-repository.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
 import { startNotificationCoordinator, syncNotificationPreferences, syncNotificationVisibility, reconnectNotifications, refreshNotificationReadiness, hasBackgroundNotifications, useNotificationStatus } from './lib/notification-client.js'
@@ -316,6 +317,21 @@ function Shell() {
       if (current.assignedProgram?.versionId !== version.id || current.assignedProgram?.assignmentId !== latest.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
     }).catch(() => {})
     return () => { disposed = true }
+  }, [auth.status, auth.user?.id, ready, appEntered])
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
+    const client = getBrowserSupabaseClient()
+    if (!client || typeof client.rpc !== 'function') return undefined
+    const accountId = auth.user.id
+    const store = useStore.getState()
+    store.configureSessionRecovery(createTrainingRepository({ client, accountId }), accountId)
+    void store.flushSessionRecovery()
+    const flush = () => { void useStore.getState().flushSessionRecovery() }
+    window.addEventListener('online', flush)
+    return () => {
+      window.removeEventListener('online', flush)
+      useStore.getState().releaseSessionRecovery(accountId)
+    }
   }, [auth.status, auth.user?.id, ready, appEntered])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined

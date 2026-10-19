@@ -1233,5 +1233,15 @@ export default {
   "Choose a workout for today or do a freestyle workout.": "选择今天的训练，或进行自由训练。",
   "Choose a workout for today": "选择今天的训练",
   "Could not load the body diagram.": "无法加载身体图示。",
-  "This cannot be undone.": "此操作无法撤销。"
+  "This cannot be undone.": "此操作无法撤销。",
+  "Your previous workout is waiting to be sent. Try again when it is saved.": "你之前的训练正在等待发送。保存后请重试。",
+  "Waiting to send": "等待发送",
+  "This workout is open on another device.": "此训练已在另一台设备上打开。",
+  "Sign in again to send this workout.": "请重新登录以发送此训练。",
+  "This workout could not be sent.": "无法发送此训练。",
+  "This workout is open on another device. Continue it here to send your changes.": "此训练已在另一台设备上打开。请在此继续，以发送你的更改。",
+  "This workout could not be sent. Your changes remain on this device.": "无法发送此训练。你的更改仍保留在此设备上。",
+  "Workout waiting to send. It will retry when the connection returns.": "训练正在等待发送。连接恢复后将自动重试。",
+  "Saving workout…": "正在保存训练…",
+  "Continue here": "在此继续"
 }

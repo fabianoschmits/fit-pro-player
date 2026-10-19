@@ -332,12 +332,16 @@ export function removeActiveExercise(idx) {
     if (idx < s.active.cur) s.active.cur--
     if (s.active.cur >= s.active.entries.length) s.active.cur = Math.max(0, s.active.entries.length - 1)
   }, true)
+  const active = useStore.getState().S.active
+  const queue = useStore.getState().queueSessionOperation
+  if (active && queue) void queue({ kind: 'exercise_removed', payload: { active } })
 }
 
 function ActiveWorkout() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
+  const recovery = useStore(s => s.sessionRecovery)
   const { startRest, stopRest, work, manualSet, stopManualSet } = useUI()
   const A = S.active
   const units = supersetUnits(A.entries)
@@ -354,9 +358,17 @@ function ActiveWorkout() {
     if (manualSet.sessionId !== `${A.id}:${A.start}` || manualSet.entryIdx !== cur
       || entry?.id !== manualSet.exerciseId || !entry?.sets[manualSet.setIdx] || entry.sets[manualSet.setIdx].done) stopManualSet()
   }, [A.id, A.start, A.entries, cur, manualSet, stopManualSet])
-  const startWorkout = () => update(s => {
-    if (s.active && !s.active.start) { s.active.start = Date.now(); s.active.durationMs = Math.max(0, Number(s.active.durationMs) || 0) }
-  })
+  const queueActive = (kind = 'set_upserted') => {
+    const store = useStore.getState()
+    const active = store.S.active
+    if (active && store.queueSessionOperation) void store.queueSessionOperation({ kind, payload: { active } })
+  }
+  const startWorkout = () => {
+    update(s => {
+      if (s.active && !s.active.start) { s.active.start = Date.now(); s.active.durationMs = Math.max(0, Number(s.active.durationMs) || 0) }
+    })
+    queueActive()
+  }
   // Superset flow: keep the active exercise in view - completing a set scrolls to the
   // next exercise in the group, then back up to the first exercise of the next round.
   const exRefs = useRef({})
@@ -377,18 +389,24 @@ function ActiveWorkout() {
   const done = setsDoneActive(A)
   const completedExercises = A.entries.filter(entry => entry.sets.length && entry.sets.every(set => set.done)).length
   const allExercisesDone = A.entries.length > 0 && completedExercises === A.entries.length
-  const applySuggestedProgression = () => update(s => {
-    if (!s.active?.assignmentId || setsDoneActive(s.active)) return
-    const routine = s.routines.find(item => item.id === s.active.routineId)
-    s.active.entries.forEach(entry => {
-      const plan = nextPrescription(s, { ...entry.target, id: entry.id }, routine)
-      entry.plan = plan
-      entry.sets = applyPrescription(entry.sets, plan)
+  const applySuggestedProgression = () => {
+    update(s => {
+      if (!s.active?.assignmentId || setsDoneActive(s.active)) return
+      const routine = s.routines.find(item => item.id === s.active.routineId)
+      s.active.entries.forEach(entry => {
+        const plan = nextPrescription(s, { ...entry.target, id: entry.id }, routine)
+        entry.plan = plan
+        entry.sets = applyPrescription(entry.sets, plan)
+      })
+      s.active.progressionApplied = true
     })
-    s.active.progressionApplied = true
-  })
+    queueActive()
+  }
 
-  const mutEntry = (idx, fn) => update(s => { fn(s.active.entries[idx]) }, true)
+  const mutEntry = (idx, fn) => {
+    update(s => { fn(s.active.entries[idx]) }, true)
+    queueActive()
+  }
   // Clearing an optional field drops the key rather than storing null, so a set only carries
   // what was actually logged — in the session, in history and in a backup.
   const setField = (idx, i, field, v) => mutEntry(idx, e => {
@@ -420,12 +438,14 @@ function ActiveWorkout() {
     e.sets = insertWarmupRow(e.sets, m, e.target || {})
   })
   const removeSetAt = (idx, i) => reshapeEntry(idx, e => { e.sets = removeRowAt(e.sets, i) })
-  const pairAt = (first, second) => update(s => {
-    s.active.entries = pairAdjacent(s.active.entries, first, second)
-  })
-  const unpairAt = idx => update(s => {
-    s.active.entries = unpairSuperset(s.active.entries, idx)
-  })
+  const pairAt = (first, second) => {
+    update(s => { s.active.entries = pairAdjacent(s.active.entries, first, second) })
+    queueActive()
+  }
+  const unpairAt = idx => {
+    update(s => { s.active.entries = unpairSuperset(s.active.entries, idx) })
+    queueActive()
+  }
   const onPairPrev = !isSuperset && cur > 0 ? () => pairAt(cur - 1, cur) : null
   const onPairNext = !isSuperset && cur < A.entries.length - 1 ? () => pairAt(cur, cur + 1) : null
 
@@ -443,13 +463,16 @@ function ActiveWorkout() {
     const routine = S.routines.find(r => r.id === A.routineId)
     const freestyle = !A.routineId
     const seed = freestyle ? freestyleConfig(S, { id: ex.id, ...defaultConfig(ex.id) }) : null
-    exConfigSheet(ex, null, cfg => update(s => {
-      const full = { ...cfg, id: ex.id }
-      const plan = freestyle ? null : nextPrescription(s, full, s.routines.find(r => r.id === s.active.routineId))
-      const sets = buildSets(s, full, freestyle ? { preferLast: true } : undefined)
-      s.active.entries.push({ id: ex.id, target: { ...cfg }, plan, sets: freestyle ? sets : applyPrescription(sets, plan) })
-      s.active.cur = s.active.entries.length - 1
-    }), null, routine, seed)
+    exConfigSheet(ex, null, cfg => {
+      update(s => {
+        const full = { ...cfg, id: ex.id }
+        const plan = freestyle ? null : nextPrescription(s, full, s.routines.find(r => r.id === s.active.routineId))
+        const sets = buildSets(s, full, freestyle ? { preferLast: true } : undefined)
+        s.active.entries.push({ id: ex.id, target: { ...cfg }, plan, sets: freestyle ? sets : applyPrescription(sets, plan) })
+        s.active.cur = s.active.entries.length - 1
+      })
+      queueActive('exercise_added')
+    }, null, routine, seed)
   })
 
   const openReplacementPicker = idx => exercisePicker(ex => {
@@ -482,6 +505,7 @@ function ActiveWorkout() {
         replaced = true
       })
       if (replaced) useUI.getState().toast(t('Exercise replaced'))
+      if (replaced) queueActive()
     }, null, null, seed, t('Replace'))
   }, { closeOnPick: true, title: t('Replace exercise'), excludeIds: [A.entries[idx]?.id].filter(Boolean) })
 
@@ -628,6 +652,14 @@ function ActiveWorkout() {
         <div className="workout-session-title"><strong>{A.name}</strong><span><Elapsed active={A} /> · {t('{0} sets', done + '/' + total)}</span></div>
       </div>
       <div className="wprog"><i style={{ '--progress': total ? done / total : 0 }} /></div>
+      {recovery && recovery.state !== 'idle' && <div className="workout-save-status" data-state={recovery.state} role="status">
+        {recovery.state === 'saving' ? t('Saving…')
+          : recovery.state === 'saved' ? t('Salvo')
+          : recovery.state === 'waiting' ? t('Waiting to send')
+          : recovery.state === 'takeover-required' ? t('This workout is open on another device.')
+          : recovery.state === 'auth-required' ? t('Sign in again to send this workout.')
+          : t('This workout could not be sent.')}
+      </div>}
       {A.entries.length > 0 && <div className="workout-exercise-rail" aria-label={t('Exercises')}>
         {units.map((indices, index) => {
           const entries = indices.map(entryIndex => A.entries[entryIndex])
