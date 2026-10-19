@@ -178,6 +178,16 @@ Domínios propostos: perfil/preferências; planos e versões; atribuições; ses
 - Integridade textual: `git diff --check` sem erros.
 - Próxima entrega: Etapa 1 — mapa de navegação, contratos de sessão/vínculo e protótipos mobile/desktop.
 
+### Registro da Etapa 1 — especificação concluída em 19/10/2026
+
+- Arquitetura do aluno definida em Início, Plano, Treinar, Evolução e Conta, com rotas canônicas e redirecionamentos para os caminhos atuais.
+- Workspace profissional reduzido a Visão geral, Alunos e Programas; convites e perfil passam a ser ações contextuais.
+- Wireframes de baixa fidelidade documentados para Início, Evolução, Conta e workspace profissional em mobile/desktop.
+- Estados de carregamento, vazio, falha, permissão e conteúdo desatualizado definidos para páginas remotas.
+- Contratos decididos: conta obrigatória para uso real, demo isolada, um programa ativo, múltiplos vínculos, rascunho local limitado à sessão e escopo de dados compartilhados.
+- Especificação: `docs/superpowers/specs/2026-10-19-navigation-and-product-contracts-design.md`.
+- Próxima entrega: Etapa 2 — domínio de dados no servidor, unidade canônica e recuperação da sessão ativa.
+
 Etapas 3 e 4 podem ser divididas em entregas menores; a integração de ponta a ponta é obrigatória antes de chamá-las concluídas. Não abrir vários módulos incompletos ao mesmo tempo.
 
 A etapa 2 é a de maior risco/esforço. Não vale implementar uma plataforma completa de sincronização de snapshots e logo depois descartá-la. Se a versão atual continuar sendo usada enquanto a substituição é construída, aplicar primeiro a correção mínima da revisão por aba. Se estiver restrita a homologação controlada, priorizar diretamente o novo contrato.
