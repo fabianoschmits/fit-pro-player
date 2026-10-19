@@ -323,7 +323,7 @@ function Shell() {
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
     const client = getBrowserSupabaseClient()
-    if (!client) return undefined
+    if (!client || typeof client.rpc !== 'function') return undefined
     const accountId = auth.user.id
     const token = useStore.getState().getScopeToken?.()
     const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
@@ -336,6 +336,12 @@ function Shell() {
     let bodyTimer = null
     let preferenceTimer = null
     const serializePlan = state => JSON.stringify({ mode: state.planMode, week: state.week, dayPlan: state.dayPlan, routines: state.routines })
+    const serializeBody = state => JSON.stringify({ weights: state.bodyweight, measurements: state.bodyMeasurements })
+    const preferenceValues = state => {
+      const { routines, week, dayPlan, planMode, bodyweight, bodyMeasurements, workouts, active, exWeights,
+        assignedProgram, pendingProfessionalEvents, professionalProgramDrafts, _ts, ...values } = state
+      return values
+    }
     const repository = createTrainingRepository({ client, accountId })
     const refresh = createDomainRefresh({
       accountId,
@@ -346,7 +352,11 @@ function Shell() {
         if (domain === 'plan') planRevision = data.schedule?.revision || 0
         if (domain === 'preferences') preferenceRevision = data.revision || 0
         const store = useStore.getState()
-        store.replaceState(applyDomainState(store.S, domain, data), false)
+        const next = applyDomainState(store.S, domain, data)
+        if (domain === 'plan') planFingerprint = serializePlan(next)
+        if (domain === 'body') bodyFingerprint = serializeBody(next)
+        if (domain === 'preferences') preferenceFingerprint = JSON.stringify(preferenceValues(next))
+        store.replaceState(next, false)
       },
     })
     void refresh.boot()
@@ -369,7 +379,7 @@ function Shell() {
           useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'plan', plan), false)
         }, 350)
       }
-      const body = JSON.stringify({ weights: state.S.bodyweight, measurements: state.S.bodyMeasurements })
+      const body = serializeBody(state.S)
       if (body !== bodyFingerprint) {
         bodyFingerprint = body
         window.clearTimeout(bodyTimer)
@@ -383,14 +393,13 @@ function Shell() {
           useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'body', body), false)
         }, 350)
       }
-      const { routines, week, dayPlan, planMode, bodyweight, bodyMeasurements, workouts, active, exWeights, ...preferences } = state.S
-      const preferencePayload = JSON.stringify(preferences)
+      const preferencePayload = JSON.stringify(preferenceValues(state.S))
       if (preferencePayload === preferenceFingerprint) return
       preferenceFingerprint = preferencePayload
       window.clearTimeout(preferenceTimer)
       preferenceTimer = window.setTimeout(async () => {
         const currentState = useStore.getState().S
-        const { routines, week, dayPlan, planMode, bodyweight, bodyMeasurements, workouts, active, exWeights, ...values } = currentState
+        const values = preferenceValues(currentState)
         const saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values }).catch(() => null)
         if (!saved || !current(accountId)) return
         preferenceRevision = saved.revision

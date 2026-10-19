@@ -8,7 +8,6 @@ import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from 
 import { nextStateTimestamp } from '../lib/sync-state.js'
 import { ANONYMOUS_SCOPE, resolveLocalScope } from '../lib/local-state-scope.js'
 import { readScopedState, writeScopedState } from '../lib/account-cache.js'
-import { createAccountSyncService, readSyncConflict, writeSyncConflict, clearSyncConflict, readSyncMetadata, syncMetadataKey, writeSyncMetadata, REMOTE_SYNC_STATE } from '../lib/account-sync.js'
 import { recordDiagnostic } from '../lib/diagnostics.js'
 import { DEFAULT_NOTIFICATION_PREFERENCES, normalizeNotificationPreferences } from '../lib/notification-preferences.js'
 import { MASS_UNIT, STATE_SCHEMA_VERSION } from '../lib/mass.js'
@@ -99,9 +98,7 @@ export const useStore = create((set, get) => {
   let activeScope = ANONYMOUS_SCOPE
   let scopeGeneration = 0
   let assignedProgramGeneration = 0
-  let localDirty = false
   let saveTm = null
-  let syncRunning = null
   let sessionRecovery = null
   let sessionRecoveryAccountId = null
   let nativePending = Promise.resolve(true)
@@ -136,14 +133,9 @@ export const useStore = create((set, get) => {
     const generation = scopeGeneration
     const previousAssignment = get().S?.assignedProgram
     if (['assignmentId', 'versionId', 'programId'].some(key => previousAssignment?.[key] !== S.assignedProgram?.[key])) assignedProgramGeneration++
-    if (dirty) localDirty = true
     if (dirty) S._ts = nextStateTimestamp(get().S?._ts)
     registerCustom(S.customEx)
     let ok = writeScopedState(scope, S, localStorage)
-    if (scope.kind === 'account' && dirty) {
-      const sync = readSyncMetadata(scope, localStorage)
-      ok = writeSyncMetadata(scope, { ...sync, dirty: true }, localStorage) && ok
-    }
     set({ S })
     persistenceResult(ok)
     if (MOBILE) nativePersist(scope, generation)
@@ -182,7 +174,6 @@ export const useStore = create((set, get) => {
     S: (() => { const s = loadState(); registerCustom(s.customEx); return s })(),
     ready: false,
     persistence: { state: 'saved', error: null },
-    accountSync: { state: 'IDLE', error: null, conflict: null },
     sessionRecovery: { state: 'idle', pending: 0, error: null },
     getActiveLocalScope: () => activeScope,
     getScopeToken: scopeToken,
@@ -268,7 +259,6 @@ export const useStore = create((set, get) => {
       clearTimeout(saveTm); saveTm = null
       const token = scopeToken()
       let ok = writeScopedState(activeScope, get().S, localStorage)
-      if (activeScope.kind === 'account' && localDirty) ok = writeSyncMetadata(activeScope, { ...readSyncMetadata(activeScope), dirty: true }) && ok
       if (MOBILE) ok = await saveNative(activeScope, get().S, scopeGeneration) && ok
       if (isCurrent(token)) persistenceResult(ok)
       return ok
@@ -281,23 +271,15 @@ export const useStore = create((set, get) => {
       activeScope = scope
       sessionRecovery = null
       sessionRecoveryAccountId = null
-      localDirty = readSyncMetadata(scope).dirty
       clearTimeout(saveTm); saveTm = null
       const local = readScopedState(scope, localStorage, DEF)
-      const conflict = readSyncConflict(scope)
-      set({ S: normalizeState(local.state), ready: false, persistence: { state: local.status === 'invalid' || local.status === 'error' ? 'error' : 'saved', error: local.status === 'invalid' ? 'invalid-local-cache' : local.status === 'error' ? 'local-read-failed' : null }, accountSync: { state: conflict && !conflict.resolved ? 'CONFLICT' : 'IDLE', error: null, conflict: conflict && !conflict.resolved ? conflict : null }, sessionRecovery: { state: 'idle', pending: 0, error: null } })
+      set({ S: normalizeState(local.state), ready: false, persistence: { state: local.status === 'invalid' || local.status === 'error' ? 'error' : 'saved', error: local.status === 'invalid' ? 'invalid-local-cache' : local.status === 'error' ? 'local-read-failed' : null }, sessionRecovery: { state: 'idle', pending: 0, error: null } })
       if (MOBILE) {
         const nativeState = await nativeLoad(scope)
         if (generation !== scopeGeneration || scope !== activeScope) return false
         if (nativeState && Number(nativeState._ts || 0) > Number(get().S._ts || 0)) {
           set({ S: normalizeState(nativeState) })
           let ok = writeScopedState(scope, get().S, localStorage)
-          if (scope.kind === 'account') {
-            // The native mirror may contain edits whose WebView sync metadata was
-            // evicted. Treat recovery as a local change; never silently replace it.
-            localDirty = true
-            ok = writeSyncMetadata(scope, { revision: readSyncMetadata(scope).revision, dirty: true }) && ok
-          }
           persistenceResult(ok)
         }
       }
@@ -314,87 +296,6 @@ export const useStore = create((set, get) => {
       const next = normalizeState(S)
       next.pendingProfessionalEvents = next.pendingProfessionalEvents.filter(event => activeScope.kind === 'account' && event.accountId === activeScope.userId)
       return persist(next, dirty)
-    },
-
-    async syncAccount(client) {
-      if (activeScope.kind !== 'account') return { state: 'IDLE' }
-      if (syncRunning?.token && isCurrent(syncRunning.token)) return syncRunning.promise
-      const token = scopeToken()
-      const scope = token.scope
-      const service = createAccountSyncService({ client, scope, generation: token.generation, isCurrent: generation => generation === scopeGeneration && scope === activeScope })
-      const publish = result => { if (isCurrent(token)) { if (result.state === 'ERROR') recordDiagnostic('sync-error'); set({ accountSync: { ...get().accountSync, ...result } }) }; return result }
-      const preserveConflict = remote => {
-        const conflict = { local: clone(get().S), remote, baseRevision: readSyncMetadata(scope).revision, createdAt: Date.now(), resolved: false }
-        const ok = remote && writeSyncConflict(scope, conflict)
-        if (!ok) persistenceResult(false, 'conflict-copy-write-failed')
-        return publish({ state: 'CONFLICT', error: ok ? null : 'conflict-copy-write-failed', conflict })
-      }
-      const run = async () => {
-        if (get().accountSync.state === 'CONFLICT') return get().accountSync
-        if (get().persistence.state === 'error' && !(await get().flushPersistence())) return publish({ state: 'ERROR', error: 'local-write-failed' })
-        if (!isCurrent(token)) return { state: 'ERROR', error: 'stale-scope' }
-        publish({ state: 'SYNCING', error: null })
-        const result = await service.sync({ state: get().S })
-        if (!isCurrent(token)) return { state: 'ERROR', error: 'stale-scope' }
-        if (result.state === REMOTE_SYNC_STATE.CONFLICT) return preserveConflict(result.snapshot)
-        if (result.state === REMOTE_SYNC_STATE.REMOTE_AHEAD) {
-          if (readSyncMetadata(scope).dirty) return preserveConflict(result.snapshot)
-          const next = normalizeState(result.snapshot.payload)
-          next.professionalProgramDrafts = get().S.professionalProgramDrafts
-          next.pendingProfessionalEvents = get().S.pendingProfessionalEvents.filter(event => event.accountId === scope.userId)
-          if (!persist(next, false)) return publish({ state: 'ERROR', error: 'local-write-failed' })
-          if (!writeSyncMetadata(scope, { revision: result.snapshot.revision, dirty: false })) persistenceResult(false, 'local-metadata-write-failed')
-          else localDirty = false
-          return publish({ state: 'IN_SYNC', error: null, conflict: null })
-        }
-        if (![REMOTE_SYNC_STATE.REMOTE_ABSENT, REMOTE_SYNC_STATE.LOCAL_AHEAD].includes(result.state)) return publish(result)
-        const anonymous = readScopedState(ANONYMOUS_SCOPE, localStorage, DEF)
-        const adopted = result.state === REMOTE_SYNC_STATE.REMOTE_ABSENT && !hasData(get().S) && anonymous.status === 'valid' && hasData(anonymous.state)
-        if (adopted) get().replaceState(anonymous.state)
-        do {
-          const snapshot = clone(get().S)
-          const uploaded = await service.uploadSnapshot({ state: snapshot, expectedRevision: readSyncMetadata(scope).revision, isUnchanged: () => get().S._ts === snapshot._ts })
-          if (!isCurrent(token)) return { state: 'ERROR', error: 'stale-scope' }
-          if (uploaded.state === REMOTE_SYNC_STATE.CONFLICT) {
-            const latest = await service.fetchRemoteSnapshot()
-            if (!isCurrent(token)) return { state: 'ERROR', error: 'stale-scope' }
-            return latest.snapshot ? preserveConflict(latest.snapshot) : publish({ state: 'CONFLICT', error: latest.error || 'remote-read-failed', conflict: null })
-          }
-          if (uploaded.state !== REMOTE_SYNC_STATE.IN_SYNC) return publish(uploaded)
-        } while (readSyncMetadata(scope).dirty && isCurrent(token))
-        localDirty = false
-        if (adopted) get().clearAnonymousState()
-        return publish({ state: 'IN_SYNC', error: null, conflict: null })
-      }
-      const promise = run().finally(() => { if (syncRunning?.token === token) syncRunning = null })
-      syncRunning = { token, promise }
-      return promise
-    },
-
-    async resolveSyncConflict(choice, client) {
-      const token = scopeToken()
-      const conflict = get().accountSync.conflict
-      if (!conflict?.remote || !['local', 'cloud'].includes(choice)) return false
-      const archive = { ...conflict, local: clone(get().S), resolved: true, resolution: choice }
-      if (!writeSyncConflict(activeScope, archive)) { persistenceResult(false, 'conflict-copy-write-failed'); return false }
-      if (choice === 'cloud') {
-        const next = normalizeState(conflict.remote.payload)
-        next.professionalProgramDrafts = get().S.professionalProgramDrafts
-        next.pendingProfessionalEvents = get().S.pendingProfessionalEvents.filter(event => event.accountId === activeScope.userId)
-        if (!persist(next, false)) return false
-        if (!writeSyncMetadata(activeScope, { revision: conflict.remote.revision, dirty: false })) { persistenceResult(false, 'local-metadata-write-failed'); return false }
-        localDirty = false
-        set({ accountSync: { state: 'IN_SYNC', error: null, conflict: null } })
-        return true
-      }
-      if (!writeSyncMetadata(activeScope, { revision: conflict.remote.revision, dirty: true })) { persistenceResult(false, 'local-metadata-write-failed'); return false }
-      set({ accountSync: { state: 'LOCAL_AHEAD', error: null, conflict: null } })
-      const result = await get().syncAccount(client)
-      return isCurrent(token) && result.state === 'IN_SYNC'
-    },
-    getSyncCopy(kind) {
-      const conflict = get().accountSync.conflict || readSyncConflict(activeScope)
-      return kind === 'cloud' ? conflict?.remote?.payload || null : conflict?.local || get().S
     },
 
     isGuest: () => localStorage.getItem('gym_guest') === '1',
@@ -428,14 +329,10 @@ export const useStore = create((set, get) => {
       empty._ts = nextStateTimestamp(currentScope ? get().S._ts : 0)
       const ok = writeScopedState(scope, empty, localStorage)
       if (!ok) { persistenceResult(false); return false }
-      if (currentScope) localDirty = false
-      const metadataKey = syncMetadataKey(scope)
-      if (metadataKey) localStorage.removeItem(metadataKey)
-      clearSyncConflict(scope)
       localStorage.removeItem(appEntryKey(scope))
       if (scope.kind === 'anonymous') localStorage.removeItem('gym_guest')
       if (scope === activeScope || (scope.kind === activeScope.kind && scope.userId === activeScope.userId)) {
-        set({ S: empty, accountSync: { state: 'IDLE', error: null, conflict: null } })
+        set({ S: empty })
         persistenceResult(ok)
       }
       if (MOBILE) nativePending = nativeClear(scope, empty).then(result => { if (currentScope) persistenceResult(result !== false, 'native-clear-failed'); return result })

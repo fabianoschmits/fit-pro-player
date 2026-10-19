@@ -16,7 +16,7 @@ Eventos de início/conclusão/abandono profissional ficam em uma fila local e us
 
 ## Offline e atualizações
 
-No PWA, abra Configurações e escolha baixar o plano para uso offline enquanto há conexão. O aplicativo prepara rotas e mídias dos exercícios do plano e informa falhas; convites, autenticação e mudanças profissionais exigem conexão. O cache de plano substitui mídias de planos anteriores; o cache de navegação mantém até duas versões e limita imagens de uso ocasional.
+O aplicativo precisa de conexão para carregar e gravar dados da conta. O PWA continua usando cache de arquivos estáticos para iniciar com rapidez, receber atualizações e operar notificações, mas não oferece mais download de plano ou edição offline ampla.
 
 Atualizações do aplicativo aguardam o fim do treino ativo antes de recarregar. O aplicativo nativo embute arquivos e usa também uma cópia no diretório privado. A compilação web móvel é validada no CI; geração de APK/IPA, assinatura e teste em dispositivos reais exigem Android SDK/Xcode e não são substituídos por essa validação.
 
@@ -26,7 +26,7 @@ Configurações permite exportar/limpar um diagnóstico local com categorias de 
 
 ## Testes e limites
 
-`npm test` verifica lógica e componentes; `check:i18n` verifica cobertura/placeholder/português; `test:e2e` usa Chromium desktop/celular com respostas Supabase controladas; `test:e2e:pwa` usa o build real com service worker e recarregamento offline. Os testes SQL exercitam permissões e contratos com usuários autenticados. As respostas controladas do navegador não substituem um teste de aceitação no projeto Supabase de homologação.
+`npm test` verifica lógica e componentes; `check:i18n` verifica cobertura/placeholder/português; `test:e2e` usa Chromium desktop/celular com respostas Supabase controladas; `test:e2e:pwa` usa o build real com service worker, instalação e atualização. Os testes SQL exercitam permissões e contratos com usuários autenticados. As respostas controladas do navegador não substituem um teste de aceitação no projeto Supabase de homologação.
 
 Antes de liberar, teste em homologação convite → aceite → publicação → atribuição → treino → acompanhamento, revogação e exclusão de contas. Confirme também restauração de backup, conflito entre dois dispositivos, armazenamento cheio e execução em Android/iOS reais. Esses passos externos não são executados pelo push Git.
 

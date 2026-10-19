@@ -67,10 +67,10 @@ describe('Settings Supabase logout', () => {
     expect(mocks.toast).toHaveBeenCalled();
   });
 
-  it('routes an authenticated Supabase account through Auth only and keeps the local-data guarantee visible', async () => {
+  it('shows the authenticated account and keeps sign-out in Auth', async () => {
     await renderSettings();
     expect(container.textContent).toContain('ana@example.com');
-    expect(container.textContent).toContain('dados de convidado ficam neste dispositivo')
+    expect(container.textContent).toContain('A conta está atualizada')
     const signOut = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Terminar sessão'));
     await act(async () => signOut.click());
     await act(async () => mocks.confirm.onConfirm());

@@ -11,15 +11,11 @@ beforeEach(async () => {
 })
 
 describe('native recovery lifecycle', () => {
-  it('preserves recovered account edits when WebView sync metadata was evicted', async () => {
+  it('preserves recovered account edits when the WebView storage is older', async () => {
     const userId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
     native.load.mockResolvedValue({ ...DEF, profile: { ...DEF.profile, name: 'recovered edits' }, _ts: 20 })
     await useStore.getState().activateLocalScope(userId)
-    const client={from:()=>({select:()=>({eq:()=>({maybeSingle:async()=>({data:{user_id:userId,revision:4,state_schema_version:1,payload:{...DEF,_ts:10}}})})})}),rpc:vi.fn()}
-    await useStore.getState().syncAccount(client)
     expect(useStore.getState().S.profile.name).toBe('Recovered Edits')
-    expect(useStore.getState().accountSync.state).toBe('CONFLICT')
-    expect(client.rpc).not.toHaveBeenCalled()
   })
   it('flushes a pending mirror before switching account scope', async () => {
     native.load.mockResolvedValue(null)

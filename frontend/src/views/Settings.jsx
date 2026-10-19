@@ -16,7 +16,6 @@ import Icon from '../components/Icon.jsx'
 import { Button, Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
-import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 import NotificationSettings from '../components/NotificationSettings.jsx'
 import PwaInstallGuide from '../components/PwaInstallGuide.jsx'
@@ -33,9 +32,7 @@ export default function Settings() {
   const clearAnonymousState = useStore(s => s.clearAnonymousState)
   const clearLocalScope = useStore(s => s.clearLocalScope)
   const resetDemo = useStore(s => s.resetDemo)
-  const accountSync = useStore(s => s.accountSync) || { state: 'IDLE' }
   const persistence = useStore(s => s.persistence) || { state: 'saved' }
-  const [syncBusy, setSyncBusy] = useState(false)
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
   const importRef = useRef(null)
@@ -49,35 +46,6 @@ export default function Settings() {
     const reader = readerRef.current
     if (reader) { reader.onload = null; reader.onerror = null; reader.onabort = null; if (reader.readyState === 1) reader.abort() }
   }, [])
-
-  const openManualSync = async () => {
-    if (auth.status !== 'authenticated' || !auth.user?.id || syncBusy) return false
-    setSyncBusy(true)
-    try {
-      const result = await useStore.getState().syncAccount(getBrowserSupabaseClient())
-      if (result?.state === 'ERROR') throw new Error(t('Could not finish sync. Your copies were preserved.'))
-      if (['CONFLICT', 'OFFLINE', 'IDLE'].includes(result?.state)) return false
-    }
-    finally { setSyncBusy(false) }
-  }
-  const resolveConflict = choice => confirmSheet({
-    title: choice === 'local' ? t('Use the device copy?') : t('Use the cloud copy?'),
-    message: t('Both copies remain available as backups. The selected copy becomes the account state.'),
-    confirmText: t('Continue'), danger: true,
-    onConfirm: async () => {
-      setSyncBusy(true)
-      try {
-        const ok = await useStore.getState().resolveSyncConflict(choice, getBrowserSupabaseClient())
-        if (!ok) throw new Error(t('Could not finish sync. Your copies were preserved.'))
-        toast(t('Sync updated'), { tone: 'success' })
-      } finally { setSyncBusy(false) }
-    },
-  })
-  const exportConflict = async kind => {
-    const state = useStore.getState().getSyncCopy(kind)
-    if (!state) return false
-    return doExport(state, kind)
-  }
 
   const doExport = async (state = S, suffix = '') => {
     const json = JSON.stringify(state, null, 2)
@@ -130,10 +98,7 @@ export default function Settings() {
         <Row icon="reset" iconTint="var(--blue)" title={t('Reset demo data')} accessory="chevron"
           onClick={() => confirmSheet({ title: t('Reset demo data?'), message: t('Puts the example plan, workouts and weigh-ins back the way they started.'), confirmText: t('Reset'), onConfirm: () => { resetDemo(); nav('/home'); toast(t('Demo data reset')) } })} />
       </> : auth.status === 'authenticated' ? <>
-        <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Guest data stays on this device — export a backup now and then!')} />
-        <Row icon="shuffle" iconTint="var(--blue)" title={t('Account sync')} subtitle={t('Sync automatically or retry now. Conflicts keep both copies.')}>
-          <Button size="sm" onAction={openManualSync} loadingLabel={t('Syncing…')} successLabel={t('Sync updated')}>{t('Sync now')}</Button>
-        </Row>
+        <Row icon="personCircle" iconTint="var(--grey)" title={auth.user?.email || t('Account')} subtitle={t('Account is up to date')} />
         <Row icon="signOut" iconTint="var(--red)" title={t('Sign out')} danger onClick={() => confirmSheet({
           title: t('Sign out?'), message: t('Guest data stays on this device — export a backup now and then!'),
           confirmText: t('Sign out'), danger: true,
@@ -148,21 +113,9 @@ export default function Settings() {
           accessory="chevron" onClick={() => openAuthSheet('entry')} />
       </> : <Row icon="lock" iconTint="var(--grey)" title={t('Guest mode — data lives only in this browser.')} />}
     </Section>
-    {(auth.status === 'authenticated' || persistence.state === 'error') && <Section collapsible defaultOpen={false} title={t('Storage and sync')}>
+    {persistence.state === 'error' && <Section collapsible defaultOpen={false} title={t('Storage and sync')}>
       <div className="lrow" role="status" aria-live="polite" style={{ display: 'block' }}>
         <p>{persistence.state === 'error' ? t('Could not save on this device. Export a backup before closing the app.') : t('Saved on this device')}</p>
-        {auth.status === 'authenticated' && <p>{t(SYNC_LABELS[accountSync.state] || 'Waiting to sync')}</p>}
-        {accountSync.state === 'CONFLICT' && <>
-          <p>{t('Another device changed your account. Choose which copy to use; both remain available for export.')}</p>
-          <div className="btn-row">
-            <button className="btn" disabled={syncBusy || !accountSync.conflict?.remote} onClick={() => resolveConflict('local')}>{t('Use device copy')}</button>
-            <button className="btn" disabled={syncBusy || !accountSync.conflict?.remote} onClick={() => resolveConflict('cloud')}>{t('Use cloud copy')}</button>
-          </div>
-          <div className="btn-row">
-            <Button variant="ghost" onAction={() => exportConflict('local')} successLabel={t('Backup exported')}>{t('Export device copy')}</Button>
-            <Button variant="ghost" disabled={!accountSync.conflict?.remote} onAction={() => exportConflict('cloud')} successLabel={t('Backup exported')}>{t('Export cloud copy')}</Button>
-          </div>
-        </>}
         {persistence.state === 'error' && <button className="btn" onClick={() => useStore.getState().flushPersistence()}>{t('Retry saving')}</button>}
       </div>
     </Section>}
@@ -354,9 +307,3 @@ function effortHelpSheet() {
   </>)
 }
 
-const SYNC_LABELS = {
-  IDLE: 'Waiting to sync', SYNCING: 'Syncing…', IN_SYNC: 'Account is up to date',
-  LOCAL_AHEAD: 'Changes waiting to sync', REMOTE_AHEAD: 'Cloud update available',
-  CONFLICT: 'Choose how to resolve the sync conflict', OFFLINE: 'Offline — changes will sync when connected',
-  ERROR: 'Could not sync. Your device copy is preserved.',
-}
