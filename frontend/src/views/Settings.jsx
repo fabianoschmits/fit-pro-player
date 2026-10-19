@@ -17,7 +17,6 @@ import { Button, Section, Row, SelectRow, Switch, Segmented } from '../component
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
-import OfflineControls from '../components/OfflineControls.jsx'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
 import NotificationSettings from '../components/NotificationSettings.jsx'
 import PwaInstallGuide from '../components/PwaInstallGuide.jsx'
@@ -169,7 +168,6 @@ export default function Settings() {
     </Section>}
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
 
-    <Section collapsible defaultOpen={false} title={t('Offline')}><OfflineControls /></Section>
     {/* ---------- general ---------- */}
     <Section collapsible defaultOpen={false} title={t('General')} footer={t('Weights are stored safely in kilograms and converted for display.')}>
       <SelectRow
