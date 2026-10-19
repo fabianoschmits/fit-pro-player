@@ -9,7 +9,7 @@ import { Button, Segmented, TextField } from '../components/ui.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS, defaultBirthDate, formatPersonName, heightText, normalizeProfile, weightText } from '../lib/profile.js'
+import { EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS, defaultBirthDate, formatPersonName, heightCmFromText, heightText, normalizeProfile, weightText } from '../lib/profile.js'
 import { t } from '../lib/i18n.js'
 
 const localSaveError = () => t('Não foi possível salvar neste dispositivo. Tente novamente.')
@@ -71,7 +71,7 @@ export default function PersonalData() {
       <EditableField name="name" label="Nome" value={formatPersonName(profile.name || '')} summary={formatPersonName(profile.name || '')} onChange={value => commit('name', formatPersonName(value))} inputProps={{ autoComplete: 'name' }} />
       <EditableField name="sex" label="Sexo" value={profile.sex} summary={profile.sex === 'female' ? 'Feminino' : 'Masculino'} onChange={value => commit('sex', value)}>{({ editing, value, setValue }) => <Segmented options={[{ value: 'male', label: 'Masculino' }, { value: 'female', label: 'Feminino' }]} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="birthDate" label="Data de nascimento" value={profile.birthDate || defaultBirthDate()} summary={profile.birthDate || 'Não informado'} onChange={value => commit('birthDate', value)}>{({ editing, value, setValue }) => <DateWheelPicker value={value} max={new Date().toISOString().slice(0, 10)} onChange={setValue} disabled={!editing} />}</EditableField>
-      <MeasuresField height={heightText(profile.heightCm)} weight={weightText(profile.startWeight)} onSave={({ height, weight }) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), heightCm: Number(String(height).replace(',', '.')) * (String(height).includes('.') ? 100 : 1), startWeight: Number(String(weight).replace(',', '.')) } }); confirmPersonalSave(toast) }} />
+      <MeasuresField height={heightText(profile.heightCm)} weight={weightText(profile.startWeight)} onSave={({ height, weight }) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), heightCm: heightCmFromText(height), startWeight: Number(String(weight).replace(',', '.')) } }); confirmPersonalSave(toast) }} />
       <EditableField name="goal" label="Objetivo" value={profile.goal} summary={profile.goal ? t(PROFILE_GOAL_LABELS[profile.goal]) : 'Não informado'} onChange={value => commit('goal', value)}>{({ editing, value, setValue }) => <Segmented options={PROFILE_GOALS.map(goal => ({ value: goal, label: t(PROFILE_GOAL_LABELS[goal]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="experience" label="Experiência" value={profile.experience} summary={profile.experience ? t(EXPERIENCE_LABELS[profile.experience]) : 'Não informado'} onChange={value => commit('experience', value)}>{({ editing, value, setValue }) => <Segmented options={EXPERIENCE_LEVELS.map(level => ({ value: level, label: t(EXPERIENCE_LABELS[level]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
     </div>

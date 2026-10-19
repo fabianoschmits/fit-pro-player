@@ -2,6 +2,7 @@ import { useStore } from '../store/useStore.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
 import AppHeader from '../components/AppHeader.jsx'
+import Icon from '../components/Icon.jsx'
 
 export default function History() {
   const S = useStore(s => s.S)

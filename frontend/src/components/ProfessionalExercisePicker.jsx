@@ -39,7 +39,7 @@ export default function ProfessionalExercisePicker({ exercises, selectedIds, exe
           <Thumb ex={exercise} />
           <div className="professional-picker-name"><strong>{name}</strong><small>{[exercise.tg || exercise.bp, exercise.eq].filter(Boolean).map(value => sentenceCase(t(value))).join(' · ')}</small></div>
           <button type="button" className="professional-picker-preview-button" aria-expanded={open} aria-controls={open ? previewId : undefined} aria-label={t('Ver animação de {0}', name)} onClick={() => setExpanded(open ? null : exercise.id)}><Icon name={open ? 'chevronUp' : 'chevronDown'} /></button>
-          <Button size="sm" variant={selected ? 'plain' : 'tinted'} disabled={selected || exerciseCount >= 50} onClick={() => onAdd(exercise)}>{t(selected ? 'Selecionado' : 'Adicionar')}</Button>
+          <Button size="sm" variant={selected ? 'plain' : 'tinted'} activation="immediate" disabled={selected || exerciseCount >= 50} onClick={() => onAdd(exercise)}>{t(selected ? 'Selecionado' : 'Adicionar')}</Button>
         </div>
         {open && <div id={previewId} className="professional-exercise-animation">{exerciseGuideAsset(exercise) ? <ExerciseGuideAnimation ex={exercise} playing fallback={<p className="muted small">{t('Animação ainda não disponível para este exercício.')}</p>} /> : <p className="muted small">{t('Animação ainda não disponível para este exercício.')}</p>}</div>}
       </article>

@@ -63,6 +63,27 @@ it('keeps the birth date controls disabled until editing is activated', async ()
   expect(container.querySelector('[data-profile-field="birthDate"] .date-wheel-column button').disabled).toBe(false)
 })
 
+it('saves a height entered with a comma in centimeters', async () => {
+  mocks.update.mockImplementation(recipe => {
+    recipe(mocks.state.S)
+    mocks.state.persistence = { state: 'saved' }
+  })
+  await render()
+  const field = container.querySelector('[data-profile-field="measures"]')
+  await act(async () => field.querySelector('.personal-edit').click())
+  const height = field.querySelector('input[inputmode="decimal"]')
+  await act(async () => {
+    const setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+    setValue.call(height, '1,76')
+    height.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(async () => {
+    field.querySelector('.personal-save').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }))
+    await Promise.resolve()
+  })
+  expect(mocks.state.S.profile.heightCm).toBe(176)
+})
+
 it('renders the avatar picker as a horizontal scroller', async () => {
   await render()
   const picker = container.querySelector('.avatar-picker-grid')
