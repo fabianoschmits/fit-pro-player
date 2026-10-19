@@ -41,10 +41,10 @@
 - Produces: tables/RPCs for preferences, routines, plans, body records, workout sessions, set operations, and active-program selection.
 - Produces: `start_workout_session`, `append_workout_operation`, `take_over_workout_session`, `complete_workout_session`, and read RPC contracts.
 
-- [ ] Write static migration tests for RLS enablement, revoked default grants, fixed `search_path`, ownership checks, expected revision, writer token, and operation ID uniqueness.
-- [ ] Run the new Node test and verify RED because the migration is absent.
-- [ ] Add the schema and RPC migration with all quantities documented in kg.
-- [ ] Run static checks and disposable PostgreSQL tests; record any environment skips.
+- [x] Write static migration tests for RLS enablement, revoked default grants, fixed `search_path`, ownership checks, expected revision, writer token, and operation ID uniqueness.
+- [x] Run the new Node test and verify RED because the migration is absent.
+- [x] Add the schema and RPC migration with all quantities documented in kg.
+- [x] Run static checks and disposable PostgreSQL tests; record any environment skips. Static checks passed; three database-backed checks remain skipped because `PG_BIN` is unavailable.
 - [ ] Commit migration and checks with message `feat: add server-owned training domain`.
 
 ### Task 2: Add client repositories and DTO validation
