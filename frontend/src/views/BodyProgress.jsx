@@ -13,6 +13,7 @@ import {
 } from '../lib/body-measurements.js'
 import { bodyShapeFallbackScales } from '../lib/body-shape.js'
 import { t } from '../lib/i18n.js'
+import { toDisplayMass } from '../lib/mass.js'
 import { confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
@@ -84,7 +85,7 @@ function bodyShapeProfile(S, weight) {
     sex: bodySex(S),
     heightCm: S.profile?.heightCm,
     weight: weight?.w,
-    unit: S.unit || 'kg',
+    unit: 'kg',
   }
 }
 
@@ -240,7 +241,7 @@ function BodyHistoryScrubber({ snapshots, value, onChange, onScrubbingChange, we
 
   if (snapshots.length === 1) return <div className="bp-scrubber-single">
     <Icon name="calendar" />
-    <span><strong>{fmtDate(active.date, true)}</strong><small>{weight ? `${fmtNum(weight.w)} ${unit} · adicione outro registro para comparar` : 'O corpo começará a mudar quando houver outro check-in.'}</small></span>
+    <span><strong>{fmtDate(active.date, true)}</strong><small>{weight ? `${fmtNum(toDisplayMass(weight.w, unit))} ${unit} · adicione outro registro para comparar` : 'O corpo começará a mudar quando houver outro check-in.'}</small></span>
   </div>
 
   const finish = raw => {
@@ -264,7 +265,7 @@ function BodyHistoryScrubber({ snapshots, value, onChange, onScrubbingChange, we
   return <div className="bp-scrubber">
     <div className="bp-scrubber-heading">
       <div><span className="bp-eyebrow">Corpo nesta data</span><strong>{fmtDate(active.date, true)}</strong></div>
-      <div className="bp-scrubber-reading"><span>{nearestIndex + 1} de {snapshots.length}</span>{weight && <b>{fmtNum(weight.w)} {unit}</b>}</div>
+      <div className="bp-scrubber-reading"><span>{nearestIndex + 1} de {snapshots.length}</span>{weight && <b>{fmtNum(toDisplayMass(weight.w, unit))} {unit}</b>}</div>
     </div>
     <div className="bp-scrubber-control" ref={railRef}>
       <input
@@ -435,7 +436,7 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
 function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, view, setView, focusRequest }) {
   const update = useStore(state => state.update)
   const snapshots = useMemo(() => bodyShapeTimeline(S, checkins), [
-    S.body, S.bodyweight, S.profile?.heightCm, S.profile?.sex, S.profile?.startWeight, S.unit, checkins,
+    S.body, S.bodyweight, S.profile?.heightCm, S.profile?.sex, S.profile?.startWeight, checkins,
   ])
   const firstTime = snapshots.length ? timestampOf(snapshots[0].date) : null
   const lastTime = snapshots.length ? timestampOf(snapshots.at(-1).date) : null
@@ -500,7 +501,7 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
         fallbackScales={interpolation.fallbackScales}
         instant={scrubbing} onSelect={selectPart}
       />
-      <BodyHistoryScrubber snapshots={snapshots} value={scrubTime} onChange={setScrubTime} onScrubbingChange={setScrubbing} weight={weight} unit={S.unit} />
+      <BodyHistoryScrubber snapshots={snapshots} value={scrubTime} onChange={setScrubTime} onScrubbingChange={setScrubbing} weight={weight} unit={S.displayUnit || 'kg'} />
       <p className="bp-relative-note"><Icon name="info" /> Medidas registradas sempre têm prioridade. Onde elas faltam, a largura usa apenas uma estimativa visual baseada em altura, peso e sexo — nunca exibida como centímetros reais.</p>
     </section>
 
@@ -609,7 +610,7 @@ function CheckinHistory({ S, checkins, onOpenEvolution }) {
               onClick={event => toggle(event, item.week)}
             >
               <span className="sr-only">{expanded ? 'Recolher' : 'Expandir'} detalhes do check-in de </span>
-              <span className="bp-checkin-date"><strong>{fmtDate(item.date, true)}</strong><small>{weight ? `${directWeight ? 'Peso do check-in' : 'Último peso'} · ${fmtNum(weight.w)} ${S.unit || 'kg'}` : 'Peso não registrado'}</small></span>
+              <span className="bp-checkin-date"><strong>{fmtDate(item.date, true)}</strong><small>{weight ? `${directWeight ? 'Peso do check-in' : 'Último peso'} · ${fmtNum(toDisplayMass(weight.w, S.displayUnit || 'kg'))} ${S.displayUnit || 'kg'}` : 'Peso não registrado'}</small></span>
               <span className={`bp-checkin-status${count === BODY_MEASUREMENT_PARTS.length ? ' complete' : ''}`}>{count === BODY_MEASUREMENT_PARTS.length ? <Icon name="check" /> : null}{count === BODY_MEASUREMENT_PARTS.length ? `${count}/${BODY_MEASUREMENT_PARTS.length} medidas` : `Parcial · ${count}/${BODY_MEASUREMENT_PARTS.length}`}</span>
               <span className="bp-checkin-quick" aria-hidden="true">
                 {['abdomen', 'waist', 'chest'].map(partId => <span key={partId}><small>{BODY_MEASUREMENT_BY_ID[partId].shortLabel}</small><strong>{formatCm(item.values[partId])}</strong></span>)}

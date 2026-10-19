@@ -5,7 +5,7 @@ import { workoutDuration } from './format.js'
 describe('completed workout boundary', () => {
   it('retains execution, assignment and immutable prescription identifiers in personal history', () => {
     const active = { id: 'w', professionalExecutionId: 'execution', assignmentId: 'a', programVersionId: 'v', prescribedEntries: [{ id: 'x' }], entries: [] }
-    expect(buildCompletedWorkout(active)).toMatchObject({ professionalExecutionId: 'execution', assignmentId: 'a', programVersionId: 'v', prescribedEntries: [{ id: 'x' }] })
+    expect(buildCompletedWorkout(active)).toMatchObject({ professionalExecutionId: 'execution', assignmentId: 'a', programVersionId: 'v', prescribedEntries: [{ id: 'x' }], massUnit: 'kg' })
   })
   it('builds the same legacy-shaped record doFinishWorkout stores and keeps it visible', () => {
     const active = {

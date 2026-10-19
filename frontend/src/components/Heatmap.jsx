@@ -42,7 +42,7 @@ export default function Heatmap({ S, onDay }) {
     const future = day > today
     const cls = 'hm-c hm-day l' + level(a) + (key === todayISO() ? ' today' : '') + (future ? ' future' : '')
     cells.push(<button key={key} type="button" className={cls}
-      title={key + (a ? ` · ${t(a.n === 1 ? '{0} workout' : '{0} workouts', a.n)} · ${a.min} min · ${fmtVol(a.vol, S.unit)}` : '')}
+      title={key + (a ? ` · ${t(a.n === 1 ? '{0} workout' : '{0} workouts', a.n)} · ${a.min} min · ${fmtVol(a.vol, S.displayUnit || 'kg')}` : '')}
       disabled={!a || future} onClick={() => onDay(key)}><span>{d}</span></button>)
   }
   while (cells.length % 7) cells.push(<div key={'f' + cells.length} className="hm-c hm-empty" />)
@@ -53,7 +53,7 @@ export default function Heatmap({ S, onDay }) {
         <button className="iconbtn" onClick={() => setMonthOffset(v => v - 1)} aria-label={t('Previous month')} title={t('Previous month')}><Icon name="chevronLeft" /></button>
         <div className="hm-month-title">
           <strong>{t(MONTHS_LONG[month])} {year}</strong>
-          <span>{monthAgg.length ? `${t(monthAgg.length === 1 ? '{0} workout' : '{0} workouts', monthAgg.length)} · ${fmtDur(monthMinutes * 60000)} · ${fmtVol(monthVolume, S.unit)}` : t('No workouts this month')}</span>
+          <span>{monthAgg.length ? `${t(monthAgg.length === 1 ? '{0} workout' : '{0} workouts', monthAgg.length)} · ${fmtDur(monthMinutes * 60000)} · ${fmtVol(monthVolume, S.displayUnit || 'kg')}` : t('No workouts this month')}</span>
         </div>
         <button className="iconbtn" disabled={!canGoNext} onClick={() => setMonthOffset(v => Math.min(0, v + 1))} aria-label={t('Next month')} title={t('Next month')}><Icon name="chevronRight" /></button>
       </div>

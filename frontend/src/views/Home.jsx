@@ -13,6 +13,7 @@ import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { routineName } from '../lib/starter.js'
 import PlanProgress from '../components/PlanProgress.jsx'
+import { toDisplayMass } from '../lib/mass.js'
 
 function nextPlannedWorkout(S, from) {
   for (let offset = 1; offset <= 14; offset++) {
@@ -51,6 +52,8 @@ export default function Home() {
   const lastWorkout = S.workouts.length ? S.workouts[S.workouts.length - 1] : null
   const recentWorkouts = [...S.workouts].reverse().slice(0, 2)
   const planProgress = planSetupProgress(S)
+  const displayUnit = S.displayUnit || 'kg'
+  const displayMass = value => toDisplayMass(value, displayUnit)
 
   const monday = new Date(today)
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + weekOffset * 7)
@@ -76,9 +79,9 @@ export default function Home() {
     : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} - ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
   const workoutsThisWeek = S.workouts.filter(workout => weekKey(workout.d) === weekKey(isoToday)).length
   const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(key => S.week[key]).length
-  const bwPoints = S.bodyweight.slice(-90).map(entry => ({ t: entry.t || new Date(entry.d).getTime(), y: entry.w, d: entry.d, iso: entry.d }))
+  const bwPoints = S.bodyweight.slice(-90).map(entry => ({ t: entry.t || new Date(entry.d).getTime(), y: displayMass(entry.w), d: entry.d, iso: entry.d }))
   const weightStart = bwPoints[0]
-  const weightTrend = weightStart && bw ? bw.w - weightStart.y : null
+  const weightTrend = weightStart && bw ? bw.w - S.bodyweight.slice(-90)[0].w : null
   const chartHeight = weightExpanded ? 228 : 104
   const weightTransition = { type: 'spring', duration: 0.42, bounce: 0 }
 
@@ -115,7 +118,7 @@ export default function Home() {
         <span className="home-now-kicker">{t('Workout complete!')}</span>
       </div>
       <h2>{todayWorkout.name}</h2>
-      <SessionMetrics workout={todayWorkout} unit={S.unit} />
+      <SessionMetrics workout={todayWorkout} unit={displayUnit} />
       {nextWorkout && <div className="home-next-session"><span>{t('Next')}</span><b>{routineName(nextWorkout.routine)}</b><small>{fmtDate(nextWorkout.iso, true)}</small></div>}
       <div className="home-now-actions">
         <Button variant="plain" size="sm" onClick={() => workoutDetailSheet(todayWorkout)}>{t('Details')}</Button>
@@ -194,7 +197,7 @@ export default function Home() {
       <div className="home-section-head">
         <div><h2>{t('Body weight')}</h2>{bw && <span>{fmtDate(bw.d, true)}</span>}</div>
         <div className="row home-weight-actions">
-          <Button size="sm" variant="ghost" icon="target" style={S.targetW ? { color: 'var(--yellow)' } : undefined} onClick={goalSheet}>{S.targetW ? fmtNum(S.targetW) : t('Goal')}</Button>
+          <Button size="sm" variant="ghost" icon="target" style={S.targetW ? { color: 'var(--yellow)' } : undefined} onClick={goalSheet}>{S.targetW ? fmtNum(displayMass(S.targetW)) : t('Goal')}</Button>
           <Button size="sm" variant="tinted" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button>
           {bw && <button type="button" className="home-weight-expand" aria-expanded={weightExpanded} aria-label={t(weightExpanded ? 'Collapse' : 'Expand')} onClick={() => setWeightExpanded(expanded => !expanded)}>
             <Icon name={weightExpanded ? 'chevronUp' : 'chevronDown'} />
@@ -204,17 +207,17 @@ export default function Home() {
       {bw ? <>
         <div className="home-weight-reading">
           <button type="button" onClick={() => bwSheet({ date: bw.d || isoToday })} title={t('Edit current weight')} aria-label={t('Edit current weight')}>
-            <strong>{fmtNum(bw.w)}</strong><span>{S.unit}</span>
+            <strong>{fmtNum(displayMass(bw.w))}</strong><span>{displayUnit}</span>
           </button>
-          {!!delta && <span style={{ color: bwDeltaColor(delta, bw.w) }}><Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} />{fmtNum(Math.abs(delta))} {S.unit}</span>}
-          {S.targetW && <small><Icon name="target" />{Math.abs(S.targetW - bw.w) < 0.05 ? t('reached!') : t(S.targetW > bw.w ? '{0} to gain' : '{0} to lose', `${fmtNum(Math.abs(S.targetW - bw.w))} ${S.unit}`)}</small>}
+          {!!delta && <span style={{ color: bwDeltaColor(delta, bw.w) }}><Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} />{fmtNum(displayMass(Math.abs(delta)))} {displayUnit}</span>}
+          {S.targetW && <small><Icon name="target" />{Math.abs(S.targetW - bw.w) < 0.05 ? t('reached!') : t(S.targetW > bw.w ? '{0} to gain' : '{0} to lose', `${fmtNum(displayMass(Math.abs(S.targetW - bw.w)))} ${displayUnit}`)}</small>}
         </div>
         <motion.div layout={!reducedMotion} transition={weightTransition} className="chart home-weight-chart">
-          <LineChart points={bwPoints} h={chartHeight} unit={S.unit} goal={S.targetW} animateGeometry={!reducedMotion} onPointEdit={point => bwSheet({ date: point.iso || point.d || isoToday })} />
+          <LineChart points={bwPoints} h={chartHeight} unit={displayUnit} goal={displayMass(S.targetW)} animateGeometry={!reducedMotion} onPointEdit={point => bwSheet({ date: point.iso || point.d || isoToday })} />
         </motion.div>
         {weightExpanded && <motion.div className="home-weight-details" initial={reducedMotion ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={reducedMotion ? undefined : { opacity: 0, y: -3 }} transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.2, 0.8, 0.2, 1] }}>
-          <span><small>{t('Progress')}</small><b style={{ color: weightTrend == null ? 'var(--label)' : bwDeltaColor(weightTrend, bw.w) }}>{weightTrend == null || Math.abs(weightTrend) < 0.05 ? '—' : `${weightTrend > 0 ? '+' : '−'}${fmtNum(Math.abs(weightTrend))} ${S.unit}`}</b></span>
-          <span><small>{t('Goal')}</small><b>{S.targetW ? `${fmtNum(S.targetW)} ${S.unit}` : '—'}</b></span>
+          <span><small>{t('Progress')}</small><b style={{ color: weightTrend == null ? 'var(--label)' : bwDeltaColor(weightTrend, bw.w) }}>{weightTrend == null || Math.abs(weightTrend) < 0.05 ? '—' : `${weightTrend > 0 ? '+' : '−'}${fmtNum(displayMass(Math.abs(weightTrend)))} ${displayUnit}`}</b></span>
+          <span><small>{t('Goal')}</small><b>{S.targetW ? `${fmtNum(displayMass(S.targetW))} ${displayUnit}` : '—'}</b></span>
           <span><small>{t('Last time')}</small><b>{weightStart ? fmtDate(weightStart.iso, true) : '—'}</b></span>
         </motion.div>}
       </> : <div className="home-weight-empty"><span>{t("No entries yet — log your weight to start the curve. It's also asked before every workout.")}</span><Button size="sm" variant="primary" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button></div>}

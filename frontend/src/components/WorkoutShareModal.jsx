@@ -80,7 +80,7 @@ function LayoutDashboard({ w, st, innerRef, themeId }) {
             <div className="wsc-stat-box">
               <div className="wsc-stat-icon"><Icon name="dumbbell" /></div>
               <div className="wsc-stat-info">
-                <span className="wsc-stat-val">{fmtVol(w.vol, st.unit)}</span>
+                <span className="wsc-stat-val">{fmtVol(w.vol, st.displayUnit || 'kg')}</span>
                 <span className="wsc-stat-label">{t('Volume')}</span>
               </div>
             </div>

@@ -13,6 +13,7 @@ import { BRAND_SYMBOL_SVG } from './brand.js'
 import { modeOf, fmtSec, isBw, isPerSide, sideReps } from './history.js'
 import { uid, todayISO, DAYN, fmtNum, exCount } from './format.js'
 import { t } from './i18n-core.js'
+import { toDisplayMass } from './mass.js'
 
 const PLAN_FMT = 1
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]   // Mon-first, matching the Plan screen
@@ -152,7 +153,7 @@ function scheme(e, unit) {
     return sets > 1 ? `${sets} × ${body}` : body
   }
   let s = mode === 'time' ? `${sets} × ${fmtSec(e.sec || 45)}` : `${sets} × ${e.reps ?? 10}`
-  if (e.weight) s += ` · ${isBw(e) ? '+' : ''}${fmtNum(e.weight)} ${unit}`
+  if (e.weight) s += ` · ${isBw(e) ? '+' : ''}${fmtNum(toDisplayMass(e.weight, unit))} ${unit}`
   // A printed plan is read at the rack, so the split earns its four characters.
   if (mode !== 'time' && isPerSide(e)) s += ` · ${t('{0}/side', fmtNum(sideReps(e.reps ?? 10)))}`
   return s
@@ -199,7 +200,7 @@ function weekHTML(S) {
 
 /** Full self-contained HTML for the print/PDF view. */
 export function planPrintHTML(S, owner) {
-  const unit = S.unit || 'kg'
+  const unit = S.displayUnit || 'kg'
   const routines = (S.routines || []).filter(r => r.ex && r.ex.length)
   const body = routines.length
     ? routines.map(r => routineHTML(r, unit)).join('')

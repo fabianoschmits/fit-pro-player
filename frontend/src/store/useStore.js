@@ -11,9 +11,11 @@ import { readScopedState, writeScopedState } from '../lib/account-cache.js'
 import { createAccountSyncService, readSyncConflict, writeSyncConflict, clearSyncConflict, readSyncMetadata, syncMetadataKey, writeSyncMetadata, REMOTE_SYNC_STATE } from '../lib/account-sync.js'
 import { recordDiagnostic } from '../lib/diagnostics.js'
 import { DEFAULT_NOTIFICATION_PREFERENCES, normalizeNotificationPreferences } from '../lib/notification-preferences.js'
+import { MASS_UNIT, STATE_SCHEMA_VERSION } from '../lib/mass.js'
 
 export const DEF = {
-  unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: 'pt',
+  displayUnit: 'kg', massUnit: MASS_UNIT, stateSchemaVersion: STATE_SCHEMA_VERSION,
+  restSec: 90, sound: true, keepAwake: true, lang: 'pt',
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
   profile: DEFAULT_PROFILE, planMode: 'weekly',
   bodyweight: [], bodyMeasurements: [], bodyMeasurementGoals: {}, routines: [], week: {}, dayPlan: {},
@@ -45,7 +47,15 @@ function hasCompleteProfile(profile) {
 
 export function normalizeState(source) {
   const raw = object(source)
+  if (raw.stateSchemaVersion !== STATE_SCHEMA_VERSION || raw.massUnit !== MASS_UNIT) {
+    const displayUnit = raw.displayUnit === 'lb' || raw.unit === 'lb' ? 'lb' : 'kg'
+    return normalizeState({ ...clone(DEF), displayUnit })
+  }
   const state = Object.assign(clone(DEF), raw)
+  state.displayUnit = state.displayUnit === 'lb' ? 'lb' : 'kg'
+  state.massUnit = MASS_UNIT
+  state.stateSchemaVersion = STATE_SCHEMA_VERSION
+  delete state.unit
   state.bodyweight = Array.isArray(state.bodyweight) ? state.bodyweight : []
   state.bodyMeasurements = normalizeBodyMeasurementCheckins(state.bodyMeasurements)
   state.bodyMeasurementGoals = normalizeBodyMeasurementGoals(state.bodyMeasurementGoals)

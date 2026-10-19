@@ -19,6 +19,7 @@ import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import { isWarmupRow } from '../lib/workout-model.js'
 import { applyPreviousSetValues, replaceSessionExercise } from '../lib/workout-session.js'
+import { fromDisplayMass, toDisplayMass } from '../lib/mass.js'
 
 /* ---------- start chooser (no active workout) ---------- */
 function StartChooser() {
@@ -115,6 +116,7 @@ function Elapsed({ active }) {
 /* ---------- one exercise block (reps: weight×reps · time: a held duration · cardio: duration+speed) ---------- */
 function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onStartTimed }) {
   const S = useStore(s => s.S)
+  const displayUnit = S.displayUnit || 'kg'
   const working = useUI(s => s.work)
   const timer = useUI(s => s.timer)
   const manualSet = useUI(s => s.manualSet)
@@ -137,7 +139,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
   }, [allDone])
 
   const last = lastEntryFor(S, entry.id)
-  const lastLabels = last ? last.sets.filter(s => !isWarmupRow(s)).map(s => setLabel(entry.id, s, last.target)) : []
+  const lastLabels = last ? last.sets.filter(s => !isWarmupRow(s)).map(s => setLabel(entry.id, s, last.target, displayUnit)) : []
   // The same number the "confirm your working weight" sheet calls your best, so the two
   // never disagree inside one session: heaviest logged set, or the working weight you kept.
   const best = cardio ? 0 : Math.max(bestWeightFor(S, entry.id), (S.exWeights[entry.id] || {}).w || 0)
@@ -150,7 +152,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
   const cfg = { ...(entry.target || {}), id: entry.id }
   const bw = !cardio && isBw(cfg)
   const added = bw && entry.sets.some(s => s.w > 0)
-  const loadCol = { f: 'w', step: 2.5, dec: true, hd: bw ? t('Added ({0})', S.unit) : t('Weight ({0})', S.unit) }
+  const loadCol = { f: 'w', step: fromDisplayMass(displayUnit === 'lb' ? 5 : 2.5, displayUnit), dec: true, hd: bw ? t('Added ({0})', displayUnit) : t('Weight ({0})', displayUnit) }
   // The reps column is the total in every mode, unilateral included — the stepper walks in
   // twos there so the number you land on is one you can actually split evenly.
   const repCol = { f: 'r', step: repStep(cfg), dec: false, hd: t('Reps') }
@@ -178,8 +180,8 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
     <div className={'stp ' + cls}>
       <button aria-label={`${t('Decrease')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, -1)}><Icon name="minus" /></button>
       {/* a typed effort is capped — there is no RPE 12, and 12 reps in reserve is a warm-up */}
-      <span className="val"><NumberField decimal={col.dec} nullable={col.opt} value={s[col.f] ?? ''}
-        aria-label={col.hd} disabled={locked} onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : v)} /></span>
+      <span className="val"><NumberField decimal={col.dec} nullable={col.opt} value={col.f === 'w' ? (toDisplayMass(s[col.f] ?? 0, displayUnit) ?? '') : (s[col.f] ?? '')}
+        aria-label={col.hd} disabled={locked} onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : col.f === 'w' ? fromDisplayMass(v, displayUnit) : v)} /></span>
       <button aria-label={`${t('Increase')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, 1)}><Icon name="plus" /></button>
     </div>
   )
@@ -199,7 +201,7 @@ function ExerciseBlock({ entryIdx, compact, locked = false, onStartWorkout, onTo
       {!cardio && !timed && isPerSide(cfg) && <span className="tag acc nocap"><Icon name="shuffle" />{t('{0} per side', fmtNum(sideReps(entry.sets.find(s => !s.done)?.r ?? entry.sets[0]?.r)))}</span>}
       {(ex.tg || ex.bp) && <span className="tag">{sentenceCase(t(ex.tg || ex.bp))}</span>}
       {ex.eq && <span className="tag">{sentenceCase(t(ex.eq))}</span>}
-      {best > 0 && <span className="tag nocap">{t('Best:')} {fmtNum(best)} {S.unit}</span>}
+      {best > 0 && <span className="tag nocap">{t('Best:')} {fmtNum(toDisplayMass(best, displayUnit))} {displayUnit}</span>}
     </div>
     {cfg.notes && <p className="muted">{cfg.notes}</p>}
     <Media ex={ex} key={entry.id} compact={compact} minimizable />

@@ -161,7 +161,7 @@ export function stallCount(sessions) {
 export function nextPrescription(S, cfg, routine) {
   const mode = modeOf(cfg)
   const policy = policyFor(cfg, routine, mode)
-  const unit = S.unit || 'kg'
+  const unit = 'kg'
   const inc = cfg.inc > 0 ? cfg.inc : (mode === 'time' ? DEFAULT_SEC_INCREMENT : defaultIncrement(cfg.id, unit))
   if (policy === 'off') return { policy, kind: 'off' }
 

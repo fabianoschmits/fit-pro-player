@@ -19,6 +19,7 @@ import Icon from './Icon.jsx'
 import RoutineMuscleThumb from './RoutineMuscleThumb.jsx'
 import { Button, Segmented, TextField } from './ui.jsx'
 import { glyphOf } from '../lib/glyphs.js'
+import { fromDisplayMass, toDisplayMass } from '../lib/mass.js'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 const DEFAULT_DAYS = [1, 3, 5]
@@ -47,11 +48,11 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     birthDate: profile.birthDate || defaultBirthDate(),
     sex: profile.sex || (S.body === 'female' ? 'female' : 'male'),
     height: heightText(profile.heightCm),
-    startWeight: weightText(lastWeight || profile.startWeight),
-    targetWeight: weightText(S.targetW),
+    startWeight: weightText(toDisplayMass(lastWeight || profile.startWeight, S.displayUnit || 'kg')),
+    targetWeight: weightText(toDisplayMass(S.targetW, S.displayUnit || 'kg')),
     goal: profile.goal || '',
     experience: profile.experience || '',
-    unit: S.unit === 'lb' ? 'lb' : 'kg',
+    unit: S.displayUnit === 'lb' ? 'lb' : 'kg',
     planMode: S.planMode === 'daily' ? 'daily' : 'weekly',
   }))
   const [days, setDays] = useState(scheduled.length ? scheduled : DEFAULT_DAYS)
@@ -62,7 +63,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   })
 
   const previewRoutines = useMemo(() => {
-    const startWeight = decimalNumber(draft.startWeight)
+    const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
     const generated = personalizedRoutineSpecs({
       goal: draft.goal, experience: draft.experience, startWeight,
     }, draft.planMode === 'daily' ? 7 : Math.max(1, days.length), {
@@ -71,9 +72,18 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     if (draft.planMode !== 'daily') return generated
     const custom = S.routines.filter(routine => !routine.planGenerated && !isStarterRoutine(routine))
     return [...generated, ...custom]
-  }, [S, days.length, draft.experience, draft.goal, draft.planMode, draft.startWeight])
+  }, [S, days.length, draft.experience, draft.goal, draft.planMode, draft.startWeight, draft.unit])
 
   const set = patch => setDraft(current => ({ ...current, ...patch }))
+  const switchUnit = unit => setDraft(current => {
+    if (unit === current.unit) return current
+    const convert = text => {
+      const value = decimalNumber(text)
+      if (!value) return text
+      return weightText(toDisplayMass(fromDisplayMass(value, current.unit), unit))
+    }
+    return { ...current, unit, startWeight: convert(current.startWeight), targetWeight: convert(current.targetWeight) }
+  })
   const toggleDay = day => setDays(current => current.includes(day) ? current.filter(d => d !== day) : [...current, day])
   const maxDate = todayISO()
   const total = 7
@@ -114,8 +124,8 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     if (message) { setError(message); return }
     const today = todayISO()
     const heightCm = heightCmFromText(draft.height)
-    const startWeight = decimalNumber(draft.startWeight)
-    const targetWeight = decimalNumber(draft.targetWeight)
+    const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
+    const targetWeight = fromDisplayMass(decimalNumber(draft.targetWeight), draft.unit)
     const name = formatPersonName(draft.name).trim()
     const planInputsChanged = !editing
       || !S.routines.some(routine => routine.planGenerated)
@@ -138,7 +148,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
         completedAt: state.profile?.completedAt || Date.now(),
       }
       state.body = draft.sex
-      state.unit = draft.unit
+      state.displayUnit = draft.unit
       state.targetW = targetWeight
       state.planMode = draft.planMode
 
@@ -169,8 +179,8 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
 
   const saveProgress = () => {
     const heightCm = heightCmFromText(draft.height)
-    const startWeight = decimalNumber(draft.startWeight)
-    const targetWeight = decimalNumber(draft.targetWeight)
+    const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
+    const targetWeight = fromDisplayMass(decimalNumber(draft.targetWeight), draft.unit)
     const name = formatPersonName(draft.name).trim()
     if (!name && !S.profile?.name) { setError(t('Enter your name to continue.')); return }
     update(state => {
@@ -187,7 +197,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
         ...(draft.experience ? { experience: draft.experience } : {}),
       }
       state.body = draft.sex || state.body
-      state.unit = draft.unit
+      state.displayUnit = draft.unit
       if (targetWeight) state.targetW = targetWeight
       state.planMode = draft.planMode
       if (startWeight) {
@@ -242,7 +252,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <h1>{t('Your starting point')}</h1>
       <p>{t('Your first weight starts the progress chart and remains saved as your registration weight.')}</p>
       <span className="wizard-label">{t('Weight unit')}</span>
-      <Segmented options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} value={draft.unit} onChange={unit => set({ unit })} />
+      <Segmented options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} value={draft.unit} onChange={switchUnit} />
       <div className="wizard-measure-grid">
         <label><span>{t('Height')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="1,76" value={draft.height} onChange={event => set({ height: heightInput(event.target.value) })} /><i>m</i></span></label>
         <label><span>{t('Body weight')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="71,2" value={draft.startWeight} onChange={event => set({ startWeight: weightInput(event.target.value) })} /><i>{draft.unit}</i></span></label>

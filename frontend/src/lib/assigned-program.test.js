@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { assignedPlanToState, clearAssignedProgramFromState, hasAssignedProgram } from './assigned-program.js'
+import { assignedPlanToState, assignedSessionEntries, clearAssignedProgramFromState, hasAssignedProgram } from './assigned-program.js'
 
 describe('assigned program priority', () => {
   it('assigned_title_falls_back_for_legacy and preserves old history', () => {
@@ -36,5 +36,10 @@ describe('assigned program priority', () => {
     const next = assignedPlanToState({ routines: [] }, { id: 'v', weekly_plan: { friday: [{ exerciseId: '1', mode: 'time', sec: 60, sets: 2, reps: 1, rest: 20, sg: 'pair', unit: 'lb', effort: 'rir', rir: 2 }] } }, { id: 'a' })
     expect(next.routines[0]).toMatchObject({ assignedDayKey: 'friday' })
     expect(next.routines[0].ex[0]).toMatchObject({ sec: 60, rest: 20, sg: 'pair', unit: 'lb', effort: 'rir', rir: 2 })
+  })
+  it('converts a professional pound prescription to canonical kg for the workout session', () => {
+    const entries = assignedSessionEntries({ ex: [{ id: '1', sets: 1, reps: 5, weight: 220.462262, unit: 'lb' }] })
+    expect(entries[0].target).toMatchObject({ weight: expect.closeTo(100, 5), unit: 'kg' })
+    expect(entries[0].sets[0].w).toBeCloseTo(100, 5)
   })
 })

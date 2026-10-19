@@ -78,12 +78,12 @@
 **Interfaces:**
 - Produces: `toDisplayMass(kg, displayUnit)`, `fromDisplayMass(value, displayUnit)`, `formatDisplayMass(kg, displayUnit)`, `displayUnit`, `massUnit: 'kg'`, and current `stateSchemaVersion`.
 
-- [ ] Write failing conversion, round-trip, invalid input, import, and repeated-unit-switch tests.
-- [ ] Implement pure conversion functions and reset legacy states without current schema markers.
-- [ ] Replace reads/writes at profile, routine, workout, history, progress, professional prescription, import, export, charts, and sharing boundaries.
-- [ ] Update settings copy and add a test proving the persisted kg value is unchanged after display switches.
-- [ ] Run focused tests, `check:i18n`, and the full suite.
-- [ ] Commit with message `feat: store training mass canonically in kilograms`.
+- [x] Write failing conversion, round-trip, invalid input, import, and repeated-unit-switch tests.
+- [x] Implement pure conversion functions and reset legacy states without current schema markers.
+- [x] Replace reads/writes at profile, routine, workout, history, progress, professional prescription, import, export, charts, and sharing boundaries.
+- [x] Update settings copy and add a test proving the persisted kg value is unchanged after display switches.
+- [x] Run focused tests, `check:i18n`, and the full suite. Focused: 210 tests; full frontend: 1,183 tests; 11 locale packs synchronized; production build passed.
+- [x] Commit with message `feat: store training mass canonically in kilograms`.
 
 ### Task 4: Implement active-session recovery
 

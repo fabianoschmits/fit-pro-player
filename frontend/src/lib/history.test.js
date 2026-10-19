@@ -332,6 +332,10 @@ describe('exLine', () => {
     expect(exLine({ id: LIFT, sets: 2, sec: 90, weight: 20, mode: 'time' }, 'kg')).toBe('2 × 1:30 · 20 kg')
     expect(exLine({ id: CARDIO, sets: 1, min: 20, speed: 8 }, 'kg')).toBe('1 × 20 min @ 8 km/h')
   })
+  it('converts canonical loads only while formatting pounds', () => {
+    expect(exLine({ id: LIFT, sets: 3, reps: 10, weight: 100 }, 'lb')).toMatch(/^3 × 10 · 220[,.]5 lb$/)
+    expect(setLabel(LIFT, { w: 100, r: 5 }, { id: LIFT }, 'lb')).toMatch(/^220[,.]5×5$/)
+  })
 })
 
 const emptyS = { workouts: [], exWeights: {} }

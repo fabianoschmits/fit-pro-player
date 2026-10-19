@@ -192,7 +192,7 @@ export default function RoutineEdit() {
             exConfigSheet(ex, entry, cfg => edit(x => { x[i] = { id: x[i].id, sg: x[i].sg, ...cfg } }), () => edit(x => { x.splice(i, 1); cleanupSg(x) }), r)
           }}>
             <Thumb ex={ex} />
-            <span className="grow"><span className="tt capitalize">{exerciseName(ex)}</span><span className="ss">{exLine(entry, S.unit)}</span></span>
+            <span className="grow"><span className="tt capitalize">{exerciseName(ex)}</span><span className="ss">{exLine(entry, S.displayUnit || 'kg')}</span></span>
             {!organizing && <Icon name="chevronRight" className="chev" />}
           </button>
           {organizing && <span className="routine-item-tools">

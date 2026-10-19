@@ -112,7 +112,7 @@ function allSubfullWorkout(now = BASE_NOW) {
 }
 
 function resetFixture(workouts = lifecycleWorkouts()) {
-  mocks.S.unit = 'kg'
+  mocks.S.displayUnit = 'kg'
   mocks.S.bodyweight = []
   mocks.S.workouts = workouts
   mocks.maps.length = 0
@@ -253,18 +253,18 @@ describe('Stats muscle recovery view runtime', () => {
     expect(lastMap().load.chest).toBe(6)
   })
 
-  it('derives a pound-profile bodyweight in kg and passes it into the rendered Fatigue map', async () => {
+  it('keeps canonical bodyweight in kg when the profile displays pounds', async () => {
     const bodyweightWorkout = workout('bodyweight', BASE_NOW, [
       entry('0001', [{ done: true, w: 0, r: 10 }]),
     ])
     resetFixture([bodyweightWorkout])
-    mocks.S.unit = 'lb'
-    mocks.S.bodyweight = [{ d: '2026-01-20', w: 180 }, { d: '2026-01-22', w: 220.462262 }]
+    mocks.S.displayUnit = 'lb'
+    mocks.S.bodyweight = [{ d: '2026-01-20', w: 82 }, { d: '2026-01-22', w: 100 }]
 
     await mountStats()
     await click(viewButton(t('Fatigue')))
 
-    // 220.462262 lb ~= 100 kg; ten reps score 1000 kg against the initial 2000 kg reference.
+    // Display preference cannot alter the canonical 100 kg used by recovery calculations.
     expect(lastMap().load.abs).toBeCloseTo(1 - Math.exp(-0.5), 6)
     expect(lastMap().thresholds).toBeTruthy()
   })

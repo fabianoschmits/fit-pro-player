@@ -171,7 +171,7 @@ export default function Settings() {
 
     <Section collapsible defaultOpen={false} title={t('Offline')}><OfflineControls /></Section>
     {/* ---------- general ---------- */}
-    <Section collapsible defaultOpen={false} title={t('General')} footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
+    <Section collapsible defaultOpen={false} title={t('General')} footer={t('Weights are stored safely in kilograms and converted for display.')}>
       <SelectRow
         icon="globe" iconTint="var(--blue)" title={t('Language')}
         value={S.lang || DEFAULT_LANG} onChange={v => update(s => { s.lang = v })}
@@ -183,7 +183,7 @@ export default function Settings() {
       <Row icon="scale" iconTint="var(--teal)" title={t('Weight unit')}>
         <Segmented className="seg-inline"
           options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]}
-          value={S.unit} onChange={v => update(s => { s.unit = v })} />
+          value={S.displayUnit} onChange={v => update(s => { s.displayUnit = v })} />
       </Row>
       <SelectRow icon="person" iconTint="var(--teal)" title={t('Motivational messages')}
         value={S.motivationTone || 'calm'} onChange={value => update(state => { state.motivationTone = value })}

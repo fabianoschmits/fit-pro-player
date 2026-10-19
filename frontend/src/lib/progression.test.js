@@ -165,9 +165,9 @@ describe('linear progression', () => {
     expect(p.weight).toBe(61)
   })
 
-  it('works in pounds', () => {
-    const S = { ...hist(LIFT, [[135, 5, 5, 5]]), unit: 'lb' }
-    expect(nextPrescription(S, cfg).weight).toBe(140)
+  it('keeps progression canonical when the display preference is pounds', () => {
+    const S = { ...hist(LIFT, [[135, 5, 5, 5]]), displayUnit: 'lb', massUnit: 'kg' }
+    expect(nextPrescription(S, cfg).weight).toBe(137.5)
   })
 })
 

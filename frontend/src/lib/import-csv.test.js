@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mergeImport, parseWorkoutCSV } from './import-csv.js'
+import { mergeImport, parseBodyweight, parseWorkoutCSV } from './import-csv.js'
 
 const CSV = [
   'Date,Exercise,Weight,Reps,Set Type',
@@ -35,5 +35,24 @@ describe('CSV warm-up provenance', () => {
 
     expect(result).toEqual({ added: 1, skipped: 0 })
     expect(state.profile.startWeight).toBe(79.1)
+  })
+
+  it('always imports declared pounds into canonical kilograms', () => {
+    const workout = parseWorkoutCSV([
+      'Date,Exercise,Weight,Weight Unit,Reps',
+      '2026-08-08,Bench Press,220.462262,lb,5',
+    ].join('\n'), { displayUnit: 'lb' })
+    expect(workout.workouts[0].entries[0].sets[0].w).toBeCloseTo(100, 1)
+
+    const bodyweight = parseBodyweight([
+      'Date,Weight (lbs)',
+      '2026-08-08,220.462262',
+    ].join('\n'), { displayUnit: 'lb' })
+    expect(bodyweight.bodyweight[0].w).toBeCloseTo(100, 1)
+  })
+
+  it('treats files without a unit as canonical kilograms', () => {
+    const parsed = parseWorkoutCSV(CSV, { displayUnit: 'lb' })
+    expect(parsed.workouts[0].entries[0].sets[0].w).toBe(100)
   })
 })

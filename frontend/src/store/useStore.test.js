@@ -23,17 +23,32 @@ describe('state migration for first-run profiles', () => {
     expect(hasData(state)).toBe(false)
   })
 
-  it('sends established legacy data through the wizard without losing progress', () => {
+  it('resets legacy mass data that has no canonical schema marker', () => {
     const state = normalizeState({
-      body: 'female', routines: [], week: {}, dayPlan: {}, customEx: [],
+      unit: 'lb', body: 'female', routines: [], week: {}, dayPlan: {}, customEx: [],
       bodyweight: [{ d: '2026-08-01', w: 68, t: 1 }],
       workouts: [{ id: 'w1', d: '2026-08-02', entries: [] }],
       exWeights: { '0025': 60 },
     })
     expect(state.onboardingDone).toBe(false)
-    expect(state.profile).toMatchObject({ sex: 'female', startWeight: 68 })
-    expect(state.workouts).toHaveLength(1)
-    expect(state.exWeights).toEqual({ '0025': 60 })
+    expect(state.stateSchemaVersion).toBe(2)
+    expect(state.massUnit).toBe('kg')
+    expect(state.displayUnit).toBe('lb')
+    expect(state.bodyweight).toEqual([])
+    expect(state.workouts).toEqual([])
+    expect(state.exWeights).toEqual({})
+  })
+
+  it('keeps canonical kg values unchanged when the display preference changes', () => {
+    const original = normalizeState({
+      ...DEF,
+      displayUnit: 'kg',
+      bodyweight: [{ d: '2026-08-01', w: 83.275, t: 1 }],
+      workouts: [{ id: 'w1', d: '2026-08-02', entries: [{ id: '0025', sets: [{ w: 72.5, r: 5, done: true }] }] }],
+    })
+    const changed = normalizeState({ ...original, displayUnit: 'lb' })
+    expect(changed.bodyweight[0].w).toBe(83.275)
+    expect(changed.workouts[0].entries[0].sets[0].w).toBe(72.5)
   })
 
   it('keeps the personal profile and plan mode through JSON backup restoration', () => {

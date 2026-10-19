@@ -305,7 +305,7 @@ const toKm = (v, unit) => num(v) * (KM[String(unit || 'km').toLowerCase().trim()
  * of several thousand sets will contain oddities, and losing the file over one of them
  * helps nobody. Bad rows are counted and reported instead.
  */
-export function parseWorkoutCSV(text, { unit = 'kg' } = {}) {
+export function parseWorkoutCSV(text) {
   const rows = parseCSV(text)
   if (rows.length < 2) return { error: 'empty' }
   const map = mapHeader(rows[0])
@@ -396,23 +396,18 @@ export function parseWorkoutCSV(text, { unit = 'kg' } = {}) {
     sets++
   }
 
-  // lb -> kg only where a row disagrees with the profile. The app never converts units on
-  // its own, so importing unconverted would silently rewrite someone's numbers.
-  // Converting PER ROW matters: apps like FitNotes write the unit next to every set, and a
-  // history recorded partly in lb and partly in kg used to be taken over as-is, turning
-  // "185 lb" into 185 kg.
+  // Every imported load crosses the same storage boundary: kilograms are canonical,
+  // regardless of the user's display preference. Converting per row matters because apps
+  // such as FitNotes can mix lb and kg in the same history.
   const fileUnit = sawLb && !sawKg ? 'lb' : sawKg && !sawLb ? 'kg' : ''
   const mixedUnits = sawLb && sawKg
   const toKg = x => Math.round(x * LB_TO_KG * 10) / 10
-  const toLb = x => Math.round(x / LB_TO_KG * 10) / 10
-  // A row without its own unit follows the file's, and a file that says nothing is taken
-  // to already be in the profile's unit.
+  // A row without its own unit follows the file's. A file that says nothing is canonical kg.
   const convRow = s => {
     const u = s.u || fileUnit
-    if (!u || u === unit) return s.w
-    return u === 'lb' ? toKg(s.w) : toLb(s.w)
+    return u === 'lb' ? toKg(s.w) : s.w
   }
-  const converted = (!!fileUnit && fileUnit !== unit) || mixedUnits
+  const converted = sawLb
 
   const dates = [...byDate.keys()].sort()
   const workouts = dates.map(d => {
@@ -455,7 +450,7 @@ export function parseWorkoutCSV(text, { unit = 'kg' } = {}) {
  * records are pulled out with a scan instead. Health writes weights in the unit the
  * phone is set to and labels each record, so the unit is read per record.
  */
-export function parseBodyweight(text, { unit = 'kg' } = {}) {
+export function parseBodyweight(text) {
   const s = String(text)
   const out = new Map()          // iso date -> { w, t }  (one weigh-in per day, the last)
   let fileUnit = ''
@@ -493,9 +488,9 @@ export function parseBodyweight(text, { unit = 'kg' } = {}) {
   }
 
   if (!out.size) return { error: 'unrecognised' }
-  const converted = !!fileUnit && fileUnit !== unit
+  const converted = fileUnit === 'lb'
   const conv = converted
-    ? (fileUnit === 'lb' ? x => Math.round(x * LB_TO_KG * 10) / 10 : x => Math.round(x / LB_TO_KG * 10) / 10)
+    ? x => Math.round(x * LB_TO_KG * 10) / 10
     : x => Math.round(x * 10) / 10
   const dates = [...out.keys()].sort()
   return {

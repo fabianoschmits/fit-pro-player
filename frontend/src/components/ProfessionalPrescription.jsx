@@ -20,7 +20,7 @@ export function ProfessionalSessionDetail({ execution }) {
   const payload = execution.payload || {}
   const prescription = payload.prescription || payload.prescribedEntries || execution.prescription_snapshot?.exercises || []
   const actual = payload.entries || []
-  const unit = payload.unit || 'kg'
+  const unit = payload.massUnit || payload.unit || 'kg'
   return <div className="professional-session-detail">
     <div><h4>{t('Prescrito')}</h4>{prescription.length ? <ProfessionalPrescription entries={prescription} unit={unit} /> : <p className="muted">{t('Prescrição não disponível nesta execução.')}</p>}</div>
     <div><h4>{t('Realizado')}</h4>{actual.length ? actual.map((entry, index) => {

@@ -11,7 +11,7 @@ import Heatmap from '../components/Heatmap.jsx'
 import Icon from '../components/Icon.jsx'
 import BodyMap, { BodyMapLegend } from '../components/BodyMap.jsx'
 import { loadOfWorkouts, rankOf, MUSCLE_NAME, musclesOf } from '../lib/muscles.js'
-import { fatigueOf, strengthOf, STRENGTH_FLOOR, LB_TO_KG } from '../lib/recovery.js'
+import { fatigueOf, strengthOf, STRENGTH_FLOOR } from '../lib/recovery.js'
 import { strengthExerciseRowsForMuscle } from '../lib/strength-exercises.js'
 import { fatigueStateOf } from '../lib/recovery-view.js'
 import { e1rmSeries, best1RM } from '../lib/onerm.js'
@@ -23,6 +23,7 @@ import { Button, Segmented, SelectRow } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import TipOnce from '../components/TipOnce.jsx'
 import { isWarmupRow } from '../lib/workout-model.js'
+import { toDisplayMass } from '../lib/mass.js'
 
 // Which muscles the training in a window actually hit — and, the point of the card,
 // which ones it keeps missing. Shading is relative within the window (lib/muscles.js).
@@ -111,10 +112,10 @@ function MuscleBalance({ S }) {
     if (!entries.length) return null
     const last = entries.slice().sort((a, b) => String(a.d).localeCompare(String(b.d))).at(-1)
     if (!last || !(last.w > 0)) return null
-    return S.unit === 'lb' ? last.w * LB_TO_KG : last.w
-  }, [S.bodyweight, S.unit])
-  const fatigue = useMemo(() => fatigueOf(workouts, now, { bodyweightKg, unit: S.unit }), [workouts, now, bodyweightKg, S.unit])
-  const strength = useMemo(() => strengthOf(workouts, now, { bodyweightKg, unit: S.unit }), [workouts, now, bodyweightKg, S.unit])
+    return last.w
+  }, [S.bodyweight])
+  const fatigue = useMemo(() => fatigueOf(workouts, now, { bodyweightKg, unit: 'kg' }), [workouts, now, bodyweightKg])
+  const strength = useMemo(() => strengthOf(workouts, now, { bodyweightKg, unit: 'kg' }), [workouts, now, bodyweightKg])
   const muscleExercises = useMemo(() => (sel ? strengthExerciseRowsForMuscle(S, now, sel) : []), [S, now, sel])
   const lastTrained = useMemo(() => latestMuscleTraining(workouts), [workouts])
   const strengthHint = slug => {
@@ -222,10 +223,10 @@ function MuscleBalance({ S }) {
                       ? <span className="dim" style={{ fontSize: 11, marginLeft: 6 }}>{t('primary')}</span>
                       : <span className="dim" style={{ fontSize: 11, marginLeft: 6 }}>{t('secondary')}</span>}
                   </span>
-                  <span className="small dim" style={{ display: 'block', fontWeight: 400 }}>{t('Est. 1RM')}: {fmtNum(row.est)} {S.unit} · {fmtDate(row.estDate, true)}</span>
+                  <span className="small dim" style={{ display: 'block', fontWeight: 400 }}>{t('Est. 1RM')}: {fmtNum(toDisplayMass(row.est, S.displayUnit || 'kg'))} {S.displayUnit || 'kg'} · {fmtDate(row.estDate, true)}</span>
                 </span>
                 <span className="bar" style={{ alignSelf: 'center' }}><i style={{ width: '100%', background: 'linear-gradient(to right, var(--acc) ' + Math.round(row.decay * 100) + '%, var(--surface-2) ' + Math.round(row.decay * 100) + '%)' }} /></span>
-                <span className="v" style={{ alignSelf: 'center' }}>{fmtNum(row.current)} {S.unit}<span className="dim"> · {Math.round(row.decay * 100)}%</span></span>
+                <span className="v" style={{ alignSelf: 'center' }}>{fmtNum(toDisplayMass(row.current, S.displayUnit || 'kg'))} {S.displayUnit || 'kg'}<span className="dim"> · {Math.round(row.decay * 100)}%</span></span>
               </div>
             )) : <div className="muted small">{t('No exercises with an estimated 1RM yet.')}</div>}
           </>}
@@ -305,6 +306,8 @@ export default function Stats() {
   const [exId, setExId] = useState(null)
   const [exMetric, setExMetric] = useState('top')
   const workouts = S.workouts
+  const displayUnit = S.displayUnit || 'kg'
+  const displayMass = value => toDisplayMass(value, displayUnit)
 
   const bwPts = useMemo(() => {
     let raw = S.bodyweight
@@ -312,16 +315,16 @@ export default function Stats() {
       const cutoff = Date.now() - range * 86400000
       raw = raw.filter(b => b.t >= cutoff)
     }
-    return raw.map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
-  }, [S.bodyweight, range])
+    return raw.map(b => ({ t: b.t || new Date(b.d).getTime(), y: displayMass(b.w), d: b.d }))
+  }, [S.bodyweight, range, displayUnit])
 
   const volPts = useMemo(() => {
     return [...workouts].reverse().map(w => ({
       t: w.start || new Date(w.d).getTime(),
-      y: workoutVolume(w),
+      y: displayMass(workoutVolume(w)),
       d: w.d
     }))
-  }, [workouts])
+  }, [workouts, displayUnit])
 
   const totalVolume = useMemo(() => workouts.reduce((sum, w) => sum + workoutVolume(w), 0), [workouts])
   const now = Date.now()
@@ -330,6 +333,7 @@ export default function Stats() {
 
   const bw30 = S.bodyweight.filter(b => (b.t || new Date(b.d).getTime()) > now - 30 * 86400000)
   const bwDelta30 = bw30.length > 1 ? bw30[bw30.length - 1].w - bw30[0].w : null
+  const displayBwDelta30 = bwDelta30 == null ? null : Math.sign(bwDelta30) * displayMass(Math.abs(bwDelta30))
   const monthW = workouts.filter(w => String(w.d || '').slice(0, 7) === todayISO().slice(0, 7)).length
 
   const nameOf = id => {
@@ -343,9 +347,9 @@ export default function Stats() {
       const mode = metricModeForEntry(en) || modeOf({ id })
       const rows = metricRowsForEntry(en, mode)
       const mx = mode === 'reps' ? bestWeightForEntry(en) : Math.max(0, ...rows.map(s => mode === 'cardio' ? (s.speed || 0) : mode === 'time' ? (s.sec || 0) : (s.w || 0)))
-      if (mx > 0) return { mx, unit: mode === 'cardio' ? 'km/h' : mode === 'time' ? 's' : S.unit }
+      if (mx > 0) return { mx, unit: mode === 'cardio' ? 'km/h' : mode === 'time' ? 's' : displayUnit }
     }
-    return { mx: 0, unit: S.unit }
+    return { mx: 0, unit: displayUnit }
   }
   const exHist = [...new Set(workouts.flatMap(w => w.entries.map(e => e.id)))].filter(id => EXIDX[id] || nameOf(id) !== id)
   const exCurrent = Object.fromEntries(exHist.map(id => [id, currentOf(id)]))
@@ -366,7 +370,7 @@ export default function Stats() {
   const curCardio = curMode === 'cardio'
   const curTimed = curMode === 'time'
   const metric = s => curCardio ? (s.speed || 0) : curTimed ? (s.sec || 0) : (s.w || 0)
-  const exUnit = curCardio ? 'km/h' : curTimed ? 's' : S.unit
+  const exUnit = curCardio ? 'km/h' : curTimed ? 's' : displayUnit
   let exPts = [], exList = [], exBest = 0
   if (curEx) {
     workouts.forEach(w => {
@@ -398,7 +402,7 @@ export default function Stats() {
   const onE1 = showE1 && exMetric === 'e1rm'
   const onEff = showEff && exMetric === 'effort'
   const topPts = exPts.map((p, i) => ({
-    t: p.t, y: p.y, d: p.d,
+    t: p.t, y: displayMass(p.y), d: p.d,
     // 0 RIR (nothing left) is a full dot, 4+ a faint one; unrated sessions keep the plain line.
     m: exRir[i] == null ? null : 1 - Math.min(4, Math.max(0, exRir[i])) / 4,
     note: exRir[i] == null ? undefined : hd + ' ' + fmtNum(toScale(kind, exRir[i]))
@@ -414,7 +418,7 @@ export default function Stats() {
       <div><span>{t('Workouts')}</span><b>{workouts.length}</b></div>
       <div><span>{t('This month')}</span><b>{monthW}</b></div>
       <div><span>{t('Week streak')}</span><b>{streakWeeks(S)}</b></div>
-      <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{bwDelta30 === null ? '—' : (bwDelta30 > 0 ? '+' : '') + fmtNum(bwDelta30) + ' ' + S.unit}</b></div>
+      <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{displayBwDelta30 === null ? '—' : (displayBwDelta30 > 0 ? '+' : '') + fmtNum(displayBwDelta30) + ' ' + displayUnit}</b></div>
     </section>
 
     <button
@@ -435,30 +439,30 @@ export default function Stats() {
     <div className="card stats-exercise-card">
       <div className="stats-card-heading">
         <div><h2>{t('Exercise progress')}</h2>{curEx && <span>{nameOf(curEx)}</span>}</div>
-        {exBest > 0 && <b>{t('Best:')} {fmtNum(onE1 ? e1Best?.est : exBest)} {onE1 ? S.unit : exUnit}</b>}
+        {exBest > 0 && <b>{t('Best:')} {fmtNum(onE1 ? displayMass(e1Best?.est) : (curCardio || curTimed ? exBest : displayMass(exBest)))} {onE1 ? displayUnit : exUnit}</b>}
       </div>
       {exHist.length ? <>
         <div className="stats-exercise-picker">
           <h4 className="sec">{t('Exercise')}</h4>
           <div className="sect-b">
             <SelectRow title="" sheetTitle={t('Exercise progress')} value={curEx} onChange={setExId}
-              options={exHist.map(id => ({ value: id, label: nameOf(id) + (exCurrent[id].mx ? ' — ' + fmtNum(exCurrent[id].mx) + ' ' + exCurrent[id].unit : '') }))} />
+              options={exHist.map(id => ({ value: id, label: nameOf(id) + (exCurrent[id].mx ? ' — ' + fmtNum(exCurrent[id].unit === displayUnit ? displayMass(exCurrent[id].mx) : exCurrent[id].mx) + ' ' + exCurrent[id].unit : '') }))} />
           </div>
         </div>
         {exOpts.length > 1 && <Segmented className="seg-range" value={onEff ? 'effort' : onE1 ? 'e1rm' : 'top'} onChange={setExMetric} options={exOpts} />}
         <div className="chart">
           {onEff
             ? <LineChart points={effPts} h={150} unit={hd} color="var(--yellow)" invert={kind === 'rir'} />
-            : <LineChart points={onE1 ? e1Pts.map(point => ({ t: point.t, y: point.y, d: point.d })) : topPts} h={150} unit={exUnit} color="var(--blue)" />}
+            : <LineChart points={onE1 ? e1Pts.map(point => ({ t: point.t, y: displayMass(point.y), d: point.d })) : topPts} h={150} unit={exUnit} color="var(--blue)" />}
         </div>
         <div className="stats-exercise-history">{exList.map((point, index) => <div key={index}>
-          <span>{fmtDate(point.d, true)}</span><b>{point.sets.map(set => setLabel(curEx, set, point.target)).join(' · ')}</b>
+          <span>{fmtDate(point.d, true)}</span><b>{point.sets.map(set => setLabel(curEx, set, point.target, displayUnit)).join(' · ')}</b>
         </div>)}</div>
         <div className="small dim stats-exercise-note">
           {onEff ? t('Average effort per workout') : onE1 ? t('Estimated 1RM per workout') : curCardio ? t('Top speed per workout') : curTimed ? t('Longest hold per workout') : t('Best set weight per workout')}
         </div>
         {onE1 && <div className="small dim" style={{ marginTop: 4 }}>
-          {t('Best estimate from {0} on {1} — an estimate, not a tested max.', fmtNum(e1Best.w) + ' ' + S.unit + ' × ' + e1Best.r, fmtDate(e1Best.d, true))}
+          {t('Best estimate from {0} on {1} — an estimate, not a tested max.', fmtNum(displayMass(e1Best.w)) + ' ' + displayUnit + ' × ' + e1Best.r, fmtDate(e1Best.d, true))}
         </div>}
         {!onEff && !onE1 && showEff && <div className="small dim" style={{ marginTop: 4 }}>
           {t('A fuller dot means less left in the tank — the same weight at a lower {0} is progress the line alone does not show.', hd)}
@@ -470,13 +474,13 @@ export default function Stats() {
         <div className="row between" style={{ marginBottom: 8 }}>
           <h2 style={{ margin: 0 }}>{t('Body weight')}</h2>
           <div className="row" style={{ gap: 8 }}>
-            <Button size="sm" icon="target" style={S.targetW ? { color: 'var(--yellow)' } : undefined} onClick={goalSheet}>{S.targetW ? fmtNum(S.targetW) : t('Goal')}</Button>
+            <Button size="sm" icon="target" style={S.targetW ? { color: 'var(--yellow)' } : undefined} onClick={goalSheet}>{S.targetW ? fmtNum(displayMass(S.targetW)) : t('Goal')}</Button>
             <Button size="sm" icon="plus" onClick={() => bwSheet()}>{t('Log')}</Button>
           </div>
         </div>
         <Segmented className="seg-range" value={range} onChange={setRange}
           options={[{ value: 30, label: '1M' }, { value: 90, label: '3M' }, { value: 365, label: '1Y' }, { value: 0, label: t('All') }]} />
-        <div className="chart"><LineChart points={bwPts} h={160} unit={S.unit} goal={S.targetW} /></div>
+        <div className="chart"><LineChart points={bwPts} h={160} unit={displayUnit} goal={displayMass(S.targetW)} /></div>
     </div>
 
     <div className="cols">
@@ -489,9 +493,9 @@ export default function Stats() {
 
     <div className="card stats-volume-card">
         <h2>{t('Total Volume Lifted')}</h2>
-        <div className="chart"><LineChart points={volPts} h={140} unit={S.unit} color="var(--purple)" /></div>
+        <div className="chart"><LineChart points={volPts} h={140} unit={displayUnit} color="var(--purple)" /></div>
         <div className="small dim stats-volume-total">
-          {t('Total all-time volume: ')} <b className="accent">{fmtNum(totalVolume)} {S.unit}</b>
+          {t('Total all-time volume: ')} <b className="accent">{fmtNum(displayMass(totalVolume))} {displayUnit}</b>
         </div>
     </div>
   </div>

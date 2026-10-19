@@ -36,7 +36,7 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
       assignmentId: active.assignmentId,
       programVersionId: active.programVersionId,
       prescribedEntries: active.prescribedEntries,
-      unit: active.unit,
+      massUnit: 'kg',
     } : {}),
   }
 }

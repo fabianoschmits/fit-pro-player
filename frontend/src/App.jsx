@@ -20,6 +20,7 @@ import Toast from './components/Toast.jsx'
 import { FppSkeleton } from './components/FppFeedback.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
+import { toDisplayMass } from './lib/mass.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import RestTimer from './components/RestTimer.jsx'
 import Landing from './views/Landing.jsx'
@@ -165,7 +166,7 @@ export function ProfileHeader({ S, preview }) {
   const facts = [
     t('{0} years', age ?? '--'),
     `${heightText(profile?.heightCm) || '--'} m`,
-    `${currentWeight ? weightText(currentWeight) : '--'} ${S.unit}`,
+    `${currentWeight ? weightText(toDisplayMass(currentWeight, S.displayUnit || 'kg')) : '--'} ${S.displayUnit || 'kg'}`,
   ]
   useEffect(() => {
     setMessageIsVisible(true)

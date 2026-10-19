@@ -45,10 +45,10 @@ describe('notification preferences', () => {
     }
   })
 
-  it('normalizes imported state without enabling a legacy reminder by default', () => {
+  it('resets legacy notification state that predates the canonical schema', () => {
     expect(normalizeState({ routines: [], workouts: [] }).notifications).toEqual(normalize())
     expect(normalizeState({ reminder: { on: true, time: '08:00' } }).notifications)
-      .toMatchObject({ workoutReminder: true, trainingTime: '10:00', leadMinutes: 120 })
+      .toEqual(normalize())
   })
 })
 

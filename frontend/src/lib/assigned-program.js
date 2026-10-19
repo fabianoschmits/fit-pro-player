@@ -72,13 +72,13 @@ export function clearAssignedProgramFromState(state) {
   return state
 }
 
-export function assignedSessionEntries(routine, unit = 'kg') {
+export function assignedSessionEntries(routine) {
   return (routine?.ex || []).map(cfg => {
-    const weight = cfg.unit && cfg.unit !== unit ? cfg.weight * (unit === 'lb' ? 2.2046226218 : 1 / 2.2046226218) : cfg.weight
+    const weight = cfg.unit === 'lb' ? cfg.weight * 0.45359237 : cfg.weight
     const sets = Array.from({ length: cfg.sets }, () => ({
       ...(cfg.mode === 'cardio' ? { min: cfg.min ?? 20, speed: cfg.speed ?? 8 } : cfg.mode === 'time' ? { sec: cfg.sec ?? 45, w: weight } : { w: weight, r: cfg.reps }),
       ...(cfg.rir != null ? { rir: cfg.rir } : {}), ...(cfg.rpe != null ? { rpe: cfg.rpe } : {}), done: false,
     }))
-    return { id: cfg.id, sg: cfg.sg, target: { ...cfg, weight, unit }, plan: null, sets }
+    return { id: cfg.id, sg: cfg.sg, target: { ...cfg, weight, unit: 'kg' }, plan: null, sets }
   })
 }
