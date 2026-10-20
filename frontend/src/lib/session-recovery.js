@@ -169,6 +169,12 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
       }
       return publish('saved', { session: current.session })
     } catch (error) {
+      // A restored account can retain a valid PWA draft after its server-side
+      // session was removed. Recreate that same id, then replay its queued work.
+      if (error?.kind === 'session-missing' && current?.phase !== 'starting') {
+        persist({ ...current, phase: 'starting', session: { ...current.session, status: 'starting', revision: 0, writerToken: null, startedAt: null, completedAt: null, updatedAt: null } })
+        return dispatch()
+      }
       return fail(error)
     }
   }

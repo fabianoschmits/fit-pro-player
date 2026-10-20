@@ -31,6 +31,7 @@ function mapError(error) {
   if (code === '40001') {
     return new TrainingRepositoryError('revision-conflict', { code, retryable: true, cause: error })
   }
+  if (code === '42501' && message.includes('workout session not found')) return new TrainingRepositoryError('session-missing', { code, retryable: true, cause: error })
   if (code === '42501' || code === 'PGRST301' || error?.status === 401) return new TrainingRepositoryError('forbidden', { code, cause: error })
   if (code === '55000') return new TrainingRepositoryError('finalized', { code, cause: error })
   if (code === '23505') return new TrainingRepositoryError('active-session', { code, cause: error })
