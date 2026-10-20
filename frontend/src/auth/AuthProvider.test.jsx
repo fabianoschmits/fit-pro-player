@@ -1,3 +1,4 @@
+// @vitest-environment happy-dom
 import React, { act, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Window } from 'happy-dom';
@@ -6,6 +7,7 @@ const notificationMocks=vi.hoisted(()=>({disable:vi.fn().mockResolvedValue(true)
 vi.mock('../lib/notification-client.js',()=>({disableBackgroundNotifications:notificationMocks.disable}));
 
 import { AuthProvider, buildAuthRedirectUrl, useAuth } from './AuthProvider.jsx';
+import { useUI } from '../store/useUI.js';
 
 const user = { id: '72d8d4df-efce-4ea3-9d6b-5d5c4651b9c2', email: 'ana@example.com', email_confirmed_at: '2026-09-22T00:00:00.000Z' };
 
@@ -72,6 +74,15 @@ describe('AuthProvider', () => {
     await act(async()=>{await latest.signOut()})
     expect(notificationMocks.disable).toHaveBeenCalledOnce()
     expect(notificationMocks.disable.mock.invocationCallOrder[0]).toBeLessThan(client.auth.signOut.mock.invocationCallOrder[0])
+  });
+  it('closes open sheets when sign-out clears the authenticated session', async () => {
+    const client = createFakeClient({ session: { user } });
+    await renderProvider(client);
+    useUI.setState({ sheets: [{ id: 'sign-out-confirmation', render: () => null, kind: 'center', locked: false }] });
+
+    await act(async () => { await latest.signOut(); });
+
+    expect(useUI.getState().sheets).toEqual([]);
   });
   it('restores a minimal authenticated user and never exposes token fields', async () => {
     const client = createFakeClient({ session: { user, access_token: 'secret' } });

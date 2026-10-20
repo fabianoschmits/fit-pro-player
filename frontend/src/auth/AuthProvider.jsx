@@ -5,6 +5,7 @@ import { MOBILE } from '../lib/mobile.js';
 import { parseCapacitorAuthUrl } from '../lib/capacitor-auth.js';
 import { toAuthError } from './auth-errors.js';
 import { disableBackgroundNotifications } from '../lib/notification-client.js';
+import { useUI } from '../store/useUI.js';
 
 const AuthContext = createContext(null);
 
@@ -292,7 +293,10 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         // Detach this device while its authenticated RPC still has the current owner.
         await disableBackgroundNotifications();
         const result = await execute('signing_out', () => client.auth.signOut());
-        if (result.kind === 'success') setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
+        if (result.kind === 'success') {
+          useUI.getState().closeAll();
+          setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
+        }
         return result;
       },
       deleteAccount: async () => {
