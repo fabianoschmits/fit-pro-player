@@ -54,11 +54,11 @@ describe('TabBar scroll stability', () => {
       )
     })
 
-    const toggle = [...container.querySelectorAll('.corner-nav-toggle')].find(button => button.textContent.includes('Fechar'))
+    const toggle = container.querySelector('.corner-nav-toggle')
     act(() => toggle.dispatchEvent(new MouseEvent('click', { bubbles: true })))
 
     expect(container.querySelector('#tabbar').className).not.toContain('is-open')
-    expect(container.querySelector('.corner-nav-main').className).toContain('is-hidden')
+    expect(container.querySelector('.corner-nav-main')).toBeNull()
   })
 
   it('starts attached to the mobile edge and detaches only after being dragged', () => {
@@ -81,6 +81,20 @@ describe('TabBar scroll stability', () => {
     })
 
     expect(tabbar.className).toContain('is-free')
+  })
+
+  it('keeps the toggle and every primary destination in one navigation card', () => {
+    act(() => {
+      root.render(
+        <MemoryRouter initialEntries={['/home']}>
+          <TabBar onStart={vi.fn()} />
+        </MemoryRouter>,
+      )
+    })
+
+    const card = container.querySelector('.corner-nav-shell')
+    expect(card.querySelector('.corner-nav-toggle')).not.toBeNull()
+    expect(card.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
   })
 
   it('keeps the complete menu unchanged while the page scrolls', () => {

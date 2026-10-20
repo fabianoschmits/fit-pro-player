@@ -432,6 +432,14 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav.more-below .corner-nav-more{top:84px;bottom:auto;transform-origin:top left}
 @media(max-width:480px){.corner-nav:not(.is-free){left:0;right:0;bottom:0}.corner-nav:not(.is-free) .corner-nav-main{border-radius:19px 19px 0 0;border-bottom:0;padding-bottom:max(6px,env(safe-area-inset-bottom))}.corner-nav:not(.is-free) .corner-nav-toggle{height:64px;border-radius:18px 18px 0 0;border-bottom:0;padding-bottom:max(4px,env(safe-area-inset-bottom))}.corner-nav:not(.is-free) .corner-nav-more{left:12px;width:calc(100vw - 24px)}}
 
+/* The fixed mobile navigation is one continuous card: its left control opens or
+   folds the destinations, rather than reading as a separate floating button. */
+.corner-nav-shell{display:flex;align-items:stretch;gap:0;overflow:hidden;background:color-mix(in srgb,var(--bg-el) 94%,transparent);backdrop-filter:blur(18px);border:var(--hair) solid var(--surface-border);border-radius:19px;box-shadow:0 12px 30px color-mix(in srgb,var(--label) 16%,transparent)}
+.corner-nav-shell .corner-nav-toggle{border:0;border-radius:0;box-shadow:none;border-right:var(--hair) solid var(--surface-border)}
+.corner-nav-shell .corner-nav-main{flex:1;width:auto;gap:6px;padding:6px 8px;background:transparent;border:0;border-radius:0;box-shadow:none;animation:none}
+.corner-nav-shell .corner-nav-tab{border-radius:13px}
+@media(max-width:480px){.corner-nav:not(.is-free) .corner-nav-shell{width:100%;border-radius:19px 19px 0 0;border-bottom:0}.corner-nav:not(.is-free) .corner-nav-shell .corner-nav-toggle{height:auto;min-height:64px;border-radius:0;padding-bottom:max(4px,env(safe-area-inset-bottom))}.corner-nav:not(.is-free) .corner-nav-shell .corner-nav-main{width:calc(100% - 64px);border:0;border-radius:0;padding-bottom:max(6px,env(safe-area-inset-bottom))}.corner-nav.is-free .corner-nav-shell{border-radius:19px}.corner-nav.is-free .corner-nav-shell .corner-nav-main{width:auto}}
+
 /* Start — permanent elevated FAB (original Fit Pro Player highlight). */
 .tab-item--start{margin-top:-14px;padding-bottom:4px}
 .tab-start-wrap{
