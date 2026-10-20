@@ -3,6 +3,7 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Button, Check, Switch } from './ui.jsx'
+import { useStore } from '../store/useStore.js'
 
 let root, host
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no }); return { promise, resolve, reject } }
@@ -18,6 +19,32 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.useRealTimers() })
 
 describe('action feedback lifetime', () => {
+  it('waits for database confirmation before showing success for an account edit', async () => {
+    await useStore.getState().activateLocalScope('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+    const pending = deferred()
+    useStore.getState().configureAccountSync(() => pending.promise)
+    render({ onAction: () => useStore.getState().update(state => { state.profile.name = 'Ana' }), successLabel: 'Salvo', loadingLabel: 'Sincronizando…' })
+    await act(async () => { click(); await Promise.resolve(); await Promise.resolve() })
+    expect(useStore.getState().S._pendingSync.preferences).toBe(true)
+    expect(host.querySelector('button').getAttribute('data-state')).not.toBe('success')
+    await settle(() => { useStore.setState(state => ({ S: { ...state.S, _pendingSync: { preferences: false } } })); pending.resolve() })
+    expect(host.querySelector('button').getAttribute('data-state')).toBe('success')
+    useStore.getState().releaseAccountSync()
+    await useStore.getState().activateLocalScope(null)
+  })
+  it('keeps an offline account action usable without showing a false saved state', async () => {
+    await useStore.getState().activateLocalScope('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
+    useStore.getState().configureAccountSync(() => Promise.resolve())
+    const completed = vi.fn()
+    render({ onAction: () => useStore.getState().update(state => { state.profile.name = 'Bia' }), onSuccess: completed, successLabel: 'Salvo' })
+    await act(async () => { click(); await Promise.resolve(); await Promise.resolve() })
+    expect(host.querySelector('button').getAttribute('data-state')).toBe('warning')
+    expect(host.querySelector('button').textContent).not.toBe('Salvo')
+    await act(async () => { vi.advanceTimersByTime(300); await Promise.resolve(); await Promise.resolve() })
+    expect(completed).toHaveBeenCalledOnce()
+    useStore.getState().releaseAccountSync()
+    await useStore.getState().activateLocalScope(null)
+  })
   it('guards two activations in the same event turn and locks immediately without flashing busy text', async () => {
     const pending = deferred(); let writes = 0
     render({ onAction: () => { writes++; return pending.promise }, loadingLabel: 'Salvando…' })

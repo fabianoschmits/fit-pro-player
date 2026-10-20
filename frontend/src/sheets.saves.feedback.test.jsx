@@ -23,8 +23,9 @@ const primary = () => container.querySelector('button.primary')
 const failWrites = () => vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('quota') })
 const hasError = () => !!container.querySelector('[role="status"][data-state="error"]')
 
-beforeEach(() => {
+beforeEach(async () => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  await useStore.getState().activateLocalScope(null)
   localStorage.clear()
   mocks.navigate.mockClear()
   useStore.setState({ S: structuredClone(DEF), persistence: { state: 'saved', error: null } })

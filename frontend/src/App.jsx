@@ -346,15 +346,20 @@ function Shell() {
       if (state.S !== previous.S && current(accountId)) void sync.changed()
     })
     void refresh.boot().then(() => { if (current(accountId)) void sync.start() })
-    const detach = attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['plan', 'history', 'body'] })
+    const detach = attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['preferences', 'plan', 'history', 'body'] })
     const retry = () => { if (current(accountId)) void sync.retry() }
-    window.addEventListener('online', retry)
+    const reconnect = () => {
+      if (!current(accountId)) return
+      void sync.retry()
+      for (const domain of ['preferences', 'plan', 'history', 'body']) void refresh.refresh(domain)
+    }
+    window.addEventListener('online', reconnect)
     window.addEventListener('focus', retry)
     return () => {
       sync.dispose()
       unsubscribe()
       detach()
-      window.removeEventListener('online', retry)
+      window.removeEventListener('online', reconnect)
       window.removeEventListener('focus', retry)
       useStore.getState().releaseAccountSync()
     }

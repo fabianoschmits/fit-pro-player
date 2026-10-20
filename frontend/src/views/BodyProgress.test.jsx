@@ -11,11 +11,13 @@ const mocks = vi.hoisted(() => ({
   mapProps: null,
   navigate: vi.fn(),
   toast: vi.fn(),
+  scope: null,
+  retry: vi.fn(),
 }))
 
 vi.mock('../store/useStore.js', () => {
   const useStore = selector => selector({ S: mocks.S, update: mocks.update })
-  useStore.getState = () => ({ S: mocks.S, persistence: mocks.persistence })
+  useStore.getState = () => ({ S: mocks.S, persistence: mocks.persistence, getActiveLocalScope: () => mocks.scope, retryAccountSync: mocks.retry })
   return { useStore }
 })
 vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ toast: mocks.toast }) } }))
@@ -52,6 +54,8 @@ beforeEach(() => {
   window.requestAnimationFrame = callback => callback()
   mocks.S = { body: 'female', bodyMeasurements: [], bodyMeasurementGoals: {} }
   mocks.persistence = { state: 'saved' }
+  mocks.scope = null
+  mocks.retry.mockReset()
   mocks.update.mockImplementation(mutator => mutator(mocks.S))
   container = document.createElement('div')
   document.body.append(container)
@@ -67,6 +71,21 @@ afterEach(async () => {
 })
 
 describe('body progress page', () => {
+  it('shows measurement success only after account sync confirms the write', async () => {
+    let confirm
+    mocks.scope = { kind: 'account' }
+    mocks.S._pendingSync = { body: true }
+    mocks.retry.mockImplementation(() => new Promise(resolve => { confirm = () => { mocks.S._pendingSync.body = false; resolve() } }))
+    await render()
+    await click(partButton('Circunferência do tórax'))
+    await inputValue(container.querySelector('#body-measurement-value'), '101,5')
+    await click(button('Salvar medida'))
+    expect(mocks.retry).toHaveBeenCalledOnce()
+    expect(mocks.toast).not.toHaveBeenCalled()
+    expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).not.toBe('success')
+    await act(async () => confirm())
+    expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).toBe('success')
+  })
   it('reports a failed measurement write locally and allows retry without showing saved', async () => {
     await render()
     await click(partButton('Circunferência do tórax'))

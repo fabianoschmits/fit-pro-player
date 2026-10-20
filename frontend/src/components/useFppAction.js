@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { waitForFppConfirmation } from './fpp-action-timing.js'
+import { accountActionStore } from '../lib/account-action-store.js'
 
 const BUSY_STATES = new Set(['loading', 'processing', 'uploading', 'syncing'])
 const BUSY_VISUAL_DELAY = 220
@@ -38,8 +39,17 @@ export function useFppAction({ onAction, onSuccess, onError, state: controlledSt
     clearTimeout(resetTimer.current)
     setManagedState('loading')
     let result
+    let accountPending = false
+    const before = accountActionStore()
+    const beforeTimestamp = before?.S?._ts
     try {
       result = await onAction(event)
+      const store = accountActionStore()
+      if (result !== false && store?.getActiveLocalScope?.()?.kind === 'account'
+        && store.S?._ts !== beforeTimestamp && Object.values(store.S?._pendingSync || {}).some(Boolean)) {
+        await store.retryAccountSync?.()
+        accountPending = Object.values(accountActionStore()?.S?._pendingSync || {}).some(Boolean)
+      }
     } catch (error) {
       running.current = false
       if (mounted.current) {
@@ -51,7 +61,7 @@ export function useFppAction({ onAction, onSuccess, onError, state: controlledSt
     }
     if (!mounted.current) { running.current = false; return result }
     if (result === false) { running.current = false; setManagedState('idle'); return false }
-    setManagedState('success')
+    setManagedState(accountPending ? 'warning' : 'success')
     if (onSuccess) {
       setConfirming(true)
       completion.current = new AbortController()

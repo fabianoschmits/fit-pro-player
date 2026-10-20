@@ -13,6 +13,7 @@ import { DEFAULT_NOTIFICATION_PREFERENCES, normalizeNotificationPreferences } fr
 import { MASS_UNIT, STATE_SCHEMA_VERSION } from '../lib/mass.js'
 import { createSessionRecovery, hasPendingSessionFinalization } from '../lib/session-recovery.js'
 import { markPendingDomains } from '../lib/domain-sync-state.js'
+import { bindAccountActionStore } from '../lib/account-action-store.js'
 
 export const DEF = {
   displayUnit: 'kg', massUnit: MASS_UNIT, stateSchemaVersion: STATE_SCHEMA_VERSION,
@@ -103,6 +104,7 @@ export const useStore = create((set, get) => {
   let saveTm = null
   let sessionRecovery = null
   let sessionRecoveryAccountId = null
+  let accountSyncRetry = null
   let nativePending = Promise.resolve(true)
   const scopeToken = () => ({ scope: activeScope, generation: scopeGeneration })
   const isCurrent = token => token.generation === scopeGeneration && token.scope === activeScope
@@ -179,8 +181,13 @@ export const useStore = create((set, get) => {
     S: (() => { const s = loadState(); registerCustom(s.customEx); return s })(),
     ready: false,
     persistence: { state: 'saved', error: null },
+    accountSync: { state: 'saved', pending: 0, error: null },
     sessionRecovery: { state: 'idle', pending: 0, error: null },
     getActiveLocalScope: () => activeScope,
+    setAccountSyncStatus(status) { set({ accountSync: status }) },
+    configureAccountSync(retry) { accountSyncRetry = retry },
+    retryAccountSync() { return accountSyncRetry?.() || Promise.resolve() },
+    releaseAccountSync() { accountSyncRetry = null; set({ accountSync: { state: 'saved', pending: 0, error: null } }) },
     getScopeToken: scopeToken,
     isScopeCurrent: isCurrent,
     // Reads share this generation across Shell and management. Every persisted assignment
@@ -214,6 +221,7 @@ export const useStore = create((set, get) => {
       if (sessionRecoveryAccountId !== accountId) return
       sessionRecovery = null
       sessionRecoveryAccountId = null
+      accountSyncRetry = null
       set({ sessionRecovery: { state: 'idle', pending: 0, error: null } })
     },
     flushSessionRecovery() {
@@ -281,7 +289,9 @@ export const useStore = create((set, get) => {
       sessionRecoveryAccountId = null
       clearTimeout(saveTm); saveTm = null
       const local = readScopedState(scope, localStorage, DEF)
-      set({ S: normalizeState(local.state), ready: false, persistence: { state: local.status === 'invalid' || local.status === 'error' ? 'error' : 'saved', error: local.status === 'invalid' ? 'invalid-local-cache' : local.status === 'error' ? 'local-read-failed' : null }, sessionRecovery: { state: 'idle', pending: 0, error: null } })
+      const restored = normalizeState(local.state)
+      const pendingSync = ['plan', 'body', 'preferences'].filter(domain => restored._pendingSync?.[domain]).length
+      set({ S: restored, ready: false, persistence: { state: local.status === 'invalid' || local.status === 'error' ? 'error' : 'saved', error: local.status === 'invalid' ? 'invalid-local-cache' : local.status === 'error' ? 'local-read-failed' : null }, accountSync: { state: pendingSync ? 'queued' : 'saved', pending: pendingSync, error: null }, sessionRecovery: { state: 'idle', pending: 0, error: null } })
       if (MOBILE) {
         const nativeState = await nativeLoad(scope)
         if (generation !== scopeGeneration || scope !== activeScope) return false
@@ -388,5 +398,7 @@ export const useStore = create((set, get) => {
     }
   }
 })
+
+bindAccountActionStore(() => useStore.getState())
 
 export { hasData }

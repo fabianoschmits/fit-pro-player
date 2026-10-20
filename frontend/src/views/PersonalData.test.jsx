@@ -99,6 +99,28 @@ it('records an edited personal weight as a bodyweight entry for sync', async () 
   expect(mocks.state.S.bodyweight.some(entry => entry.w === 72.5)).toBe(true)
 })
 
+it('does not announce a personal weight as saved before account sync confirms it', async () => {
+  mocks.state.S._pendingSync = { body: true, preferences: true }
+  mocks.state.getActiveLocalScope = () => ({ kind: 'account' })
+  let confirm
+  mocks.state.retryAccountSync = vi.fn(() => new Promise(resolve => { confirm = () => {
+    mocks.state.S._pendingSync = { body: false, preferences: false }
+    resolve()
+  } }))
+  mocks.update.mockImplementation(recipe => { recipe(mocks.state.S); mocks.state.persistence = { state: 'saved' } })
+  await render()
+  const field = container.querySelector('[data-profile-field="measures"]')
+  await act(async () => field.querySelector('.personal-edit').click())
+  await act(async () => field.querySelector('.personal-save').click())
+  expect(mocks.state.retryAccountSync).toHaveBeenCalledOnce()
+  expect(mocks.toast).not.toHaveBeenCalledWith('Salvo com sucesso', { tone: 'success' })
+  await act(async () => confirm())
+  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso', { tone: 'success' })
+  delete mocks.state.getActiveLocalScope
+  delete mocks.state.retryAccountSync
+  delete mocks.state.S._pendingSync
+})
+
 it('renders the avatar picker as a horizontal scroller', async () => {
   await render()
   const picker = container.querySelector('.avatar-picker-grid')

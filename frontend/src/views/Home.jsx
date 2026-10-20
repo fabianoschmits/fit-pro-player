@@ -79,7 +79,7 @@ export default function Home() {
     : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} - ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
   const workoutsThisWeek = S.workouts.filter(workout => weekKey(workout.d) === weekKey(isoToday)).length
   const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(key => S.week[key]).length
-  const bwPoints = S.bodyweight.slice(-90).map(entry => ({ t: entry.t || new Date(entry.d).getTime(), y: displayMass(entry.w), d: entry.d, iso: entry.d }))
+  const bwPoints = S.bodyweight.slice(-90).map(entry => ({ t: new Date(entry.d).getTime(), y: displayMass(entry.w), d: entry.d, iso: entry.d }))
   const weightStart = bwPoints[0]
   const weightTrend = weightStart && bw ? bw.w - S.bodyweight.slice(-90)[0].w : null
   const chartHeight = weightExpanded ? 228 : 104

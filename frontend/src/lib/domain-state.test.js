@@ -12,6 +12,21 @@ describe('domain state projection', () => {
 
     const body = applyDomainState(plan, 'body', { weights: [{ id: 'weight-1', date: '2026-10-19', weightKg: 80, updatedAt: '2026-10-19T10:00:00Z' }], measurements: [{ id: 'checkin-1', date: '2026-10-19', valuesCm: { chest: 100 }, note: 'morning', createdAt: '2026-10-19T09:00:00Z', updatedAt: '2026-10-19T10:00:00Z' }] })
     expect(body).toMatchObject({ bodyweight: [{ id: 'weight-1', d: '2026-10-19', w: 80 }], bodyMeasurements: [{ id: 'checkin-1', values: { chest: 100 }, notes: 'morning' }] })
+    expect(body.bodyweight[0].t).toBe(new Date('2026-10-19').getTime())
+  })
+
+  it('places a migrated weigh-in on its measured day, even when every row was updated today', () => {
+    const body = applyDomainState({ bodyweight: [], bodyMeasurements: [] }, 'body', {
+      weights: [
+        { id: 'old', date: '2025-09-04', weightKg: 110, updatedAt: '2026-10-20T12:00:00Z' },
+        { id: 'new', date: '2026-10-20', weightKg: 68.5, updatedAt: '2026-10-20T12:00:00Z' },
+      ],
+      measurements: [],
+    })
+    expect(body.bodyweight.map(entry => entry.t)).toEqual([
+      new Date('2025-09-04').getTime(),
+      new Date('2026-10-20').getTime(),
+    ])
   })
 
   it('uses only completion payloads for history and never invents a workout from session metadata', () => {

@@ -35,7 +35,7 @@ function mapError(error) {
   if (code === '42501' || code === 'PGRST301' || error?.status === 401) return new TrainingRepositoryError('forbidden', { code, cause: error })
   if (code === '55000') return new TrainingRepositoryError('finalized', { code, cause: error })
   if (code === '23505') return new TrainingRepositoryError('active-session', { code, cause: error })
-  return new TrainingRepositoryError('request-failed', { code, retryable: false, cause: error })
+  return new TrainingRepositoryError('request-failed', { code, retryable: Number(error?.status) >= 500, cause: error })
 }
 
 function parseResponse(parser, value, accountId) {
@@ -65,7 +65,7 @@ export function createTrainingRepository({ client, accountId }) {
     } catch (error) {
       throw mapError(error)
     }
-    if (result?.error) throw mapError(result.error)
+    if (result?.error) throw mapError({ ...result.error, status: result.error.status ?? result.status })
     return parseResponse(parser, result?.data, accountId)
   }
 
@@ -76,8 +76,19 @@ export function createTrainingRepository({ client, accountId }) {
     } catch (error) {
       throw mapError(error)
     }
-    if (result?.error) throw mapError(result.error)
+    if (result?.error) throw mapError({ ...result.error, status: result.error.status ?? result.status })
     return parseResponse(parser, result?.data, accountId)
+  }
+
+  async function readAll(table, orderColumn) {
+    const pageSize = 500
+    const rows = []
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await read(client.from(table).select('*').eq('user_id', accountId)
+        .order(orderColumn, { ascending: true }).range(offset, offset + pageSize - 1), value => value)
+      rows.push(...page)
+      if (page.length < pageSize) return rows
+    }
   }
 
   return {
@@ -156,8 +167,8 @@ export function createTrainingRepository({ client, accountId }) {
     async loadBody() {
       if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
       const [weights, measurements] = await Promise.all([
-        read(client.from('bodyweight_entries').select('*').eq('user_id', accountId).order('measured_on', { ascending: true }).limit(1000), value => value),
-        read(client.from('body_measurement_checkins').select('*').eq('user_id', accountId).order('measured_on', { ascending: true }).limit(1000), value => value),
+        readAll('bodyweight_entries', 'measured_on'),
+        readAll('body_measurement_checkins', 'measured_on'),
       ])
       return parseResponse(parseBodyData, { weights, measurements }, accountId)
     },

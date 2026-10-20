@@ -302,7 +302,7 @@ function EffortCard({ S }) {
 export default function Stats() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const [range, setRange] = useState(90)
+  const [range, setRange] = useState(0)
   const [exId, setExId] = useState(null)
   const [exMetric, setExMetric] = useState('top')
   const workouts = S.workouts
@@ -313,9 +313,9 @@ export default function Stats() {
     let raw = S.bodyweight
     if (range > 0) {
       const cutoff = Date.now() - range * 86400000
-      raw = raw.filter(b => b.t >= cutoff)
+      raw = raw.filter(b => new Date(b.d).getTime() >= cutoff)
     }
-    return raw.map(b => ({ t: b.t || new Date(b.d).getTime(), y: displayMass(b.w), d: b.d }))
+    return raw.map(b => ({ t: new Date(b.d).getTime(), y: displayMass(b.w), d: b.d }))
   }, [S.bodyweight, range, displayUnit])
 
   const volPts = useMemo(() => {
@@ -331,7 +331,7 @@ export default function Stats() {
   const kind = displayScale(S)
   const hd = scaleName(kind)
 
-  const bw30 = S.bodyweight.filter(b => (b.t || new Date(b.d).getTime()) > now - 30 * 86400000)
+  const bw30 = S.bodyweight.filter(b => new Date(b.d).getTime() > now - 30 * 86400000)
   const bwDelta30 = bw30.length > 1 ? bw30[bw30.length - 1].w - bw30[0].w : null
   const displayBwDelta30 = bwDelta30 == null ? null : Math.sign(bwDelta30) * displayMass(Math.abs(bwDelta30))
   const monthW = workouts.filter(w => String(w.d || '').slice(0, 7) === todayISO().slice(0, 7)).length

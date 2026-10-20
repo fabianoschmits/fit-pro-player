@@ -60,10 +60,17 @@ describe('training repository', () => {
     [{ code: '55000', message: 'workout session already finalized' }, 'finalized', false],
     [{ code: '23505', message: 'active workout already exists' }, 'active-session', false],
     [{ message: 'Failed to fetch' }, 'offline', true],
+    [{ status: 504, message: 'Gateway timeout' }, 'request-failed', true],
   ])('maps RPC error %o to %s', async (error, kind, retryable) => {
     const { createTrainingRepository } = await load()
     const repo = createTrainingRepository({ client: clientWithRpc(async () => ({ data: null, error })), accountId: 'account-1' })
     await expect(repo.startSession({ sessionId: 's', prescriptionSnapshot: {} })).rejects.toMatchObject({ kind, retryable })
+  })
+
+  it('uses the HTTP status when Supabase returns a transient RPC error without status on the error object', async () => {
+    const { createTrainingRepository } = await load()
+    const repo = createTrainingRepository({ client: clientWithRpc(async () => ({ data: null, error: { message: 'Gateway timeout' }, status: 504 })), accountId: 'account-1' })
+    await expect(repo.startSession({ sessionId: 's', prescriptionSnapshot: {} })).rejects.toMatchObject({ kind: 'request-failed', retryable: true })
   })
 
   it('treats an idempotent replay response as the current session', async () => {
@@ -75,7 +82,7 @@ describe('training repository', () => {
 
   it('loads plan/history and saves preferences through owner-scoped boundaries', async () => {
     const { createTrainingRepository } = await load()
-    const query = (data) => ({ select: () => query(data), eq: () => query(data), order: () => query(data), limit: async () => ({ data, error: null }), maybeSingle: async () => ({ data: data[0] || null, error: null }) })
+    const query = (data) => ({ select: () => query(data), eq: () => query(data), order: () => query(data), limit: async () => ({ data, error: null }), range: async (start, end) => ({ data: data.slice(start, end + 1), error: null }), maybeSingle: async () => ({ data: data[0] || null, error: null }) })
     const from = vi.fn(table => query(table === 'athlete_routines' ? [{ id: 'r1', user_id: 'account-1', revision: 1, title: 'A', position: 0, prescription: {}, created_at: 'a', updated_at: 'b' }]
       : table === 'athlete_schedules' ? [{ user_id: 'account-1', revision: 1, mode: 'weekly', schedule: {}, updated_at: 'b' }]
         : table === 'workout_session_operations' ? [{ session_id: 'session-1', user_id: 'account-1', kind: 'session_completed', payload: { workout: { id: 'session-1', entries: [] } } }]
@@ -90,7 +97,7 @@ describe('training repository', () => {
 
   it('loads preferences and body records through independently scoped reads', async () => {
     const { createTrainingRepository } = await load()
-    const query = (data) => ({ select: () => query(data), eq: () => query(data), order: () => query(data), limit: async () => ({ data, error: null }), maybeSingle: async () => ({ data: data[0] || null, error: null }) })
+    const query = (data) => ({ select: () => query(data), eq: () => query(data), order: () => query(data), limit: async () => ({ data, error: null }), range: async (start, end) => ({ data: data.slice(start, end + 1), error: null }), maybeSingle: async () => ({ data: data[0] || null, error: null }) })
     const from = vi.fn(table => query({
       account_preferences: [{ user_id: 'account-1', revision: 1, display_unit: 'kg', mass_unit: 'kg', state_schema_version: 2, preferences: { lang: 'pt' }, updated_at: 'now' }],
       bodyweight_entries: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80, created_at: 'a', updated_at: 'b' }],
@@ -102,6 +109,23 @@ describe('training repository', () => {
     expect(from).toHaveBeenCalledWith('account_preferences')
     expect(from).toHaveBeenCalledWith('bodyweight_entries')
     expect(from).toHaveBeenCalledWith('body_measurement_checkins')
+  })
+
+  it('loads every body entry beyond the first thousand before a replacement save', async () => {
+    const { createTrainingRepository } = await load()
+    const weights = Array.from({ length: 1001 }, (_, index) => ({
+      id: `aaaaaaaa-aaaa-4aaa-8aaa-${String(index).padStart(12, '0')}`,
+      user_id: 'account-1',
+      measured_on: new Date(Date.UTC(2023, 0, 1 + index)).toISOString().slice(0, 10),
+      weight_kg: 80, created_at: 'a', updated_at: 'b',
+    }))
+    const query = rows => ({
+      select: () => query(rows), eq: () => query(rows), order: () => query(rows),
+      limit: async count => ({ data: rows.slice(0, count), error: null }),
+      range: async (start, end) => ({ data: rows.slice(start, end + 1), error: null }),
+    })
+    const repo = createTrainingRepository({ client: { from: table => query(table === 'bodyweight_entries' ? weights : []), rpc: vi.fn() }, accountId: 'account-1' })
+    expect((await repo.loadBody()).weights).toHaveLength(1001)
   })
 
   it('loads completion payloads alongside historical session metadata', async () => {

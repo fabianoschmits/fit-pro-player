@@ -14,9 +14,18 @@ import { t } from '../lib/i18n.js'
 import { todayISO } from '../lib/format.js'
 
 const localSaveError = () => t('Não foi possível salvar neste dispositivo. Tente novamente.')
-function confirmPersonalSave(toast) {
+async function confirmPersonalSave(toast) {
   if (useStore.getState().persistence?.state === 'error') throw new Error(localSaveError())
+  const store = useStore.getState()
+  if (store.getActiveLocalScope?.()?.kind === 'account' && Object.values(store.S._pendingSync || {}).some(Boolean)) {
+    await store.retryAccountSync?.()
+    if (Object.values(useStore.getState().S._pendingSync || {}).some(Boolean)) {
+      toast(t('Changes waiting to sync'), { tone: 'warning' })
+      return false
+    }
+  }
   toast('Salvo com sucesso', { tone: 'success' })
+  return true
 }
 function PersonalSaveButton({ onSave, onError }) {
   return <Button appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={() => onError(localSaveError())}
@@ -27,7 +36,7 @@ function EditableField({ name, label, value, summary = value, onChange, children
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
   const [error, setError] = useState('')
-  const save = () => { setError(''); onChange(draft); setEditing(false); onSaved?.() }
+  const save = async () => { setError(''); const result = await onChange(draft); setEditing(false); onSaved?.(); return result }
   return <section className={`personal-field ${editing ? 'is-editing' : ''}`} data-profile-field={name}>
     <div className="personal-field-head"><span>{label}</span>{editing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setError(''); setDraft(value ?? ''); setEditing(false) }}>Cancelar</button><PersonalSaveButton onSave={save} onError={setError} /></span> : <button type="button" className="personal-edit" onClick={() => { setDraft(value ?? ''); setEditing(true) }} aria-label={`Editar ${label}`}><Icon name="edit" /><span>Editar</span></button>}</div>
     {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
@@ -40,7 +49,7 @@ function MeasuresField({ height, weight, onSave }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState({ height, weight })
   const [error, setError] = useState('')
-  const save = () => { setError(''); onSave(draft); setEditing(false) }
+  const save = async () => { setError(''); const result = await onSave(draft); setEditing(false); return result }
   return <section className={`personal-field personal-measures-field ${editing ? 'is-editing' : ''}`} data-profile-field="measures">
     <div className="personal-field-head"><span>Medidas</span>{editing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setError(''); setDraft({ height, weight }); setEditing(false) }}>Cancelar</button><PersonalSaveButton onSave={save} onError={setError} /></span> : <button type="button" className="personal-edit" onClick={() => { setDraft({ height, weight }); setEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
     {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
@@ -58,12 +67,12 @@ export default function PersonalData() {
   const [avatarEditing, setAvatarEditing] = useState(false)
   const [avatarDraft, setAvatarDraft] = useState(profile.avatarId)
   const [avatarError, setAvatarError] = useState('')
-  const commit = (key, value) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), [key]: value }; if (key === 'sex') state.body = value }); confirmPersonalSave(toast) }
+  const commit = (key, value) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), [key]: value }; if (key === 'sex') state.body = value }); return confirmPersonalSave(toast) }
   return <main className="narrow personal-data-page">
     <AppHeader title="Dados pessoais" subtitle="Mantenha seu perfil atualizado" />
     <button type="button" className="personal-back" onClick={() => nav('/more')}><Icon name="chevronLeft" /> Voltar</button>
     <section className={`personal-avatar-card ${avatarEditing ? 'is-editing' : ''}`} data-profile-field="avatarId">
-      <div className="personal-field-head"><span>Seu avatar</span>{avatarEditing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setAvatarError(''); setAvatarDraft(profile.avatarId); setAvatarEditing(false) }}>Cancelar</button><PersonalSaveButton onSave={() => { setAvatarError(''); commit('avatarId', avatarDraft); setAvatarEditing(false) }} onError={setAvatarError} /></span> : <button type="button" className="personal-edit" onClick={() => { setAvatarDraft(profile.avatarId); setAvatarEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
+      <div className="personal-field-head"><span>Seu avatar</span>{avatarEditing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setAvatarError(''); setAvatarDraft(profile.avatarId); setAvatarEditing(false) }}>Cancelar</button><PersonalSaveButton onSave={() => { setAvatarError(''); setAvatarEditing(false); return commit('avatarId', avatarDraft) }} onError={setAvatarError} /></span> : <button type="button" className="personal-edit" onClick={() => { setAvatarDraft(profile.avatarId); setAvatarEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
       {avatarError && <FppActionFeedback state="error">{avatarError}</FppActionFeedback>}
       <div className="personal-avatar-summary"><AvatarImage avatarId={profile.avatarId} alt="" /><span>{avatarEditing ? 'Arraste para os lados e escolha seu avatar' : 'Avatar atual'}</span></div>
       <div className="personal-avatar-editor" aria-hidden={!avatarEditing}><AvatarPicker value={avatarEditing ? avatarDraft : profile.avatarId} onChange={setAvatarDraft} t={t} orientation="horizontal" disabled={!avatarEditing} /></div>
@@ -83,7 +92,7 @@ export default function PersonalData() {
           else state.bodyweight.push({ d: date, w: weightKg, t: Date.now() })
           state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
         })
-        confirmPersonalSave(toast)
+        return confirmPersonalSave(toast)
       }} />
       <EditableField name="goal" label="Objetivo" value={profile.goal} summary={profile.goal ? t(PROFILE_GOAL_LABELS[profile.goal]) : 'Não informado'} onChange={value => commit('goal', value)}>{({ editing, value, setValue }) => <Segmented options={PROFILE_GOALS.map(goal => ({ value: goal, label: t(PROFILE_GOAL_LABELS[goal]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="experience" label="Experiência" value={profile.experience} summary={profile.experience ? t(EXPERIENCE_LABELS[profile.experience]) : 'Não informado'} onChange={value => commit('experience', value)}>{({ editing, value, setValue }) => <Segmented options={EXPERIENCE_LEVELS.map(level => ({ value: level, label: t(EXPERIENCE_LABELS[level]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
