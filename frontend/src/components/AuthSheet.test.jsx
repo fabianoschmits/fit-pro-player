@@ -182,6 +182,10 @@ describe('AuthSheet', () => {
     expect(input('Email').getAttribute('autocomplete')).toBe('email');
     expect(input('New password').getAttribute('autocomplete')).toBe('new-password');
     expect(input('Confirm password')).toBeTruthy();
+    expect(container.querySelector('.auth-security-status')).toBeNull();
+    const logo = container.querySelector('.auth-brand-logo');
+    expect(logo).toBeTruthy();
+    expect(logo.getAttribute('src')).toBe('/brand-logo.svg');
   });
 
   it('shows password strength and toggles password visibility', async () => {

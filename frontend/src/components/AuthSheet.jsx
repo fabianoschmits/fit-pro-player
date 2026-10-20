@@ -171,11 +171,6 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       <h3>{t(title)}</h3>
       <p>{isSignUp ? 'Salve seu histórico e leve seu treino para onde você estiver.' : isRecovery ? 'Enviaremos um link para recuperar seu acesso.' : 'Seu treino continua no ponto em que você deixou.'}</p>
     </div>
-    {isSignUp && <div className={'auth-security-status' + (signUpLimit?.blocked ? ' is-blocked' : '')} role="status" aria-live="polite">
-      <span className="auth-security-icon"><Icon name="shield" /></span>
-      <span><strong>{signUpLimit?.blocked ? 'Proteção temporariamente acionada' : 'Proteção anti-brute-force ativa'}</strong><small>{signUpLimit?.blocked ? 'Novas tentativas serão liberadas em alguns minutos.' : `Até ${signUpRateLimitConfig().maxAttempts} tentativas por janela para proteger seu cadastro.`}</small></span>
-      <b>{signUpLimit?.blocked ? 'Aguardar' : 'Ativa'}</b>
-    </div>}
     {isSignUp && <>
       <label>{t('Name')}<input className="input" aria-label={t('Name')} autoComplete="name" required value={values.name} onChange={change('name')} /></label>
       <div style={{ height: 10 }} />
@@ -197,7 +192,12 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
         <label>{t('Confirm password')}<span className="auth-password-field"><input className="input" type={showConfirmation ? 'text' : 'password'} aria-label={t('Confirm password')} autoComplete="new-password" required minLength={8} aria-describedby="auth-error" value={values.confirmation} onChange={change('confirmation')} /><button type="button" aria-label={showConfirmation ? 'Ocultar confirmação' : 'Mostrar confirmação'} onClick={() => setShowConfirmation(value => !value)}><Icon name={showConfirmation ? 'eyeSlash' : 'eye'} /></button></span></label>
       </>}
     </>}
-    {isSignUp && <label className="auth-consent"><input type="checkbox" checked={privacyAccepted} onChange={event => setPrivacyAccepted(event.target.checked)} /> <span>Aceito o <a href="#/privacy" target="_blank" rel="noreferrer">Aviso de Privacidade</a> e os <a href="#/terms" target="_blank" rel="noreferrer">Termos de Uso</a>.</span></label>}
+    {isSignUp && <>
+      <label className="auth-consent"><input type="checkbox" checked={privacyAccepted} onChange={event => setPrivacyAccepted(event.target.checked)} /> <span>Aceito o <a href="#/privacy" target="_blank" rel="noreferrer">Aviso de Privacidade</a> e os <a href="#/terms" target="_blank" rel="noreferrer">Termos de Uso</a>.</span></label>
+      <div className="auth-brand-logo-wrap">
+        <img src="/brand-logo.svg" alt="Fit Pro Player" className="auth-brand-logo" />
+      </div>
+    </>}
     <p id="auth-error" ref={alertRef} role="alert" tabIndex="-1">{error}</p>
     {notice && <p role="status">{notice}</p>}
     <Button variant="primary" type="submit" state={busy ? 'loading' : submitState} loadingLabel={t('Loading…')} successLabel={t('Done')}>{t(submitLabel)}</Button>
