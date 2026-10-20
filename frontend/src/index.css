@@ -398,6 +398,39 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 }
 .tab-item.on .tab-label{font-weight:700;color:var(--acc)}
 
+/* Match the original Fit Pro Player navigation scale inside the corner menu. */
+.corner-nav{font-size:10px}
+.corner-nav-main{gap:6px;padding:6px 8px}
+.corner-nav-tab{min-width:68px;height:58px;padding:5px 10px;gap:4px}
+.corner-nav-tab .icn{width:21px;height:21px;--icon-stroke:1.75}
+.corner-nav-tab.is-active .icn{width:22px;height:22px;--icon-stroke:2.05}
+.corner-nav-tab--start{min-width:72px}
+.corner-nav-tab--start .corner-nav-icon{width:48px;height:48px}
+.corner-nav-tab--start .corner-nav-icon .icn{width:23px;height:23px;--icon-stroke:2}
+.corner-nav-toggle{width:64px;height:60px}
+.corner-nav-toggle .icn{width:21px;height:21px;--icon-stroke:1.75}
+.corner-nav-more-item>.icn{width:22px;height:22px;--icon-stroke:1.75}
+@media(max-width:480px){.corner-nav-tab{min-width:54px;height:58px}.corner-nav-tab--start{min-width:62px}.corner-nav-tab--start .corner-nav-icon{width:44px;height:44px}}
+
+/* Same hinged motion as the reference menu; keep the arm mounted for its exit. */
+.corner-nav-main{transform-origin:left center;animation:corner-arm-in .24s cubic-bezier(.2,.8,.2,1) both;perspective:700px}
+.corner-nav-main.is-hidden{opacity:0;pointer-events:none;transform:perspective(700px) rotateY(-45deg) translateX(-10px);transition:opacity .2s ease,transform .24s cubic-bezier(.2,.8,.2,1)}
+.corner-nav-more{opacity:0;pointer-events:none;transform:perspective(700px) rotateX(-45deg) translateY(10px);transform-origin:bottom left;transition:opacity .2s ease,transform .24s cubic-bezier(.2,.8,.2,1)}
+.corner-nav-more.is-visible{opacity:1;pointer-events:auto;transform:perspective(700px) rotateX(0) translateY(0)}
+@keyframes corner-arm-in{from{opacity:0;transform:perspective(700px) rotateY(-60deg) translateX(-15px)}to{opacity:1;transform:perspective(700px) rotateY(0) translateX(0)}}
+@media(max-width:480px){.corner-nav{left:12px;right:12px}.corner-nav-rail{width:100%;gap:8px}.corner-nav-main{width:calc(100% - 72px);justify-content:space-around}.corner-nav-tab{flex:1;min-width:0}.corner-nav-tab--start{flex:1.15}.corner-nav-more{width:calc(100vw - 24px)}}
+
+/* Theme-safe materials: the corner menu follows the app palette in both modes. */
+.corner-nav-toggle{background:linear-gradient(135deg,var(--acc),color-mix(in srgb,var(--acc) 72%,var(--bg)));color:var(--on-acc);border:var(--hair) solid color-mix(in srgb,var(--acc) 62%,var(--surface-border));box-shadow:0 8px 22px color-mix(in srgb,var(--acc) 30%,transparent)}
+.corner-nav-main,.corner-nav-more{background:color-mix(in srgb,var(--bg-el) 94%,transparent);border-color:var(--surface-border);box-shadow:0 12px 30px color-mix(in srgb,var(--label) 16%,transparent)}
+.corner-nav-more-trigger{background:var(--surface);border-color:var(--surface-border);color:var(--acc)}
+.corner-nav-tab--start .corner-nav-icon{background:var(--acc);color:var(--on-acc);box-shadow:0 3px 12px color-mix(in srgb,var(--acc) 38%,transparent)}
+.corner-nav-tab.is-active{background:color-mix(in srgb,var(--acc) 16%,var(--surface));outline-color:color-mix(in srgb,var(--acc) 42%,var(--surface-border))}
+.corner-nav.is-free .corner-nav-toggle{cursor:grab;touch-action:none}.corner-nav.is-free .corner-nav-toggle:active{cursor:grabbing}.corner-nav-drag-toggle{border-top:var(--hair) solid var(--surface-border);margin-top:5px;border-radius:0}
+.corner-nav-more{bottom:84px}
+.corner-nav.more-below .corner-nav-pivot{flex-direction:column-reverse}
+.corner-nav.more-below .corner-nav-more{top:84px;bottom:auto;transform-origin:top left}
+
 /* Start — permanent elevated FAB (original Fit Pro Player highlight). */
 .tab-item--start{margin-top:-14px;padding-bottom:4px}
 .tab-start-wrap{
