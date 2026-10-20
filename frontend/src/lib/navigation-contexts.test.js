@@ -29,6 +29,22 @@ describe('navigation-contexts resolver', () => {
     expect(resLib.items.map(i => i.k)).toEqual(['home', 'plan', 'library', 'history'])
   })
 
+  it('keeps a resumable workout reachable without replacing the current route action', () => {
+    const active = { active: { id: 'active-workout' }, routines: [] }
+
+    const plan = resolveNavigationContext({ pathname: '/plan', hasActiveWorkout: true, workoutState: active })
+    expect(plan.items.map(i => i.k)).toEqual(['home', 'plan', 'library', 'start'])
+    expect(plan.items[3].label(active)).toBe('Retomar')
+
+    const stats = resolveNavigationContext({ pathname: '/stats', hasActiveWorkout: true, workoutState: active })
+    expect(stats.items.map(i => i.k)).toEqual(['home', 'stats', 'body-progress', 'start'])
+    expect(stats.items[3].label(active)).toBe('Retomar')
+
+    const privacy = resolveNavigationContext({ pathname: '/privacy-settings', hasActiveWorkout: true, workoutState: active })
+    expect(privacy.activeKey).toBe('privacy-settings')
+    expect(privacy.items.map(i => i.k)).toEqual(['home', 'settings', 'start', 'privacy-settings'])
+  })
+
   it('inherits Training context on /plan/r/:id (level 2)', () => {
     const res = resolveNavigationContext({ pathname: '/plan/r/routine-123' })
     expect(res.contextId).toBe('training')

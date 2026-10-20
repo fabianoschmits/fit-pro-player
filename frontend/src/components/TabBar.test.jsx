@@ -70,6 +70,18 @@ describe('TabBar folding navigation', () => {
     expect(toggle().querySelector('.nav-icon__play')).toBeNull()
   })
 
+  it('keeps Retomar available from contextual screens while an active workout exists', () => {
+    mocks.state.S = { ...mocks.state.S, active: { id: 'active-workout' } }
+    render('/stats')
+    click(toggle())
+    const resume = container.querySelector('[data-tab-key="start"]')
+    expect(resume.textContent).toContain('Retomar')
+    expect(resume.querySelector('.nav-icon__dumbbell')).not.toBeNull()
+    expect(resume.querySelector('.nav-icon__play')).not.toBeNull()
+    click(resume)
+    expect(container.querySelector('output').textContent).toBe('/workout')
+  })
+
   it('starts collapsed with only the current destination available to assistive technology', () => {
     render('/stats')
     expect(toggle().getAttribute('aria-expanded')).toBe('false')

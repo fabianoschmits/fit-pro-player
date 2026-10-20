@@ -27,6 +27,19 @@ export function getStoredNavigationContext() {
   }
 }
 
+// A running workout must remain one tap away without taking over the item that
+// represents the screen the person is currently using. Less-frequent routes
+// remain available from More.
+function withResumeAction(items, activeKey, hasActiveWorkout) {
+  if (!hasActiveWorkout || items.some(item => item.k === 'start')) return items
+  const replaceAt = items.map((item, index) => ({ item, index })).reverse()
+    .find(({ item }) => item.k !== 'home' && item.k !== activeKey)?.index
+  if (replaceAt == null) return items
+  const next = [...items]
+  next[replaceAt] = { k: 'start', icon: 'dumbbell', action: true, to: '/workout', label: state => startTabShortLabel(state) }
+  return next
+}
+
 /**
  * Resolves which navigation context, items, and active item key apply.
  */
@@ -260,6 +273,8 @@ export function resolveNavigationContext({
         { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
       ]
   }
+
+  items = withResumeAction(items, activeKey, hasActiveWorkout)
 
   // Determine pivotItem: represents the current page when the menu is closed
   let pivotItem = items.find(item => item.k === activeKey) || null
