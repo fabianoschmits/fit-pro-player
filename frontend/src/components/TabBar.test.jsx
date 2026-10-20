@@ -45,6 +45,31 @@ afterEach(() => {
 })
 
 describe('TabBar folding navigation', () => {
+  it('keeps the dumbbell when a workout becomes resumable and resumes the same entry point', () => {
+    render()
+    click(toggle())
+    const start = () => container.querySelector('[data-tab-key="start"]')
+    expect(start().querySelector('.nav-icon__dumbbell')).not.toBeNull()
+    expect(start().querySelector('.nav-icon__play')).toBeNull()
+
+    mocks.state.S = { ...mocks.state.S, active: { id: 'active-workout' } }
+    render()
+    expect(start().textContent).toContain('Retomar')
+    expect(start().querySelector('.nav-icon__dumbbell')).not.toBeNull()
+    expect(start().querySelector('.nav-icon__play')).not.toBeNull()
+    click(start())
+    expect(container.querySelector('output').textContent).toBe('/workout')
+    expect(toggle().textContent).toContain('Retomar')
+    expect(toggle().querySelector('.nav-icon__dumbbell')).not.toBeNull()
+    expect(toggle().querySelector('.nav-icon__play')).not.toBeNull()
+
+    mocks.state.S = { ...mocks.state.S, active: null }
+    render()
+    expect(start().querySelector('.nav-icon__dumbbell')).not.toBeNull()
+    expect(start().querySelector('.nav-icon__play')).toBeNull()
+    expect(toggle().querySelector('.nav-icon__play')).toBeNull()
+  })
+
   it('starts collapsed with only the current destination available to assistive technology', () => {
     render('/stats')
     expect(toggle().getAttribute('aria-expanded')).toBe('false')

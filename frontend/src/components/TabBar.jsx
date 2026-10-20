@@ -11,6 +11,7 @@ import { createProfessionalWorkflowRepository } from '../lib/professional-workfl
 import { createConsoleRepository } from '../lib/console.js'
 import { confirmSheet } from '../sheets.jsx'
 import Icon from './Icon.jsx'
+import NavigationIcon from './NavigationIcon.jsx'
 import { useFppActivation } from './useFppActivation.js'
 
 const NAVIGATION_LAYOUT_KEY = 'fpp_navigation_layout_v1'
@@ -21,7 +22,7 @@ const MAX_ARM_WIDTH = 320
 const MAIN = [
   { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
   { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
-  { k: 'start', icon: s => s.active ? 'play' : 'dumbbell', action: true, label: s => startTabShortLabel(s) },
+  { k: 'start', icon: 'dumbbell', action: true, label: s => startTabShortLabel(s) },
   { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
 ]
 const activeMain = path => {
@@ -29,13 +30,17 @@ const activeMain = path => {
   return root === 'body-progress' ? 'stats' : root === 'workout' ? 'start' : MAIN.some(x => x.k === root) ? root : null
 }
 
-function MainButton({ item, active, state, onSelect }) {
+function MainButton({ item, active, state, visible, entryKey, onSelect }) {
   const trigger = useFppActivation({ onActivate: onSelect })
-  const icon = typeof item.icon === 'function' ? item.icon(state) : item.icon
+  const [activation, setActivation] = useState(0)
+  const select = event => {
+    if (!event.defaultPrevented && !trigger.pressed) setActivation(value => value + 1)
+    trigger.run(event)
+  }
   return <button type="button" data-tab-key={item.k}
     className={'corner-nav-tab' + (item.action ? ' corner-nav-tab--start' : '') + (active ? ' is-active' : '')}
-    onClick={trigger.run} aria-current={active ? 'page' : undefined}>
-    <span className="corner-nav-icon"><Icon name={icon} /></span><span>{item.label(state)}</span>
+    onClick={select} aria-current={active ? 'page' : undefined}>
+    <span className="corner-nav-icon"><NavigationIcon name={item.k} resume={Boolean(state.active)} active={active} visible={visible} activation={activation} entryKey={entryKey} /></span><span>{item.label(state)}</span>
   </button>
 }
 
@@ -74,6 +79,7 @@ export default function TabBar({ onStart }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [professional, setProfessional] = useState(false), [consoleAccess, setConsoleAccess] = useState(false)
   const [moveReady, setMoveReady] = useState(false)
+  const [iconActivation, setIconActivation] = useState(0)
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
   const rootRef = useRef(null), toggleRef = useRef(null), moreTrigger = useRef(null), firstMore = useRef(null)
   const drag = useRef(null), ignoreClickUntil = useRef(0)
@@ -164,6 +170,7 @@ export default function TabBar({ onStart }) {
   }
   const toggleMenu = () => {
     if (Date.now() < ignoreClickUntil.current) return
+    setIconActivation(value => value + 1)
     setOpen(value => !value)
     setMoreOpen(false)
   }
@@ -220,11 +227,13 @@ export default function TabBar({ onStart }) {
         <button type="button" ref={toggleRef} className="corner-nav-toggle" aria-expanded={open} aria-controls="corner-nav-main"
           aria-label={`${open ? 'Fechar menu' : 'Abrir menu'}: ${currentItem.label(S)}`}
           onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag} onClick={toggleMenu}>
-          <span className="corner-nav-icon"><Icon name={typeof currentItem.icon === 'function' ? currentItem.icon(S) : currentItem.icon} /></span>
+          <span className="corner-nav-icon">{current
+            ? <NavigationIcon name={current} resume={Boolean(S.active)} active activation={iconActivation} />
+            : <Icon name={currentItem.icon} />}</span>
           <span className="corner-nav-label">{currentItem.label(S)}</span>
         </button>
         <div id="corner-nav-main" className="corner-nav-main" aria-hidden={!open} inert={!open}>
-          {MAIN.map(item => <MainButton key={item.k} item={item} state={S} active={current === item.k} onSelect={() => item.action ? start() : go(item.to)} />)}
+          {MAIN.map(item => <MainButton key={item.k} item={item} state={S} active={current === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
         </div>
       </div>
       <div id="corner-nav-more" className={'corner-nav-more' + (moreOpen ? ' is-visible' : '')} role="menu" aria-label={t('Mais opções')} aria-hidden={!moreOpen} inert={!moreOpen}>

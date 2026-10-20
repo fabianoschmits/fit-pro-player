@@ -383,3 +383,194 @@ test('the mounted main menu folds in both directions and respects reduced motion
   expect(durations.every(duration => duration <= 0.01)).toBe(true)
   await expect(main(page).getByRole('button')).toHaveCount(4)
 })
+
+test.describe('navigation icons', () => {
+  const icons = page => nav(page).locator('svg.icn.nav-icon')
+  const tab = (page, key) => page.locator(`[data-tab-key="${key}"]`)
+
+  async function recordAnimations(page) {
+    await nav(page).evaluate(element => {
+      window.navigationIconAnimations = []
+      element.addEventListener('animationstart', event => {
+        const icon = event.target.closest('.nav-icon')
+        if (!icon) return
+        for (const animation of event.target.getAnimations()) {
+          if (animation.animationName !== event.animationName) continue
+          const timing = animation.effect.getTiming()
+          window.navigationIconAnimations.push({
+            name: event.animationName,
+            at: performance.now(),
+            icon: icon.dataset.navIcon,
+            pivot: Boolean(icon.closest('.corner-nav-toggle')),
+            duration: timing.duration,
+            iterations: timing.iterations,
+          })
+        }
+      })
+    })
+  }
+
+  async function expectIdle(page) {
+    await expect.poll(() => icons(page).evaluateAll(elements => elements.flatMap(element =>
+      element.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running')
+    ).length)).toBe(0)
+  }
+
+  async function expectFiniteAnimations(page, from, kind) {
+    await expect.poll(() => page.evaluate(({ from, kind }) =>
+      window.navigationIconAnimations.slice(from).filter(animation => animation.icon === kind).length,
+    { from, kind })).toBeGreaterThan(0)
+    const animations = await page.evaluate(from => window.navigationIconAnimations.slice(from), from)
+    expect(animations.every(animation => animation.duration > 0 && animation.duration <= 500 && animation.iterations === 1)).toBe(true)
+    await expectIdle(page)
+  }
+
+  test('pointer activation and active-tab re-click finish, and history entry updates the pivot', async ({ page }) => {
+    await load(page, 390, 'no-preference')
+    await expect(icons(page)).toHaveCount(5)
+    await expectIdle(page)
+    await openMainNavigation(page)
+    await settle(page)
+    await recordAnimations(page)
+
+    await tab(page, 'plan').click()
+    await expect(page).toHaveURL(/#\/plan$/)
+    await expect(tab(page, 'plan')).toHaveAttribute('aria-current', 'page')
+    await expect(toggle(page).locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'plan')
+    await expectFiniteAnimations(page, 0, 'plan')
+    const planEvents = await page.evaluate(() => window.navigationIconAnimations
+      .filter(animation => animation.icon === 'plan' && !animation.pivot))
+    const planMotions = planEvents.map(animation => animation.name)
+    expect(planMotions, JSON.stringify(planEvents)).toEqual([...new Set(planMotions)])
+
+    const beforeBack = await page.evaluate(() => window.navigationIconAnimations.length)
+    await page.goBack()
+    await expect(page).toHaveURL(/#\/home$/)
+    await expect(tab(page, 'home')).toHaveAttribute('aria-current', 'page')
+    await expect(toggle(page).locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'home')
+    await expectFiniteAnimations(page, beforeBack, 'home')
+    expect(await page.evaluate(from => window.navigationIconAnimations.slice(from).some(animation => animation.pivot && animation.icon === 'home'), beforeBack)).toBe(true)
+
+    const beforeReclick = await page.evaluate(() => window.navigationIconAnimations.length)
+    await tab(page, 'home').click()
+    await expectFiniteAnimations(page, beforeReclick, 'home')
+
+    const beforeIdle = await page.evaluate(() => window.navigationIconAnimations.length)
+    await tab(page, 'plan').hover()
+    await page.mouse.move(200, 180)
+    await page.evaluate(() => window.scrollBy(0, 180))
+    await page.waitForTimeout(600)
+    await expectIdle(page)
+    expect(await page.evaluate(() => window.navigationIconAnimations.length)).toBe(beforeIdle)
+  })
+
+  test('keeps a previously visited inactive icon idle when the menu reopens', async ({ page }) => {
+    await load(page, 390, 'no-preference')
+    await openMainNavigation(page)
+    await settle(page)
+    await tab(page, 'plan').click()
+    await expect(page).toHaveURL(/#\/plan$/)
+    await settle(page)
+    await tab(page, 'home').click()
+    await expect(page).toHaveURL(/#\/home$/)
+    await settle(page)
+    await recordAnimations(page)
+    await toggle(page).click()
+    await settle(page)
+    await openMainNavigation(page)
+    await settle(page)
+    expect(await page.evaluate(() => window.navigationIconAnimations.filter(animation => animation.icon === 'plan'))).toEqual([])
+  })
+
+  test('starting the fixture workout keeps the dumbbell and adds play when the action becomes Retomar', async ({ page }, testInfo) => {
+    await load(page, 390, 'no-preference')
+    await openMainNavigation(page)
+    await settle(page)
+    const start = tab(page, 'start')
+    await expect(start.locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'start')
+    await expect(start.locator('.nav-icon__dumbbell')).toHaveCount(1)
+    await expect(start.locator('.nav-icon__play')).toHaveCount(0)
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+      await page.locator('.corner-nav-shell').screenshot({ path: testInfo.outputPath(`navigation-start-${theme}.png`) })
+    }
+    await recordAnimations(page)
+
+    await start.click()
+    await expect(page).toHaveURL(/#\/workout$/)
+    await expect(start).toContainText('Retomar')
+    await expect(toggle(page)).toHaveAccessibleName(/Retomar/)
+    for (const control of [start, toggle(page)]) {
+      await expect(control.locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
+      await expect(control.locator('.nav-icon__dumbbell')).toHaveCount(1)
+      await expect(control.locator('.nav-icon__play')).toHaveCount(1)
+    }
+    await expectFiniteAnimations(page, 0, 'resume')
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+      await page.locator('.corner-nav-shell').screenshot({ path: testInfo.outputPath(`navigation-resume-${theme}.png`) })
+    }
+  })
+
+  test('reduced motion keeps complete resume shapes and disables moving feedback', async ({ page }) => {
+    await load(page, 390, 'reduce')
+    await openMainNavigation(page)
+    await settle(page)
+    await expect(icons(page)).toHaveCount(5)
+    await recordAnimations(page)
+    await tab(page, 'start').click()
+    await expect(page).toHaveURL(/#\/workout$/)
+    await expect(tab(page, 'start')).toContainText('Retomar')
+    await expect(toggle(page).locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
+    await settle(page)
+
+    const artwork = await icons(page).evaluateAll(elements => elements.map(element => ({
+      animations: element.getAnimations({ subtree: true }).length,
+      shapes: [...element.querySelectorAll('.nav-icon__dumbbell, .nav-icon__play')].map(shape => ({
+        opacity: Number(getComputedStyle(shape).opacity),
+        visibility: getComputedStyle(shape).visibility,
+        width: shape.getBBox().width,
+        height: shape.getBBox().height,
+      })),
+    })))
+    expect(artwork.every(icon => icon.animations === 0)).toBe(true)
+    const resumeShapes = artwork.flatMap(icon => icon.shapes)
+    expect(resumeShapes).toHaveLength(4)
+    expect(resumeShapes.every(shape => shape.opacity > 0 && shape.visibility === 'visible' && shape.width > 0 && shape.height > 0)).toBe(true)
+    expect(await page.evaluate(() => window.navigationIconAnimations)).toEqual([])
+  })
+
+  test('inline artwork inherits currentColor and keeps the existing icon dimensions in both themes', async ({ page }) => {
+    await load(page, 390, 'reduce')
+    await openMainNavigation(page)
+    await settle(page)
+    await expect(icons(page)).toHaveCount(5)
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
+      const appearance = await icons(page).evaluateAll(elements => elements.map(element => {
+        const style = getComputedStyle(element)
+        const slot = element.parentElement.getBoundingClientRect()
+        const bounds = element.getBoundingClientRect()
+        return {
+          color: style.color,
+          slotColor: getComputedStyle(element.parentElement).color,
+          stroke: style.stroke,
+          width: bounds.width,
+          height: bounds.height,
+          slotWidth: slot.width,
+          slotHeight: slot.height,
+          externalImages: element.querySelectorAll('image, foreignObject').length,
+        }
+      }))
+      for (const icon of appearance) {
+        expect(icon.color).toBe(icon.slotColor)
+        expect(icon.stroke).toBe(icon.color)
+        expect(icon.width).toBeCloseTo(20, 0)
+        expect(icon.height).toBeCloseTo(20, 0)
+        expect(icon.slotWidth).toBeCloseTo(28, 0)
+        expect(icon.slotHeight).toBeCloseTo(28, 0)
+        expect(icon.externalImages).toBe(0)
+      }
+    }
+  })
+})

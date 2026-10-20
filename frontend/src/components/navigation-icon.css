@@ -1,0 +1,54 @@
+/* Finite SVG feedback: completed artwork is also the unanimated base state. */
+.nav-icon{--nav-icon-ease:cubic-bezier(.22,1,.36,1);display:block;flex:none}
+.nav-icon__house,.nav-icon__calendar-page,.nav-icon__calendar-check,
+.nav-icon__grip,.nav-icon__play,.nav-icon__bar{transform-box:fill-box;transform-origin:center}
+.nav-icon__calendar-page{transform-origin:center top}
+.nav-icon__bar{transform-origin:center bottom}
+
+.nav-icon__motion.is-playing .nav-icon__house{animation:nav-icon-home 320ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__calendar-page{animation:nav-icon-calendar 340ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__calendar-check{animation:nav-icon-mark 340ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__grip{animation:nav-icon-grip 420ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__plate--left{animation:nav-icon-plate-left 420ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__plate--right{animation:nav-icon-plate-right 420ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__play{animation:nav-icon-play 420ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__bar{animation:nav-icon-bar 340ms var(--nav-icon-ease) both}
+.nav-icon__motion.is-playing .nav-icon__bar--two{animation-delay:25ms}
+.nav-icon__motion.is-playing .nav-icon__bar--three{animation-delay:50ms}
+.nav-icon__motion.is-playing .nav-icon__bar--four{animation-delay:75ms}
+
+@keyframes nav-icon-home{
+  from{transform:translateY(2px);opacity:.65}
+  to{transform:translateY(0);opacity:1}
+}
+@keyframes nav-icon-calendar{
+  from{transform:translateY(1px) scaleY(.92);opacity:.7}
+  to{transform:translateY(0) scaleY(1);opacity:1}
+}
+@keyframes nav-icon-mark{
+  0%,25%{transform:translateY(1px) scale(.9);opacity:0}
+  100%{transform:translateY(0) scale(1);opacity:1}
+}
+@keyframes nav-icon-grip{
+  from{transform:scaleX(.9);opacity:.4}
+  55%,100%{transform:scaleX(1);opacity:1}
+}
+@keyframes nav-icon-plate-left{
+  from{transform:translateX(-2px);opacity:.35}
+  75%,100%{transform:translateX(0);opacity:1}
+}
+@keyframes nav-icon-plate-right{
+  0%,10%{transform:translateX(2px);opacity:.35}
+  85%,100%{transform:translateX(0);opacity:1}
+}
+@keyframes nav-icon-play{
+  0%,35%{transform:translateX(-.6px) scale(.9);opacity:0}
+  100%{transform:translateX(0) scale(1);opacity:1}
+}
+@keyframes nav-icon-bar{
+  from{transform:scaleY(.35);opacity:.55}
+  to{transform:scaleY(1);opacity:1}
+}
+@media(prefers-reduced-motion:reduce){
+  .nav-icon .nav-icon__motion *{animation:none!important}
+}
