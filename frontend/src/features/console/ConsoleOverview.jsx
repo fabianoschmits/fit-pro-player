@@ -33,7 +33,8 @@ export default function ConsoleOverview() {
       </section>
       <section aria-label="Gestão da plataforma"><SectionTitle>Gestão da plataforma</SectionTitle>
         {!accounts ? <Alert onRetry={refresh}>Não foi possível carregar o resumo de contas.</Alert> : <div className="console-metrics"><MetricCard label="Usuários" value={accounts.userCount} sub={`+${accounts.newUsers7d || 0} nos últimos 7 dias`} /><MetricCard label="Profissionais" value={accounts.professionalCount} /><MetricCard label="Verificações pendentes" value={accounts.pendingVerificationCount || 0} /><MetricCard label="Contas suspensas" value={accounts.suspendedCount || 0} /></div>}
-        <SectionBody><WorkspaceLink to="/console/users" icon="person" title="Usuários e contas" description="Consulte perfis, treinos, permissões e acesso." />
+        <SectionBody><WorkspaceLink to="/console/system" icon="server" title="Sistema & Banco de Dados" description="Monitore conexões, queries lentas, jobs do cron e erros." />
+          <WorkspaceLink to="/console/users" icon="person" title="Usuários e contas" description="Consulte perfis, treinos, permissões e acesso." />
           <WorkspaceLink to="/console/professionals" icon="personCircle" title="Profissionais" description="Revise cadastros e gerencie verificações profissionais." />
           <WorkspaceLink to="/console/professionals?status=pending" icon="shield" title="Aguardando verificação" description="Confira os perfis que precisam de análise." count={accounts?.pendingVerificationCount} />
         </SectionBody>

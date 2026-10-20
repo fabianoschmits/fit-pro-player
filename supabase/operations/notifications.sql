@@ -61,7 +61,7 @@ do $$declare job record; new_job_id bigint; begin
     update public.notification_settings set scheduler_job_ids=case when job.jobid=any(scheduler_job_ids) then scheduler_job_ids else array_append(scheduler_job_ids,job.jobid) end where singleton;
     perform cron.unschedule(job.jobid);
   end loop;
-  select cron.schedule('fitpp-notifications-dispatch','5 seconds','select public.notification_dispatch_tick()') into new_job_id;
+  select cron.schedule('fitpp-notifications-dispatch','* * * * *','select public.notification_dispatch_tick()') into new_job_id;
   update public.notification_settings set scheduler_job_ids=array_append(scheduler_job_ids,new_job_id) where singleton;
   select cron.schedule('fitpp-notifications-maintenance','0 * * * *',
     $cron$select public.notification_maintenance(); delete from cron.job_run_details where jobid in (select unnest(scheduler_job_ids) from public.notification_settings where singleton) and end_time<now()-interval '3 days';$cron$) into new_job_id;

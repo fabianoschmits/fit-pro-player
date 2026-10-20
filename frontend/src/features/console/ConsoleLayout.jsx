@@ -6,6 +6,7 @@ import './console.css'
 
 const navigation = [
   { to: '/console', label: 'Visão geral', description: 'Resumo da operação', icon: 'chartLine', group: 'Plataforma' },
+  { to: '/console/system', label: 'Sistema & Banco', description: 'Monitoramento, queries e logs de erro', icon: 'server', group: 'Plataforma' },
   { to: '/console/users', label: 'Usuários', description: 'Contas e permissões', icon: 'person', group: 'Plataforma' },
   { to: '/console/professionals', label: 'Profissionais', description: 'Perfis e verificações', icon: 'personCircle', group: 'Plataforma' },
   { to: '/console/support', label: 'Mensagens', description: 'Caixa de entrada da equipe', icon: 'list', group: 'Atendimento' },

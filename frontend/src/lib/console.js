@@ -132,6 +132,10 @@ export function createConsoleRepository({ client } = {}) {
     accountSuspended,
     overview,
     advancedMetrics,
+    systemHealth: () => rpc('ops_system_health'),
+    resolveSystemError: errorId => rpc('ops_resolve_system_error', { p_error_id: errorId }),
+    logSystemError: ({ source, message, severity = 'error', details = {} }) =>
+      rpc('ops_log_system_error', { p_source: source, p_message: message, p_severity: severity, p_details: details }),
     listUsers,
     userDetail,
     userTraining,

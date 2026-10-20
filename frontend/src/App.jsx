@@ -97,6 +97,7 @@ const ConsoleProfessionals = lazy(() => loadConsole().then(module => ({ default:
 const ConsoleUserPage = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUserPage })))
 const ConsoleSupport = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupport })))
 const ConsoleSupportTicket = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupportTicket })))
+const ConsoleSystem = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSystem })))
 const ConsoleFaq = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaq })))
 const ConsoleFaqEditor = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaqEditor })))
 const Support = lazy(loadSupport)
@@ -366,12 +367,28 @@ function Shell() {
         window.clearTimeout(timer)
         timer = window.setTimeout(async () => {
           const latest = useStore.getState().S
-          const plan = await repository.savePlan({
-            expectedRevision: planRevision,
-            mode: latest.planMode,
-            schedule: { week: latest.week, dayPlan: latest.dayPlan },
-            routines: latest.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
-          }).catch(() => null)
+          let plan = null
+          try {
+            plan = await repository.savePlan({
+              expectedRevision: planRevision,
+              mode: latest.planMode,
+              schedule: { week: latest.week, dayPlan: latest.dayPlan },
+              routines: latest.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
+            })
+          } catch (err) {
+            if (err?.kind === 'revision-conflict' && current(accountId)) {
+              const fresh = await repository.loadPlan().catch(() => null)
+              if (fresh && current(accountId)) {
+                planRevision = fresh.schedule?.revision || planRevision
+                plan = await repository.savePlan({
+                  expectedRevision: planRevision,
+                  mode: latest.planMode,
+                  schedule: { week: latest.week, dayPlan: latest.dayPlan },
+                  routines: latest.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
+                }).catch(() => null)
+              }
+            }
+          }
           if (!plan || !current(accountId)) return
           planRevision = plan.schedule?.revision || planRevision
           useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'plan', plan), false)
@@ -398,7 +415,18 @@ function Shell() {
       preferenceTimer = window.setTimeout(async () => {
         const currentState = useStore.getState().S
         const values = preferenceValues(currentState)
-        const saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values }).catch(() => null)
+        let saved = null
+        try {
+          saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values })
+        } catch (err) {
+          if (err?.kind === 'revision-conflict' && current(accountId)) {
+            const fresh = await repository.loadPreferences().catch(() => null)
+            if (fresh && current(accountId)) {
+              preferenceRevision = fresh.revision
+              saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values }).catch(() => null)
+            }
+          }
+        }
         if (!saved || !current(accountId)) return
         preferenceRevision = saved.revision
         useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'preferences', saved), false)
@@ -560,6 +588,7 @@ function Shell() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/motion-feedback" element={<MotionFeedback />} />
                 <Route path="/console" element={<ConsoleHome />} />
+                <Route path="/console/system" element={<ConsoleSystem />} />
                 <Route path="/console/laboratory" element={<ConsoleLaboratory />} />
                 <Route path="/console/users" element={<ConsoleUsers />} />
                 <Route path="/console/users/:userId" element={<ConsoleUserPage />} />
