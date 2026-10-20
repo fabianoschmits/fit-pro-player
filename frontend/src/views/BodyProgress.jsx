@@ -337,14 +337,6 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
       update(state => { state.bodyMeasurements = upsertBodyMeasurement(state.bodyMeasurements, { date: today, partId: selected, value: draft }) })
       if (useStore.getState().persistence?.state === 'error') throw new Error('local-write-failed')
     } catch { setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.')); return }
-    const store = useStore.getState()
-    if (store.getActiveLocalScope?.()?.kind === 'account' && store.S._pendingSync?.body) {
-      await store.retryAccountSync()
-      if (useStore.getState().S._pendingSync?.body) {
-        useUI.getState().toast(t('Changes waiting to sync'), { tone: 'warning' })
-        return
-      }
-    }
     setSavedPart(selected)
     useUI.getState().toast(`${part.circumferenceLabel}: ${formatCm(draft)} · ${t('Saved')}`, { tone: 'success' })
   }
@@ -357,11 +349,6 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
       else delete state.bodyMeasurementGoals[selected]
     })
     if (useStore.getState().persistence?.state === 'error') throw new Error('local-write-failed')
-    const store = useStore.getState()
-    if (store.getActiveLocalScope?.()?.kind === 'account' && store.S._pendingSync?.preferences) {
-      await store.retryAccountSync()
-      if (useStore.getState().S._pendingSync?.preferences) return false
-    }
     useUI.getState().toast(goalDraft > 0 ? 'Meta salva' : 'Meta removida', { tone: 'success' })
   }
 

@@ -19,27 +19,27 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.useRealTimers() })
 
 describe('action feedback lifetime', () => {
-  it('waits for database confirmation before showing success for an account edit', async () => {
+  it('confirms an account edit locally while the background queue is pending', async () => {
     await useStore.getState().activateLocalScope('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     const pending = deferred()
     useStore.getState().configureAccountSync(() => pending.promise)
     render({ onAction: () => useStore.getState().update(state => { state.profile.name = 'Ana' }), successLabel: 'Salvo', loadingLabel: 'Sincronizando…' })
     await act(async () => { click(); await Promise.resolve(); await Promise.resolve() })
     expect(useStore.getState().S._pendingSync.preferences).toBe(true)
-    expect(host.querySelector('button').getAttribute('data-state')).not.toBe('success')
+    expect(host.querySelector('button').getAttribute('data-state')).toBe('success')
     await settle(() => { useStore.setState(state => ({ S: { ...state.S, _pendingSync: { preferences: false } } })); pending.resolve() })
     expect(host.querySelector('button').getAttribute('data-state')).toBe('success')
     useStore.getState().releaseAccountSync()
     await useStore.getState().activateLocalScope(null)
   })
-  it('keeps an offline account action usable without showing a false saved state', async () => {
+  it('confirms the local save while account synchronization continues in the background', async () => {
     await useStore.getState().activateLocalScope('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
     useStore.getState().configureAccountSync(() => Promise.resolve())
     const completed = vi.fn()
     render({ onAction: () => useStore.getState().update(state => { state.profile.name = 'Bia' }), onSuccess: completed, successLabel: 'Salvo' })
     await act(async () => { click(); await Promise.resolve(); await Promise.resolve() })
-    expect(host.querySelector('button').getAttribute('data-state')).toBe('warning')
-    expect(host.querySelector('button').textContent).not.toBe('Salvo')
+    expect(host.querySelector('button').getAttribute('data-state')).toBe('success')
+    expect(host.querySelector('button').textContent).toBe('Salvo')
     await act(async () => { vi.advanceTimersByTime(300); await Promise.resolve(); await Promise.resolve() })
     expect(completed).toHaveBeenCalledOnce()
     useStore.getState().releaseAccountSync()

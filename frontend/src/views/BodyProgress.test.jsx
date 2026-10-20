@@ -71,19 +71,16 @@ afterEach(async () => {
 })
 
 describe('body progress page', () => {
-  it('shows measurement success only after account sync confirms the write', async () => {
-    let confirm
+  it('confirms a measurement locally while the account queue syncs in the background', async () => {
     mocks.scope = { kind: 'account' }
     mocks.S._pendingSync = { body: true }
-    mocks.retry.mockImplementation(() => new Promise(resolve => { confirm = () => { mocks.S._pendingSync.body = false; resolve() } }))
+    mocks.retry.mockResolvedValue()
     await render()
     await click(partButton('Circunferência do tórax'))
     await inputValue(container.querySelector('#body-measurement-value'), '101,5')
     await click(button('Salvar medida'))
-    expect(mocks.retry).toHaveBeenCalledOnce()
-    expect(mocks.toast).not.toHaveBeenCalled()
-    expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).not.toBe('success')
-    await act(async () => confirm())
+    expect(mocks.retry).not.toHaveBeenCalled()
+    expect(mocks.toast).toHaveBeenCalledWith('Circunferência do tórax: 101,5 cm · Salvo', { tone: 'success' })
     expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).toBe('success')
   })
   it('reports a failed measurement write locally and allows retry without showing saved', async () => {

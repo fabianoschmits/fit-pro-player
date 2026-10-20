@@ -1240,13 +1240,6 @@ function WorkoutDetail({ w, close }) {
           if (account) s._pendingWorkoutDeletes = [...new Set([...(s._pendingWorkoutDeletes || []), w.id])]
         })
         close()
-        if (account) {
-          await useStore.getState().retryAccountSync()
-          if (useStore.getState().S._pendingWorkoutDeletes?.includes(w.id)) {
-            ui().toast(t('Changes waiting to sync'), { tone: 'warning' })
-            return
-          }
-        }
         toast(t('Workout deleted'))
       } })}>{t('Delete workout')}</Button>
     </div>

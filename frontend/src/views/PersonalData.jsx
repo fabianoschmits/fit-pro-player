@@ -16,14 +16,6 @@ import { todayISO } from '../lib/format.js'
 const localSaveError = () => t('Não foi possível salvar neste dispositivo. Tente novamente.')
 async function confirmPersonalSave(toast) {
   if (useStore.getState().persistence?.state === 'error') throw new Error(localSaveError())
-  const store = useStore.getState()
-  if (store.getActiveLocalScope?.()?.kind === 'account' && Object.values(store.S._pendingSync || {}).some(Boolean)) {
-    await store.retryAccountSync?.()
-    if (Object.values(useStore.getState().S._pendingSync || {}).some(Boolean)) {
-      toast(t('Changes waiting to sync'), { tone: 'warning' })
-      return false
-    }
-  }
   toast('Salvo com sucesso', { tone: 'success' })
   return true
 }

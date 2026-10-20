@@ -33,20 +33,17 @@ beforeEach(() => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 
-it('shows that account changes are still syncing until the database confirms them', async () => {
+it('keeps account synchronization states internal', async () => {
   mocks.state.accountSync = { state: 'saving', pending: 1, error: null }
   await act(async () => root.render(<AppStatus />))
-  expect(container.textContent).toContain('Sincronizando')
-  expect(container.textContent).not.toContain('Salvo')
+  expect(container.querySelector('.app-status')).toBeNull()
 })
 
-it('shows failed account sync and offers a retry without claiming the change is saved', async () => {
+it('does not expose account retry controls after a sync failure', async () => {
   mocks.state.accountSync = { state: 'error', pending: 1, error: 'request-failed' }
-  mocks.retryAccount.mockResolvedValue()
   await act(async () => root.render(<AppStatus />))
-  expect(container.textContent).toContain('Não foi possível sincronizar')
-  await act(async () => container.querySelector('.app-status-action').click())
-  expect(mocks.retryAccount).toHaveBeenCalledOnce()
+  expect(container.querySelector('.app-status')).toBeNull()
+  expect(mocks.retryAccount).not.toHaveBeenCalled()
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.useRealTimers(); vi.restoreAllMocks() })
 

@@ -142,11 +142,6 @@ export default function RoutineEdit() {
   const saveRoutine = async () => {
     setSaveError('')
     if (!(await useStore.getState().flushPersistence())) throw new Error('local-write-failed')
-    const store = useStore.getState()
-    if (store.getActiveLocalScope?.()?.kind === 'account' && store.S._pendingSync?.plan) {
-      await store.retryAccountSync()
-      if (useStore.getState().S._pendingSync?.plan) { nav('/plan'); return false }
-    }
   }
   const deleteRoutine = () => confirmSheet({
     title: t('Delete routine?'), message: t('“{0}” and its exercises will be removed.', displayName), confirmText: t('Delete'), danger: true,

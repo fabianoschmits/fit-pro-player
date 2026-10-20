@@ -92,7 +92,7 @@ export default function MotionFeedback() {
     <section className="motion-showcase-panel">
       <h2>{t('Progress and status')}</h2>
       <FppProgress value={60} label={t('Progress')} />
-      <FppProgress label={t('Syncing…')} />
+      <FppProgress label={t('Saving…')} />
       <FppActionFeedback state="success">{t('Saved on this device')}</FppActionFeedback>
       <FppActionFeedback state="error">{t('Check your connection and try again.')}</FppActionFeedback>
       <FppActionFeedback state="offline">{t('Offline — changes stay on this device until you reconnect.')}</FppActionFeedback>
