@@ -51,6 +51,9 @@ export default function SupportTicket() {
   const [body, setBody]       = useState('')
   const [error, setError]     = useState('')
   const [busy, setBusy]       = useState(true)
+  // Pagination: visible message count (starting at 10)
+  const [visibleCount, setVisibleCount] = useState(10)
+  const [loadingOlder, setLoadingOlder] = useState(false)
   // rate limiting state
   const [sendTimestamps, setSendTimestamps] = useState([])  // array of epoch ms
   const [cooldownSec, setCooldownSec]       = useState(0)
@@ -98,12 +101,54 @@ export default function SupportTicket() {
 
   useEffect(() => {
     current.current = ticketId
-    setTicket(null); setBody('')
+    setTicket(null); setBody(''); setVisibleCount(10)
     void load()
     return () => { current.current = null; request.current++ }
   }, [load, ticketId])
 
-  useEffect(() => { if (!busy && ticket) scrollToBottom(false) }, [busy, ticket, scrollToBottom])
+  useEffect(() => {
+    if (!busy && ticket && !loadingOlder) {
+      scrollToBottom(false)
+    }
+  }, [busy, ticket, loadingOlder, scrollToBottom])
+
+  // ── Load older messages (pagination) ─────────────────────────
+  const totalMessages = ticket?.messages?.length || 0
+  const hasOlder = totalMessages > visibleCount
+
+  const loadMoreOlder = useCallback(() => {
+    if (!hasOlder || loadingOlder) return
+    setLoadingOlder(true)
+    const thread = threadRef.current
+    const prevScrollHeight = thread ? thread.scrollHeight : 0
+    const prevScrollTop = thread ? thread.scrollTop : 0
+
+    setVisibleCount(prev => Math.min(prev + 10, totalMessages))
+
+    // Restore scroll position so content doesn't jump
+    requestAnimationFrame(() => {
+      if (thread) {
+        const heightDiff = thread.scrollHeight - prevScrollHeight
+        thread.scrollTop = prevScrollTop + heightDiff
+      }
+      setLoadingOlder(false)
+    })
+  }, [hasOlder, loadingOlder, totalMessages])
+
+  // Handle scroll to top to automatically load older messages
+  const handleScroll = useCallback(() => {
+    if (!threadRef.current || !hasOlder || loadingOlder) return
+    if (threadRef.current.scrollTop <= 15) {
+      loadMoreOlder()
+    }
+  }, [hasOlder, loadingOlder, loadMoreOlder])
+
+  // Sliced messages: show the latest visibleCount messages
+  const visibleMessages = useMemo(() => {
+    if (!ticket?.messages) return []
+    const start = Math.max(0, ticket.messages.length - visibleCount)
+    return ticket.messages.slice(start)
+  }, [ticket?.messages, visibleCount])
 
   // ── Send action ──────────────────────────────────────────────
   const action = useFppAction({
@@ -135,6 +180,8 @@ export default function SupportTicket() {
       startCooldownTick(next)
 
       setBody('')
+      // Ensure newly sent message is included in visible view
+      setVisibleCount(c => c + 1)
       void load()
       return true
     },
@@ -159,7 +206,7 @@ export default function SupportTicket() {
 
   return (
     <div className="chat-page">
-      {/* Header */}
+      {/* Header — Fixed on top */}
       <div className="chat-header">
         <AppHeader title={ticket?.subject || 'Chamado'} subtitle={ticket?.categoryLabel} backTo="/support/tickets" />
         {ticket && (
@@ -169,14 +216,28 @@ export default function SupportTicket() {
         )}
       </div>
 
-      {/* Thread */}
-      <div className="chat-thread" ref={threadRef} aria-live="polite" aria-label="Conversa">
-        {busy && <FppSkeleton label="Carregando conversa…" />}
+      {/* Thread — Only messages scroll */}
+      <div className="chat-thread" ref={threadRef} onScroll={handleScroll} aria-live="polite" aria-label="Conversa">
+        {hasOlder && (
+          <div className="chat-load-older-row">
+            <button
+              type="button"
+              className="chat-load-older-btn"
+              onClick={loadMoreOlder}
+              disabled={loadingOlder}
+            >
+              <Icon name="history" />
+              <span>{loadingOlder ? 'Carregando…' : `Carregar mais antigas (${totalMessages - visibleCount} restantes)`}</span>
+            </button>
+          </div>
+        )}
+
+        {busy && !ticket && <FppSkeleton label="Carregando conversa…" />}
         {error && <p role="alert" className="support-error chat-error">{error}</p>}
 
-        {ticket && ticket.messages.map((msg, i) => {
+        {visibleMessages.map((msg, i) => {
           const isUser  = msg.author_kind === 'user'
-          const prevKind = i > 0 ? ticket.messages[i - 1].author_kind : null
+          const prevKind = i > 0 ? visibleMessages[i - 1].author_kind : null
           const isFirst  = prevKind !== msg.author_kind
           return (
             <div key={msg.id} className={`chat-bubble-row chat-bubble-row--${msg.author_kind}${isFirst ? ' is-first' : ''}`}>
@@ -191,7 +252,7 @@ export default function SupportTicket() {
         })}
       </div>
 
-      {/* Input bar */}
+      {/* Input bar — Fixed at bottom */}
       {isArchived ? (
         <div className="chat-archived"><Icon name="lock" /><span>Este chamado está arquivado.</span></div>
       ) : (

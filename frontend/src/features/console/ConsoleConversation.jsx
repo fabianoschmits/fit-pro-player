@@ -19,11 +19,13 @@ export default function ConsoleConversation() {
   const { userId, repo: accounts, allowed } = useConsoleAccess()
   const repo = useMemo(() => createSupportRepository({ client: getBrowserSupabaseClient() }), [])
   const [draft, setDraft] = useState(''), [acting, setActing] = useState(''), [actionError, setActionError] = useState(''), [success, setSuccess] = useState('')
+  const [visibleCount, setVisibleCount] = useState(10)
+  const [loadingOlder, setLoadingOlder] = useState(false)
   const threadRef = useRef(null)
   const identity = `${userId}:${ticketId}`
   const current = useRef(identity); current.current = identity
   const readTicket = useRef('')
-  useEffect(() => { current.current = identity; setDraft(''); setActing(''); setActionError(''); setSuccess(''); return () => { current.current = null } }, [identity])
+  useEffect(() => { current.current = identity; setDraft(''); setActing(''); setActionError(''); setSuccess(''); setVisibleCount(10); return () => { current.current = null } }, [identity])
   const { data, busy, error, refresh } = useConsoleResource({ userId, allowed, resourceKey: 'ticket:' + ticketId, load: async () => {
     if (readTicket.current !== identity) { await repo.markRead(ticketId); readTicket.current = identity }
     const ticket = await repo.adminTicketDetail(ticketId)
@@ -34,10 +36,44 @@ export default function ConsoleConversation() {
   const ticket = data?.ticket
 
   useEffect(() => {
-    if (threadRef.current) {
+    if (threadRef.current && !loadingOlder) {
       threadRef.current.scrollTop = threadRef.current.scrollHeight
     }
-  }, [ticket?.messages?.length, busy])
+  }, [ticket?.messages?.length, busy, loadingOlder])
+
+  const totalMessages = ticket?.messages?.length || 0
+  const hasOlder = totalMessages > visibleCount
+
+  const loadMoreOlder = () => {
+    if (!hasOlder || loadingOlder) return
+    setLoadingOlder(true)
+    const thread = threadRef.current
+    const prevScrollHeight = thread ? thread.scrollHeight : 0
+    const prevScrollTop = thread ? thread.scrollTop : 0
+
+    setVisibleCount(prev => Math.min(prev + 10, totalMessages))
+
+    requestAnimationFrame(() => {
+      if (thread) {
+        const heightDiff = thread.scrollHeight - prevScrollHeight
+        thread.scrollTop = prevScrollTop + heightDiff
+      }
+      setLoadingOlder(false)
+    })
+  }
+
+  const handleScroll = () => {
+    if (!threadRef.current || !hasOlder || loadingOlder) return
+    if (threadRef.current.scrollTop <= 15) {
+      loadMoreOlder()
+    }
+  }
+
+  const visibleMessages = useMemo(() => {
+    if (!ticket?.messages) return []
+    const start = Math.max(0, ticket.messages.length - visibleCount)
+    return ticket.messages.slice(start)
+  }, [ticket?.messages, visibleCount])
 
   const operation = useFppAction({ onAction: async ({ key, perform, text }) => {
     setActing(key); setActionError(''); setSuccess('')
@@ -52,7 +88,10 @@ export default function ConsoleConversation() {
     }
   }, onSuccess: result => {
     if (current.current !== result.identity) return
-    if (result.key === 'reply') setDraft('')
+    if (result.key === 'reply') {
+      setDraft('')
+      setVisibleCount(c => c + 1)
+    }
     refresh()
   } })
   const run = (event, key, perform, text) => operation.run({ key, perform, text, fppInput: fppActionInput(event) })
@@ -101,10 +140,23 @@ export default function ConsoleConversation() {
           </header>
 
           {/* WhatsApp-style Thread */}
-          <div className="console-chat-thread" ref={threadRef} aria-live="polite" aria-label="Histórico de mensagens">
-            {ticket.messages.map((message, i) => {
+          <div className="console-chat-thread" ref={threadRef} onScroll={handleScroll} aria-live="polite" aria-label="Histórico de mensagens">
+            {hasOlder && (
+              <div className="chat-load-older-row">
+                <button
+                  type="button"
+                  className="chat-load-older-btn"
+                  onClick={loadMoreOlder}
+                  disabled={loadingOlder}
+                >
+                  <Icon name="history" />
+                  <span>{loadingOlder ? 'Carregando…' : `Carregar mais antigas (${totalMessages - visibleCount} restantes)`}</span>
+                </button>
+              </div>
+            )}
+            {visibleMessages.map((message, i) => {
               const isAdmin = message.author_kind === 'admin'
-              const prevKind = i > 0 ? ticket.messages[i - 1].author_kind : null
+              const prevKind = i > 0 ? visibleMessages[i - 1].author_kind : null
               const isFirst = prevKind !== message.author_kind
               return (
                 <div key={message.id} className={`console-chat-row console-chat-row--${message.author_kind}${isFirst ? ' is-first' : ''}`}>
