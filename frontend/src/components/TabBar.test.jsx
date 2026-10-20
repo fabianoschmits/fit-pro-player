@@ -61,6 +61,28 @@ describe('TabBar scroll stability', () => {
     expect(container.querySelector('.corner-nav-main').className).toContain('is-hidden')
   })
 
+  it('starts attached to the mobile edge and detaches only after being dragged', () => {
+    act(() => {
+      root.render(
+        <MemoryRouter initialEntries={['/home']}>
+          <TabBar onStart={vi.fn()} />
+        </MemoryRouter>,
+      )
+    })
+
+    const tabbar = container.querySelector('#tabbar')
+    const toggle = container.querySelector('.corner-nav-toggle')
+    expect(tabbar.className).not.toContain('is-free')
+
+    act(() => {
+      toggle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 20, clientY: 700 }))
+      toggle.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 80, clientY: 640 }))
+      toggle.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: 80, clientY: 640 }))
+    })
+
+    expect(tabbar.className).toContain('is-free')
+  })
+
   it('keeps the complete menu unchanged while the page scrolls', () => {
     act(() => {
       root.render(

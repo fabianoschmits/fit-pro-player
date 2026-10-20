@@ -430,6 +430,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav-more{bottom:84px}
 .corner-nav.more-below .corner-nav-pivot{flex-direction:column-reverse}
 .corner-nav.more-below .corner-nav-more{top:84px;bottom:auto;transform-origin:top left}
+@media(max-width:480px){.corner-nav:not(.is-free){left:0;right:0;bottom:0}.corner-nav:not(.is-free) .corner-nav-main{border-radius:19px 19px 0 0;border-bottom:0;padding-bottom:max(6px,env(safe-area-inset-bottom))}.corner-nav:not(.is-free) .corner-nav-toggle{height:64px;border-radius:18px 18px 0 0;border-bottom:0;padding-bottom:max(4px,env(safe-area-inset-bottom))}.corner-nav:not(.is-free) .corner-nav-more{left:12px;width:calc(100vw - 24px)}}
 
 /* Start — permanent elevated FAB (original Fit Pro Player highlight). */
 .tab-item--start{margin-top:-14px;padding-bottom:4px}
