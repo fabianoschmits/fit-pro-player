@@ -20,7 +20,7 @@ export const DEF = {
   restSec: 90, sound: true, keepAwake: true, lang: 'pt',
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
   profile: DEFAULT_PROFILE, planMode: 'weekly',
-  bodyweight: [], bodyMeasurements: [], bodyMeasurementGoals: {}, routines: [], week: {}, dayPlan: {},
+  bodyweight: [], bodyMeasurements: [], bodyMeasurementGoals: {}, routines: [], week: {}, dayPlan: {}, _pendingWorkoutDeletes: [],
   exWeights: {}, workouts: [], active: null, customEx: [], mediaSize: 'mini',
   // effort: which per-set effort scale is logged — 'none' | 'rir' | 'rpe'. null, not 'none', so
   // that a profile which never chose (loaded state is overlaid on DEF, on every path: local,
@@ -60,6 +60,7 @@ export function normalizeState(source) {
   state.stateSchemaVersion = STATE_SCHEMA_VERSION
   delete state.unit
   state.bodyweight = Array.isArray(state.bodyweight) ? state.bodyweight : []
+  state._pendingWorkoutDeletes = Array.isArray(state._pendingWorkoutDeletes) ? state._pendingWorkoutDeletes : []
   state.bodyMeasurements = normalizeBodyMeasurementCheckins(state.bodyMeasurements)
   state.bodyMeasurementGoals = normalizeBodyMeasurementGoals(state.bodyMeasurementGoals)
   state.routines = Array.isArray(state.routines) ? state.routines : []

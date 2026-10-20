@@ -155,6 +155,14 @@ describe('training repository', () => {
     expect(rpc).toHaveBeenCalledWith('save_athlete_body', { p_weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2026-10-19', weightKg: 80 }], p_measurements: [] })
   })
 
+  it('deletes a completed workout through its owner-scoped RPC', async () => {
+    const { createTrainingRepository } = await load()
+    const rpc = vi.fn(async () => ({ data: true, error: null }))
+    const repo = createTrainingRepository({ client: { rpc }, accountId: 'account-1' })
+    await expect(repo.deleteCompletedWorkout({ sessionId: 'session-1' })).resolves.toBe(true)
+    expect(rpc).toHaveBeenCalledWith('delete_completed_workout', { p_session_id: 'session-1' })
+  })
+
   it('loads the current active session before a writer takeover', async () => {
     const { createTrainingRepository } = await load()
     const query = data => ({

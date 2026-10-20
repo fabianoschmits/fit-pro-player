@@ -1233,7 +1233,22 @@ function WorkoutDetail({ w, close }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
       <Button variant="secondary" icon="instagram" onClick={() => workoutShareSheet(w)}>{t('Compartilhar treino')}</Button>
       <Button variant="primary" icon="reset" onClick={() => { close(); repeatWorkout(w) }}>{t('Repeat {0}', w.name)}</Button>
-      <Button variant="danger" onClick={() => confirmSheet({ title: t('Delete workout?'), message: t('This removes it from your history for good.'), confirmText: t('Delete'), danger: true, onConfirm: () => { update(s => { s.workouts = s.workouts.filter(x => x.id !== w.id) }); close(); toast(t('Workout deleted')) } })}>{t('Delete workout')}</Button>
+      <Button variant="danger" onClick={() => confirmSheet({ title: t('Delete workout?'), message: t('This removes it from your history for good.'), confirmText: t('Delete'), danger: true, onConfirm: async () => {
+        const account = useStore.getState().getActiveLocalScope?.()?.kind === 'account'
+        update(s => {
+          s.workouts = s.workouts.filter(x => x.id !== w.id)
+          if (account) s._pendingWorkoutDeletes = [...new Set([...(s._pendingWorkoutDeletes || []), w.id])]
+        })
+        close()
+        if (account) {
+          await useStore.getState().retryAccountSync()
+          if (useStore.getState().S._pendingWorkoutDeletes?.includes(w.id)) {
+            ui().toast(t('Changes waiting to sync'), { tone: 'warning' })
+            return
+          }
+        }
+        toast(t('Workout deleted'))
+      } })}>{t('Delete workout')}</Button>
     </div>
   </>
 }

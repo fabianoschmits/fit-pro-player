@@ -1,7 +1,7 @@
 import { applyDomainState } from './domain-state.js'
 import { bodyFingerprint, planFingerprint, preferenceFingerprint, preferenceValues } from './domain-sync-state.js'
 
-const DOMAINS = ['plan', 'body', 'preferences']
+const DOMAINS = ['plan', 'body', 'preferences', 'history']
 const fingerprints = { plan: planFingerprint, body: bodyFingerprint, preferences: preferenceFingerprint }
 const validId = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || '')
 const idOf = value => validId(value) ? value : crypto.randomUUID()
@@ -17,8 +17,12 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   const retryTimers = new Map()
   const retryAttempts = new Map()
   const firstRead = new Set(DOMAINS)
+  const deletedWorkouts = new Set()
   const current = () => !disposed && isCurrent()
-  const pending = () => DOMAINS.filter(domain => getState()._pendingSync?.[domain])
+  const isPending = domain => domain === 'history'
+    ? !!getState()._pendingWorkoutDeletes?.length
+    : !!getState()._pendingSync?.[domain]
+  const pending = () => DOMAINS.filter(isPending)
   const status = () => {
     const count = pending().length
     const error = failures.values().next().value || null
@@ -27,6 +31,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   const publish = () => onStatus(status())
 
   async function save(domain, state) {
+    if (domain === 'history') return repository.deleteCompletedWorkout({ sessionId: state._pendingWorkoutDeletes[0] })
     if (domain === 'body') return repository.saveBody({
       weights: state.bodyweight.map(entry => ({ id: idOf(entry.id), date: entry.d, weightKg: entry.w })),
       measurements: state.bodyMeasurements.map(entry => ({ id: idOf(entry.id), date: entry.date, valuesCm: entry.values || {}, note: entry.notes || '' })),
@@ -63,7 +68,12 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
     if (!current()) return
     const initial = firstRead.delete(domain)
     recordRevision(domain, data)
-    if (getState()._pendingSync?.[domain]) return
+    if (domain === 'history') {
+      const removed = new Set([...(getState()._pendingWorkoutDeletes || []), ...deletedWorkouts])
+      replaceState(applyDomainState(getState(), domain, data.filter(record => !removed.has(record.workout?.id || record.session?.id))))
+      return
+    }
+    if (isPending(domain)) return
     if (initial && domain === 'body') {
       const local = getState()
       const missingWeights = !data.weights.length && local.bodyweight?.length
@@ -83,9 +93,9 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   function flushDomain(domain) {
     if (inFlight.has(domain)) return inFlight.get(domain)
     const task = (async () => {
-      while (current() && isOnline() && getState()._pendingSync?.[domain]) {
+      while (current() && isOnline() && isPending(domain)) {
         const state = getState()
-        const sentFingerprint = fingerprints[domain](state)
+        const sentFingerprint = domain === 'history' ? state._pendingWorkoutDeletes[0] : fingerprints[domain](state)
         let saved
         try { saved = await save(domain, state) }
         catch (error) {
@@ -106,6 +116,12 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
         failures.delete(domain)
         retryAttempts.delete(domain)
         if (retryTimers.has(domain)) { clearTimeout(retryTimers.get(domain)); retryTimers.delete(domain) }
+        if (domain === 'history') {
+          deletedWorkouts.add(sentFingerprint)
+          const next = { ...getState(), _pendingWorkoutDeletes: (getState()._pendingWorkoutDeletes || []).filter(id => id !== sentFingerprint) }
+          replaceState(next)
+          continue
+        }
         if (fingerprints[domain](getState()) !== sentFingerprint) continue
         const next = applyDomainState(getState(), domain, saved)
         next._pendingSync = { ...next._pendingSync, [domain]: false }

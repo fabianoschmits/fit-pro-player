@@ -19,7 +19,7 @@ function harness({ online = true, saveBody = vi.fn(async ({ weights }) => bodyRe
   let state = initial()
   let connected = online
   const statuses = []
-  const repository = { saveBody, savePlan: vi.fn(), savePreferences: vi.fn() }
+  const repository = { saveBody, savePlan: vi.fn(), savePreferences: vi.fn(), deleteCompletedWorkout: vi.fn(async () => true) }
   const sync = createAccountDomainSync({
     repository,
     getState: () => state,
@@ -142,4 +142,38 @@ it('does not apply an old account response after switching accounts', async () =
   response.resolve(bodyResponse(72))
   await flush
   expect(state._pendingSync.body).toBe(true)
+})
+
+it('hides an offline deleted workout during history refresh and deletes it on reconnect', async () => {
+  const h = harness({ online: false })
+  h.setState({ ...h.state(), _pendingSync: {}, _pendingWorkoutDeletes: ['session-1'] })
+  await h.sync.start()
+  h.sync.acceptRemote('history', [
+    { workout: { id: 'session-1', d: '2026-10-19', entries: [] } },
+    { workout: { id: 'session-2', d: '2026-10-20', entries: [] } },
+  ])
+  expect(h.state().workouts.map(workout => workout.id)).toEqual(['session-2'])
+  expect(h.statuses.at(-1).state).toBe('queued')
+  h.setOnline(true)
+  await h.sync.retry()
+  expect(h.repository.deleteCompletedWorkout).toHaveBeenCalledWith({ sessionId: 'session-1' })
+  expect(h.state()._pendingWorkoutDeletes).toEqual([])
+})
+
+it('keeps a workout deletion queued after a failed request', async () => {
+  const h = harness({ saveBody: vi.fn() })
+  h.setState({ ...h.state(), _pendingSync: {}, _pendingWorkoutDeletes: ['session-1'] })
+  h.repository.deleteCompletedWorkout.mockRejectedValueOnce(new Error('server error'))
+  await h.sync.start()
+  expect(h.state()._pendingWorkoutDeletes).toEqual(['session-1'])
+  expect(h.statuses.at(-1).state).toBe('error')
+})
+
+it('does not resurrect a deleted workout from a stale in-flight history read', async () => {
+  const h = harness()
+  h.setState({ ...h.state(), _pendingSync: {}, _pendingWorkoutDeletes: ['session-1'] })
+  await h.sync.start()
+  expect(h.state()._pendingWorkoutDeletes).toEqual([])
+  h.sync.acceptRemote('history', [{ workout: { id: 'session-1', d: '2026-10-19', entries: [] } }])
+  expect(h.state().workouts).toEqual([])
 })

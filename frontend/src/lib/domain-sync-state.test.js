@@ -17,3 +17,11 @@ it('retains an earlier failed write while a different domain changes', () => {
   markPendingDomains(previous, next)
   expect(next._pendingSync).toEqual({ body: true, preferences: true })
 })
+
+it('keeps pending workout deletions in the local recovery journal, outside preferences', () => {
+  const previous = base()
+  const next = { ...previous, workouts: [], _pendingWorkoutDeletes: ['session-1'] }
+  markPendingDomains(previous, next)
+  expect(next._pendingSync).toEqual({})
+  expect(preferenceFingerprint(next)).toBe(preferenceFingerprint(previous))
+})

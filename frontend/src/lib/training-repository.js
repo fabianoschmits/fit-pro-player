@@ -212,5 +212,12 @@ export function createTrainingRepository({ client, accountId }) {
     saveBody({ weights, measurements }) {
       return rpc('save_athlete_body', { p_weights: weights, p_measurements: measurements }, parseBodyData)
     },
+
+    deleteCompletedWorkout({ sessionId }) {
+      return rpc('delete_completed_workout', { p_session_id: sessionId }, value => {
+        if (value !== true) throw new TypeError('invalid-workout-deletion-response')
+        return true
+      })
+    },
   }
 }
