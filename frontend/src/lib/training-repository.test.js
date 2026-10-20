@@ -26,6 +26,24 @@ describe('training repository', () => {
     ])
   })
 
+  it('drops legacy non-UUID plan references when recreating a persisted session', async () => {
+    const { createTrainingRepository } = await load()
+    const client = clientWithRpc(async () => ({ data: session(), error: null }))
+    const repo = createTrainingRepository({ client, accountId: 'account-1' })
+
+    await repo.startSession({
+      sessionId: 'session-1',
+      prescriptionSnapshot: { exercises: [] },
+      routineId: 'year-push',
+      assignmentId: 'program-assignment',
+    })
+
+    expect(client.rpc).toHaveBeenCalledWith('start_workout_session', expect.objectContaining({
+      p_routine_id: null,
+      p_assignment_id: null,
+    }))
+  })
+
   it('rejects malformed RPC data and a response owned by another account', async () => {
     const { createTrainingRepository } = await load()
     const malformed = createTrainingRepository({ client: clientWithRpc(async () => ({ data: null, error: null })), accountId: 'account-1' })

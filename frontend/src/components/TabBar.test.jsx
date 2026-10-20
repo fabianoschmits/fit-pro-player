@@ -45,6 +45,22 @@ afterEach(() => {
 })
 
 describe('TabBar scroll stability', () => {
+  it('closes the expanded menu when the user taps Fechar', () => {
+    act(() => {
+      root.render(
+        <MemoryRouter initialEntries={['/home']}>
+          <TabBar onStart={vi.fn()} />
+        </MemoryRouter>,
+      )
+    })
+
+    const toggle = [...container.querySelectorAll('.corner-nav-toggle')].find(button => button.textContent.includes('Fechar'))
+    act(() => toggle.dispatchEvent(new MouseEvent('click', { bubbles: true })))
+
+    expect(container.querySelector('#tabbar').className).not.toContain('is-open')
+    expect(container.querySelector('.corner-nav-main').className).toContain('is-hidden')
+  })
+
   it('keeps the complete menu unchanged while the page scrolls', () => {
     act(() => {
       root.render(

@@ -46,6 +46,13 @@ function parseResponse(parser, value, accountId) {
   }
 }
 
+function nullableUuid(value) {
+  return typeof value === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+    ? value
+    : null
+}
+
 export function createTrainingRepository({ client, accountId }) {
   if (!client || typeof client.rpc !== 'function' || typeof accountId !== 'string' || accountId.length === 0) {
     throw new TypeError('invalid-training-repository-scope')
@@ -78,8 +85,8 @@ export function createTrainingRepository({ client, accountId }) {
       return rpc('start_workout_session', {
         p_session_id: sessionId,
         p_prescription_snapshot: prescriptionSnapshot,
-        p_routine_id: routineId,
-        p_assignment_id: assignmentId,
+        p_routine_id: nullableUuid(routineId),
+        p_assignment_id: nullableUuid(assignmentId),
       }, parseWorkoutSession)
     },
 

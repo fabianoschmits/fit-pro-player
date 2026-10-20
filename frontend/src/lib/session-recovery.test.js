@@ -121,6 +121,23 @@ describe('active session recovery', () => {
     expect(readSessionRecoveryDraft({ accountId: accountA, storage })).toBeNull()
   })
 
+  it('recreates a server session removed during a restore and replays its completion', async () => {
+    const completion = operation({ kind: 'session_completed', payload: { durationMs: 3_600_000, massUnit: 'kg' } })
+    const repo = repository({
+      completeSession: vi.fn()
+        .mockRejectedValueOnce(Object.assign(new Error('workout session not found'), { kind: 'session-missing', retryable: true }))
+        .mockResolvedValueOnce(activeSession({ status: 'completed', revision: 2, completedAt: '2026-10-19T13:00:00Z' })),
+      startSession: vi.fn(async () => activeSession()),
+    })
+    const recovery = createSessionRecovery({ repository: repo, accountId: accountA, storage })
+    recovery.adopt(activeSession())
+
+    await expect(recovery.complete(completion)).resolves.toMatchObject({ state: 'saved', completed: true })
+    expect(repo.startSession).toHaveBeenCalledWith(expect.objectContaining({ sessionId: activeSession().id }))
+    expect(repo.completeSession).toHaveBeenCalledTimes(2)
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage })).toBeNull()
+  })
+
   it('finalizes a discarded session on the server before allowing a new start', async () => {
     const abandoned = activeSession({ status: 'abandoned', revision: 2, completedAt: '2026-10-19T12:10:00Z' })
     const repo = repository({ abandonSession: vi.fn(async () => abandoned) })
