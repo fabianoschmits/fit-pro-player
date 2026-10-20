@@ -33,7 +33,7 @@ export default function Support() {
   const repo = useMemo(repoFor, [])
   useEffect(() => { let live = true; setBusy(true); setError(''); repo.listFaq({ query, category }).then(rows => live && setFaq(rows)).catch(e => live && setError(e.message || 'Não foi possível carregar a ajuda.')).finally(() => live && setBusy(false)); return () => { live = false } }, [repo, query, category, reload])
   return <div className="narrow support-page">
-    <AppHeader title="Ajuda e suporte" subtitle="Encontre respostas ou fale com o administrador." />
+    <AppHeader title="Ajuda e suporte" subtitle="Encontre respostas ou fale com a equipe." />
     <div className="support-actions"><Link className="support-action-card" to="/support/tickets/new"><Icon name="chat" /><span><strong>Fale com a equipe</strong><small>Envie dúvidas, sugestões, críticas ou relatos de problemas.</small></span><Icon name="chevronRight" /></Link><Link className="support-action-card" to="/support/tickets"><Icon name="history" /><span><strong>Meus chamados</strong><small>Acompanhe suas mensagens e respostas.</small></span><Icon name="chevronRight" /></Link></div>
     <Section title="Perguntas frequentes" className="support-section">
       <TextField className="support-search" placeholder="Buscar no FAQ" value={query} onChange={e => setQuery(e.target.value)} aria-label="Buscar no FAQ" />

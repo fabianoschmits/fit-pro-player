@@ -37,7 +37,7 @@ export default function SupportTickets() {
 
   return (
     <div className="narrow support-page">
-      <AppHeader title="Meus chamados" subtitle="Acompanhe suas conversas com o administrador." backTo="/support" />
+      <AppHeader title="Meus chamados" subtitle="Acompanhe suas conversas com a equipe." backTo="/support" />
       <div className="support-list-actions">
         <Link className="management-button management-button-primary" to="/support/tickets/new">
           <Icon name="plus" /> Novo chamado

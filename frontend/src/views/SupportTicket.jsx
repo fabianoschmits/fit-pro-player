@@ -226,7 +226,14 @@ export default function SupportTicket() {
               </span>
             </div>
           </div>
-          <button type="submit" className="chat-send-btn" disabled={!canSend} aria-label="Enviar">
+          <button
+            type="submit"
+            className="chat-send-btn"
+            disabled={!canSend}
+            aria-label="Enviar"
+            aria-busy={action.busy ? 'true' : undefined}
+            data-state={action.state !== 'idle' ? action.state : undefined}
+          >
             <Icon name="arrowUp" />
           </button>
         </form>

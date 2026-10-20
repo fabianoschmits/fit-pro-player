@@ -1,5 +1,5 @@
-.support-page { padding-bottom: 48px; }
-.support-actions { display: grid; gap: 12px; margin: 18px 0 26px; }
+.support-page { padding-bottom: 48px; width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
+.support-actions { display: grid; gap: 12px; margin: 18px 0 26px; width: 100%; }
 .support-action-card, .support-ticket-row {
   display: flex; align-items: center; gap: 12px; padding: 16px;
   border: 1px solid var(--surface-border);
@@ -8,28 +8,33 @@
   color: var(--ink); text-decoration: none;
   box-shadow: var(--card-shadow);
   transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease), background 140ms var(--ease);
+  width: 100%; box-sizing: border-box; max-width: 100%; overflow: hidden;
 }
 .support-action-card:hover, .support-ticket-row:hover {
   background: var(--surface-2);
   border-color: var(--acc-line, color-mix(in srgb, var(--acc) 38%, transparent));
   box-shadow: 0 0 0 3px var(--acc-soft, color-mix(in srgb, var(--acc) 10%, transparent));
 }
-.support-action-card > span, .support-ticket-row > span { display: grid; gap: 4px; flex: 1; }
-.support-action-card small, .support-ticket-row small { color: var(--muted); }
-.support-section { display: grid; gap: 14px; }
-.support-section .sect-b { background: var(--bg); border-color: transparent; }
-.support-search { width: 100%; box-sizing: border-box; background: var(--bg); border-color: var(--surface-border); }
+.support-action-card > span, .support-ticket-row > span { display: grid; gap: 4px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.support-action-card strong, .support-ticket-row strong { overflow-wrap: anywhere; word-break: break-word; }
+.support-action-card small, .support-ticket-row small { color: var(--muted); overflow-wrap: anywhere; }
+.support-action-card > .icn, .support-ticket-row > .icn { flex: none; }
+.support-section { display: grid; gap: 14px; width: 100%; max-width: 100%; box-sizing: border-box; }
+.support-section .sect-b { background: var(--bg); border-color: transparent; width: 100%; box-sizing: border-box; }
+.support-search { width: 100%; box-sizing: border-box; background: var(--bg); border-color: var(--surface-border); max-width: 100%; }
 .support-search:focus { background: var(--bg); }
-.support-category-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
-.support-filter { border: 1px solid var(--line); color: var(--muted); background: transparent; border-radius: 999px; padding: 8px 12px; white-space: nowrap; cursor: pointer; }
+.support-category-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; max-width: 100%; scrollbar-width: none; }
+.support-category-row::-webkit-scrollbar { display: none; }
+.support-filter { border: 1px solid var(--line); color: var(--muted); background: transparent; border-radius: 999px; padding: 8px 12px; white-space: nowrap; cursor: pointer; flex: none; }
 .support-filter.active { color: var(--ink); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); }
-.support-faq-list, .support-ticket-list { display: grid; gap: 10px; }
+.support-faq-list, .support-ticket-list { display: grid; gap: 10px; width: 100%; max-width: 100%; box-sizing: border-box; }
 .support-faq-item {
   border: 1px solid var(--surface-border);
   border-radius: var(--r-lg, 12px);
   background: var(--surface);
   box-shadow: var(--card-shadow);
   overflow: hidden;
+  width: 100%; box-sizing: border-box; max-width: 100%;
   transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease);
 }
 .support-faq-item:has(> button[aria-expanded="true"]),
@@ -41,45 +46,49 @@
   width: 100%; border: 0; background: transparent; color: var(--ink);
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   text-align: left; padding: 15px 16px; font: inherit; font-weight: 500;
-  cursor: pointer;
+  cursor: pointer; box-sizing: border-box;
   transition: background 140ms var(--ease);
 }
+.support-faq-item button > span { flex: 1; min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
 .support-faq-item button:hover { background: var(--surface-2); }
 .support-faq-item button .icn { flex: none; color: var(--acc); opacity: .75; }
 .support-faq-item p {
   color: var(--label-2, var(--muted)); line-height: 1.6;
   margin: 0; padding: 0 16px 16px; white-space: pre-wrap; font-size: 14px;
+  overflow-wrap: anywhere; word-break: break-word;
 }
 .support-faq-answer { animation: support-answer-enter .18s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes support-answer-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-.support-form, .support-reply { display: grid; gap: 16px; margin-top: 18px; }
-.support-form label { display: grid; gap: 8px; color: var(--muted); font-size: .9rem; }
+.support-form, .support-reply { display: grid; gap: 16px; margin-top: 18px; width: 100%; max-width: 100%; box-sizing: border-box; }
+.support-form label { display: grid; gap: 8px; color: var(--muted); font-size: .9rem; width: 100%; box-sizing: border-box; }
+.support-form select, .support-form input, .support-form textarea { width: 100%; box-sizing: border-box; max-width: 100%; }
 .support-form select { appearance: none; }
-.support-field-error, .support-error { color: var(--red, #ff6b6b); }
-.support-success { color: var(--teal, #55d6be); }
-.support-list-actions { display: flex; justify-content: flex-end; margin: 18px 0; gap: 8px; align-items: center; }
+.support-field-error, .support-error { color: var(--red, #ff6b6b); overflow-wrap: anywhere; }
+.support-success { color: var(--teal, #55d6be); overflow-wrap: anywhere; }
+.support-list-actions { display: flex; justify-content: flex-end; margin: 18px 0; gap: 8px; align-items: center; width: 100%; box-sizing: border-box; flex-wrap: wrap; }
 .support-status {
   display: inline-flex; align-items: center; gap: 5px;
   border-radius: 999px; padding: 4px 10px; font-size: .72rem; font-style: normal; white-space: nowrap;
-  background: var(--surface-2); color: var(--muted);
+  background: var(--surface-2); color: var(--muted); flex: none;
 }
 .support-status--unread, .support-status--pending { color: var(--orange, #f5b75d); }
 .support-status--answered { color: var(--blue, #78b7ff); }
 .support-status--resolved { color: var(--teal, #55d6be); }
 .support-status--archived { opacity: .65; }
-.status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; }
-.support-empty { display: grid; gap: 10px; padding: 26px; border: 1px dashed var(--surface-border); border-radius: var(--r-lg, 12px); color: var(--muted); }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; display: inline-block; flex: none; }
+.support-empty { display: grid; gap: 10px; padding: 26px; border: 1px dashed var(--surface-border); border-radius: var(--r-lg, 12px); color: var(--muted); width: 100%; box-sizing: border-box; text-align: center; }
 .support-empty a { color: var(--acc); }
 
 /* ── Ticket chat row (list view) ───────────────────────────────── */
 .ticket-chat-row {
-  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px; padding: 14px 16px;
   border: 1px solid var(--surface-border);
   border-radius: var(--r-lg, 12px);
   background: var(--surface);
   color: var(--ink); text-decoration: none;
   box-shadow: var(--card-shadow);
   transition: border-color 180ms, box-shadow 180ms, background 140ms;
+  width: 100%; max-width: 100%; box-sizing: border-box; overflow: hidden;
 }
 .ticket-chat-row:hover {
   background: var(--surface-2);
@@ -88,32 +97,49 @@
 }
 .ticket-chat-row--unread { border-color: var(--acc-line); }
 .ticket-chat-avatar {
-  flex: none; width: 46px; height: 46px; border-radius: 50%;
+  flex: none; width: 42px; height: 42px; border-radius: 50%;
   background: linear-gradient(135deg, var(--acc) 0%, var(--acc-2, #0a6466) 100%);
   display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: 1.1rem; color: var(--on-acc, #fff);
+  font-weight: 700; font-size: 1rem; color: var(--on-acc, #fff);
 }
-.ticket-chat-body { flex: 1; min-width: 0; display: grid; gap: 4px; }
-.ticket-chat-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.ticket-chat-subject { font-weight: 600; font-size: .95rem; truncate: clip; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticket-chat-body { flex: 1; min-width: 0; display: grid; gap: 4px; overflow: hidden; }
+.ticket-chat-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
+.ticket-chat-subject { font-weight: 600; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
 .ticket-chat-time { font-size: .72rem; color: var(--muted); white-space: nowrap; flex: none; }
-.ticket-chat-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.ticket-chat-category { font-size: .8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ticket-chat-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.ticket-chat-category { font-size: .8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
 .ticket-chat-arrow { flex: none; color: var(--muted); opacity: .5; }
+
+@media (max-width: 480px) {
+  .ticket-chat-row { padding: 12px 12px; gap: 10px; }
+  .ticket-chat-avatar { width: 38px; height: 38px; font-size: .95rem; }
+  .support-action-card { padding: 14px 12px; gap: 10px; }
+  .support-faq-item button { padding: 13px 12px; }
+  .support-faq-item p { padding: 0 12px 14px; }
+}
 
 /* ── Chat page layout ──────────────────────────────────────────── */
 .chat-page {
   display: flex; flex-direction: column;
   height: calc(100dvh - 60px);   /* full height minus tab bar */
+  max-height: calc(100dvh - 60px);
   overflow: hidden;
   background: var(--bg);
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 .chat-header {
   flex: none;
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 16px 0 0;
   border-bottom: 1px solid var(--surface-border);
   background: var(--bg-el, var(--surface));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .chat-header .app-header { flex: 1; border-bottom: none; }
 .chat-status-badge { flex: none; }
