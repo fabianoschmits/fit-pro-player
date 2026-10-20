@@ -81,6 +81,7 @@ export default function TabBar({ onStart }) {
   const [moveReady, setMoveReady] = useState(false)
   const [iconActivation, setIconActivation] = useState(0)
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
+  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight)
   const rootRef = useRef(null), toggleRef = useRef(null), moreTrigger = useRef(null), firstMore = useRef(null)
   const drag = useRef(null), ignoreClickUntil = useRef(0)
   const free = position !== null
@@ -122,6 +123,7 @@ export default function TabBar({ onStart }) {
   useEffect(() => {
     const fit = () => {
       setViewportWidth(window.innerWidth)
+      setViewportHeight(window.innerHeight)
       setPosition(point => point && constrainPosition(point, MENU_HEIGHT))
     }
     window.addEventListener('resize', fit)
@@ -148,8 +150,11 @@ export default function TabBar({ onStart }) {
     },
   })
 
+  const canDrag = free || moveReady
+  const SNAP_THRESHOLD = 64
+
   const beginDrag = event => {
-    if (event.button > 0 || event.isPrimary === false) return
+    if (!canDrag || event.button > 0 || event.isPrimary === false) return
     const rect = rootRef.current.getBoundingClientRect()
     drag.current = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, moved: false }
     event.currentTarget.setPointerCapture?.(event.pointerId)
@@ -161,8 +166,18 @@ export default function TabBar({ onStart }) {
     if (!origin.moved && Math.hypot(dx, dy) < 6) return
     origin.moved = true
     event.preventDefault()
-    setMoreOpen(false)
-    setPosition(constrainPosition({ x: origin.left + dx, y: origin.top + dy }, MENU_HEIGHT))
+
+    const rawY = origin.top + dy
+    const margin = window.innerWidth >= 768 ? 16 : 0
+    const bottomLimit = Math.max(0, window.innerHeight - MENU_HEIGHT - margin)
+
+    // Magnet snap to bottom footer
+    if (rawY >= bottomLimit - SNAP_THRESHOLD) {
+      setPosition(null)
+      setMoveReady(false)
+    } else {
+      setPosition(constrainPosition({ x: origin.left + dx, y: rawY }, MENU_HEIGHT))
+    }
   }
   const endDrag = () => {
     if (drag.current?.moved) { ignoreClickUntil.current = Date.now() + 300; setMoveReady(false) }
@@ -175,8 +190,12 @@ export default function TabBar({ onStart }) {
     setMoreOpen(false)
   }
   const moveMenu = () => {
-    if (free) setPosition(null)
-    else setMoveReady(true)
+    if (free) {
+      setPosition(null)
+      setMoveReady(false)
+    } else {
+      setMoveReady(true)
+    }
     setMoreOpen(false)
     toggleRef.current?.focus()
   }
@@ -208,21 +227,22 @@ export default function TabBar({ onStart }) {
   const currentItem = MAIN.find(item => item.k === current) || (secondary && { ...secondary, label: () => secondary.title }) || MAIN[0]
   // Expand toward the side with room, preserving the pivot's chosen location.
   const opensLeft = free && position.x > (viewportWidth - PIVOT_WIDTH) / 2
+  const opensDown = free && position.y < (viewportHeight - MENU_HEIGHT) / 2
   const armSpace = free ? (opensLeft ? position.x : viewportWidth - position.x - PIVOT_WIDTH) : 0
   const panelWidth = Math.min(320, viewportWidth - 24)
   const style = position ? {
     left: position.x, top: position.y, bottom: 'auto',
     '--menu-width': `${PIVOT_WIDTH + Math.min(MAX_ARM_WIDTH, armSpace)}px`,
-    '--more-space': `${Math.max(0, position.y - 44)}px`,
+    '--more-space': `${Math.max(0, opensDown ? viewportHeight - position.y - MENU_HEIGHT - 44 : position.y - 44)}px`,
     '--more-left': `${Math.max(8, Math.min(position.x, viewportWidth - panelWidth - 8)) - position.x}px`,
   } : undefined
 
-  return <div id="tabbar" ref={rootRef} className={'corner-nav' + (open ? ' is-open' : '') + (free ? ' is-free' : '') + (opensLeft ? ' opens-left' : '') + (moveReady ? ' is-move-ready' : '')} style={style}>
+  return <div id="tabbar" ref={rootRef} className={'corner-nav' + (open ? ' is-open' : '') + (free ? ' is-free' : '') + (opensLeft ? ' opens-left' : '') + (opensDown ? ' opens-down' : '') + (moveReady ? ' is-move-ready' : '')} style={style}>
     <nav className="corner-nav-rail" aria-label={t('Main navigation')}>
       <button type="button" ref={moreTrigger} className="corner-nav-more-trigger"
         aria-label={moreOpen ? 'Fechar mais opções' : 'Abrir mais opções'} aria-expanded={moreOpen} aria-controls="corner-nav-more"
         tabIndex={open ? undefined : -1} aria-hidden={!open} inert={!open}
-        onClick={() => setMoreOpen(value => !value)}><Icon name="chevronUp" /></button>
+        onClick={() => setMoreOpen(value => !value)}><Icon name={opensDown ? 'chevronDown' : 'chevronUp'} /></button>
       <div className="corner-nav-shell">
         <button type="button" ref={toggleRef} className="corner-nav-toggle" aria-expanded={open} aria-controls="corner-nav-main"
           aria-label={`${open ? 'Fechar menu' : 'Abrir menu'}: ${currentItem.label(S)}`}

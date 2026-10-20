@@ -106,22 +106,51 @@ describe('TabBar folding navigation', () => {
     expect(container.querySelector('#tabbar').style.left).toBe('')
   })
 
-  it('detaches after dragging and keeps the chosen position after toggling', () => {
+  it('detaches after dragging when move mode is enabled and keeps the chosen position after toggling', () => {
     render()
+    click(toggle())
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
     const tabbar = container.querySelector('#tabbar')
     vi.spyOn(tabbar, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 56, height: 52, right: 56, bottom: 732 })
     pointer('pointerdown', 20, 700)
-    pointer('pointermove', 80, 640)
-    pointer('pointerup', 80, 640)
+    pointer('pointermove', 80, 600)
+    pointer('pointerup', 80, 600)
     expect(tabbar.className).toContain('is-free')
     expect(tabbar.style.left).toBe('60px')
-    expect(tabbar.style.top).toBe('620px')
+    expect(tabbar.style.top).toBe('580px')
     const position = tabbar.getAttribute('style')
     vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 500)
     click(toggle())
-    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
     click(toggle())
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
     expect(tabbar.getAttribute('style')).toBe(position)
+  })
+
+  it('snaps like a magnet to bottom footer when dragged near the bottom', () => {
+    render()
+    click(toggle())
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
+    const tabbar = container.querySelector('#tabbar')
+    // Drag upwards away from bottom
+    vi.spyOn(tabbar, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 56, height: 52, right: 56, bottom: 732 })
+    pointer('pointerdown', 20, 700)
+    pointer('pointermove', 80, 500)
+    pointer('pointerup', 80, 500)
+    expect(tabbar.className).toContain('is-free')
+    expect(tabbar.style.top).toBe('480px')
+
+    // Now drag downwards near the bottom, it should snap back to footer
+    vi.spyOn(tabbar, 'getBoundingClientRect').mockReturnValue({ left: 60, top: 480, width: 56, height: 52 })
+    pointer('pointerdown', 60, 480)
+    // window.innerHeight in happy-dom is typically 768. 768 - 52 = 716. Dragging to near bottom:
+    pointer('pointermove', 60, 700)
+    pointer('pointerup', 60, 700)
+    expect(tabbar.className).not.toContain('is-free')
+    expect(tabbar.style.top).toBe('')
+    expect(tabbar.style.left).toBe('')
   })
 
   it('opens more above the pivot, focuses its first entry and restores focus on Escape', () => {
@@ -138,6 +167,24 @@ describe('TabBar folding navigation', () => {
     expect(container.querySelector('.corner-nav-more').hasAttribute('inert')).toBe(true)
   })
 
+  it('switches more menu to open downwards when moved into the upper half of the screen', () => {
+    render()
+    click(toggle())
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
+    const tabbar = container.querySelector('#tabbar')
+    vi.spyOn(tabbar, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 56, height: 52 })
+    // Move to upper half (window.innerHeight is 768, midpoint is ~358, drag to y=200)
+    pointer('pointerdown', 20, 700)
+    pointer('pointermove', 80, 200)
+    pointer('pointerup', 80, 200)
+    expect(tabbar.className).toContain('is-free')
+    expect(tabbar.className).toContain('opens-down')
+    const trigger = container.querySelector('.corner-nav-more-trigger')
+    // chevronDown path
+    expect(trigger.querySelector('path').getAttribute('d')).toBe('m5.6 9.4 6.4 6.2 6.4-6.2')
+  })
+
   it('only arms movement when its option is selected and reattaches on request after a drag', () => {
     render()
     click(toggle())
@@ -146,8 +193,8 @@ describe('TabBar folding navigation', () => {
     const tabbar = container.querySelector('#tabbar')
     expect(tabbar.className).not.toContain('is-free')
     pointer('pointerdown', 20, 700)
-    pointer('pointermove', 80, 640)
-    pointer('pointerup', 80, 640)
+    pointer('pointermove', 80, 500)
+    pointer('pointerup', 80, 500)
     expect(tabbar.className).toContain('is-free')
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
@@ -214,22 +261,25 @@ describe('TabBar folding navigation', () => {
 
   it('restores a moved position and persists returning the menu to the footer', () => {
     render()
+    click(toggle())
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
     vi.spyOn(container.querySelector('#tabbar'), 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 56, height: 52 })
     pointer('pointerdown', 20, 700)
-    pointer('pointermove', 80, 640)
-    pointer('pointerup', 80, 640)
+    pointer('pointermove', 80, 600)
+    pointer('pointerup', 80, 600)
     reopenApp()
     const tabbar = container.querySelector('#tabbar')
     expect(tabbar.className).toContain('is-free')
     expect(tabbar.style.left).toBe('60px')
-    expect(tabbar.style.top).toBe('620px')
+    expect(tabbar.style.top).toBe('580px')
     click(toggle())
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
     reopenApp()
     expect(container.querySelector('#tabbar').className).not.toContain('is-free')
     expect(container.querySelector('#tabbar').style.top).toBe('')
-    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
   })
 
   it('fits a restored floating pivot to the current viewport', () => {

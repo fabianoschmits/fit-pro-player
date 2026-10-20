@@ -417,9 +417,12 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;
   border-radius:0;border-right:var(--hair) solid var(--surface-border);
   background:var(--acc);color:var(--on-acc);pointer-events:auto;
-  touch-action:none;user-select:none;cursor:grab;
+  touch-action:none;user-select:none;cursor:pointer;
 }
-.corner-nav-toggle:active{cursor:grabbing}
+.corner-nav.is-move-ready .corner-nav-toggle,
+.corner-nav.is-free .corner-nav-toggle{cursor:grab}
+.corner-nav.is-move-ready .corner-nav-toggle:active,
+.corner-nav.is-free .corner-nav-toggle:active{cursor:grabbing}
 .corner-nav-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px;font-weight:600}
 .corner-nav:not(.is-open) .corner-nav-label{display:none}
 .corner-nav-icon{width:28px;height:28px;display:grid;place-items:center;flex:none}
@@ -493,6 +496,23 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav.is-free .corner-nav-main{padding-bottom:0;border-radius:0 0 12px 0;overflow-x:auto;scrollbar-width:none}
 .corner-nav.is-free .corner-nav-tab{min-width:44px}
 .corner-nav.is-free:not(.is-open) .corner-nav-toggle{border-radius:0 0 12px 12px}
+.corner-nav.opens-down .corner-nav-more-trigger{
+  bottom:auto;top:calc(100% + 6px);
+}
+.corner-nav.opens-down .corner-nav-more{
+  bottom:auto;top:calc(100% + 36px);
+  transform-origin:top left;
+  transform:perspective(900px) rotateX(-70deg);
+}
+.corner-nav.opens-down .corner-nav-more.is-visible{
+  transform:perspective(900px) rotateX(0deg);
+}
+.corner-nav.opens-down.opens-left .corner-nav-more{
+  transform-origin:top right;
+}
+.corner-nav.opens-left:not(.opens-down) .corner-nav-more{
+  transform-origin:bottom right;
+}
 .corner-nav.opens-left .corner-nav-main{left:auto;right:56px;transform-origin:right center;transform:perspective(900px) rotateY(88deg);border-radius:0 0 0 12px}
 .corner-nav.is-open.opens-left .corner-nav-main{transform:perspective(900px) rotateY(0deg)}
 .corner-nav.is-open.opens-left .corner-nav-toggle{border-radius:0 0 12px 0}
