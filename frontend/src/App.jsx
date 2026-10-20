@@ -30,8 +30,7 @@ import PrivacyConsentModal from './components/PrivacyConsentModal.jsx'
 import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
 import { createTrainingRepository } from './lib/training-repository.js'
 import { attachDomainFocusRefresh, createDomainRefresh } from './lib/domain-refresh.js'
-import { applyDomainState } from './lib/domain-state.js'
-import { bodyFingerprint as serializeBody, planFingerprint as serializePlan, preferenceFingerprint as serializePreferences, preferenceValues } from './lib/domain-sync-state.js'
+import { createAccountDomainSync } from './lib/account-domain-sync.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
 import { startNotificationCoordinator, syncNotificationPreferences, syncNotificationVisibility, reconnectNotifications, refreshNotificationReadiness, hasBackgroundNotifications, useNotificationStatus } from './lib/notification-client.js'
@@ -327,140 +326,38 @@ function Shell() {
     const accountId = auth.user.id
     const token = useStore.getState().getScopeToken?.()
     const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
-    let planRevision = 0
-    let preferenceRevision = 0
-    let planFingerprint = serializePlan(useStore.getState().S)
-    let bodyFingerprint = serializeBody(useStore.getState().S)
-    let preferenceFingerprint = serializePreferences(useStore.getState().S)
-    let timer = null
-    let bodyTimer = null
-    let preferenceTimer = null
-    let applyingRemote = false
     const repository = createTrainingRepository({ client, accountId })
-    const replaceRemoteState = next => {
-      const store = useStore.getState()
-      applyingRemote = true
-      try { store.replaceState(next, false) } finally { applyingRemote = false }
-      planFingerprint = serializePlan(useStore.getState().S)
-      bodyFingerprint = serializeBody(useStore.getState().S)
-      preferenceFingerprint = serializePreferences(useStore.getState().S)
-    }
+    const sync = createAccountDomainSync({
+      repository,
+      getState: () => useStore.getState().S,
+      replaceState: next => useStore.getState().replaceState(next, false),
+      isCurrent: () => current(accountId),
+      isOnline: () => navigator.onLine !== false,
+      onStatus: status => { if (current(accountId)) useStore.getState().setAccountSyncStatus(status) },
+    })
+    useStore.getState().configureAccountSync(() => sync.retry())
     const refresh = createDomainRefresh({
       accountId,
       repository,
       isCurrent: current,
-      apply: (domain, data) => {
-        if (!current(accountId)) return
-        if (domain === 'plan') planRevision = data.schedule?.revision || 0
-        if (domain === 'preferences') preferenceRevision = data.revision || 0
-        const store = useStore.getState()
-        if (store.S._pendingSync?.[domain]) return
-        const next = applyDomainState(store.S, domain, data)
-        replaceRemoteState(next)
-      },
+      apply: (domain, data) => sync.acceptRemote(domain, data),
     })
-    const onStateChange = (state, previous) => {
-      if (applyingRemote || !current(accountId) || state.S === previous.S) return
-      const fingerprint = serializePlan(state.S)
-      if (fingerprint !== planFingerprint) {
-        planFingerprint = fingerprint
-        window.clearTimeout(timer)
-        timer = window.setTimeout(async () => {
-          const latest = useStore.getState().S
-          const sentFingerprint = serializePlan(latest)
-          let plan = null
-          try {
-            plan = await repository.savePlan({
-              expectedRevision: planRevision,
-              mode: latest.planMode,
-              schedule: { week: latest.week, dayPlan: latest.dayPlan },
-              routines: latest.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
-            })
-          } catch (err) {
-            if (err?.kind === 'revision-conflict' && current(accountId)) {
-              const fresh = await repository.loadPlan().catch(() => null)
-              if (fresh && current(accountId)) {
-                planRevision = fresh.schedule?.revision || planRevision
-                plan = await repository.savePlan({
-                  expectedRevision: planRevision,
-                  mode: latest.planMode,
-                  schedule: { week: latest.week, dayPlan: latest.dayPlan },
-                  routines: latest.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
-                }).catch(() => null)
-              }
-            }
-          }
-          if (!plan || !current(accountId)) return
-          planRevision = plan.schedule?.revision || planRevision
-          const store = useStore.getState()
-          if (serializePlan(store.S) !== sentFingerprint) return
-          const next = applyDomainState(store.S, 'plan', plan)
-          next._pendingSync = { ...next._pendingSync, plan: false }
-          replaceRemoteState(next)
-        }, 350)
-      }
-      const body = serializeBody(state.S)
-      if (body !== bodyFingerprint) {
-        bodyFingerprint = body
-        window.clearTimeout(bodyTimer)
-        bodyTimer = window.setTimeout(async () => {
-          const latest = useStore.getState().S
-          const sentFingerprint = serializeBody(latest)
-          const body = await repository.saveBody({
-            weights: latest.bodyweight.map(entry => ({ id: /^[0-9a-f-]{36}$/i.test(entry.id || '') ? entry.id : crypto.randomUUID(), date: entry.d, weightKg: entry.w })),
-            measurements: latest.bodyMeasurements.map(entry => ({ id: /^[0-9a-f-]{36}$/i.test(entry.id || '') ? entry.id : crypto.randomUUID(), date: entry.date, valuesCm: entry.values || {}, note: entry.notes || '' })),
-          }).catch(() => null)
-          if (!body || !current(accountId)) return
-          const store = useStore.getState()
-          if (serializeBody(store.S) !== sentFingerprint) return
-          const next = applyDomainState(store.S, 'body', body)
-          next._pendingSync = { ...next._pendingSync, body: false }
-          replaceRemoteState(next)
-        }, 350)
-      }
-      const preferencePayload = serializePreferences(state.S)
-      if (preferencePayload === preferenceFingerprint) return
-      preferenceFingerprint = preferencePayload
-      window.clearTimeout(preferenceTimer)
-      preferenceTimer = window.setTimeout(async () => {
-        const currentState = useStore.getState().S
-        const values = preferenceValues(currentState)
-        const sentFingerprint = serializePreferences(currentState)
-        let saved = null
-        try {
-          saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values })
-        } catch (err) {
-          if (err?.kind === 'revision-conflict' && current(accountId)) {
-            const fresh = await repository.loadPreferences().catch(() => null)
-            if (fresh && current(accountId)) {
-              preferenceRevision = fresh.revision
-              saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values }).catch(() => null)
-            }
-          }
-        }
-        if (!saved || !current(accountId)) return
-        preferenceRevision = saved.revision
-        const store = useStore.getState()
-        if (serializePreferences(store.S) !== sentFingerprint) return
-        const next = applyDomainState(store.S, 'preferences', saved)
-        next._pendingSync = { ...next._pendingSync, preferences: false }
-        replaceRemoteState(next)
-      }, 350)
-    }
-    const unsubscribe = useStore.subscribe(onStateChange)
-    const retryPending = () => {
-      if (!current(accountId)) return
-      const pending = useStore.getState().S._pendingSync || {}
-      if (pending.plan) planFingerprint = ''
-      if (pending.body) bodyFingerprint = ''
-      if (pending.preferences) preferenceFingerprint = ''
-      onStateChange(useStore.getState(), { S: null })
-    }
-    void refresh.boot().then(retryPending)
+    const unsubscribe = useStore.subscribe((state, previous) => {
+      if (state.S !== previous.S && current(accountId)) void sync.changed()
+    })
+    void refresh.boot().then(() => { if (current(accountId)) void sync.start() })
     const detach = attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['plan', 'history', 'body'] })
-    window.addEventListener('online', retryPending)
-    window.addEventListener('focus', retryPending)
-    return () => { window.clearTimeout(timer); window.clearTimeout(bodyTimer); window.clearTimeout(preferenceTimer); unsubscribe(); detach(); window.removeEventListener('online', retryPending); window.removeEventListener('focus', retryPending) }
+    const retry = () => { if (current(accountId)) void sync.retry() }
+    window.addEventListener('online', retry)
+    window.addEventListener('focus', retry)
+    return () => {
+      sync.dispose()
+      unsubscribe()
+      detach()
+      window.removeEventListener('online', retry)
+      window.removeEventListener('focus', retry)
+      useStore.getState().releaseAccountSync()
+    }
   }, [auth.status, auth.user?.id, ready, appEntered])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
@@ -629,7 +526,7 @@ function Shell() {
           )}
         </ErrorBoundary>
       </PageTransition>
-      {!(/^\/(console|professional|professional-profile|student\/professionals|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
+      {!(/^\/(console|professional|professional-profile|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
       <RestTimer />
       </>}
       <Modals />

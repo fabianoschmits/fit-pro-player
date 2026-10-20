@@ -413,7 +413,7 @@ export default function Stats() {
 
   return <div className="stats-view">
     <AppHeader title={t('Stats')} subtitle={t('Progress & history')} className="stats-titlebar"
-      action={<button className="iconbtn" aria-label={t('History')} onClick={() => nav('/history')}><Icon name="history" /></button>} />
+      action={<button className="iconbtn" aria-label={t('History')} onClick={() => nav('/history', { state: { fromContext: 'stats' } })}><Icon name="history" /></button>} />
     <section className="stats-overview" aria-label={t('Stats')}>
       <div><span>{t('Workouts')}</span><b>{workouts.length}</b></div>
       <div><span>{t('This month')}</span><b>{monthW}</b></div>

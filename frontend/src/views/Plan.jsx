@@ -126,7 +126,7 @@ export default function Plan() {
 
         <div className="row between plan-section-head">
           <h4 className="sec">{t('Previous workouts')}</h4>
-          {!!recentWorkouts.length && <button className="small accent" onClick={() => nav('/history')}>{t('View all')}</button>}
+          {!!recentWorkouts.length && <button className="small accent" onClick={() => nav('/history', { state: { fromContext: 'training' } })}>{t('View all')}</button>}
         </div>
         {recentWorkouts.length ? <div className="list">{recentWorkouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
           : <div className="card daily-plan-empty"><Icon name="history" /><strong>{t('Your completed workouts will appear here.')}</strong></div>}

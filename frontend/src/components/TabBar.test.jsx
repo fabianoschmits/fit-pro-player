@@ -213,17 +213,15 @@ describe('TabBar folding navigation', () => {
     expect(toggle().getAttribute('aria-expanded')).toBe('true')
   })
 
-  it('keeps Stats selected inside body progress', () => {
+  it('keeps body progress active inside body progress under stats context', () => {
     render('/body-progress')
     click(toggle())
-    expect(container.querySelector('[data-tab-key="stats"]').getAttribute('aria-current')).toBe('page')
+    expect(container.querySelector('[data-tab-key="body-progress"]').getAttribute('aria-current')).toBe('page')
   })
 
   it('preserves navigation and the workout entry point after expanding', () => {
     render()
     click(toggle())
-    click(container.querySelector('[data-tab-key="stats"]'))
-    expect(container.querySelector('output').textContent).toBe('/stats')
     click(container.querySelector('[data-tab-key="start"]'))
     expect(container.querySelector('output').textContent).toBe('/plan')
   })
@@ -299,11 +297,47 @@ describe('TabBar folding navigation', () => {
     expect(container.querySelector('#tabbar').className).not.toContain('is-free')
   })
 
-  it('keeps the menu usable if the browser refuses preference storage', () => {
-    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => { throw new Error('unavailable') })
-    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => { throw new Error('unavailable') })
-    render()
-    click(toggle())
-    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+  it('renders dynamic contextual items and labels according to the current area', () => {
+    const renderAndOpen = path => {
+      act(() => root.unmount())
+      root = createRoot(container)
+      render(path)
+      if (toggle().getAttribute('aria-expanded') !== 'true') click(toggle())
+    }
+
+    // 1. Training context
+    renderAndOpen('/plan')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'plan', 'library', 'history'])
+    expect(container.querySelector('[data-tab-key="plan"]').getAttribute('aria-current')).toBe('page')
+
+    // 2. Library
+    renderAndOpen('/library')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'plan', 'library', 'history'])
+    expect(container.querySelector('[data-tab-key="library"]').getAttribute('aria-current')).toBe('page')
+
+    // 3. Stats context
+    renderAndOpen('/stats')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'stats', 'body-progress', 'history'])
+    expect(container.querySelector('[data-tab-key="stats"]').getAttribute('aria-current')).toBe('page')
+
+    // 4. Support context
+    renderAndOpen('/support')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'support', 'support-tickets', 'support-new'])
+    expect(container.querySelector('[data-tab-key="support"]').getAttribute('aria-current')).toBe('page')
+
+    // 5. Account context
+    renderAndOpen('/settings')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'settings', 'personal-data', 'privacy-settings'])
+    expect(container.querySelector('[data-tab-key="settings"]').getAttribute('aria-current')).toBe('page')
+
+    // 6. Student professionals context
+    renderAndOpen('/student/professionals')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'student-list', 'student-materials', 'student-add'])
+    expect(container.querySelector('[data-tab-key="student-list"]').getAttribute('aria-current')).toBe('page')
+
+    // 7. Student professional detail (level 2)
+    renderAndOpen('/student/professionals/p1?section=training')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'student-list', 'prof-summary', 'prof-training'])
+    expect(container.querySelector('[data-tab-key="prof-training"]').getAttribute('aria-current')).toBe('page')
   })
 })

@@ -14,20 +14,19 @@ import Icon from './Icon.jsx'
 import NavigationIcon from './NavigationIcon.jsx'
 import { useFppActivation } from './useFppActivation.js'
 
+import { resolveNavigationContext } from '../lib/navigation-contexts.js'
+
 const NAVIGATION_LAYOUT_KEY = 'fpp_navigation_layout_v1'
 const PIVOT_WIDTH = 56
 const MENU_HEIGHT = 52
 const MAX_ARM_WIDTH = 320
 
-const MAIN = [
-  { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
-  { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
-  { k: 'start', icon: 'dumbbell', action: true, label: s => startTabShortLabel(s) },
-  { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
-]
-const activeMain = path => {
-  const root = path.split('/')[1] || 'home'
-  return root === 'body-progress' ? 'stats' : root === 'workout' ? 'start' : MAIN.some(x => x.k === root) ? root : null
+function NavItemIcon({ item, resume, active, visible, activation, entryKey }) {
+  if (item.k === 'home' || item.k === 'plan' || item.k === 'start' || item.k === 'workout' || item.k === 'stats') {
+    const iconName = item.k === 'workout' ? 'start' : item.k
+    return <NavigationIcon name={iconName} resume={resume} active={active} visible={visible} activation={activation} entryKey={entryKey} />
+  }
+  return <Icon name={item.icon} />
 }
 
 function MainButton({ item, active, state, visible, entryKey, onSelect }) {
@@ -37,10 +36,14 @@ function MainButton({ item, active, state, visible, entryKey, onSelect }) {
     if (!event.defaultPrevented && !trigger.pressed) setActivation(value => value + 1)
     trigger.run(event)
   }
+  const isAction = Boolean(item.action)
   return <button type="button" data-tab-key={item.k}
-    className={'corner-nav-tab' + (item.action ? ' corner-nav-tab--start' : '') + (active ? ' is-active' : '')}
+    className={'corner-nav-tab' + (isAction ? ' corner-nav-tab--start' : '') + (active ? ' is-active' : '')}
     onClick={select} aria-current={active ? 'page' : undefined}>
-    <span className="corner-nav-icon"><NavigationIcon name={item.k} resume={Boolean(state.active)} active={active} visible={visible} activation={activation} entryKey={entryKey} /></span><span>{item.label(state)}</span>
+    <span className="corner-nav-icon">
+      <NavItemIcon item={item} resume={Boolean(state.active)} active={active} visible={visible} activation={activation} entryKey={entryKey} />
+    </span>
+    <span>{item.label(state)}</span>
   </button>
 }
 
@@ -222,9 +225,17 @@ export default function TabBar({ onStart }) {
       { icon: 'expand', title: free ? 'Prender menu ao rodapé' : 'Mover menu livremente', sub: free ? 'Volta para a posição padrão' : 'Arraste o pivô para posicionar', action: moveMenu, dragToggle: true },
     ]],
   ]
-  const current = activeMain(loc.pathname)
+  const resolved = resolveNavigationContext({
+    pathname: loc.pathname,
+    search: loc.search,
+    navigationState: loc.state,
+    workoutState: S.active,
+    hasActiveWorkout: Boolean(S.active),
+  })
+  const navItems = resolved.items
+  const currentKey = resolved.activeKey
   const secondary = groups.flatMap(([, links]) => links).find(item => item.to === loc.pathname)
-  const currentItem = MAIN.find(item => item.k === current) || (secondary && { ...secondary, label: () => secondary.title }) || MAIN[0]
+  const currentItem = navItems.find(item => item.k === currentKey) || (secondary && { ...secondary, label: () => secondary.title }) || navItems[0]
   // Expand toward the side with room, preserving the pivot's chosen location.
   const opensLeft = free && position.x > (viewportWidth - PIVOT_WIDTH) / 2
   const opensDown = free && position.y < (viewportHeight - MENU_HEIGHT) / 2
@@ -247,13 +258,13 @@ export default function TabBar({ onStart }) {
         <button type="button" ref={toggleRef} className="corner-nav-toggle" aria-expanded={open} aria-controls="corner-nav-main"
           aria-label={`${open ? 'Fechar menu' : 'Abrir menu'}: ${currentItem.label(S)}`}
           onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag} onClick={toggleMenu}>
-          <span className="corner-nav-icon">{current
-            ? <NavigationIcon name={current} resume={Boolean(S.active)} active activation={iconActivation} />
-            : <Icon name={currentItem.icon} />}</span>
+          <span className="corner-nav-icon">
+            <NavItemIcon item={currentItem} resume={Boolean(S.active)} active visible activation={iconActivation} />
+          </span>
           <span className="corner-nav-label">{currentItem.label(S)}</span>
         </button>
         <div id="corner-nav-main" className="corner-nav-main" aria-hidden={!open} inert={!open}>
-          {MAIN.map(item => <MainButton key={item.k} item={item} state={S} active={current === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
+          {navItems.map(item => <MainButton key={item.k} item={item} state={S} active={currentKey === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
         </div>
       </div>
       <div id="corner-nav-more" className={'corner-nav-more' + (moreOpen ? ' is-visible' : '')} role="menu" aria-label={t('Mais opções')} aria-hidden={!moreOpen} inert={!moreOpen}>
