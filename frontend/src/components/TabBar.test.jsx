@@ -297,6 +297,28 @@ describe('TabBar folding navigation', () => {
     expect(container.querySelector('#tabbar').className).not.toContain('is-free')
   })
 
+  it('updates contextual items in-place when the user navigates via tab click (no remount)', () => {
+    // Mount once at /home and keep TabBar mounted throughout — simulates real app navigation
+    render('/home')
+    click(toggle())
+
+    // At /home: home | plan | start | stats
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key')))
+      .toEqual(['home', 'plan', 'start', 'stats'])
+
+    // Click "Plano" — navigates to /plan, keeping TabBar mounted
+    click(container.querySelector('[data-tab-key="plan"]'))
+
+    // Re-open the menu (go() doesn't close it, but let's ensure it's open)
+    if (toggle().getAttribute('aria-expanded') !== 'true') click(toggle())
+
+    // At /plan (training context): home | plan | library | history
+    expect(container.querySelector('output').textContent).toBe('/plan')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key')))
+      .toEqual(['home', 'plan', 'library', 'history'])
+    expect(container.querySelector('[data-tab-key="plan"]').getAttribute('aria-current')).toBe('page')
+  })
+
   it('renders dynamic contextual items and labels according to the current area', () => {
     const renderAndOpen = path => {
       act(() => root.unmount())
