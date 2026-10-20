@@ -20,6 +20,7 @@ import { Button, Slider, Switch, Segmented, SelectRow, Row } from './components/
 import { glyphOf, GLYPH_GROUPS, DEFAULT_GLYPH } from './lib/glyphs.js'
 import BodyMap from './components/BodyMap.jsx'
 import RoutineMuscleThumb from './components/RoutineMuscleThumb.jsx'
+import WorkoutMuscleThumb from './components/WorkoutMuscleThumb.jsx'
 import { exerciseMuscleSnapshot, loadOfWorkouts } from './lib/muscles.js'
 import { parseImport, mergeImport } from './lib/import-csv.js'
 import { buildPlanBundle, parsePlan, mergePlan, printPlan } from './lib/plan-share.js'
@@ -1283,9 +1284,8 @@ export const calendarSheet = start => ui().openSheet(close => <Calendar start={s
 /* shared small workout row (used in lists) */
 export function WorkoutRow({ w, onClick }) {
   const st = useStore(s => s.S)
-  const routine = st.routines.find(r => r.id === w.routineId)
   return <button type="button" className="item workout-row" onClick={onClick}>
-    <span className="lrow-i workout-row-icon">{routine ? <RoutineMuscleThumb routine={routine} body={st.body} /> : <Icon name="clipboard" />}</span>
+    <span className="lrow-i workout-row-icon"><WorkoutMuscleThumb workout={w} body={st.body} /></span>
     <div className="grow"><div className="tt">{w.name}</div>
       <div className="ss">{[fmtDate(w.d, true), ...durPart(workoutDuration(w)), t('{0} sets', setsDone(w)), fmtVol(w.vol, st.displayUnit || 'kg')].join(' · ')}</div></div>
     {w.prs && w.prs.length > 0 && <span className="pr"><Icon name="trophy" />{w.prs.length} {getLang() === 'pt' ? 'RP' : 'PR'}</span>}

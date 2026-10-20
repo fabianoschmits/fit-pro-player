@@ -162,7 +162,7 @@ export function createTrainingRepository({ client, accountId }) {
       return parseResponse(parseBodyData, { weights, measurements }, accountId)
     },
 
-    async loadHistory({ limit = 50 } = {}) {
+    async loadHistory({ limit = 1000 } = {}) {
       if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
       const [sessions, operations] = await Promise.all([
         read(client.from('workout_sessions')

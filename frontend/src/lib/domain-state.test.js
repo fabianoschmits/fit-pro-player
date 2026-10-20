@@ -18,4 +18,12 @@ describe('domain state projection', () => {
     const result = applyDomainState({ workouts: [{ id: 'old' }] }, 'history', [{ session: { id: 'a' }, workout: null }, { session: { id: 'b' }, workout: { id: 'b', entries: [] } }])
     expect(result.workouts).toEqual([{ id: 'b', entries: [] }])
   })
+
+  it('keeps remotely loaded workouts in chronological state order', () => {
+    const records = [
+      { workout: { id: 'new', d: '2026-10-20', start: 2, entries: [] } },
+      { workout: { id: 'old', d: '2026-10-19', start: 1, entries: [] } },
+    ]
+    expect(applyDomainState({ workouts: [] }, 'history', records).workouts.map(workout => workout.id)).toEqual(['old', 'new'])
+  })
 })

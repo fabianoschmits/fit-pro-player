@@ -35,7 +35,10 @@ export function exerciseBodyView(ex) {
 }
 
 export function routineBodyView(routine) {
-  const load = loadOfRoutine(routine)
+  return bodyViewOfLoad(loadOfRoutine(routine))
+}
+
+export function bodyViewOfLoad(load) {
   let front = 0
   let back = 0
   for (const [muscle, weight] of Object.entries(load)) {
@@ -49,7 +52,7 @@ export function routineBodyRegion(routine) {
   return bodyRegionOfLoad(loadOfRoutine(routine))
 }
 
-function bodyRegionOfLoad(load) {
+export function bodyRegionOfLoad(load) {
   let upper = 0
   let lower = 0
   for (const [muscle, weight] of Object.entries(load)) {

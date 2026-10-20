@@ -26,6 +26,7 @@ export function applyDomainState(state, domain, data) {
   }
   if (domain === 'history') {
     next.workouts = data.flatMap(record => record.workout ? [{ ...record.workout }] : [])
+      .sort((left, right) => String(left.d || '').localeCompare(String(right.d || '')) || Number(left.start || 0) - Number(right.start || 0))
     return next
   }
   throw new TypeError('unknown-domain-state')

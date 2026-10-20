@@ -12,6 +12,7 @@ import { recordDiagnostic } from '../lib/diagnostics.js'
 import { DEFAULT_NOTIFICATION_PREFERENCES, normalizeNotificationPreferences } from '../lib/notification-preferences.js'
 import { MASS_UNIT, STATE_SCHEMA_VERSION } from '../lib/mass.js'
 import { createSessionRecovery, hasPendingSessionFinalization } from '../lib/session-recovery.js'
+import { markPendingDomains } from '../lib/domain-sync-state.js'
 
 export const DEF = {
   displayUnit: 'kg', massUnit: MASS_UNIT, stateSchemaVersion: STATE_SCHEMA_VERSION,
@@ -68,6 +69,7 @@ export function normalizeState(source) {
   state.week = object(state.week)
   state.dayPlan = object(state.dayPlan)
   state.exWeights = object(state.exWeights)
+  state._pendingSync = object(state._pendingSync)
   state.planMode = state.planMode === 'daily' ? 'daily' : 'weekly'
   state.notifications = normalizeNotificationPreferences(raw.notifications, raw.reminder)
   state.profile = normalizeProfile(raw.profile, state.body)
@@ -133,7 +135,10 @@ export const useStore = create((set, get) => {
     const generation = scopeGeneration
     const previousAssignment = get().S?.assignedProgram
     if (['assignmentId', 'versionId', 'programId'].some(key => previousAssignment?.[key] !== S.assignedProgram?.[key])) assignedProgramGeneration++
-    if (dirty) S._ts = nextStateTimestamp(get().S?._ts)
+    if (dirty) {
+      S._ts = nextStateTimestamp(get().S?._ts)
+      if (scope.kind === 'account') markPendingDomains(get().S, S)
+    }
     registerCustom(S.customEx)
     let ok = writeScopedState(scope, S, localStorage)
     set({ S })

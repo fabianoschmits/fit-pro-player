@@ -31,6 +31,7 @@ import { createProfessionalWorkflowRepository } from './lib/professional-workflo
 import { createTrainingRepository } from './lib/training-repository.js'
 import { attachDomainFocusRefresh, createDomainRefresh } from './lib/domain-refresh.js'
 import { applyDomainState } from './lib/domain-state.js'
+import { bodyFingerprint as serializeBody, planFingerprint as serializePlan, preferenceFingerprint as serializePreferences, preferenceValues } from './lib/domain-sync-state.js'
 import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
 import { flushProfessionalEvents } from './lib/professional-events.js'
 import { startNotificationCoordinator, syncNotificationPreferences, syncNotificationVisibility, reconnectNotifications, refreshNotificationReadiness, hasBackgroundNotifications, useNotificationStatus } from './lib/notification-client.js'
@@ -328,20 +329,22 @@ function Shell() {
     const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
     let planRevision = 0
     let preferenceRevision = 0
-    let planFingerprint = ''
-    let bodyFingerprint = ''
-    let preferenceFingerprint = ''
+    let planFingerprint = serializePlan(useStore.getState().S)
+    let bodyFingerprint = serializeBody(useStore.getState().S)
+    let preferenceFingerprint = serializePreferences(useStore.getState().S)
     let timer = null
     let bodyTimer = null
     let preferenceTimer = null
-    const serializePlan = state => JSON.stringify({ mode: state.planMode, week: state.week, dayPlan: state.dayPlan, routines: state.routines })
-    const serializeBody = state => JSON.stringify({ weights: state.bodyweight, measurements: state.bodyMeasurements })
-    const preferenceValues = state => {
-      const { routines, week, dayPlan, planMode, bodyweight, bodyMeasurements, workouts, active, exWeights,
-        assignedProgram, pendingProfessionalEvents, professionalProgramDrafts, _ts, ...values } = state
-      return values
-    }
+    let applyingRemote = false
     const repository = createTrainingRepository({ client, accountId })
+    const replaceRemoteState = next => {
+      const store = useStore.getState()
+      applyingRemote = true
+      try { store.replaceState(next, false) } finally { applyingRemote = false }
+      planFingerprint = serializePlan(useStore.getState().S)
+      bodyFingerprint = serializeBody(useStore.getState().S)
+      preferenceFingerprint = serializePreferences(useStore.getState().S)
+    }
     const refresh = createDomainRefresh({
       accountId,
       repository,
@@ -351,22 +354,20 @@ function Shell() {
         if (domain === 'plan') planRevision = data.schedule?.revision || 0
         if (domain === 'preferences') preferenceRevision = data.revision || 0
         const store = useStore.getState()
+        if (store.S._pendingSync?.[domain]) return
         const next = applyDomainState(store.S, domain, data)
-        if (domain === 'plan') planFingerprint = serializePlan(next)
-        if (domain === 'body') bodyFingerprint = serializeBody(next)
-        if (domain === 'preferences') preferenceFingerprint = JSON.stringify(preferenceValues(next))
-        store.replaceState(next, false)
+        replaceRemoteState(next)
       },
     })
-    void refresh.boot()
-    const unsubscribe = useStore.subscribe((state, previous) => {
-      if (!current(accountId) || state.S === previous.S) return
+    const onStateChange = (state, previous) => {
+      if (applyingRemote || !current(accountId) || state.S === previous.S) return
       const fingerprint = serializePlan(state.S)
       if (fingerprint !== planFingerprint) {
         planFingerprint = fingerprint
         window.clearTimeout(timer)
         timer = window.setTimeout(async () => {
           const latest = useStore.getState().S
+          const sentFingerprint = serializePlan(latest)
           let plan = null
           try {
             plan = await repository.savePlan({
@@ -391,7 +392,11 @@ function Shell() {
           }
           if (!plan || !current(accountId)) return
           planRevision = plan.schedule?.revision || planRevision
-          useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'plan', plan), false)
+          const store = useStore.getState()
+          if (serializePlan(store.S) !== sentFingerprint) return
+          const next = applyDomainState(store.S, 'plan', plan)
+          next._pendingSync = { ...next._pendingSync, plan: false }
+          replaceRemoteState(next)
         }, 350)
       }
       const body = serializeBody(state.S)
@@ -400,21 +405,27 @@ function Shell() {
         window.clearTimeout(bodyTimer)
         bodyTimer = window.setTimeout(async () => {
           const latest = useStore.getState().S
+          const sentFingerprint = serializeBody(latest)
           const body = await repository.saveBody({
             weights: latest.bodyweight.map(entry => ({ id: /^[0-9a-f-]{36}$/i.test(entry.id || '') ? entry.id : crypto.randomUUID(), date: entry.d, weightKg: entry.w })),
             measurements: latest.bodyMeasurements.map(entry => ({ id: /^[0-9a-f-]{36}$/i.test(entry.id || '') ? entry.id : crypto.randomUUID(), date: entry.date, valuesCm: entry.values || {}, note: entry.notes || '' })),
           }).catch(() => null)
           if (!body || !current(accountId)) return
-          useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'body', body), false)
+          const store = useStore.getState()
+          if (serializeBody(store.S) !== sentFingerprint) return
+          const next = applyDomainState(store.S, 'body', body)
+          next._pendingSync = { ...next._pendingSync, body: false }
+          replaceRemoteState(next)
         }, 350)
       }
-      const preferencePayload = JSON.stringify(preferenceValues(state.S))
+      const preferencePayload = serializePreferences(state.S)
       if (preferencePayload === preferenceFingerprint) return
       preferenceFingerprint = preferencePayload
       window.clearTimeout(preferenceTimer)
       preferenceTimer = window.setTimeout(async () => {
         const currentState = useStore.getState().S
         const values = preferenceValues(currentState)
+        const sentFingerprint = serializePreferences(currentState)
         let saved = null
         try {
           saved = await repository.savePreferences({ expectedRevision: preferenceRevision, displayUnit: currentState.displayUnit, values })
@@ -429,11 +440,27 @@ function Shell() {
         }
         if (!saved || !current(accountId)) return
         preferenceRevision = saved.revision
-        useStore.getState().replaceState(applyDomainState(useStore.getState().S, 'preferences', saved), false)
+        const store = useStore.getState()
+        if (serializePreferences(store.S) !== sentFingerprint) return
+        const next = applyDomainState(store.S, 'preferences', saved)
+        next._pendingSync = { ...next._pendingSync, preferences: false }
+        replaceRemoteState(next)
       }, 350)
-    })
+    }
+    const unsubscribe = useStore.subscribe(onStateChange)
+    const retryPending = () => {
+      if (!current(accountId)) return
+      const pending = useStore.getState().S._pendingSync || {}
+      if (pending.plan) planFingerprint = ''
+      if (pending.body) bodyFingerprint = ''
+      if (pending.preferences) preferenceFingerprint = ''
+      onStateChange(useStore.getState(), { S: null })
+    }
+    void refresh.boot().then(retryPending)
     const detach = attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['plan', 'history', 'body'] })
-    return () => { window.clearTimeout(timer); window.clearTimeout(bodyTimer); window.clearTimeout(preferenceTimer); unsubscribe(); detach() }
+    window.addEventListener('online', retryPending)
+    window.addEventListener('focus', retryPending)
+    return () => { window.clearTimeout(timer); window.clearTimeout(bodyTimer); window.clearTimeout(preferenceTimer); unsubscribe(); detach(); window.removeEventListener('online', retryPending); window.removeEventListener('focus', retryPending) }
   }, [auth.status, auth.user?.id, ready, appEntered])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
-import { DEF, hasData, normalizeState } from './useStore.js'
+import { DEF, hasData, normalizeState, useStore } from './useStore.js'
 import { starterRoutines } from '../lib/starter.js'
 
 describe('state migration for first-run profiles', () => {
@@ -90,5 +90,23 @@ describe('state migration for first-run profiles', () => {
     expect(restored.bodyMeasurements).toHaveLength(1)
     expect(restored.bodyMeasurements[0].values).toEqual({ chest: 101, waist: 88 })
     expect(restored.bodyMeasurementGoals).toEqual({ chest: 105 })
+  })
+})
+
+describe('pending account domain writes', () => {
+  it('retains a first weigh-in and its unsent body marker after reopening the account', async () => {
+    const accountId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    localStorage.clear()
+    await useStore.getState().activateLocalScope(accountId)
+    useStore.getState().update(state => {
+      state.profile.startWeight = 78.4
+      state.bodyweight.push({ d: '2026-10-20', w: 78.4, t: 1 })
+    })
+    expect(useStore.getState().S._pendingSync).toMatchObject({ body: true, preferences: true })
+
+    await useStore.getState().activateLocalScope(null)
+    await useStore.getState().activateLocalScope(accountId)
+    expect(useStore.getState().S.bodyweight[0].w).toBe(78.4)
+    expect(useStore.getState().S._pendingSync.body).toBe(true)
   })
 })

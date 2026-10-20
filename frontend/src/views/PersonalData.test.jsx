@@ -84,6 +84,21 @@ it('saves a height entered with a comma in centimeters', async () => {
   expect(mocks.state.S.profile.heightCm).toBe(176)
 })
 
+it('records an edited personal weight as a bodyweight entry for sync', async () => {
+  mocks.update.mockImplementation(recipe => { recipe(mocks.state.S); mocks.state.persistence = { state: 'saved' } })
+  await render()
+  const field = container.querySelector('[data-profile-field="measures"]')
+  await act(async () => field.querySelector('.personal-edit').click())
+  const weight = field.querySelectorAll('input[inputmode="decimal"]')[1]
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(weight, '72,5')
+    weight.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await act(async () => { field.querySelector('.personal-save').click(); await Promise.resolve() })
+  expect(mocks.state.S.profile.startWeight).toBe(72.5)
+  expect(mocks.state.S.bodyweight.some(entry => entry.w === 72.5)).toBe(true)
+})
+
 it('renders the avatar picker as a horizontal scroller', async () => {
   await render()
   const picker = container.querySelector('.avatar-picker-grid')
