@@ -100,7 +100,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 @media(prefers-reduced-motion:reduce){.dialog-surface{animation:none}}
 
 /* Management workspace — compact, flat and mobile first, like the platform Central. */
-#app:has(.management-layout){max-width:1232px;padding:var(--sat) 0 calc(20px + var(--sab))}
+#app:has(.management-layout){max-width:1232px;padding:var(--sat) 0 calc(72px + var(--sab))}
 .management-layout{--management-muted:var(--label-2);width:100%;max-width:1232px;margin-inline:auto;color:var(--label);font-size:14px;line-height:1.5}
 .management-layout *{box-sizing:border-box}
 .management-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--sep)}
