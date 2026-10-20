@@ -92,6 +92,21 @@ export function resolveNavigationContext({
       else if (normPath === '/student/professionals/add') activeKey = 'student-add'
       else activeKey = 'student-list'
     }
+  } else if (normPath.startsWith('/professional')) {
+    // Detail page: /professional/students/:studentId
+    const studentDetailMatch = normPath.match(/^\/professional\/students\/([^/]+)$/)
+    if (studentDetailMatch) {
+      detectedContext = 'professionalStudent'
+      const searchParams = new URLSearchParams(search || '')
+      const section = searchParams.get('section')
+      activeKey = section === 'training' ? 'ps-training' : 'ps-summary'
+    } else {
+      detectedContext = 'professional'
+      if (normPath === '/professional/students') activeKey = 'prof-students'
+      else if (normPath.startsWith('/professional/programs')) activeKey = 'prof-programs'
+      else if (normPath.startsWith('/professional/invites')) activeKey = 'prof-invites'
+      else activeKey = 'prof-overview'
+    }
   } else if (normPath === '/history') {
     // Shared page: preserve origin context
     const originContext =
@@ -196,6 +211,37 @@ export function resolveNavigationContext({
           k: 'prof-training',
           icon: 'dumbbell',
           to: `/student/professionals/${professionalId}?section=training`,
+          label: () => 'Treino',
+        },
+      ]
+      break
+    }
+
+    case 'professional':
+      items = [
+        { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
+        { k: 'prof-students', icon: 'personCircle', to: '/professional/students', label: () => 'Alunos' },
+        { k: 'prof-programs', icon: 'clipboard', to: '/professional/programs', label: () => 'Programas' },
+        { k: 'prof-invites', icon: 'bell', to: '/professional/invites', label: () => 'Convites' },
+      ]
+      break
+
+    case 'professionalStudent': {
+      const psMatch = normPath.match(/^\/professional\/students\/([^/]+)$/)
+      const studentId = psMatch ? psMatch[1] : ''
+      items = [
+        { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
+        { k: 'prof-students', icon: 'personCircle', to: '/professional/students', label: () => 'Alunos' },
+        {
+          k: 'ps-summary',
+          icon: 'info',
+          to: `/professional/students/${studentId}?section=summary`,
+          label: () => 'Resumo',
+        },
+        {
+          k: 'ps-training',
+          icon: 'clipboard',
+          to: `/professional/students/${studentId}?section=training`,
           label: () => 'Treino',
         },
       ]

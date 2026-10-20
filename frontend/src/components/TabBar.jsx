@@ -248,7 +248,13 @@ export default function TabBar({ onStart }) {
     '--more-left': `${Math.max(8, Math.min(position.x, viewportWidth - panelWidth - 8)) - position.x}px`,
   } : undefined
 
-  return <div id="tabbar" ref={rootRef} className={'corner-nav' + (open ? ' is-open' : '') + (free ? ' is-free' : '') + (opensLeft ? ' opens-left' : '') + (opensDown ? ' opens-down' : '') + (moveReady ? ' is-move-ready' : '')} style={style}>
+  return <div id="tabbar" data-context={resolved.contextId} ref={rootRef} className={'corner-nav' + (open ? ' is-open' : '') + (free ? ' is-free' : '') + (opensLeft ? ' opens-left' : '') + (opensDown ? ' opens-down' : '') + (moveReady ? ' is-move-ready' : '')} style={style}>
+    {import.meta.env.DEV && <div id="tabbar-debug" style={{ position: 'fixed', bottom: 72, left: 8, background: 'rgba(0,0,0,.75)', color: '#0f0', fontFamily: 'monospace', fontSize: 10, padding: '4px 6px', borderRadius: 4, zIndex: 9999, pointerEvents: 'none', lineHeight: 1.5 }}>
+      [TabBar] {loc.pathname}<br />
+      ctx: {resolved.contextId} | key: {currentKey}<br />
+      items: {navItems.map(i => i.k).join(', ')}
+    </div>}
+
     <nav className="corner-nav-rail" aria-label={t('Main navigation')}>
       <button type="button" ref={moreTrigger} className="corner-nav-more-trigger"
         aria-label={moreOpen ? 'Fechar mais opções' : 'Abrir mais opções'} aria-expanded={moreOpen} aria-controls="corner-nav-more"

@@ -144,4 +144,54 @@ describe('navigation-contexts resolver', () => {
     expect(resTraining.contextId).toBe('studentProfessionalDetail')
     expect(resTraining.activeKey).toBe('prof-training')
   })
+
+  it('resolves Professional context on /professional and sub-paths', () => {
+    const resOverview = resolveNavigationContext({ pathname: '/professional' })
+    expect(resOverview.contextId).toBe('professional')
+    expect(resOverview.activeKey).toBe('prof-overview')
+    expect(resOverview.items.map(i => i.k)).toEqual(['home', 'prof-students', 'prof-programs', 'prof-invites'])
+
+    const resStudents = resolveNavigationContext({ pathname: '/professional/students' })
+    expect(resStudents.contextId).toBe('professional')
+    expect(resStudents.activeKey).toBe('prof-students')
+
+    const resPrograms = resolveNavigationContext({ pathname: '/professional/programs' })
+    expect(resPrograms.contextId).toBe('professional')
+    expect(resPrograms.activeKey).toBe('prof-programs')
+
+    const resProgramNew = resolveNavigationContext({ pathname: '/professional/programs/new' })
+    expect(resProgramNew.contextId).toBe('professional')
+    expect(resProgramNew.activeKey).toBe('prof-programs')
+
+    const resInvites = resolveNavigationContext({ pathname: '/professional/invites' })
+    expect(resInvites.contextId).toBe('professional')
+    expect(resInvites.activeKey).toBe('prof-invites')
+
+    const resProfile = resolveNavigationContext({ pathname: '/professional/profile' })
+    expect(resProfile.contextId).toBe('professional')
+    expect(resProfile.activeKey).toBe('prof-overview')
+
+    // Alias antigo
+    const resAlias = resolveNavigationContext({ pathname: '/professional-profile' })
+    expect(resAlias.contextId).toBe('professional')
+  })
+
+  it('resolves ProfessionalStudent context on /professional/students/:id', () => {
+    const resSummary = resolveNavigationContext({
+      pathname: '/professional/students/student-42',
+      search: '?section=summary',
+    })
+    expect(resSummary.contextId).toBe('professionalStudent')
+    expect(resSummary.activeKey).toBe('ps-summary')
+    expect(resSummary.items.map(i => i.k)).toEqual(['home', 'prof-students', 'ps-summary', 'ps-training'])
+    expect(resSummary.items[2].to).toBe('/professional/students/student-42?section=summary')
+    expect(resSummary.items[3].to).toBe('/professional/students/student-42?section=training')
+
+    const resTraining = resolveNavigationContext({
+      pathname: '/professional/students/student-42',
+      search: '?section=training',
+    })
+    expect(resTraining.contextId).toBe('professionalStudent')
+    expect(resTraining.activeKey).toBe('ps-training')
+  })
 })

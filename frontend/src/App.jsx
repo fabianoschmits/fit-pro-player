@@ -526,7 +526,7 @@ function Shell() {
           )}
         </ErrorBoundary>
       </PageTransition>
-      {!(/^\/(console|professional|professional-profile|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
+      {!(/^\/(console|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
       <RestTimer />
       </>}
       <Modals />
