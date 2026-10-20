@@ -150,14 +150,17 @@ describe('navigation-contexts resolver', () => {
     expect(resOverview.contextId).toBe('professional')
     expect(resOverview.activeKey).toBe('prof-overview')
     expect(resOverview.items.map(i => i.k)).toEqual(['home', 'prof-students', 'prof-programs', 'prof-invites'])
+    expect(resOverview.pivotItem?.label()).toBe('Área profissional')
 
     const resStudents = resolveNavigationContext({ pathname: '/professional/students' })
     expect(resStudents.contextId).toBe('professional')
     expect(resStudents.activeKey).toBe('prof-students')
+    expect(resStudents.pivotItem?.label()).toBe('Alunos')
 
     const resPrograms = resolveNavigationContext({ pathname: '/professional/programs' })
     expect(resPrograms.contextId).toBe('professional')
     expect(resPrograms.activeKey).toBe('prof-programs')
+    expect(resPrograms.pivotItem?.label()).toBe('Programas')
 
     const resProgramNew = resolveNavigationContext({ pathname: '/professional/programs/new' })
     expect(resProgramNew.contextId).toBe('professional')
@@ -166,14 +169,19 @@ describe('navigation-contexts resolver', () => {
     const resInvites = resolveNavigationContext({ pathname: '/professional/invites' })
     expect(resInvites.contextId).toBe('professional')
     expect(resInvites.activeKey).toBe('prof-invites')
+    expect(resInvites.pivotItem?.label()).toBe('Convites')
 
     const resProfile = resolveNavigationContext({ pathname: '/professional/profile' })
     expect(resProfile.contextId).toBe('professional')
-    expect(resProfile.activeKey).toBe('prof-overview')
+    expect(resProfile.activeKey).toBe('prof-profile')
+    expect(resProfile.items.map(i => i.k)).toEqual(['home', 'prof-students', 'prof-programs', 'prof-invites'])
+    expect(resProfile.pivotItem?.label()).toBe('Perfil profissional')
 
     // Alias antigo
     const resAlias = resolveNavigationContext({ pathname: '/professional-profile' })
     expect(resAlias.contextId).toBe('professional')
+    expect(resAlias.activeKey).toBe('prof-profile')
+    expect(resAlias.pivotItem?.label()).toBe('Perfil profissional')
   })
 
   it('resolves ProfessionalStudent context on /professional/students/:id', () => {

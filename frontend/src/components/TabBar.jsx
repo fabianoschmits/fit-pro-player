@@ -235,7 +235,7 @@ export default function TabBar({ onStart }) {
   const navItems = resolved.items
   const currentKey = resolved.activeKey
   const secondary = groups.flatMap(([, links]) => links).find(item => item.to === loc.pathname)
-  const currentItem = navItems.find(item => item.k === currentKey) || (secondary && { ...secondary, label: () => secondary.title }) || navItems[0]
+  const currentItem = resolved.pivotItem || navItems.find(item => item.k === currentKey) || (secondary && { ...secondary, label: () => secondary.title }) || navItems[0]
   // Expand toward the side with room, preserving the pivot's chosen location.
   const opensLeft = free && position.x > (viewportWidth - PIVOT_WIDTH) / 2
   const opensDown = free && position.y < (viewportHeight - MENU_HEIGHT) / 2

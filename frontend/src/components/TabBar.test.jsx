@@ -357,9 +357,22 @@ describe('TabBar folding navigation', () => {
     expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'student-list', 'student-materials', 'student-add'])
     expect(container.querySelector('[data-tab-key="student-list"]').getAttribute('aria-current')).toBe('page')
 
-    // 7. Student professional detail (level 2)
-    renderAndOpen('/student/professionals/p1?section=training')
-    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'student-list', 'prof-summary', 'prof-training'])
-    expect(container.querySelector('[data-tab-key="prof-training"]').getAttribute('aria-current')).toBe('page')
+    // 8. Professional context closed pivot & open menu
+    act(() => root.unmount())
+    root = createRoot(container)
+    render('/professional')
+    expect(toggle().getAttribute('aria-label')).toContain('Área profissional')
+    expect(container.querySelector('.corner-nav-label')?.textContent).toBe('Área profissional')
+    click(toggle())
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'prof-students', 'prof-programs', 'prof-invites'])
+
+    // 9. Professional profile closed pivot
+    act(() => root.unmount())
+    root = createRoot(container)
+    render('/professional/profile')
+    expect(toggle().getAttribute('aria-label')).toContain('Perfil profissional')
+    expect(container.querySelector('.corner-nav-label')?.textContent).toBe('Perfil profissional')
+    click(toggle())
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'prof-students', 'prof-programs', 'prof-invites'])
   })
 })

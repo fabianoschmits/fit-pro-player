@@ -12,7 +12,12 @@
 .workout-exercise-tab>b{font-size:12px}.workout-exercise-tab>small{font-size:12px}.workout-exercise-tab>span{font-size:11px}
 .plan-day-name,.wizard-label small,.wizard-body-fields>small,.wizard-plan-fit small,.wizard-schedule-preview small{font-size:12px}
 .professional-page{width:min(100%,1080px);margin-inline:auto}
-.professional-workspace-nav{scroll-padding:8px}.professional-workspace-nav a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}
+.professional-workspace-nav{scroll-padding:8px}
+@media(max-width:959px){
+  .professional-workspace-nav{display:none !important}
+  .management-workspace:has(.professional-workspace-nav) .management-sidebar{display:none !important}
+}
+.professional-workspace-nav a{white-space:nowrap;min-height:44px;display:inline-flex;align-items:center}
 .professional-editor-grid{display:grid;gap:16px}.professional-editor-grid label{font-size:14px;line-height:1.4}
 .professional-editor-grid input,.professional-editor-grid select,.professional-editor-grid textarea{min-height:44px;font-size:16px;min-width:0}
 .professional-status,.app-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--sep);border-radius:var(--r);padding:10px 12px;color:var(--label-2);font-size:13px;line-height:1.5}

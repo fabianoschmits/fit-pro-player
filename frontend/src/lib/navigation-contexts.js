@@ -105,7 +105,11 @@ export function resolveNavigationContext({
       if (normPath === '/professional/students') activeKey = 'prof-students'
       else if (normPath.startsWith('/professional/programs')) activeKey = 'prof-programs'
       else if (normPath.startsWith('/professional/invites')) activeKey = 'prof-invites'
-      else activeKey = 'prof-overview'
+      else if (normPath === '/professional/profile' || normPath.startsWith('/professional/profile/') || normPath === '/professional-profile') {
+        activeKey = 'prof-profile'
+      } else {
+        activeKey = 'prof-overview'
+      }
     }
   } else if (normPath === '/history') {
     // Shared page: preserve origin context
@@ -257,9 +261,20 @@ export function resolveNavigationContext({
       ]
   }
 
+  // Determine pivotItem: represents the current page when the menu is closed
+  let pivotItem = items.find(item => item.k === activeKey) || null
+  if (!pivotItem) {
+    if (activeKey === 'prof-overview') {
+      pivotItem = { k: 'prof-overview', icon: 'clipboard', to: '/professional', label: () => 'Área profissional' }
+    } else if (activeKey === 'prof-profile') {
+      pivotItem = { k: 'prof-profile', icon: 'personCircle', to: '/professional/profile', label: () => 'Perfil profissional' }
+    }
+  }
+
   return {
     contextId: detectedContext,
     items,
     activeKey,
+    pivotItem,
   }
 }
