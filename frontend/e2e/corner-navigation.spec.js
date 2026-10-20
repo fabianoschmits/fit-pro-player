@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 import { seed, openMainNavigation } from './fixtures.test.js'
 
 const height = 720
+const pivotWidth = 56
 const nav = page => page.locator('.corner-nav')
 const toggle = page => page.locator('.corner-nav-toggle')
 const main = page => page.locator('.corner-nav-main')
@@ -18,6 +19,20 @@ async function settle(page) {
   await expect.poll(() => nav(page).evaluate(element =>
     element.getAnimations({ subtree: true }).some(animation => animation.playState === 'running')
   )).toBe(false)
+}
+
+async function reloadNavigation(page) {
+  await page.reload()
+  await expect(toggle(page)).toBeVisible()
+  await settle(page)
+}
+
+async function expectMoreClosed(page) {
+  const panel = page.locator('.corner-nav-more')
+  await expect(page.locator('.corner-nav-more-trigger')).toHaveAttribute('aria-expanded', 'false')
+  await expect(panel).not.toHaveClass(/is-visible/)
+  await expect(panel).toHaveAttribute('aria-hidden', 'true')
+  expect(await panel.evaluate(element => element.inert)).toBe(true)
 }
 
 async function expectPosition(page, position) {
@@ -39,7 +54,14 @@ async function expectUpwardMore(page, { activateFirst = false } = {}) {
   const trigger = page.locator('.corner-nav-more-trigger')
   const triggerBox = await trigger.boundingBox()
   const toggleBox = await toggle(page).boundingBox()
-  expect(triggerBox.y + triggerBox.height).toBeLessThanOrEqual(toggleBox.y + 1)
+  expect(triggerBox.width).toBeCloseTo(42, 0)
+  expect(triggerBox.height).toBeCloseTo(24, 0)
+  expect(toggleBox.y - triggerBox.y - triggerBox.height).toBeCloseTo(6, 0)
+  const radii = await trigger.evaluate(element => {
+    const style = getComputedStyle(element)
+    return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomLeftRadius, style.borderBottomRightRadius].map(parseFloat)
+  })
+  expect(radii.every(radius => radius >= triggerBox.height / 2)).toBe(true)
   // Inspect the rendered chevron in screen coordinates, including any SVG rotation.
   expect(await trigger.locator('path').evaluate(path => {
     const length = path.getTotalLength()
@@ -87,7 +109,8 @@ for (const width of [320, 390, 600]) {
     await expect(page.locator('.corner-nav-more-trigger')).toBeHidden()
     await expect(nav(page).getByRole('button')).toHaveCount(1)
     const closed = await nav(page).boundingBox()
-    expect(closed.width).toBeCloseTo(64, 0)
+    expect(closed.width).toBeCloseTo(pivotWidth, 0)
+    expect(closed.height).toBeLessThan(64)
     expect(closed.x).toBeCloseTo(0, 0)
     expect(closed.y + closed.height).toBeCloseTo(height, 0)
 
@@ -96,27 +119,40 @@ for (const width of [320, 390, 600]) {
     const opened = await page.locator('.corner-nav-shell').boundingBox()
     expect(opened.x).toBeCloseTo(0, 0)
     expect(opened.width).toBeCloseTo(width, 0)
+    expect(opened.height).toBeLessThan(64)
     expect(opened.y + opened.height).toBeCloseTo(height, 0)
     await expect(main(page)).toHaveAttribute('aria-hidden', 'false')
     expect(await main(page).evaluate(element => element.inert)).toBe(false)
     await expect(main(page).getByRole('button')).toHaveCount(4)
     const shape = await nav(page).evaluate(element => {
-      const shell = getComputedStyle(element.querySelector('.corner-nav-shell'))
+      const surfaces = [...element.querySelectorAll('.corner-nav-shell, .corner-nav-toggle, .corner-nav-main')].map(surface => getComputedStyle(surface))
+      const material = getComputedStyle(element.querySelector('.corner-nav-main'))
+      // Canvas accepts computed rgb(), color(srgb ...), and other browser color syntaxes.
+      const canvas = document.createElement('canvas')
+      canvas.width = canvas.height = 1
+      const context = canvas.getContext('2d')
+      context.fillStyle = material.backgroundColor
+      context.fillRect(0, 0, 1, 1)
       const icons = [...element.querySelectorAll('.corner-nav-toggle .corner-nav-icon > .icn, .corner-nav-main .corner-nav-icon > .icn')]
       return {
-        topCorners: [shell.borderTopLeftRadius, shell.borderTopRightRadius].map(parseFloat),
+        topCorners: surfaces.flatMap(surface => [surface.borderTopLeftRadius, surface.borderTopRightRadius].map(parseFloat)),
+        materialAlpha: context.getImageData(0, 0, 1, 1).data[3] / 255,
+        backdropFilter: material.backdropFilter || material.webkitBackdropFilter,
         centers: icons.map(icon => { const box = icon.getBoundingClientRect(); return box.top + box.height / 2 }),
         overflow: document.documentElement.scrollWidth > innerWidth + 1,
       }
     })
-    expect(shape.topCorners).toEqual([0, 0])
+    expect(shape.topCorners.every(radius => radius === 0)).toBe(true)
+    expect(shape.materialAlpha).toBeGreaterThan(0)
+    expect(shape.materialAlpha).toBeLessThan(0.4)
+    expect(shape.backdropFilter).toMatch(/blur\(/)
     expect(shape.centers).toHaveLength(5)
     expect(Math.max(...shape.centers) - Math.min(...shape.centers)).toBeLessThanOrEqual(1)
     expect(shape.overflow).toBe(false)
     await expectUpwardMore(page)
     await toggle(page).click()
     await settle(page)
-    expect((await nav(page).boundingBox()).width).toBeCloseTo(64, 0)
+    expect((await nav(page).boundingBox()).width).toBeCloseTo(pivotWidth, 0)
   })
 }
 
@@ -182,7 +218,7 @@ test('a pivot moved toward the right stays anchored and keeps upward options usa
   await openMainNavigation(page)
   await settle(page)
   await expectPosition(page, chosen)
-  expect((await nav(page).boundingBox()).width).toBeCloseTo(64, 0)
+  expect((await nav(page).boundingBox()).width).toBeCloseTo(pivotWidth, 0)
   await expectUpwardMore(page, { activateFirst: true })
   await expectPosition(page, chosen)
   await toggle(page).click()
@@ -209,7 +245,7 @@ test('resizing a moved desktop menu constrains only its compact pivot', async ({
   await dragBy(page, 1000 - initial.x, 280 - initial.y)
   await page.setViewportSize({ width: 390, height })
   await settle(page)
-  await expect.poll(async () => (await toggle(page).boundingBox()).x).toBeCloseTo(390 - 64, 0)
+  await expect.poll(async () => (await toggle(page).boundingBox()).x).toBeCloseTo(390 - pivotWidth, 0)
   const fitted = await toggle(page).boundingBox()
   await page.waitForTimeout(320)
   await openMainNavigation(page)
@@ -219,6 +255,65 @@ test('resizing a moved desktop menu constrains only its compact pivot', async ({
   await page.setViewportSize({ width: 1280, height })
   await settle(page)
   await expectPosition(page, fitted)
+})
+
+test('reload restores an open docked bar while always closing its extra options', async ({ page }) => {
+  await load(page, 390)
+  await openMainNavigation(page)
+  await page.locator('.corner-nav-more-trigger').click()
+  await expect(page.locator('.corner-nav-more')).toHaveClass(/is-visible/)
+  await settle(page)
+
+  await reloadNavigation(page)
+  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true')
+  await expect(main(page)).toHaveAttribute('aria-hidden', 'false')
+  expect(await main(page).evaluate(element => element.inert)).toBe(false)
+  await expect(nav(page)).not.toHaveClass(/is-free/)
+  await expectMoreClosed(page)
+  await expectUpwardMore(page)
+})
+
+for (const open of [false, true]) {
+  test(`reload preserves a moved pivot with the main bar ${open ? 'open' : 'closed'}`, async ({ page }) => {
+    await load(page, 390)
+    if (open) await openMainNavigation(page)
+    const initial = await toggle(page).boundingBox()
+    await dragBy(page, 100 - initial.x, 280 - initial.y)
+    await expect(nav(page)).toHaveClass(/is-free/)
+    await settle(page)
+    const chosen = await toggle(page).boundingBox()
+
+    await reloadNavigation(page)
+    await expect(nav(page)).toHaveClass(/is-free/)
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', String(open))
+    await expect(main(page)).toHaveAttribute('aria-hidden', String(!open))
+    await expectPosition(page, chosen)
+    await expectMoreClosed(page)
+    if (open) await expectUpwardMore(page)
+  })
+}
+
+test('reattaching a moved menu persists its default docked position after reload', async ({ page }) => {
+  await load(page, 390)
+  await openMainNavigation(page)
+  const initial = await toggle(page).boundingBox()
+  await dragBy(page, 100 - initial.x, 280 - initial.y)
+  await expect(nav(page)).toHaveClass(/is-free/)
+  await settle(page)
+  await page.locator('.corner-nav-more-trigger').click()
+  await expect(page.locator('.corner-nav-more')).toHaveClass(/is-visible/)
+  await page.locator('.corner-nav-drag-toggle').click()
+  await expect(nav(page)).not.toHaveClass(/is-free/)
+  await settle(page)
+
+  await reloadNavigation(page)
+  await expect(nav(page)).not.toHaveClass(/is-free/)
+  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true')
+  await expectMoreClosed(page)
+  const docked = await page.locator('.corner-nav-shell').boundingBox()
+  expect(docked.x).toBeCloseTo(0, 0)
+  expect(docked.y + docked.height).toBeCloseTo(height, 0)
+  expect(docked.width).toBeCloseTo(390, 0)
 })
 
 test('the mounted main menu folds in both directions and respects reduced motion', async ({ page }) => {

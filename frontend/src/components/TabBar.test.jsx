@@ -19,8 +19,14 @@ function render(path = '/home', onStart = vi.fn()) {
 function pointer(type, x, y) {
   act(() => toggle().dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y })))
 }
+function reopenApp() {
+  act(() => root.unmount())
+  root = createRoot(container)
+  render()
+}
 
 beforeEach(() => {
+  window.localStorage.clear()
   mocks.auth = { status: 'anonymous' }
   mocks.state = { S: { onboardingDone: true, active: null, routines: [], week: {}, dayPlan: {} }, user: null, isGuest: () => true }
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -78,7 +84,7 @@ describe('TabBar folding navigation', () => {
   it('detaches after dragging and keeps the chosen position after toggling', () => {
     render()
     const tabbar = container.querySelector('#tabbar')
-    vi.spyOn(tabbar, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 64, height: 64, right: 64, bottom: 744 })
+    vi.spyOn(tabbar, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 56, height: 52, right: 56, bottom: 732 })
     pointer('pointerdown', 20, 700)
     pointer('pointermove', 80, 640)
     pointer('pointerup', 80, 640)
@@ -157,5 +163,72 @@ describe('TabBar folding navigation', () => {
     expect(toggle().getAttribute('aria-expanded')).toBe('false')
     click(toggle())
     expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
+  })
+
+  it('restores the expanded bottom bar after reopening the app while More starts closed', () => {
+    render()
+    click(toggle())
+    click(container.querySelector('.corner-nav-more-trigger'))
+    expect(container.querySelector('.corner-nav-more-trigger').getAttribute('aria-expanded')).toBe('true')
+    reopenApp()
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    expect(container.querySelector('.corner-nav-main').hasAttribute('inert')).toBe(false)
+    expect(container.querySelector('.corner-nav-more-trigger').getAttribute('aria-expanded')).toBe('false')
+    expect(container.querySelector('.corner-nav-more').hasAttribute('inert')).toBe(true)
+  })
+
+  it('remembers a subsequent collapse instead of restoring an older expanded bar', () => {
+    render()
+    click(toggle())
+    reopenApp()
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    click(toggle())
+    reopenApp()
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('restores a moved position and persists returning the menu to the footer', () => {
+    render()
+    vi.spyOn(container.querySelector('#tabbar'), 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 56, height: 52 })
+    pointer('pointerdown', 20, 700)
+    pointer('pointermove', 80, 640)
+    pointer('pointerup', 80, 640)
+    reopenApp()
+    const tabbar = container.querySelector('#tabbar')
+    expect(tabbar.className).toContain('is-free')
+    expect(tabbar.style.left).toBe('60px')
+    expect(tabbar.style.top).toBe('620px')
+    click(toggle())
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
+    reopenApp()
+    expect(container.querySelector('#tabbar').className).not.toContain('is-free')
+    expect(container.querySelector('#tabbar').style.top).toBe('')
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it('fits a restored floating pivot to the current viewport', () => {
+    window.localStorage.setItem('fpp_navigation_layout_v1', JSON.stringify({ open: true, position: { x: 5000, y: 5000 } }))
+    render()
+    const tabbar = container.querySelector('#tabbar')
+    expect(tabbar.className).toContain('is-free')
+    expect(Number.parseFloat(tabbar.style.left)).toBeLessThanOrEqual(window.innerWidth - 56)
+    expect(Number.parseFloat(tabbar.style.top)).toBeLessThanOrEqual(window.innerHeight - 52)
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+  })
+
+  it.each(['{broken', JSON.stringify({ open: 'true', position: { x: '20', y: 40 } })])('handles invalid stored preferences safely: %s', value => {
+    window.localStorage.setItem('fpp_navigation_layout_v1', value)
+    render()
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    expect(container.querySelector('#tabbar').className).not.toContain('is-free')
+  })
+
+  it('keeps the menu usable if the browser refuses preference storage', () => {
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => { throw new Error('unavailable') })
+    vi.spyOn(window.localStorage, 'setItem').mockImplementation(() => { throw new Error('unavailable') })
+    render()
+    click(toggle())
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
   })
 })

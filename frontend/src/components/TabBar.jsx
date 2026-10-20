@@ -13,6 +13,11 @@ import { confirmSheet } from '../sheets.jsx'
 import Icon from './Icon.jsx'
 import { useFppActivation } from './useFppActivation.js'
 
+const NAVIGATION_LAYOUT_KEY = 'fpp_navigation_layout_v1'
+const PIVOT_WIDTH = 56
+const MENU_HEIGHT = 52
+const MAX_ARM_WIDTH = 320
+
 const MAIN = [
   { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
   { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
@@ -39,22 +44,45 @@ function constrainPosition(point, height) {
   const margin = window.innerWidth >= 768 ? 16 : 0
   const bottom = Math.max(0, window.innerHeight - height - margin)
   return {
-    x: Math.max(margin, Math.min(point.x, window.innerWidth - 64 - margin)),
+    x: Math.max(margin, Math.min(point.x, window.innerWidth - PIVOT_WIDTH - margin)),
     y: Math.max(Math.min(160, bottom), Math.min(point.y, bottom)),
   }
+}
+
+function readNavigationLayout() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(NAVIGATION_LAYOUT_KEY) || 'null')
+    const point = saved?.position
+    return {
+      open: saved?.open === true,
+      position: Number.isFinite(point?.x) && Number.isFinite(point?.y) ? constrainPosition(point, MENU_HEIGHT) : null,
+    }
+  } catch { return { open: false, position: null } }
 }
 
 export default function TabBar({ onStart }) {
   const nav = useNavigate(), loc = useLocation()
   const S = useStore(s => s.S), isGuest = useStore(s => s.isGuest()), auth = useAuth()
   const account = auth.status === 'authenticated' ? auth.user : null
-  const [open, setOpen] = useState(false), [moreOpen, setMoreOpen] = useState(false)
+  const [layout, setLayout] = useState(readNavigationLayout)
+  const { open, position } = layout
+  const setOpen = value => setLayout(current => ({ ...current, open: typeof value === 'function' ? value(current.open) : value }))
+  const setPosition = value => setLayout(current => {
+    const next = typeof value === 'function' ? value(current.position) : value
+    return next === current.position ? current : { ...current, position: next }
+  })
+  const [moreOpen, setMoreOpen] = useState(false)
   const [professional, setProfessional] = useState(false), [consoleAccess, setConsoleAccess] = useState(false)
-  const [position, setPosition] = useState(null), [moveReady, setMoveReady] = useState(false)
+  const [moveReady, setMoveReady] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
   const rootRef = useRef(null), toggleRef = useRef(null), moreTrigger = useRef(null), firstMore = useRef(null)
   const drag = useRef(null), ignoreClickUntil = useRef(0)
   const free = position !== null
+
+  // Only the bottom bar's layout survives an app restart; More stays transient.
+  useEffect(() => {
+    try { window.localStorage.setItem(NAVIGATION_LAYOUT_KEY, JSON.stringify({ open, position })) } catch {}
+  }, [open, position])
 
   useEffect(() => {
     let alive = true
@@ -88,7 +116,7 @@ export default function TabBar({ onStart }) {
   useEffect(() => {
     const fit = () => {
       setViewportWidth(window.innerWidth)
-      setPosition(point => point && constrainPosition(point, rootRef.current?.offsetHeight || 64))
+      setPosition(point => point && constrainPosition(point, MENU_HEIGHT))
     }
     window.addEventListener('resize', fit)
     return () => window.removeEventListener('resize', fit)
@@ -117,7 +145,7 @@ export default function TabBar({ onStart }) {
   const beginDrag = event => {
     if (event.button > 0 || event.isPrimary === false) return
     const rect = rootRef.current.getBoundingClientRect()
-    drag.current = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, height: rect.height || 64, moved: false }
+    drag.current = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, moved: false }
     event.currentTarget.setPointerCapture?.(event.pointerId)
   }
   const moveDrag = event => {
@@ -128,7 +156,7 @@ export default function TabBar({ onStart }) {
     origin.moved = true
     event.preventDefault()
     setMoreOpen(false)
-    setPosition(constrainPosition({ x: origin.left + dx, y: origin.top + dy }, origin.height))
+    setPosition(constrainPosition({ x: origin.left + dx, y: origin.top + dy }, MENU_HEIGHT))
   }
   const endDrag = () => {
     if (drag.current?.moved) { ignoreClickUntil.current = Date.now() + 300; setMoveReady(false) }
@@ -172,12 +200,12 @@ export default function TabBar({ onStart }) {
   const secondary = groups.flatMap(([, links]) => links).find(item => item.to === loc.pathname)
   const currentItem = MAIN.find(item => item.k === current) || (secondary && { ...secondary, label: () => secondary.title }) || MAIN[0]
   // Expand toward the side with room, preserving the pivot's chosen location.
-  const opensLeft = free && position.x > (viewportWidth - 64) / 2
-  const armSpace = free ? (opensLeft ? position.x : viewportWidth - position.x - 64) : 0
+  const opensLeft = free && position.x > (viewportWidth - PIVOT_WIDTH) / 2
+  const armSpace = free ? (opensLeft ? position.x : viewportWidth - position.x - PIVOT_WIDTH) : 0
   const panelWidth = Math.min(320, viewportWidth - 24)
   const style = position ? {
     left: position.x, top: position.y, bottom: 'auto',
-    '--menu-width': `${64 + Math.min(344, armSpace)}px`,
+    '--menu-width': `${PIVOT_WIDTH + Math.min(MAX_ARM_WIDTH, armSpace)}px`,
     '--more-space': `${Math.max(0, position.y - 44)}px`,
     '--more-left': `${Math.max(8, Math.min(position.x, viewportWidth - panelWidth - 8)) - position.x}px`,
   } : undefined
