@@ -14,6 +14,7 @@ import Icon from './Icon.jsx'
 import NavigationIcon from './NavigationIcon.jsx'
 import { useFppActivation } from './useFppActivation.js'
 import './tabbar-motion.css'
+import { getVisualId, findIconMorph } from './icon-morph-registry.jsx'
 
 import { resolveNavigationContext } from '../lib/navigation-contexts.js'
 
@@ -34,32 +35,39 @@ function DockSlotButton({ item, active, state, visible, entryKey, onSelect }) {
   const trigger = useFppActivation({ onActivate: onSelect })
   const [activation, setActivation] = useState(0)
 
-  // Transition state: keeps previous layer during item change
+  const currentVisualId = getVisualId(item, state)
+
+  // Transition state: keeps previous snapshot (item + visualId) during item change
   const [transition, setTransition] = useState({
     current: item,
+    currentVisualId,
     previous: null,
+    previousVisualId: null,
     animating: false,
   })
 
-  // Detect item identity change
+  // Detect item or visual identity change
   useEffect(() => {
     setTransition(prev => {
-      // If it's the exact same item key, preserve without morph
-      if (prev.current.k === item.k) {
-        return { ...prev, current: item }
+      // If it's the exact same item and visual state, preserve without morph
+      if (prev.current.k === item.k && prev.currentVisualId === currentVisualId) {
+        return { ...prev, current: item, currentVisualId }
       }
       return {
         current: item,
+        currentVisualId,
         previous: prev.current,
+        previousVisualId: prev.currentVisualId,
         animating: true,
       }
     })
-  }, [item])
+  }, [item, currentVisualId])
 
   const onAnimationEnd = () => {
     setTransition(prev => ({
       ...prev,
       previous: null,
+      previousVisualId: null,
       animating: false,
     }))
   }
@@ -71,13 +79,18 @@ function DockSlotButton({ item, active, state, visible, entryKey, onSelect }) {
 
   const isAction = Boolean(item.action)
 
+  // Query registry for specific icon morph between previous and current visual IDs
+  const morph = transition.animating
+    ? findIconMorph(transition.previousVisualId, transition.currentVisualId)
+    : null
+
   return <button type="button" data-tab-key={item.k}
     className={'corner-nav-tab' + (isAction ? ' corner-nav-tab--start' : '') + (active ? ' is-active' : '')}
     onClick={select} aria-current={active ? 'page' : undefined}>
     <span className="dock-slot-content">
       {transition.previous && (
         <span className="dock-slot-layer dock-slot-layer--exiting" aria-hidden="true" onAnimationEnd={onAnimationEnd}>
-          <span className="corner-nav-icon">
+          <span className="corner-nav-icon" style={{ visibility: morph ? 'hidden' : 'visible' }}>
             <NavItemIcon item={transition.previous} resume={Boolean(state.active)} active={false} visible={visible} activation={0} />
           </span>
           <span>{transition.previous.label(state)}</span>
@@ -85,7 +98,11 @@ function DockSlotButton({ item, active, state, visible, entryKey, onSelect }) {
       )}
       <span className={'dock-slot-layer dock-slot-layer--current' + (transition.animating ? ' is-entering' : '')}>
         <span className="corner-nav-icon">
-          <NavItemIcon item={item} resume={Boolean(state.active)} active={active} visible={visible} activation={activation} entryKey={entryKey} />
+          {morph ? (
+            <morph.Component isReversed={morph.isReversed} />
+          ) : (
+            <NavItemIcon item={item} resume={Boolean(state.active)} active={active} visible={visible} activation={activation} entryKey={entryKey} />
+          )}
         </span>
         <span>{item.label(state)}</span>
       </span>
@@ -94,37 +111,48 @@ function DockSlotButton({ item, active, state, visible, entryKey, onSelect }) {
 }
 
 function PivotTransition({ currentItem, state, iconActivation }) {
+  const currentVisualId = getVisualId(currentItem, state)
+
   const [transition, setTransition] = useState({
     current: currentItem,
+    currentVisualId,
     previous: null,
+    previousVisualId: null,
     animating: false,
   })
 
   useEffect(() => {
     setTransition(prev => {
-      if (prev.current.k === currentItem.k) {
-        return { ...prev, current: currentItem }
+      if (prev.current.k === currentItem.k && prev.currentVisualId === currentVisualId) {
+        return { ...prev, current: currentItem, currentVisualId }
       }
       return {
         current: currentItem,
+        currentVisualId,
         previous: prev.current,
+        previousVisualId: prev.currentVisualId,
         animating: true,
       }
     })
-  }, [currentItem])
+  }, [currentItem, currentVisualId])
 
   const onAnimationEnd = () => {
     setTransition(prev => ({
       ...prev,
       previous: null,
+      previousVisualId: null,
       animating: false,
     }))
   }
 
+  const morph = transition.animating
+    ? findIconMorph(transition.previousVisualId, transition.currentVisualId)
+    : null
+
   return <span className="pivot-transition-shell">
     {transition.previous && (
       <span className="pivot-layer pivot-layer--exiting" aria-hidden="true" onAnimationEnd={onAnimationEnd}>
-        <span className="corner-nav-icon">
+        <span className="corner-nav-icon" style={{ visibility: morph ? 'hidden' : 'visible' }}>
           <NavItemIcon item={transition.previous} resume={Boolean(state.active)} active visible activation={0} />
         </span>
         <span className="corner-nav-label">{transition.previous.label(state)}</span>
@@ -132,7 +160,11 @@ function PivotTransition({ currentItem, state, iconActivation }) {
     )}
     <span className={'pivot-layer pivot-layer--current' + (transition.animating ? ' is-entering' : '')}>
       <span className="corner-nav-icon">
-        <NavItemIcon item={currentItem} resume={Boolean(state.active)} active visible activation={iconActivation} />
+        {morph ? (
+          <morph.Component isReversed={morph.isReversed} />
+        ) : (
+          <NavItemIcon item={currentItem} resume={Boolean(state.active)} active visible activation={iconActivation} />
+        )}
       </span>
       <span className="corner-nav-label">{currentItem.label(state)}</span>
     </span>

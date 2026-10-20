@@ -1,0 +1,123 @@
+/* Fit Pro Player - TabBar Icon Morphs CSS */
+
+.morph-svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+.morph-svg path,
+.morph-svg rect,
+.morph-svg circle {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: var(--icon-stroke, 1.7);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.morph-svg .morph-solid {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Base groups inside morph */
+.morph-group {
+  transform-origin: center;
+  transform-box: fill-box;
+}
+
+/* Direction: Direct (A -> B) */
+.morph-direct .morph-from {
+  animation: morph-fade-out var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+}
+
+.morph-direct .morph-to {
+  animation: morph-fade-in var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+}
+
+/* Direction: Reverse (B -> A) */
+.morph-reversed .morph-from {
+  animation: morph-fade-in var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both reverse;
+}
+
+.morph-reversed .morph-to {
+  animation: morph-fade-out var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both reverse;
+}
+
+@keyframes morph-fade-out {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.72) translateY(-3px);
+  }
+}
+
+@keyframes morph-fade-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Morph specific: Dumbbell (Resume) -> List (Library) */
+.morph-direct .morph-dumbbell-bar {
+  animation: dumbbell-to-list-bar var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+}
+.morph-direct .morph-dumbbell-plates {
+  animation: dumbbell-to-list-plates var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+}
+
+@keyframes dumbbell-to-list-plates {
+  0% { opacity: 1; transform: scaleX(1); }
+  60% { opacity: 0.3; transform: scaleX(0.5); }
+  100% { opacity: 0; transform: scaleX(0); }
+}
+
+@keyframes dumbbell-to-list-bar {
+  0% { transform: scaleY(1); }
+  100% { transform: scaleY(1.2); }
+}
+
+/* Morph specific: Chart (Stats) -> History */
+.morph-direct .morph-chart-bars {
+  animation: chart-to-history-bars var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+}
+
+@keyframes chart-to-history-bars {
+  0% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(0.4); opacity: 0; }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .morph-direct .morph-from,
+  .morph-direct .morph-to,
+  .morph-reversed .morph-from,
+  .morph-reversed .morph-to,
+  .morph-direct .morph-dumbbell-bar,
+  .morph-direct .morph-dumbbell-plates,
+  .morph-direct .morph-chart-bars {
+    animation: none !important;
+    transition: none !important;
+  }
+  .morph-direct .morph-from,
+  .morph-reversed .morph-to {
+    display: none !important;
+  }
+  .morph-direct .morph-to,
+  .morph-reversed .morph-from {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
