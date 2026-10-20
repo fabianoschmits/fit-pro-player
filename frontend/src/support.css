@@ -1,6 +1,19 @@
 .support-page { padding-bottom: 48px; }
 .support-actions { display: grid; gap: 12px; margin: 18px 0 26px; }
-.support-action-card, .support-ticket-row { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); color: var(--ink); text-decoration: none; }
+.support-action-card, .support-ticket-row {
+  display: flex; align-items: center; gap: 12px; padding: 16px;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface);
+  color: var(--ink); text-decoration: none;
+  box-shadow: var(--card-shadow);
+  transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease), background 140ms var(--ease);
+}
+.support-action-card:hover, .support-ticket-row:hover {
+  background: var(--surface-2);
+  border-color: var(--acc-line, color-mix(in srgb, var(--acc) 38%, transparent));
+  box-shadow: 0 0 0 3px var(--acc-soft, color-mix(in srgb, var(--acc) 10%, transparent));
+}
 .support-action-card > span, .support-ticket-row > span { display: grid; gap: 4px; flex: 1; }
 .support-action-card small, .support-ticket-row small { color: var(--muted); }
 .support-section { display: grid; gap: 14px; }
@@ -10,11 +23,35 @@
 .support-category-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
 .support-filter { border: 1px solid var(--line); color: var(--muted); background: transparent; border-radius: 999px; padding: 8px 12px; white-space: nowrap; cursor: pointer; }
 .support-filter.active { color: var(--ink); border-color: var(--acc); background: color-mix(in srgb, var(--acc) 14%, transparent); }
-.support-faq-list, .support-ticket-list { display: grid; gap: 8px; }
-.support-faq-item { border-bottom: 1px solid var(--line); }
-.support-faq-item button { width: 100%; border: 0; background: transparent; color: var(--ink); display: flex; justify-content: space-between; text-align: left; padding: 15px 2px; font: inherit; cursor: pointer; }
-.support-faq-item p { color: var(--muted); line-height: 1.55; margin: 0 4px 16px; white-space: pre-wrap; }
-.support-faq-answer { animation: support-answer-enter .18s cubic-bezier(.2,.8,.2,1) both; } @keyframes support-answer-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.support-faq-list, .support-ticket-list { display: grid; gap: 10px; }
+.support-faq-item {
+  border: 1px solid var(--surface-border);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  transition: border-color 180ms var(--ease), box-shadow 180ms var(--ease);
+}
+.support-faq-item:has(> button[aria-expanded="true"]),
+.support-faq-item.is-open {
+  border-color: var(--acc-line, color-mix(in srgb, var(--acc) 38%, transparent));
+  box-shadow: 0 0 0 3px var(--acc-soft, color-mix(in srgb, var(--acc) 10%, transparent));
+}
+.support-faq-item button {
+  width: 100%; border: 0; background: transparent; color: var(--ink);
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  text-align: left; padding: 15px 16px; font: inherit; font-weight: 500;
+  cursor: pointer;
+  transition: background 140ms var(--ease);
+}
+.support-faq-item button:hover { background: var(--surface-2); }
+.support-faq-item button .icn { flex: none; color: var(--acc); opacity: .75; }
+.support-faq-item p {
+  color: var(--label-2, var(--muted)); line-height: 1.6;
+  margin: 0; padding: 0 16px 16px; white-space: pre-wrap; font-size: 14px;
+}
+.support-faq-answer { animation: support-answer-enter .18s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes support-answer-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 .support-form, .support-reply { display: grid; gap: 16px; margin-top: 18px; }
 .support-form label { display: grid; gap: 8px; color: var(--muted); font-size: .9rem; }
 .support-form select { appearance: none; }
