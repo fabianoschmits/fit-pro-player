@@ -32,20 +32,20 @@
 
 /* Direction: Direct (A -> B) */
 .morph-direct .morph-from {
-  animation: morph-fade-out var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+  animation: morph-fade-out 220ms var(--ease, cubic-bezier(.32,.72,0,1)) both;
 }
 
 .morph-direct .morph-to {
-  animation: morph-fade-in var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+  animation: morph-fade-in 220ms var(--ease, cubic-bezier(.32,.72,0,1)) both;
 }
 
 /* Direction: Reverse (B -> A) */
 .morph-reversed .morph-from {
-  animation: morph-fade-in var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both reverse;
+  animation: morph-fade-in 220ms var(--ease, cubic-bezier(.32,.72,0,1)) both reverse;
 }
 
 .morph-reversed .morph-to {
-  animation: morph-fade-out var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both reverse;
+  animation: morph-fade-out 220ms var(--ease, cubic-bezier(.32,.72,0,1)) both reverse;
 }
 
 @keyframes morph-fade-out {
@@ -53,16 +53,22 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+  40% {
+    opacity: 0.6;
+  }
   100% {
     opacity: 0;
-    transform: scale(0.72) translateY(-3px);
+    transform: scale(0.76) translateY(-2px);
   }
 }
 
 @keyframes morph-fade-in {
   0% {
     opacity: 0;
-    transform: scale(0.72) translateY(3px);
+    transform: scale(0.76) translateY(2px);
+  }
+  60% {
+    opacity: 0.7;
   }
   100% {
     opacity: 1;
@@ -72,31 +78,32 @@
 
 /* Morph specific: Dumbbell (Resume) -> List (Library) */
 .morph-direct .morph-dumbbell-bar {
-  animation: dumbbell-to-list-bar var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+  animation: dumbbell-to-list-bar 220ms var(--ease, cubic-bezier(.32,.72,0,1)) both;
 }
 .morph-direct .morph-dumbbell-plates {
-  animation: dumbbell-to-list-plates var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+  animation: dumbbell-to-list-plates 220ms var(--ease, cubic-bezier(.32,.72,0,1)) both;
 }
 
 @keyframes dumbbell-to-list-plates {
   0% { opacity: 1; transform: scaleX(1); }
-  60% { opacity: 0.3; transform: scaleX(0.5); }
+  50% { opacity: 0.2; transform: scaleX(0.4); }
   100% { opacity: 0; transform: scaleX(0); }
 }
 
 @keyframes dumbbell-to-list-bar {
   0% { transform: scaleY(1); }
-  100% { transform: scaleY(1.2); }
+  100% { transform: scaleY(1.15); }
 }
 
-/* Morph specific: Chart (Stats) -> History */
+/* Morph specific: Chart (Stats) -> History (Recolhe barras primeiro para evitar poluição visual com o arco) */
 .morph-direct .morph-chart-bars {
-  animation: chart-to-history-bars var(--med, 260ms) var(--ease, cubic-bezier(.32,.72,0,1)) both;
+  animation: chart-to-history-bars 220ms var(--ease, cubic-bezier(.32,.72,0,1)) both;
 }
 
 @keyframes chart-to-history-bars {
   0% { transform: scaleY(1); opacity: 1; }
-  100% { transform: scaleY(0.4); opacity: 0; }
+  45% { transform: scaleY(0.4); opacity: 0.3; }
+  100% { transform: scaleY(0); opacity: 0; }
 }
 
 /* Reduced motion accessibility */
