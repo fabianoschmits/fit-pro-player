@@ -170,6 +170,42 @@ test('desktop navigation floats above the bottom when closed and open', async ({
   await expectUpwardMore(page)
 })
 
+for (const theme of ['light', 'dark']) {
+  test(`the ${theme} mobile footer has no empty strip below its buttons on an inset screen`, async ({ page }, testInfo) => {
+    await load(page, 390)
+    await page.evaluate(theme => {
+      document.documentElement.dataset.theme = theme
+      document.documentElement.style.setProperty('--sab', '34px')
+    }, theme)
+    await openMainNavigation(page)
+    await settle(page)
+    const geometry = await nav(page).evaluate(element => {
+      const bar = element.getBoundingClientRect()
+      const item = element.querySelector('[data-tab-key="home"]')
+      const button = item.getBoundingClientRect()
+      const indicator = getComputedStyle(item, '::after')
+      return {
+        barHeight: bar.height,
+        buttonHeight: button.height,
+        bottomGap: innerHeight - bar.bottom,
+        emptyStrip: bar.bottom - button.bottom,
+        indicatorGap: innerHeight - button.bottom + parseFloat(indicator.bottom),
+      }
+    })
+    expect(geometry.barHeight).toBeCloseTo(geometry.buttonHeight, 0)
+    expect(geometry.bottomGap).toBeCloseTo(0, 0)
+    expect(Math.abs(geometry.emptyStrip)).toBeLessThanOrEqual(1)
+    expect(geometry.indicatorGap).toBeGreaterThanOrEqual(0)
+    expect(geometry.indicatorGap).toBeLessThanOrEqual(4)
+    await page.screenshot({ path: testInfo.outputPath(`footer-${theme}-inset.png`) })
+    await toggle(page).click()
+    await settle(page)
+    const collapsed = await toggle(page).boundingBox()
+    expect(collapsed.height).toBeCloseTo(geometry.buttonHeight, 0)
+    expect(collapsed.y + collapsed.height).toBeCloseTo(height, 0)
+  })
+}
+
 test('small pointer movement keeps the mobile bar docked', async ({ page }) => {
   await load(page, 390)
   await dragBy(page, 3, -2)

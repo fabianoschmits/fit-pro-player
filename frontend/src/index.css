@@ -399,7 +399,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 /* Folding navigation: a compact left pivot, a full mobile footer and a floating
    desktop card. The sheet stays mounted for interruptible open AND close motion. */
 #tabbar.corner-nav{
-  --menu-width:100vw;--menu-height:calc(52px + var(--sab));
+  --menu-width:100vw;--menu-height:52px;
   --more-space:calc(100dvh - var(--menu-height) - 40px - var(--sat));
   position:fixed;z-index:50;left:0;right:auto;bottom:0;
   width:56px;height:var(--menu-height);font-size:10px;pointer-events:none;
@@ -413,7 +413,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   box-shadow:0 -6px 24px color-mix(in srgb,var(--label) 8%,transparent);
 }
 .corner-nav-toggle{
-  position:relative;z-index:2;width:56px;height:100%;padding:0 4px var(--sab);
+  position:relative;z-index:2;width:56px;height:100%;padding:0 4px;
   display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;
   border-radius:0;border-right:var(--hair) solid var(--surface-border);
   background:var(--acc);color:var(--on-acc);pointer-events:auto;
@@ -426,7 +426,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav-icon .icn{width:20px;height:20px;--icon-stroke:1.75}
 .corner-nav-main{
   position:absolute;z-index:1;left:56px;top:0;width:calc(var(--menu-width) - 56px);height:100%;
-  display:flex;align-items:stretch;padding:0 0 var(--sab);border-radius:0;
+  display:flex;align-items:stretch;padding:0;border-radius:0;
   background:color-mix(in srgb,var(--bg-el) 24%,transparent);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
   transform-origin:left center;backface-visibility:hidden;
