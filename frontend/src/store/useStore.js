@@ -220,6 +220,9 @@ export const useStore = create((set, get) => {
     takeOverSessionRecovery() {
       return sessionRecovery?.takeOver() || Promise.resolve({ state: 'idle', pending: 0 })
     },
+    replaceRemoteActiveSession() {
+      return sessionRecovery?.replaceRemoteActive() || Promise.resolve({ state: 'idle', pending: 0 })
+    },
     startSessionRecovery(active) {
       if (!sessionRecovery || !active) return Promise.resolve({ state: 'idle', pending: 0 })
       const prescriptionSnapshot = {

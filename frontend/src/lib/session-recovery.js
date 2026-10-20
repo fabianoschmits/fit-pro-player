@@ -76,6 +76,7 @@ export function hasPendingSessionFinalization(draft) {
 
 function recoveryState(error) {
   if (['forbidden', 'unauthorized', 'session-expired', 'auth-required'].includes(error?.kind)) return 'auth-required'
+  if (error?.kind === 'active-session') return 'remote-active'
   if (['stale-writer', 'revision-conflict'].includes(error?.kind)) return 'takeover-required'
   if (error?.kind === 'offline' || error?.retryable) return 'waiting'
   return 'failed'
@@ -247,6 +248,26 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
         persist({ ...current, session: serverSession(latest) })
         const session = await repository.takeOverSession({ sessionId: current.session.id, expectedRevision: latest.revision })
         persist({ ...current, session: serverSession(session) })
+      } catch (error) {
+        return fail(error)
+      }
+      return flush()
+    },
+    async replaceRemoteActive() {
+      if (!current || current.phase !== 'starting') throw new Error('no-pending-session-start')
+      publish('saving')
+      try {
+        const remote = await repository.loadActiveSession()
+        if (remote && remote.id !== current.session.id) {
+          const owner = await repository.takeOverSession({ sessionId: remote.id, expectedRevision: remote.revision })
+          await repository.abandonSession({
+            sessionId: owner.id,
+            writerToken: owner.writerToken,
+            expectedRevision: owner.revision,
+            operationId: crypto.randomUUID(),
+            payload: { reason: 'replaced-by-local-session', massUnit: MASS_UNIT },
+          })
+        }
       } catch (error) {
         return fail(error)
       }

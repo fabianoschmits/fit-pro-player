@@ -29,6 +29,7 @@ export default function AppStatus() {
 
   const state = persistence?.state === 'error' ? 'error'
     : session?.state === 'takeover-required' ? 'session-takeover'
+    : session?.state === 'remote-active' ? 'session-remote-active'
     : session?.state === 'auth-required' ? 'session-auth'
     : session?.state === 'failed' ? 'session-error'
     : session?.state === 'waiting' ? 'session-waiting'
@@ -57,10 +58,12 @@ export default function AppStatus() {
 
   const retrySession = () => useStore.getState().flushSessionRecovery()
   const takeOverSession = () => useStore.getState().takeOverSessionRecovery()
+  const replaceRemoteSession = () => useStore.getState().replaceRemoteActiveSession()
 
   if (!state) return null
   const text = state === 'error' ? t('Data could not be saved on this device.')
     : state === 'session-takeover' ? t('This workout is open on another device. Continue it here to send your changes.')
+    : state === 'session-remote-active' ? `${t('This workout is open on another device.')} ${t('This workout could not be sent. Your changes remain on this device.')}`
     : state === 'session-auth' ? t('Sign in again to send this workout.')
     : state === 'session-error' ? t('This workout could not be sent. Your changes remain on this device.')
     : state === 'session-waiting' ? t('Workout waiting to send. It will retry when the connection returns.')
@@ -76,6 +79,7 @@ export default function AppStatus() {
     {!state?.startsWith('session-') && <a href="#/settings">{t('Settings')}</a>}
     {['session-waiting', 'session-error', 'session-auth'].includes(state) && <Button size="sm" className="app-status-action" onAction={retrySession} loadingLabel={t('Saving…')} successLabel={t('Salvo')}>{t('Try again')}</Button>}
     {state === 'session-takeover' && <Button size="sm" className="app-status-action" onAction={takeOverSession} loadingLabel={t('Saving…')} successLabel={t('Salvo')}>{t('Continue here')}</Button>}
+    {state === 'session-remote-active' && <Button size="sm" className="app-status-action" onAction={replaceRemoteSession} loadingLabel={t('Saving…')} successLabel={t('Salvo')}>{t('Discard the running workout')}</Button>}
     {state === 'update' && <button type="button" className="app-status-dismiss" aria-label={t('Close')} onClick={() => setUpdateDismissed(true)}>×</button>}
   </aside>
 }

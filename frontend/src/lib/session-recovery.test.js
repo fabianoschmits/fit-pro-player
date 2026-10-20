@@ -177,6 +177,33 @@ describe('active session recovery', () => {
     expect(repo.appendOperation.mock.calls[1][0]).toMatchObject({ writerToken: 'writer-2', expectedRevision: 3 })
   })
 
+  it('preserves a new workout when an older server workout blocks its start, then replaces the older one explicitly', async () => {
+    const localId = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+    const older = activeSession()
+    const repo = repository({
+      startSession: vi.fn()
+        .mockRejectedValueOnce(Object.assign(new Error('active workout already exists'), { kind: 'active-session' }))
+        .mockResolvedValueOnce(activeSession({ id: localId })),
+      loadActiveSession: vi.fn(async () => older),
+      takeOverSession: vi.fn(async () => activeSession({ revision: 2, writerToken: 'writer-2' })),
+      abandonSession: vi.fn(async () => activeSession({ status: 'abandoned', revision: 3 })),
+    })
+    const recovery = createSessionRecovery({ repository: repo, accountId: accountA, storage })
+
+    await expect(recovery.start({ sessionId: localId, prescriptionSnapshot: { exercises: [] } }))
+      .resolves.toMatchObject({ state: 'remote-active' })
+    expect(recovery.getDraft()).toMatchObject({ phase: 'starting', session: { id: localId } })
+    expect(repo.abandonSession).not.toHaveBeenCalled()
+
+    await expect(recovery.replaceRemoteActive()).resolves.toMatchObject({ state: 'saved' })
+    expect(repo.takeOverSession).toHaveBeenCalledWith({ sessionId: older.id, expectedRevision: 1 })
+    expect(repo.abandonSession).toHaveBeenCalledWith(expect.objectContaining({
+      sessionId: older.id, writerToken: 'writer-2', expectedRevision: 2,
+    }))
+    expect(repo.startSession.mock.calls[1][0].sessionId).toBe(localId)
+    expect(recovery.getDraft()).toMatchObject({ phase: 'active', session: { id: localId } })
+  })
+
   it('persists the start intent before calling the server and blocks another start while completion is pending', async () => {
     let inspected
     const repo = repository({ startSession: vi.fn(async () => {

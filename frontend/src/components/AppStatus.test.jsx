@@ -3,7 +3,7 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ state: null, flush: vi.fn(), takeover: vi.fn() }))
+const mocks = vi.hoisted(() => ({ state: null, flush: vi.fn(), takeover: vi.fn(), replaceRemote: vi.fn() }))
 vi.mock('../store/useStore.js', () => {
   const useStore = selector => selector(mocks.state)
   useStore.getState = () => mocks.state
@@ -18,12 +18,14 @@ beforeEach(() => {
   vi.useFakeTimers()
   mocks.flush.mockReset()
   mocks.takeover.mockReset()
+  mocks.replaceRemote.mockReset()
   mocks.state = {
     persistence: { state: 'saved' },
     sessionRecovery: { state: 'idle', pending: 0, error: null },
     S: { pendingProfessionalEvents: [] },
     flushSessionRecovery: mocks.flush,
     takeOverSessionRecovery: mocks.takeover,
+    replaceRemoteActiveSession: mocks.replaceRemote,
   }
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
@@ -46,5 +48,14 @@ describe('AppStatus session recovery', () => {
     expect(container.textContent).toContain('outro dispositivo')
     await act(async () => container.querySelector('.app-status-action').click())
     expect(mocks.takeover).toHaveBeenCalledOnce()
+  })
+
+  it('offers an explicit way to replace an older server workout blocking a local one', async () => {
+    mocks.state = { ...mocks.state, sessionRecovery: { state: 'remote-active', pending: 0 } }
+    mocks.replaceRemote.mockResolvedValue({ state: 'saved' })
+    await act(async () => root.render(<AppStatus />))
+    expect(container.textContent).toContain('outro dispositivo')
+    await act(async () => container.querySelector('.app-status-action').click())
+    expect(mocks.replaceRemote).toHaveBeenCalledOnce()
   })
 })
