@@ -1,0 +1,135 @@
+/* TabBar Motion Engine: persistent dock slot transitions and morphs */
+
+.dock-slot-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.dock-slot-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
+
+.dock-slot-layer--current {
+  position: relative;
+}
+
+.dock-slot-layer--current.is-entering {
+  animation: dock-slot-enter var(--med) var(--ease) both;
+}
+
+.dock-slot-layer--exiting {
+  position: absolute;
+  animation: dock-slot-exit var(--med) var(--ease) both;
+}
+
+@keyframes dock-slot-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dock-slot-exit {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.85);
+  }
+}
+
+/* Pivot transitions (closed & open states) */
+.pivot-transition-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.pivot-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.pivot-layer--current {
+  position: relative;
+}
+
+.pivot-layer--current.is-entering {
+  animation: pivot-enter var(--med) var(--ease) both;
+}
+
+.pivot-layer--exiting {
+  position: absolute;
+  animation: pivot-exit var(--med) var(--ease) both;
+}
+
+@keyframes pivot-enter {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pivot-exit {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
+/* Reduced motion accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .dock-slot-layer--current.is-entering,
+  .dock-slot-layer--exiting,
+  .pivot-layer--current.is-entering,
+  .pivot-layer--exiting {
+    animation: none !important;
+    transition: none !important;
+  }
+  .dock-slot-layer--exiting,
+  .pivot-layer--exiting {
+    display: none !important;
+  }
+}

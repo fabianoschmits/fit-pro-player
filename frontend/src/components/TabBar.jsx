@@ -13,6 +13,7 @@ import { confirmSheet } from '../sheets.jsx'
 import Icon from './Icon.jsx'
 import NavigationIcon from './NavigationIcon.jsx'
 import { useFppActivation } from './useFppActivation.js'
+import './tabbar-motion.css'
 
 import { resolveNavigationContext } from '../lib/navigation-contexts.js'
 
@@ -29,22 +30,113 @@ function NavItemIcon({ item, resume, active, visible, activation, entryKey }) {
   return <Icon name={item.icon} />
 }
 
-function MainButton({ item, active, state, visible, entryKey, onSelect }) {
+function DockSlotButton({ item, active, state, visible, entryKey, onSelect }) {
   const trigger = useFppActivation({ onActivate: onSelect })
   const [activation, setActivation] = useState(0)
+
+  // Transition state: keeps previous layer during item change
+  const [transition, setTransition] = useState({
+    current: item,
+    previous: null,
+    animating: false,
+  })
+
+  // Detect item identity change
+  useEffect(() => {
+    setTransition(prev => {
+      // If it's the exact same item key, preserve without morph
+      if (prev.current.k === item.k) {
+        return { ...prev, current: item }
+      }
+      return {
+        current: item,
+        previous: prev.current,
+        animating: true,
+      }
+    })
+  }, [item])
+
+  const onAnimationEnd = () => {
+    setTransition(prev => ({
+      ...prev,
+      previous: null,
+      animating: false,
+    }))
+  }
+
   const select = event => {
     if (!event.defaultPrevented && !trigger.pressed) setActivation(value => value + 1)
     trigger.run(event)
   }
+
   const isAction = Boolean(item.action)
+
   return <button type="button" data-tab-key={item.k}
     className={'corner-nav-tab' + (isAction ? ' corner-nav-tab--start' : '') + (active ? ' is-active' : '')}
     onClick={select} aria-current={active ? 'page' : undefined}>
-    <span className="corner-nav-icon">
-      <NavItemIcon item={item} resume={Boolean(state.active)} active={active} visible={visible} activation={activation} entryKey={entryKey} />
+    <span className="dock-slot-content">
+      {transition.previous && (
+        <span className="dock-slot-layer dock-slot-layer--exiting" aria-hidden="true" onAnimationEnd={onAnimationEnd}>
+          <span className="corner-nav-icon">
+            <NavItemIcon item={transition.previous} resume={Boolean(state.active)} active={false} visible={visible} activation={0} />
+          </span>
+          <span>{transition.previous.label(state)}</span>
+        </span>
+      )}
+      <span className={'dock-slot-layer dock-slot-layer--current' + (transition.animating ? ' is-entering' : '')}>
+        <span className="corner-nav-icon">
+          <NavItemIcon item={item} resume={Boolean(state.active)} active={active} visible={visible} activation={activation} entryKey={entryKey} />
+        </span>
+        <span>{item.label(state)}</span>
+      </span>
     </span>
-    <span>{item.label(state)}</span>
   </button>
+}
+
+function PivotTransition({ currentItem, state, iconActivation }) {
+  const [transition, setTransition] = useState({
+    current: currentItem,
+    previous: null,
+    animating: false,
+  })
+
+  useEffect(() => {
+    setTransition(prev => {
+      if (prev.current.k === currentItem.k) {
+        return { ...prev, current: currentItem }
+      }
+      return {
+        current: currentItem,
+        previous: prev.current,
+        animating: true,
+      }
+    })
+  }, [currentItem])
+
+  const onAnimationEnd = () => {
+    setTransition(prev => ({
+      ...prev,
+      previous: null,
+      animating: false,
+    }))
+  }
+
+  return <span className="pivot-transition-shell">
+    {transition.previous && (
+      <span className="pivot-layer pivot-layer--exiting" aria-hidden="true" onAnimationEnd={onAnimationEnd}>
+        <span className="corner-nav-icon">
+          <NavItemIcon item={transition.previous} resume={Boolean(state.active)} active visible activation={0} />
+        </span>
+        <span className="corner-nav-label">{transition.previous.label(state)}</span>
+      </span>
+    )}
+    <span className={'pivot-layer pivot-layer--current' + (transition.animating ? ' is-entering' : '')}>
+      <span className="corner-nav-icon">
+        <NavItemIcon item={currentItem} resume={Boolean(state.active)} active visible activation={iconActivation} />
+      </span>
+      <span className="corner-nav-label">{currentItem.label(state)}</span>
+    </span>
+  </span>
 }
 
 // Keep a moved menu reachable, including after rotating or resizing the screen.
@@ -264,13 +356,10 @@ export default function TabBar({ onStart }) {
         <button type="button" ref={toggleRef} className="corner-nav-toggle" aria-expanded={open} aria-controls="corner-nav-main"
           aria-label={`${open ? 'Fechar menu' : 'Abrir menu'}: ${currentItem.label(S)}`}
           onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag} onClick={toggleMenu}>
-          <span className="corner-nav-icon">
-            <NavItemIcon item={currentItem} resume={Boolean(S.active)} active visible activation={iconActivation} />
-          </span>
-          <span className="corner-nav-label">{currentItem.label(S)}</span>
+          <PivotTransition currentItem={currentItem} state={S} iconActivation={iconActivation} />
         </button>
         <div id="corner-nav-main" className="corner-nav-main" aria-hidden={!open} inert={!open}>
-          {navItems.map(item => <MainButton key={item.k} item={item} state={S} active={currentKey === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
+          {navItems.map((item, index) => <DockSlotButton key={`slot-${index}`} item={item} state={S} active={currentKey === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
         </div>
       </div>
       <div id="corner-nav-more" className={'corner-nav-more' + (moreOpen ? ' is-visible' : '')} role="menu" aria-label={t('Mais opções')} aria-hidden={!moreOpen} inert={!moreOpen}>

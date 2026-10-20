@@ -375,4 +375,39 @@ describe('TabBar folding navigation', () => {
     click(toggle())
     expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'prof-students', 'prof-programs', 'prof-invites'])
   })
+
+  it('keeps the same dock slot button elements mounted while transitioning content from Home to Plan', () => {
+    // Mount at /home and open menu
+    render('/home')
+    click(toggle())
+
+    const initialTabs = Array.from(container.querySelectorAll('.corner-nav-tab'))
+    expect(initialTabs.length).toBe(4)
+    const slot0 = initialTabs[0]
+    const slot1 = initialTabs[1]
+    const slot2 = initialTabs[2] // start / Começar ou Retomar
+    const slot3 = initialTabs[3] // stats
+
+    // Click "Plano" at slot 1 to trigger contextual transition to /plan
+    click(slot1)
+    if (toggle().getAttribute('aria-expanded') !== 'true') click(toggle())
+
+    const updatedTabs = Array.from(container.querySelectorAll('.corner-nav-tab'))
+    // Slot button instances must be preserved identically
+    expect(updatedTabs[0]).toBe(slot0)
+    expect(updatedTabs[1]).toBe(slot1)
+    expect(updatedTabs[2]).toBe(slot2)
+    expect(updatedTabs[3]).toBe(slot3)
+
+    // Data-tab-key attributes update to reflect the new identity
+    expect(updatedTabs[0].getAttribute('data-tab-key')).toBe('home')
+    expect(updatedTabs[1].getAttribute('data-tab-key')).toBe('plan')
+    expect(updatedTabs[2].getAttribute('data-tab-key')).toBe('library') // transformed from start to library
+    expect(updatedTabs[3].getAttribute('data-tab-key')).toBe('history') // transformed from stats to history
+
+    // Rapid navigation to stats doesn't break the dock
+    click(slot0) // back to home
+    if (toggle().getAttribute('aria-expanded') !== 'true') click(toggle())
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'plan', 'start', 'stats'])
+  })
 })
