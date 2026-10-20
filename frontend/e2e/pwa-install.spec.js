@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test'
-import { seed } from './fixtures.test.js'
+import { seed, openMainNavigation } from './fixtures.test.js'
 
 test('installation offer survives navigation and requires confirmation before reporting installed', async ({ page }) => {
   await seed(page)
   await page.goto('/#/home')
+  await openMainNavigation(page)
   await expect(page.locator('[data-tab-key="start"]')).toBeVisible()
   await page.evaluate(() => {
     window.installCalls = 0

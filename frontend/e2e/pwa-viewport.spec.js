@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed } from './fixtures.test.js'
+import { seed, openMainNavigation } from './fixtures.test.js'
 
 const iphoneChrome = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/140.0.7339.39 Mobile/15E148 Safari/604.1'
 const iphoneWebApp = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
@@ -46,6 +46,7 @@ for (const [name, userAgent] of [['iPhone Chrome', iphoneChrome], ['iPhone Home 
       await expect(bubble).toBeVisible()
       expect((await bubble.boundingBox()).y).toBeGreaterThanOrEqual(62)
       await page.screenshot({ path: testInfo.outputPath('installed-home.png') })
+      await openMainNavigation(page)
       await page.locator('[data-tab-key="start"]').click()
       const title = page.locator('.workout-session-title')
       await expect(title).toBeVisible()

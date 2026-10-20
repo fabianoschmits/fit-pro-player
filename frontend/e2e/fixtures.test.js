@@ -1,7 +1,15 @@
+import { expect } from '@playwright/test'
+
 export const USER='11111111-1111-4111-8111-111111111111'
 export const STUDENT='22222222-2222-4222-8222-222222222222'
+export async function openMainNavigation(page) {
+  const toggle = page.locator('.corner-nav-toggle')
+  await expect(toggle).toBeVisible()
+  if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+}
 export function stateFixture(){
-  return {unit:'kg',restSec:90,sound:false,keepAwake:false,lang:'pt',theme:'dark',accent:'lime',body:'male',targetW:null,
+  return {stateSchemaVersion:2,massUnit:'kg',displayUnit:'kg',restSec:90,sound:false,keepAwake:false,lang:'pt',theme:'dark',accent:'lime',body:'male',targetW:null,
     profile:{name:'Pessoa Teste',avatarId:'avatar-27',birthDate:'1995-01-01',sex:'male',heightCm:175,startWeight:75,goal:'build_muscle',experience:'intermediate',completedAt:'2026-10-02T12:00:00Z'},
     planMode:'weekly',bodyweight:[],bodyMeasurements:[],bodyMeasurementGoals:{},
     routines:[{id:'e2e-routine',name:'Treino de teste',emoji:'dumbbell',ex:[{id:'0025',sets:1,reps:10,weight:20}]}],

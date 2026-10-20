@@ -264,7 +264,7 @@ body:has(.home-glass-experiment) .home-recent-list .workout-row { padding: 14px 
 body:has(.home-glass-experiment) .workout-row-icon { border-radius: 12px; background: var(--surface-2); }
 
 /* Floating glass dock, including the application's real workout button. */
-body:has(.home-glass-experiment) #tabbar {
+body:has(.home-glass-experiment) #tabbar:not(.corner-nav) {
   left: 50%;
   right: auto;
   bottom: calc(12px + var(--sab));

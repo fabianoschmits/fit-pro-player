@@ -1,149 +1,161 @@
 // @vitest-environment happy-dom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import TabBar from './TabBar.jsx'
 
-const mocks = vi.hoisted(() => ({
-  auth: { status: 'anonymous' },
-  state: {
-    S: { onboardingDone: true, active: null, routines: [], week: {}, dayPlan: {} },
-    user: null,
-    isGuest: () => true,
-  },
-}))
-
-vi.mock('../store/useStore.js', () => ({
-  useStore: selector => selector(mocks.state),
-}))
+const mocks = vi.hoisted(() => ({ auth: { status: 'anonymous' }, state: {} }))
+vi.mock('../store/useStore.js', () => ({ useStore: selector => selector(mocks.state) }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 
-let container
-let root
+let container, root
+const click = element => act(() => element.click())
+const toggle = () => container.querySelector('.corner-nav-toggle')
+function Location() { return <output>{useLocation().pathname}</output> }
+function render(path = '/home', onStart = vi.fn()) {
+  act(() => root.render(<MemoryRouter initialEntries={[path]}><TabBar onStart={onStart} /><Location /></MemoryRouter>))
+}
+function pointer(type, x, y) {
+  act(() => toggle().dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y })))
+}
 
 beforeEach(() => {
   mocks.auth = { status: 'anonymous' }
+  mocks.state = { S: { onboardingDone: true, active: null, routines: [], week: {}, dayPlan: {} }, user: null, isGuest: () => true }
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
-    value: vi.fn(() => ({
-      matches: true,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
+    value: vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
   })
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
 })
-
 afterEach(() => {
   act(() => root.unmount())
   container.remove()
   vi.restoreAllMocks()
 })
 
-describe('TabBar scroll stability', () => {
-  it('closes the expanded menu when the user taps Fechar', () => {
-    act(() => {
-      root.render(
-        <MemoryRouter initialEntries={['/home']}>
-          <TabBar onStart={vi.fn()} />
-        </MemoryRouter>,
-      )
-    })
-
-    const toggle = container.querySelector('.corner-nav-toggle')
-    act(() => toggle.dispatchEvent(new MouseEvent('click', { bubbles: true })))
-
-    expect(container.querySelector('#tabbar').className).not.toContain('is-open')
-    expect(container.querySelector('.corner-nav-main')).toBeNull()
+describe('TabBar folding navigation', () => {
+  it('starts collapsed with only the current destination available to assistive technology', () => {
+    render('/stats')
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    expect(toggle().getAttribute('aria-label')).toContain('Estatísticas')
+    expect(container.querySelector('.corner-nav-main').hasAttribute('inert')).toBe(true)
+    expect(container.querySelector('.corner-nav-main').getAttribute('aria-hidden')).toBe('true')
+    expect(container.querySelector('.corner-nav-more').hasAttribute('inert')).toBe(true)
   })
 
-  it('starts attached to the mobile edge and detaches only after being dragged', () => {
-    act(() => {
-      root.render(
-        <MemoryRouter initialEntries={['/home']}>
-          <TabBar onStart={vi.fn()} />
-        </MemoryRouter>,
-      )
-    })
+  it('keeps destinations mounted during closing so the sheet can fold back', () => {
+    render()
+    click(toggle())
+    const sheet = container.querySelector('.corner-nav-main')
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    expect(sheet.hasAttribute('inert')).toBe(false)
+    expect(sheet.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
+    click(toggle())
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    expect(container.querySelector('.corner-nav-main')).toBe(sheet)
+    expect(sheet.hasAttribute('inert')).toBe(true)
+  })
 
+  it('keeps the active secondary screen on the collapsed button', () => {
+    render('/personal-data')
+    expect(toggle().getAttribute('aria-label')).toContain('Dados pessoais')
+  })
+
+  it('does not move or detach for small pointer jitter', () => {
+    render()
+    pointer('pointerdown', 20, 700)
+    pointer('pointermove', 22, 699)
+    pointer('pointerup', 22, 699)
+    expect(container.querySelector('#tabbar').className).not.toContain('is-free')
+    expect(container.querySelector('#tabbar').style.left).toBe('')
+  })
+
+  it('detaches after dragging and keeps the chosen position after toggling', () => {
+    render()
     const tabbar = container.querySelector('#tabbar')
-    const toggle = container.querySelector('.corner-nav-toggle')
-    expect(tabbar.className).not.toContain('is-free')
-
-    act(() => {
-      toggle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 20, clientY: 700 }))
-      toggle.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 80, clientY: 640 }))
-      toggle.dispatchEvent(new MouseEvent('pointerup', { bubbles: true, clientX: 80, clientY: 640 }))
-    })
-
+    vi.spyOn(tabbar, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 64, height: 64, right: 64, bottom: 744 })
+    pointer('pointerdown', 20, 700)
+    pointer('pointermove', 80, 640)
+    pointer('pointerup', 80, 640)
     expect(tabbar.className).toContain('is-free')
+    expect(tabbar.style.left).toBe('60px')
+    expect(tabbar.style.top).toBe('620px')
+    const position = tabbar.getAttribute('style')
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 500)
+    click(toggle())
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    click(toggle())
+    expect(tabbar.getAttribute('style')).toBe(position)
   })
 
-  it('keeps the toggle and every primary destination in one navigation card', () => {
-    act(() => {
-      root.render(
-        <MemoryRouter initialEntries={['/home']}>
-          <TabBar onStart={vi.fn()} />
-        </MemoryRouter>,
-      )
-    })
-
-    const card = container.querySelector('.corner-nav-shell')
-    expect(card.querySelector('.corner-nav-toggle')).not.toBeNull()
-    expect(card.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
+  it('opens more above the pivot, focuses its first entry and restores focus on Escape', () => {
+    render()
+    click(toggle())
+    const trigger = container.querySelector('.corner-nav-more-trigger')
+    click(trigger)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    expect(trigger.querySelector('path').getAttribute('d')).toBe('m5.6 14.6 6.4-6.2 6.4 6.2')
+    expect(document.activeElement.textContent).toContain('Dados pessoais')
+    act(() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(trigger)
+    expect(container.querySelector('.corner-nav-more').hasAttribute('inert')).toBe(true)
   })
 
-  it('keeps the complete menu unchanged while the page scrolls', () => {
-    act(() => {
-      root.render(
-        <MemoryRouter initialEntries={['/stats']}>
-          <TabBar onStart={vi.fn()} />
-        </MemoryRouter>,
-      )
-    })
+  it('only arms movement when its option is selected and reattaches on request after a drag', () => {
+    render()
+    click(toggle())
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
+    const tabbar = container.querySelector('#tabbar')
+    expect(tabbar.className).not.toContain('is-free')
+    pointer('pointerdown', 20, 700)
+    pointer('pointermove', 80, 640)
+    pointer('pointerup', 80, 640)
+    expect(tabbar.className).toContain('is-free')
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
+    expect(tabbar.className).not.toContain('is-free')
+    expect(tabbar.style.left).toBe('')
+    expect(tabbar.style.top).toBe('')
+  })
 
+  it('keeps the expanded menu unchanged while the page scrolls', () => {
+    render('/stats')
+    click(toggle())
     const tabbar = container.querySelector('#tabbar')
     const before = tabbar.innerHTML
-    expect(tabbar.className).toBe('corner-nav is-open')
-    expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
-    expect(container.querySelector('[aria-label="Abrir mais opções"]')).not.toBeNull()
-
-    Object.defineProperty(window, 'scrollY', { configurable: true, value: 500 })
     act(() => window.dispatchEvent(new Event('scroll')))
-
-    expect(tabbar.className).toBe('corner-nav is-open')
     expect(tabbar.innerHTML).toBe(before)
-    expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
   })
 
   it('keeps Stats selected inside body progress', () => {
-    act(() => {
-      root.render(
-        <MemoryRouter initialEntries={['/body-progress']}>
-          <TabBar onStart={vi.fn()} />
-        </MemoryRouter>,
-      )
-    })
-
-    const stats = container.querySelector('[data-tab-key="stats"]')
-    expect(stats.getAttribute('aria-current')).toBe('page')
+    render('/body-progress')
+    click(toggle())
+    expect(container.querySelector('[data-tab-key="stats"]').getAttribute('aria-current')).toBe('page')
   })
 
-  it('shows the complete menu for an authenticated Supabase account', () => {
+  it('preserves navigation and the workout entry point after expanding', () => {
+    render()
+    click(toggle())
+    click(container.querySelector('[data-tab-key="stats"]'))
+    expect(container.querySelector('output').textContent).toBe('/stats')
+    click(container.querySelector('[data-tab-key="start"]'))
+    expect(container.querySelector('output').textContent).toBe('/plan')
+  })
+
+  it('also starts collapsed for an authenticated account', () => {
     mocks.state.isGuest = () => false
     mocks.auth = { status: 'authenticated' }
-    act(() => {
-      root.render(
-        <MemoryRouter initialEntries={['/home']}>
-          <TabBar onStart={vi.fn()} />
-        </MemoryRouter>,
-      )
-    })
-
+    render()
+    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    click(toggle())
     expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
   })
 })

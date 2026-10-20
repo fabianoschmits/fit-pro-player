@@ -109,7 +109,7 @@ const SupportTicket = lazy(loadSupportTicket)
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
   loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(), loadPersonalData(),
-  loadLibrary(), loadSettings(), loadMore(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadProfessionalPrograms(), loadStudentProfessionals(), loadSheets(),
+  loadLibrary(), loadSettings(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadProfessionalPrograms(), loadStudentProfessionals(), loadSheets(),
 ])
 
 const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))

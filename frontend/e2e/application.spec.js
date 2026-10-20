@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed, stateFixture, USER } from './fixtures.test.js'
+import { seed, stateFixture, USER, openMainNavigation } from './fixtures.test.js'
 
 for (const width of [320, 390]) {
   test(`workout adjustments stay below series and leave execution unobstructed at ${width}px`, async ({page}) => {
@@ -9,6 +9,7 @@ for (const width of [320, 390]) {
     state.routines[0].ex[0] = {id:'0025',sets:5,reps:10,weight:20}
     await seed(page, {state})
     await page.goto('/#/home')
+    await openMainNavigation(page)
     await page.locator('[data-tab-key="start"]').click()
     await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
 
@@ -98,6 +99,7 @@ test('execution guidance waits for play before each set and progresses after sto
   state.routines[0].ex[0] = {id:'custom-long-name',sets:2,reps:10,weight:20}
   await seed(page, {state})
   await page.goto('/#/home')
+  await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
   await expect(page.locator('.exercise-muscle-static svg')).toBeVisible()
   await expect(page.locator('.setrow .chk.is-executing')).toHaveCount(0)
@@ -159,6 +161,7 @@ test('rest expiration leaves the next set waiting for play', async ({page}) => {
   state.routines[0].ex[0] = {id:'0025',sets:2,reps:10,weight:20,rest:1}
   await seed(page, {state})
   await page.goto('/#/home')
+  await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
   await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
   await page.locator('.set-start-action').click()
@@ -182,6 +185,7 @@ test('timed sets keep stop accessible and wait for play after rest expires', asy
   state.routines[0].ex[0] = {id:'0025',sets:2,mode:'time',sec:30,rest:1,bodyweight:true,weight:0}
   await seed(page, {state})
   await page.goto('/#/home')
+  await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
   await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
   await expect(page.locator('.work-set-overlay')).toHaveCount(0)
@@ -261,6 +265,7 @@ test('student accepts invite, receives program and sends recorded workout events
 test('guest can start, discard, reload and keep the planned routine',async({page},testInfo)=>{
   await seed(page);await page.goto('/#/home')
   await expect(page.getByText('Treino de teste',{exact:true}).first()).toBeVisible()
+  await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
   await expect(page).toHaveURL(/workout/)
   await expect(page.locator('.workout-session-title')).toContainText('Treino de teste')
@@ -274,7 +279,7 @@ test('guest can start, discard, reload and keep the planned routine',async({page
 })
 
 test('completed workout is persisted and remains in history after reload',async({page})=>{
-  await seed(page);await page.goto('/#/home');await page.locator('[data-tab-key="start"]').click()
+  await seed(page);await page.goto('/#/home');await openMainNavigation(page);await page.locator('[data-tab-key="start"]').click()
   await expect(page.locator('.workout-session-title')).toBeVisible()
   await page.locator('.active-workout').getByRole('button',{name:'Começar treino',exact:true}).click()
   await page.locator('.set-start-action').click()

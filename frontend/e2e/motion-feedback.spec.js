@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed } from './fixtures.test.js'
+import { seed, openMainNavigation } from './fixtures.test.js'
 
 test.beforeEach(async ({ page }) => {
   await seed(page)
@@ -88,6 +88,7 @@ test('reduced motion retains labels and disables moving feedback', async ({ page
 
 test('navigation keeps one workout surface and one start action', async ({ page }) => {
   await page.goto('/#/home')
+  await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
   await expect(page).toHaveURL(/workout/)
   expect(await page.locator('#app').count()).toBe(1)
