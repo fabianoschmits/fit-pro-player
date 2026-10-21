@@ -24,6 +24,7 @@ export function createSupportRepository({ client } = {}) {
   const markRead = ticketId => rpc('ops_support_mark_read', { p_ticket_id: ticketId })
   const listFaqAdmin = () => rpc('ops_support_list_faq').then(rows).then(items => items.map(mapFaq))
   const saveFaqArticle = ({ articleId = null, categorySlug, question, answer, sortOrder = 0, isFeatured = false, isPublished = false }) => rpc('ops_support_save_faq', { p_article_id: articleId, p_category_slug: categorySlug, p_question: question, p_answer: answer, p_sort_order: sortOrder, p_is_featured: isFeatured, p_is_published: isPublished })
+  const deleteFaqArticle = articleId => rpc('ops_support_delete_faq', { p_article_id: articleId })
   const deleteTicket = ticketId => rpc('ops_support_delete_ticket', { p_ticket_id: ticketId })
   return Object.freeze({ listCategories, listFaq, createTicket, listMyTickets, ticketDetail, addUserMessage, overview, listTickets, adminTicketDetail, reply, updateTicket, markRead, deleteTicket, listFaqAdmin, saveFaqArticle, deleteFaqArticle })
 }
