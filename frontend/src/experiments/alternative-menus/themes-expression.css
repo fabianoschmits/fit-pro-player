@@ -1,0 +1,550 @@
+/* Five material studies. All movement responds to an explicit menu action. */
+
+/* Alloy — the machined keys of a training machine. */
+.am-demo[data-theme='alloy'] .am-menu {
+  --am-ink: #253438;
+  --am-accent: #c29e3e;
+  --am-gap: 8px;
+  --am-click-name: am-alloy-press;
+}
+
+.am-demo[data-theme='alloy'] .am-stage {
+  background: #c7cfd0;
+  color: #3e5053;
+}
+
+.am-demo[data-theme='alloy'] .am-scenery {
+  background:
+    repeating-linear-gradient(0deg, #ffffff0b 0 1px, transparent 1px 3px),
+    linear-gradient(120deg, #f4f6f37a, transparent 60%);
+}
+
+.am-demo[data-theme='alloy'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  top: -210px;
+  right: -90px;
+  border: 32px solid #6a7a7c19;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #ffffff4d, inset 0 0 0 1px #ffffff4d;
+}
+
+.am-demo[data-theme='alloy'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  top: 44px;
+  right: 30px;
+  width: 36px;
+  height: 6px;
+  background: #68777a55;
+  box-shadow: 0 12px #68777a33, 0 24px #68777a22;
+  transform: skewX(-20deg);
+}
+
+.am-demo[data-theme='alloy'] .am-stage-brand {
+  color: #3e5053;
+}
+
+.am-demo[data-theme='alloy'] .am-button {
+  color: #26373c;
+  border: 1px solid #f7f9f5;
+  border-bottom-color: #7a898b;
+  border-radius: 9px;
+  background:
+    repeating-linear-gradient(0deg, #ffffff12 0 1px, transparent 1px 3px),
+    linear-gradient(145deg, #f5f7f2 0%, #d5dcda 42%, #afbcbd 100%);
+  box-shadow: inset 0 1px #fff, inset 0 -3px 0 #89999c, 0 5px 0 #6d7f83, 0 9px 13px #20383d24;
+}
+
+.am-demo[data-theme='alloy'] .am-glass-edge {
+  display: block;
+  position: absolute;
+  inset: 4px;
+  border: 1px solid #ffffff70;
+  border-radius: 5px;
+  opacity: 1;
+}
+
+.am-demo[data-theme='alloy'] .am-toggle {
+  color: #fff5cc;
+  border-color: #5d7074;
+  border-bottom-color: #182b31;
+  background: linear-gradient(145deg, #576c70, #2b4147 70%);
+  box-shadow: inset 0 1px #a2b1ad, inset 0 -3px #20373d, 0 5px 0 #132c33, 0 9px 13px #20383d38;
+}
+
+.am-demo[data-theme='alloy'] .am-item[aria-pressed='true'] {
+  color: #3d3217;
+  border-color: #fff2c2;
+  background: linear-gradient(145deg, #fff0b2, #d6b256 66%, #b69238);
+  box-shadow: inset 0 1px #fff8dc, inset 0 -3px #ad8b38, 0 5px 0 #78652c, 0 9px 13px #20383d24;
+}
+
+.am-demo[data-theme='alloy'] .am-label {
+  font-weight: 700;
+}
+
+.am-demo[data-theme='alloy'] .am-slot {
+  transform-origin: 0 100%;
+  transition-timing-function: cubic-bezier(.2, .75, .25, 1);
+}
+
+.am-demo[data-theme='alloy'] .am-button:active {
+  transform: translateY(2px);
+}
+
+/* Energy — an electric arc, with a distinct key on each stop. */
+.am-demo[data-theme='energy'] .am-menu {
+  --am-ink: #f3edff;
+  --am-accent: #b8a1ff;
+  --am-click-name: am-energy-surge;
+}
+
+.am-demo[data-theme='energy'] .am-stage {
+  background: #1b1646;
+}
+
+.am-demo[data-theme='energy'] .am-scenery {
+  background:
+    radial-gradient(ellipse at 14% 100%, #5941a449, transparent 64%),
+    radial-gradient(ellipse at 100% 0%, #2c78ac33, transparent 55%);
+}
+
+.am-demo[data-theme='energy'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  width: 370px;
+  height: 370px;
+  left: -132px;
+  bottom: -212px;
+  border: 1px solid #9d88f345;
+  border-radius: 50%;
+  box-shadow: 0 0 0 42px #a38eff09, 0 0 0 43px #a38eff20, 0 0 0 88px #a38eff07;
+}
+
+.am-demo[data-theme='energy'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  width: 90px;
+  height: 142px;
+  right: 38px;
+  top: 54px;
+  background: linear-gradient(145deg, #8b74eb30, #5087d809);
+  clip-path: polygon(54% 0, 100% 0, 64% 40%, 94% 40%, 16% 100%, 38% 54%, 0 54%);
+}
+
+.am-demo[data-theme='energy'] .am-stage-brand {
+  color: #d1c4ff;
+}
+
+.am-demo[data-theme='energy'] .am-slot:nth-child(1) { --am-x: 60px; --am-y: -10px; }
+.am-demo[data-theme='energy'] .am-slot:nth-child(2) { --am-x: 116px; --am-y: -36px; }
+.am-demo[data-theme='energy'] .am-slot:nth-child(3) { --am-x: 158px; --am-y: -80px; }
+.am-demo[data-theme='energy'] .am-slot:nth-child(4) { --am-x: 186px; --am-y: -136px; }
+
+.am-demo[data-theme='energy'] .am-button {
+  color: #eee9ff;
+  border: 1px solid #a492f586;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #6552ac, #39346c 72%);
+  box-shadow: inset 0 1px 1px #e6d5ff55, 0 7px 18px #06052155, 0 0 0 4px #9c87ee09;
+}
+
+.am-demo[data-theme='energy'] .am-glass-edge {
+  display: block;
+  position: absolute;
+  inset: 3px;
+  border: 1px solid #bcb0ff25;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  opacity: 1;
+}
+
+.am-demo[data-theme='energy'] .am-toggle {
+  color: #fff;
+  border-color: #d4c4ff;
+  background: linear-gradient(140deg, #9674e1, #6754c3 58%, #4069b5);
+  box-shadow: inset 0 1px 1px #f7e9ff88, 0 5px 22px #0b082b66, 0 0 0 5px #b09bf015;
+}
+
+.am-demo[data-theme='energy'] .am-slot:nth-child(2) .am-item {
+  background: linear-gradient(145deg, #4779bd, #304b88);
+}
+
+.am-demo[data-theme='energy'] .am-slot:nth-child(3) .am-item {
+  background: linear-gradient(145deg, #7263ba, #3d367c);
+}
+
+.am-demo[data-theme='energy'] .am-slot:nth-child(4) .am-item {
+  background: linear-gradient(145deg, #8a5caa, #533d7d);
+}
+
+.am-demo[data-theme='energy'] .am-item[aria-pressed='true'] {
+  color: #1e1c53;
+  border-color: #e8e4ff;
+  background: linear-gradient(145deg, #f2e8ff, #b9bdff 66%, #84b9f2);
+  box-shadow: inset 0 1px #fff, 0 5px 20px #08052466, 0 0 0 3px #c5b5ff28;
+}
+
+.am-demo[data-theme='energy'] .am-slot {
+  transition-timing-function: cubic-bezier(.19, 1, .32, 1);
+}
+
+/* Porcelain — a quiet vertical rack of detached ceramic controls. */
+.am-demo[data-theme='porcelain'] .am-menu {
+  --am-size: 44px;
+  --am-ink: #374b46;
+  --am-accent: #557b62;
+  --am-click-name: am-porcelain-press;
+}
+
+.am-demo[data-theme='porcelain'] .am-stage {
+  background: #e9ece5;
+  color: #4d6559;
+}
+
+.am-demo[data-theme='porcelain'] .am-scenery {
+  background: linear-gradient(105deg, #ffffff61, transparent 65%);
+}
+
+.am-demo[data-theme='porcelain'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  width: 138px;
+  height: 270px;
+  right: 60px;
+  top: 84px;
+  border: 1px solid #8d9d852b;
+  border-radius: 90px 90px 0 0;
+  transform: rotate(25deg);
+}
+
+.am-demo[data-theme='porcelain'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  width: 138px;
+  height: 270px;
+  right: 37px;
+  top: 84px;
+  border: 1px solid #8d9d8520;
+  border-radius: 90px 90px 0 0;
+  transform: rotate(25deg);
+}
+
+.am-demo[data-theme='porcelain'] .am-stage-brand {
+  color: #4d6559;
+}
+
+.am-demo[data-theme='porcelain'] .am-material {
+  left: 84px;
+  top: 122px;
+}
+
+.am-demo[data-theme='porcelain'] .am-menu {
+  bottom: 14px;
+}
+
+.am-demo[data-theme='porcelain'] .am-slot {
+  --am-x: 0px;
+  --am-y: calc(var(--i) * -50px);
+  transition-duration: 250ms;
+  transition-timing-function: cubic-bezier(.2, .8, .2, 1);
+}
+
+.am-demo[data-theme='porcelain'] .am-button {
+  color: #4b6257;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fffefa, #eeeee6);
+  box-shadow: inset 0 1px 1px #fff, 0 2px 2px #3c4c3812, 0 5px 12px #3c4c3817, 0 0 0 1px #fff9;
+}
+
+.am-demo[data-theme='porcelain'] .am-glass-edge {
+  display: none;
+}
+
+.am-demo[data-theme='porcelain'] .am-toggle {
+  color: #f7f9f2;
+  background: linear-gradient(150deg, #6e8b73, #496953);
+  box-shadow: inset 0 1px #a0b49b, 0 3px 8px #344b312c;
+}
+
+.am-demo[data-theme='porcelain'] .am-item[aria-pressed='true'] {
+  color: #34503c;
+  background: linear-gradient(145deg, #e6eedc, #d5e3c9);
+  box-shadow: inset 0 1px #ffffffc4, 0 2px 2px #3c4c3812, 0 5px 12px #3c4c3817, 0 0 0 2px #6c8b604d;
+}
+
+/* Tide — rising steps follow the edge of a dark swimming lane. */
+.am-demo[data-theme='tide'] .am-menu {
+  --am-ink: #e3fffb;
+  --am-accent: #62d1c4;
+  --am-click-name: am-tide-lift;
+}
+
+.am-demo[data-theme='tide'] .am-stage {
+  background: #103c4b;
+}
+
+.am-demo[data-theme='tide'] .am-scenery {
+  background: linear-gradient(150deg, #15596a3b, transparent 66%);
+}
+
+.am-demo[data-theme='tide'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  width: 560px;
+  height: 260px;
+  top: 154px;
+  right: -125px;
+  border: 1px solid #89decb30;
+  border-radius: 50%;
+  transform: rotate(-23deg);
+  box-shadow: 0 -16px 0 -1px #72bbae13, 0 -34px 0 -1px #72bbae0a;
+}
+
+.am-demo[data-theme='tide'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  width: 560px;
+  height: 260px;
+  top: 176px;
+  right: -125px;
+  border: 1px solid #89decb24;
+  border-radius: 50%;
+  transform: rotate(-23deg);
+}
+
+.am-demo[data-theme='tide'] .am-stage-brand {
+  color: #9dd9d0;
+  top: auto;
+  bottom: 28px;
+}
+
+.am-demo[data-theme='tide'] .am-slot:nth-child(1) { --am-x: 56px; --am-y: -20px; }
+.am-demo[data-theme='tide'] .am-slot:nth-child(2) { --am-x: 94px; --am-y: -72px; }
+.am-demo[data-theme='tide'] .am-slot:nth-child(3) { --am-x: 132px; --am-y: -124px; }
+.am-demo[data-theme='tide'] .am-slot:nth-child(4) { --am-x: 170px; --am-y: -176px; }
+
+.am-demo[data-theme='tide'] .am-button {
+  color: #d2f7f0;
+  border: 1px solid #8cdbcb60;
+  border-radius: 18px 18px 18px 5px;
+  background: linear-gradient(150deg, #397b8466, #164751db 75%);
+  box-shadow: inset 0 1px 1px #d1fff329, inset 0 -2px 0 #0b344047, 0 6px 14px #031d2c3d;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.am-demo[data-theme='tide'] .am-glass-edge {
+  display: block;
+  position: absolute;
+  inset: 4px;
+  border-top: 1px solid #bbf9e631;
+  border-radius: 14px 14px 14px 3px;
+  opacity: 1;
+}
+
+.am-demo[data-theme='tide'] .am-toggle {
+  color: #e0fff6;
+  border-color: #8ed6bf9c;
+  border-radius: 50% 50% 50% 8px;
+  background: linear-gradient(145deg, #40978c, #1c6c70);
+  box-shadow: inset 0 1px #c2f9dc70, 0 5px 15px #031d2c66;
+}
+
+.am-demo[data-theme='tide'] .am-item[aria-pressed='true'] {
+  color: #113c41;
+  border-color: #c4f6e3;
+  background: linear-gradient(150deg, #c0efdb, #70c6b8);
+  box-shadow: inset 0 1px #e5fff6, 0 5px 14px #031d2c55;
+}
+
+.am-demo[data-theme='tide'] .am-slot {
+  transition-duration: 310ms;
+  transition-timing-function: cubic-bezier(.16, 1, .3, 1);
+}
+
+/* Ignite — four angular pit-wall controls, two rows above the starter. */
+.am-demo[data-theme='ignite'] .am-menu {
+  --am-ink: #f3ece4;
+  --am-accent: #ee8a49;
+  --am-click-name: am-ignite-snap;
+}
+
+.am-demo[data-theme='ignite'] .am-stage {
+  background: #2b2928;
+}
+
+.am-demo[data-theme='ignite'] .am-scenery {
+  background: repeating-linear-gradient(135deg, transparent 0 17px, #ffffff03 17px 18px);
+}
+
+.am-demo[data-theme='ignite'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  width: 110px;
+  height: 310px;
+  right: 65px;
+  top: -40px;
+  background: linear-gradient(180deg, #da71381f, #da713806);
+  transform: skewX(-24deg);
+  border-left: 1px solid #da71384d;
+  border-right: 1px solid #da71382b;
+}
+
+.am-demo[data-theme='ignite'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 310px;
+  right: 186px;
+  top: -40px;
+  background: #da713826;
+  transform: skewX(-24deg);
+}
+
+.am-demo[data-theme='ignite'] .am-stage-brand {
+  color: #e9b593;
+  font-style: italic;
+}
+
+.am-demo[data-theme='ignite'] .am-slot:nth-child(1) {
+  --am-x: calc(var(--am-size) + 8px);
+  --am-y: calc(-1 * (var(--am-size) + 8px));
+}
+
+.am-demo[data-theme='ignite'] .am-slot:nth-child(2) {
+  --am-x: calc(2 * (var(--am-size) + 8px));
+  --am-y: calc(-1 * (var(--am-size) + 8px));
+}
+
+.am-demo[data-theme='ignite'] .am-slot:nth-child(3) {
+  --am-x: calc(var(--am-size) + 8px);
+  --am-y: calc(-2 * (var(--am-size) + 8px));
+}
+
+.am-demo[data-theme='ignite'] .am-slot:nth-child(4) {
+  --am-x: calc(2 * (var(--am-size) + 8px));
+  --am-y: calc(-2 * (var(--am-size) + 8px));
+}
+
+.am-demo[data-theme='ignite'] .am-button {
+  color: #f3e5dc;
+  border: 1px solid #b79b885e;
+  border-left: 3px solid #c17a4b;
+  border-radius: 9px 2px 9px 2px;
+  background: linear-gradient(125deg, #4b4440, #322f2d 70%);
+  box-shadow: inset 0 1px #bfa38b27, 3px 4px 0 #15191b52, 0 7px 15px #080e1024;
+}
+
+.am-demo[data-theme='ignite'] .am-button::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 3px;
+  top: 5px;
+  right: 5px;
+  bottom: auto;
+  left: auto;
+  border-radius: 0;
+  background: #bca08866;
+  transform: skewX(-25deg);
+  pointer-events: none;
+}
+
+.am-demo[data-theme='ignite'] .am-glass-edge {
+  display: block;
+  position: absolute;
+  inset: 4px;
+  border: 1px solid #ecd1ba12;
+  border-right: 0;
+  border-bottom: 0;
+  border-radius: 4px 0 4px 0;
+  opacity: 1;
+}
+
+.am-demo[data-theme='ignite'] .am-toggle {
+  color: #2a2520;
+  border-color: #f8be82;
+  border-left-color: #ffdab0;
+  background: linear-gradient(125deg, #f8ad63, #e5813f 70%);
+  box-shadow: inset 0 1px #ffe2be, 3px 4px 0 #834b2f, 0 7px 15px #080e1038;
+}
+
+.am-demo[data-theme='ignite'] .am-toggle::after {
+  background: #76422480;
+}
+
+.am-demo[data-theme='ignite'] .am-item[aria-pressed='true'] {
+  color: #2e2721;
+  border-color: #ffd39b;
+  border-left-color: #fff0cb;
+  background: linear-gradient(125deg, #ffd39b, #eea567 70%);
+  box-shadow: inset 0 1px #fff0d8, 3px 4px 0 #8b573a, 0 7px 15px #080e1038;
+}
+
+.am-demo[data-theme='ignite'] .am-item[aria-pressed='true']::after {
+  background: #77462e;
+}
+
+.am-demo[data-theme='ignite'] .am-slot {
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(.22, .8, .3, 1);
+}
+
+@keyframes am-alloy-press {
+  0%, 100% { transform: translateY(0); }
+  35% { transform: translateY(2px) scale(.94); }
+}
+
+@keyframes am-energy-surge {
+  0%, 100% { transform: scale(1); }
+  35% { transform: scale(1.13); }
+  70% { transform: scale(.98); }
+}
+
+@keyframes am-porcelain-press {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(.9); }
+}
+
+@keyframes am-tide-lift {
+  0%, 100% { transform: translateY(0); }
+  42% { transform: translateY(-3px); }
+}
+
+@keyframes am-ignite-snap {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(2px) scale(.95); }
+  60% { transform: translateX(-1px); }
+}
+
+@media (max-width: 480px) {
+  .am-demo[data-theme='alloy'] .am-menu { --am-gap: 4px; }
+  .am-demo[data-theme='porcelain'] .am-menu { --am-size: 44px; }
+  .am-demo[data-theme='energy'] .am-scenery::after { right: 12px; opacity: .6; }
+  .am-demo[data-theme='porcelain'] .am-scenery::before { right: 22px; }
+  .am-demo[data-theme='porcelain'] .am-scenery::after { right: -1px; }
+}
+
+.am-demo:is([data-theme='alloy'], [data-theme='porcelain']) .am-stage-brand img {
+  filter: grayscale(1) brightness(0);
+}
+
+.am-demo:is([data-theme='alloy'], [data-theme='energy'], [data-theme='porcelain'], [data-theme='tide'], [data-theme='ignite']) .am-stage[data-backdrop='neutral'] {
+  background: #6f7a7d;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-demo:is([data-theme='alloy'], [data-theme='energy'], [data-theme='porcelain'], [data-theme='tide'], [data-theme='ignite']) .am-slot,
+  .am-demo:is([data-theme='alloy'], [data-theme='energy'], [data-theme='porcelain'], [data-theme='tide'], [data-theme='ignite']) .am-button,
+  .am-demo:is([data-theme='alloy'], [data-theme='energy'], [data-theme='porcelain'], [data-theme='tide'], [data-theme='ignite']) .am-icon,
+  .am-demo:is([data-theme='alloy'], [data-theme='energy'], [data-theme='porcelain'], [data-theme='tide'], [data-theme='ignite']) .am-click-wave {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}

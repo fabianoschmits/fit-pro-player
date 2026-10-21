@@ -396,3 +396,172 @@
 .console-btn-resolve { padding: 5px 12px; border-radius: 6px; background: var(--acc); color: var(--on-acc); border: none; font-size: 11px; font-weight: 600; cursor: pointer; }
 .console-btn-resolve:disabled { opacity: .5; cursor: not-allowed; }
 
+/* ── Console Messages Inbox Redesign & Bulk Actions ─────────────── */
+.console-messages-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--sep);
+  padding-bottom: 8px;
+  margin: 12px 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.console-messages-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--label-2);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .15s ease;
+}
+.console-messages-tab:hover {
+  background: var(--surface);
+  color: var(--label);
+}
+.console-messages-tab.is-active {
+  background: var(--acc-soft);
+  color: var(--acc);
+  border-color: color-mix(in srgb, var(--acc) 30%, transparent);
+}
+.console-messages-tab-badge {
+  background: color-mix(in srgb, var(--label-2) 20%, transparent);
+  color: var(--label);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.console-messages-tab.is-active .console-messages-tab-badge {
+  background: var(--acc);
+  color: var(--on-acc);
+}
+
+.console-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+}
+.console-bulk-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--label);
+  cursor: pointer;
+  user-select: none;
+}
+.console-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.console-bulk-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--sep);
+  background: var(--bg);
+  color: var(--label);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.console-bulk-btn:hover {
+  background: var(--surface-border);
+}
+.console-bulk-btn--danger {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+.console-bulk-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+}
+.console-bulk-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.console-message-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--sep);
+  transition: background .12s ease;
+  border-radius: 8px;
+}
+.console-message-item:hover {
+  background: color-mix(in srgb, var(--acc) 4%, transparent);
+}
+.console-message-item.is-selected {
+  background: color-mix(in srgb, var(--acc) 10%, transparent);
+}
+.console-message-item.is-unread {
+  background: color-mix(in srgb, var(--acc) 5%, transparent);
+  font-weight: 600;
+}
+.console-message-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--acc);
+  flex: none;
+}
+.console-message-item > a.console-message-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+.console-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.console-quick-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--label-2);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.console-quick-action-btn:hover {
+  background: var(--surface);
+  color: var(--label);
+  border-color: var(--sep);
+}
+.console-quick-action-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+}

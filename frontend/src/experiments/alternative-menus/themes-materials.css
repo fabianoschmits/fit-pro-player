@@ -1,0 +1,807 @@
+/* Material studies: a refracting hinge, raised equipment keys, race-lane
+   segments, a courtside rail, and a compact electronic scoreboard. */
+
+/* 01 — Glass. Each option is a separate pane; only its rim refracts. */
+.am-demo[data-theme='glass'] {
+  --am-ink: #102c35;
+  --am-accent: #087e83;
+  --am-gap: 0px;
+}
+
+.am-demo[data-theme='glass'] .am-stage {
+  color: #16464a;
+  background-color: #d9ece6;
+}
+
+.am-demo[data-theme='glass'] .am-scenery {
+  background:
+    radial-gradient(ellipse at 64% 74%, #d5faf665 0 17%, transparent 52%),
+    linear-gradient(115deg, transparent 0 33%, #0f8b8d13 33% 45%, transparent 45%);
+}
+
+.am-demo[data-theme='glass'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  width: 88%;
+  height: 51px;
+  left: 8%;
+  bottom: 27px;
+  border-top: 1px solid #0b7a7c38;
+  border-bottom: 1px solid #0b7a7c1f;
+  background: linear-gradient(90deg, #5ee2d958, #19a5a933 44%, #f8cf7659 75%, #f5dfac16);
+  transform: rotate(-15deg);
+}
+
+.am-demo[data-theme='glass'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  width: 128px;
+  height: 128px;
+  right: 11%;
+  bottom: -32px;
+  border: 1px solid #0b818446;
+  border-radius: 50%;
+  box-shadow: 0 0 0 20px #3dc4bd0b, 0 0 0 21px #0b81841c;
+}
+
+.am-demo[data-theme='glass'] .am-menu {
+  --am-ink: #102c35;
+  --am-accent: #087e83;
+  --am-gap: 0px;
+  isolation: isolate;
+  perspective: 600px;
+}
+
+.am-demo[data-theme='glass'] .am-button {
+  border: 0;
+  overflow: visible;
+  color: #14383e;
+  border-radius: 0;
+  background: #ecfffd12;
+  box-shadow:
+    inset 0 1px 0 #ffffffc9,
+    inset 0 -1px 0 #07495031,
+    inset 1px 0 0 #ffffffc4,
+    inset -1px 0 0 #1c6f7038,
+    0 8px 18px -13px #07495070;
+  backdrop-filter: blur(.7px) saturate(1.12);
+  -webkit-backdrop-filter: blur(.7px) saturate(1.12);
+}
+
+.am-demo[data-theme='glass'] .am-button::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  inset: 1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(142deg, #ffffff35, transparent 29% 72%, #ffffff42);
+  box-shadow: inset 0 0 0 1px #ffffff20;
+}
+
+.am-demo[data-theme='glass'] .am-button::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 7px;
+  bottom: 7px;
+  left: 1px;
+  right: auto;
+  width: 1px;
+  height: auto;
+  background: linear-gradient(transparent, #ffffffd9 24%, #c0ffff70 75%, transparent);
+  pointer-events: none;
+}
+
+.am-demo[data-theme='glass'] .am-glass-edge {
+  display: block;
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  padding: 5px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(125deg, #fff9, #83e2da19 23% 70%, #ffffffa8);
+  backdrop-filter: url('#am-glass-refraction') blur(.3px) saturate(1.6);
+  -webkit-backdrop-filter: url('#am-glass-refraction') blur(.3px) saturate(1.6);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.am-demo[data-theme='glass'] .am-toggle {
+  z-index: 6;
+  border-radius: 17px 5px 5px 17px;
+  color: #fff;
+  background: linear-gradient(135deg, #169496ed, #076b73ed);
+  box-shadow:
+    inset 0 1px 0 #ffffff73,
+    inset 1px 0 0 #a7fff542,
+    inset -1px 0 0 #003a4b38,
+    0 9px 19px -11px #07515c95;
+}
+
+.am-demo[data-theme='glass'] .am-toggle .am-glass-edge {
+  opacity: .6;
+}
+
+.am-demo[data-theme='glass'] .am-menu:not(.is-open) .am-toggle {
+  border-radius: 17px;
+}
+
+.am-demo[data-theme='glass'] .am-slot {
+  transform-origin: 0 50%;
+  transition-duration: 280ms, 170ms, 0s;
+  transition-timing-function: cubic-bezier(.22,.8,.24,1);
+}
+
+.am-demo[data-theme='glass'] .am-menu:not(.is-open) .am-slot {
+  transform: translate(14px, 0) rotateY(-62deg) scale(.96);
+}
+
+.am-demo[data-theme='glass'] .am-slot:last-child .am-item {
+  border-radius: 0 15px 15px 0;
+}
+
+.am-demo[data-theme='glass'] .am-item[aria-pressed='true'] {
+  color: #005d62;
+  background: #43c8c322;
+  box-shadow:
+    inset 0 1px 0 #ffffffe8,
+    inset 0 -2px 0 #07878b9e,
+    inset 1px 0 0 #ffffffa3,
+    inset -1px 0 0 #1c6f7038,
+    0 8px 18px -13px #07495070;
+}
+
+.am-demo[data-theme='glass'] .am-label {
+  font-weight: 650;
+  text-shadow: 0 1px 1px #ffffffb5;
+}
+
+.am-demo[data-theme='glass'] .am-toggle .am-label {
+  text-shadow: 0 1px 1px #004d5350;
+}
+
+.am-demo[data-theme='glass'] .am-icon.is-clicked {
+  animation-name: am-glass-click;
+  animation-duration: 320ms;
+}
+
+@supports not (backdrop-filter: url('#am-glass-refraction')) {
+  .am-demo[data-theme='glass'] .am-glass-edge {
+    backdrop-filter: blur(2px) saturate(1.6);
+    -webkit-backdrop-filter: blur(2px) saturate(1.6);
+    box-shadow: inset 1px 1px 2px #ffffffc7, inset -1px -1px 2px #12545c54;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .am-demo[data-theme='glass'] .am-item {
+    background: #e4f5efb5;
+  }
+}
+
+/* 02 — Carbon. A diagonal shelf of individually raised equipment keys. */
+.am-demo[data-theme='carbon'] {
+  --am-ink: #e8edf0;
+  --am-accent: #f29a54;
+  --am-gap: 10px;
+}
+
+.am-demo[data-theme='carbon'] .am-stage {
+  background-color: #202327;
+}
+
+.am-demo[data-theme='carbon'] .am-scenery {
+  background:
+    radial-gradient(ellipse at 75% 12%, #7e8b9324, transparent 62%),
+    repeating-linear-gradient(45deg, #ffffff03 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(-45deg, #00000021 0 1px, transparent 1px 4px);
+}
+
+.am-demo[data-theme='carbon'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  width: 192px;
+  height: 192px;
+  right: -29px;
+  top: -68px;
+  border: 20px solid #a6afb009;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #a6afb017, inset 0 0 0 1px #a6afb017;
+}
+
+.am-demo[data-theme='carbon'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  left: 17px;
+  bottom: 15px;
+  width: 312px;
+  height: 72px;
+  border-radius: 15px;
+  background: linear-gradient(180deg, #ffffff04, #0000001c);
+  border-bottom: 1px solid #ffffff12;
+  transform: rotate(-4deg);
+}
+
+.am-demo[data-theme='carbon'] .am-stage-brand {
+  opacity: .3;
+  color: #dde9ec;
+}
+
+.am-demo[data-theme='carbon'] .am-menu {
+  --am-ink: #e8edf0;
+  --am-accent: #f29a54;
+  --am-gap: 10px;
+  bottom: 27px;
+}
+
+.am-demo[data-theme='carbon'] .am-slot {
+  --am-y: calc(var(--i) * -6px);
+}
+
+.am-demo[data-theme='carbon'] .am-slot:nth-child(even) {
+  --am-rotate: -3deg;
+}
+
+.am-demo[data-theme='carbon'] .am-slot:nth-child(odd) {
+  --am-rotate: 2deg;
+}
+
+.am-demo[data-theme='carbon'] .am-button {
+  border-radius: 16px;
+  border: 1px solid #ffffff0a;
+  color: #e5e9ed;
+  background: linear-gradient(145deg, #3b4147, #252a2f 55%, #202428);
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    inset 1px 0 0 #ffffff09,
+    inset 0 -2px 0 #00000063,
+    0 4px 0 #101216,
+    0 7px 0 #0e101369,
+    0 15px 17px -9px #000000b3;
+}
+
+.am-demo[data-theme='carbon'] .am-button::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 11px;
+  border: 1px solid #ffffff05;
+  pointer-events: none;
+}
+
+.am-demo[data-theme='carbon'] .am-button::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: calc(50% - 6px);
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+  background: #ffffff20;
+  pointer-events: none;
+}
+
+.am-demo[data-theme='carbon'] .am-toggle {
+  color: #171c1f;
+  background: linear-gradient(145deg, #ffbd78, #e88c40 70%);
+  border-color: #f8bd7b;
+  box-shadow:
+    inset 0 1px 0 #fff6,
+    inset 0 -2px 0 #a95b37,
+    0 4px 0 #733d28,
+    0 7px 0 #11131896,
+    0 15px 17px -9px #000000b3;
+}
+
+.am-demo[data-theme='carbon'] .am-toggle::after,
+.am-demo[data-theme='carbon'] .am-item[aria-pressed='true']::after {
+  background: #ffb46c;
+}
+
+.am-demo[data-theme='carbon'] .am-item[aria-pressed='true'] {
+  color: #ffc28a;
+  border-color: #e89b5759;
+  box-shadow:
+    inset 0 1px 0 #ffcc9f38,
+    inset 0 -2px 0 #00000063,
+    0 4px 0 #101216,
+    0 7px 0 #0e101369,
+    0 15px 17px -9px #000000b3;
+}
+
+.am-demo[data-theme='carbon'] .am-label {
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+.am-demo[data-theme='carbon'] .am-icon.is-clicked {
+  animation-name: am-carbon-click;
+  animation-duration: 260ms;
+}
+
+/* 03 — Track. Painted race-lane geometry, with a red starting block. */
+.am-demo[data-theme='track'] {
+  --am-ink: #211e1b;
+  --am-accent: #d33c29;
+  --am-gap: 4px;
+}
+
+.am-demo[data-theme='track'] .am-stage {
+  color: #713a2a;
+  background-color: #f3f0e5;
+}
+
+.am-demo[data-theme='track'] .am-scenery {
+  background:
+    repeating-linear-gradient(103deg, transparent 0 67px, #c5433120 67px 69px, transparent 69px 136px),
+    linear-gradient(180deg, #ffffff10, #d2c7a725);
+}
+
+.am-demo[data-theme='track'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  left: -10%;
+  width: 120%;
+  height: 62px;
+  bottom: 26px;
+  background: #d33c2912;
+  border-top: 2px solid #fff9;
+  border-bottom: 2px solid #fff9;
+  transform: rotate(-5deg);
+}
+
+.am-demo[data-theme='track'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  width: 47px;
+  height: 47px;
+  opacity: .28;
+  background: repeating-conic-gradient(#b53a2c 0% 25%, transparent 0% 50%) 0 0 / 12px 12px;
+  transform: skewX(-13deg);
+}
+
+.am-demo[data-theme='track'] .am-stage-brand {
+  color: #b73b2d;
+  opacity: .16;
+  transform: skewX(-10deg);
+}
+
+.am-demo[data-theme='track'] .am-menu {
+  --am-ink: #211e1b;
+  --am-accent: #d33c29;
+  --am-gap: 4px;
+  left: 28px;
+}
+
+.am-demo[data-theme='track'] .am-slot {
+  --am-y: calc(var(--i) * -2px);
+  transition-duration: 210ms, 150ms, 0s;
+  transition-timing-function: cubic-bezier(.16,.76,.25,1);
+}
+
+.am-demo[data-theme='track'] .am-button {
+  border-radius: 2px;
+  border: 0;
+  color: #302b25;
+  background: #fffdf4;
+  transform: skewX(-10deg);
+  box-shadow: inset 0 -3px 0 #d5cbb7, 0 5px 0 #4a362813;
+}
+
+.am-demo[data-theme='track'] .am-button::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  bottom: 7px;
+  width: 2px;
+  background: #c7bcaa60;
+  pointer-events: none;
+}
+
+.am-demo[data-theme='track'] .am-toggle {
+  color: #fff9ee;
+  background: #cf3c2a;
+  box-shadow: inset 0 -3px 0 #942c20, 0 5px 0 #6e2a241b;
+}
+
+.am-demo[data-theme='track'] .am-toggle::before {
+  background: #fff8e070;
+}
+
+.am-demo[data-theme='track'] .am-item[aria-pressed='true'] {
+  color: #c23225;
+  background: #fff9e8;
+  box-shadow: inset 0 -3px 0 #cf3c2a, 0 5px 0 #4a362813;
+}
+
+.am-demo[data-theme='track'] .am-icon,
+.am-demo[data-theme='track'] .am-label {
+  transform: skewX(10deg);
+}
+
+.am-demo[data-theme='track'] .am-label {
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.am-demo[data-theme='track'] .am-icon.is-clicked {
+  animation-name: am-track-click;
+  animation-duration: 300ms;
+}
+
+.am-demo[data-theme='track'] .am-button:active {
+  transform: skewX(-10deg) scale(.96);
+}
+
+/* 04 — Court. A courtside vertical rail and rubberized green controls. */
+.am-demo[data-theme='court'] {
+  --am-ink: #e9f4dc;
+  --am-accent: #e0e9a4;
+  --am-size: 44px;
+  --am-gap: 3px;
+}
+
+.am-demo[data-theme='court'] .am-stage {
+  background-color: #247156;
+}
+
+.am-demo[data-theme='court'] .am-scenery {
+  background:
+    repeating-linear-gradient(0deg, #0c43380a 0 2px, transparent 2px 5px),
+    linear-gradient(115deg, #063e3d2b, transparent 60%);
+}
+
+.am-demo[data-theme='court'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  left: 106px;
+  top: 22px;
+  right: 23px;
+  bottom: 23px;
+  border: 2px solid #dcebc65c;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 1px), #dcebc65c calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(0deg, transparent calc(50% - 1px), #dcebc638 calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px));
+  transform: skewY(-4deg);
+}
+
+.am-demo[data-theme='court'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  right: 29%;
+  top: 89px;
+  width: 93px;
+  height: 93px;
+  border: 2px solid #dcebc650;
+  border-radius: 50%;
+  transform: skewY(-4deg);
+}
+
+.am-demo[data-theme='court'] .am-stage-brand {
+  color: #e0ebce;
+  opacity: .2;
+}
+
+.am-demo[data-theme='court'] .am-menu {
+  --am-ink: #e9f4dc;
+  --am-accent: #e0e9a4;
+  --am-size: 44px;
+  --am-gap: 3px;
+  left: 24px;
+  bottom: 19px;
+}
+
+.am-demo[data-theme='court'] .am-menu::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  bottom: 0;
+  width: 32px;
+  height: calc(var(--am-size) * 5 + var(--am-gap) * 4);
+  background: #153f3538;
+  border: 1px solid #eaf6d51f;
+  border-radius: 17px;
+  opacity: 0;
+  transform: scaleY(.22);
+  transform-origin: bottom;
+  transition: opacity 160ms cubic-bezier(.2,.75,.3,1), transform 240ms cubic-bezier(.2,.75,.3,1);
+  pointer-events: none;
+}
+
+.am-demo[data-theme='court'] .am-menu.is-open::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.am-demo[data-theme='court'] .am-slot {
+  --am-x: 0px;
+  --am-y: calc(var(--i) * (var(--am-size) + var(--am-gap)) * -1);
+  transform-origin: center bottom;
+}
+
+.am-demo[data-theme='court'] .am-button {
+  color: #edf5db;
+  border-radius: 12px;
+  border: 1px solid #b9dcac38;
+  background:
+    repeating-linear-gradient(45deg, #ffffff04 0 1px, transparent 1px 4px),
+    #124f40;
+  box-shadow:
+    inset 0 1px 0 #dbffd728,
+    inset 0 -2px 0 #062e2b66,
+    0 3px 7px #0b382e3d;
+}
+
+.am-demo[data-theme='court'] .am-toggle {
+  color: #163f32;
+  border-radius: 50%;
+  border-color: #e6f2b9;
+  background: #deedac;
+  box-shadow: inset 0 2px 0 #f4ffd5, inset 0 -2px 0 #b7cd83, 0 3px 7px #0b382e3d;
+}
+
+.am-demo[data-theme='court'] .am-item[aria-pressed='true'] {
+  color: #f2f7d8;
+  border-color: #deedac;
+  background: #316e4d;
+  box-shadow: inset 3px 0 0 #deedac, inset 0 1px 0 #dbffd728, 0 3px 7px #0b382e3d;
+}
+
+.am-demo[data-theme='court'] .am-label {
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.am-demo[data-theme='court'] .am-icon .icn {
+  width: 18px;
+  height: 18px;
+}
+
+.am-demo[data-theme='court'] .am-icon.is-clicked {
+  animation-name: am-court-click;
+  animation-duration: 310ms;
+}
+
+/* 05 — Scoreboard. Flush LED cells inside a physical display cabinet. */
+.am-demo[data-theme='scoreboard'] {
+  --am-ink: #d7efa5;
+  --am-accent: #c7ee6b;
+  --am-gap: 2px;
+  --am-size: 52px;
+}
+
+.am-demo[data-theme='scoreboard'] .am-stage {
+  background-color: #192128;
+}
+
+.am-demo[data-theme='scoreboard'] .am-scenery {
+  background:
+    radial-gradient(circle at 75% 25%, #70894c1c, transparent 47%),
+    radial-gradient(#ffffff08 .8px, transparent 1px) 0 0 / 6px 6px;
+}
+
+.am-demo[data-theme='scoreboard'] .am-scenery::before {
+  content: '';
+  position: absolute;
+  right: 29px;
+  top: 24px;
+  width: 104px;
+  height: 58px;
+  border: 4px solid #10191d;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, transparent 48%, #46513b42 48% 52%, transparent 52%),
+    repeating-linear-gradient(0deg, transparent 0 5px, #c7ee6b07 5px 6px),
+    #0e181b;
+  box-shadow: inset 0 0 0 1px #4850394d, 0 2px 0 #ffffff09;
+}
+
+.am-demo[data-theme='scoreboard'] .am-scenery::after {
+  content: '';
+  position: absolute;
+  right: 58px;
+  top: 44px;
+  width: 6px;
+  height: 6px;
+  background: #f6c15b6b;
+  box-shadow: 0 14px 0 #f6c15b6b, -48px 0 0 #d3ea796b, -48px 14px 0 #d3ea796b;
+}
+
+.am-demo[data-theme='scoreboard'] .am-stage-brand {
+  color: #c7dd9b;
+  opacity: .22;
+}
+
+.am-demo[data-theme='scoreboard'] .am-menu {
+  --am-ink: #d7efa5;
+  --am-accent: #c7ee6b;
+  --am-gap: 2px;
+  --am-size: 52px;
+}
+
+.am-demo[data-theme='scoreboard'] .am-menu::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  bottom: -7px;
+  width: calc(var(--am-size) * 5 + var(--am-gap) * 4 + 12px);
+  height: calc(var(--am-size) + 14px);
+  border-radius: 8px;
+  border: 1px solid #4c595b;
+  background:
+    radial-gradient(circle at 3px 3px, #90988a 0 1px, transparent 1.5px),
+    radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #90988a 0 1px, transparent 1.5px),
+    #263235;
+  box-shadow: inset 0 1px 0 #ffffff16, 0 7px 0 #0a1216, 0 13px 19px -9px #0009;
+  opacity: 0;
+  transform: scaleX(.2);
+  transform-origin: 30px center;
+  transition: transform 220ms cubic-bezier(.2,.8,.25,1), opacity 120ms cubic-bezier(.2,.8,.25,1);
+  pointer-events: none;
+}
+
+.am-demo[data-theme='scoreboard'] .am-menu.is-open::before {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.am-demo[data-theme='scoreboard'] .am-button {
+  border-radius: 3px;
+  border: 1px solid #4151328a;
+  color: #c6de90;
+  background:
+    radial-gradient(#bedb7014 .65px, transparent .9px) 0 0 / 3px 3px,
+    #111b18;
+  box-shadow: inset 0 2px 4px #0007, 0 1px 0 #ffffff0a;
+}
+
+.am-demo[data-theme='scoreboard'] .am-button::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  top: 4px;
+  height: 1px;
+  background: #a9c66e15;
+  pointer-events: none;
+}
+
+.am-demo[data-theme='scoreboard'] .am-toggle {
+  color: #fac366;
+  border-color: #8d673b;
+  background:
+    radial-gradient(#d8a35622 .65px, transparent .9px) 0 0 / 3px 3px,
+    #292317;
+  text-shadow: 0 0 7px #fdb54838;
+}
+
+.am-demo[data-theme='scoreboard'] .am-item[aria-pressed='true'] {
+  color: #ddfa92;
+  border-color: #9ab952;
+  background:
+    radial-gradient(#bedb7025 .65px, transparent .9px) 0 0 / 3px 3px,
+    #253320;
+  text-shadow: 0 0 8px #b6e6595c;
+}
+
+.am-demo[data-theme='scoreboard'] .am-label {
+  font-family: 'Courier New', ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: -.04em;
+}
+
+.am-demo[data-theme='scoreboard'] .am-icon .icn {
+  stroke-width: 2;
+  filter: drop-shadow(0 0 2px #c0e76e34);
+}
+
+.am-demo[data-theme='scoreboard'] .am-icon.is-clicked {
+  animation-name: am-scoreboard-click;
+  animation-duration: 260ms;
+  animation-timing-function: steps(2, end);
+}
+
+/* Responses are finite and attached only to the item the user activates. */
+@keyframes am-glass-click {
+  0%, 100% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(1px) scale(.87); }
+  72% { transform: translateY(-1px) scale(1.04); }
+}
+
+@keyframes am-carbon-click {
+  0%, 100% { transform: translateY(0); }
+  38% { transform: translateY(3px) scale(.94); }
+  75% { transform: translateY(-1px); }
+}
+
+@keyframes am-track-click {
+  0%, 100% { transform: skewX(10deg) translateX(0); }
+  35% { transform: skewX(10deg) translateX(-3px); }
+  65% { transform: skewX(10deg) translateX(4px); }
+}
+
+@keyframes am-court-click {
+  0%, 100% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(2px) scale(.88, 1.04); }
+  70% { transform: translateY(-2px) scale(1.03, .97); }
+}
+
+@keyframes am-scoreboard-click {
+  0%, 100% { opacity: 1; transform: translateY(0); }
+  30% { opacity: .45; transform: translateY(1px); }
+  65% { opacity: 1; transform: translateY(-1px); }
+}
+
+@media (hover: hover) {
+  .am-demo[data-theme='glass'] .am-item:hover {
+    background-color: #b9fff52c;
+  }
+
+  .am-demo[data-theme='carbon'] .am-item:hover {
+    filter: brightness(1.12);
+  }
+
+  .am-demo[data-theme='track'] .am-item:hover {
+    background-color: #f5e6c4;
+  }
+
+  .am-demo[data-theme='court'] .am-item:hover {
+    background-color: #2b7050;
+  }
+
+  .am-demo[data-theme='scoreboard'] .am-item:hover {
+    filter: brightness(1.2);
+  }
+}
+
+@media (max-width: 480px) {
+  .am-demo[data-theme='carbon'] .am-menu {
+    --am-gap: 8px;
+  }
+
+  .am-demo[data-theme='track'] .am-menu {
+    left: 20px;
+  }
+
+  .am-demo[data-theme='court'] .am-menu {
+    left: 16px;
+    bottom: 18px;
+  }
+
+  .am-demo[data-theme='scoreboard'] .am-menu {
+    --am-size: 44px;
+  }
+
+  .am-demo[data-theme='carbon'] .am-button {
+    border-radius: 13px;
+  }
+
+  .am-demo[data-theme='glass'] .am-label,
+  .am-demo[data-theme='track'] .am-label {
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-demo:is([data-theme='glass'], [data-theme='carbon'], [data-theme='track'], [data-theme='court'], [data-theme='scoreboard']) .am-slot,
+  .am-demo:is([data-theme='court'], [data-theme='scoreboard']) .am-menu::before {
+    transition-duration: .01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .am-demo:is([data-theme='glass'], [data-theme='carbon'], [data-theme='track'], [data-theme='court'], [data-theme='scoreboard']) .am-icon.is-clicked {
+    animation: none !important;
+  }
+}
+
+.am-demo:is([data-theme='court'], [data-theme='scoreboard']) .am-menu.is-keyboard::before {
+  transition: none;
+}

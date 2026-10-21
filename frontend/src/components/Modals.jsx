@@ -43,8 +43,9 @@ function useSheetPresence(sheets) {
 function Sheet({ sheet, exiting }) {
   const { closeSheet } = useUI()
   const ref = useRef(null)
+  const layerRef = useRef(null)
   const titleId = useId()
-  useDialogFocus(ref, { active: !exiting, titleId })
+  useDialogFocus(ref, { active: !exiting, titleId, layerRef })
   const drag = useRef({ startY: null, delta: 0, startedAt: 0, kind: null })
 
   const onTouchStart = e => {
@@ -132,14 +133,14 @@ function Sheet({ sheet, exiting }) {
   const close = () => closeSheet(sheet.id)
   if (sheet.kind === 'center') {
     return (
-      <div className={'modal-layer' + (exiting ? ' is-closing' : '')}>
+      <div ref={layerRef} className={'modal-layer' + (exiting ? ' is-closing' : '')}>
         <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
         <div className="center" ref={ref} role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>{sheet.render(close, { id: sheet.id, exiting })}</div>
       </div>
     )
   }
   return (
-    <div className={'modal-layer' + (exiting ? ' is-closing' : '')}>
+    <div ref={layerRef} className={'modal-layer' + (exiting ? ' is-closing' : '')}>
       <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
       <div className={'sheet ' + (sheet.className || '')} ref={ref} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}

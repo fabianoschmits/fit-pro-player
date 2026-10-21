@@ -21,6 +21,7 @@ beforeEach(() => {
     overview: vi.fn().mockResolvedValue({ unreadCount: 4, pendingCount: 100, answeredCount: 2, resolvedCount: 1 }),
     listTickets: vi.fn().mockResolvedValue([ticket()]), adminTicketDetail: vi.fn().mockResolvedValue(ticket()), markRead: vi.fn().mockResolvedValue(),
     updateTicket: vi.fn().mockResolvedValue(), reply: vi.fn().mockResolvedValue(),
+    deleteTicket: vi.fn().mockResolvedValue(),
     listCategories: vi.fn().mockResolvedValue([{ slug: 'question', label: 'Dúvida' }]),
     listFaqAdmin: vi.fn().mockResolvedValue([{ articleId: 'faq-1', question: 'Como começar?', answer: 'Abra o Plano.', categorySlug: 'question', categoryLabel: 'Dúvida', sortOrder: 10, isPublished: true }]),
     saveFaqArticle: vi.fn().mockResolvedValue('faq-1'),
@@ -56,9 +57,10 @@ it('groups the experimental pages in the test laboratory and marks its navigatio
   await render('/console/laboratory')
   expect(container.querySelector('h1').textContent).toBe('Laboratório de testes')
   const pages = container.querySelector('section[aria-label="Páginas de testes"]')
-  expect(pages.querySelectorAll('a').length).toBe(2)
+  expect(pages.querySelectorAll('a').length).toBe(3)
   expect(pages.querySelector('a[href="/motion-feedback"]')?.textContent).toContain('Laboratório de interações')
   expect(pages.querySelector('a[href="/tests/home-glass"]')?.textContent).toContain('Home Glass')
+  expect(pages.querySelector('a[href="/console/laboratory/menus"]')?.textContent).toContain('Menus alternativos')
   expect(container.querySelector('nav [aria-current="page"]')?.getAttribute('href')).toBe('/console/laboratory')
   expect(container.querySelector('a.console-back')?.getAttribute('href')).toBe('/console')
   expect(mocks.console.overview).not.toHaveBeenCalled()
@@ -72,6 +74,7 @@ it('keeps the test catalogue unavailable to accounts without admin access', asyn
   expect(container.querySelector('section[aria-label="Páginas de testes"]')).toBeNull()
   expect(container.querySelector('a[href="/motion-feedback"]')).toBeNull()
   expect(container.querySelector('a[href="/tests/home-glass"]')).toBeNull()
+  expect(container.querySelector('a[href="/console/laboratory/menus"]')).toBeNull()
 })
 
 it('lists messages with dedicated conversation links and status filters', async () => {
@@ -79,6 +82,19 @@ it('lists messages with dedicated conversation links and status filters', async 
   expect(container.querySelector('a[href^="/console/support/ticket-1"]')).not.toBeNull()
   expect(container.textContent).toContain('Dúvida sobre o plano')
   expect(mocks.support.listTickets).toHaveBeenCalledWith(expect.objectContaining({ status: 'pending', limit: 25, offset: 0 }))
+})
+
+it('allows selecting tickets and triggering bulk actions', async () => {
+  await render('/console/support')
+  const checkbox = container.querySelector('input[type="checkbox"][aria-label="Selecionar chamado Dúvida sobre o plano"]')
+  expect(checkbox).not.toBeNull()
+  await act(async () => checkbox.click())
+  expect(checkbox.checked).toBe(true)
+
+  const archiveBtn = [...container.querySelectorAll('button')].find(b => b.textContent.includes('Arquivar'))
+  expect(archiveBtn).not.toBeNull()
+  await act(async () => archiveBtn.click())
+  expect(mocks.support.updateTicket).toHaveBeenCalledWith('ticket-1', expect.objectContaining({ status: 'archived' }))
 })
 
 it('opens normalized ticket data and submits replies using its real ID', async () => {

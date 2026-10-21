@@ -24,7 +24,7 @@ function isolate(element) {
   })
 }
 
-export function useDialogFocus(ref, { active = true, onClose, locked = false, titleId } = {}) {
+export function useDialogFocus(ref, { active = true, onClose, locked = false, titleId, layerRef } = {}) {
   const closeRef = useRef(onClose); closeRef.current = onClose
   const lockedRef = useRef(locked); lockedRef.current = locked
   useLayoutEffect(() => {
@@ -37,7 +37,8 @@ export function useDialogFocus(ref, { active = true, onClose, locked = false, ti
       surface.setAttribute('aria-labelledby', title.id)
     }
     if (!title && !surface.hasAttribute('aria-label') && !surface.hasAttribute('aria-labelledby')) surface.setAttribute('aria-label', 'Fit Pro Player')
-    const release = isolate(surface)
+    // Keep a sibling backdrop interactive while isolating the page behind the layer.
+    const release = isolate(layerRef?.current || surface)
     stack.push(surface)
     const focusables = () => [...surface.querySelectorAll(FOCUSABLE)].filter(el => !el.closest('[inert],[hidden],[aria-hidden="true"]'))
     const initial = surface.querySelector('[autofocus]') || focusables()[0] || surface
@@ -67,5 +68,5 @@ export function useDialogFocus(ref, { active = true, onClose, locked = false, ti
         target?.focus?.({ preventScroll: true })
       }
     }
-  }, [ref, active, titleId])
+  }, [ref, active, titleId, layerRef])
 }

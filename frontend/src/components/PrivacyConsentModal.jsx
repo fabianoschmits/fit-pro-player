@@ -61,7 +61,9 @@ export default function PrivacyConsentModal() {
   }
   const closeAfterSave = () => { setVisible(false); setCustomizing(false) }
   const all = { ...DEFAULT_PRIVACY_CONSENT, preferences: true, analytics: true, communications: true }
-  return <div className="privacy-consent-backdrop" role="presentation">
+  return <div className="privacy-consent-backdrop" role="presentation" onClick={event => {
+    if (event.target === event.currentTarget && consent) closeAfterSave()
+  }}>
     <section className="privacy-consent-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-consent-title">
       <div className="privacy-consent-heading"><div><span className="privacy-consent-kicker">PRIVACIDADE</span><h2 id="privacy-consent-title">Privacidade e cookies</h2></div><button type="button" className="privacy-consent-settings" aria-label="Personalizar privacidade" onClick={() => setCustomizing(value => !value)}>⚙</button></div>
       <p>Usamos dados necessários para o app funcionar. Você pode escolher se permite recursos opcionais.</p>

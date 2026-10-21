@@ -18,6 +18,12 @@ const experiments = [
     description: 'Explore a home com transparência, desfoque e reflexos de vidro.',
     icon: 'house',
   },
+  {
+    to: '/console/laboratory/menus',
+    title: 'Menus alternativos',
+    description: 'Compare dez menus expansíveis e teste suas interações.',
+    icon: 'list',
+  },
 ]
 
 export default function ConsoleLaboratory() {

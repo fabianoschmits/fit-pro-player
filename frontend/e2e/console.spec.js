@@ -88,6 +88,14 @@ test('the test laboratory groups experiments and returns each one to its hub', a
   await expect(page.locator('.home-glass-experiment')).toBeVisible()
   await page.getByRole('link', { name: 'Voltar ao laboratório de testes', exact: true }).click()
   await expectHub()
+  await page.locator('.console-main').getByRole('link', { name: /Menus alternativos/ }).click()
+  await expect(page).toHaveURL(/#\/console\/laboratory\/menus$/)
+  await expect(page.getByRole('heading', { name: 'Menus alternativos', level: 1 })).toBeVisible()
+  await expect(page.locator('article.am-demo')).toHaveCount(10)
+  await expect(page.locator('#tabbar')).toHaveCount(0)
+  await page.screenshot({ path: testInfo.outputPath(`alternative-menus-${width}.png`), fullPage: true })
+  await page.locator('.console-back').click()
+  await expectHub()
 })
 
 test('the central pages fit small and large viewports and the FAQ has a separate editor', async ({ page }, testInfo) => {

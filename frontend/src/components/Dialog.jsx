@@ -5,9 +5,10 @@ import { t } from '../lib/i18n.js'
 
 export default function Dialog({ title, onClose, children, className = '', locked = false }) {
   const ref = useRef(null), titleId = useId(), closeRef = useRef(onClose), lockedRef = useRef(locked)
+  const layerRef = useRef(null)
   closeRef.current = onClose
   lockedRef.current = locked
-  useDialogFocus(ref, { onClose: () => closeRef.current?.(), locked, titleId })
+  useDialogFocus(ref, { onClose: () => closeRef.current?.(), locked, titleId, layerRef })
   useEffect(() => {
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -28,7 +29,7 @@ export default function Dialog({ title, onClose, children, className = '', locke
       if (pushed && !consumed && location.href === openedAt && history.state?.fitProPlayerDialog === titleId) history.back()
     }
   }, [titleId])
-  return createPortal(<div className="dialog-layer">
+  return createPortal(<div ref={layerRef} className="dialog-layer">
     <div className="dialog-backdrop" onClick={() => { if (!locked) onClose?.() }} />
     <section ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`dialog-surface ${className}`}>
       <header className="dialog-header"><h2 id={titleId}>{title}</h2><button type="button" className="dialog-close" aria-label={t('Close')} disabled={locked} onClick={onClose}>×</button></header>
