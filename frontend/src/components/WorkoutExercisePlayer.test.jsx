@@ -58,6 +58,8 @@ describe('workout exercise player', () => {
     expect(useUI.getState().manualSet).toMatchObject({ entryIdx: 0, setIdx: 0, sessionId: 'player-test:1000' })
     expect(rows().map(row => row.done)).toEqual([false, false])
     expect(container.querySelectorAll('.set-action.is-executing')).toHaveLength(1)
+    expect(container.querySelector('.wp-main-action').getAttribute('aria-label')).toBe('Concluir série 1')
+    expect(container.querySelector('.wp-main-action').textContent).toContain('Concluir série')
     expect(container.querySelector('.set-execution-hint').closest('details')).toBeNull()
     click('.wp-main-action')
     expect(rows().map(row => row.done)).toEqual([true, false])
@@ -73,6 +75,17 @@ describe('workout exercise player', () => {
     expect(container.querySelector('.wp-main-action').disabled).toBe(false)
     expect(useUI.getState().manualSet).toBeNull()
     expect(rows()[0].done).toBe(false)
+  })
+
+  it('cancels an accidental manual start without logging a set or starting rest', () => {
+    render()
+    click('.wp-main-action')
+    expect(useUI.getState().manualSet).toBeTruthy()
+    click('.wp-cancel-set')
+    expect(useUI.getState().manualSet).toBeNull()
+    expect(useUI.getState().timer).toBeNull()
+    expect(rows().map(row => row.done)).toEqual([false, false])
+    expect(container.querySelector('.wp-main-action').classList.contains('set-start-action')).toBe(true)
   })
 
   it('finishes a timed set with elapsed seconds through the existing timer state', () => {

@@ -34,30 +34,42 @@ Root `.active-workout.workout-player-page`; component `.wp-exercise-player`, `da
 ### Task 1: Exercise player presentation
 
 Owner: presentation agent. Files: new component and focused component tests only.
-- [ ] Read existing ExerciseBlock completely and test a failing real-store presentation/control behavior.
-- [ ] Implement animation card, current-set controls and primary action with folded full table/context.
-- [ ] Verify modes, locked/rest/running/completed states and shared controls.
+- [x] Read existing ExerciseBlock completely and test a failing real-store presentation/control behavior.
+- [x] Implement animation card, current-set controls and primary action with folded full table/context.
+- [x] Verify modes, locked/rest/running/completed states and shared controls.
 
 ### Task 2: Visual implementation
 
 Owner: CSS agent. File: `frontend/src/workout-player.css` only.
-- [ ] Implement reference geometry, scoped responsive surfaces and interactions based on real component markup.
-- [ ] Style parent header, queue dots, folded info and timers without concealing functionality.
-- [ ] Check 320/390px, themes, names, focus/reduced motion.
+- [x] Implement reference geometry, scoped responsive surfaces and interactions based on real component markup.
+- [x] Style parent header, queue dots, folded info and timers without concealing functionality.
+- [x] Check 320/390px, themes, names, focus/reduced motion.
 
 ### Task 3: Integration
 
 Owner: root. Files: `Workout.jsx`, existing Workout tests and other integration files only when required.
-- [ ] Add failing regression tests for real player shell, navigation/progress and collapsed secondary sections.
-- [ ] Replace ExerciseBlock rendering; preserve ActiveWorkout handlers; add navigation and one active superset member with group context.
-- [ ] Keep recovery, queue/add, all adjustment groups and completion reachable.
-- [ ] Update layout-specific test expectations while keeping behavioral assertions.
+- [x] Add failing regression tests for real player shell, navigation/progress and collapsed secondary sections.
+- [x] Replace ExerciseBlock rendering; preserve ActiveWorkout handlers; add navigation and one active superset member with group context.
+- [x] Keep recovery, queue/add, all adjustment groups and completion reachable.
+- [x] Update layout-specific test expectations while keeping behavioral assertions.
 
 ### Task 4: Browser verification/review/delivery
 
 Owner: browser agent for `frontend/e2e/application.spec.js` and new `workout-execution-player.spec.js`; root for checks/review.
-- [ ] Update old layout selectors to new visible controls and retain persistence/timer assertions.
-- [ ] Exercise real bodyweight/loaded/lb/time/cardio/unilateral/superset flows at desktop and mobile, including loaded animation and screenshots.
-- [ ] Run focused/full unit tests, relevant browser checks and production build.
-- [ ] Independent review and resolve material findings.
+- [x] Update old layout selectors to new visible controls and retain persistence/timer assertions.
+- [x] Exercise real bodyweight/loaded/lb/time/cardio/unilateral/superset flows at desktop and mobile, including loaded animation and screenshots.
+- [x] Run focused/full unit tests, relevant browser checks and production build.
+- [x] Independent review and resolve material findings.
 - [ ] Integrate the verified change into the project and verify delivery.
+
+
+## Verification and review
+
+- `npm test`: 153 files and 1304 tests passed after the final behavior changes.
+- `npm run build`: production build passed; existing mixed static/dynamic sheets import warning remains.
+- `npm run check:i18n`: all 993 source strings present, 11 locale packs synchronized. The final copy reuses existing translations.
+- Focused component/integration tests: 40 passed.
+- Independent review identified timed-superset rest visibility, manual cancellation and navigation focus; all were corrected and the reviewer confirmed the fixes. Browser regressions cover each behavior.
+- The user requested matching the full card background to the real animation; it now uses the same black with local readable text tokens.
+- Final Chromium desktop/mobile: 44 cases passed. Keyboard navigation rerun: 2 passed. iPhone 13 WebKit: all 9 cases validated (8 passed initially; the navigation assertion was corrected to use Enter and passed its isolated rerun).
+- Production delivery checks: push the verified commit to main/master, inspect Vercel production state and exact Git SHA, then fetch the public workout JS/CSS and verify the player controls and matching black card.

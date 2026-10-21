@@ -516,7 +516,7 @@ function ActiveWorkout() {
         <div className="ss-hd"><Icon name="link" /><span>{t('Superset · do these back-to-back, rest when done')}</span></div>
         <div className="wp-superset-members">{unit.map(idx => <button type="button" key={idx} disabled={navigationLocked} aria-current={cur === idx ? 'step' : undefined} onClick={() => navigateExercise(idx)}>{exerciseName(exOr(A.entries[idx].id))}</button>)}</div>
       </div>}
-      <div key={`exercise-${cur}`} ref={el => { exRefs.current[cur] = el }} className={'workout-unit-stage' + (isSuperset ? ' ss-ex' : '')} data-exidx={cur}>
+      <div ref={el => { exRefs.current[cur] = el }} className={'workout-unit-stage' + (isSuperset ? ' ss-ex' : '')} data-exidx={cur}>
         <WorkoutExercisePlayer entryIdx={cur} locked={!workoutStarted} onStartWorkout={startWorkout}
           onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onStartTimed={i => startTimed(cur, i)}
           onPrevious={() => navigateExercise(cur - 1)} onNext={() => navigateExercise(cur + 1)} previousDisabled={navigationLocked || cur === 0} nextDisabled={navigationLocked || cur === A.entries.length - 1}

@@ -216,7 +216,7 @@ describe('Workout set completion flow', () => {
     await act(async () => root.render(<Workout />))
     expect(mocks.startManualSet).toHaveBeenCalledWith(`${mocks.S.active.id}:${mocks.S.active.start}`, 0, 0)
     const stop = container.querySelector('.wp-main-action.is-executing')
-    expect(stop.getAttribute('aria-label')).toContain('Parar série')
+    expect(stop.getAttribute('aria-label')).toContain('Concluir série')
     expect(stop.getAttribute('role')).toBeNull()
     expect(stop.getAttribute('aria-describedby')).toBe(container.querySelector('.set-execution-hint').id)
     expect(container.querySelector('.set-execution-hint').textContent).toContain('Executando série')

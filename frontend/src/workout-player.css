@@ -69,6 +69,11 @@
 
 /* The movement and its name share one cover, as on the approved reference. */
 .workout-player-page .wp-media-card {
+  --label: #f5f5f7;
+  --label-2: #b0b0b3;
+  --surface-2: #242426;
+  --bg: #000;
+  --wp-edge: #ffffff1f;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -77,7 +82,7 @@
   padding: 8px 0 18px;
   border: 1px solid var(--wp-edge);
   border-radius: 24px;
-  background: linear-gradient(145deg, color-mix(in srgb, var(--surface-2) 65%, var(--bg)), var(--wp-cover) 55%);
+  background: #000;
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--label) 3%, transparent), 0 10px 32px -22px #000;
 }
 .workout-player-page .wp-media { order: 0; min-width: 0; margin: 0 14px; }
@@ -248,6 +253,7 @@
 }
 .workout-player-page :is(.wp-main-action.btn, .wp-main-action > .btn):disabled { box-shadow: none; }
 .workout-player-page .set-execution-hint { margin: 8px 0; padding: 8px 10px; border-radius: 12px; font-size: 12px; line-height: 1.4; }
+.workout-player-page .wp-cancel-set { min-height: 44px; margin-left: auto; }
 .workout-player-page .ex-done-banner { margin: 12px 0; border-radius: 18px; }
 
 /* Secondary information stays available without competing with the next set. */

@@ -27,6 +27,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
     if (allDone && !previouslyDone.current) setSetsOpen(false)
     previouslyDone.current = allDone
   }, [allDone])
+  useEffect(() => { setSetsOpen(false) }, [entryIdx, entry?.id])
   if (!entry) return null
 
   const ex = exOr(entry.id)
@@ -121,15 +122,17 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
       : current && <Button variant="primary" intent="quick" icon={resting ? 'moon' : executing ? 'check' : 'play'}
         className={'wp-main-action' + (executing ? ' set-action is-executing' : ready ? ' set-start-action' : resting ? ' is-resting' : '')}
         disabled={!executing && !ready} aria-describedby={hintId}
-        aria-label={resting ? t('Resting') : `${executing ? t('Stop set') : t('Start set')} ${currentNumber}`}
+        aria-label={resting ? t('Resting') : `${executing ? t('Complete set') : t('Start set')} ${currentNumber}`}
         onClick={executing ? completeSet : startSet}>
         {resting ? t('Resting') : executing ? t('Complete set') : `${t('Start set')} ${currentNumber}`}
       </Button>}
     {current && !locked && <div id={hintId} className={'set-execution-hint' + (resting ? ' is-resting' : '')}>
       <strong><Icon name={resting ? 'moon' : executing ? 'flame' : 'play'} />{resting ? t('Resting') : executing ? t('Performing set') : t('Start set')}</strong>
-      <span>{resting ? t('When rest ends, tap play to start the next set.') : executing ? t('Tap stop when you finish this set.') : t('Tap play to start this set.')}</span>
+      <span>{resting ? t('When rest ends, tap play to start the next set.') : executing ? t('Tap the highlighted check field when you finish this set.') : t('Tap play to start this set.')}</span>
+      {executing && manualSet && <Button variant="ghost" size="sm" intent="quick" className="wp-cancel-set" onClick={() => useUI.getState().stopManualSet()}>{t('Cancel')}</Button>}
     </div>}
-    <WorkSetOverlay entryIdx={entryIdx} />
+    {/* A timed superset may already show its next member while the previous member owns rest. */}
+    <WorkSetOverlay entryIdx={working?.phase === 'rest' ? working.entryIdx : entryIdx} />
     {allDone && <Button intent="quick" className="ex-done-banner" icon="check" trailingIcon={setsOpen ? 'minimize' : 'expand'}
       aria-label={setsOpen ? t('Collapse') : t('Expand sets')} aria-expanded={setsOpen} onClick={() => setSetsOpen(value => !value)}>
       {t('Exercise complete')} · {entry.sets.length} {entry.sets.length === 1 ? t('set') : t('sets')}
