@@ -12,9 +12,10 @@ import Media from './Media.jsx'
 import WorkSetOverlay from './WorkSetOverlay.jsx'
 import Icon from './Icon.jsx'
 import { Button, Check, NumberField } from './ui.jsx'
+import { Elapsed } from '../views/Workout.jsx'
 
 export default function WorkoutExercisePlayer({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onStartTimed,
-  onPrevious, onNext, previousDisabled, nextDisabled, exerciseDots }) {
+  onAddSet, onPrevious, onNext, previousDisabled, nextDisabled, exerciseDots }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
   const timer = useUI(s => s.timer)
@@ -55,7 +56,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
 
   const bw = !cardio && isBw(cfg)
   const added = bw && entry.sets.some(s => s.w > 0)
-  const loadCol = { f: 'w', step: fromDisplayMass(displayUnit === 'lb' ? 2.5 : 1, displayUnit), dec: true, hd: bw ? t('Added ({0})', displayUnit) : t('Weight ({0})', displayUnit) }
+  const loadCol = { f: 'w', step: fromDisplayMass(displayUnit === 'lb' ? 5 : 1, displayUnit), dec: true, hd: bw ? t('Added ({0})', displayUnit) : t('Weight ({0})', displayUnit) }
   const repCol = { f: 'r', step: repStep(cfg), dec: false, hd: t('Reps') }
   const col1 = cardio ? { f: 'min', step: 1, dec: false, hd: t('Duration (min)') }
     : timed ? { f: 'sec', step: 5, dec: false, hd: t('Seconds') } : bw && !added ? repCol : loadCol
@@ -99,19 +100,14 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
       {entry.sets.map((s, i) => <span key={i} className={'wp-series-segment' + (s.done ? ' is-done' : i === currentIndex ? ' is-current' : '') + (isWarmupRow(s) ? ' is-warmup' : '')} />)}
     </div>
     <div className="wp-media-card">
+      <div className="wp-card-clock" aria-label={t('Elapsed')}><Icon name="clock" /><span><Elapsed active={S.active} /></span></div>
       <div className="wp-exercise-header">
         <h2 className="wp-exercise-title workout-exercise-name">{exerciseName(ex)}</h2>
         <div className="wp-exercise-target">{current ? setLabel(entry.id, current, entry.target, displayUnit) : t('Exercise complete')}{cardio && <span>{t('Cardio')}</span>}</div>
         {entry.replacedFrom && <div className="workout-exercise-replacement"><Icon name="shuffle" /><span>{t('Replaces {0}', exerciseName(exOr(entry.replacedFrom)))}</span></div>}
       </div>
       <div className="wp-media"><Media ex={ex} key={entry.id} compact={compact} /></div>
-      {/* Weight badge: shown on the card while a set is active (executing or ready) and the exercise uses weight */}
-      {current && !cardio && !timed && (executing || ready) && !bw || (current && !cardio && !timed && (executing || ready) && bw && added) ? (
-        <div className={'wp-weight-badge' + (executing ? ' is-executing' : '')} aria-hidden="true">
-          <span className="wp-weight-badge-value">{toDisplayMass(current.w ?? 0, displayUnit) ?? 0}</span>
-          <span className="wp-weight-badge-unit">{displayUnit}</span>
-        </div>
-      ) : null}
+
       <button type="button" className="wp-exercise-nav wp-exercise-nav--previous" aria-label={t('Previous exercise')} disabled={previousDisabled || !onPrevious} onClick={onPrevious}><Icon name="chevronLeft" /></button>
       <button type="button" className="wp-exercise-nav wp-exercise-nav--next" aria-label={t('Next exercise')} disabled={nextDisabled || !onNext} onClick={onNext}><Icon name="chevronRight" /></button>
       <button type="button" className="wp-expand" aria-label={t('Details')} onClick={() => exerciseDetailSheet(ex)}><Icon name="expand" /></button>
@@ -166,6 +162,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
           </div>
         })}
       </div>
+      {onAddSet && <Button size="sm" variant="ghost" icon="plus" className="wp-add-set-btn" disabled={locked} onClick={onAddSet}>{t('Add set')}</Button>}
     </details>
     {(ex.tg || ex.bp || ex.eq || cfg.notes || last || best > 0 || (plan?.why && plan.kind !== 'off')) && <details className="wp-exercise-details">
       <summary>{t('Details')}<Icon name="chevronDown" /></summary>

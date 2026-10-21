@@ -330,33 +330,96 @@
 .workout-player-page .wp-queue-details .workout-exercise-rail { padding: 0 10px 10px; }
 .workout-player-page .wp-queue-details .workout-exercise-tab { width: 144px; min-width: 144px; border-radius: 9px; }
 .workout-player-page .wp-queue-details .workout-exercise-tab b { font-size: 11px; }
+/* Top-left execution clock inside the media card */
+.workout-player-page .wp-card-clock {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px 4px 7px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--bg) 68%, transparent);
+  border: 1px solid color-mix(in srgb, var(--label) 10%, transparent);
+  color: var(--label);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: .02em;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+.workout-player-page .wp-card-clock .icn {
+  font-size: 13px;
+  color: var(--label-2);
+}
+
 .workout-player-page .wp-series-details .exercise-input-card {
   --wp-cols: 1;
-  padding: 8px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-3) transparent;
+  padding: 8px 6px;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .workout-player-page .wp-series-details .exercise-input-card:has(.r-sp) { --wp-cols: 2; }
 .workout-player-page .wp-series-details .exercise-input-card:has(.eff3) { --wp-cols: 3; }
 .workout-player-page .wp-series-details :is(.setrow, .sethead) {
   display: grid;
-  grid-template-columns: 44px repeat(var(--wp-cols), minmax(140px, 1fr)) 44px;
-  gap: 8px;
-  min-width: calc(88px + var(--wp-cols) * 140px + (var(--wp-cols) + 1) * 8px);
+  grid-template-columns: 32px repeat(var(--wp-cols), minmax(0, 1fr)) 40px;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
   margin-inline: 0;
   padding-inline: 0;
 }
 .workout-player-page .wp-series-details .sethead { text-transform: none; letter-spacing: 0; color: var(--label-2); }
-.workout-player-page .wp-series-details .sethead :is(.n-sp, .ck-sp) { width: 44px; }
+.workout-player-page .wp-series-details .sethead :is(.n-sp) { width: 32px; }
+.workout-player-page .wp-series-details .sethead :is(.ck-sp) { width: 40px; }
 .workout-player-page .wp-series-details .setrow .n { justify-self: center; }
 .workout-player-page .wp-series-details .wp-table-cell { min-width: 0; }
-.workout-player-page .wp-series-details .setrow .stp button { width: 44px; height: 44px; }
-.workout-player-page .wp-series-details .setrow .stp .num { min-height: 44px; font-size: 16px; }
+.workout-player-page .wp-series-details .setrow .stp {
+  min-width: 0;
+  width: 100%;
+}
+.workout-player-page .wp-series-details .setrow .stp button {
+  width: 32px;
+  min-width: 28px;
+  height: 40px;
+  flex: none;
+  padding: 0;
+}
+.workout-player-page .wp-series-details .setrow .stp .num {
+  min-height: 40px;
+  font-size: 15px;
+  min-width: 0;
+  padding: 0 2px;
+}
 .workout-player-page .wp-series-details .setrow .chk,
-.workout-player-page .wp-set-status { display: grid; place-items: center; width: 44px; height: 44px; }
+.workout-player-page .wp-set-status { display: grid; place-items: center; width: 40px; height: 40px; }
 .workout-player-page .wp-set-status { color: var(--label-3); }
+.workout-player-page .wp-series-details .wp-add-set-btn {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 8px;
+  border-radius: 10px;
+  border: 1px dashed var(--sep-op);
+  background: color-mix(in srgb, var(--surface) 35%, transparent);
+  color: var(--label);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.workout-player-page .wp-series-details .wp-add-set-btn:active {
+  background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
 .workout-player-page .wp-exercise-details .muted { overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
 .workout-player-page .workout-tools-toggle { font-size: 12px; }
 .workout-player-page .workout-session-footer { gap: 8px; margin-top: 6px; padding: 0 0 12px; border-top: 0; }
@@ -367,51 +430,6 @@
 .workout-player-page .wp-superset-members button { flex: 1 1 100px; min-width: 0; min-height: 44px; padding: 8px 10px; border: 1px solid var(--wp-edge); border-radius: 12px; background: var(--wp-cover); color: var(--label-2); font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
 .workout-player-page .wp-superset-members button[aria-current="step"] { border-color: var(--acc-line); color: var(--acc); background: var(--acc-soft); }
 
-/* Weight badge overlay on the media card — shown during ready/executing state */
-.workout-player-page .wp-weight-badge {
-  position: absolute;
-  z-index: 4;
-  bottom: 22px;
-  left: 14px;
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-  padding: 5px 10px 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--label) 12%, transparent);
-  border-radius: 30px;
-  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  color: var(--label);
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-  transition: opacity .2s, transform .2s;
-}
-.workout-player-page .wp-weight-badge.is-executing {
-  border-color: color-mix(in srgb, var(--acc) 50%, transparent);
-  background: color-mix(in srgb, var(--acc) 18%, var(--surface-2));
-  color: var(--wp-bright);
-  animation: wp-badge-pulse 2.4s ease-in-out infinite;
-}
-.workout-player-page .wp-weight-badge-value {
-  font-size: 22px;
-  font-weight: 750;
-  letter-spacing: -.03em;
-  line-height: 1;
-}
-.workout-player-page .wp-weight-badge-unit {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--label-2);
-  letter-spacing: .02em;
-}
-.workout-player-page .wp-weight-badge.is-executing .wp-weight-badge-unit {
-  color: color-mix(in srgb, var(--wp-bright) 70%, transparent);
-}
-@keyframes wp-badge-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--acc) 0%, transparent); }
-  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--acc) 22%, transparent); }
-}
 
 /* Timed work remains inline; the classic floating timer keeps its own actions. */
 .workout-player-page .work-set-overlay { margin: 10px 0; z-index: 3; }

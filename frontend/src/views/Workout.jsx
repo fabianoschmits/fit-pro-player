@@ -91,7 +91,7 @@ function StartChooser() {
 }
 
 /* ---------- elapsed clock (isolated so the workout tree doesn't re-render every second) ---------- */
-function Elapsed({ active }) {
+export function Elapsed({ active }) {
   const timer = useUI(s => s.timer)
   const work = useUI(s => s.work)
   const manualSet = useUI(s => s.manualSet)
@@ -510,6 +510,7 @@ function ActiveWorkout() {
       <div ref={el => { exRefs.current[cur] = el }} className={'workout-unit-stage' + (isSuperset ? ' ss-ex' : '')} data-exidx={cur}>
         <WorkoutExercisePlayer entryIdx={cur} locked={!workoutStarted} onStartWorkout={startWorkout}
           onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onStartTimed={i => startTimed(cur, i)}
+          onAddSet={() => addSet(cur)}
           onPrevious={() => navigateExercise(cur - 1)} onNext={() => navigateExercise(cur + 1)} previousDisabled={navigationLocked || cur === 0} nextDisabled={navigationLocked || cur === A.entries.length - 1}
           exerciseDots={<div className="wp-exercise-dots" aria-label={t('Exercises')}>{A.entries.map((entry, idx) => <button type="button" key={idx} className={'wp-exercise-dot' + (entry.sets.length && entry.sets.every(set => set.done) ? ' is-done' : '')}
             aria-label={`${idx + 1}. ${exerciseName(exOr(entry.id))}`} aria-current={idx === cur ? 'step' : undefined} disabled={navigationLocked} onClick={() => navigateExercise(idx)} />)}</div>} />

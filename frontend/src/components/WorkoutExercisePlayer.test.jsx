@@ -219,4 +219,14 @@ describe('workout exercise player', () => {
     expect(useUI.getState().manualSet).toMatchObject({ setIdx: 0 })
     expect(rows()[0].done).toBe(false)
   })
+
+  it('displays the execution clock in the media card and adds a set from the series details card', () => {
+    const onAddSet = vi.fn()
+    render({ onAddSet })
+    expect(container.querySelector('.wp-media-card .wp-card-clock')).toBeTruthy()
+    const addButton = container.querySelector('.wp-series-details .wp-add-set-btn')
+    expect(addButton).toBeTruthy()
+    click('.wp-series-details .wp-add-set-btn')
+    expect(onAddSet).toHaveBeenCalledTimes(1)
+  })
 })
