@@ -1,0 +1,274 @@
+{
+  "ok": true,
+  "strict": false,
+  "browserSkipped": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 11,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"intro\"> is a timeline element that contains nested <div id=\"intro-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#intro",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"intro\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"plan\"> is a timeline element that contains nested <div id=\"plan-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#plan",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"plan\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"workout\"> is a timeline element that contains nested <div id=\"workout-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#workout",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"workout\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"library-bench\"> is a timeline element that contains nested <div id=\"library-bench-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#library-bench",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"library-bench\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"library-squat\"> is a timeline element that contains nested <div id=\"library-squat-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#library-squat",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"library-squat\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"library-deadlift\"> is a timeline element that contains nested <div id=\"library-deadlift-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#library-deadlift",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"library-deadlift\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"balance\"> is a timeline element that contains nested <div id=\"balance-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#balance",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"balance\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"fatigue\"> is a timeline element that contains nested <div id=\"fatigue-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#fatigue",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"fatigue\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"progress\"> is a timeline element that contains nested <div id=\"progress-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#progress",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"progress\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"professional\"> is a timeline element that contains nested <div id=\"professional-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#professional",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"professional\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      },
+      {
+        "code": "nested_structure_needs_subcomposition",
+        "severity": "warning",
+        "message": "<section id=\"outro\"> is a timeline element that contains nested <div id=\"outro-content\">. The timeline shows one row per top-level element, and the root composition is built only from sub-compositions.",
+        "selector": "#outro",
+        "dataAttributes": {},
+        "sourceFile": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move <section id=\"outro\"> and its contents into a sub-composition file and mount it with data-composition-src."
+      }
+    ],
+    "filesScanned": 1
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "duration": 60,
+    "samples": [
+      1.8,
+      8,
+      16,
+      20.3,
+      24.3,
+      26.7,
+      29.4,
+      33,
+      37,
+      44,
+      50.5,
+      56.5,
+      59.7
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 0,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "specPath": "C:\\MeusProjetos\\Fitproplayer\\brag-output\\one-minute\\composition\\index.motion.json",
+    "samples": 300
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      1.8,
+      20.3,
+      29.4,
+      44,
+      59.7
+    ],
+    "checked": 49,
+    "passed": 49
+  },
+  "hdr": {
+    "autoPromotion": null,
+    "inspection": "available"
+  },
+  "snapshots": {
+    "enabled": true,
+    "files": [
+      ".hyperframes\\artifacts\\snapshots\\09c85aa9-809a-4356-ad46-02a7c02df8ff\\frame-00-at-1.8s.png",
+      ".hyperframes\\artifacts\\snapshots\\09c85aa9-809a-4356-ad46-02a7c02df8ff\\frame-01-at-20.3s.png",
+      ".hyperframes\\artifacts\\snapshots\\09c85aa9-809a-4356-ad46-02a7c02df8ff\\frame-02-at-29.4s.png",
+      ".hyperframes\\artifacts\\snapshots\\09c85aa9-809a-4356-ad46-02a7c02df8ff\\frame-03-at-44.0s.png",
+      ".hyperframes\\artifacts\\snapshots\\09c85aa9-809a-4356-ad46-02a7c02df8ff\\frame-04-at-59.7s.png"
+    ],
+    "times": [
+      1.8,
+      20.3,
+      29.4,
+      44,
+      59.7
+    ],
+    "findingFiles": []
+  }
+}

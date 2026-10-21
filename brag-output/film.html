@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=1080, height=1920">
+  <title>Fit Pro Player — Treine com contexto</title>
+  <script src="assets/runtime/gsap.min.js"></script>
+  <style>
+    :root { --bg:#000000; --surface:#0e0e10; --panel:#1c1c1e; --text:#ffffff; --muted:#b5c4c4; --accent:#0F8B8D; --bright:#63e6e2; }
+    * { box-sizing:border-box; }
+    html,body { margin:0; width:100%; height:100%; background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; }
+    #root { position:relative; width:100%; height:100%; overflow:hidden; }
+    #ground { position:absolute; inset:0; background:#000000; }
+    #light { position:absolute; inset:0; background:radial-gradient(ellipse 75% 42% at 52% 52%, #0F8B8D77, #0F8B8D22 52%, transparent 85%); opacity:.65; }
+    #grain { position:absolute; inset:0; opacity:.035; pointer-events:none; }
+    .clip,.scene-content { position:absolute; inset:0; }
+    .scene-content { display:flex; flex-direction:column; align-items:center; padding:230px 88px 260px; }
+    h1,h2,h3,p { margin:0; }
+    .headline { font-size:94px; line-height:1.08; font-weight:650; letter-spacing:-3px; width:904px; text-align:center; }
+    .headline span { display:block; width:100%; }
+    .accent { color:var(--bright); }
+    .line-slide span { --line-x:0px; transform:translateX(var(--line-x)); }
+    .brand-image { display:block; object-fit:contain; }
+    #hook-logo { width:820px; height:820px; margin-top:85px; filter:drop-shadow(0 26px 58px #000a); }
+    #hook-copy { width:880px; text-align:center; font-size:40px; color:var(--muted); margin-top:64px; }
+    #plan-content { padding-top:248px; }
+    #plan-heading { font-size:90px; }
+    .product-panel { width:868px; background:var(--surface); border:2px solid #395758; border-radius:36px; box-shadow:0 48px 100px #000a; }
+    #plan-panel { margin-top:78px; padding:56px; }
+    .plan-label { color:var(--muted); font-size:34px; }
+    .today-heading { font-size:82px; font-weight:650; letter-spacing:-2px; margin-top:5px; }
+    .routine { background:#132627; border:2px solid #295556; border-radius:26px; padding:38px 32px; margin-top:40px; }
+    .routine-title { font-size:54px; font-weight:650; letter-spacing:-1px; }
+    .routine-meta { font-size:36px; color:var(--muted); margin-top:16px; }
+    #start-button { height:106px; margin-top:38px; display:flex; align-items:center; justify-content:center; gap:28px; background:var(--accent); border-radius:24px; font-size:44px; font-weight:600; }
+    .chevron { width:24px; height:24px; border-right:4px solid #fff; border-top:4px solid #fff; transform:rotate(45deg); }
+    .week { display:grid; grid-template-columns:repeat(7,1fr); gap:8px; margin-top:46px; }
+    .day { display:flex; flex-direction:column; align-items:center; gap:16px; font-size:28px; color:var(--muted); }
+    .day b { font-size:36px; color:var(--text); }
+    .day i { width:10px; height:10px; border-radius:50%; background:#536263; }
+    .day.done i,.day.today i { background:var(--bright); }
+    .day.today b { color:var(--bright); }
+    .tap { position:absolute; width:44px; height:44px; background:#fff; border:3px solid #63e6e2; border-radius:50%; box-shadow:0 0 0 20px #63e6e21a; opacity:0; }
+    #start-tap { left:812px; top:1028px; }
+    #workout-content { padding-top:220px; }
+    #workout-heading { font-size:82px; }
+    #workout-panel { margin-top:50px; padding:36px 44px; }
+    .workout-nav { display:flex; justify-content:space-between; align-items:center; font-size:32px; color:var(--muted); }
+    .exercise-name { font-size:62px; font-weight:650; letter-spacing:-2px; margin-top:28px; }
+    .exercise-meta { font-size:32px; color:var(--muted); margin-top:6px; }
+    #exercise-stage { width:100%; height:444px; position:relative; margin-top:18px; }
+    .exercise-frame { display:block; position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; }
+    #exercise-1 { opacity:1; }
+    .set-grid { display:grid; grid-template-columns:90px 1.7fr 1.2fr 96px; align-items:center; }
+    .set-head { color:var(--muted); font-size:27px; padding:10px 0; }
+    .set-row { font-size:39px; height:90px; border-bottom:2px solid #293435; }
+    .set-row strong { font-weight:600; }
+    .set-check { height:46px; width:46px; border:2px solid #5e7273; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:32px; }
+    .set-check.done { background:var(--accent); border-color:var(--accent); }
+    #third-check-mark { opacity:0; }
+    #finish-tap { left:833px; top:1414px; }
+    .rest { margin-top:20px; padding:20px 24px; border-radius:20px; background:#152627; display:flex; justify-content:space-between; align-items:center; }
+    .rest span { color:var(--muted); font-size:28px; }
+    .rest b { font-size:42px; font-weight:600; font-variant-numeric:tabular-nums; }
+    #workout-note { font-size:34px; color:var(--muted); text-align:center; margin-top:30px; }
+    .stats-content { padding-top:228px; }
+    .stats-headline { font-size:86px; }
+    .tabs { display:grid; grid-template-columns:1.25fr .75fr; gap:10px; margin-top:40px; padding:8px; border-radius:22px; background:#1c1c1e; width:868px; }
+    .tab { padding:24px 12px; font-size:34px; text-align:center; color:var(--muted); border-radius:17px; }
+    .tab.active { color:#fff; background:var(--accent); }
+    .body-pair { display:flex; justify-content:center; gap:44px; width:868px; height:760px; margin-top:30px; }
+    .body-view { display:block; width:370px; height:760px; overflow:visible; filter:drop-shadow(0 10px 30px #0F8B8D20); }
+    .muscle-rows { width:832px; margin-top:20px; }
+    .muscle-row { display:flex; align-items:center; justify-content:space-between; border-top:2px solid #2b3c3d; height:82px; font-size:38px; }
+    .muscle-row strong { font-weight:550; }
+    .muscle-row span { color:var(--muted); }
+    .heat-badge { display:flex; align-items:center; gap:14px; }
+    .heat-badge i { display:block; width:14px; height:14px; border-radius:50%; }
+    .fatigued { background:#ff453a; }
+    .recovering { background:#ff9f0a; }
+    .ready { background:#63e6e2; }
+    #outro-content { padding-top:245px; }
+    #outro-logo { width:740px; height:740px; margin-top:76px; filter:drop-shadow(0 24px 46px #000a); }
+    #outro-url { font-size:56px; font-weight:600; color:var(--bright); margin-top:58px; }
+    #outro-copy { font-size:38px; color:var(--muted); margin-top:30px; text-align:center; }
+  </style>
+</head>
+<body>
+  <div id="root" data-composition-id="fitproplayer" data-start="0" data-width="1080" data-height="1920" data-fps="30" data-duration="20">
+    <div id="ground" data-layout-ignore></div>
+    <div id="light" data-layout-ignore></div>
+    <svg id="grain" data-layout-ignore aria-hidden="true" width="100%" height="100%"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="2" seed="17" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(#noise)" opacity=".55"/></svg>
+
+    <section id="hook" class="clip" data-start="0" data-duration="3.27" data-track-index="0">
+      <div id="hook-content" class="scene-content">
+        <h1 id="hook-heading" class="headline line-slide"><span>Treine com</span><span class="accent">contexto.</span></h1>
+        <img id="hook-logo" class="brand-image" src="assets/brand-logo.png" alt="Fit Pro Player">
+        <p id="hook-copy">Seu treino, sem ruído.</p>
+      </div>
+    </section>
+
+    <section id="plan" class="clip" data-start="3.27" data-duration="2.07" data-track-index="1">
+      <div id="plan-content" class="scene-content">
+        <h2 id="plan-heading" class="headline"><span>Comece pelo</span><span class="accent">próximo treino.</span></h2>
+        <div id="plan-panel" class="product-panel">
+          <p class="plan-label">Plano de hoje</p>
+          <h3 class="today-heading">Hoje</h3>
+          <div class="routine"><p class="routine-title">Dia de Peito</p><p class="routine-meta">6 exercícios</p></div>
+          <div id="start-button">Começar <i class="chevron" aria-hidden="true"></i></div>
+          <div class="week" aria-hidden="true">
+            <div class="day done"><span>SEG</span><b>07</b><i></i></div><div class="day"><span>TER</span><b>08</b><i></i></div>
+            <div class="day done"><span>QUA</span><b>09</b><i></i></div><div class="day"><span>QUI</span><b>10</b><i></i></div>
+            <div class="day done"><span>SEX</span><b>11</b><i></i></div><div class="day"><span>SÁB</span><b>12</b><i></i></div>
+            <div class="day today"><span>DOM</span><b>13</b><i></i></div>
+          </div>
+        </div>
+        <div id="start-tap" class="tap" data-layout-ignore aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section id="workout" class="clip" data-start="5.34" data-duration="4.49" data-track-index="2">
+      <div id="workout-content" class="scene-content">
+        <h2 id="workout-heading" class="headline"><span>Da primeira à</span><span class="accent">última série.</span></h2>
+        <div id="workout-panel" class="product-panel">
+          <div class="workout-nav"><span>Treino A</span><span>3 de 5</span></div>
+          <h3 class="exercise-name">Supino reto</h3><p class="exercise-meta">Peito · Barra</p>
+          <div id="exercise-stage">
+            <img id="exercise-1" class="exercise-frame" src="assets/exercise/frame-1.webp" alt="Demonstração original de supino reto">
+            <img id="exercise-2" class="exercise-frame" src="assets/exercise/frame-2.webp" alt="">
+            <img id="exercise-3" class="exercise-frame" src="assets/exercise/frame-3.webp" alt="">
+            <img id="exercise-4" class="exercise-frame" src="assets/exercise/frame-4.webp" alt="">
+          </div>
+          <div class="set-grid set-head"><span>SÉRIE</span><span>PESO</span><span>REPS</span><span>FEITO</span></div>
+          <div id="set-1" class="set-grid set-row"><span>1</span><strong>60 kg</strong><strong>10</strong><span class="set-check done">✓</span></div>
+          <div id="set-2" class="set-grid set-row"><span>2</span><strong>62,5 kg</strong><strong>10</strong><span class="set-check done">✓</span></div>
+          <div id="set-3" class="set-grid set-row"><span>3</span><strong>62,5 kg</strong><strong>8</strong><span id="third-check" class="set-check"><span id="third-check-mark">✓</span></span></div>
+          <div class="rest"><span>Descanso</span><b id="rest-value">01:18</b></div>
+        </div>
+        <div id="finish-tap" class="tap" data-layout-ignore aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <section id="balance" class="clip" data-start="9.83" data-duration="3.28" data-track-index="3">
+      <div id="balance-content" class="scene-content stats-content">
+        <h2 id="balance-heading" class="headline stats-headline"><span>Volume bem</span><span class="accent">distribuído.</span></h2>
+        <div class="tabs"><div class="tab active">Equilíbrio muscular</div><div class="tab">Fadiga</div></div>
+        <div id="balance-body" class="body-pair"><!-- BALANCE_BODY --></div>
+        <div id="balance-rows" class="muscle-rows">
+          <div class="muscle-row"><span>Quadríceps</span><strong>19 séries</strong></div>
+          <div class="muscle-row"><span>Peito</span><strong>18 séries</strong></div>
+          <div class="muscle-row"><span>Costas</span><strong>17 séries</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="fatigue" class="clip" data-start="13.11" data-duration="3.27" data-track-index="4">
+      <div id="fatigue-content" class="scene-content stats-content">
+        <h2 id="fatigue-heading" class="headline stats-headline"><span>Recuperação</span><span class="accent">em andamento.</span></h2>
+        <div class="tabs"><div class="tab">Equilíbrio muscular</div><div class="tab active">Fadiga</div></div>
+        <div id="fatigue-body" class="body-pair"><!-- FATIGUE_BODY --></div>
+        <div id="fatigue-rows" class="muscle-rows">
+          <div class="muscle-row"><span>Peito</span><strong class="heat-badge"><i class="fatigued"></i>Fadigado</strong></div>
+          <div class="muscle-row"><span>Ombros</span><strong class="heat-badge"><i class="recovering"></i>Recuperando</strong></div>
+          <div class="muscle-row"><span>Costas</span><strong class="heat-badge"><i class="ready"></i>Pronto</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="outro" class="clip" data-start="16.38" data-duration="3.62" data-track-index="5">
+      <div id="outro-content" class="scene-content">
+        <h2 id="outro-heading" class="headline line-slide"><span>Evolua com</span><span class="accent">clareza.</span></h2>
+        <img id="outro-logo" class="brand-image" src="assets/brand-logo.png" alt="Fit Pro Player">
+        <p id="outro-url">fitpp.com.br</p>
+        <p id="outro-copy">Comece pelo próximo treino.</p>
+      </div>
+    </section>
+
+    <audio id="music-bed" src="assets/music/happy-beats-business-moves-vol-12-by-ende-dot-app.mp3" data-start="0" data-duration="20" data-track-index="10" data-volume="0.30" data-automation="{&quot;version&quot;:1,&quot;lanes&quot;:[{&quot;target&quot;:&quot;volume&quot;,&quot;points&quot;:[{&quot;t&quot;:0,&quot;v&quot;:0},{&quot;t&quot;:0.25,&quot;v&quot;:1},{&quot;t&quot;:18.6,&quot;v&quot;:1},{&quot;t&quot;:20,&quot;v&quot;:0}]}]}"></audio>
+    <audio id="sfx-start" src="assets/sfx/click2.ogg" data-start="4.91" data-duration="0.10" data-track-index="11" data-volume="0.55"></audio>
+    <audio id="sfx-set" src="assets/sfx/click2.ogg" data-start="8.19" data-duration="0.10" data-track-index="12" data-volume="0.55"></audio>
+    <audio id="sfx-analysis" src="assets/sfx/impactSoft_medium_001.ogg" data-start="13.11" data-duration="0.18" data-track-index="13" data-volume="0.40"></audio>
+  </div>
+  <script>
+    const AUDIO_DATA = /* AUDIO_DATA */;
+    const tl = gsap.timeline({paused:true});
+    // The line reveal is adapted from Hyperframes' line-by-line-slide primitive.
+    function lines(selector, time) {
+      tl.fromTo(selector, {opacity:0, '--line-x':'-42px'}, {opacity:1, '--line-x':'0px', duration:.36, stagger:.09, ease:'power3.out'}, time);
+    }
+    function enter(selector,time) {
+      tl.fromTo(selector,{x:80,opacity:.3},{x:0,opacity:1,duration:.42,ease:'power3.out',immediateRender:false},time);
+    }
+    lines('#hook-heading span', .08);
+    tl.fromTo('#hook-logo',{scale:1.12,y:42},{scale:1,y:0,duration:.6,ease:'power3.out'},0);
+    tl.fromTo('#hook-copy',{y:20,opacity:0},{y:0,opacity:1,duration:.35,ease:'power2.out'},.62);
+    tl.to('#hook-content',{x:-90,opacity:0,duration:.25,ease:'power2.in'},3.02);
+
+    // beat-grid: plan reveal 3.27s; tap 4.91s; workout reveal 5.34s.
+    enter('#plan-content',3.27);
+    tl.fromTo('#start-tap',{opacity:0,scale:1.3,y:50},{opacity:1,scale:1,y:0,duration:.22,ease:'power2.out',immediateRender:false},4.68);
+    tl.to('#start-button',{scale:.97,duration:.08,ease:'power1.in'},4.91);
+    tl.to('#start-button',{scale:1,duration:.12,ease:'power2.out'},4.99);
+    tl.to('#start-tap',{opacity:0,scale:1.7,duration:.18,ease:'power2.out'},5.02);
+    tl.to('#plan-content',{x:-80,opacity:0,duration:.18,ease:'power2.in'},5.16);
+
+    enter('#workout-content',5.34);
+    const exerciseFrames = ['#exercise-1','#exercise-2','#exercise-3','#exercise-4'];
+    const sequence = [0,1,2,3];
+    // Original four-frame playback, 2.4 seconds per movement cycle.
+    for (let step=0; step<8; step++) {
+      const time = 5.34 + step*.6;
+      if (time >= 9.83) break;
+      tl.set(exerciseFrames,{opacity:0},time);
+      tl.set(exerciseFrames[sequence[step % sequence.length]],{opacity:1},time);
+    }
+    // beat-grid: confirmed set 8.19s; give the settled table time to read.
+    tl.fromTo('#finish-tap',{opacity:0,scale:1.25,y:40},{opacity:1,scale:1,y:0,duration:.2,ease:'power2.out',immediateRender:false},7.96);
+    tl.to('#third-check',{backgroundColor:'#0F8B8D',borderColor:'#0F8B8D',scale:.94,duration:.08},8.19);
+    tl.to('#third-check',{scale:1,duration:.15,ease:'power2.out'},8.27);
+    tl.to('#third-check-mark',{opacity:1,duration:.08},8.19);
+    tl.set('#finish-tap',{backgroundColor:'transparent'},8.19);
+    tl.to('#finish-tap',{opacity:0,scale:1.7,duration:.18},8.32);
+    tl.set('#rest-value',{innerText:'01:17'},8.8);
+    tl.set('#rest-value',{innerText:'01:16'},9.8);
+    tl.to('#workout-content',{y:-70,opacity:0,duration:.23,ease:'power2.in'},9.60);
+
+    enter('#balance-content',9.83);
+    tl.fromTo('#balance-body',{scale:.98},{scale:1.025,duration:3.28,ease:'none',immediateRender:false},9.83);
+    // beat-locked: switching to fatigue at strong cue 13.11s.
+    tl.fromTo('#fatigue-content',{opacity:.65},{opacity:1,duration:.2,ease:'power2.out',immediateRender:false},13.11);
+    tl.fromTo('#fatigue-body',{scale:1.025},{scale:1,duration:3.27,ease:'none',immediateRender:false},13.11);
+    tl.to('#fatigue-content',{x:-60,opacity:0,duration:.23,ease:'power2.in'},16.15);
+
+    lines('#outro-heading span',16.40);
+    tl.fromTo('#outro-logo',{scale:1.10,y:28,opacity:.3},{scale:1,y:0,opacity:1,duration:1.09,ease:'power3.out',immediateRender:false},16.38);
+    // beat-locked: the official mark settles at strong cue 17.47s.
+    tl.fromTo('#outro-url',{opacity:0,y:20},{opacity:1,y:0,duration:.35,ease:'power2.out',immediateRender:false},17.02);
+    tl.fromTo('#outro-copy',{opacity:0},{opacity:1,duration:.32,immediateRender:false},17.28);
+
+    // Pre-extracted band samples, not a free-running oscillator. The explicit
+    // timeline sets make backwards/random seeks reproduce the same light.
+    for (let frame=0; frame<AUDIO_DATA.frames.length; frame++) {
+      const bands = AUDIO_DATA.frames[frame].bands;
+      const intensity = bands[0]*.4 + bands.slice(2,8).reduce((sum,x)=>sum+x,0)/6*.6;
+      tl.set('#light',{opacity:.52 + intensity*.23},frame/AUDIO_DATA.fps);
+    }
+    window.__timelines['fitproplayer'] = tl;
+  </script>
+</body>
+</html>

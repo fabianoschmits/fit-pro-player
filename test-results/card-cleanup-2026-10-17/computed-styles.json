@@ -1,0 +1,3106 @@
+[
+  {
+    "screen": "light-390-plan",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-390-routine",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "routine-builder-head-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 356,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 356,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-390-library",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-390-workout",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.0509804 0.580392 0.533333 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 318,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 302,
+        "height": 52,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.899476 0.938882 0.962745)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 330,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-390-static",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.0509804 0.580392 0.533333 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 318,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 302,
+        "height": 52,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.899476 0.938882 0.962745)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 330,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-390-plan",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-390-routine",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "routine-builder-head-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 356,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 356,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-390-library",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-390-workout",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.25098 0.784314 0.878431 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 318,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 302,
+        "height": 52,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.123463 0.160673 0.206765)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 330,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-390-static",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.25098 0.784314 0.878431 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 318,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 302,
+        "height": 52,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.123463 0.160673 0.206765)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 330,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 330,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-1280-plan",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-1280-routine",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "routine-builder-head-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 315,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 315,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-1280-library",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-1280-workout",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.0509804 0.580392 0.533333 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 600,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 584,
+        "height": 34,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.899476 0.938882 0.962745)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 612,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-1280-static",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.0509804 0.580392 0.533333 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 600,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 584,
+        "height": 34,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.899476 0.938882 0.962745)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 612,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-1280-plan",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-1280-routine",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "routine-builder-head-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 34,
+        "height": 38,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 315,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "item in-ss",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 315,
+        "height": 68,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 50,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 22,
+        "height": 28,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-1280-library",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 50,
+        "height": 42,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-1280-workout",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.25098 0.784314 0.878431 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 600,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 584,
+        "height": 34,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.123463 0.160673 0.206765)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 612,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-1280-static",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "setrow is-current",
+        "background": "color(srgb 0.25098 0.784314 0.878431 / 0.16)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 600,
+        "height": 52,
+        "svg": 4
+      },
+      {
+        "class": "set-execution-hint",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 584,
+        "height": 34,
+        "svg": 1
+      },
+      {
+        "class": "workout-last-values",
+        "background": "color(srgb 0.123463 0.160673 0.206765)",
+        "borderLeft": "0px",
+        "borderRadius": "8px",
+        "shadow": "none",
+        "width": 612,
+        "height": 52.65625,
+        "svg": 0
+      },
+      {
+        "class": "exmedia compact",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 2
+      },
+      {
+        "class": "bodymap exercise-muscle-thumb exercise-muscle-static",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 612,
+        "height": 120,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-390-daily-plan",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "light-390-chooser",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 28,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 28,
+        "height": 28,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-390-daily-plan",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 42,
+        "height": 48,
+        "svg": 1
+      }
+    ]
+  },
+  {
+    "screen": "dark-390-chooser",
+    "overflow": false,
+    "nodes": [
+      {
+        "class": "lrow-i",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 28,
+        "height": 28,
+        "svg": 1
+      },
+      {
+        "class": "bodymap plan-routine-body-thumb",
+        "background": "rgba(0, 0, 0, 0)",
+        "borderLeft": "0px",
+        "borderRadius": "0px",
+        "shadow": "none",
+        "width": 28,
+        "height": 28,
+        "svg": 1
+      }
+    ]
+  }
+]

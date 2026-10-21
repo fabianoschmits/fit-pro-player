@@ -1,0 +1,105 @@
+{
+  "voice":"pm_alex", "lang":"pt-br", "speed":1.0,
+  "chapters":[
+    {"id":"intro","start":0,"end":12,"title":"Seu treino começa antes da primeira série.","lines":[
+      "Seu treino não começa na primeira série.",
+      "Começa nas escolhas que você faz antes dela.",
+      "O Fit Pro Player conecta essas escolhas",
+      "ao que acontece durante e depois do treino.",
+      "Veja como essa jornada funciona, na prática."
+    ]},
+    {"id":"plan","start":12,"end":36,"title":"Prepare a semana.","lines":[
+      "Tudo começa com um plano para a semana.",
+      "Organize os dias e as sessões de treino",
+      "de acordo com a sua rotina.",
+      "Escolha os exercícios de cada dia",
+      "e ajuste as séries, cargas e repetições previstas.",
+      "Você também pode escrever observações na prescrição",
+      "para lembrar um detalhe importante da execução.",
+      "A proposta é chegar à academia com contexto:",
+      "saber qual sessão fazer, o que ela contém",
+      "e como começar o próximo exercício.",
+      "Com o planejamento pronto, vamos para o treino."
+    ]},
+    {"id":"workout","start":36,"end":66,"title":"Registre o que você faz.","lines":[
+      "Na sessão, cada exercício reúne suas informações",
+      "em uma tela pensada para acompanhar a execução.",
+      "Veja o movimento na demonstração animada",
+      "e confira os campos de carga e repetições.",
+      "Toque para iniciar a série, faça o exercício",
+      "e finalize quando terminar de executar.",
+      "O descanso entra no fluxo antes da próxima série.",
+      "Assim, você registra o que realmente aconteceu",
+      "sem depender da memória no fim da sessão.",
+      "Os últimos valores ficam disponíveis como referência.",
+      "Precisa adaptar o treino? Ajuste as séries,",
+      "inclua aquecimento ou substitua um exercício.",
+      "Também é possível avaliar o esforço da série",
+      "quando essa opção está ativada no seu perfil."
+    ]},
+    {"id":"library","start":66,"end":86,"title":"Entenda cada movimento.","lines":[
+      "Se surgir uma dúvida, consulte o próprio exercício.",
+      "As demonstrações animadas ajudam a visualizar o movimento",
+      "enquanto as informações mostram os músculos envolvidos.",
+      "Supino, agachamento e levantamento terra são exemplos",
+      "do catálogo visual que acompanha o aplicativo.",
+      "A execução e a consulta ficam conectadas:",
+      "você entende o que está registrando",
+      "e mantém o foco na próxima ação.",
+      "Depois, esses registros ganham uma leitura corporal."
+    ]},
+    {"id":"body","start":86,"end":111,"title":"Veja o treino pelo corpo.","lines":[
+      "O BodyMap apresenta o corpo de frente e de costas.",
+      "No equilíbrio muscular, as regiões mostram",
+      "como as séries registradas se distribuem no período.",
+      "Você pode selecionar um músculo para consultar detalhes",
+      "e perceber regiões que receberam menos trabalho.",
+      "Na visão de fadiga, o histórico alimenta",
+      "uma estimativa de recuperação para cada região.",
+      "A visão de força também relaciona os registros",
+      "aos exercícios e à força estimada ao longo do tempo.",
+      "São informações para dar contexto ao planejamento,",
+      "não medições clínicas nem garantia de resultado.",
+      "O próximo treino passa a conversar com o anterior."
+    ]},
+    {"id":"progress","start":111,"end":135,"title":"Transforme registros em contexto.","lines":[
+      "Ao concluir uma sessão, ela entra no histórico.",
+      "Reabra o treino para consultar exercícios, séries",
+      "e os valores que ficaram registrados.",
+      "Nas estatísticas, acompanhe volume e desempenho",
+      "em vez de olhar uma sessão isoladamente.",
+      "O peso corporal também pode ser registrado",
+      "e consultado em gráficos ao longo do tempo.",
+      "Cada ponto representa uma informação que você adicionou.",
+      "Compare períodos, observe tendências e releia sua rotina.",
+      "O aplicativo organiza os dados; o contexto importa.",
+      "Isso inclui olhar além do número da balança."
+    ]},
+    {"id":"measures","start":135,"end":151,"title":"Acompanhe medidas, não só peso.","lines":[
+      "Na evolução corporal, registre suas circunferências",
+      "e escolha a região que deseja acompanhar.",
+      "O mapa indica onde posicionar a fita métrica.",
+      "Consulte check-ins, gráficos e comparações entre datas.",
+      "A linha do tempo reúne os momentos registrados",
+      "para você observar as mudanças com mais clareza.",
+      "Medidas reais têm prioridade sobre estimativas visuais."
+    ]},
+    {"id":"professional","start":151,"end":171,"title":"Prepare. Envie. Acompanhe.","lines":[
+      "Para profissionais, a jornada continua na área própria.",
+      "Organize alunos e convites, e crie programas reutilizáveis.",
+      "Monte a semana, ajuste a prescrição",
+      "e publique uma nova versão do programa.",
+      "As versões enviadas permanecem no histórico.",
+      "O aluno recebe a programação e acessa",
+      "os próximos treinos dentro da sua rotina.",
+      "O profissional acompanha as execuções e as pendências",
+      "para organizar o que precisa de atenção."
+    ]},
+    {"id":"outro","start":171,"end":180,"title":"Do plano à evolução, tudo conectado.","lines":[
+      "Planejar, executar, registrar e acompanhar:",
+      "cada etapa prepara a próxima.",
+      "Conheça o Fit Pro Player em fitpp.com.br.",
+      "E comece essa jornada pelo seu próximo treino."
+    ]}
+  ]
+}

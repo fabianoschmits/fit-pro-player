@@ -1,0 +1,55 @@
+{
+  "duration": 180,
+  "assertions": [
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-intro-world",
+      "bySec": 0.6
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-plan-world",
+      "bySec": 10.941913855657798
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-workout-world",
+      "bySec": 32.83365261078812
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-library-world",
+      "bySec": 63.05344684993447
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-body-world",
+      "bySec": 83.7644426684758
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-progress-world",
+      "bySec": 111.53654644496028
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-measures-world",
+      "bySec": 135.83148563321387
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-professional-world",
+      "bySec": 152.64513156380312
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#scene-outro-world",
+      "bySec": 172.00991187808523
+    },
+    {
+      "kind": "appearsBy",
+      "selector": "#intro-brand",
+      "bySec": 1
+    }
+  ]
+}

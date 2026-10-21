@@ -1,0 +1,1 @@
+A execução e a consulta ficam conectadas:

@@ -1,0 +1,97 @@
+{
+  "ffprobe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "pcm_s24le",
+        "sample_rate": "48000",
+        "channels": 2,
+        "channel_layout": "stereo",
+        "bits_per_sample": 24,
+        "time_base": "1/48000",
+        "duration_ts": 2880000,
+        "duration": "60.000000"
+      }
+    ],
+    "format": {
+      "duration": "60.000000",
+      "size": "17280224"
+    }
+  },
+  "sampleFrames": 2880000,
+  "durationSeconds": 60.0,
+  "integratedLufs": -13.9,
+  "loudnessRangeLu": 5.8,
+  "ffmpegTruePeakDbtp": -1.3,
+  "oversampled8xPeakDbfs": -1.2245,
+  "samplePeakDbfs": -1.297,
+  "ffmpegMeanVolumeDb": -15.5,
+  "ffmpegMaxVolumeDb": -1.3,
+  "clippedSamples": 0,
+  "firstFrame": [
+    -1.0728836059570312e-06,
+    -9.5367431640625e-07
+  ],
+  "lastFrame": [
+    -1.1920928955078125e-07,
+    -5.960464477539062e-07
+  ],
+  "dcOffsetLeftRight": [
+    -4.3149928210510146e-05,
+    -4.214602257642481e-05
+  ],
+  "stereoCorrelation": 0.94754,
+  "monoSpectralEnergyPercent": {
+    "sub": 58.2,
+    "bass": 25.0,
+    "mid": 8.11,
+    "presence": 3.66,
+    "air": 4.92
+  },
+  "sections": [
+    {
+      "name": "intro",
+      "startSeconds": 0.0,
+      "endSeconds": 15.0,
+      "rmsDbfs": -14.99,
+      "samplePeakDbfs": -1.297
+    },
+    {
+      "name": "drop_1",
+      "startSeconds": 15.0,
+      "endSeconds": 30.0,
+      "rmsDbfs": -14.325,
+      "samplePeakDbfs": -1.298
+    },
+    {
+      "name": "breakdown",
+      "startSeconds": 30.0,
+      "endSeconds": 37.5,
+      "rmsDbfs": -21.67,
+      "samplePeakDbfs": -6.426
+    },
+    {
+      "name": "build",
+      "startSeconds": 37.5,
+      "endSeconds": 45.0,
+      "rmsDbfs": -17.547,
+      "samplePeakDbfs": -1.3
+    },
+    {
+      "name": "drop_2",
+      "startSeconds": 45.0,
+      "endSeconds": 56.25,
+      "rmsDbfs": -14.171,
+      "samplePeakDbfs": -1.298
+    },
+    {
+      "name": "outro",
+      "startSeconds": 56.25,
+      "endSeconds": 60.0,
+      "rmsDbfs": -18.361,
+      "samplePeakDbfs": -1.529
+    }
+  ],
+  "sha256": "af50c569d8ed7ea01d202d9eeed0e77d1874ef075bdff64090fd099770ccd584"
+}

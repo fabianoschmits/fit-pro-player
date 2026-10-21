@@ -1,0 +1,105 @@
+{
+  "ok": true,
+  "durationSeconds": 60,
+  "frames": 1800,
+  "width": 1080,
+  "height": 1920,
+  "fps": "30/1",
+  "videoCodec": "h264",
+  "audioCodec": "aac",
+  "sampleRate": "48000",
+  "channels": 2,
+  "sizeBytes": 8998168,
+  "decodePassed": true,
+  "voiceSegments": [
+    {
+      "id": "intro",
+      "start": 0.25,
+      "duration": 3.733,
+      "vocalBandCorrelation": 0.999028,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    },
+    {
+      "id": "plan",
+      "start": 5.4,
+      "duration": 5.632,
+      "vocalBandCorrelation": 0.999144,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    },
+    {
+      "id": "workout",
+      "start": 13.35,
+      "duration": 7.232,
+      "vocalBandCorrelation": 0.99706,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    },
+    {
+      "id": "library",
+      "start": 23.35,
+      "duration": 6.741,
+      "vocalBandCorrelation": 0.998459,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    },
+    {
+      "id": "body",
+      "start": 31.35,
+      "duration": 6.805,
+      "vocalBandCorrelation": 0.997609,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    },
+    {
+      "id": "progress",
+      "start": 40.35,
+      "duration": 6.208,
+      "vocalBandCorrelation": 0.996202,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    },
+    {
+      "id": "professional",
+      "start": 48.3,
+      "duration": 5.12,
+      "vocalBandCorrelation": 0.997471,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    },
+    {
+      "id": "outro",
+      "start": 54.3,
+      "duration": 4.949,
+      "vocalBandCorrelation": 0.998901,
+      "bestOffsetSeconds": 0.0,
+      "present": true
+    }
+  ],
+  "musicPresence": [
+    {
+      "start": 11.4,
+      "end": 12.05,
+      "bassCorrelation": 0.997512,
+      "bassRmsDbfs": -28.67,
+      "present": true
+    },
+    {
+      "start": 21.15,
+      "end": 22.4,
+      "bassCorrelation": 0.985668,
+      "bassRmsDbfs": -24.96,
+      "present": true
+    },
+    {
+      "start": 46.9,
+      "end": 47.8,
+      "bassCorrelation": 0.986158,
+      "bassRmsDbfs": -27.92,
+      "present": true
+    }
+  ],
+  "audioPreservedByPoster": true,
+  "audioPacketHash": "SHA256=9c243beaf505318c9c2d98313a15e5ed906b16b31ce7f0850f12c50470ba906f"
+}

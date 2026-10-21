@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-10-18T18:44:18.843Z",
+  "projectName": "fit-pro-player",
+  "previousAvatar": "1f42f5515c6173e6442ba2c9c3d345ecb0a21907",
+  "avatar": "d224181ba61bcff89a68529b127e96156a62e2b3",
+  "fileSha1": "d224181ba61bcff89a68529b127e96156a62e2b3",
+  "uploadStatus": 200,
+  "projectReadStatus": 200,
+  "avatarFetchStatus": 200,
+  "sourceFile": "C:/MeusProjetos/Fitproplayer/frontend/public/icons/lion-794daf1cde13-512.png",
+  "sourceBytes": 285083,
+  "sourceDimensions": {
+    "width": 512,
+    "height": 512
+  },
+  "avatarImageType": "image/png",
+  "avatarImageBytes": 57448,
+  "avatarImageDimensions": {
+    "width": 384,
+    "height": 384
+  },
+  "avatarImageSha256": "ba5bf4234f65c7dbadf2173e3aee80dcdfeda077d392f71c4ca50cedb00a843c",
+  "evidenceFile": "C:\\MeusProjetos\\Fitproplayer\\test-results\\vercel-project-avatar-lion.png",
+  "avatarUrl": "https://vercel.com/api/www/avatar/d224181ba61bcff89a68529b127e96156a62e2b3?s=512",
+  "settingsUrl": "https://vercel.com/fabianoschmits-9996s-projects/fit-pro-player/settings/general"
+}

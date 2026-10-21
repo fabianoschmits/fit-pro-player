@@ -1,0 +1,16 @@
+{
+  "provider": "kokoro",
+  "voice": "pm_alex",
+  "lang": "pt-br",
+  "speed": 1.05,
+  "lines": [
+    {"id":"intro","start":0.25,"end":4.9,"text":"Seu treino merece mais do que improviso. Conheça o Fit Pró Plêier."},
+    {"id":"plan","start":5.4,"end":12.8,"text":"Organize sua semana, escolha a rotina e comece sabendo exatamente o que fazer no próximo treino."},
+    {"id":"workout","start":13.35,"end":22.8,"text":"Na hora de treinar, veja a execução do exercício, registre cargas e repetições e acompanhe o descanso. Tudo na mesma tela."},
+    {"id":"library","start":23.35,"end":30.8,"text":"Consulte as demonstrações animadas e os músculos trabalhados para entender cada movimento, dentro do próprio treino."},
+    {"id":"body","start":31.35,"end":39.8,"text":"O mapa corporal mostra o equilíbrio muscular e a recuperação, trazendo mais contexto para decidir o próximo treino."},
+    {"id":"progress","start":40.35,"end":47.8,"text":"Acompanhe seu histórico, o volume de treino e a evolução do peso em gráficos claros e fáceis de consultar."},
+    {"id":"professional","start":48.3,"end":53.8,"text":"Na área profissional, organize alunos e programas de treino para acompanhar cada rotina."},
+    {"id":"outro","start":54.3,"end":59.6,"text":"Fit Pró Plêier. Treine com contexto. Evolua com clareza. Comece pelo próximo treino."}
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "fit-pro-player-three-minute",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test ../timing.test.mjs",
+    "build": "node ../build.mjs",
+    "check": "hyperframes check --samples 31 --snapshots",
+    "preview": "hyperframes preview --background --no-open",
+    "render:draft": "hyperframes render --fps 30 --quality draft --workers 2 --strict --output ../fit-pro-player-3min.review.mp4",
+    "render": "hyperframes render --fps 30 --quality delivery --workers 2 --strict --output ../fit-pro-player-3min.render.mp4"
+  },
+  "devDependencies": {"hyperframes": "0.8.158", "@hyperframes/core": "0.8.158"}
+}

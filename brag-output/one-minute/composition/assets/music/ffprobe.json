@@ -1,0 +1,24 @@
+{
+    "programs": [
+
+    ],
+    "stream_groups": [
+
+    ],
+    "streams": [
+        {
+            "codec_name": "pcm_s24le",
+            "sample_rate": "48000",
+            "channels": 2,
+            "channel_layout": "stereo",
+            "bits_per_sample": 24,
+            "time_base": "1/48000",
+            "duration_ts": 2880000,
+            "duration": "60.000000"
+        }
+    ],
+    "format": {
+        "duration": "60.000000",
+        "size": "17280224"
+    }
+}

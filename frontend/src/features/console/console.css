@@ -235,11 +235,14 @@
 .console-chat-bubble-foot { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10px; margin-top: 2px; }
 .console-chat-tick { display: inline-flex; align-items: center; font-size: 11px; color: color-mix(in srgb, var(--on-acc, #fff) 80%, transparent); }
 
-/* Sticky bottom composer */
+/* Sticky bottom composer
+   z-index 55 keeps the reply bar above the corner-nav (z-index 50) on mobile.
+   The console-chat-column already clips at max-height so this only matters
+   when the nav is open and the browser hasn't scrolled the sticky into view. */
 .console-chat-composer-wrap {
   position: sticky;
   bottom: 0;
-  z-index: 20;
+  z-index: 55;
   background: var(--surface);
   border-top: 1px solid var(--surface-border);
 }

@@ -1,0 +1,10 @@
+{
+  "duration": 20,
+  "assertions": [
+    {"kind":"appearsBy","selector":"#hook-heading","bySec":0.8},
+    {"kind":"appearsBy","selector":"#workout-panel","bySec":6.0},
+    {"kind":"appearsBy","selector":"#balance-body","bySec":10.5},
+    {"kind":"appearsBy","selector":"#outro-url","bySec":17.5},
+    {"kind":"before","a":"#hook-logo","b":"#outro-logo"}
+  ]
+}

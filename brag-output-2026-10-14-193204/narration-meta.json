@@ -1,0 +1,1218 @@
+{
+  "provider": "kokoro",
+  "voice": "pm_alex",
+  "lang": "pt-br",
+  "duration": 180,
+  "chapters": [
+    {
+      "id": "intro",
+      "start": 0,
+      "end": 10.341913855657799,
+      "title": "Seu treino começa antes da primeira série.",
+      "tempo": 1.3409197816313418
+    },
+    {
+      "id": "plan",
+      "start": 10.341913855657799,
+      "end": 32.23365261078812,
+      "title": "Prepare a semana.",
+      "tempo": 1.3409197816313416
+    },
+    {
+      "id": "workout",
+      "start": 32.23365261078812,
+      "end": 62.453446849934465,
+      "title": "Registre o que você faz.",
+      "tempo": 1.3409197816313416
+    },
+    {
+      "id": "library",
+      "start": 62.453446849934465,
+      "end": 83.1644426684758,
+      "title": "Entenda cada movimento.",
+      "tempo": 1.340919781631342
+    },
+    {
+      "id": "body",
+      "start": 83.1644426684758,
+      "end": 110.93654644496029,
+      "title": "Veja o treino pelo corpo.",
+      "tempo": 1.340919781631342
+    },
+    {
+      "id": "progress",
+      "start": 110.93654644496029,
+      "end": 135.23148563321388,
+      "title": "Transforme registros em contexto.",
+      "tempo": 1.3409197816313412
+    },
+    {
+      "id": "measures",
+      "start": 135.23148563321388,
+      "end": 152.04513156380312,
+      "title": "Acompanhe medidas, não só peso.",
+      "tempo": 1.3409197816313425
+    },
+    {
+      "id": "professional",
+      "start": 152.04513156380312,
+      "end": 171.40991187808524,
+      "title": "Prepare. Envie. Acompanhe.",
+      "tempo": 1.3409197816313418
+    },
+    {
+      "id": "outro",
+      "start": 171.40991187808524,
+      "end": 180,
+      "title": "Do plano à evolução, tudo conectado.",
+      "tempo": 1.3409197816313492
+    }
+  ],
+  "lines": [
+    {
+      "id": "intro-01",
+      "chapter": "intro",
+      "text": "Seu treino não começa na primeira série.",
+      "lines": [
+        "Seu treino não começa",
+        "na primeira série."
+      ],
+      "start": 0.12,
+      "end": 2.028889,
+      "duration": 1.908889,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/intro-01.wav"
+    },
+    {
+      "id": "intro-02",
+      "chapter": "intro",
+      "text": "Começa nas escolhas que você faz antes dela.",
+      "lines": [
+        "Começa nas escolhas que",
+        "você faz antes dela."
+      ],
+      "start": 2.118889,
+      "end": 4.156918,
+      "duration": 2.038029,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/intro-02.wav"
+    },
+    {
+      "id": "intro-03",
+      "chapter": "intro",
+      "text": "O Fit Pro Player conecta essas escolhas",
+      "lines": [
+        "O Fit Pro Player",
+        "conecta essas escolhas"
+      ],
+      "start": 4.246918,
+      "end": 6.054104,
+      "duration": 1.807186,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/intro-03.wav"
+    },
+    {
+      "id": "intro-04",
+      "chapter": "intro",
+      "text": "ao que acontece durante e depois do treino.",
+      "lines": [
+        "ao que acontece durante",
+        "e depois do treino."
+      ],
+      "start": 6.144104,
+      "end": 8.079218,
+      "duration": 1.935114,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/intro-04.wav"
+    },
+    {
+      "id": "intro-05",
+      "chapter": "intro",
+      "text": "Veja como essa jornada funciona, na prática.",
+      "lines": [
+        "Veja como essa jornada",
+        "funciona, na prática."
+      ],
+      "start": 8.169218,
+      "end": 10.221914,
+      "duration": 2.052695,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/intro-05.wav"
+    },
+    {
+      "id": "plan-01",
+      "chapter": "plan",
+      "text": "Tudo começa com um plano para a semana.",
+      "lines": [
+        "Tudo começa com um",
+        "plano para a semana."
+      ],
+      "start": 10.461914,
+      "end": 12.129178,
+      "duration": 1.667264,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-01.wav"
+    },
+    {
+      "id": "plan-02",
+      "chapter": "plan",
+      "text": "Organize os dias e as sessões de treino",
+      "lines": [
+        "Organize os dias e",
+        "as sessões de treino"
+      ],
+      "start": 12.219178,
+      "end": 14.035966,
+      "duration": 1.816788,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-02.wav"
+    },
+    {
+      "id": "plan-03",
+      "chapter": "plan",
+      "text": "de acordo com a sua rotina.",
+      "lines": [
+        "de acordo com a sua rotina."
+      ],
+      "start": 14.125966,
+      "end": 15.475817,
+      "duration": 1.349851,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-03.wav"
+    },
+    {
+      "id": "plan-04",
+      "chapter": "plan",
+      "text": "Escolha os exercícios de cada dia",
+      "lines": [
+        "Escolha os exercícios",
+        "de cada dia"
+      ],
+      "start": 15.565817,
+      "end": 17.256634,
+      "duration": 1.690817,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-04.wav"
+    },
+    {
+      "id": "plan-05",
+      "chapter": "plan",
+      "text": "e ajuste as séries, cargas e repetições previstas.",
+      "lines": [
+        "e ajuste as séries, cargas",
+        "e repetições previstas."
+      ],
+      "start": 17.346634,
+      "end": 19.712299,
+      "duration": 2.365665,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-05.wav"
+    },
+    {
+      "id": "plan-06",
+      "chapter": "plan",
+      "text": "Você também pode escrever observações na prescrição",
+      "lines": [
+        "Você também pode escrever",
+        "observações na prescrição"
+      ],
+      "start": 19.802299,
+      "end": 22.253197,
+      "duration": 2.450898,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-06.wav"
+    },
+    {
+      "id": "plan-07",
+      "chapter": "plan",
+      "text": "para lembrar um detalhe importante da execução.",
+      "lines": [
+        "para lembrar um detalhe",
+        "importante da execução."
+      ],
+      "start": 22.343197,
+      "end": 24.323243,
+      "duration": 1.980046,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-07.wav"
+    },
+    {
+      "id": "plan-08",
+      "chapter": "plan",
+      "text": "A proposta é chegar à academia com contexto:",
+      "lines": [
+        "A proposta é chegar à",
+        "academia com contexto:"
+      ],
+      "start": 24.413243,
+      "end": 26.421007,
+      "duration": 2.007764,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-08.wav"
+    },
+    {
+      "id": "plan-09",
+      "chapter": "plan",
+      "text": "saber qual sessão fazer, o que ela contém",
+      "lines": [
+        "saber qual sessão",
+        "fazer, o que ela contém"
+      ],
+      "start": 26.511007,
+      "end": 28.335687,
+      "duration": 1.82468,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-09.wav"
+    },
+    {
+      "id": "plan-10",
+      "chapter": "plan",
+      "text": "e como começar o próximo exercício.",
+      "lines": [
+        "e como começar o",
+        "próximo exercício."
+      ],
+      "start": 28.425687,
+      "end": 30.134744,
+      "duration": 1.709057,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-10.wav"
+    },
+    {
+      "id": "plan-11",
+      "chapter": "plan",
+      "text": "Com o planejamento pronto, vamos para o treino.",
+      "lines": [
+        "Com o planejamento pronto,",
+        "vamos para o treino."
+      ],
+      "start": 30.224744,
+      "end": 32.113653,
+      "duration": 1.888909,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/plan-11.wav"
+    },
+    {
+      "id": "workout-01",
+      "chapter": "workout",
+      "text": "Na sessão, cada exercício reúne suas informações",
+      "lines": [
+        "Na sessão, cada exercício",
+        "reúne suas informações"
+      ],
+      "start": 32.353653,
+      "end": 34.586821,
+      "duration": 2.233169,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-01.wav"
+    },
+    {
+      "id": "workout-02",
+      "chapter": "workout",
+      "text": "em uma tela pensada para acompanhar a execução.",
+      "lines": [
+        "em uma tela pensada para",
+        "acompanhar a execução."
+      ],
+      "start": 34.676821,
+      "end": 36.847315,
+      "duration": 2.170494,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-02.wav"
+    },
+    {
+      "id": "workout-03",
+      "chapter": "workout",
+      "text": "Veja o movimento na demonstração animada",
+      "lines": [
+        "Veja o movimento na",
+        "demonstração animada"
+      ],
+      "start": 36.937315,
+      "end": 38.784057,
+      "duration": 1.846742,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-03.wav"
+    },
+    {
+      "id": "workout-04",
+      "chapter": "workout",
+      "text": "e confira os campos de carga e repetições.",
+      "lines": [
+        "e confira os campos",
+        "de carga e repetições."
+      ],
+      "start": 38.874057,
+      "end": 40.912552,
+      "duration": 2.038495,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-04.wav"
+    },
+    {
+      "id": "workout-05",
+      "chapter": "workout",
+      "text": "Toque para iniciar a série, faça o exercício",
+      "lines": [
+        "Toque para iniciar a",
+        "série, faça o exercício"
+      ],
+      "start": 41.002552,
+      "end": 42.911876,
+      "duration": 1.909324,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-05.wav"
+    },
+    {
+      "id": "workout-06",
+      "chapter": "workout",
+      "text": "e finalize quando terminar de executar.",
+      "lines": [
+        "e finalize quando",
+        "terminar de executar."
+      ],
+      "start": 43.001876,
+      "end": 44.908465,
+      "duration": 1.906589,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-06.wav"
+    },
+    {
+      "id": "workout-07",
+      "chapter": "workout",
+      "text": "O descanso entra no fluxo antes da próxima série.",
+      "lines": [
+        "O descanso entra no fluxo",
+        "antes da próxima série."
+      ],
+      "start": 44.998465,
+      "end": 47.270941,
+      "duration": 2.272476,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-07.wav"
+    },
+    {
+      "id": "workout-08",
+      "chapter": "workout",
+      "text": "Assim, você registra o que realmente aconteceu",
+      "lines": [
+        "Assim, você registra o",
+        "que realmente aconteceu"
+      ],
+      "start": 47.360941,
+      "end": 49.428862,
+      "duration": 2.067922,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-08.wav"
+    },
+    {
+      "id": "workout-09",
+      "chapter": "workout",
+      "text": "sem depender da memória no fim da sessão.",
+      "lines": [
+        "sem depender da memória",
+        "no fim da sessão."
+      ],
+      "start": 49.518862,
+      "end": 51.410754,
+      "duration": 1.891892,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-09.wav"
+    },
+    {
+      "id": "workout-10",
+      "chapter": "workout",
+      "text": "Os últimos valores ficam disponíveis como referência.",
+      "lines": [
+        "Os últimos valores ficam",
+        "disponíveis como referência."
+      ],
+      "start": 51.500754,
+      "end": 53.930709,
+      "duration": 2.429955,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-10.wav"
+    },
+    {
+      "id": "workout-11",
+      "chapter": "workout",
+      "text": "Precisa adaptar o treino? Ajuste as séries,",
+      "lines": [
+        "Precisa adaptar o",
+        "treino? Ajuste as séries,"
+      ],
+      "start": 54.020709,
+      "end": 55.980806,
+      "duration": 1.960097,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-11.wav"
+    },
+    {
+      "id": "workout-12",
+      "chapter": "workout",
+      "text": "inclua aquecimento ou substitua um exercício.",
+      "lines": [
+        "inclua aquecimento ou",
+        "substitua um exercício."
+      ],
+      "start": 56.070806,
+      "end": 58.159174,
+      "duration": 2.088367,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-12.wav"
+    },
+    {
+      "id": "workout-13",
+      "chapter": "workout",
+      "text": "Também é possível avaliar o esforço da série",
+      "lines": [
+        "Também é possível avaliar",
+        "o esforço da série"
+      ],
+      "start": 58.249174,
+      "end": 60.280335,
+      "duration": 2.031162,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-13.wav"
+    },
+    {
+      "id": "workout-14",
+      "chapter": "workout",
+      "text": "quando essa opção está ativada no seu perfil.",
+      "lines": [
+        "quando essa opção está",
+        "ativada no seu perfil."
+      ],
+      "start": 60.370335,
+      "end": 62.333447,
+      "duration": 1.963111,
+      "tempo": 1.3409197816313416,
+      "path": "assets/voice/workout-14.wav"
+    },
+    {
+      "id": "library-01",
+      "chapter": "library",
+      "text": "Se surgir uma dúvida, consulte o próprio exercício.",
+      "lines": [
+        "Se surgir uma dúvida,",
+        "consulte o próprio exercício."
+      ],
+      "start": 62.573447,
+      "end": 64.833245,
+      "duration": 2.259798,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-01.wav"
+    },
+    {
+      "id": "library-02",
+      "chapter": "library",
+      "text": "As demonstrações animadas ajudam a visualizar o movimento",
+      "lines": [
+        "As demonstrações animadas",
+        "ajudam a visualizar o movimento"
+      ],
+      "start": 64.923245,
+      "end": 67.596814,
+      "duration": 2.673569,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-02.wav"
+    },
+    {
+      "id": "library-03",
+      "chapter": "library",
+      "text": "enquanto as informações mostram os músculos envolvidos.",
+      "lines": [
+        "enquanto as informações",
+        "mostram os músculos envolvidos."
+      ],
+      "start": 67.686814,
+      "end": 70.344132,
+      "duration": 2.657318,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-03.wav"
+    },
+    {
+      "id": "library-04",
+      "chapter": "library",
+      "text": "Supino, agachamento e levantamento terra são exemplos",
+      "lines": [
+        "Supino, agachamento e",
+        "levantamento terra são exemplos"
+      ],
+      "start": 70.434132,
+      "end": 72.920423,
+      "duration": 2.486291,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-04.wav"
+    },
+    {
+      "id": "library-05",
+      "chapter": "library",
+      "text": "do catálogo visual que acompanha o aplicativo.",
+      "lines": [
+        "do catálogo visual que",
+        "acompanha o aplicativo."
+      ],
+      "start": 73.010423,
+      "end": 75.085802,
+      "duration": 2.075379,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-05.wav"
+    },
+    {
+      "id": "library-06",
+      "chapter": "library",
+      "text": "A execução e a consulta ficam conectadas:",
+      "lines": [
+        "A execução e a consulta",
+        "ficam conectadas:"
+      ],
+      "start": 75.175802,
+      "end": 77.138293,
+      "duration": 1.96249,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-06.wav"
+    },
+    {
+      "id": "library-07",
+      "chapter": "library",
+      "text": "você entende o que está registrando",
+      "lines": [
+        "você entende o que",
+        "está registrando"
+      ],
+      "start": 77.228293,
+      "end": 78.900839,
+      "duration": 1.672546,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-07.wav"
+    },
+    {
+      "id": "library-08",
+      "chapter": "library",
+      "text": "e mantém o foco na próxima ação.",
+      "lines": [
+        "e mantém o foco na próxima ação."
+      ],
+      "start": 78.990839,
+      "end": 80.597696,
+      "duration": 1.606857,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-08.wav"
+    },
+    {
+      "id": "library-09",
+      "chapter": "library",
+      "text": "Depois, esses registros ganham uma leitura corporal.",
+      "lines": [
+        "Depois, esses registros",
+        "ganham uma leitura corporal."
+      ],
+      "start": 80.687696,
+      "end": 83.044443,
+      "duration": 2.356746,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/library-09.wav"
+    },
+    {
+      "id": "body-01",
+      "chapter": "body",
+      "text": "O BodyMap apresenta o corpo de frente e de costas.",
+      "lines": [
+        "O BodyMap apresenta o corpo",
+        "de frente e de costas."
+      ],
+      "start": 83.284443,
+      "end": 85.734192,
+      "duration": 2.449749,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-01.wav"
+    },
+    {
+      "id": "body-02",
+      "chapter": "body",
+      "text": "No equilíbrio muscular, as regiões mostram",
+      "lines": [
+        "No equilíbrio muscular,",
+        "as regiões mostram"
+      ],
+      "start": 85.824192,
+      "end": 87.684637,
+      "duration": 1.860445,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-02.wav"
+    },
+    {
+      "id": "body-03",
+      "chapter": "body",
+      "text": "como as séries registradas se distribuem no período.",
+      "lines": [
+        "como as séries registradas",
+        "se distribuem no período."
+      ],
+      "start": 87.774637,
+      "end": 89.954732,
+      "duration": 2.180095,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-03.wav"
+    },
+    {
+      "id": "body-04",
+      "chapter": "body",
+      "text": "Você pode selecionar um músculo para consultar detalhes",
+      "lines": [
+        "Você pode selecionar um",
+        "músculo para consultar detalhes"
+      ],
+      "start": 90.044732,
+      "end": 92.493238,
+      "duration": 2.448506,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-04.wav"
+    },
+    {
+      "id": "body-05",
+      "chapter": "body",
+      "text": "e perceber regiões que receberam menos trabalho.",
+      "lines": [
+        "e perceber regiões que",
+        "receberam menos trabalho."
+      ],
+      "start": 92.583238,
+      "end": 94.779212,
+      "duration": 2.195974,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-05.wav"
+    },
+    {
+      "id": "body-06",
+      "chapter": "body",
+      "text": "Na visão de fadiga, o histórico alimenta",
+      "lines": [
+        "Na visão de fadiga,",
+        "o histórico alimenta"
+      ],
+      "start": 94.869212,
+      "end": 96.7992,
+      "duration": 1.929987,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-06.wav"
+    },
+    {
+      "id": "body-07",
+      "chapter": "body",
+      "text": "uma estimativa de recuperação para cada região.",
+      "lines": [
+        "uma estimativa de",
+        "recuperação para cada região."
+      ],
+      "start": 96.8892,
+      "end": 99.185167,
+      "duration": 2.295967,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-07.wav"
+    },
+    {
+      "id": "body-08",
+      "chapter": "body",
+      "text": "A visão de força também relaciona os registros",
+      "lines": [
+        "A visão de força também",
+        "relaciona os registros"
+      ],
+      "start": 99.275167,
+      "end": 101.485932,
+      "duration": 2.210765,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-08.wav"
+    },
+    {
+      "id": "body-09",
+      "chapter": "body",
+      "text": "aos exercícios e à força estimada ao longo do tempo.",
+      "lines": [
+        "aos exercícios e à força",
+        "estimada ao longo do tempo."
+      ],
+      "start": 101.575932,
+      "end": 103.862049,
+      "duration": 2.286117,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-09.wav"
+    },
+    {
+      "id": "body-10",
+      "chapter": "body",
+      "text": "São informações para dar contexto ao planejamento,",
+      "lines": [
+        "São informações para dar",
+        "contexto ao planejamento,"
+      ],
+      "start": 103.952049,
+      "end": 106.155325,
+      "duration": 2.203276,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-10.wav"
+    },
+    {
+      "id": "body-11",
+      "chapter": "body",
+      "text": "não medições clínicas nem garantia de resultado.",
+      "lines": [
+        "não medições clínicas nem",
+        "garantia de resultado."
+      ],
+      "start": 106.245325,
+      "end": 108.519106,
+      "duration": 2.273781,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-11.wav"
+    },
+    {
+      "id": "body-12",
+      "chapter": "body",
+      "text": "O próximo treino passa a conversar com o anterior.",
+      "lines": [
+        "O próximo treino passa a",
+        "conversar com o anterior."
+      ],
+      "start": 108.609106,
+      "end": 110.816546,
+      "duration": 2.20744,
+      "tempo": 1.340919781631342,
+      "path": "assets/voice/body-12.wav"
+    },
+    {
+      "id": "progress-01",
+      "chapter": "progress",
+      "text": "Ao concluir uma sessão, ela entra no histórico.",
+      "lines": [
+        "Ao concluir uma sessão,",
+        "ela entra no histórico."
+      ],
+      "start": 111.056546,
+      "end": 112.992065,
+      "duration": 1.935518,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-01.wav"
+    },
+    {
+      "id": "progress-02",
+      "chapter": "progress",
+      "text": "Reabra o treino para consultar exercícios, séries",
+      "lines": [
+        "Reabra o treino para",
+        "consultar exercícios, séries"
+      ],
+      "start": 113.082065,
+      "end": 115.151633,
+      "duration": 2.069568,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-02.wav"
+    },
+    {
+      "id": "progress-03",
+      "chapter": "progress",
+      "text": "e os valores que ficaram registrados.",
+      "lines": [
+        "e os valores que",
+        "ficaram registrados."
+      ],
+      "start": 115.241633,
+      "end": 116.869123,
+      "duration": 1.62749,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-03.wav"
+    },
+    {
+      "id": "progress-04",
+      "chapter": "progress",
+      "text": "Nas estatísticas, acompanhe volume e desempenho",
+      "lines": [
+        "Nas estatísticas, acompanhe",
+        "volume e desempenho"
+      ],
+      "start": 116.959123,
+      "end": 119.121289,
+      "duration": 2.162167,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-04.wav"
+    },
+    {
+      "id": "progress-05",
+      "chapter": "progress",
+      "text": "em vez de olhar uma sessão isoladamente.",
+      "lines": [
+        "em vez de olhar uma",
+        "sessão isoladamente."
+      ],
+      "start": 119.211289,
+      "end": 121.153768,
+      "duration": 1.942479,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-05.wav"
+    },
+    {
+      "id": "progress-06",
+      "chapter": "progress",
+      "text": "O peso corporal também pode ser registrado",
+      "lines": [
+        "O peso corporal também",
+        "pode ser registrado"
+      ],
+      "start": 121.243768,
+      "end": 123.253614,
+      "duration": 2.009846,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-06.wav"
+    },
+    {
+      "id": "progress-07",
+      "chapter": "progress",
+      "text": "e consultado em gráficos ao longo do tempo.",
+      "lines": [
+        "e consultado em gráficos",
+        "ao longo do tempo."
+      ],
+      "start": 123.343614,
+      "end": 125.297745,
+      "duration": 1.954131,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-07.wav"
+    },
+    {
+      "id": "progress-08",
+      "chapter": "progress",
+      "text": "Cada ponto representa uma informação que você adicionou.",
+      "lines": [
+        "Cada ponto representa uma",
+        "informação que você adicionou."
+      ],
+      "start": 125.387745,
+      "end": 127.926519,
+      "duration": 2.538774,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-08.wav"
+    },
+    {
+      "id": "progress-09",
+      "chapter": "progress",
+      "text": "Compare períodos, observe tendências e releia sua rotina.",
+      "lines": [
+        "Compare períodos, observe",
+        "tendências e releia sua rotina."
+      ],
+      "start": 128.016519,
+      "end": 130.797787,
+      "duration": 2.781269,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-09.wav"
+    },
+    {
+      "id": "progress-10",
+      "chapter": "progress",
+      "text": "O aplicativo organiza os dados; o contexto importa.",
+      "lines": [
+        "O aplicativo organiza os",
+        "dados; o contexto importa."
+      ],
+      "start": 130.887787,
+      "end": 133.136057,
+      "duration": 2.24827,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-10.wav"
+    },
+    {
+      "id": "progress-11",
+      "chapter": "progress",
+      "text": "Isso inclui olhar além do número da balança.",
+      "lines": [
+        "Isso inclui olhar além",
+        "do número da balança."
+      ],
+      "start": 133.226057,
+      "end": 135.111486,
+      "duration": 1.885428,
+      "tempo": 1.3409197816313412,
+      "path": "assets/voice/progress-11.wav"
+    },
+    {
+      "id": "measures-01",
+      "chapter": "measures",
+      "text": "Na evolução corporal, registre suas circunferências",
+      "lines": [
+        "Na evolução corporal,",
+        "registre suas circunferências"
+      ],
+      "start": 135.351486,
+      "end": 137.706679,
+      "duration": 2.355193,
+      "tempo": 1.3409197816313425,
+      "path": "assets/voice/measures-01.wav"
+    },
+    {
+      "id": "measures-02",
+      "chapter": "measures",
+      "text": "e escolha a região que deseja acompanhar.",
+      "lines": [
+        "e escolha a região",
+        "que deseja acompanhar."
+      ],
+      "start": 137.796679,
+      "end": 139.61387,
+      "duration": 1.817191,
+      "tempo": 1.3409197816313425,
+      "path": "assets/voice/measures-02.wav"
+    },
+    {
+      "id": "measures-03",
+      "chapter": "measures",
+      "text": "O mapa indica onde posicionar a fita métrica.",
+      "lines": [
+        "O mapa indica onde",
+        "posicionar a fita métrica."
+      ],
+      "start": 139.70387,
+      "end": 142.003193,
+      "duration": 2.299323,
+      "tempo": 1.3409197816313425,
+      "path": "assets/voice/measures-03.wav"
+    },
+    {
+      "id": "measures-04",
+      "chapter": "measures",
+      "text": "Consulte check-ins, gráficos e comparações entre datas.",
+      "lines": [
+        "Consulte check-ins, gráficos",
+        "e comparações entre datas."
+      ],
+      "start": 142.093193,
+      "end": 144.633334,
+      "duration": 2.540141,
+      "tempo": 1.3409197816313425,
+      "path": "assets/voice/measures-04.wav"
+    },
+    {
+      "id": "measures-05",
+      "chapter": "measures",
+      "text": "A linha do tempo reúne os momentos registrados",
+      "lines": [
+        "A linha do tempo reúne",
+        "os momentos registrados"
+      ],
+      "start": 144.723334,
+      "end": 146.862196,
+      "duration": 2.138862,
+      "tempo": 1.3409197816313425,
+      "path": "assets/voice/measures-05.wav"
+    },
+    {
+      "id": "measures-06",
+      "chapter": "measures",
+      "text": "para você observar as mudanças com mais clareza.",
+      "lines": [
+        "para você observar as",
+        "mudanças com mais clareza."
+      ],
+      "start": 146.952196,
+      "end": 149.078162,
+      "duration": 2.125966,
+      "tempo": 1.3409197816313425,
+      "path": "assets/voice/measures-06.wav"
+    },
+    {
+      "id": "measures-07",
+      "chapter": "measures",
+      "text": "Medidas reais têm prioridade sobre estimativas visuais.",
+      "lines": [
+        "Medidas reais têm prioridade",
+        "sobre estimativas visuais."
+      ],
+      "start": 149.168162,
+      "end": 151.925132,
+      "duration": 2.75697,
+      "tempo": 1.3409197816313425,
+      "path": "assets/voice/measures-07.wav"
+    },
+    {
+      "id": "professional-01",
+      "chapter": "professional",
+      "text": "Para profissionais, a jornada continua na área própria.",
+      "lines": [
+        "Para profissionais, a jornada",
+        "continua na área própria."
+      ],
+      "start": 152.165132,
+      "end": 154.57983,
+      "duration": 2.414699,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-01.wav"
+    },
+    {
+      "id": "professional-02",
+      "chapter": "professional",
+      "text": "Organize alunos e convites, e crie programas reutilizáveis.",
+      "lines": [
+        "Organize alunos e convites, e",
+        "crie programas reutilizáveis."
+      ],
+      "start": 154.66983,
+      "end": 157.508646,
+      "duration": 2.838816,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-02.wav"
+    },
+    {
+      "id": "professional-03",
+      "chapter": "professional",
+      "text": "Monte a semana, ajuste a prescrição",
+      "lines": [
+        "Monte a semana,",
+        "ajuste a prescrição"
+      ],
+      "start": 157.598646,
+      "end": 159.132575,
+      "duration": 1.533928,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-03.wav"
+    },
+    {
+      "id": "professional-04",
+      "chapter": "professional",
+      "text": "e publique uma nova versão do programa.",
+      "lines": [
+        "e publique uma nova",
+        "versão do programa."
+      ],
+      "start": 159.222575,
+      "end": 160.907146,
+      "duration": 1.684571,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-04.wav"
+    },
+    {
+      "id": "professional-05",
+      "chapter": "professional",
+      "text": "As versões enviadas permanecem no histórico.",
+      "lines": [
+        "As versões enviadas",
+        "permanecem no histórico."
+      ],
+      "start": 160.997146,
+      "end": 162.982568,
+      "duration": 1.985422,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-05.wav"
+    },
+    {
+      "id": "professional-06",
+      "chapter": "professional",
+      "text": "O aluno recebe a programação e acessa",
+      "lines": [
+        "O aluno recebe a",
+        "programação e acessa"
+      ],
+      "start": 163.072568,
+      "end": 164.779295,
+      "duration": 1.706726,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-06.wav"
+    },
+    {
+      "id": "professional-07",
+      "chapter": "professional",
+      "text": "os próximos treinos dentro da sua rotina.",
+      "lines": [
+        "os próximos treinos",
+        "dentro da sua rotina."
+      ],
+      "start": 164.869295,
+      "end": 166.892937,
+      "duration": 2.023642,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-07.wav"
+    },
+    {
+      "id": "professional-08",
+      "chapter": "professional",
+      "text": "O profissional acompanha as execuções e as pendências",
+      "lines": [
+        "O profissional acompanha as",
+        "execuções e as pendências"
+      ],
+      "start": 166.982937,
+      "end": 169.470999,
+      "duration": 2.488062,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-08.wav"
+    },
+    {
+      "id": "professional-09",
+      "chapter": "professional",
+      "text": "para organizar o que precisa de atenção.",
+      "lines": [
+        "para organizar o que",
+        "precisa de atenção."
+      ],
+      "start": 169.560999,
+      "end": 171.289912,
+      "duration": 1.728913,
+      "tempo": 1.3409197816313418,
+      "path": "assets/voice/professional-09.wav"
+    },
+    {
+      "id": "outro-01",
+      "chapter": "outro",
+      "text": "Planejar, executar, registrar e acompanhar:",
+      "lines": [
+        "Planejar, executar,",
+        "registrar e acompanhar:"
+      ],
+      "start": 171.529912,
+      "end": 173.505701,
+      "duration": 1.975789,
+      "tempo": 1.3409197816313492,
+      "path": "assets/voice/outro-01.wav"
+    },
+    {
+      "id": "outro-02",
+      "chapter": "outro",
+      "text": "cada etapa prepara a próxima.",
+      "lines": [
+        "cada etapa prepara a próxima."
+      ],
+      "start": 173.595701,
+      "end": 175.036535,
+      "duration": 1.440833,
+      "tempo": 1.3409197816313492,
+      "path": "assets/voice/outro-02.wav"
+    },
+    {
+      "id": "outro-03",
+      "chapter": "outro",
+      "text": "Conheça o Fit Pro Player em fitpp.com.br.",
+      "lines": [
+        "Conheça o Fit Pro",
+        "Player em fitpp.com.br."
+      ],
+      "start": 175.126535,
+      "end": 177.684542,
+      "duration": 2.558008,
+      "tempo": 1.3409197816313492,
+      "path": "assets/voice/outro-03.wav"
+    },
+    {
+      "id": "outro-04",
+      "chapter": "outro",
+      "text": "E comece essa jornada pelo seu próximo treino.",
+      "lines": [
+        "E comece essa jornada",
+        "pelo seu próximo treino."
+      ],
+      "start": 177.774542,
+      "end": 179.88,
+      "duration": 2.105458,
+      "tempo": 1.3409197816313492,
+      "path": "assets/voice/outro-04.wav"
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+{
+  "ffprobe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "pcm_s24le",
+        "sample_rate": "48000",
+        "channels": 2,
+        "channel_layout": "stereo",
+        "bits_per_sample": 24,
+        "time_base": "1/48000",
+        "duration_ts": 8640000,
+        "duration": "180.000000"
+      }
+    ],
+    "format": {
+      "duration": "180.000000",
+      "size": "51840292"
+    }
+  },
+  "durationSeconds": 180.0,
+  "sampleFrames": 8640000,
+  "integratedLufs": -15.0,
+  "loudnessRangeLu": 4.9,
+  "ffmpegTruePeakDbtp": -1.5,
+  "oversampled8xPeakDbfs": -1.4622,
+  "samplePeakDbfs": -1.4816,
+  "meanVolumeDb": -16.1,
+  "maxVolumeDb": -1.5,
+  "clippedSamples": 0,
+  "firstFrame": [
+    -1.1920928955078125e-07,
+    -1.1920928955078125e-07
+  ],
+  "lastFrame": [
+    0.0,
+    0.0
+  ],
+  "lastQuarterSecondRmsDbfs": -100.3563,
+  "dcOffsetLeftRight": [
+    -1.857235668985932e-06,
+    -2.137032937672403e-06
+  ],
+  "stereoCorrelation": 0.962934,
+  "monoSpectralEnergyPercent": {
+    "sub": 64.173,
+    "bass": 26.206,
+    "mid": 3.902,
+    "narrationPresence": 0.892,
+    "air": 4.693
+  },
+  "minuteComparisons": [
+    {
+      "minutes": [
+        1,
+        2
+      ],
+      "identical": false,
+      "waveformCorrelation": 0.710021,
+      "differenceRmsDbfs": -18.1161
+    },
+    {
+      "minutes": [
+        2,
+        3
+      ],
+      "identical": false,
+      "waveformCorrelation": 0.626291,
+      "differenceRmsDbfs": -18.0359
+    },
+    {
+      "minutes": [
+        1,
+        3
+      ],
+      "identical": false,
+      "waveformCorrelation": 0.752018,
+      "differenceRmsDbfs": -18.7868
+    }
+  ],
+  "sections": [
+    {
+      "name": "intro",
+      "startSeconds": 0.0,
+      "endSeconds": 11.25,
+      "nominalStartSeconds": 0,
+      "nominalEndSeconds": 12,
+      "rmsDbfs": -15.3249,
+      "samplePeakDbfs": -1.4995
+    },
+    {
+      "name": "explanation",
+      "startSeconds": 11.25,
+      "endSeconds": 65.625,
+      "nominalStartSeconds": 12,
+      "nominalEndSeconds": 66,
+      "rmsDbfs": -15.1654,
+      "samplePeakDbfs": -1.4816
+    },
+    {
+      "name": "change",
+      "startSeconds": 65.625,
+      "endSeconds": 86.25,
+      "nominalStartSeconds": 66,
+      "nominalEndSeconds": 86,
+      "rmsDbfs": -19.9783,
+      "samplePeakDbfs": -1.5671
+    },
+    {
+      "name": "body",
+      "startSeconds": 86.25,
+      "endSeconds": 110.625,
+      "nominalStartSeconds": 86,
+      "nominalEndSeconds": 111,
+      "rmsDbfs": -15.2965,
+      "samplePeakDbfs": -1.4955
+    },
+    {
+      "name": "variation",
+      "startSeconds": 110.625,
+      "endSeconds": 151.875,
+      "nominalStartSeconds": 111,
+      "nominalEndSeconds": 151,
+      "rmsDbfs": -15.9153,
+      "samplePeakDbfs": -1.4996
+    },
+    {
+      "name": "professional",
+      "startSeconds": 151.875,
+      "endSeconds": 170.625,
+      "nominalStartSeconds": 151,
+      "nominalEndSeconds": 171,
+      "rmsDbfs": -17.3753,
+      "samplePeakDbfs": -1.5641
+    },
+    {
+      "name": "closing",
+      "startSeconds": 170.625,
+      "endSeconds": 180.0,
+      "nominalStartSeconds": 171,
+      "nominalEndSeconds": 180,
+      "rmsDbfs": -19.9955,
+      "samplePeakDbfs": -2.5031
+    }
+  ],
+  "sha256": "e56c62f22d82811e88ed2ca5bb64e636d9845e3fa197f9ceb0b0eda9194329ec",
+  "measurementTools": {
+    "ffmpeg": "9.0.2",
+    "numpy": "2.5.1"
+  },
+  "listeningClaim": "Numerical and arrangement verification only; narration mix not reviewed here",
+  "checks": {
+    "exact180Seconds": true,
+    "48000HzStereoPcm24": true,
+    "noClippingOrNonfinite": true,
+    "truePeakAtMostMinus1": true,
+    "loudnessNearMinus15": true,
+    "distinctMinutes": true,
+    "tailEndsQuietly": true
+  }
+}

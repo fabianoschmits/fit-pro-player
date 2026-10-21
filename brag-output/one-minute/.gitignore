@@ -1,0 +1,4 @@
+.venv/
+composition/node_modules/
+composition/.hyperframes/
+qc/

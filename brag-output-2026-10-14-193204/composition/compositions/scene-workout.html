@@ -1,0 +1,35 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"></head><body><template><style>#scene-workout{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}</style><div id="scene-workout" data-composition-id="scene-workout" data-width="1080" data-height="1920" data-duration="30.219794239146346"><div id="scene-workout-world" class="world"><h2 class="scene-title"><span class="title-word">Registre</span><span class="title-word">o</span><span class="title-word">que</span><span class="title-word">você</span><span class="title-word">faz.</span></h2><div class="stage"><article id="workout-move" class="pane " data-pane-start="0" data-pane-end="7.353483264858944"><div class="panel"><div class="piece heading"><h3>Supino com barra</h3></div><div class="sprite" data-sprite="bench-press" aria-label="Supino com barra"><img src="assets/sprites/bench-press/frame-1.webp" class="sprite-frame first" alt="Supino com barra"><img src="assets/sprites/bench-press/frame-2.webp" class="sprite-frame " alt="Supino com barra"><img src="assets/sprites/bench-press/frame-3.webp" class="sprite-frame " alt="Supino com barra"><img src="assets/sprites/bench-press/frame-4.webp" class="sprite-frame " alt="Supino com barra"></div><div class="piece center"><span>Peitoral · barra</span></div></div></article><article id="workout-sets" class="pane " data-pane-start="7.353483264858944" data-pane-end="19.642866255445124"><div class="panel"><div class="piece heading"><h3>Supino com barra</h3></div><div class="sprite" data-sprite="bench-press-sets" aria-label="Supino com barra"><img src="assets/sprites/bench-press-sets/frame-1.webp" class="sprite-frame first" alt="Supino com barra"><img src="assets/sprites/bench-press-sets/frame-2.webp" class="sprite-frame " alt="Supino com barra"><img src="assets/sprites/bench-press-sets/frame-3.webp" class="sprite-frame " alt="Supino com barra"><img src="assets/sprites/bench-press-sets/frame-4.webp" class="sprite-frame " alt="Supino com barra"></div><div class="sets"><div class="piece set-head"><span>Série</span><span>kg</span><span>Reps</span><span></span></div><div class="piece set-row"><b>1</b><span><span class="typed" data-type="60" data-at="0.66"><span>60</span><i></i></span></span><span><span class="typed" data-type="10" data-at="0.9600000000000001"><span>10</span><i></i></span></span><span class="set-state demo-set">▶</span></div><div class="piece set-row"><b>2</b><span><span class="typed" data-type="62,5" data-at="0.8200000000000001"><span>62,5</span><i></i></span></span><span><span class="typed" data-type="10" data-at="1.12"><span>10</span><i></i></span></span><span class="set-state ">—</span></div><div class="piece set-row"><b>3</b><span><span class="typed" data-type="62,5" data-at="0.98"><span>62,5</span><i></i></span></span><span><span class="typed" data-type="8" data-at="1.28"><span>8</span><i></i></span></span><span class="set-state ">—</span></div></div><div class="rest piece"><span>Descanso</span><strong class="rest-count">01:30</strong></div></div></article><article id="workout-adjust" class="pane " data-pane-start="19.642866255445124" data-pane-end="30.219794239146346"><div class="panel"><div class="piece heading"><h3>Ajustes do exercício</h3></div><div class="piece row"><small>Última vez</small><strong>60 kg × 10 · 60 kg × 10</strong></div><div class="piece row"><strong>Adicionar série</strong><span>Ajuste a sessão</span></div><div class="piece row"><strong>Aquecimento</strong><span>Prepare a execução</span></div><div class="piece row"><strong>Substituir exercício</strong><span>Consulte outra opção</span></div><div class="piece row"><strong>Esforço por série</strong><span>Opcional · RIR ou RPE</span></div></div></article></div></div></div><script>(function(){
+ const root=document.getElementById('scene-workout');const tl=gsap.timeline({paused:true});
+ const world=root.querySelector('.world');
+ tl.fromTo(world,{x:120,scale:1.075},{x:0,scale:1,duration:.46,ease:'power3.out'},0);
+ tl.fromTo(root.querySelectorAll('.title-word'),{y:28,opacity:0},{y:0,opacity:1,duration:.3,stagger:.055,ease:'power3.out'},.05);
+ for(const p of root.querySelectorAll('.pane')){
+  const start=Number(p.dataset.paneStart),end=Number(p.dataset.paneEnd);
+  tl.fromTo(p,{opacity:0},{opacity:1,duration:.01,immediateRender:false,ease:'none'},start);
+  tl.fromTo(p,{x:160,scale:1.04},{x:0,scale:1,duration:.42,ease:'power3.out',immediateRender:false},start);
+  const pieces=p.querySelectorAll('.piece');
+  pieces.forEach((el,i)=>tl.fromTo(el,{y:34,x:i%2?-18:18,opacity:0},{y:0,x:0,opacity:1,duration:.36,ease:i%3===0?'power4.out':i%3===1?'power2.out':'sine.out',immediateRender:false},start+.05+i*.055));
+  for(const box of p.querySelectorAll('.panel'))tl.fromTo(box,{'--hf-panel-open':0},{'--hf-panel-open':1,duration:.44,ease:'power3.out',immediateRender:false},start);
+  for(const t of p.querySelectorAll('.typed')){
+   const text=t.dataset.type,span=t.querySelector('span'),caret=t.querySelector('i');
+   const at=start+Number(t.dataset.at||.7);tl.set(span,{innerText:''},0);
+   for(let k=1;k<=text.length;k++)tl.set(span,{innerText:text.slice(0,k)},at+k*(text.length>18?.075:.095)+(k>7?.07:0));
+   tl.set(caret,{opacity:1},at);tl.to(caret,{opacity:.1,duration:.25,repeat:Math.max(0,Math.floor((text.length*.09)/.25)-1),yoyo:true,ease:'none'},at+.1);tl.set(caret,{opacity:0},at+text.length*.095+.45);
+  }
+  for(const s of p.querySelectorAll('.sprite')){
+   const frames=s.querySelectorAll('.sprite-frame');for(let k=0;start+k*.6<end;k++){tl.set(frames,{opacity:0},start+k*.6);tl.set(frames[k%4],{opacity:1},start+k*.6);}
+  }
+  for(const path of p.querySelectorAll('.draw-path')){
+   const length=path.getTotalLength();tl.set(path,{strokeDasharray:length,strokeDashoffset:length},0);tl.to(path,{strokeDashoffset:0,duration:4.8,ease:'power2.inOut'},start+.6);
+  }
+  const dots=p.querySelectorAll('.chart-dot');if(dots.length)tl.fromTo(dots,{opacity:0,scale:.5,transformOrigin:'center'},{opacity:1,scale:1,duration:.2,stagger:.4,ease:'power2.out',immediateRender:false},start+1);
+  if(p.querySelector('.demo-set')){const n=p.querySelector('.demo-set');tl.set(n,{innerText:'■'},start+3.5);tl.set(n,{innerText:'✓',backgroundColor:'#276b55'},start+5.8);const timer=p.querySelector('.rest-count');for(let k=0;k<5;k++)tl.set(timer,{innerText:'01:'+String(30-k).padStart(2,'0')},start+6+k);}
+  if(end<30.219794239146346){tl.to(p,{x:-175,scale:.96,duration:.28,ease:'power2.in'},end-.28);tl.set(p,{opacity:0},end);}
+ }
+ // beat-locked: the anatomy focus begins at the music's 86.25s return.
+ const focusAt=2.6;
+ const selected=root.querySelectorAll('[data-muscle="chest"]');if(selected.length)tl.to(selected,{fill:'#b5fffa',duration:.8,repeat:2,yoyo:true,ease:'sine.inOut'},focusAt);
+ if('workout'==='outro')tl.to(root.querySelector('.closing-logo'),{scale:.985,duration:3.5,ease:'none'},4.5);
+ if('workout'!=='outro')tl.to(world,{x:-100,y:-25,scale:.96,duration:.28,ease:'power2.in'},30.219794239146346-.28);
+ window.__timelines['scene-workout']=tl;
+})();</script></template></body></html>

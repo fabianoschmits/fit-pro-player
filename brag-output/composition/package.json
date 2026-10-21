@@ -1,0 +1,15 @@
+{
+  "name": "fit-pro-player-brag",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../build.mjs",
+    "check": "hyperframes check --samples 15 --snapshots",
+    "preview": "hyperframes preview --background",
+    "render": "hyperframes render --fps 30 --quality delivery --workers 2 --strict --output ../brag.render.mp4"
+  },
+  "devDependencies": {
+    "gsap": "3.14.2",
+    "hyperframes": "0.8.157"
+  }
+}

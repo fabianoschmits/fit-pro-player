@@ -1,4 +1,4 @@
-.support-page { padding-bottom: 48px; width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
+.support-page { padding-bottom: calc(72px + var(--sab, 0px)); width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: hidden; }
 .support-actions { display: grid; gap: 12px; margin: 18px 0 26px; width: 100%; }
 .support-action-card, .support-ticket-row {
   display: flex; align-items: center; gap: 12px; padding: 16px;
@@ -119,11 +119,13 @@
 }
 
 /* ── Chat page layout ──────────────────────────────────────────── */
+/* z-index 60 keeps the chat above the navigation menu (z-index 50) so the
+   input bar is never covered when the corner-nav is expanded on mobile. */
 .chat-page {
   position: fixed;
   inset: 0;
   bottom: 0;
-  z-index: 50;
+  z-index: 60;
   display: flex;
   flex-direction: column;
   height: 100dvh;
