@@ -14,14 +14,27 @@ import Icon from './Icon.jsx'
 import NavigationIcon from './NavigationIcon.jsx'
 import { useFppActivation } from './useFppActivation.js'
 import './tabbar-motion.css'
+import './tabbar-glass.css'
 import { getVisualId, findIconMorph } from './icon-morph-registry.jsx'
 
 import { resolveNavigationContext } from '../lib/navigation-contexts.js'
 
 const NAVIGATION_LAYOUT_KEY = 'fpp_navigation_layout_v1'
 const PIVOT_WIDTH = 56
-const MENU_HEIGHT = 52
+const menuHeightForWidth = width => width < 768 ? 68 : 52
 const MAX_ARM_WIDTH = 320
+
+function NavigationGlassRefraction() {
+  return <svg className="corner-nav-glass-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="fpp-nav-glass-refraction" x="-40%" y="-40%" width="180%" height="180%" colorInterpolationFilters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.022 0.065" numOctaves="2" seed="8" result="texture" />
+        <feGaussianBlur in="texture" stdDeviation="1.2" result="softTexture" />
+        <feDisplacementMap in="SourceGraphic" in2="softTexture" scale="16" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+}
 
 function NavItemIcon({ item, resume, active, visible, activation, entryKey }) {
   if (item.k === 'home' || item.k === 'plan' || item.k === 'start' || item.k === 'workout' || item.k === 'stats') {
@@ -172,7 +185,7 @@ function PivotTransition({ currentItem, state, iconActivation }) {
 }
 
 // Keep a moved menu reachable, including after rotating or resizing the screen.
-function constrainPosition(point, height) {
+function constrainPosition(point, height = menuHeightForWidth(window.innerWidth)) {
   const margin = window.innerWidth >= 768 ? 16 : 0
   const bottom = Math.max(0, window.innerHeight - height - margin)
   return {
@@ -187,7 +200,7 @@ function readNavigationLayout() {
     const point = saved?.position
     return {
       open: saved?.open === true,
-      position: Number.isFinite(point?.x) && Number.isFinite(point?.y) ? constrainPosition(point, MENU_HEIGHT) : null,
+      position: Number.isFinite(point?.x) && Number.isFinite(point?.y) ? constrainPosition(point) : null,
     }
   } catch { return { open: false, position: null } }
 }
@@ -209,6 +222,7 @@ export default function TabBar({ onStart }) {
   const [iconActivation, setIconActivation] = useState(0)
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
   const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight)
+  const menuHeight = menuHeightForWidth(viewportWidth)
   const rootRef = useRef(null), toggleRef = useRef(null), moreTrigger = useRef(null), firstMore = useRef(null)
   const drag = useRef(null), ignoreClickUntil = useRef(0)
   const free = position !== null
@@ -251,7 +265,7 @@ export default function TabBar({ onStart }) {
     const fit = () => {
       setViewportWidth(window.innerWidth)
       setViewportHeight(window.innerHeight)
-      setPosition(point => point && constrainPosition(point, MENU_HEIGHT))
+      setPosition(point => point && constrainPosition(point))
     }
     window.addEventListener('resize', fit)
     return () => window.removeEventListener('resize', fit)
@@ -296,14 +310,14 @@ export default function TabBar({ onStart }) {
 
     const rawY = origin.top + dy
     const margin = window.innerWidth >= 768 ? 16 : 0
-    const bottomLimit = Math.max(0, window.innerHeight - MENU_HEIGHT - margin)
+    const bottomLimit = Math.max(0, window.innerHeight - menuHeightForWidth(window.innerWidth) - margin)
 
     // Magnet snap to bottom footer
     if (rawY >= bottomLimit - SNAP_THRESHOLD) {
       setPosition(null)
       setMoveReady(false)
     } else {
-      setPosition(constrainPosition({ x: origin.left + dx, y: rawY }, MENU_HEIGHT))
+      setPosition(constrainPosition({ x: origin.left + dx, y: rawY }))
     }
   }
   const endDrag = () => {
@@ -362,17 +376,18 @@ export default function TabBar({ onStart }) {
   const currentItem = resolved.pivotItem || navItems.find(item => item.k === currentKey) || (secondary && { ...secondary, label: () => secondary.title }) || navItems[0]
   // Expand toward the side with room, preserving the pivot's chosen location.
   const opensLeft = free && position.x > (viewportWidth - PIVOT_WIDTH) / 2
-  const opensDown = free && position.y < (viewportHeight - MENU_HEIGHT) / 2
+  const opensDown = free && position.y < (viewportHeight - menuHeight) / 2
   const armSpace = free ? (opensLeft ? position.x : viewportWidth - position.x - PIVOT_WIDTH) : 0
   const panelWidth = Math.min(320, viewportWidth - 24)
   const style = position ? {
     left: position.x, top: position.y, bottom: 'auto',
     '--menu-width': `${PIVOT_WIDTH + Math.min(MAX_ARM_WIDTH, armSpace)}px`,
-    '--more-space': `${Math.max(0, opensDown ? viewportHeight - position.y - MENU_HEIGHT - 44 : position.y - 44)}px`,
+    '--more-space': `${Math.max(0, opensDown ? viewportHeight - position.y - menuHeight - 44 : position.y - 44)}px`,
     '--more-left': `${Math.max(8, Math.min(position.x, viewportWidth - panelWidth - 8)) - position.x}px`,
   } : undefined
 
   return <div id="tabbar" data-context={resolved.contextId} ref={rootRef} className={'corner-nav' + (open ? ' is-open' : '') + (free ? ' is-free' : '') + (opensLeft ? ' opens-left' : '') + (opensDown ? ' opens-down' : '') + (moveReady ? ' is-move-ready' : '')} style={style}>
+    <NavigationGlassRefraction />
     {import.meta.env.DEV && <div id="tabbar-debug" style={{ position: 'fixed', bottom: 72, left: 8, background: 'rgba(0,0,0,.75)', color: '#0f0', fontFamily: 'monospace', fontSize: 10, padding: '4px 6px', borderRadius: 4, zIndex: 9999, pointerEvents: 'none', lineHeight: 1.5 }}>
       [TabBar] {loc.pathname}<br />
       ctx: {resolved.contextId} | key: {currentKey}<br />

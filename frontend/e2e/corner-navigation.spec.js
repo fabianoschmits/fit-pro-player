@@ -110,7 +110,7 @@ for (const width of [320, 390, 600]) {
     await expect(nav(page).getByRole('button')).toHaveCount(1)
     const closed = await nav(page).boundingBox()
     expect(closed.width).toBeCloseTo(pivotWidth, 0)
-    expect(closed.height).toBeLessThan(64)
+    expect(closed.height).toBeCloseTo(68, 0)
     expect(closed.x).toBeCloseTo(0, 0)
     expect(closed.y + closed.height).toBeCloseTo(height, 0)
 
@@ -119,7 +119,7 @@ for (const width of [320, 390, 600]) {
     const opened = await page.locator('.corner-nav-shell').boundingBox()
     expect(opened.x).toBeCloseTo(0, 0)
     expect(opened.width).toBeCloseTo(width, 0)
-    expect(opened.height).toBeLessThan(64)
+    expect(opened.height).toBeCloseTo(68, 0)
     expect(opened.y + opened.height).toBeCloseTo(height, 0)
     await expect(main(page)).toHaveAttribute('aria-hidden', 'false')
     expect(await main(page).evaluate(element => element.inert)).toBe(false)
@@ -163,6 +163,7 @@ test('desktop navigation floats above the bottom when closed and open', async ({
     if (open) await openMainNavigation(page)
     await settle(page)
     const box = await page.locator('.corner-nav-shell').boundingBox()
+    expect(box.height).toBeCloseTo(52, 0)
     expect(box.x).toBeGreaterThanOrEqual(16)
     expect(height - box.y - box.height).toBeGreaterThanOrEqual(16)
     expect(box.width).toBeLessThan(1280 - 32)
@@ -500,6 +501,8 @@ test.describe('navigation icons', () => {
     await expect(page).toHaveURL(/#\/workout$/)
     await expect(start).toContainText('Retomar')
     await expect(toggle(page)).toHaveAccessibleName(/Retomar/)
+    // The pivot briefly keeps the departing icon while the current one enters.
+    await settle(page)
     for (const control of [start, toggle(page)]) {
       await expect(control.locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
       await expect(control.locator('.nav-icon__dumbbell')).toHaveCount(1)

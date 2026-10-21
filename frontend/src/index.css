@@ -51,6 +51,7 @@
   --pad:16px;
   --content-max:640px;
   --control-min:44px;
+  --primary-menu-height:52px;
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
   --space-5:20px; --space-6:24px; --space-7:32px;
   --icon-stroke:1.7;
@@ -61,6 +62,10 @@
 
   --sab:env(safe-area-inset-bottom,0px);
   --sat:calc(max(env(safe-area-inset-top,0px),var(--pwa-top-min,0px)) + var(--pwa-top-gap,0px));
+}
+
+@media(max-width:767px){
+  :root{--primary-menu-height:68px}
 }
 
 /* Leave room for the installed browser's status-bar blur and the profile bubble.
@@ -186,7 +191,7 @@ button,.chip,.tile,.item,.wday,.cal-d,.swatch,.hm-c,.lrow,.seg button,.stp butto
   padding:calc(var(--sat) + 8px) var(--pad) calc(104px + var(--sab));
   max-width:560px;margin:0 auto;
 }
-body.resting #app{padding-bottom:calc(224px + var(--sab))}
+body.resting #app{padding-bottom:calc(172px + var(--primary-menu-height) + var(--sab))}
 
 /* large title */
 .hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 15px}
@@ -399,7 +404,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 /* Folding navigation: a compact left pivot, a full mobile footer and a floating
    desktop card. The sheet stays mounted for interruptible open AND close motion. */
 #tabbar.corner-nav{
-  --menu-width:100vw;--menu-height:52px;
+  --menu-width:100vw;--menu-height:var(--primary-menu-height);
   --more-space:calc(100dvh - var(--menu-height) - 40px - var(--sat));
   position:fixed;z-index:50;left:0;right:auto;bottom:0;
   width:56px;height:var(--menu-height);font-size:10px;pointer-events:none;
@@ -447,7 +452,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 }
 .corner-nav.is-open .corner-nav-main::after{opacity:0}
 .corner-nav-tab{
-  position:relative;flex:1;min-width:0;height:52px;padding:0 2px;
+  position:relative;flex:1;min-width:0;height:var(--menu-height);padding:0 2px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   border-radius:0;background:transparent;color:color-mix(in srgb,var(--label) 84%,transparent);
 }
@@ -491,7 +496,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav-drag-toggle{border-top:var(--hair) solid var(--surface-border);margin-top:5px}
 .corner-nav button:focus-visible{outline:2px solid var(--acc);outline-offset:-3px}
 .corner-nav.is-move-ready .corner-nav-toggle{outline:2px dashed var(--on-acc);outline-offset:-5px}
-#tabbar.corner-nav.is-free{--menu-height:52px;width:56px}
+#tabbar.corner-nav.is-free{width:56px}
 .corner-nav.is-free .corner-nav-toggle{padding-bottom:0;border-radius:0 0 0 12px}
 .corner-nav.is-free .corner-nav-main{padding-bottom:0;border-radius:0 0 12px 0;overflow-x:auto;scrollbar-width:none}
 .corner-nav.is-free .corner-nav-tab{min-width:44px}
@@ -517,7 +522,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav.is-open.opens-left .corner-nav-main{transform:perspective(900px) rotateY(0deg)}
 .corner-nav.is-open.opens-left .corner-nav-toggle{border-radius:0 0 12px 0}
 @media(min-width:768px){
-  #tabbar.corner-nav{--menu-width:min(376px,calc(100vw - 32px));--menu-height:52px;left:16px;bottom:max(16px,var(--sab))}
+  #tabbar.corner-nav{--menu-width:min(376px,calc(100vw - 32px));left:16px;bottom:max(16px,var(--sab))}
   .corner-nav-toggle{padding-bottom:0;border-radius:0 0 0 12px}
   .corner-nav-main{padding-bottom:0;border-radius:0 0 12px 0}
   .corner-nav:not(.is-open) .corner-nav-toggle{border-radius:0 0 12px 12px}
@@ -1456,7 +1461,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 
 /* --- rest timer --- */
 #timer{
-  position:fixed;left:12px;right:12px;bottom:calc(76px + var(--sab));z-index:60;
+  position:fixed;left:12px;right:12px;bottom:calc(var(--primary-menu-height) + 24px + var(--sab));z-index:60;
   /* An opaque surface keeps the clock distinct from the set rows underneath. */
   background:var(--surface);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);

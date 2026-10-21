@@ -91,6 +91,19 @@ describe('TabBar folding navigation', () => {
     expect(container.querySelector('.corner-nav-more').hasAttribute('inert')).toBe(true)
   })
 
+  it('keeps a restored mobile pivot on screen with the taller menu after a resize', () => {
+    const viewport = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390)
+    localStorage.setItem('fpp_navigation_layout_v1', JSON.stringify({ open: true, position: { x: 20, y: 9999 } }))
+    render()
+    const tabbar = container.querySelector('#tabbar')
+    expect(Number.parseFloat(tabbar.style.top)).toBe(window.innerHeight - 68)
+    viewport.mockReturnValue(1280)
+    act(() => window.dispatchEvent(new Event('resize')))
+    viewport.mockReturnValue(390)
+    act(() => window.dispatchEvent(new Event('resize')))
+    expect(Number.parseFloat(tabbar.style.top)).toBeLessThanOrEqual(window.innerHeight - 68)
+  })
+
   it('keeps destinations mounted during closing so the sheet can fold back', () => {
     render()
     click(toggle())

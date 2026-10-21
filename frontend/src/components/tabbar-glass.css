@@ -1,0 +1,173 @@
+/* The folding dock keeps its existing layout and motion. Only the narrow rim
+   of each pane refracts; icons and labels remain on an undistorted layer. */
+.corner-nav .corner-nav-glass-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.corner-nav {
+  --nav-glass-rim-top: rgb(221 245 247 / 21%);
+  --nav-glass-rim-side: rgb(147 201 205 / 12%);
+  --nav-glass-rim-bottom: rgb(0 10 15 / 52%);
+  --nav-glass-reflection: rgb(203 230 238 / 6%);
+  --nav-glass-teal-reflection: rgb(35 136 142 / 7%);
+  --nav-glass-pane-shade: rgb(1 13 18 / 15%);
+  --nav-glass-pane-seam: rgb(3 16 21 / 24%);
+  --nav-glass-pivot-shade: rgb(0 37 45 / 20%);
+  --nav-glass-shadow: rgb(0 8 12 / 23%);
+  --nav-glass-solid-fill: rgb(19 29 34 / 89%);
+  --nav-glass-fallback-wash: rgb(16 27 32 / 35%);
+}
+
+[data-theme='light'] .corner-nav {
+  --nav-glass-rim-top: rgb(255 255 255 / 61%);
+  --nav-glass-rim-side: rgb(239 255 255 / 40%);
+  --nav-glass-rim-bottom: rgb(34 77 82 / 23%);
+  --nav-glass-reflection: rgb(255 255 255 / 15%);
+  --nav-glass-teal-reflection: rgb(30 133 139 / 4%);
+  --nav-glass-pane-shade: rgb(24 63 68 / 5%);
+  --nav-glass-pane-seam: rgb(31 83 88 / 12%);
+  --nav-glass-pivot-shade: rgb(0 61 67 / 13%);
+  --nav-glass-shadow: rgb(22 59 66 / 12%);
+  --nav-glass-solid-fill: rgb(232 243 241 / 94%);
+  --nav-glass-fallback-wash: rgb(233 243 240 / 41%);
+}
+
+.corner-nav .corner-nav-main {
+  /* Keep the original color-mix(... 24%, transparent) background color. */
+  background-image:
+    linear-gradient(180deg, var(--nav-glass-reflection), transparent 34% 62%, var(--nav-glass-pane-shade)),
+    linear-gradient(118deg, transparent 15% 52%, var(--nav-glass-teal-reflection) 78%, transparent);
+  border-top-color: var(--nav-glass-rim-side);
+  box-shadow:
+    inset 0 1px 0 var(--nav-glass-rim-top),
+    inset 0 -1px 0 var(--nav-glass-rim-bottom),
+    0 -6px 24px var(--nav-glass-shadow);
+}
+
+.corner-nav .corner-nav-tab {
+  background-image: linear-gradient(145deg, var(--nav-glass-reflection), transparent 28% 74%, var(--nav-glass-teal-reflection));
+  box-shadow:
+    inset 1px 0 0 var(--nav-glass-rim-side),
+    inset -1px 0 0 var(--nav-glass-pane-seam),
+    inset 0 1px 0 var(--nav-glass-rim-top),
+    inset 0 -1px 0 var(--nav-glass-rim-bottom);
+}
+
+.corner-nav .corner-nav-tab.is-active {
+  background-color: var(--acc-soft);
+}
+
+.corner-nav .corner-nav-toggle {
+  background-color: color-mix(in srgb, var(--acc) 90%, transparent);
+  background-image:
+    linear-gradient(145deg, var(--nav-glass-rim-top), transparent 31% 68%, var(--nav-glass-teal-reflection)),
+    linear-gradient(180deg, transparent 57%, var(--nav-glass-pivot-shade));
+  border-top-color: var(--nav-glass-rim-side);
+  border-right-color: var(--nav-glass-pane-seam);
+  -webkit-backdrop-filter: blur(10px) saturate(1.12);
+  backdrop-filter: blur(10px) saturate(1.12);
+  box-shadow:
+    inset 0 1px 0 var(--nav-glass-rim-top),
+    inset 1px 0 0 var(--nav-glass-rim-side),
+    inset -1px 0 0 var(--nav-glass-pane-seam),
+    inset 0 -1px 0 var(--nav-glass-rim-bottom),
+    0 -6px 24px var(--nav-glass-shadow);
+}
+
+.corner-nav .corner-nav-more-trigger {
+  background-image: linear-gradient(145deg, var(--nav-glass-reflection), transparent 42% 71%, var(--nav-glass-teal-reflection));
+  border-color: var(--nav-glass-rim-side);
+  box-shadow:
+    inset 0 1px 0 var(--nav-glass-rim-top),
+    inset 0 -1px 0 var(--nav-glass-rim-bottom),
+    0 2px 8px var(--nav-glass-shadow);
+}
+
+.corner-nav .corner-nav-toggle::before,
+.corner-nav .corner-nav-tab::before,
+.corner-nav .corner-nav-more-trigger::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  padding: 4px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, var(--nav-glass-rim-top), transparent 28% 65%, var(--nav-glass-rim-bottom)),
+    linear-gradient(115deg, var(--nav-glass-rim-side), transparent 23% 76%, var(--nav-glass-teal-reflection));
+  -webkit-backdrop-filter: blur(.8px) saturate(1.3);
+  backdrop-filter: blur(.8px) saturate(1.3);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+@supports ((backdrop-filter: url('#fpp-nav-glass-refraction') blur(.35px) saturate(1.3)) or (-webkit-backdrop-filter: url('#fpp-nav-glass-refraction') blur(.35px) saturate(1.3))) {
+  .corner-nav .corner-nav-toggle::before,
+  .corner-nav .corner-nav-tab::before,
+  .corner-nav .corner-nav-more-trigger::before {
+    -webkit-backdrop-filter: url('#fpp-nav-glass-refraction') blur(.35px) saturate(1.3);
+    backdrop-filter: url('#fpp-nav-glass-refraction') blur(.35px) saturate(1.3);
+  }
+}
+
+.corner-nav .dock-slot-content,
+.corner-nav .pivot-transition-shell {
+  z-index: 1;
+}
+
+.corner-nav .corner-nav-more-trigger > .icn {
+  position: relative;
+  z-index: 1;
+}
+
+.corner-nav .corner-nav-more {
+  background-image: linear-gradient(145deg, var(--nav-glass-reflection), transparent 30% 78%, var(--nav-glass-teal-reflection));
+  border-color: var(--nav-glass-rim-side);
+  box-shadow:
+    inset 0 1px 0 var(--nav-glass-rim-top),
+    inset 1px 0 0 var(--nav-glass-rim-side),
+    inset 0 -1px 0 var(--nav-glass-rim-bottom),
+    0 8px 30px var(--nav-glass-shadow);
+}
+
+/* The existing inset bevels retain the pane boundaries without CSS masks. */
+@supports not ((mask-composite: exclude) or (-webkit-mask-composite: xor)) {
+  .corner-nav .corner-nav-toggle::before,
+  .corner-nav .corner-nav-tab::before,
+  .corner-nav .corner-nav-more-trigger::before {
+    content: none;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .corner-nav .corner-nav-main {
+    background-image:
+      linear-gradient(var(--nav-glass-fallback-wash), var(--nav-glass-fallback-wash)),
+      linear-gradient(180deg, var(--nav-glass-reflection), transparent 42%, var(--nav-glass-pane-shade));
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .corner-nav .corner-nav-main,
+  .corner-nav .corner-nav-more {
+    background-image: linear-gradient(var(--nav-glass-solid-fill), var(--nav-glass-solid-fill));
+  }
+
+  .corner-nav .corner-nav-toggle {
+    background-color: var(--acc);
+  }
+
+  .corner-nav .corner-nav-toggle::before,
+  .corner-nav .corner-nav-tab::before,
+  .corner-nav .corner-nav-more-trigger::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}

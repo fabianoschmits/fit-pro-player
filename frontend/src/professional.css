@@ -22,7 +22,7 @@
 .professional-editor-grid input,.professional-editor-grid select,.professional-editor-grid textarea{min-height:44px;font-size:16px;min-width:0}
 .professional-status,.app-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--sep);border-radius:var(--r);padding:10px 12px;color:var(--label-2);font-size:13px;line-height:1.5}
 .app-status{margin:0 auto 12px;max-width:var(--content-max);background:var(--surface)}
-.app-status-global{position:fixed;bottom:calc(84px + var(--sab));left:16px;right:16px;z-index:60;box-shadow:var(--card-shadow)}
+.app-status-global{position:fixed;bottom:calc(var(--primary-menu-height) + 32px + var(--sab));left:16px;right:16px;z-index:60;box-shadow:var(--card-shadow)}
 .app-status[data-state="error"],.app-status[data-state="conflict"]{border-color:var(--red);color:var(--label)}
 .app-status[data-state="session-error"],.app-status[data-state="session-auth"],.app-status[data-state="session-takeover"]{border-color:var(--red);color:var(--label)}
 .app-status a{color:var(--label);text-decoration:underline}.app-status .status-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);flex:none}
@@ -105,7 +105,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 @media(prefers-reduced-motion:reduce){.dialog-surface{animation:none}}
 
 /* Management workspace — compact, flat and mobile first, like the platform Central. */
-#app:has(.management-layout){max-width:1232px;padding:var(--sat) 0 calc(72px + var(--sab))}
+#app:has(.management-layout){max-width:1232px;padding:var(--sat) 0 calc(var(--primary-menu-height) + 20px + var(--sab))}
 .management-layout{--management-muted:var(--label-2);width:100%;max-width:1232px;margin-inline:auto;color:var(--label);font-size:14px;line-height:1.5}
 .management-layout *{box-sizing:border-box}
 .management-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--sep)}
