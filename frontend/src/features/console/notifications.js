@@ -11,5 +11,6 @@ export function createConsoleNotificationRepository({ client } = {}) {
       unreadCount: Number(data?.unread_count || 0), hasMore: Boolean(data?.has_more),
     })),
     markRead: id => rpc('ops_mark_notifications_read', { p_notification_id: id }),
+    deleteNotifications: ids => rpc('ops_delete_notifications', { p_notification_ids: Array.isArray(ids) ? ids : [ids] }),
   }
 }

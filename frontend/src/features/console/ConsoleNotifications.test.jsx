@@ -4,10 +4,10 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ list: vi.fn(), markRead: vi.fn(), auth: { status: 'authenticated', user: { id: 'admin-1' } } }))
+const mocks = vi.hoisted(() => ({ list: vi.fn(), markRead: vi.fn(), deleteNotifications: vi.fn(), auth: { status: 'authenticated', user: { id: 'admin-1' } } }))
 vi.mock('../../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
-vi.mock('./notifications.js', () => ({ createConsoleNotificationRepository: () => ({ list: mocks.list, markRead: mocks.markRead }) }))
+vi.mock('./notifications.js', () => ({ createConsoleNotificationRepository: () => ({ list: mocks.list, markRead: mocks.markRead, deleteNotifications: mocks.deleteNotifications }) }))
 import ConsoleNotifications from './ConsoleNotifications.jsx'
 let root, container
 function Location() { return <output>{useLocation().pathname}</output> }
@@ -73,4 +73,28 @@ it('guards duplicate mark-all writes and permits retry after failure', async () 
   expect(action().getAttribute('data-state')).toBe('error')
   await act(async () => action().click())
   expect(mocks.markRead).toHaveBeenCalledTimes(2)
+})
+
+it('allows expanding manage mode, selecting notifications and deleting them', async () => {
+  mocks.deleteNotifications.mockResolvedValueOnce()
+  await render(true)
+  await act(async () => container.querySelector('button').click())
+
+  const manageBtn = [...document.querySelectorAll('[role="dialog"] button')].find(el => el.textContent.includes('Gerenciar'))
+  expect(manageBtn).not.toBeNull()
+  await act(async () => manageBtn.click())
+
+  const checkbox = document.querySelector('input[type="checkbox"][aria-label="Selecionar notificação Nova mensagem"]')
+  expect(checkbox).not.toBeNull()
+  await act(async () => checkbox.click())
+  expect(checkbox.checked).toBe(true)
+
+  const originalConfirm = window.confirm
+  window.confirm = () => true
+  const deleteBtn = [...document.querySelectorAll('[role="dialog"] button')].find(el => el.textContent.includes('Excluir selecionadas'))
+  expect(deleteBtn).not.toBeNull()
+  await act(async () => deleteBtn.click())
+  window.confirm = originalConfirm
+
+  expect(mocks.deleteNotifications).toHaveBeenCalledWith(['support:m1'])
 })
