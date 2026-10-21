@@ -127,7 +127,7 @@
 :root[data-theme="light"][data-accent="red"]   { --on-acc:#fff }
 
 /* ---------------------------------------------------------------- reset -- */
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
 *{scrollbar-color:var(--surface-3) transparent}
 *::-webkit-scrollbar{width:10px;height:10px}
 *::-webkit-scrollbar-track{background:transparent}
@@ -149,13 +149,12 @@ body{
   transition:background-color .4s var(--ease),color .35s var(--ease);
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;letter-spacing:inherit}
-input,select,textarea{font:inherit;color:var(--label);letter-spacing:inherit}
+input,select,textarea{font:inherit;color:var(--label);letter-spacing:inherit;-webkit-user-select:text;user-select:text}
 img{max-width:100%}
 a{color:var(--acc);text-decoration:none}
 :focus{outline:none}
 :focus-visible{outline:2.5px solid var(--acc);outline-offset:2px;border-radius:6px}
-button,.chip,.tile,.item,.wday,.cal-d,.swatch,.hm-c,.lrow,.seg button,.stp button,.sld
-{-webkit-user-select:none;user-select:none}
+/* user-select já desabilitado globalmente no reset acima */
 
 /* icons inherit colour and optical size from their context */
 .icn{
