@@ -1,1 +1,0 @@
-O aplicativo organiza os dados; o contexto importa.

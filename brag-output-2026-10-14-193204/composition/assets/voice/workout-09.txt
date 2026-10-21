@@ -1,1 +1,0 @@
-sem depender da memória no fim da sessão.

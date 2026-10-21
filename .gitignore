@@ -44,3 +44,10 @@ node_modules/
 .DS_Store
 .superpowers/sdd/
 .worktrees/
+
+# Auto-generated files and scratch outputs
+brag-output/
+brag-output-*/
+film/
+test-results/
+skills-lock.json

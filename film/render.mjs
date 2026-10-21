@@ -1,2 +1,0 @@
-import {bundle} from '@remotion/bundler'; import {renderMedia, selectComposition} from '@remotion/renderer'; import path from 'node:path';
-const entry=path.resolve('src/index.jsx'); const serveUrl=await bundle({entryPoint:entry,outDir:path.resolve('film-bundle')}); const comp=await selectComposition({serveUrl,id:'FitProPlayer'}); await renderMedia({composition:comp,serveUrl,codec:'h264',outputLocation:path.resolve('fit-pro-player-instagram.mp4'),audioCodec:'aac',browserExecutable:null});
