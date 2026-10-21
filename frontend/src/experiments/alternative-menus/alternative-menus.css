@@ -15,7 +15,7 @@
 .am-backdrops button[aria-pressed="true"] { background: var(--acc-soft); color: var(--acc); border-color: color-mix(in srgb, var(--acc) 30%, transparent); }
 .am-page button:focus-visible { outline: 3px solid var(--acc); outline-offset: 3px; }
 .am-gallery { display: flex; flex-direction: column; gap: 30px; }
-.am-demo { min-width: 0; }
+.am-demo { min-width: 0; container-type: inline-size; }
 .am-demo-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 0 2px 12px; }
 .am-demo-heading { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
 .am-number { font-size: 12px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--label-2); }
@@ -63,5 +63,21 @@
 @keyframes am-click-wave { 0% { transform: scale(.75); opacity: .6; } 100% { transform: scale(1.08); opacity: 0; } }
 @media (max-width: 600px) { .am-intro { gap: 12px; align-items: flex-start; } .am-count { font-size: 32px; padding-top: 3px; } .am-toolbar { gap: 10px; } .am-demo-heading h2 { font-size: 17px; } .am-swatches { align-self: flex-start; margin-top: 3px; } .am-gallery { gap: 26px; } }
 @media (max-width: 480px) { .am-menu { --am-size: 44px; left: 16px; bottom: 20px; } .am-material { left: 18px; top: 22px; font-size: 10px; } .am-stage-brand { top: 22px; right: 18px; opacity: .45; } .am-stage-brand img { width: 27px; height: 27px; } .am-stage-brand > span { font-size: 11px; } .am-stage-brand b { font-size: 16px; } .am-stage { border-radius: 14px; } .am-open-hint { left: 76px; bottom: 35px; font-size: 10px; } .am-icon { width: 22px; height: 22px; } .am-icon .icn { width: 21px; height: 21px; } .am-label { font-size: 8px; } .am-button { gap: 2px; } .am-demo-heading { gap: 9px; } .am-backdrops button { padding-inline: 10px; } }
+/* A tablet can have a narrow preview alongside the admin sidebar. Size the
+   controls from that preview's available space as well as the viewport. */
+@container (max-width: 400px) {
+  .am-page .am-demo[data-theme] .am-menu { --am-size: 44px; left: 16px; }
+  .am-page .am-demo:is([data-theme="carbon"], [data-theme="alloy"]) .am-menu { --am-gap: 4px; }
+  .am-icon { width: 22px; height: 22px; }
+  .am-icon .icn { width: 21px; height: 21px; }
+  .am-label { font-size: 8px; }
+  .am-button { gap: 2px; }
+  .am-stage-brand { top: 22px; right: 18px; }
+  .am-stage-brand img { width: 27px; height: 27px; }
+  .am-stage-brand > span { font-size: 11px; }
+  .am-stage-brand b { font-size: 16px; }
+  .am-material { left: 18px; top: 22px; font-size: 10px; }
+  .am-open-hint { left: 76px; bottom: 35px; font-size: 10px; }
+}
 @media (prefers-reduced-motion: reduce) { .am-page *, .am-page *::before, .am-page *::after { transition: none !important; animation: none !important; } }
 @media (prefers-contrast: more) { .am-demo .am-button { border: 1px solid currentColor; } .am-demo .am-label { font-weight: 800; } }

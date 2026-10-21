@@ -39,6 +39,10 @@ test('each menu opens independently and every icon responds without navigation',
   expect(errors).toEqual([])
   await page.getByRole('button', { name: 'Abrir todos', exact: true }).click()
   await expect(page.locator('.am-toggle[aria-expanded="true"]')).toHaveCount(10)
+  await page.locator('.am-gallery').evaluate(async gallery => {
+    await Promise.all(gallery.getAnimations({ subtree: true }).map(animation => animation.finished.catch(() => {})))
+  })
+  await page.locator('.am-demo[data-theme="glass"] .am-stage').screenshot({ path: testInfo.outputPath('glass-detail.png') })
   await page.screenshot({ path: testInfo.outputPath('all-menus-open.png'), fullPage: true })
   await page.getByRole('button', { name: 'Fechar todos', exact: true }).click()
   await expect(page.locator('.am-toggle[aria-expanded="false"]')).toHaveCount(10)

@@ -764,7 +764,7 @@
 
 @media (max-width: 480px) {
   .am-demo[data-theme='carbon'] .am-menu {
-    --am-gap: 8px;
+    --am-gap: 4px;
   }
 
   .am-demo[data-theme='track'] .am-menu {

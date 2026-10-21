@@ -8,7 +8,7 @@ import './themes-expression.css'
 
 const themes = [
   { id: 'glass', title: 'Vidro refrativo', detail: 'A base atual, com placas de vidro unidas e bordas que distorcem o fundo.', material: 'Transparência e refração', icon: 'house', colors: ['#0f8b8d', '#98ddd4', '#edfaff'] },
-  { id: 'carbon', title: 'Carbono', detail: 'Textura de equipamento, teclas elevadas e um recorte de cor.', material: 'Carbono e borracha', icon: 'dumbbell', colors: ['#20242b', '#b9fa43', '#797e8c'] },
+  { id: 'carbon', title: 'Carbono', detail: 'Textura de equipamento, teclas elevadas e um recorte de cor.', material: 'Carbono e borracha', icon: 'dumbbell', colors: ['#20242b', '#f29a54', '#797e8c'] },
   { id: 'track', title: 'Na pista', detail: 'Faixas de velocidade e peças angulares inspiradas no atletismo.', material: 'Pista e velocidade', icon: 'figureRun', colors: ['#e94c3a', '#f4efe2', '#272a2e'] },
   { id: 'court', title: 'Dentro da quadra', detail: 'Verde profundo, marcações de jogo e uma abertura em coluna.', material: 'Quadra e precisão', icon: 'target', colors: ['#1b6549', '#d0ef89', '#f6f2d8'] },
   { id: 'scoreboard', title: 'Placar', detail: 'Contraste de arena, detalhes digitais e sinais luminosos.', material: 'Luz e competição', icon: 'chart', colors: ['#161d1a', '#d9fa5c', '#ffc15a'] },
