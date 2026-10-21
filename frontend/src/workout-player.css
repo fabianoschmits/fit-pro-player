@@ -254,7 +254,6 @@
 .workout-player-page :is(.wp-main-action.btn, .wp-main-action > .btn):disabled { box-shadow: none; }
 /* This perimeter signals active work; it never measures set time or repetitions. */
 .workout-player-page .wp-main-action.is-executing {
-  padding-inline: 46px;
   background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 24%, var(--surface)), color-mix(in srgb, var(--acc) 12%, var(--bg)));
   color: var(--label);
 }

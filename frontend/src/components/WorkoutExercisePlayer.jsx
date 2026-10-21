@@ -131,10 +131,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
         disabled={!executing && !ready} aria-describedby={hintId}
         aria-label={resting ? t('Resting') : `${executing ? t('Complete set') : t('Start set')} ${currentNumber}`}
         onClick={executing ? completeSet : startSet}>
-        {executing && <>
-          <span className="wp-execution-signal" aria-hidden="true"><span /></span>
-          <span className="wp-execution-mark" aria-hidden="true"><Icon name={cardio ? 'figureRun' : 'figureStrength'} /></span>
-        </>}
+        {executing && <span className="wp-execution-signal" aria-hidden="true"><span /></span>}
         {resting ? t('Resting') : executing ? t('Complete set') : `${t('Start set')} ${currentNumber}`}
       </Button>}
     {current && !locked && <div id={hintId} className={'set-execution-hint' + (resting ? ' is-resting' : '')}>
