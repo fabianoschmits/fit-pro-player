@@ -1,0 +1,368 @@
+/* Real workout player. Keep the shared control motion and account theme tokens. */
+.active-workout.workout-player-page {
+  --wp-cover: color-mix(in srgb, var(--surface) 82%, var(--bg));
+  --wp-edge: color-mix(in srgb, var(--label) 14%, transparent);
+  --wp-bright: color-mix(in srgb, var(--acc) 68%, white);
+  --workout-card: var(--wp-cover);
+  --workout-field: color-mix(in srgb, var(--surface-2) 75%, var(--bg));
+  width: 100%;
+  max-width: 500px;
+  min-width: 0;
+  margin-inline: auto;
+  padding-bottom: 28px;
+  color: var(--label);
+}
+
+.workout-player-page .workout-session-bar {
+  position: relative;
+  top: auto;
+  z-index: 2;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.workout-player-page .workout-session-header { gap: 8px; margin: 0; min-height: 44px; }
+.workout-player-page .workout-session-title { gap: 3px; }
+.workout-player-page .workout-session-title strong { font-size: 17px; font-weight: 720; }
+.workout-player-page .workout-session-title span { font-size: 11px; }
+.workout-player-page .wp-session-clock {
+  flex: none;
+  color: var(--label-2);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.workout-player-page .workout-session-header > .iconbtn { width: 44px; height: 44px; flex: none; }
+.workout-player-page .workout-unit-stage { animation: none; }
+.workout-player-page .wp-exercise-player { min-width: 0; }
+.workout-player-page .wp-series-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--label-2);
+  font-size: 12px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+}
+.workout-player-page .wp-series-status strong { color: var(--label); font-weight: 600; }
+.workout-player-page .wp-series-track { display: flex; gap: 6px; margin: 0 0 16px; }
+.workout-player-page .wp-series-segment {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--surface-3);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--label) 10%, transparent);
+}
+.workout-player-page .wp-series-segment.is-done { background: var(--acc); }
+.workout-player-page .wp-series-segment.is-current {
+  background: var(--wp-bright);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 28%, transparent);
+}
+.workout-player-page .wp-series-segment.is-warmup { outline: 1px solid color-mix(in srgb, var(--orange) 50%, transparent); outline-offset: 2px; }
+
+/* The movement and its name share one cover, as on the approved reference. */
+.workout-player-page .wp-media-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  margin-inline: 8px;
+  padding: 8px 0 18px;
+  border: 1px solid var(--wp-edge);
+  border-radius: 24px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--surface-2) 65%, var(--bg)), var(--wp-cover) 55%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--label) 3%, transparent), 0 10px 32px -22px #000;
+}
+.workout-player-page .wp-media { order: 0; min-width: 0; margin: 0 14px; }
+.workout-player-page .wp-media .exmedia {
+  margin: 0;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+}
+.active-workout.workout-player-page .wp-media .exmedia > :is(.exercise-guide-motion, .exercise-muscle-static, img) {
+  width: 100%;
+  height: clamp(170px, 28dvh, 270px);
+  max-height: none;
+  aspect-ratio: auto;
+}
+.workout-player-page .wp-media .exercise-guide-motion { background: transparent; }
+.workout-player-page .wp-media .exercise-guide-frame { mix-blend-mode: screen; }
+.workout-player-page .wp-exercise-header { order: 1; padding: 6px 32px 0; text-align: center; }
+.workout-player-page .wp-exercise-title {
+  margin: 0;
+  color: var(--label);
+  font-size: clamp(21px, 5.8vw, 27px);
+  font-weight: 750;
+  line-height: 1.14;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+.workout-player-page .wp-exercise-target {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+  margin: 5px 0 0;
+  color: var(--label-2);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.workout-player-page :is(.wp-exercise-nav--previous, .wp-exercise-nav--next, .wp-expand) {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--label) 7%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface-2) 92%, transparent);
+  color: var(--label);
+  font-size: 22px;
+}
+.workout-player-page :is(.wp-exercise-nav--previous, .wp-exercise-nav--next) { top: 44%; transform: translateY(-50%); }
+.workout-player-page .wp-exercise-nav--previous { left: -9px; }
+.workout-player-page .wp-exercise-nav--next { right: -9px; }
+.workout-player-page .wp-expand { top: 7px; right: 7px; border: 0; background: transparent; font-size: 18px; }
+.workout-player-page :is(.wp-exercise-nav--previous, .wp-exercise-nav--next):disabled { opacity: .28; }
+.workout-player-page .wp-media .exmedia :is(.media-playback, .media-muscles) {
+  bottom: 0;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--bg) 52%, transparent);
+  color: var(--label);
+}
+.workout-player-page .wp-media .exmedia .media-muscles { left: 0; }
+.workout-player-page .wp-media .exmedia .media-playback { right: 0; }
+
+.workout-player-page .wp-exercise-dots {
+  display: flex;
+  justify-content: safe center;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  min-height: 44px;
+  margin: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.workout-player-page .wp-exercise-dots::-webkit-scrollbar { display: none; }
+.workout-player-page .wp-exercise-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  flex: 0 0 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--label-2);
+}
+.workout-player-page .wp-exercise-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  box-shadow: inset 0 0 0 1px var(--wp-edge);
+}
+.workout-player-page .wp-exercise-dot.is-done::before { background: var(--acc); }
+.workout-player-page .wp-exercise-dot:is(.is-active, [aria-current="true"], [aria-current="step"])::before { background: var(--label); box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 32%, transparent); }
+.workout-player-page .wp-exercise-dot:disabled { opacity: .4; }
+.workout-player-page .wp-current-set { margin-top: 12px; }
+.workout-player-page .wp-exercise-dots + .wp-current-set { margin-top: 0; }
+.workout-player-page .wp-current-set .exercise-input-status { margin: 0 3px 6px; padding: 0; border: 0; font-size: 11px; }
+.workout-player-page .wp-current-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.workout-player-page .wp-current-controls[data-metrics="1"] { grid-template-columns: minmax(0, 1fr); }
+.workout-player-page .wp-current-controls[data-metrics="3"] .wp-metric:last-child { grid-column: 1 / -1; }
+.workout-player-page .wp-metric {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 74px;
+  padding: 5px;
+  border: 1px solid var(--wp-edge);
+  border-radius: 30px;
+  background: linear-gradient(145deg, var(--wp-cover), color-mix(in srgb, var(--surface) 50%, var(--bg)));
+}
+.workout-player-page .wp-metric-label {
+  order: 1;
+  align-self: center;
+  max-width: calc(100% - 88px);
+  margin-top: -12px;
+  color: var(--label-2);
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.workout-player-page .wp-metric .stp { width: 100%; min-height: 54px; overflow: visible; background: transparent; box-shadow: none; border-radius: 0; }
+.workout-player-page .wp-metric .stp button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid color-mix(in srgb, var(--label) 6%, transparent);
+  border-radius: 50%;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--surface-2) 85%, transparent), var(--wp-cover));
+  font-size: 21px;
+}
+.workout-player-page .wp-metric .stp button:disabled { opacity: .3; }
+.workout-player-page .wp-metric .stp .val { align-items: baseline; padding: 0 2px 11px; gap: 1px; }
+.workout-player-page .wp-metric .stp .num { min-height: 44px; color: var(--label); font-size: 25px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.025em; }
+.workout-player-page .wp-metric .stp .val i { font-size: 10px; }
+.workout-player-page .wp-current-controls[data-metrics="1"] .wp-metric .num { font-size: 32px; }
+.workout-player-page .wp-current-controls[data-metrics="1"] .wp-metric-label { font-size: 13px; }
+.workout-player-page .wp-current-controls:not([data-metrics="1"]) .wp-metric-label { max-width: 100%; font-size: 10px; }
+.workout-player-page :is(.wp-main-action.btn, .wp-main-action > .btn) {
+  width: 100%;
+  min-height: 56px;
+  margin-top: 10px;
+  padding: 12px 18px;
+  border: 1px solid var(--wp-bright);
+  border-radius: 28px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 78%, var(--surface)), var(--acc-2));
+  color: var(--on-acc);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, white 28%, transparent), 0 0 18px -6px color-mix(in srgb, var(--acc) 70%, transparent);
+  font-size: 17px;
+  font-weight: 700;
+}
+.workout-player-page :is(.wp-main-action.btn, .wp-main-action > .btn):disabled { box-shadow: none; }
+.workout-player-page .set-execution-hint { margin: 8px 0; padding: 8px 10px; border-radius: 12px; font-size: 12px; line-height: 1.4; }
+.workout-player-page .ex-done-banner { margin: 12px 0; border-radius: 18px; }
+
+/* Secondary information stays available without competing with the next set. */
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details, .workout-tools) {
+  min-width: 0;
+  margin-top: 6px;
+  border: 1px solid var(--sep-op);
+  border-radius: 14px;
+  background: transparent;
+}
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details) > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  list-style: none;
+  color: var(--label-2);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details) > summary::-webkit-details-marker { display: none; }
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details) > summary > .icn:last-child { margin-left: auto; }
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details)[open] > summary > .icn:last-child { transform: rotate(180deg); }
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details) > summary::after { content: '+'; margin-left: auto; font-size: 18px; font-weight: 400; }
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details)[open] > summary::after { content: '−'; }
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-queue-details, .wp-session-details) > summary:has(> .icn:last-child)::after { content: none; }
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-session-details)[open] { padding-bottom: 10px; }
+.workout-player-page :is(.wp-series-details, .wp-exercise-details, .wp-session-details) > :not(summary) { margin-inline: 10px; }
+.workout-player-page .wp-queue-details .workout-exercise-rail { padding: 0 10px 10px; }
+.workout-player-page .wp-queue-details .workout-exercise-tab { width: 144px; min-width: 144px; border-radius: 9px; }
+.workout-player-page .wp-queue-details .workout-exercise-tab b { font-size: 11px; }
+.workout-player-page .wp-series-details .exercise-input-card {
+  --wp-cols: 1;
+  padding: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-3) transparent;
+}
+.workout-player-page .wp-series-details .exercise-input-card:has(.r-sp) { --wp-cols: 2; }
+.workout-player-page .wp-series-details .exercise-input-card:has(.eff3) { --wp-cols: 3; }
+.workout-player-page .wp-series-details :is(.setrow, .sethead) {
+  display: grid;
+  grid-template-columns: 44px repeat(var(--wp-cols), minmax(140px, 1fr)) 44px;
+  gap: 8px;
+  min-width: calc(88px + var(--wp-cols) * 140px + (var(--wp-cols) + 1) * 8px);
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.workout-player-page .wp-series-details .sethead { text-transform: none; letter-spacing: 0; color: var(--label-2); }
+.workout-player-page .wp-series-details .sethead :is(.n-sp, .ck-sp) { width: 44px; }
+.workout-player-page .wp-series-details .setrow .n { justify-self: center; }
+.workout-player-page .wp-series-details .wp-table-cell { min-width: 0; }
+.workout-player-page .wp-series-details .setrow .stp button { width: 44px; height: 44px; }
+.workout-player-page .wp-series-details .setrow .stp .num { min-height: 44px; font-size: 16px; }
+.workout-player-page .wp-series-details .setrow .chk,
+.workout-player-page .wp-set-status { display: grid; place-items: center; width: 44px; height: 44px; }
+.workout-player-page .wp-set-status { color: var(--label-3); }
+.workout-player-page .wp-exercise-details .muted { overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
+.workout-player-page .workout-tools-toggle { font-size: 12px; }
+.workout-player-page .workout-session-footer { gap: 8px; margin-top: 6px; padding: 0 0 12px; border-top: 0; }
+.workout-player-page .workout-session-footer .workout-primary-action .btn { min-height: 44px; border-radius: 14px; }
+.workout-player-page .wp-session-details .workout-progress-summary { padding: 0 2px 5px; }
+.workout-player-page .wp-superset-context { margin: 0 0 10px; color: var(--label-2); font-size: 12px; line-height: 1.4; }
+.workout-player-page .wp-superset-members { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.workout-player-page .wp-superset-members button { flex: 1 1 100px; min-width: 0; min-height: 44px; padding: 8px 10px; border: 1px solid var(--wp-edge); border-radius: 12px; background: var(--wp-cover); color: var(--label-2); font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
+.workout-player-page .wp-superset-members button[aria-current="step"] { border-color: var(--acc-line); color: var(--acc); background: var(--acc-soft); }
+
+/* Timed work remains inline; the classic floating timer keeps its own actions. */
+.workout-player-page .work-set-overlay { margin: 10px 0; z-index: 3; }
+.workout-player-page .work-set-overlay__backdrop { position: absolute; inset: 0; z-index: 0; border-radius: 18px; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.workout-player-page .work-set-overlay__card { z-index: 1; padding: 14px; border-radius: 18px; background: var(--wp-cover); box-shadow: none; animation: none; }
+.workout-player-page .work-set-overlay__phase { margin-bottom: 7px; font-size: 12px; letter-spacing: 0; text-transform: none; }
+.workout-player-page .work-set-overlay .work-set-overlay__time { font-size: 44px; text-shadow: none; }
+.workout-player-page .work-set-overlay__label { margin: 5px 0 10px; font-size: 12px; }
+.workout-player-page .work-set-overlay__bar { height: 4px; margin-bottom: 10px; }
+.workout-player-page .work-set-overlay__actions .btn { min-height: 44px; border-radius: 12px; }
+.workout-player-page .work-set-overlay__done-icon { width: 40px; height: 40px; margin-bottom: 8px; }
+.workout-player-page .work-set-overlay__done-title { font-size: 18px; }
+.workout-player-page .work-set-overlay__done-sub { margin-bottom: 10px; font-size: 12px; }
+body:has(.workout-player-page) #timer { border-radius: 18px; border-color: var(--acc-line); box-shadow: 0 8px 30px #0005; }
+body:has(.workout-player-page) #timer .btn { min-height: 44px; }
+
+.workout-player-page :is(button, summary, input):focus-visible { outline: 2px solid var(--wp-bright); outline-offset: 3px; }
+.workout-player-page .wp-metric .num:focus-visible { outline-offset: -2px; border-radius: 6px; }
+:root[data-theme="light"] .workout-player-page { --wp-bright: var(--acc); }
+:root[data-theme="light"] .workout-player-page .wp-media .exercise-guide-frame { mix-blend-mode: normal; }
+:root[data-theme="light"] .workout-player-page .wp-media .exercise-guide-motion { background: #000; border-radius: 16px; }
+:root[data-theme="light"] .workout-player-page .wp-media .exmedia :is(.media-playback, .media-muscles) { background: #0008; color: #fff; }
+
+@media (max-width: 360px) {
+  .workout-player-page .workout-session-title strong { font-size: 15px; }
+  .workout-player-page .wp-media-card { margin-inline: 4px; border-radius: 21px; padding-bottom: 14px; }
+  .workout-player-page .wp-media { margin-inline: 10px; }
+  .workout-player-page .wp-exercise-header { padding-inline: 22px; }
+  .workout-player-page .wp-metric { padding-inline: 3px; }
+  .workout-player-page .wp-metric .stp .num { font-size: 21px; }
+  .workout-player-page .wp-metric .stp .val i { font-size: 9px; }
+  .workout-player-page .wp-exercise-nav--previous { left: -5px; }
+  .workout-player-page .wp-exercise-nav--next { right: -5px; }
+}
+@media (max-height: 760px) {
+  .workout-player-page .workout-session-bar { margin-bottom: 4px; }
+  .workout-player-page .wp-series-track { margin-bottom: 12px; }
+  .active-workout.workout-player-page .wp-media .exmedia > :is(.exercise-guide-motion, .exercise-muscle-static, img) { height: clamp(150px, 24dvh, 182px); }
+  .workout-player-page .wp-media-card { padding-top: 4px; padding-bottom: 13px; }
+  .workout-player-page .wp-metric { min-height: 68px; }
+  .workout-player-page :is(.wp-main-action.btn, .wp-main-action > .btn) { min-height: 52px; margin-top: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workout-player-page .workout-unit-stage,
+  .workout-player-page .work-set-overlay__card,
+  .workout-player-page .work-set-overlay__done-icon { animation: none; }
+  .workout-player-page .wp-series-segment { transition: none; }
+}

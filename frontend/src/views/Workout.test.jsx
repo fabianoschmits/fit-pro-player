@@ -122,16 +122,14 @@ async function unmount() {
 }
 
 async function toggleSet(index) {
-  let checkbox = container.querySelectorAll('.set-action')[index]
-  expect(checkbox).toBeTruthy()
-  if (checkbox.disabled) {
-    const play = checkbox.closest('.setrow').parentElement.querySelector('.set-start-action')
-    expect(play).toBeTruthy()
-    await act(async () => play.click())
-    await act(async () => root.render(<Workout />))
-    checkbox = container.querySelectorAll('.set-action')[index]
+  const entry = mocks.S.active.entries[mocks.S.active.cur]
+  if (entry.sets[index].done) {
+    await clickAndRender(container.querySelectorAll('.setrow')[index].querySelector('.set-action'))
+    return
   }
-  await act(async () => { checkbox.dispatchEvent(new dom.Event('click', { bubbles: true })) })
+  expect(index).toBe(entry.sets.findIndex(set => !set.done))
+  if (!container.querySelector('.wp-main-action.is-executing')) await clickAndRender(container.querySelector('.wp-main-action.set-start-action'))
+  await clickAndRender(container.querySelector('.wp-main-action.is-executing'))
 }
 
 function startWorkoutButton() {
@@ -163,6 +161,28 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
+  it('presents one real exercise player and folds the queue and session summary', async () => {
+    await mount([exercise('plain-bench', [false, false]), exercise('plain-row', [false, false])])
+    expect(container.querySelectorAll('.wp-exercise-player')).toHaveLength(1)
+    expect(container.querySelector('.wp-media-card')).toBeTruthy()
+    expect(container.querySelector('.wp-main-action')).toBeTruthy()
+    expect(container.querySelector('.wp-queue-details')?.hasAttribute('open')).toBe(false)
+    expect(container.querySelector('.wp-session-details')?.hasAttribute('open')).toBe(false)
+    expect(container.querySelectorAll('.wp-exercise-dot')).toHaveLength(2)
+    await clickAndRender(container.querySelector('.wp-exercise-nav--next'))
+    expect(mocks.S.active.cur).toBe(1)
+    expect(mocks.S.active.entries[0].sets.some(set => set.done)).toBe(false)
+    expect(container.querySelectorAll('.wp-exercise-player')).toHaveLength(1)
+  })
+
+  it('keeps superset partners available while focusing only the current animation card', async () => {
+    await mount([exercise('plain-bench', [false], { sg: 'pair' }), exercise('plain-row', [false], { sg: 'pair' })])
+    expect(container.querySelector('.wp-superset-context')).toBeTruthy()
+    expect(container.querySelectorAll('.wp-superset-members button')).toHaveLength(2)
+    expect(container.querySelectorAll('.wp-exercise-player')).toHaveLength(1)
+    expect(container.querySelectorAll('.workout-tool-group')).toHaveLength(2)
+  })
+
   it('requires a fresh Play after navigating away from an executing set', async () => {
     await mount([exercise('bench', [false]), exercise('row', [false])])
     await act(async () => container.querySelector('.set-start-action').click())
@@ -188,14 +208,14 @@ describe('Workout set completion flow', () => {
     await mount([exercise('plain-bench', [false, false])])
     expect(container.querySelector('.exercise-phase')).toBeNull()
     expect(container.querySelector('.chk.is-executing')).toBeNull()
-    expect(container.querySelector('.setrow.is-current .set-action').disabled).toBe(true)
+    expect(container.querySelector('.setrow.is-current .set-action')).toBeNull()
     const play = container.querySelector('.set-start-action')
     expect(play).toBeTruthy()
-    expect(play.nextElementSibling.classList.contains('setrow')).toBe(true)
+    expect(play.closest('.wp-exercise-player')).toBeTruthy()
     await act(async () => play.click())
     await act(async () => root.render(<Workout />))
     expect(mocks.startManualSet).toHaveBeenCalledWith(`${mocks.S.active.id}:${mocks.S.active.start}`, 0, 0)
-    const stop = container.querySelector('.chk.is-executing')
+    const stop = container.querySelector('.wp-main-action.is-executing')
     expect(stop.getAttribute('aria-label')).toContain('Parar série')
     expect(stop.getAttribute('role')).toBeNull()
     expect(stop.getAttribute('aria-describedby')).toBe(container.querySelector('.set-execution-hint').id)
@@ -207,7 +227,7 @@ describe('Workout set completion flow', () => {
     mocks.timer = { left: 90, total: 90 }
     await act(async () => root.render(<Workout />))
     expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(0)
-    expect(container.querySelector('.setrow.is-current .chk').disabled).toBe(true)
+    expect(container.querySelector('.wp-main-action').disabled).toBe(true)
     expect(container.querySelector('.set-execution-hint').textContent).toContain('Descansando')
     mocks.timer = null
     await act(async () => root.render(<Workout />))
@@ -266,9 +286,9 @@ describe('Workout set completion flow', () => {
     mocks.work = { phase: 'work', entryIdx: 0, setIdx: 0, left: 30, total: 45 }
     await act(async () => root.render(<Workout />))
     expect(container.querySelector('.set-execution-hint').textContent).toContain('Executando série')
-    expect(container.querySelector('.work-set-overlay').previousElementSibling.classList.contains('exercise-input-card')).toBe(true)
+    expect(container.querySelector('.work-set-overlay').closest('.wp-exercise-player')).toBeTruthy()
     expect(container.querySelector('.work-set-overlay__backdrop')).toBeNull()
-    await act(async () => container.querySelector('.chk.is-executing').click())
+    await act(async () => container.querySelector('.wp-main-action.is-executing').click())
     expect(mocks.finishWorkEarly).toHaveBeenCalledTimes(1)
     expect(mocks.S.active.entries[0].sets[0].done).toBe(false)
   })
@@ -277,9 +297,9 @@ describe('Workout set completion flow', () => {
     await mount([exercise('plank', [false, false], { target: { mode: 'time' }, sets: [{ sec: 45, done: false }, { sec: 45, done: false }] })])
     mocks.work = { phase: 'work', entryIdx: 0, setIdx: 1, left: 30, total: 45 }
     await act(async () => root.render(<Workout />))
-    expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(1)
-    expect(container.querySelector('.chk.is-executing').getAttribute('aria-describedby')).toBe('set-execution-0-1')
-    expect(container.querySelector('.chk.is-executing').closest('.setrow').getAttribute('aria-current')).toBe('step')
+    expect(container.querySelectorAll('.wp-main-action.is-executing')).toHaveLength(1)
+    expect(container.querySelector('.wp-main-action.is-executing').getAttribute('aria-describedby')).toBe('set-execution-0-1')
+    expect(container.querySelectorAll('.setrow')[1].getAttribute('aria-current')).toBe('step')
     expect(container.querySelectorAll('.set-execution-hint')).toHaveLength(1)
   })
 
@@ -326,8 +346,8 @@ describe('Workout set completion flow', () => {
       expect(card.textContent).not.toContain(label)
       expect(buttonNamed(tools, label).closest('.workout-tools')).toBe(tools)
     }
-    expect(container.querySelector('.workout-exercise-heading button[aria-label="Detalhes"]')).toBeTruthy()
-    expect(container.querySelector('.workout-exercise-heading').textContent).not.toContain('Substituir')
+    expect(container.querySelector('.wp-media-card button[aria-label="Detalhes"]')).toBeTruthy()
+    expect(container.querySelector('.wp-media-card').textContent).not.toContain('Substituir')
     expect(buttonNamed(tools, 'Remover exercício').classList.contains('workout-danger-action')).toBe(true)
   })
 
@@ -406,17 +426,18 @@ describe('Workout set completion flow', () => {
 
   it('toggles completed rows with the banner outside the series card', async () => {
     await mount([exercise('plain-bench', [true, true], { asked: true })])
-    expect(container.querySelector('.exercise-input-card')).toBeNull()
+    expect(container.querySelector('.wp-series-details').hasAttribute('open')).toBe(false)
     const banner = () => container.querySelector('.ex-done-banner')
     expect(banner()).toBeTruthy()
     await clickAndRender(banner())
+    expect(container.querySelector('.wp-series-details').hasAttribute('open')).toBe(true)
     expect(container.querySelectorAll('.exercise-input-card .setrow')).toHaveLength(2)
     expect(banner()).toBeTruthy()
     expect(banner().closest('.exercise-input-card')).toBeNull()
     expect(container.querySelector('.exercise-input-card').textContent).not.toContain('Collapse')
     expect([...container.querySelectorAll('.exercise-input-card button')].every(button => button.matches('.set-action, .stp button'))).toBe(true)
     await clickAndRender(banner())
-    expect(container.querySelector('.exercise-input-card')).toBeNull()
+    expect(container.querySelector('.wp-series-details').hasAttribute('open')).toBe(false)
   })
 
   it('locks bottom adjustments during a manual set while keeping Stop and finish available', async () => {
@@ -512,14 +533,16 @@ describe('Workout set completion flow', () => {
     expect(container.textContent).toContain('0:00')
     expect(startWorkoutButton()).toBeTruthy()
     expect(container.querySelector('.exercise-phase')).toBeNull()
-    expect(container.querySelector('.set-action')?.disabled).toBe(true)
+    expect(container.querySelector('.set-action')).toBeNull()
+    expect([...container.querySelectorAll('.wp-current-controls input')].every(input => input.disabled)).toBe(true)
 
     await act(async () => { startWorkoutButton().dispatchEvent(new dom.Event('click', { bubbles: true })) })
 
     expect(mocks.S.active.start).toEqual(expect.any(Number))
     await act(async () => { root.render(React.createElement(Workout)) })
     expect(container.querySelector('.set-start-action')?.disabled).toBe(false)
-    expect(container.querySelector('.set-action')?.disabled).toBe(true)
+    expect(container.querySelector('.set-action')).toBeNull()
+    expect([...container.querySelectorAll('.wp-current-controls input')].every(input => input.disabled)).toBe(false)
   })
 
   it('locks an entire opening superset behind one start action', async () => {
@@ -624,8 +647,8 @@ describe('superset flow survives an exercise being removed mid-session', () => {
     await act(async () => { root.render(React.createElement(Workout)) })
     expect(mocks.S.active.cur).toBe(1)
 
-    // Partner closes the round (each still has a second set), which is what starts the rest.
-    await toggleSet(2)
+    // The single player now focuses the partner's first set, closing the round.
+    await toggleSet(0)
     expect(mocks.startRest).toHaveBeenCalledWith(90)
   })
 })
