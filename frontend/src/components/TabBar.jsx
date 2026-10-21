@@ -14,7 +14,6 @@ import Icon from './Icon.jsx'
 import NavigationIcon from './NavigationIcon.jsx'
 import { useFppActivation } from './useFppActivation.js'
 import './tabbar-motion.css'
-import './tabbar-glass.css'
 import { getVisualId, findIconMorph } from './icon-morph-registry.jsx'
 
 import { resolveNavigationContext } from '../lib/navigation-contexts.js'
@@ -23,18 +22,6 @@ const NAVIGATION_LAYOUT_KEY = 'fpp_navigation_layout_v1'
 const PIVOT_WIDTH = 56
 const menuHeightForWidth = width => width < 768 ? 68 : 52
 const MAX_ARM_WIDTH = 320
-
-function NavigationGlassRefraction() {
-  return <svg className="corner-nav-glass-defs" aria-hidden="true" focusable="false">
-    <defs>
-      <filter id="fpp-nav-glass-refraction" x="-40%" y="-40%" width="180%" height="180%" colorInterpolationFilters="sRGB">
-        <feTurbulence type="fractalNoise" baseFrequency="0.022 0.065" numOctaves="2" seed="8" result="texture" />
-        <feGaussianBlur in="texture" stdDeviation="1.2" result="softTexture" />
-        <feDisplacementMap in="SourceGraphic" in2="softTexture" scale="16" xChannelSelector="R" yChannelSelector="G" />
-      </filter>
-    </defs>
-  </svg>
-}
 
 function NavItemIcon({ item, resume, active, visible, activation, entryKey }) {
   if (item.k === 'home' || item.k === 'plan' || item.k === 'start' || item.k === 'workout' || item.k === 'stats') {
@@ -387,7 +374,6 @@ export default function TabBar({ onStart }) {
   } : undefined
 
   return <div id="tabbar" data-context={resolved.contextId} ref={rootRef} className={'corner-nav' + (open ? ' is-open' : '') + (free ? ' is-free' : '') + (opensLeft ? ' opens-left' : '') + (opensDown ? ' opens-down' : '') + (moveReady ? ' is-move-ready' : '')} style={style}>
-    <NavigationGlassRefraction />
     {import.meta.env.DEV && <div id="tabbar-debug" style={{ position: 'fixed', bottom: 72, left: 8, background: 'rgba(0,0,0,.75)', color: '#0f0', fontFamily: 'monospace', fontSize: 10, padding: '4px 6px', borderRadius: 4, zIndex: 9999, pointerEvents: 'none', lineHeight: 1.5 }}>
       [TabBar] {loc.pathname}<br />
       ctx: {resolved.contextId} | key: {currentKey}<br />
