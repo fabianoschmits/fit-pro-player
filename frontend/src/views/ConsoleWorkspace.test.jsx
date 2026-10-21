@@ -86,6 +86,10 @@ it('lists messages with dedicated conversation links and status filters', async 
 
 it('allows selecting tickets and triggering bulk actions', async () => {
   await render('/console/support')
+  const selectModeBtn = [...container.querySelectorAll('button')].find(b => b.textContent.includes('Selecionar'))
+  expect(selectModeBtn).not.toBeNull()
+  await act(async () => selectModeBtn.click())
+
   const checkbox = container.querySelector('input[type="checkbox"][aria-label="Selecionar chamado Dúvida sobre o plano"]')
   expect(checkbox).not.toBeNull()
   await act(async () => checkbox.click())

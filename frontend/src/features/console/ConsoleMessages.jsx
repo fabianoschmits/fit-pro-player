@@ -17,20 +17,24 @@ export default function ConsoleMessages() {
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState(params.get('q') || '')
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [showSearchFilters, setShowSearchFilters] = useState(false)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [actionNotice, setActionNotice] = useState('')
 
-  const activeTab = params.get('tab') || 'all'
+  // Default tab order requested: pendentes primeiro, lidas, respondidas, resolvidas, todas e arquivadas
+  const activeTab = params.get('tab') || 'pending'
   const page = Math.max(0, Number.parseInt(params.get('page'), 10) || 0)
 
   // Map tab to specific status filters
   const tabStatus = useMemo(() => {
-    if (activeTab === 'unread') return 'unread'
-    if (activeTab === 'read') return 'read'
     if (activeTab === 'pending') return 'pending'
+    if (activeTab === 'read') return 'read'
     if (activeTab === 'answered') return 'answered'
     if (activeTab === 'resolved') return 'resolved'
+    if (activeTab === 'all') return params.get('status') || null
     if (activeTab === 'archived') return 'archived'
+    if (activeTab === 'unread') return 'unread'
     return params.get('status') || null
   }, [activeTab, params])
 
@@ -70,7 +74,7 @@ export default function ConsoleMessages() {
     setSelectedIds(new Set())
     setParams(previous => {
       const next = new URLSearchParams(previous)
-      if (tabKey === 'all') {
+      if (tabKey === 'pending') {
         next.delete('tab')
         next.delete('status')
       } else {
@@ -104,6 +108,15 @@ export default function ConsoleMessages() {
     })
   }
 
+  const toggleSelectionMode = () => {
+    setSelectionMode(prev => {
+      if (prev) {
+        setSelectedIds(new Set())
+      }
+      return !prev
+    })
+  }
+
   // Bulk actions
   const performBulkStatus = async (status, label) => {
     if (!selectedIds.size || bulkBusy) return
@@ -113,6 +126,7 @@ export default function ConsoleMessages() {
       const ids = Array.from(selectedIds)
       await Promise.all(ids.map(id => repo.updateTicket(id, { status })))
       setSelectedIds(new Set())
+      setSelectionMode(false)
       setActionNotice(`${ids.length} chamado(s) marcado(s) como ${label}.`)
       refresh()
     } catch {
@@ -131,6 +145,7 @@ export default function ConsoleMessages() {
     try {
       await Promise.all(ids.map(id => repo.deleteTicket(id)))
       setSelectedIds(new Set())
+      setSelectionMode(false)
       setActionNotice(`${ids.length} chamado(s) excluído(s) com sucesso.`)
       refresh()
     } catch {
@@ -170,46 +185,51 @@ export default function ConsoleMessages() {
     }
   }
 
+  const hasActiveFilters = Boolean(
+    params.get('q') ||
+    params.get('category') ||
+    params.get('priority') ||
+    params.get('from') ||
+    params.get('to') ||
+    (activeTab === 'all' && params.get('status'))
+  )
+
   return (
     <AccessGate allowed={allowed}>
       <ConsoleShell userId={userId} allowed={allowed}>
         <div className="cx-page-body">
+          {/* Cabeçalho limpo com botões de ação */}
           <div className="cx-page-head console-page-heading">
-            <div>
-              <h1 className="cx-page-title">Gestão de Mensagens do Suporte</h1>
-              <p className="cx-page-sub">Caixa de entrada inteligente, filtragem por status e ações em lote.</p>
+            <h1 className="cx-page-title">Mensagens</h1>
+            <div className="console-head-actions">
+              <button
+                type="button"
+                className={`cx-pill-btn ${selectionMode ? 'is-active' : ''}`}
+                onClick={toggleSelectionMode}
+                title={selectionMode ? 'Cancelar modo de seleção' : 'Selecionar mensagens'}
+              >
+                <Icon name={selectionMode ? 'xmark' : 'check'} size={15} />
+                <span>{selectionMode ? 'Cancelar' : 'Selecionar'}</span>
+              </button>
+              <button
+                type="button"
+                className={`cx-pill-btn ${showSearchFilters || hasActiveFilters ? 'is-active' : ''}`}
+                onClick={() => setShowSearchFilters(prev => !prev)}
+                title="Buscar e filtrar mensagens"
+              >
+                <Icon name="search" size={15} />
+                <span>{showSearchFilters ? 'Fechar busca' : 'Buscar'}</span>
+                {hasActiveFilters && <span className="console-filter-dot" aria-hidden="true" />}
+              </button>
+              <button type="button" className="cx-pill-btn" onClick={refresh} title="Atualizar dados">
+                <Icon name="reset" size={15} />
+                <span>Atualizar</span>
+              </button>
             </div>
-            <button type="button" className="cx-pill-btn" onClick={refresh}>
-              Atualizar
-            </button>
           </div>
 
-          {/* Abas inteligentes de status */}
+          {/* Abas ordenadas: Pendentes, Lidas, Respondidas, Resolvidas, Todas, Arquivadas */}
           <nav className="console-messages-tabs" aria-label="Abas de status de mensagens">
-            <button
-              type="button"
-              className={`console-messages-tab ${activeTab === 'all' ? 'is-active' : ''}`}
-              onClick={() => handleTabChange('all')}
-            >
-              <span>Todas</span>
-            </button>
-            <button
-              type="button"
-              className={`console-messages-tab ${activeTab === 'unread' ? 'is-active' : ''}`}
-              onClick={() => handleTabChange('unread')}
-            >
-              <span>Não lidas</span>
-              {Boolean(data?.stats?.unreadCount) && (
-                <span className="console-messages-tab-badge">{data.stats.unreadCount}</span>
-              )}
-            </button>
-            <button
-              type="button"
-              className={`console-messages-tab ${activeTab === 'read' ? 'is-active' : ''}`}
-              onClick={() => handleTabChange('read')}
-            >
-              <span>Lidas</span>
-            </button>
             <button
               type="button"
               className={`console-messages-tab ${activeTab === 'pending' ? 'is-active' : ''}`}
@@ -219,6 +239,13 @@ export default function ConsoleMessages() {
               {Boolean(data?.stats?.pendingCount) && (
                 <span className="console-messages-tab-badge">{data.stats.pendingCount}</span>
               )}
+            </button>
+            <button
+              type="button"
+              className={`console-messages-tab ${activeTab === 'read' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('read')}
+            >
+              <span>Lidas</span>
             </button>
             <button
               type="button"
@@ -239,6 +266,13 @@ export default function ConsoleMessages() {
             </button>
             <button
               type="button"
+              className={`console-messages-tab ${activeTab === 'all' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('all')}
+            >
+              <span>Todas</span>
+            </button>
+            <button
+              type="button"
               className={`console-messages-tab ${activeTab === 'archived' ? 'is-active' : ''}`}
               onClick={() => handleTabChange('archived')}
             >
@@ -249,74 +283,112 @@ export default function ConsoleMessages() {
             </button>
           </nav>
 
-          {/* Busca e Filtros refinados */}
-          <section className="console-filter-section" aria-label="Filtros das mensagens">
-            <form className="console-search-form" onSubmit={e => { e.preventDefault(); change('q', query.trim()) }}>
-              <label className="cx-label">
-                Buscar mensagens
-                <input
-                  className="cx-field"
-                  type="search"
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  placeholder="Buscar por assunto, e-mail ou mensagem..."
-                />
-              </label>
-              <button className="cx-pill-btn" type="submit">Buscar</button>
-            </form>
+          {/* Seção retrátil de busca e filtros */}
+          {showSearchFilters && (
+            <section className="console-filter-section console-filter-drawer" aria-label="Filtros das mensagens">
+              <form
+                className="console-search-form"
+                onSubmit={e => {
+                  e.preventDefault()
+                  change('q', query.trim())
+                }}
+              >
+                <label className="cx-label">
+                  Buscar mensagens
+                  <input
+                    className="cx-field"
+                    type="search"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    placeholder="Buscar por assunto, e-mail ou mensagem..."
+                    autoFocus
+                  />
+                </label>
+                <button className="cx-pill-btn" type="submit">
+                  <Icon name="search" size={15} /> Buscar
+                </button>
+              </form>
 
-            <details className="console-inbox-filters">
-              <summary>Mais filtros (categoria, prioridade e período)</summary>
-              <div className="console-filter-grid">
-                {activeTab === 'all' && (
+              <details className="console-inbox-filters" open={hasActiveFilters}>
+                <summary>Mais filtros (categoria, prioridade e período)</summary>
+                <div className="console-filter-grid">
+                  {activeTab === 'all' && (
+                    <label className="cx-label">
+                      Status específico
+                      <select
+                        className="cx-field"
+                        value={params.get('status') || ''}
+                        onChange={e => change('status', e.target.value)}
+                      >
+                        <option value="">Todos os status</option>
+                        {Object.entries(supportStatusLabel).map(([key, value]) => (
+                          <option value={key} key={key}>{value}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <label className="cx-label">
-                    Status específico
-                    <select className="cx-field" value={params.get('status') || ''} onChange={e => change('status', e.target.value)}>
-                      <option value="">Todos os status</option>
-                      {Object.entries(supportStatusLabel).map(([key, value]) => (
-                        <option value={key} key={key}>{value}</option>
+                    Categoria
+                    <select
+                      className="cx-field"
+                      value={params.get('category') || ''}
+                      onChange={e => change('category', e.target.value)}
+                    >
+                      <option value="">Todas as categorias</option>
+                      {data?.categories?.map(cat => (
+                        <option key={cat.slug} value={cat.slug}>{cat.label}</option>
                       ))}
                     </select>
                   </label>
-                )}
-                <label className="cx-label">
-                  Categoria
-                  <select className="cx-field" value={params.get('category') || ''} onChange={e => change('category', e.target.value)}>
-                    <option value="">Todas as categorias</option>
-                    {data?.categories?.map(cat => (
-                      <option key={cat.slug} value={cat.slug}>{cat.label}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="cx-label">
-                  Prioridade
-                  <select className="cx-field" value={params.get('priority') || ''} onChange={e => change('priority', e.target.value)}>
-                    <option value="">Todas</option>
-                    {Object.entries(supportPriorityLabel).map(([key, value]) => (
-                      <option key={key} value={key}>{value}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="cx-label">
-                  De
-                  <input className="cx-field" type="date" value={params.get('from') || ''} onChange={e => change('from', e.target.value)} />
-                </label>
-                <label className="cx-label">
-                  Até
-                  <input className="cx-field" type="date" value={params.get('to') || ''} min={params.get('from') || undefined} onChange={e => change('to', e.target.value)} />
-                </label>
-              </div>
-            </details>
-            {(params.size > 0 || query) && (
-              <button
-                className="console-text-button"
-                onClick={() => { setParams({}); setQuery(''); setSelectedIds(new Set()) }}
-                type="button"
-              >
-                Limpar todos os filtros
-              </button>
-            )}
-          </section>
+                  <label className="cx-label">
+                    Prioridade
+                    <select
+                      className="cx-field"
+                      value={params.get('priority') || ''}
+                      onChange={e => change('priority', e.target.value)}
+                    >
+                      <option value="">Todas</option>
+                      {Object.entries(supportPriorityLabel).map(([key, value]) => (
+                        <option key={key} value={key}>{value}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="cx-label">
+                    De
+                    <input
+                      className="cx-field"
+                      type="date"
+                      value={params.get('from') || ''}
+                      onChange={e => change('from', e.target.value)}
+                    />
+                  </label>
+                  <label className="cx-label">
+                    Até
+                    <input
+                      className="cx-field"
+                      type="date"
+                      value={params.get('to') || ''}
+                      min={params.get('from') || undefined}
+                      onChange={e => change('to', e.target.value)}
+                    />
+                  </label>
+                </div>
+              </details>
+              {(hasActiveFilters || query) && (
+                <button
+                  className="console-text-button"
+                  onClick={() => {
+                    setParams({})
+                    setQuery('')
+                    setSelectedIds(new Set())
+                  }}
+                  type="button"
+                >
+                  Limpar todos os filtros
+                </button>
+              )}
+            </section>
+          )}
 
           {actionNotice && <div className="cx-success" role="status" style={{ margin: '12px 0' }}>{actionNotice}</div>}
           {error && <Alert onRetry={refresh}>{error}</Alert>}
@@ -330,8 +402,8 @@ export default function ConsoleMessages() {
                 <span>Página {page + 1}</span>
               </div>
 
-              {/* Barra de Ações em Lote */}
-              {tickets.length > 0 && (
+              {/* Barra de Ações em Lote — visível somente quando seleção ativa */}
+              {selectionMode && tickets.length > 0 && (
                 <div className="console-bulk-bar">
                   <label className="console-bulk-select-all">
                     <input
@@ -341,7 +413,7 @@ export default function ConsoleMessages() {
                       onChange={toggleSelectAll}
                       aria-label="Selecionar todas as mensagens da página"
                     />
-                    <span>{selectedIds.size > 0 ? `${selectedIds.size} selecionada(s)` : 'Selecionar todas'}</span>
+                    <span>{selectedIds.size > 0 ? `${selectedIds.size} selecionada(s)` : 'Selecionar todas da página'}</span>
                   </label>
 
                   {selectedIds.size > 0 && (
@@ -399,13 +471,15 @@ export default function ConsoleMessages() {
                         key={ticket.ticketId}
                         className={`console-message-item ${isSelected ? 'is-selected' : ''} ${isUnread ? 'is-unread' : ''}`}
                       >
-                        <input
-                          type="checkbox"
-                          className="console-message-checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelect(ticket.ticketId)}
-                          aria-label={`Selecionar chamado ${ticket.subject}`}
-                        />
+                        {selectionMode && (
+                          <input
+                            type="checkbox"
+                            className="console-message-checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleSelect(ticket.ticketId)}
+                            aria-label={`Selecionar chamado ${ticket.subject}`}
+                          />
+                        )}
 
                         <Link
                           className="console-message-link"
@@ -429,46 +503,48 @@ export default function ConsoleMessages() {
                         </Link>
 
                         {/* Ações rápidas contextuais */}
-                        <div className="console-message-actions">
-                          {isUnread && (
+                        {!selectionMode && (
+                          <div className="console-message-actions">
+                            {isUnread && (
+                              <button
+                                type="button"
+                                className="console-quick-action-btn"
+                                title="Marcar como lida"
+                                onClick={e => handleQuickStatus(e, ticket.ticketId, 'read')}
+                              >
+                                <Icon name="checkCircle" size={16} />
+                              </button>
+                            )}
+                            {ticket.status !== 'archived' && (
+                              <button
+                                type="button"
+                                className="console-quick-action-btn"
+                                title="Arquivar chamado"
+                                onClick={e => handleQuickStatus(e, ticket.ticketId, 'archived')}
+                              >
+                                <Icon name="folder" size={16} />
+                              </button>
+                            )}
+                            {ticket.status === 'archived' && (
+                              <button
+                                type="button"
+                                className="console-quick-action-btn"
+                                title="Reabrir chamado"
+                                onClick={e => handleQuickStatus(e, ticket.ticketId, 'pending')}
+                              >
+                                <Icon name="reset" size={16} />
+                              </button>
+                            )}
                             <button
                               type="button"
-                              className="console-quick-action-btn"
-                              title="Marcar como lida"
-                              onClick={e => handleQuickStatus(e, ticket.ticketId, 'read')}
+                              className="console-quick-action-btn console-quick-action-btn--danger"
+                              title="Excluir chamado"
+                              onClick={e => handleQuickDelete(e, ticket.ticketId)}
                             >
-                              <Icon name="checkCircle" size={16} />
+                              <Icon name="trash" size={16} />
                             </button>
-                          )}
-                          {ticket.status !== 'archived' && (
-                            <button
-                              type="button"
-                              className="console-quick-action-btn"
-                              title="Arquivar chamado"
-                              onClick={e => handleQuickStatus(e, ticket.ticketId, 'archived')}
-                            >
-                              <Icon name="folder" size={16} />
-                            </button>
-                          )}
-                          {ticket.status === 'archived' && (
-                            <button
-                              type="button"
-                              className="console-quick-action-btn"
-                              title="Reabrir chamado"
-                              onClick={e => handleQuickStatus(e, ticket.ticketId, 'pending')}
-                            >
-                              <Icon name="reset" size={16} />
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="console-quick-action-btn console-quick-action-btn--danger"
-                            title="Excluir chamado"
-                            onClick={e => handleQuickDelete(e, ticket.ticketId)}
-                          >
-                            <Icon name="trash" size={16} />
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     )
                   })}

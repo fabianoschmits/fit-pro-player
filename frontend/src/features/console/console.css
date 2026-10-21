@@ -397,6 +397,54 @@
 .console-btn-resolve:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Console Messages Inbox Redesign & Bulk Actions ─────────────── */
+.console-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.console-head-actions .cx-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.console-head-actions .cx-pill-btn.is-active {
+  background: var(--acc);
+  color: var(--on-acc);
+  border-color: var(--acc);
+}
+.console-filter-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--acc);
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+.cx-pill-btn.is-active .console-filter-dot {
+  background: #fff;
+}
+.console-filter-drawer {
+  animation: fadeInDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--surface);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--sep);
+  margin-bottom: 14px;
+}
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .console-messages-tabs {
   display: flex;
   gap: 8px;
