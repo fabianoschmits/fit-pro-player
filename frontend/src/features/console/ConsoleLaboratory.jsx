@@ -7,6 +7,12 @@ import { SectionBody, SectionTitle } from './ConsoleUI.jsx'
 // Keep the test catalogue together so future experiments have one place to enter.
 const experiments = [
   {
+    to: '/console/laboratory/players',
+    title: 'Players de treino',
+    description: 'Experimente dez formas de executar o treino, com preparação, séries, avisos e descanso.',
+    icon: 'dumbbell',
+  },
+  {
     to: '/motion-feedback',
     title: 'Laboratório de interações',
     description: 'Teste botões, fluxos, estados de feedback e recuperação do PWA.',

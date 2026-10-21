@@ -57,10 +57,11 @@ it('groups the experimental pages in the test laboratory and marks its navigatio
   await render('/console/laboratory')
   expect(container.querySelector('h1').textContent).toBe('Laboratório de testes')
   const pages = container.querySelector('section[aria-label="Páginas de testes"]')
-  expect(pages.querySelectorAll('a').length).toBe(3)
+  expect(pages.querySelectorAll('a').length).toBe(4)
   expect(pages.querySelector('a[href="/motion-feedback"]')?.textContent).toContain('Laboratório de interações')
   expect(pages.querySelector('a[href="/tests/home-glass"]')?.textContent).toContain('Home Glass')
   expect(pages.querySelector('a[href="/console/laboratory/menus"]')?.textContent).toContain('Menus alternativos')
+  expect(pages.querySelector('a[href="/console/laboratory/players"]')?.textContent).toContain('Players de treino')
   expect(container.querySelector('nav [aria-current="page"]')?.getAttribute('href')).toBe('/console/laboratory')
   expect(container.querySelector('a.console-back')?.getAttribute('href')).toBe('/console')
   expect(mocks.console.overview).not.toHaveBeenCalled()
@@ -75,6 +76,7 @@ it('keeps the test catalogue unavailable to accounts without admin access', asyn
   expect(container.querySelector('a[href="/motion-feedback"]')).toBeNull()
   expect(container.querySelector('a[href="/tests/home-glass"]')).toBeNull()
   expect(container.querySelector('a[href="/console/laboratory/menus"]')).toBeNull()
+  expect(container.querySelector('a[href="/console/laboratory/players"]')).toBeNull()
 })
 
 it('lists messages with dedicated conversation links and status filters', async () => {

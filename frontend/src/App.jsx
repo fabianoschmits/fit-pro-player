@@ -70,6 +70,7 @@ const loadSheets = () => import('./sheets.jsx')
 const Home = lazy(loadHome)
 const HomeGlass = lazy(() => import('./experiments/home-glass/HomeGlass.jsx'))
 const AlternativeMenus = lazy(() => import('./experiments/alternative-menus/AlternativeMenus.jsx'))
+const WorkoutPlayers = lazy(() => import('./experiments/workout-players/WorkoutPlayers.jsx'))
 const Plan = lazy(loadPlan)
 const RoutineEdit = lazy(loadRoutineEdit)
 const Workout = lazy(loadWorkout)
@@ -521,6 +522,7 @@ function Shell() {
                 <Route path="/console/system" element={<ConsoleSystem />} />
                 <Route path="/console/laboratory" element={<ConsoleLaboratory />} />
                 <Route path="/console/laboratory/menus" element={<AlternativeMenus />} />
+                <Route path="/console/laboratory/players" element={<WorkoutPlayers />} />
                 <Route path="/console/users" element={<ConsoleUsers />} />
                 <Route path="/console/users/:userId" element={<ConsoleUserPage />} />
                 <Route path="/console/professionals" element={<ConsoleProfessionals />} />
