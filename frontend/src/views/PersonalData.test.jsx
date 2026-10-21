@@ -38,7 +38,7 @@ it('saves only the edited personal field', async () => {
   await act(async () => { const input = field.querySelector('input'); input.value = 'Beatriz'; input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })) })
   await act(async () => [...field.querySelectorAll('button')].find(button => button.textContent.includes('Salvar')).click())
   expect(mocks.update).toHaveBeenCalledTimes(1)
-  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso', { tone: 'success' })
+  expect(mocks.toast).not.toHaveBeenCalled()
 })
 
 it('keeps a failed local profile save editable and reports error without a success toast', async () => {
@@ -53,7 +53,7 @@ it('keeps a failed local profile save editable and reports error without a succe
   mocks.update.mockImplementation(() => { mocks.state.persistence = { state: 'saved' } })
   await act(async () => field.querySelector('.personal-save').click())
   expect(field.querySelector('input').disabled).toBe(true)
-  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso', { tone: 'success' })
+  expect(mocks.toast).not.toHaveBeenCalled()
 })
 
 it('keeps the birth date controls disabled until editing is activated', async () => {
@@ -99,7 +99,7 @@ it('records an edited personal weight as a bodyweight entry for sync', async () 
   expect(mocks.state.S.bodyweight.some(entry => entry.w === 72.5)).toBe(true)
 })
 
-it('confirms a personal weight locally while the account queue syncs in the background', async () => {
+it('keeps personal weight persistence silent while the account queue runs in the background', async () => {
   mocks.state.S._pendingSync = { body: true, preferences: true }
   mocks.state.getActiveLocalScope = () => ({ kind: 'account' })
   mocks.state.retryAccountSync = vi.fn()
@@ -109,7 +109,7 @@ it('confirms a personal weight locally while the account queue syncs in the back
   await act(async () => field.querySelector('.personal-edit').click())
   await act(async () => field.querySelector('.personal-save').click())
   expect(mocks.state.retryAccountSync).not.toHaveBeenCalled()
-  expect(mocks.toast).toHaveBeenCalledWith('Salvo com sucesso', { tone: 'success' })
+  expect(mocks.toast).not.toHaveBeenCalled()
   delete mocks.state.getActiveLocalScope
   delete mocks.state.retryAccountSync
   delete mocks.state.S._pendingSync

@@ -51,6 +51,30 @@ afterEach(() => {
 })
 
 describe('workout exercise player', () => {
+  it('shows the execution signal only while a set is running and removes it on cancel, completion and rest', () => {
+    render()
+    expect(container.querySelector('.wp-execution-signal')).toBeNull()
+
+    click('.wp-main-action')
+    expect(container.querySelector('.wp-main-action.is-executing .wp-execution-signal')?.getAttribute('aria-hidden')).toBe('true')
+    expect(container.querySelector('.wp-main-action').getAttribute('aria-label')).toBe('Concluir série 1')
+    click('.wp-cancel-set')
+    expect(container.querySelector('.wp-execution-signal')).toBeNull()
+
+    click('.wp-main-action')
+    expect(container.querySelector('.wp-execution-signal')).toBeTruthy()
+    click('.wp-main-action')
+    expect(rows().map(row => row.done)).toEqual([true, false])
+    expect(container.querySelector('.wp-execution-signal')).toBeNull()
+
+    click('.wp-main-action')
+    expect(container.querySelector('.wp-execution-signal')).toBeTruthy()
+    act(() => useUI.getState().startRest(5))
+    expect(container.querySelector('.wp-main-action.is-resting')).toBeTruthy()
+    expect(container.querySelector('.wp-execution-signal')).toBeNull()
+    expect(container.querySelector('.wp-main-action').disabled).toBe(true)
+  })
+
   it('starts the pending row without logging and exposes only one completion action', () => {
     render()
     expect(container.querySelector('.wp-series-details').open).toBe(false)
@@ -94,11 +118,13 @@ describe('workout exercise player', () => {
       mutate(entry => { entry.sets[i].sec = elapsed; entry.sets[i].done = true })
     }, { entryIdx: 0, setIdx: i, isLastSet: true }) })
     click('.wp-main-action')
+    expect(container.querySelector('.wp-main-action.is-executing .wp-execution-signal')).toBeTruthy()
     act(() => vi.advanceTimersByTime(12000))
     expect(rows()[0].done).toBe(false)
     click('.wp-main-action')
     expect(rows()[0]).toMatchObject({ done: true, sec: 12 })
     expect(useUI.getState().work.phase).toBe('done')
+    expect(container.querySelector('.wp-execution-signal')).toBeNull()
   })
 
   it('keeps bodyweight unilateral and optional effort controls in the current set', () => {
@@ -137,6 +163,39 @@ describe('workout exercise player', () => {
     expect(useUI.getState().manualSet).toBeNull()
   })
 
+  it.each([
+    ['loaded', false, 'Peso (kg)'],
+    ['added bodyweight', true, 'Extra (kg)'],
+  ])('adjusts %s weight by one kilogram without discarding fractional load', (_, bodyweight, label) => {
+    mutate(entry => { entry.target.bodyweight = bodyweight; entry.sets[0].w = 60.25 })
+    render()
+    const field = container.querySelector('.wp-current-controls .w input')
+    expect(field.getAttribute('aria-label')).toBe(label)
+    expect(field.value).toBe('60.25')
+
+    click('.wp-current-controls .w button:last-child')
+    expect(rows()[0].w).toBe(61.25)
+    expect(field.value).toBe('61.25')
+    click('.wp-current-controls .w button:first-child')
+    click('.wp-current-controls .w button:first-child')
+    expect(rows()[0].w).toBe(59.25)
+    expect(field.value).toBe('59.25')
+    expect(rows()[1].w).toBe(60)
+  })
+
+  it('keeps decimal weight entry while the kilogram buttons use whole kilogram steps', () => {
+    render()
+    const field = container.querySelector('.wp-current-controls .w input')
+    act(() => {
+      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(field, '12,75')
+      field.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    expect(rows()[0].w).toBe(12.75)
+    click('.wp-current-controls .w button:last-child')
+    expect(rows()[0].w).toBe(13.75)
+    expect(field.value).toBe('13.75')
+  })
+
   it('converts the pound step back to stored kilograms for added bodyweight load', () => {
     useStore.setState({ S: { ...useStore.getState().S, displayUnit: 'lb' } })
     mutate(entry => { entry.target.bodyweight = true })
@@ -145,6 +204,8 @@ describe('workout exercise player', () => {
     expect(field.getAttribute('aria-label')).toBe('Extra (lb)')
     click('.wp-current-controls .w button:last-child')
     expect(rows()[0].w).toBe(62.27)
+    click('.wp-current-controls .w button:first-child')
+    expect(rows()[0].w).toBe(60)
     expect(rows()[1].w).toBe(60)
   })
 

@@ -73,7 +73,9 @@ describe('professional profile workspace', () => {
     })
     expect(mocks.save).toHaveBeenCalledTimes(1)
     const action = container.querySelector('button[type="submit"]')
-    expect(action.getAttribute('aria-busy')).toBe('true')
+    expect(action.disabled).toBe(true)
+    expect(action.textContent).toBe('Salvar perfil')
+    expect(action.getAttribute('aria-busy')).toBeNull()
     await act(async () => fail(new Error('offline')))
     expect(action.getAttribute('data-state')).toBe('error')
     expect(container.querySelector('[name="professionalName"]').disabled).toBe(false)
@@ -108,7 +110,7 @@ describe('professional profile workspace', () => {
     await fill('specialties', 'força, corrida'); await click('Salvar perfil')
     expect(mocks.save).toHaveBeenCalledWith('professional-a', expect.objectContaining({ professionalName: 'Ana Souza', specialties: ['força', 'corrida'] }))
     expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile')
-    expect(container.textContent).toContain('Ana Souza'); expect(container.textContent).toContain('Perfil salvo.')
+    expect(container.textContent).toContain('Ana Souza'); expect(container.textContent).not.toContain('Perfil salvo.')
   })
   it('shows a retry after a load failure instead of offering account provisioning', async () => {
     mocks.own.mockRejectedValueOnce(new Error('offline')); await render()
@@ -128,7 +130,7 @@ describe('professional profile workspace', () => {
   it('ignores a late save from the previous account', async () => {
     let resolveSave; mocks.save.mockImplementationOnce(() => new Promise(resolve => { resolveSave = resolve }))
     await render('/professional/profile/edit'); await click('Salvar perfil')
-    expect(container.querySelector('button[type="submit"][aria-busy="true"]').disabled).toBe(true)
+    expect(container.querySelector('button[type="submit"]').disabled).toBe(true)
     mocks.auth = { status: 'authenticated', user: { id: 'professional-b' } }; mocks.own.mockResolvedValue({ ...saved, professionalName: 'Bruna' }); await render()
     await act(async () => resolveSave({ ...saved, professionalName: 'Ana antiga' }))
     expect(container.querySelector('[name="professionalName"]').value).toBe('Bruna')

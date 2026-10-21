@@ -390,7 +390,7 @@ export default function ConsoleSystem() {
                                         disabled={resolvingId === err.id}
                                         onClick={() => handleResolve(err.id)}
                                       >
-                                        {resolvingId === err.id ? 'Salvando...' : 'Marcar Resolvido'}
+                                        Marcar Resolvido
                                       </button>
                                     )}
                                   </td>

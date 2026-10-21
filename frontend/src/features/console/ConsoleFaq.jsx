@@ -63,7 +63,7 @@ export function ConsoleFaqEditor() {
         <label className="cx-label">Ordem de exibição<input className="cx-field" type="number" min={0} step={1} value={form.sortOrder} onChange={e => field('sortOrder', Math.max(0, Number(e.target.value) || 0))} /></label>
         <label className="console-checkbox"><input type="checkbox" checked={form.isFeatured} onChange={e => field('isFeatured', e.target.checked)} /><span>Destacar entre as perguntas mais importantes</span></label>
         <label className="console-checkbox"><input type="checkbox" checked={form.isPublished} onChange={e => field('isPublished', e.target.checked)} /><span>Publicar em Ajuda e suporte</span></label>
-      </div></SectionBody></section><div className="console-editor-actions"><Link className="cx-pill-btn" to="/console/faq">Cancelar</Link><CxButton className="cx-pill-btn cx-pill-btn--accent" type="submit" state={operation.state} loadingLabel="Salvando…">Salvar pergunta</CxButton></div>
+      </div></SectionBody></section><div className="console-editor-actions"><Link className="cx-pill-btn" to="/console/faq">Cancelar</Link><CxButton feedback="persistence" className="cx-pill-btn cx-pill-btn--accent" type="submit" state={operation.state} loadingLabel="Salvando…">Salvar pergunta</CxButton></div>
     </form>}
   </div></ConsoleShell></AccessGate>
 }

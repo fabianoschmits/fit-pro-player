@@ -48,13 +48,23 @@ it('does not expose account retry controls after a sync failure', async () => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.useRealTimers(); vi.restoreAllMocks() })
 
 describe('AppStatus session recovery', () => {
-  it('shows a queued workout and retries it from the global status', async () => {
-    mocks.state = { ...mocks.state, sessionRecovery: { state: 'waiting', pending: 1 } }
-    mocks.flush.mockResolvedValue({ state: 'saved' })
+  it.each(['saving', 'saved', 'waiting', 'failed', 'auth-required'])('keeps %s workout synchronization silent', async state => {
+    mocks.state = { ...mocks.state, sessionRecovery: { state, pending: 1 } }
     await act(async () => root.render(<AppStatus />))
-    expect(container.textContent).toContain('Treino aguardando envio')
-    await act(async () => container.querySelector('.app-status-action').click())
-    expect(mocks.flush).toHaveBeenCalledOnce()
+    expect(container.querySelector('.app-status')).toBeNull()
+    expect(mocks.flush).not.toHaveBeenCalled()
+  })
+
+  it('keeps local write and professional synchronization notices internal', async () => {
+    mocks.state = { ...mocks.state, persistence: { state: 'error' }, S: { pendingProfessionalEvents: [{ blocked: true }] } }
+    await act(async () => root.render(<AppStatus />))
+    expect(container.querySelector('.app-status')).toBeNull()
+  })
+
+  it('does not interrupt the app with persistence notices when the network disconnects', async () => {
+    await act(async () => root.render(<AppStatus />))
+    await act(async () => window.dispatchEvent(new Event('offline')))
+    expect(container.querySelector('.app-status')).toBeNull()
   })
 
   it('offers takeover when another device owns the session writer', async () => {

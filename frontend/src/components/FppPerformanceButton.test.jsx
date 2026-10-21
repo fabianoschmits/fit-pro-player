@@ -19,6 +19,49 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.useRealTimers() })
 
 describe('action feedback lifetime', () => {
+  it('keeps persistence presentation silent while the real write and continuation finish', async () => {
+    const pending = deferred(); const completed = vi.fn()
+    let writes = 0
+    render({ feedback: 'persistence', icon: 'check', onAction: () => { writes++; return pending.promise }, onSuccess: completed, loadingLabel: 'Salvando…', successLabel: 'Salvo' })
+    act(() => {
+      const activate = () => host.querySelector('button').dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+      activate(); activate()
+    })
+    await act(async () => { vi.advanceTimersByTime(320); await Promise.resolve() })
+    const button = host.querySelector('button')
+    act(() => vi.advanceTimersByTime(600))
+    expect(writes).toBe(1)
+    expect(button.disabled).toBe(true)
+    expect(button.textContent).toBe('Salvar')
+    expect(button.getAttribute('aria-busy')).toBeNull()
+    expect(button.querySelector('[aria-live], .fpp-status-animation, .fpp-energy-rail')).toBeNull()
+    expect(button.querySelector('[data-label="Salvando…"], [data-label="Salvo"]')).toBeNull()
+    await settle(() => pending.resolve('written'))
+    expect(button.textContent).toBe('Salvar')
+    expect(button.getAttribute('data-visual-state')).toBe('idle')
+    expect(button.disabled).toBe(true)
+    await act(async () => { vi.advanceTimersByTime(520); await Promise.resolve(); await Promise.resolve() })
+    expect(completed).toHaveBeenCalledExactlyOnceWith('written')
+    expect(button.disabled).toBe(false)
+    expect(button.querySelector('.fpp-status-animation')).toBeNull()
+  })
+
+  it('retains explicit persistence errors and permits retry without a success announcement', async () => {
+    const error = new Error('disk full'); const observed = vi.fn()
+    let attempts = 0
+    render({ feedback: 'persistence', onAction: () => { if (++attempts === 1) throw error; return true }, onError: observed, errorLabel: 'Tentar novamente', successLabel: 'Salvo' })
+    await act(async () => { click(); await Promise.resolve(); await Promise.resolve() })
+    const button = host.querySelector('button')
+    expect(button.textContent).toBe('Tentar novamente')
+    expect(button.getAttribute('data-visual-state')).toBe('error')
+    expect(observed).toHaveBeenCalledExactlyOnceWith(error)
+    expect(button.disabled).toBe(false)
+    await act(async () => { click(); await Promise.resolve(); await Promise.resolve() })
+    expect(attempts).toBe(2)
+    expect(button.textContent).toBe('Salvar')
+    expect(button.querySelector('[aria-live], .fpp-status-animation')).toBeNull()
+  })
+
   it('confirms an account edit locally while the background queue is pending', async () => {
     await useStore.getState().activateLocalScope('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     const pending = deferred()

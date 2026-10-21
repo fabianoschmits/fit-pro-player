@@ -166,7 +166,6 @@ function ActiveWorkout() {
   }, [update])
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const recovery = useStore(s => s.sessionRecovery)
   const { startRest, stopRest, work, manualSet, stopManualSet } = useUI()
   const A = S.active
   const units = supersetUnits(A.entries)
@@ -483,14 +482,6 @@ function ActiveWorkout() {
         <div className="wp-session-clock"><Elapsed active={A} /></div>
         <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { abandonWorkout(); nav('/home') } })}><Icon name="xmark" /></button>
       </div>
-      {recovery && recovery.state !== 'idle' && <div className="workout-save-status" data-state={recovery.state} role="status">
-        {recovery.state === 'saving' ? t('Saving…')
-          : recovery.state === 'saved' ? t('Salvo')
-          : recovery.state === 'waiting' ? t('Waiting to send')
-          : recovery.state === 'takeover-required' ? t('This workout is open on another device.')
-          : recovery.state === 'auth-required' ? t('Sign in again to send this workout.')
-          : t('This workout could not be sent.')}
-      </div>}
       {A.entries.length > 0 && <details className="wp-queue-details"><summary>{t('Exercises')}<span>{cur + 1}/{A.entries.length}</span><Icon name="chevronDown" /></summary><div className="workout-exercise-rail" aria-label={t('Exercises')}>
         {units.map((indices, index) => {
           const entries = indices.map(entryIndex => A.entries[entryIndex])

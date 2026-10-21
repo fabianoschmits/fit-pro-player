@@ -105,8 +105,16 @@ export const useStore = create((set, get) => {
   let saveTm = null
   let sessionRecovery = null
   let sessionRecoveryAccountId = null
+  let releaseSessionRecoveryAuth = null
   let accountSyncRetry = null
   let nativePending = Promise.resolve(true)
+  const disposeSessionRecovery = () => {
+    releaseSessionRecoveryAuth?.()
+    releaseSessionRecoveryAuth = null
+    sessionRecovery?.dispose()
+    sessionRecovery = null
+    sessionRecoveryAccountId = null
+  }
   const scopeToken = () => ({ scope: activeScope, generation: scopeGeneration })
   const isCurrent = token => token.generation === scopeGeneration && token.scope === activeScope
   const persistenceResult = (ok, error = 'local-write-failed') => {
@@ -202,6 +210,7 @@ export const useStore = create((set, get) => {
     configureSessionRecovery(repository, accountId) {
       if (activeScope.kind !== 'account' || activeScope.userId !== accountId) return null
       if (sessionRecovery && sessionRecoveryAccountId === accountId) return sessionRecovery
+      disposeSessionRecovery()
       sessionRecoveryAccountId = accountId
       sessionRecovery = createSessionRecovery({
         repository,
@@ -212,6 +221,13 @@ export const useStore = create((set, get) => {
           }
         },
       })
+      const recovery = sessionRecovery
+      releaseSessionRecoveryAuth = repository.onAuthRestored?.(() => {
+        // Leave the auth callback before making a new Supabase request.
+        setTimeout(() => {
+          if (sessionRecovery === recovery && activeScope.kind === 'account' && activeScope.userId === accountId) void recovery.flush()
+        }, 0)
+      }) || null
       const draft = sessionRecovery.getDraft()
       set({ sessionRecovery: draft
         ? { state: hasPendingSessionFinalization(draft) ? 'waiting' : 'saved', pending: draft.pendingOperations.length, error: null }
@@ -220,8 +236,7 @@ export const useStore = create((set, get) => {
     },
     releaseSessionRecovery(accountId) {
       if (sessionRecoveryAccountId !== accountId) return
-      sessionRecovery = null
-      sessionRecoveryAccountId = null
+      disposeSessionRecovery()
       accountSyncRetry = null
       set({ sessionRecovery: { state: 'idle', pending: 0, error: null } })
     },
@@ -286,8 +301,7 @@ export const useStore = create((set, get) => {
       if (MOBILE && saveTm) saveNative(activeScope, get().S, scopeGeneration)
       const generation = ++scopeGeneration
       activeScope = scope
-      sessionRecovery = null
-      sessionRecoveryAccountId = null
+      disposeSessionRecovery()
       clearTimeout(saveTm); saveTm = null
       const local = readScopedState(scope, localStorage, DEF)
       const restored = normalizeState(local.state)

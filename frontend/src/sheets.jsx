@@ -266,7 +266,7 @@ function BwSheet({ required, onDone, close, date, sheetId }) {
     return n
   }, n => {
     close()
-    if (onDone) onDone(n); else toast(t('Weight saved'))
+    onDone?.(n)
   })
   const recent = [...st.bodyweight].reverse().slice(0, 3)
   const delEntry = d => update(s => {
@@ -292,7 +292,7 @@ function BwSheet({ required, onDone, close, date, sheetId }) {
     </fieldset>
     <div style={{ height: 14 }} />
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : required ? t('Save & start workout') : t('Save')}</Button>
+    <Button feedback="persistence" variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : required ? t('Save & start workout') : t('Save')}</Button>
     {required && <>
       <div style={{ height: 8 }} /><Button variant="ghost" className="dim" activation="immediate" disabled={action.needsPersistence} onClick={() => { close(); onDone && onDone(null) }}>{t('Start without weighing in')}</Button>
       <div style={{ height: 2 }} /><Button variant="ghost" className="dim" activation="immediate" icon="reset" onClick={() => { close(); nav('/workout') }}>{t('Choose a different workout')}</Button>
@@ -438,7 +438,7 @@ function GoalSheet({ close, sheetId }) {
     <fieldset disabled={action.needsPersistence} style={{ display: 'contents' }}><WeightInput value={v} setValue={setV} unit={st.displayUnit || 'kg'} /></fieldset>
     <div style={{ height: 14 }} />
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save goal')}</Button>
+    <Button feedback="persistence" variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save goal')}</Button>
     {st.targetW && <><div style={{ height: 8 }} /><Button variant="danger" disabled={action.needsPersistence} onClick={() => { update(s => { s.targetW = null }); close(); toast(t('Goal removed')) }}>{t('Remove goal')}</Button></>}
   </>
 }
@@ -664,7 +664,7 @@ function CustomExForm({ existing, prefill, onDone, close, sheetId }) {
     return { id, name }
   }, result => {
     close()
-    toast(existing ? t('Saved') : t('“{0}” created', result.name))
+    if (!existing) toast(t('“{0}” created', result.name))
     onDone && onDone(EXIDX[result.id])
   })
   return <>
@@ -681,7 +681,7 @@ function CustomExForm({ existing, prefill, onDone, close, sheetId }) {
     </fieldset>
     <div style={{ height: 14 }} />
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : existing ? t('Save') : t('Create exercise')}</Button>
+    <Button feedback="persistence" variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : existing ? t('Save') : t('Create exercise')}</Button>
     {existing && <><div style={{ height: 8 }} /><Button variant="danger" icon="trash" disabled={action.needsPersistence} onClick={() => { close(); deleteCustomEx(existing) }}>{t('Delete exercise')}</Button></>}
   </>
 }
@@ -986,7 +986,7 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
     </details>
     </fieldset>
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+    <Button feedback="persistence" variant="primary" onAction={action.needsPersistence ? action.retry : save} onSuccess={action.complete} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
       onError={action.onError}>{saveLabel || (existing ? t('Save') : t('Add to routine'))}</Button>
     {ex.custom && <><div style={{ height: 8 }} /><Button icon="pencil" disabled={localSavePending} onClick={() => { close(); customExSheet(ex) }}>{t('Edit or delete this exercise')}</Button></>}
     {onDelete && <><div style={{ height: 8 }} /><Button variant="danger" disabled={localSavePending} onClick={() => { close(); onDelete() }}>{t('Remove from routine')}</Button></>}
@@ -1127,7 +1127,7 @@ function PlanImport({ bundle, close, sheetId }) {
       <Switch checked={schedule} disabled={action.needsPersistence} onChange={setSchedule} />
     </div>}
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
-    <Button variant="primary" onAction={action.needsPersistence ? action.retry : apply} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Add to my plan')}</Button>
+    <Button feedback="persistence" variant="primary" onAction={action.needsPersistence ? action.retry : apply} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Add to my plan')}</Button>
     <div style={{ height: 8 }} />
     <Button variant="ghost" className="dim" activation="immediate" onClick={close}>{t('Cancel')}</Button>
   </>
@@ -1310,7 +1310,7 @@ function stopWorkoutExecution() {
 }
 export function startFlow(routineId, professionalExecutionId = null) {
   if (useStore.getState().hasPendingSessionCompletion?.()) {
-    toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+    void useStore.getState().flushSessionRecovery()
     return false
   }
   const st = S()
@@ -1330,7 +1330,7 @@ export function repeatLastWorkout() {
 export function repeatWorkout(workout) {
   if (!workout) return false
   if (useStore.getState().hasPendingSessionCompletion?.()) {
-    toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+    void useStore.getState().flushSessionRecovery()
     return false
   }
   const st = S()
@@ -1349,7 +1349,7 @@ export function repeatWorkout(workout) {
       onConfirm: () => {
         const continueWith = result => {
         if (!['idle', 'saved'].includes(result?.state)) {
-          toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+          void useStore.getState().flushSessionRecovery()
           return false
         }
         begin()
@@ -1386,7 +1386,7 @@ function beginWorkoutFromHistory(workout, bw) {
 }
 export function beginWorkout(routineId, bw, professionalExecutionId = null) {
   if (useStore.getState().hasPendingSessionCompletion?.()) {
-    toast(t('Your previous workout is waiting to be sent. Try again when it is saved.'))
+    void useStore.getState().flushSessionRecovery()
     return false
   }
   const st = S()
@@ -1474,9 +1474,9 @@ function TopWeight({ entryIdx, close, sheetId }) {
     {prevBest > 0 ? <div className="small dim" style={{ textAlign: 'center', marginBottom: 12 }}>{t('Previous best:')} {fmtNum(toDisplayMass(prevBest, st.displayUnit || 'kg'))} {st.displayUnit || 'kg'}{maxSet > prevBest && <span style={{ color: 'var(--yellow)' }}> — {t('new record!')}</span>}</div> : <div style={{ height: 4 }} />}
     {action.error && <FppActionFeedback state="error">{action.error}</FppActionFeedback>}
     {unitDone ? <>
-      <Button variant="primary" trailingIcon={isLastUnit ? null : 'chevronRight'} onAction={action.needsPersistence ? action.retry : () => commit(true)} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : isLastUnit ? t('Save') : t('Save & next exercise')}</Button>
+      <Button feedback="persistence" variant="primary" trailingIcon={isLastUnit ? null : 'chevronRight'} onAction={action.needsPersistence ? action.retry : () => commit(true)} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : isLastUnit ? t('Save') : t('Save & next exercise')}</Button>
       <div style={{ height: 8 }} /><Button variant="ghost" className="dim" disabled={action.needsPersistence} onAction={() => commit(false)} onSuccess={action.complete} onError={action.onError}>{t('Just close')}</Button>
-    </> : <Button variant="primary" onAction={action.needsPersistence ? action.retry : () => commit(false)} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save weight')}</Button>}
+    </> : <Button feedback="persistence" variant="primary" onAction={action.needsPersistence ? action.retry : () => commit(false)} onSuccess={action.complete} onError={action.onError} loadingLabel={t('Salvando…')} successLabel={t('Saved')}>{action.needsPersistence ? t('Tentar novamente') : t('Save weight')}</Button>}
   </>
 }
 export const topWeightSheet = entryIdx => { let sheetId; const h = ui().openSheet((close, context) => <TopWeight entryIdx={entryIdx} sheetId={context?.id || sheetId} close={close} />); sheetId = h.id; return h }
@@ -1498,16 +1498,11 @@ export const workoutCompleteSheet = () => ui().openSheet(close => <WorkoutComple
 
 function FinishSummary({ w, prs, e1prs = [], close }) {
   const st = useStore(s => s.S)
-  const persistenceError = useStore(s => s.persistence?.state === 'error')
-  const retrySave = async () => {
-    await flushLocalSave()
-  }
   return <div className="finish-summary">
     <div className="finish-summary-heading">
-      <FppStatusAnimation className="icn" state={persistenceError ? 'warning' : 'success'} />
+      <FppStatusAnimation className="icn" state="success" />
       <div><h3>{t('Workout complete!')}</h3><span>{fmtDate(w.d, true)}</span></div>
     </div>
-    {persistenceError && <><FppActionFeedback state="error">{t('Não foi possível salvar neste dispositivo. Tente novamente.')}</FppActionFeedback><Button onAction={retrySave} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}>{t('Tentar novamente')}</Button></>}
     <div className="finish-metrics">
       <div className="finish-metric"><div className="l">{t('Duration')}</div><div className="v">{fmtDur(workoutDuration(w))}</div></div>
       <div className="finish-metric"><div className="l">{t('Exercises')}</div><div className="v">{w.entries.length}</div></div>

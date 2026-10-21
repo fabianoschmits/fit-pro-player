@@ -314,7 +314,6 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   const pair = part?.pair ? BODY_MEASUREMENT_PARTS.filter(item => item.pair === part.pair) : []
   const [draft, setDraft] = useState(null)
   const [goalDraft, setGoalDraft] = useState(null)
-  const [savedPart, setSavedPart] = useState(null)
   const [saveError, setSaveError] = useState('')
   const [goalError, setGoalError] = useState('')
   const goal = S.bodyMeasurementGoals?.[selected] ?? null
@@ -322,23 +321,16 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   useEffect(() => setDraft(weekValues[selected] ?? null), [selected, currentCheckin?.week, weekValues[selected]])
   useEffect(() => setGoalDraft(goal), [selected, goal])
   useEffect(() => { setSaveError(''); setGoalError('') }, [selected])
-  useEffect(() => {
-    if (!savedPart) return undefined
-    const timeout = window.setTimeout(() => setSavedPart(null), 1600)
-    return () => window.clearTimeout(timeout)
-  }, [savedPart])
 
   const selectPart = id => setSelected(id)
   const saveMeasurement = async event => {
     event.preventDefault()
     if (!part || !(draft > 0) || draft > 400) return
-    setSaveError(''); setSavedPart(null)
+    setSaveError('')
     try {
       update(state => { state.bodyMeasurements = upsertBodyMeasurement(state.bodyMeasurements, { date: today, partId: selected, value: draft }) })
       if (useStore.getState().persistence?.state === 'error') throw new Error('local-write-failed')
     } catch { setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.')); return }
-    setSavedPart(selected)
-    useUI.getState().toast(`${part.circumferenceLabel}: ${formatCm(draft)} · ${t('Saved')}`, { tone: 'success' })
   }
   const saveGoal = async () => {
     if (!part) return false
@@ -349,7 +341,7 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
       else delete state.bodyMeasurementGoals[selected]
     })
     if (useStore.getState().persistence?.state === 'error') throw new Error('local-write-failed')
-    useUI.getState().toast(goalDraft > 0 ? 'Meta salva' : 'Meta removida', { tone: 'success' })
+    if (!(goalDraft > 0)) useUI.getState().toast('Meta removida', { tone: 'success' })
   }
 
   const currentValue = latestValues[selected]
@@ -402,8 +394,8 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
                 <span>cm</span>
               </div>
               {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
-              <Button type="submit" variant="primary" icon={savedPart === selected ? 'check' : 'ruler'} state={saveError ? 'error' : savedPart === selected ? 'success' : 'idle'} successLabel="Circunferência salva" disabled={!(draft > 0) || draft > 400}>
-                {savedPart === selected ? 'Circunferência salva' : weekValues[selected] != null ? 'Atualizar medida' : 'Salvar medida'}
+              <Button feedback="persistence" type="submit" variant="primary" icon="ruler" state={saveError ? 'error' : 'idle'} disabled={!(draft > 0) || draft > 400}>
+                {weekValues[selected] != null ? 'Atualizar medida' : 'Salvar medida'}
               </Button>
             </form>
 
@@ -412,7 +404,7 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
 
             <div className="bp-goal-row">
               <div><strong>Meta para {part.shortLabel.toLowerCase()}</strong><span>{goalDistance != null ? `${formatCm(goalDistance)} de distância` : 'Opcional · ajuda a interpretar a evolução'}</span></div>
-              <div className="bp-goal-control"><NumberField value={goalDraft} onChange={setGoalDraft} nullable decimal aria-label={`Meta para ${part.circumferenceLabel}`} /><span>cm</span><Button size="sm" onAction={saveGoal} successLabel={t('Saved')} onError={() => setGoalError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Save')}</Button></div>
+              <div className="bp-goal-control"><NumberField value={goalDraft} onChange={setGoalDraft} nullable decimal aria-label={`Meta para ${part.circumferenceLabel}`} /><span>cm</span><Button feedback="persistence" size="sm" onAction={saveGoal} successLabel={t('Saved')} onError={() => setGoalError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Save')}</Button></div>
             </div>
             {goalError && <FppActionFeedback state="error">{goalError}</FppActionFeedback>}
           </motion.div>

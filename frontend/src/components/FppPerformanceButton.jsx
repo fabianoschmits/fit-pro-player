@@ -18,7 +18,7 @@ function labelText(value) {
 export const FppPerformanceButton = forwardRef(function FppPerformanceButton({
   variant = 'plain', appearance = 'default', size, icon, trailingIcon, children, className = '', type = 'button',
   onAction, onClick, onSuccess, onError, state, intent = 'primary', loadingLabel,
-  successLabel, errorLabel, progress, disabled = false, activation = 'animated', onKeyDown, onPointerDown, ...rest
+  successLabel, errorLabel, progress, feedback, disabled = false, activation = 'animated', onKeyDown, onPointerDown, ...rest
 }, ref) {
   const [input, setInput] = useState('pointer')
   const action = useFppAction({ onAction, onSuccess, onError, state, disabled })
@@ -31,14 +31,18 @@ export const FppPerformanceButton = forwardRef(function FppPerformanceButton({
     }
   } })
   const enhanced = !!onAction || state != null
+  const persistenceFeedback = feedback === 'persistence'
   const labels = { loading: loadingLabel ?? t('Loading…'), success: successLabel ?? t('Done'), error: errorLabel ?? t('Try again') }
-  const visualState = trigger.pressed ? 'pressed' : action.visualState
+  // Persistence keeps its real lifetime and locks; only explicit errors need
+  // presentation. Normal activation motion and other action feedback remain.
+  const visualState = trigger.pressed ? 'pressed' : persistenceFeedback && (isFppBusy(action.visualState) || action.visualState === 'success') ? 'idle' : action.visualState
   const result = ['success', 'error', 'offline', 'warning'].includes(visualState)
   const label = isFppBusy(visualState) ? labels.loading : visualState === 'success' ? labels.success : visualState === 'error' ? labels.error : children
   const inlineStatus = result && !icon
   const pct = Math.max(0, Math.min(100, Number(progress) || 0)) / 100
   const currentState = trigger.pressed ? 'pressed' : action.state
   const locked = action.locked || trigger.pressed
+  const announce = enhanced && (!persistenceFeedback || visualState === 'error')
 
   const handleClick = event => {
     const modality = fppActionInput(event)
@@ -50,7 +54,7 @@ export const FppPerformanceButton = forwardRef(function FppPerformanceButton({
   const appearanceClass = appearance === 'custom' ? '' : `btn ${variant}${size ? ' ' + size : ''}`
   return <button {...rest} ref={ref} type={type} className={`${appearanceClass} fpp-button ${className}`.trim()}
     disabled={locked} aria-disabled={locked || rest['aria-disabled'] || undefined}
-    aria-busy={trigger.pressed || action.busy || rest['aria-busy'] || undefined} data-state={currentState} data-visual-state={visualState} data-intent={intent} data-input={input}
+    aria-busy={(!persistenceFeedback && (trigger.pressed || action.busy)) || rest['aria-busy'] || undefined} data-state={currentState} data-visual-state={visualState} data-intent={intent} data-input={input}
     onClick={handleClick}
     onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') setInput('keyboard'); onKeyDown?.(event) }}
     onPointerDown={event => { setInput('pointer'); onPointerDown?.(event) }}>
@@ -58,11 +62,11 @@ export const FppPerformanceButton = forwardRef(function FppPerformanceButton({
     {(label != null && label !== false) && <span className="fpp-button-labels">
       {enhanced && <>
         <span className="fpp-button-reserve" aria-hidden="true" data-symbol={!icon || undefined} data-label={labelText(children)} />
-        <span className="fpp-button-reserve" aria-hidden="true" data-label={labelText(labels.loading)} />
-        <span className="fpp-button-reserve" aria-hidden="true" data-symbol={!icon || undefined} data-label={labelText(labels.success)} />
+        {!persistenceFeedback && <span className="fpp-button-reserve" aria-hidden="true" data-label={labelText(labels.loading)} />}
+        {!persistenceFeedback && <span className="fpp-button-reserve" aria-hidden="true" data-symbol={!icon || undefined} data-label={labelText(labels.success)} />}
         <span className="fpp-button-reserve" aria-hidden="true" data-symbol={!icon || undefined} data-label={labelText(labels.error)} />
       </>}
-      <span className="fpp-button-label" data-current="true" aria-live={enhanced ? 'polite' : undefined} aria-atomic={enhanced || undefined}>{inlineStatus && <FppStatusAnimation state={visualState} />}{label}</span>
+      <span className="fpp-button-label" data-current="true" aria-live={announce ? 'polite' : undefined} aria-atomic={announce || undefined}>{inlineStatus && <FppStatusAnimation state={visualState} />}{label}</span>
     </span>}
     {trailingIcon && <Icon name={trailingIcon} />}
     {isFppBusy(visualState) && <span className="fpp-energy-rail" aria-hidden="true" data-indeterminate={progress == null || undefined}><span style={progress == null ? undefined : { transform: `scaleX(${pct})` }} /></span>}

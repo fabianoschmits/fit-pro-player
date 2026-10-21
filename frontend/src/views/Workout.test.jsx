@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => {
   }
   state.storeSnapshot = () => ({
     S: state.S,
+    sessionRecovery: state.sessionRecovery,
     user: null,
     update: mut => mut(state.S),
   })
@@ -154,6 +155,7 @@ beforeEach(() => {
   mocks.timer = null
   mocks.work = null
   mocks.manualSet = null
+  mocks.sessionRecovery = { state: 'idle', pending: 0 }
 })
 
 afterEach(async () => {
@@ -161,6 +163,15 @@ afterEach(async () => {
 })
 
 describe('Workout set completion flow', () => {
+  it.each(['saving', 'saved', 'waiting', 'failed', 'auth-required'])('does not show %s database status in the real workout player', async state => {
+    mocks.sessionRecovery = { state, pending: 1 }
+    await mount([exercise('plain-bench', [false, false])])
+    expect(container.querySelector('.workout-save-status')).toBeNull()
+    await toggleSet(0)
+    expect(mocks.S.active.entries[0].sets[0].done).toBe(true)
+    expect(container.querySelector('.workout-save-status')).toBeNull()
+  })
+
   it('presents one real exercise player and folds the queue and session summary', async () => {
     await mount([exercise('plain-bench', [false, false]), exercise('plain-row', [false, false])])
     expect(container.querySelectorAll('.wp-exercise-player')).toHaveLength(1)

@@ -215,6 +215,7 @@ export function ConsoleUserPage() {
                     onChange={e => setDisplayName(e.target.value)}
                   />
                   <CxButton
+                    feedback="persistence"
                     type="button"
                     className="cx-pill-btn cx-pill-btn--accent"
                     state={actionState('name')} disabled={operation.locked}
@@ -290,7 +291,7 @@ export function ConsoleUserPage() {
                   </div>
                   <div className="cx-action-list cx-action-list--row cx-mt-12">
                     <CxButton type="button" className="cx-pill-btn cx-pill-btn--accent"
-                      state={actionState('pro-save')} disabled={operation.locked}
+                      feedback="persistence" state={actionState('pro-save')} disabled={operation.locked}
                       onClick={event => run(event, 'pro-save', () => repo.updateProfessionalProfile(user.userId, {
                         professionalName: proName, bio, cityRegion: city,
                         registrationType: regType, registrationNumber: regNumber,

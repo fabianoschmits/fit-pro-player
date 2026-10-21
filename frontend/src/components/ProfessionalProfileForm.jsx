@@ -37,7 +37,7 @@ export default function ProfessionalProfileForm({ profile, onSave, onCancel, sav
       <p className="management-help">{t('Salvar exige conexão. O status de verificação é controlado pelo sistema.')}</p>
     </fieldset>
     <div className="management-form-actions">
-      <Button type="submit" variant="primary" intent="primary" state={state === 'success' ? state : saving ? 'loading' : state} loadingLabel={provisioning ? t('Criando…') : t('Salvando…')} successLabel={t('Perfil salvo.')} errorLabel={t('Tentar novamente')} disabled={saving}>{provisioning ? t('Criar perfil profissional') : t('Salvar perfil')}</Button>
+      <Button feedback="persistence" type="submit" variant="primary" intent="primary" state={state === 'success' ? state : saving ? 'loading' : state} loadingLabel={provisioning ? t('Criando…') : t('Salvando…')} successLabel={t('Perfil salvo.')} errorLabel={t('Tentar novamente')} disabled={saving}>{provisioning ? t('Criar perfil profissional') : t('Salvar perfil')}</Button>
       <Button type="button" activation="immediate" disabled={saving} onClick={onCancel}>{t('Cancelar')}</Button>
     </div>
   </form>

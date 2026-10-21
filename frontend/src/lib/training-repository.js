@@ -92,6 +92,14 @@ export function createTrainingRepository({ client, accountId }) {
   }
 
   return {
+    onAuthRestored(resume) {
+      if (typeof client.auth?.onAuthStateChange !== 'function') return () => {}
+      const { data } = client.auth.onAuthStateChange((event, session) => {
+        if (['SIGNED_IN', 'TOKEN_REFRESHED'].includes(event) && session?.user?.id === accountId) resume()
+      })
+      return () => data?.subscription?.unsubscribe?.()
+    },
+
     startSession({ sessionId, prescriptionSnapshot, routineId = null, assignmentId = null }) {
       return rpc('start_workout_session', {
         p_session_id: sessionId,

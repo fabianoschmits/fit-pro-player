@@ -55,7 +55,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
 
   const bw = !cardio && isBw(cfg)
   const added = bw && entry.sets.some(s => s.w > 0)
-  const loadCol = { f: 'w', step: fromDisplayMass(displayUnit === 'lb' ? 5 : 2.5, displayUnit), dec: true, hd: bw ? t('Added ({0})', displayUnit) : t('Weight ({0})', displayUnit) }
+  const loadCol = { f: 'w', step: fromDisplayMass(displayUnit === 'lb' ? 2.5 : 1, displayUnit), dec: true, hd: bw ? t('Added ({0})', displayUnit) : t('Weight ({0})', displayUnit) }
   const repCol = { f: 'r', step: repStep(cfg), dec: false, hd: t('Reps') }
   const col1 = cardio ? { f: 'min', step: 1, dec: false, hd: t('Duration (min)') }
     : timed ? { f: 'sec', step: 5, dec: false, hd: t('Seconds') } : bw && !added ? repCol : loadCol
@@ -105,6 +105,13 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
         {entry.replacedFrom && <div className="workout-exercise-replacement"><Icon name="shuffle" /><span>{t('Replaces {0}', exerciseName(exOr(entry.replacedFrom)))}</span></div>}
       </div>
       <div className="wp-media"><Media ex={ex} key={entry.id} compact={compact} /></div>
+      {/* Weight badge: shown on the card while a set is active (executing or ready) and the exercise uses weight */}
+      {current && !cardio && !timed && (executing || ready) && !bw || (current && !cardio && !timed && (executing || ready) && bw && added) ? (
+        <div className={'wp-weight-badge' + (executing ? ' is-executing' : '')} aria-hidden="true">
+          <span className="wp-weight-badge-value">{toDisplayMass(current.w ?? 0, displayUnit) ?? 0}</span>
+          <span className="wp-weight-badge-unit">{displayUnit}</span>
+        </div>
+      ) : null}
       <button type="button" className="wp-exercise-nav wp-exercise-nav--previous" aria-label={t('Previous exercise')} disabled={previousDisabled || !onPrevious} onClick={onPrevious}><Icon name="chevronLeft" /></button>
       <button type="button" className="wp-exercise-nav wp-exercise-nav--next" aria-label={t('Next exercise')} disabled={nextDisabled || !onNext} onClick={onNext}><Icon name="chevronRight" /></button>
       <button type="button" className="wp-expand" aria-label={t('Details')} onClick={() => exerciseDetailSheet(ex)}><Icon name="expand" /></button>
@@ -124,6 +131,10 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
         disabled={!executing && !ready} aria-describedby={hintId}
         aria-label={resting ? t('Resting') : `${executing ? t('Complete set') : t('Start set')} ${currentNumber}`}
         onClick={executing ? completeSet : startSet}>
+        {executing && <>
+          <span className="wp-execution-signal" aria-hidden="true"><span /></span>
+          <span className="wp-execution-mark" aria-hidden="true"><Icon name={cardio ? 'figureRun' : 'figureStrength'} /></span>
+        </>}
         {resting ? t('Resting') : executing ? t('Complete set') : `${t('Start set')} ${currentNumber}`}
       </Button>}
     {current && !locked && <div id={hintId} className={'set-execution-hint' + (resting ? ' is-resting' : '')}>

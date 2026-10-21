@@ -19,6 +19,14 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); dom.close() })
 
 describe('professional program editor', () => {
+  it('keeps automatic draft writes and recovery silent', async () => {
+    useStore.setState({ S: { ...useStore.getState().S, professionalProgramDrafts: { program: { plan: { monday: [{ exerciseId: '9997', sets: 4, reps: 8 }] } } } } })
+    await act(async () => root.render(<ProfessionalProgramEditor draftKey="program" initialPlan={{}} onPublish={vi.fn()} onCancel={vi.fn()} />))
+    expect(useStore.getState().S.professionalProgramDrafts.program.plan.monday[0].sets).toBe(4)
+    expect(useStore.getState().S.professionalProgramDrafts.program.savedAt).toBeTruthy()
+    expect(container.textContent).not.toMatch(/Rascunho (recuperado|salvo)/)
+  })
+
   it('keeps pointer publication confirmation visible before completing the editor', async () => {
     vi.useFakeTimers()
     try {

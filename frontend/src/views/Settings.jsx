@@ -32,7 +32,6 @@ export default function Settings() {
   const clearAnonymousState = useStore(s => s.clearAnonymousState)
   const clearLocalScope = useStore(s => s.clearLocalScope)
   const resetDemo = useStore(s => s.resetDemo)
-  const persistence = useStore(s => s.persistence) || { state: 'saved' }
   const toast = useUI(s => s.toast)
   const fileRef = useRef(null)
   const importRef = useRef(null)
@@ -113,12 +112,6 @@ export default function Settings() {
           accessory="chevron" onClick={() => openAuthSheet('entry')} />
       </> : <Row icon="lock" iconTint="var(--grey)" title={t('Guest mode — data lives only in this browser.')} />}
     </Section>
-    {persistence.state === 'error' && <Section collapsible defaultOpen={false} title={t('Storage and sync')}>
-      <div className="lrow" role="status" aria-live="polite" style={{ display: 'block' }}>
-        <p>{persistence.state === 'error' ? t('Could not save on this device. Export a backup before closing the app.') : t('Saved on this device')}</p>
-        {persistence.state === 'error' && <button className="btn" onClick={() => useStore.getState().flushPersistence()}>{t('Retry saving')}</button>}
-      </div>
-    </Section>}
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
 
     {/* ---------- general ---------- */}
@@ -306,4 +299,3 @@ function effortHelpSheet() {
     <div style={{ height: 8 }} />
   </>)
 }
-

@@ -8,19 +8,17 @@ import Icon from '../components/Icon.jsx'
 import { Button, Segmented, TextField } from '../components/ui.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 import { useStore } from '../store/useStore.js'
-import { useUI } from '../store/useUI.js'
 import { EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS, defaultBirthDate, formatPersonName, heightCmFromText, heightText, normalizeProfile, weightText } from '../lib/profile.js'
 import { t } from '../lib/i18n.js'
 import { todayISO } from '../lib/format.js'
 
 const localSaveError = () => t('Não foi possível salvar neste dispositivo. Tente novamente.')
-async function confirmPersonalSave(toast) {
+async function confirmPersonalSave() {
   if (useStore.getState().persistence?.state === 'error') throw new Error(localSaveError())
-  toast('Salvo com sucesso', { tone: 'success' })
   return true
 }
 function PersonalSaveButton({ onSave, onError }) {
-  return <Button appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={() => onError(localSaveError())}
+  return <Button feedback="persistence" appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={() => onError(localSaveError())}
     loadingLabel={t('Saving…')} successLabel={t('Saved')} errorLabel={t('Save')}>{t('Save')}</Button>
 }
 
@@ -54,12 +52,11 @@ export default function PersonalData() {
   const nav = useNavigate()
   const S = useStore(state => state.S)
   const update = useStore(state => state.update)
-  const toast = useUI(state => state.toast)
   const profile = normalizeProfile(S.profile, S.body)
   const [avatarEditing, setAvatarEditing] = useState(false)
   const [avatarDraft, setAvatarDraft] = useState(profile.avatarId)
   const [avatarError, setAvatarError] = useState('')
-  const commit = (key, value) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), [key]: value }; if (key === 'sex') state.body = value }); return confirmPersonalSave(toast) }
+  const commit = (key, value) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), [key]: value }; if (key === 'sex') state.body = value }); return confirmPersonalSave() }
   return <main className="narrow personal-data-page">
     <AppHeader title="Dados pessoais" subtitle="Mantenha seu perfil atualizado" />
     <button type="button" className="personal-back" onClick={() => nav('/more')}><Icon name="chevronLeft" /> Voltar</button>
@@ -84,7 +81,7 @@ export default function PersonalData() {
           else state.bodyweight.push({ d: date, w: weightKg, t: Date.now() })
           state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
         })
-        return confirmPersonalSave(toast)
+        return confirmPersonalSave()
       }} />
       <EditableField name="goal" label="Objetivo" value={profile.goal} summary={profile.goal ? t(PROFILE_GOAL_LABELS[profile.goal]) : 'Não informado'} onChange={value => commit('goal', value)}>{({ editing, value, setValue }) => <Segmented options={PROFILE_GOALS.map(goal => ({ value: goal, label: t(PROFILE_GOAL_LABELS[goal]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="experience" label="Experiência" value={profile.experience} summary={profile.experience ? t(EXPERIENCE_LABELS[profile.experience]) : 'Não informado'} onChange={value => commit('experience', value)}>{({ editing, value, setValue }) => <Segmented options={EXPERIENCE_LEVELS.map(level => ({ value: level, label: t(EXPERIENCE_LABELS[level]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>

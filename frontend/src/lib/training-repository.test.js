@@ -8,6 +8,30 @@ function clientWithRpc(resolver) {
 }
 
 describe('training repository', () => {
+  it('resumes writes only after an authentication restoration for the repository account', async () => {
+    const { createTrainingRepository } = await load()
+    let handleAuth
+    const unsubscribe = vi.fn()
+    const repo = createTrainingRepository({
+      accountId: 'account-1',
+      client: { rpc: vi.fn(), auth: { onAuthStateChange: listener => {
+        handleAuth = listener
+        return { data: { subscription: { unsubscribe } } }
+      } } },
+    })
+    let resumed = 0
+    const detach = repo.onAuthRestored(() => { resumed++ })
+    handleAuth('TOKEN_REFRESHED', { user: { id: 'account-2' } })
+    handleAuth('SIGNED_OUT', null)
+    handleAuth('USER_UPDATED', { user: { id: 'account-1' } })
+    expect(resumed).toBe(0)
+    handleAuth('TOKEN_REFRESHED', { user: { id: 'account-1' } })
+    handleAuth('SIGNED_IN', { user: { id: 'account-1' } })
+    expect(resumed).toBe(2)
+    detach()
+    expect(unsubscribe).toHaveBeenCalledOnce()
+  })
+
   it('sends exact session RPC arguments and maps returned sessions', async () => {
     const { createTrainingRepository } = await load()
     const client = clientWithRpc(async (name) => ({ data: session({ status: name === 'complete_workout_session' ? 'completed' : 'active', completed_at: name === 'complete_workout_session' ? 'done' : null }), error: null }))

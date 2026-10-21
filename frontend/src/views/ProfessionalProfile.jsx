@@ -70,7 +70,7 @@ function ProfileWorkspace({ auth }) {
       confirmation.current = null
       if (!confirmed || !active.current) return false
       setProfile({ ...EMPTY, ...next }); setCapability(true)
-      setNotice(provisioning ? t('Perfil profissional criado.') : t('Perfil salvo.'))
+      setNotice(provisioning ? t('Perfil profissional criado.') : '')
       navigate(provisioning ? '/professional-profile' : '/professional/profile', { replace: true })
     } catch (cause) {
       if (!active.current) return false

@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEF, useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
-import { repeatWorkout } from './sheets.jsx'
+import { repeatWorkout, startFlow } from './sheets.jsx'
 
 const mocks = vi.hoisted(() => ({ nav: vi.fn() }))
 vi.mock('./lib/nav.js', () => ({ nav: mocks.nav }))
@@ -35,7 +35,26 @@ describe('repeat historical workout', () => {
     useUI.getState().stopWork()
     useUI.getState().stopManualSet()
     vi.clearAllTimers()
+    vi.restoreAllMocks()
     vi.useRealTimers()
+  })
+
+  it.each(['start', 'repeat'])('silently retries a pending completion without starting another workout (%s)', async action => {
+    const state = clone(DEF)
+    state.weighBeforeWorkout = false
+    const historical = { id: 'old', name: 'Treino antigo', entries: [] }
+    state.workouts = [historical]
+    useStore.setState({ S: state, user: null })
+    vi.spyOn(useStore.getState(), 'hasPendingSessionCompletion').mockReturnValue(true)
+    const retry = vi.spyOn(useStore.getState(), 'flushSessionRecovery').mockResolvedValue({ state: 'waiting' })
+
+    expect(action === 'repeat' ? repeatWorkout(historical) : startFlow('routine')).toBe(false)
+    await Promise.resolve()
+    expect(retry).toHaveBeenCalledOnce()
+    expect(useStore.getState().S.active).toBeNull()
+    expect(useStore.getState().S.workouts).toEqual([historical])
+    expect(useUI.getState().toastMsg).toBe('')
+    expect(mocks.nav).not.toHaveBeenCalled()
   })
 
   it('starts an independent copy of the selected session, not the current routine', () => {

@@ -252,6 +252,49 @@
   font-weight: 700;
 }
 .workout-player-page :is(.wp-main-action.btn, .wp-main-action > .btn):disabled { box-shadow: none; }
+/* This perimeter signals active work; it never measures set time or repetitions. */
+.workout-player-page .wp-main-action.is-executing {
+  padding-inline: 46px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--acc) 24%, var(--surface)), color-mix(in srgb, var(--acc) 12%, var(--bg)));
+  color: var(--label);
+}
+.workout-player-page .wp-main-action.is-executing .wp-execution-signal {
+  position: absolute;
+  inset: 3px;
+  padding: 2px;
+  overflow: hidden;
+  border-radius: 25px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--acc) 18%, transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+.workout-player-page .wp-main-action.is-executing .wp-execution-signal > span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 110%;
+  aspect-ratio: 1;
+  background: conic-gradient(from 0deg, transparent 0deg 235deg, var(--acc) 290deg, var(--wp-bright) 330deg, transparent 360deg);
+  transform: translate(-50%, -50%) rotate(0turn);
+  animation: wp-execution-orbit 3s linear infinite;
+}
+.workout-player-page .wp-main-action.is-executing .wp-execution-mark {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  display: inline-flex;
+  color: var(--wp-bright);
+  font-size: 20px;
+  opacity: .7;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+@keyframes wp-execution-orbit {
+  to { transform: translate(-50%, -50%) rotate(1turn); }
+}
 .workout-player-page .set-execution-hint { margin: 8px 0; padding: 8px 10px; border-radius: 12px; font-size: 12px; line-height: 1.4; }
 .workout-player-page .wp-cancel-set { min-height: 44px; margin-left: auto; }
 .workout-player-page .ex-done-banner { margin: 12px 0; border-radius: 18px; }
@@ -325,6 +368,52 @@
 .workout-player-page .wp-superset-members button { flex: 1 1 100px; min-width: 0; min-height: 44px; padding: 8px 10px; border: 1px solid var(--wp-edge); border-radius: 12px; background: var(--wp-cover); color: var(--label-2); font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
 .workout-player-page .wp-superset-members button[aria-current="step"] { border-color: var(--acc-line); color: var(--acc); background: var(--acc-soft); }
 
+/* Weight badge overlay on the media card — shown during ready/executing state */
+.workout-player-page .wp-weight-badge {
+  position: absolute;
+  z-index: 4;
+  bottom: 22px;
+  left: 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 5px 10px 5px 9px;
+  border: 1px solid color-mix(in srgb, var(--label) 12%, transparent);
+  border-radius: 30px;
+  background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--label);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+.workout-player-page .wp-weight-badge.is-executing {
+  border-color: color-mix(in srgb, var(--acc) 50%, transparent);
+  background: color-mix(in srgb, var(--acc) 18%, var(--surface-2));
+  color: var(--wp-bright);
+  animation: wp-badge-pulse 2.4s ease-in-out infinite;
+}
+.workout-player-page .wp-weight-badge-value {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -.03em;
+  line-height: 1;
+}
+.workout-player-page .wp-weight-badge-unit {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--label-2);
+  letter-spacing: .02em;
+}
+.workout-player-page .wp-weight-badge.is-executing .wp-weight-badge-unit {
+  color: color-mix(in srgb, var(--wp-bright) 70%, transparent);
+}
+@keyframes wp-badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--acc) 0%, transparent); }
+  50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--acc) 22%, transparent); }
+}
+
 /* Timed work remains inline; the classic floating timer keeps its own actions. */
 .workout-player-page .work-set-overlay { margin: 10px 0; z-index: 3; }
 .workout-player-page .work-set-overlay__backdrop { position: absolute; inset: 0; z-index: 0; border-radius: 18px; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
@@ -371,4 +460,8 @@ body:has(.workout-player-page) #timer .btn { min-height: 44px; }
   .workout-player-page .work-set-overlay__card,
   .workout-player-page .work-set-overlay__done-icon { animation: none; }
   .workout-player-page .wp-series-segment { transition: none; }
+  .workout-player-page .wp-main-action.is-executing .wp-execution-signal > span {
+    animation: none;
+    background: var(--acc);
+  }
 }

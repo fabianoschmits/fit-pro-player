@@ -71,7 +71,7 @@ afterEach(async () => {
 })
 
 describe('body progress page', () => {
-  it('confirms a measurement locally while the account queue syncs in the background', async () => {
+  it('records a measurement silently while the account queue runs in the background', async () => {
     mocks.scope = { kind: 'account' }
     mocks.S._pendingSync = { body: true }
     mocks.retry.mockResolvedValue()
@@ -80,8 +80,9 @@ describe('body progress page', () => {
     await inputValue(container.querySelector('#body-measurement-value'), '101,5')
     await click(button('Salvar medida'))
     expect(mocks.retry).not.toHaveBeenCalled()
-    expect(mocks.toast).toHaveBeenCalledWith('Circunferência do tórax: 101,5 cm · Salvo', { tone: 'success' })
-    expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).toBe('success')
+    expect(mocks.toast).not.toHaveBeenCalled()
+    expect(mocks.S.bodyMeasurements[0].values.chest).toBe(101.5)
+    expect(container.querySelector('button[type="submit"]').getAttribute('data-visual-state')).toBe('idle')
   })
   it('reports a failed measurement write locally and allows retry without showing saved', async () => {
     await render()
@@ -94,7 +95,7 @@ describe('body progress page', () => {
     expect(container.querySelector('.fpp-action-feedback[data-state="error"]')).not.toBeNull()
     mocks.persistence = { state: 'saved' }
     await click(container.querySelector('button[type="submit"]'))
-    expect(container.querySelector('button[type="submit"]').getAttribute('data-state')).toBe('success')
+    expect(container.querySelector('button[type="submit"]').getAttribute('data-visual-state')).toBe('idle')
     expect(mocks.S.bodyMeasurements).toHaveLength(1)
   })
 

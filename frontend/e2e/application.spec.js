@@ -340,11 +340,12 @@ test('plan and library work on narrow screens with reduced motion',async({page})
   await page.goto('/#/plan');await expect(page.locator('.plan-routine-list .tt').filter({hasText:'Treino de teste'})).toBeVisible()
 })
 
-test('offline mode clearly indicates local changes',async({page,context})=>{
+test('offline changes stay local without automatic save notices',async({page,context})=>{
   await seed(page);await page.goto('/#/home')
   await expect(page.getByText('Treino de teste',{exact:true}).first()).toBeVisible()
   await context.setOffline(true)
-  await expect(page.locator('.app-status-global')).toContainText(/Offline|Sem conexão/)
+  await expect(page.locator('.app-status-global')).toHaveCount(0)
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('gym_state_v1')).routines[0].name)).toBe('Treino de teste')
   await context.setOffline(false)
   await expect(page.locator('.app-status-global')).toHaveCount(0)
 })

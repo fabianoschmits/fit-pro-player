@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   createSessionRecovery,
@@ -55,7 +55,8 @@ function repository(overrides = {}) {
 
 describe('active session recovery', () => {
   let storage
-  beforeEach(() => { storage = memoryStorage() })
+  beforeEach(() => { storage = memoryStorage(); vi.useFakeTimers() })
+  afterEach(() => { vi.clearAllTimers(); vi.useRealTimers() })
 
   it('isolates drafts by account and rejects a foreign payload stored under an account key', () => {
     const draft = { schemaVersion: 1, accountId: accountA, phase: 'active', session: activeSession(), pendingOperations: [], updatedAt: 1 }
@@ -93,6 +94,16 @@ describe('active session recovery', () => {
     expect(readSessionRecoveryDraft({ accountId: accountA, storage }).pendingOperations).toHaveLength(0)
   })
 
+  it('drains an operation queued before an empty flush has settled', async () => {
+    const recovery = createSessionRecovery({ repository: repository(), accountId: accountA, storage })
+    recovery.adopt(activeSession())
+    const emptyFlush = recovery.flush()
+    const queued = recovery.enqueue(operation())
+    await Promise.all([emptyFlush, queued])
+
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage })).toMatchObject({ session: { revision: 2 }, pendingOperations: [] })
+  })
+
   it('replays the same operation id after an offline response without duplicating it', async () => {
     const repo = repository({ appendOperation: vi.fn()
       .mockRejectedValueOnce(Object.assign(new Error('offline'), { kind: 'offline', retryable: true }))
@@ -104,6 +115,89 @@ describe('active session recovery', () => {
     expect(readSessionRecoveryDraft({ accountId: accountA, storage }).pendingOperations).toHaveLength(1)
     await expect(recovery.flush()).resolves.toMatchObject({ state: 'saved' })
     expect(repo.appendOperation.mock.calls.map(([value]) => value.operationId)).toEqual([operation().operationId, operation().operationId])
+  })
+
+  it('automatically retries a transient failure and durably acknowledges the same queued operation', async () => {
+    let available = false
+    const accepted = []
+    const repo = repository({ appendOperation: async request => {
+      if (!available) throw Object.assign(new Error('network response lost'), { kind: 'offline', retryable: true })
+      accepted.push(request)
+      return activeSession({ revision: 2 })
+    } })
+    const recovery = createSessionRecovery({ repository: repo, accountId: accountA, storage })
+    recovery.adopt(activeSession())
+
+    await expect(recovery.enqueue(operation())).resolves.toMatchObject({ state: 'waiting' })
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).pendingOperations).toEqual([operation()])
+    available = true
+    await vi.advanceTimersByTimeAsync(2000)
+
+    expect(accepted).toEqual([expect.objectContaining({ operationId: operation().operationId, expectedRevision: 1 })])
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage })).toMatchObject({ session: { revision: 2 }, pendingOperations: [] })
+  })
+
+  it('backs off repeated failures and retains the journal after the automatic retry budget', async () => {
+    let attempts = 0
+    const repo = repository({ appendOperation: async () => {
+      attempts++
+      throw Object.assign(new Error('gateway timeout'), { kind: 'request-failed', retryable: true })
+    } })
+    const recovery = createSessionRecovery({ repository: repo, accountId: accountA, storage })
+    recovery.adopt(activeSession())
+    await recovery.enqueue(operation())
+
+    for (const delay of [2000, 4000, 8000, 16000, 30000]) {
+      const before = attempts
+      await vi.advanceTimersByTimeAsync(delay - 1)
+      expect(attempts).toBe(before)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(attempts).toBe(before + 1)
+    }
+    await vi.advanceTimersByTimeAsync(120000)
+    expect(attempts).toBe(6)
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).pendingOperations).toEqual([operation()])
+  })
+
+  it('waits for connectivity and resumes a persisted operation without a click', async () => {
+    let online = false
+    const recovery = createSessionRecovery({ repository: repository(), accountId: accountA, storage, isOnline: () => online })
+    recovery.adopt(activeSession())
+    await expect(recovery.enqueue(operation())).resolves.toMatchObject({ state: 'waiting' })
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).pendingOperations).toHaveLength(1)
+
+    online = true
+    await recovery.flush()
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage })).toMatchObject({ session: { revision: 2 }, pendingOperations: [] })
+  })
+
+  it.each(['forbidden', 'stale-writer', 'revision-conflict', 'active-session', 'invalid-response'])('does not automatically replay a %s error', async kind => {
+    let attempts = 0
+    const recovery = createSessionRecovery({ repository: repository({ appendOperation: async () => {
+      attempts++
+      throw Object.assign(new Error(kind), { kind, retryable: true })
+    } }), accountId: accountA, storage })
+    recovery.adopt(activeSession())
+    await recovery.enqueue(operation())
+    await vi.advanceTimersByTimeAsync(120000)
+
+    expect(attempts).toBe(1)
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).pendingOperations).toHaveLength(1)
+  })
+
+  it('cancels scheduled retries when the account recovery is disposed', async () => {
+    let attempts = 0
+    const recovery = createSessionRecovery({ repository: repository({ appendOperation: async () => {
+      attempts++
+      throw Object.assign(new Error('offline'), { kind: 'offline', retryable: true })
+    } }), accountId: accountA, storage })
+    recovery.adopt(activeSession())
+    await recovery.enqueue(operation())
+    recovery.dispose()
+    await vi.advanceTimersByTimeAsync(120000)
+
+    expect(attempts).toBe(1)
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).pendingOperations).toHaveLength(1)
   })
 
   it('recovers a lost completion response as the same completed session', async () => {

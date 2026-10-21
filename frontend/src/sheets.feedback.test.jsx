@@ -148,18 +148,18 @@ describe('local workout persistence feedback', () => {
     expect(useUI.getState().sheets.some(sheet => sheet.id === id)).toBe(false)
   })
 
-  it('retries a completed workout disk write without finishing it a second time', async () => {
+  it('keeps the completed workout summary silent while its disk write retries', async () => {
     useStore.getState().update(s => { s.active = { id: 'a', name: 'Treino', start: 1000, entries: [{ id: '0025', target: {}, sets: [{ w: 0, r: 8, done: true }] }] } })
     const write = vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('quota') })
     finishWorkout()
     mountSheet()
     expect(useStore.getState().S.active).toBeNull()
     expect(useStore.getState().S.workouts).toHaveLength(1)
-    expect(container.querySelector('[role="status"][data-state="error"]')).not.toBeNull()
-    expect([...container.querySelectorAll('button')].some(button => /Tentar novamente/.test(button.textContent))).toBe(true)
-    expect(container.querySelector('[data-state="success"]')).toBeNull()
+    expect(container.querySelector('[role="status"][data-state="error"]')).toBeNull()
+    expect([...container.querySelectorAll('button')].some(button => /Tentar novamente/.test(button.textContent))).toBe(false)
+    expect(container.querySelector('[data-state="success"]')).not.toBeNull()
     write.mockRestore()
-    await act(async () => [...container.querySelectorAll('button')].find(button => /Tentar novamente/.test(button.textContent)).click())
+    await act(async () => useStore.getState().flushPersistence())
     expect(useStore.getState().S.workouts).toHaveLength(1)
     expect(useStore.getState().persistence.state).toBe('saved')
     expect(container.querySelector('[data-state="success"]')).not.toBeNull()

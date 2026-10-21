@@ -3,13 +3,13 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ auth: {}, repo: {
+const mocks = vi.hoisted(() => ({ auth: {}, client: {}, repo: {
   professionalRole: vi.fn(), assignedPrograms: vi.fn(), version: vi.fn(),
   studentProfessionals: vi.fn(), studentOverview: vi.fn(), studentProfessionalDetail: vi.fn(),
   revokeRelationship: vi.fn(), previewInvite: vi.fn(), acceptInvite: vi.fn(),
 } }))
 vi.mock('./auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('./lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => ({}) }))
+vi.mock('./lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => mocks.client }))
 vi.mock('./lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 // Presentation animation is irrelevant to ownership and keeps deferred reads deterministic.
 vi.mock('./components/PageTransition.jsx', () => ({ default: ({ children }) => <div id="app">{children}</div> }))
@@ -48,6 +48,7 @@ const seedAccount = async (id, assigned = true, onboardingDone = true) => {
 beforeEach(async () => {
   Object.values(mocks.repo).forEach(method => method.mockReset())
   localStorage.clear(); sessionStorage.clear()
+  mocks.client = {}
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   linked = true
   mocks.auth = { status: 'authenticated', user: { id: '11111111-1111-4111-8111-111111111111' } }
@@ -66,6 +67,41 @@ beforeEach(async () => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
+
+it('automatically sends a pending body change after its own account token is restored', async () => {
+  const authListeners = new Set()
+  let authenticated = false
+  mocks.client = {
+    auth: { onAuthStateChange: callback => {
+      authListeners.add(callback)
+      return { data: { subscription: { unsubscribe: () => authListeners.delete(callback) } } }
+    } },
+    rpc: async name => {
+      if (!authenticated) return { error: { code: 'PGRST301', message: 'JWT expired' }, status: 401 }
+      if (name === 'save_athlete_body') return { data: { weights: [{
+        id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: oldAssignment.student_user_id,
+        measured_on: '2026-10-21', weight_kg: 76, created_at: 'created', updated_at: 'updated',
+      }], measurements: [] } }
+      throw new Error(`unexpected write: ${name}`)
+    },
+  }
+  useStore.getState().replaceState({ ...useStore.getState().S, _pendingSync: {} }, false)
+  useStore.getState().update(state => { state.bodyweight = [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', d: '2026-10-21', w: 76 }] })
+  await render()
+  expect(useStore.getState().S._pendingSync.body).toBe(true)
+  authenticated = true
+  await act(async () => {
+    authListeners.forEach(callback => callback('TOKEN_REFRESHED', { user: { id: '22222222-2222-4222-8222-222222222222' } }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+  })
+  expect(useStore.getState().S._pendingSync.body).toBe(true)
+  await act(async () => {
+    authListeners.forEach(callback => callback('TOKEN_REFRESHED', { user: { id: oldAssignment.student_user_id } }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+  })
+  expect(useStore.getState().S._pendingSync.body).toBe(false)
+  expect(useStore.getState().S.bodyweight[0].w).toBe(76)
+})
 
 it.each(['section', '/student/professionals/materials', '/home'])('keeps unlink cleared when the actual Shell version arrives after %s navigation', async destination => {
   const pendingVersion = deferred(); const unlink = deferred()

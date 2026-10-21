@@ -27,12 +27,11 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const pendingRef = useRef(false)
-  const [draftError, setDraftError] = useState(false)
   const current = draft[day] || []
   useEffect(() => {
     if (!draftKey) return
-    try { useStore.getState().update(state => { state.professionalProgramDrafts ||= {}; state.professionalProgramDrafts[draftKey] = { plan: draft, metadata, savedAt: new Date().toISOString() } }); setDraftError(false) }
-    catch { setDraftError(true) }
+    try { useStore.getState().update(state => { state.professionalProgramDrafts ||= {}; state.professionalProgramDrafts[draftKey] = { plan: draft, metadata, savedAt: new Date().toISOString() } }) }
+    catch { /* Draft persistence stays in the background. */ }
   }, [draft, metadata, draftKey])
   const selectedIds = useMemo(() => new Set(current.map(entry => entry.exerciseId)), [current])
   const add = exercise => setDraft(value => ((value[day] || []).length >= 50 || (value[day] || []).some(entry => entry.exerciseId === exercise.id)) ? value : ({ ...value, [day]: [...(value[day] || []), { exerciseId: exercise.id, sets: 3, reps: 8, load: 0, rest: 90, ...(isCardio(exercise) ? { mode: 'cardio', min: 20, speed: 8 } : {}) }] }))
@@ -77,10 +76,8 @@ export default function ProfessionalProgramEditor({ exercises = [], initialPlan 
   }
   return <div className="professional-program-editor">
     <div className="row between"><div><h3>{t('Montar semana')}</h3><p className="muted small">{t('Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.')}</p></div><Button activation="immediate" disabled={pending} onClick={onCancel}>{t('Cancelar')}</Button></div>
-    {saved && <p role="status">{t('Rascunho recuperado.')}</p>}
-    {draftKey && <p className="muted small" role="status">{t(draftError ? 'Não foi possível salvar o rascunho neste dispositivo.' : 'Rascunho salvo neste dispositivo.')}</p>}
     {error && <p role="alert" className="error">{error}</p>}
-    {initialMetadata && <details className="professional-program-metadata"><summary>{t('Dados do programa')}</summary><div className="professional-metadata-fields"><label>{t('Nome do programa')}<TextField maxLength={160} value={metadata.title || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, title: event.target.value })} /></label><label>{t('Descrição do programa')}<TextArea maxLength={2000} value={metadata.description || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, description: event.target.value })} /></label>{onSaveMetadata && <Button disabled={pending || !metadata.title?.trim()} onAction={saveMetadata} loadingLabel={t('Salvando…')} successLabel={t('Saved')} errorLabel={t('Tentar novamente')}>{t('Salvar dados do programa')}</Button>}</div></details>}
+    {initialMetadata && <details className="professional-program-metadata"><summary>{t('Dados do programa')}</summary><div className="professional-metadata-fields"><label>{t('Nome do programa')}<TextField maxLength={160} value={metadata.title || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, title: event.target.value })} /></label><label>{t('Descrição do programa')}<TextArea maxLength={2000} value={metadata.description || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, description: event.target.value })} /></label>{onSaveMetadata && <Button feedback="persistence" disabled={pending || !metadata.title?.trim()} onAction={saveMetadata} loadingLabel={t('Salvando…')} successLabel={t('Saved')} errorLabel={t('Tentar novamente')}>{t('Salvar dados do programa')}</Button>}</div></details>}
     <div className="chips" role="tablist" aria-label={t('Dias do programa')}>{DAYS.map(item => <button type="button" role="tab" key={item} disabled={pending} className={'chip' + (day === item ? ' on' : '')} aria-selected={day === item} onClick={() => setDay(item)}>{t(labels[item])}<span className="professional-day-count">{draft[item]?.length || 0}</span></button>)}</div>
     <Section title={t('{0} · {1} exercício(s)', t(labels[day]), current.length)}>
       <details className="professional-day-tools"><summary>{t('Organize days')}</summary><div className="row-actions"><label>{t('Dia de destino')}<select value={copyTo} disabled={pending} onChange={event => setCopyTo(event.target.value)}>{DAYS.map(item => <option key={item} value={item}>{t(labels[item])}</option>)}</select></label><Button disabled={pending || copyTo === day || !current.length} onClick={copyDay}>{t('Copiar dia')}</Button><Button disabled={pending || copyTo === day} onClick={() => setDraft(state => ({ ...state, [copyTo]: state[day] || [], [day]: state[copyTo] || [] }))}>{t('Trocar dias')}</Button></div></details>

@@ -233,7 +233,7 @@ export default function RoutineEdit() {
 
     {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
     <div className="routine-completion-actions">
-      <Button variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => nav('/plan')} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+      <Button feedback="persistence" variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => nav('/plan')} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
         onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
       {canDelete && <Button variant="danger" icon="trash" onClick={deleteRoutine}>{t('Delete routine')}</Button>}
     </div>

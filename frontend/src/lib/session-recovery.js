@@ -99,15 +99,19 @@ function serverSession(session) {
   }
 }
 
-export function createSessionRecovery({ repository, accountId, storage = globalThis.localStorage, now = Date.now, onStatus = () => {} }) {
+export function createSessionRecovery({ repository, accountId, storage = globalThis.localStorage, now = Date.now, isOnline = () => globalThis.navigator?.onLine !== false, onStatus = () => {} }) {
   if (!repository || !isText(accountId) || !storage) throw new TypeError('invalid-session-recovery-scope')
   const key = sessionRecoveryKey(accountId)
   let current = readSessionRecoveryDraft({ accountId, storage })
   let inFlight = null
+  let disposed = false
+  let retryTimer = null
+  let retryAttempts = 0
+  let lastFailure = null
 
   const publish = (state, extra = {}) => {
     const value = { state, pending: current?.pendingOperations?.length || 0, ...extra }
-    onStatus(value)
+    if (!disposed) onStatus(value)
     return value
   }
   const persist = draft => {
@@ -117,13 +121,39 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
     return copy(next)
   }
   const clear = () => {
+    clearTimeout(retryTimer)
+    retryTimer = null
+    retryAttempts = 0
+    lastFailure = null
     storage.removeItem(key)
     current = null
   }
-  const fail = error => publish(recoveryState(error), { error: error?.kind || 'request-failed' })
+  const resetRetry = () => {
+    clearTimeout(retryTimer)
+    retryTimer = null
+    retryAttempts = 0
+    lastFailure = null
+  }
+  const fail = error => {
+    lastFailure = error
+    // Conflicts and authentication need their own resolution. Retry only a
+    // transient transport/server failure, with a finite background budget.
+    const transient = error?.kind === 'offline' || (error?.kind === 'request-failed' && error?.retryable)
+    if (!disposed && transient && isOnline() && retryTimer === null && retryAttempts < 5) {
+      const delay = Math.min(30000, 2000 * 2 ** retryAttempts++)
+      retryTimer = setTimeout(() => {
+        retryTimer = null
+        lastFailure = null
+        void flush(false)
+      }, delay)
+    }
+    return publish(recoveryState(error), { error: error?.kind || 'request-failed' })
+  }
 
   async function dispatch() {
+    if (disposed) return { state: 'idle', pending: current?.pendingOperations.length || 0 }
     if (!current) return publish('idle')
+    if (!isOnline()) return publish('waiting', { error: 'offline' })
     publish('saving')
     try {
       if (current.phase === 'starting') {
@@ -133,7 +163,9 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
           routineId: current.session.routineId,
           assignmentId: current.session.assignmentId,
         })
+        if (disposed) return { state: 'idle', pending: current?.pendingOperations.length || 0 }
         persist({ ...current, phase: 'active', session: serverSession(session) })
+        resetRetry()
       }
 
       while (current?.pendingOperations.length) {
@@ -150,6 +182,8 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
           : queued.kind === 'session_abandoned'
             ? await repository.abandonSession(request)
             : await repository.appendOperation({ ...request, kind: queued.kind })
+        if (disposed) return { state: 'idle', pending: current?.pendingOperations.length || 0 }
+        resetRetry()
 
         const remaining = current.pendingOperations.slice(1)
         if (session.status === 'completed' && remaining.length === 0) {
@@ -170,6 +204,7 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
       }
       return publish('saved', { session: current.session })
     } catch (error) {
+      if (disposed) return { state: 'idle', pending: current?.pendingOperations.length || 0 }
       // A restored account can retain a valid PWA draft after its server-side
       // session was removed. Recreate that same id, then replay its queued work.
       if (error?.kind === 'session-missing' && current?.phase !== 'starting') {
@@ -180,9 +215,18 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
     }
   }
 
-  const flush = () => {
+  const flush = (restart = true) => {
+    if (disposed) return Promise.resolve({ state: 'idle', pending: current?.pendingOperations.length || 0 })
     if (inFlight) return inFlight
-    inFlight = dispatch().finally(() => { inFlight = null })
+    if (restart) resetRetry()
+    else if (lastFailure) return Promise.resolve(publish(recoveryState(lastFailure), { error: lastFailure?.kind || 'request-failed' }))
+    inFlight = (async () => {
+      let result = await dispatch()
+      // An empty flush can finish synchronously while its promise is still in
+      // flight. Drain work enqueued in that gap instead of leaving it stranded.
+      while (!disposed && !lastFailure && isOnline() && current?.pendingOperations.length) result = await dispatch()
+      return result
+    })().finally(() => { inFlight = null })
     return inFlight
   }
 
@@ -190,6 +234,7 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
     getDraft: () => current ? copy(current) : null,
     adopt(session) {
       if (session.accountId !== accountId || session.massUnit !== MASS_UNIT || session.status !== 'active') throw new TypeError('invalid-session-recovery-session')
+      resetRetry()
       persist({ phase: 'active', session: serverSession(session), pendingOperations: [] })
       return publish('saved', { session })
     },
@@ -206,15 +251,15 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
         },
         pendingOperations: [],
       })
-      return flush()
+      return flush(false)
     },
     enqueue(queued) {
       if (!current || !validOperation(queued) || queued.kind === 'session_completed') {
         throw new TypeError('invalid-session-operation')
       }
-      if (current.pendingOperations.some(item => item.operationId === queued.operationId)) return flush()
+      if (current.pendingOperations.some(item => item.operationId === queued.operationId)) return flush(false)
       persist({ ...current, pendingOperations: [...current.pendingOperations, copy(queued)] })
-      return flush()
+      return flush(false)
     },
     complete(queued) {
       if (!current || !validOperation(queued) || queued.kind !== 'session_completed') {
@@ -223,7 +268,7 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
       if (!current.pendingOperations.some(item => item.operationId === queued.operationId)) {
         persist({ ...current, phase: 'completing', pendingOperations: [...current.pendingOperations, copy(queued)] })
       }
-      return flush()
+      return flush(false)
     },
     abandon(queued) {
       if (!current || !validOperation(queued) || queued.kind !== 'session_abandoned') {
@@ -232,7 +277,7 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
       if (!current.pendingOperations.some(item => item.operationId === queued.operationId)) {
         persist({ ...current, phase: 'abandoning', pendingOperations: [...current.pendingOperations, copy(queued)] })
       }
-      return flush()
+      return flush(false)
     },
     flush,
     async takeOver() {
@@ -276,6 +321,11 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
     clear() {
       clear()
       return publish('idle')
+    },
+    dispose() {
+      disposed = true
+      clearTimeout(retryTimer)
+      retryTimer = null
     },
   }
 }

@@ -67,14 +67,14 @@ export default function PrivacyConsentModal() {
     <section className="privacy-consent-modal" role="dialog" aria-modal="true" aria-labelledby="privacy-consent-title">
       <div className="privacy-consent-heading"><div><span className="privacy-consent-kicker">PRIVACIDADE</span><h2 id="privacy-consent-title">Privacidade e cookies</h2></div><button type="button" className="privacy-consent-settings" aria-label="Personalizar privacidade" onClick={() => setCustomizing(value => !value)}>⚙</button></div>
       <p>Usamos dados necessários para o app funcionar. Você pode escolher se permite recursos opcionais.</p>
-      {!customizing ? <div className="privacy-consent-actions"><Button variant="primary" onAction={() => save(all)} onSuccess={closeAfterSave} loadingLabel="Salvando…" successLabel="Salvo" errorLabel="Tentar novamente">Aceitar</Button><button type="button" className="btn ghost" onClick={() => setCustomizing(true)}>Personalizar</button></div> : <>
+      {!customizing ? <div className="privacy-consent-actions"><Button feedback="persistence" variant="primary" onAction={() => save(all)} onSuccess={closeAfterSave} loadingLabel="Salvando…" successLabel="Salvo" errorLabel="Tentar novamente">Aceitar</Button><button type="button" className="btn ghost" onClick={() => setCustomizing(true)}>Personalizar</button></div> : <>
         <div className="privacy-consent-options">
           <ConsentOption label="Necessários" description="Essenciais para login, segurança e funcionamento." checked disabled />
           <ConsentOption label="Preferências" description="Lembra escolhas e melhora a experiência." checked={draft.preferences} onChange={value => setDraft(current => ({ ...current, preferences: value }))} />
           <ConsentOption label="Medição de uso" description="Ajuda a entender desempenho e erros do app." checked={draft.analytics} onChange={value => setDraft(current => ({ ...current, analytics: value }))} />
           <ConsentOption label="Comunicações" description="Permite mensagens opcionais e novidades." checked={draft.communications} onChange={value => setDraft(current => ({ ...current, communications: value }))} />
         </div>
-        <div className="privacy-consent-actions"><Button variant="primary" onAction={() => save(draft)} onSuccess={closeAfterSave} loadingLabel="Salvando…" successLabel="Salvo" errorLabel="Tentar novamente">Salvar escolhas</Button></div>
+        <div className="privacy-consent-actions"><Button feedback="persistence" variant="primary" onAction={() => save(draft)} onSuccess={closeAfterSave} loadingLabel="Salvando…" successLabel="Salvo" errorLabel="Tentar novamente">Salvar escolhas</Button></div>
       </>}
       {saveError && <p className="error" role="alert">{saveError}</p>}
       <p className="privacy-consent-links"><a href="#/privacy">Aviso de Privacidade</a> · <a href="#/data-rights">Seus direitos</a></p>

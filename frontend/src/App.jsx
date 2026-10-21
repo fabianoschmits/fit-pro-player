@@ -350,6 +350,11 @@ function Shell() {
     void refresh.boot().then(() => { if (current(accountId)) void sync.start() })
     const detach = attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['preferences', 'plan', 'history', 'body'] })
     const retry = () => { if (current(accountId)) void sync.retry() }
+    let authRetryTimer = null
+    const detachAuth = repository.onAuthRestored(() => {
+      window.clearTimeout(authRetryTimer)
+      authRetryTimer = window.setTimeout(retry, 0)
+    })
     const reconnect = () => {
       if (!current(accountId)) return
       void sync.retry()
@@ -361,6 +366,8 @@ function Shell() {
       sync.dispose()
       unsubscribe()
       detach()
+      detachAuth()
+      window.clearTimeout(authRetryTimer)
       window.removeEventListener('online', reconnect)
       window.removeEventListener('focus', retry)
       useStore.getState().releaseAccountSync()
@@ -375,9 +382,14 @@ function Shell() {
     store.configureSessionRecovery(createTrainingRepository({ client, accountId }), accountId)
     void store.flushSessionRecovery()
     const flush = () => { void useStore.getState().flushSessionRecovery() }
+    const visible = () => { if (document.visibilityState === 'visible') flush() }
     window.addEventListener('online', flush)
+    window.addEventListener('focus', flush)
+    document.addEventListener('visibilitychange', visible)
     return () => {
       window.removeEventListener('online', flush)
+      window.removeEventListener('focus', flush)
+      document.removeEventListener('visibilitychange', visible)
       useStore.getState().releaseSessionRecovery(accountId)
     }
   }, [auth.status, auth.user?.id, ready, appEntered])
