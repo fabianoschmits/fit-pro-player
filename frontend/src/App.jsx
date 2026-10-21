@@ -154,7 +154,7 @@ function applyPrefs(theme, accent) {
 }
 
 function RouteFallback() {
-  return <div className="narrow"><FppSkeleton label={t('Loading…')} rows={3} /></div>
+  return <div className="narrow" data-route-loading=""><FppSkeleton label={t('Loading…')} rows={3} /></div>
 }
 
 export function ProfileHeader({ S, preview }) {
