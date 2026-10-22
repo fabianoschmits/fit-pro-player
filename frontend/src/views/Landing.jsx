@@ -494,40 +494,49 @@ export default function Landing({ invitePath = false }) {
       <div className="landing-stage" id="top">
         <motion.section
           className="landing-hero"
-          initial={reduced ? false : { opacity: 0, y: 18 }}
-          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          initial={reduced ? false : { y: 16 }}
+          animate={reduced ? undefined : { y: 0 }}
           transition={reduced ? { duration: 0 } : { type: 'spring', duration: .7, bounce: 0 }}
         >
-          <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
-          <h1>Seu treino, no bolso.</h1>
-          <p>Plano do dia, execução e evolução — como no app.</p>
-          <div className="landing-actions">
-            <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>
-              {primaryLabel}
-            </Button>
-          </div>
-          {!localEntry && (
-            <div className="landing-account-actions">
-              {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
-              {canGuest && <button onClick={enter}>Continuar sem conta</button>}
+          <div className="landing-hero-copy">
+            <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
+            <h1>Seu treino, no bolso.</h1>
+            <p>Plano do dia, execução e evolução — como no app.</p>
+            <div className="landing-actions">
+              <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>
+                {primaryLabel}
+              </Button>
             </div>
-          )}
+            {!localEntry && (
+              <div className="landing-account-actions">
+                {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
+                {canGuest && <button onClick={enter}>Continuar sem conta</button>}
+              </div>
+            )}
+          </div>
+          <div className="landing-hero-visual">
+            <HomePreview reduced={reduced} />
+          </div>
         </motion.section>
 
-        <section className="landing-showcase">
-          <HomePreview reduced={reduced} />
-        </section>
-
         <section className="landing-block" id="treino">
-          <h2>Treino</h2>
-          <p>Mesma tela de séries, carga e animação.</p>
-          <WorkoutPreview reduced={reduced} />
+          <div className="landing-block-copy">
+            <h2>Treino</h2>
+            <p>Mesma tela de séries, carga e animação.</p>
+          </div>
+          <div className="landing-block-visual">
+            <WorkoutPreview reduced={reduced} />
+          </div>
         </section>
 
-        <section className="landing-block" id="estatisticas">
-          <h2>Corpo</h2>
-          <p>Equilíbrio, fadiga e força no mapa.</p>
-          <StatsPreview />
+        <section className="landing-block landing-block--flip" id="estatisticas">
+          <div className="landing-block-copy">
+            <h2>Corpo</h2>
+            <p>Equilíbrio, fadiga e força no mapa.</p>
+          </div>
+          <div className="landing-block-visual">
+            <StatsPreview />
+          </div>
         </section>
 
         <footer className="landing-footer">

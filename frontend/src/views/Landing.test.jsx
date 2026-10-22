@@ -134,8 +134,11 @@ describe('public landing page', () => {
     await act(async () => { root.render(<Landing />) })
 
     expect(container.querySelector('.landing-hero-logo')).toBeTruthy()
-    expect(container.querySelector('h1')).toBeTruthy()
+    expect(container.querySelector('.landing-hero-copy h1')?.textContent).toContain('Seu treino, no bolso')
+    expect(container.querySelector('.landing-hero-copy p')?.textContent).toMatch(/Plano do dia/i)
+    expect(container.querySelector('.landing-block-copy h2')?.textContent).toBe('Treino')
     expect(container.querySelector('.home-view .home-now--planned')).toBeTruthy()
+
     expect(container.querySelector('.home-week-strip .wday')).toBeTruthy()
     expect(container.querySelector('.home-weight-block [data-points]')).toBeTruthy()
     expect(container.querySelector('.workout-player-page .wp-exercise-player')).toBeTruthy()
