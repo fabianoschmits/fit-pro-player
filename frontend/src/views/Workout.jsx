@@ -41,7 +41,7 @@ function StartChooser() {
     })
     nav('/plan/r/' + r.id)
   }
-  return <div className="narrow">
+  return <div className="narrow workout-start-view page-scenery">
     <div className="hdr"><div><h1>{t('Start workout')}</h1><div className="sub">{t(DAYN[new Date().getDay()])} — {scheduledToday ? t('today is {0}', routineName(scheduledToday)) : t('rest day, but no one’s stopping you')}</div></div></div>
     {completedToday && <div className="card" style={{ borderColor: 'var(--acc)' }}>
       <h2 className="accent">{t(completedToday.endedEarly ? 'Treino do dia encerrado mais cedo' : 'Treino do dia concluído')}</h2>
@@ -475,7 +475,7 @@ function ActiveWorkout() {
     }
   }
 
-  return <div className="narrow active-workout workout-player-page">
+  return <div className="narrow active-workout workout-player-page page-scenery">
     <div className="workout-session-bar">
       <div className="hdr workout-session-header">
         <div className="workout-session-title"><strong>{A.name}</strong><span>{t('{0} sets', done + '/' + total)}</span></div>

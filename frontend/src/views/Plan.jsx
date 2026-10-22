@@ -80,7 +80,7 @@ export default function Plan() {
     })}</div>
   </section>
 
-  return <>
+  return <div className="plan-view page-scenery">
     <AppHeader
       title={t('Plan')}
       subtitle={mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')}
@@ -143,5 +143,5 @@ export default function Plan() {
         </div>
       </div>
     </section>
-  </>
+  </div>
 }

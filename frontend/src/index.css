@@ -192,6 +192,23 @@ a{color:var(--acc);text-decoration:none}
 }
 body.resting #app{padding-bottom:calc(172px + var(--primary-menu-height) + var(--sab))}
 
+/* Page art stays behind the header and fades into the app surface before controls begin. */
+.page-scenery{position:relative;isolation:isolate}
+.page-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 8px));left:50%;width:min(100vw,560px);height:322px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,transparent 34%,var(--bg) 100%),var(--page-scenery);background-position:center top;background-repeat:no-repeat;background-size:100% auto,cover;opacity:.9}
+.home-view{--page-scenery:url('./assets/page-backgrounds/home-dark.png')}
+.plan-view{--page-scenery:url('./assets/page-backgrounds/plan-dark.png')}
+.workout-start-view,.workout-player-page{--page-scenery:url('./assets/page-backgrounds/workout-dark.png')}
+.library-view{--page-scenery:url('./assets/page-backgrounds/library-dark.png')}
+:root[data-theme="light"] .home-view{--page-scenery:url('./assets/page-backgrounds/home-light.png')}
+:root[data-theme="light"] .plan-view{--page-scenery:url('./assets/page-backgrounds/plan-light.png')}
+:root[data-theme="light"] :is(.workout-start-view,.workout-player-page){--page-scenery:url('./assets/page-backgrounds/workout-light.png')}
+:root[data-theme="light"] .library-view{--page-scenery:url('./assets/page-backgrounds/library-light.png')}
+.home-view::before{height:300px;background-position:center 2%;opacity:.8}
+.plan-view::before{height:300px;background-position:center 6%;opacity:.86}
+.workout-start-view::before{height:278px;background-position:center 8%;opacity:.82}
+.workout-player-page::before{height:272px;background-position:center 10%;opacity:.38}
+.library-view::before{height:280px;background-position:center 8%;opacity:.8}
+
 /* large title */
 .hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 15px}
 .hdr h1{font-size:30px;line-height:1.1;font-weight:700;letter-spacing:0}

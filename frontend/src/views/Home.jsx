@@ -180,7 +180,7 @@ export default function Home() {
     </section>
   }
 
-  return <div className="narrow home-view">
+  return <div className="narrow home-view page-scenery">
     <div className="hdr home-titlebar">
       <div><h1>{t('Today')}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
       <button
