@@ -202,7 +202,7 @@ body.resting #app{padding-bottom:calc(172px + var(--primary-menu-height) + var(-
 :root[data-theme="light"] :is(.workout-start-view,.workout-player-page){--page-scenery:url('./assets/page-backgrounds/workout-light.png')}
 :root[data-theme="light"] .history-view{--page-scenery:url('./assets/page-backgrounds/library-light.png')}
 .home-route-scenery{position:relative;isolation:isolate}
-.home-route-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 8px));left:50%;width:min(100vw,560px);height:440px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-dark.png');background-position:center top;background-repeat:no-repeat;background-size:100% auto,cover;opacity:.8}
+.home-route-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 8px));left:50%;width:min(100vw,560px);height:440px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-dark.png');background-position:center top,center -48px;background-repeat:no-repeat;background-size:100% auto,cover;opacity:.8}
 :root[data-theme="light"] .home-route-scenery::before{background-image:linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-light.png')}
 .plan-view::before{height:300px;background-position:center 6%;opacity:.86}
 .workout-start-view::before{height:278px;background-position:center 8%;opacity:.82}
@@ -539,21 +539,21 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav.is-open.opens-left .corner-nav-toggle{border-radius:0 0 12px 0}
 @media(min-width:768px){
   #tabbar.corner-nav:not(.is-free){
-    --menu-width:min(480px,calc(100vw - 48px));
+    --menu-width:min(640px,calc(100vw - 48px));
     --menu-height:60px;
-    left:24px;
+    left:50%;
     right:auto;
     bottom:max(20px,var(--sab));
     width:64px;
     font-size:11.5px;
-    transform:none;
+    transform:translateX(-50%);
   }
   #tabbar.corner-nav:not(.is-free).is-open{
     width:var(--menu-width);
-    transform:none;
+    transform:translateX(-50%);
   }
   #tabbar.corner-nav:not(.is-free):not(.is-open){
-    transform:none;
+    transform:translateX(-50%);
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-shell{
     display:flex;
