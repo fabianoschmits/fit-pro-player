@@ -10,26 +10,59 @@ const mocks = vi.hoisted(() => ({
   openAuthSheet: vi.fn(),
   standalone: true,
   auth: { configured: false },
+  storeState: { S: { mediaSize: 'full', displayUnit: 'kg', exWeights: {}, active: null }, enterApp: null, setGuest: null },
 }))
 
-vi.mock('../store/useStore.js', () => ({
-  hasData: () => false,
-  useStore: selector => selector
-    ? selector({ S: {}, enterApp: mocks.setGuest, setGuest: mocks.setGuest })
-    : { enterApp: mocks.setGuest, setGuest: mocks.setGuest },
+vi.mock('../store/useStore.js', () => {
+  const useStore = selector => {
+    const state = {
+      ...mocks.storeState,
+      enterApp: mocks.setGuest,
+      setGuest: mocks.setGuest,
+    }
+    return selector ? selector(state) : state
+  }
+  useStore.getState = () => ({
+    ...mocks.storeState,
+    enterApp: mocks.setGuest,
+    setGuest: mocks.setGuest,
+  })
+  useStore.setState = partial => {
+    mocks.storeState = { ...mocks.storeState, ...partial, S: partial.S ?? mocks.storeState.S }
+  }
+  return { hasData: () => false, useStore }
+})
+vi.mock('../store/useUI.js', () => ({
+  useUI: Object.assign(selector => selector ? selector({ work: null, timer: null, manualSet: null }) : {}, {
+    getState: () => ({ toast: vi.fn(), openSheet: mocks.openSheet, work: null, timer: null, manualSet: null }),
+  }),
 }))
-vi.mock('../store/useUI.js', () => ({ useUI: { getState: () => ({ toast: vi.fn(), openSheet: mocks.openSheet }) } }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }))
 vi.mock('../lib/demo.js', () => ({ DEMO: false, get STANDALONE() { return mocks.standalone } }))
-vi.mock('../lib/i18n.js', () => ({ t: value => value === 'your fingerprint, face or PIN' ? 'biometria ou PIN' : value }))
+vi.mock('../lib/i18n.js', () => ({
+  t: (value, ...args) => {
+    if (value === 'your fingerprint, face or PIN') return 'biometria ou PIN'
+    if (args.length) return String(value).replace('{0}', args[0])
+    return value
+  },
+  dateLocale: () => 'pt-BR',
+}))
+vi.mock('../lib/history.js', () => ({
+  setLabel: () => '62,5 kg × 8',
+}))
 vi.mock('../lib/exercises.js', () => {
   const ids = ['0025', '0043', '0032']
+  const EXIDX = Object.fromEntries(ids.map((id, index) => [id, { id, n: `Exercise ${index + 1}`, eq: 'barbell', bp: 'chest' }]))
   return {
-    EXIDX: Object.fromEntries(ids.map((id, index) => [id, { id, n: `Exercise ${index + 1}`, eq: 'barbell', bp: 'chest' }])),
+    EXIDX,
     exerciseName: exercise => exercise.n,
+    exOr: id => EXIDX[id] || { id, n: id },
   }
 })
+vi.mock('../components/Media.jsx', () => ({
+  default: ({ ex }) => React.createElement('div', { 'data-exercise': ex.id, 'data-media': '1' }),
+}))
 vi.mock('../components/ExerciseGuideAnimation.jsx', () => ({
   default: ({ ex, playing }) => React.createElement('div', { 'data-exercise': ex.id, 'data-playing': playing }),
 }))
@@ -49,6 +82,7 @@ beforeEach(() => {
   vi.useFakeTimers()
   mocks.standalone = true
   mocks.auth = { configured: false }
+  mocks.storeState = { S: { mediaSize: 'full', displayUnit: 'kg', exWeights: {}, active: null }, enterApp: null, setGuest: null }
   dom = new Window({ url: 'http://localhost/' })
   dom.matchMedia = () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })
   globalThis.window = dom
@@ -71,34 +105,35 @@ afterEach(async () => {
 const button = label => [...container.querySelectorAll('button')].find(item => item.textContent.trim() === label)
 
 describe('public landing page', () => {
-  it('keeps a short product page without marketing filler', async () => {
+  it('keeps a short mobile-first product page without marketing filler', async () => {
     await act(async () => { root.render(<Landing />) })
 
+    expect(container.querySelector('.landing-page')).toBeTruthy()
+    expect(container.querySelector('.landing-stage')).toBeTruthy()
+    expect(container.querySelectorAll('.landing-phone').length).toBeGreaterThanOrEqual(2)
     expect(container.querySelector('[data-landing-promo-video]')).toBeNull()
     expect(container.querySelector('.landing-trust')).toBeNull()
     expect(container.querySelector('.landing-eyebrow')).toBeNull()
     expect(container.querySelector('.landing-feature-list')).toBeNull()
     expect(container.querySelector('.landing-final-cta')).toBeNull()
-    expect(container.querySelector('.landing-exercise-carousel')).toBeNull()
     expect(container.querySelector('.landing-nav nav')).toBeNull()
     expect(container.textContent).not.toContain('Como funciona')
     expect(container.textContent).not.toContain('BIBLIOTECA VISUAL')
-    expect(container.textContent).not.toContain('SEU TREINO, SEM RUÍDO')
   })
 
-  it('shows brand, home preview, workout and body map, then enters the app', async () => {
+  it('shows real home and workout screen markup, then enters the app', async () => {
     await act(async () => { root.render(<Landing />) })
 
     expect(container.querySelector('.landing-hero-logo')).toBeTruthy()
-    expect(container.querySelector('h1').textContent).toMatch(/treino|plan|evolu/i)
-    expect(container.querySelector('[aria-label="Prévia da tela inicial do aplicativo"]')).toBeTruthy()
-    expect(container.textContent).toContain('Hoje')
-    expect(container.querySelector('[data-points]')).toBeTruthy()
-    expect(container.querySelector('[aria-label="Prévia de um treino em andamento"]')).toBeTruthy()
-    expect(container.querySelectorAll('[data-exercise]').length).toBe(1)
+    expect(container.querySelector('h1')).toBeTruthy()
+    expect(container.querySelector('.home-view .home-now--planned')).toBeTruthy()
+    expect(container.querySelector('.home-week-strip .wday')).toBeTruthy()
+    expect(container.querySelector('.home-weight-block [data-points]')).toBeTruthy()
+    expect(container.querySelector('.workout-player-page .wp-exercise-player')).toBeTruthy()
+    expect(container.querySelector('.wp-media-card [data-media]')).toBeTruthy()
     expect(container.querySelector('[data-body]').getAttribute('data-body')).toBe('male')
     expect(button('Equilíbrio')).toBeTruthy()
-    expect(container.querySelector('.landing-nav-cta').classList.contains('landing-nav-cta--accent')).toBe(true)
+    expect(container.querySelector('.landing-nav-cta--accent')).toBeTruthy()
     expect(container.textContent).not.toContain('Supabase')
 
     await act(async () => { button('Começar agora').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })

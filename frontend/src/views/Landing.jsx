@@ -3,18 +3,21 @@ import { motion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
-import { EXIDX, exerciseName } from '../lib/exercises.js'
-import { t } from '../lib/i18n.js'
-import ExerciseGuideAnimation from '../components/ExerciseGuideAnimation.jsx'
+import { EXIDX, exerciseName, exOr } from '../lib/exercises.js'
+import { setLabel } from '../lib/history.js'
+import { DAYS, exCount, sentenceCase } from '../lib/format.js'
+import { t, dateLocale } from '../lib/i18n.js'
+import Media from '../components/Media.jsx'
 import BodyMap from '../components/BodyMap.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
+import '../workout-player.css'
 import '../landing.css'
 
 const DAY = 86400000
-const SHOWCASE_EXERCISE = EXIDX['0025'] || Object.values(EXIDX)[0]
+const DEMO_EX_ID = EXIDX['0025'] ? '0025' : Object.keys(EXIDX)[0]
 const BRAND_LOGO = '/brand-logo.png'
 
 const BALANCE_LOAD = {
@@ -40,14 +43,8 @@ const STRENGTH_LEVELS = [
 
 const STAT_VIEWS = [
   { id: 'balance', label: 'Equilíbrio', load: BALANCE_LOAD },
-  {
-    id: 'fatigue', label: 'Fadiga', load: FATIGUE_LOAD,
-    thresholds: FATIGUE_LEVELS, className: 'hm-fatigue',
-  },
-  {
-    id: 'strength', label: 'Força', load: STRENGTH_LOAD,
-    thresholds: STRENGTH_LEVELS, className: 'hm-strength',
-  },
+  { id: 'fatigue', label: 'Fadiga', load: FATIGUE_LOAD, thresholds: FATIGUE_LEVELS, className: 'hm-fatigue' },
+  { id: 'strength', label: 'Força', load: STRENGTH_LOAD, thresholds: STRENGTH_LEVELS, className: 'hm-strength' },
 ]
 
 export function buildWeightPreviewPoints(now = Date.now()) {
@@ -75,118 +72,180 @@ function useReducedMotion() {
   return reduced
 }
 
-function HomePreview() {
-  const points = useMemo(() => buildWeightPreviewPoints(), [])
-  const week = [
-    ['S', '7', 'done'],
-    ['T', '8', 'plan'],
-    ['Q', '9', 'done'],
-    ['Q', '10', ''],
-    ['S', '11', 'plan'],
-    ['S', '12', ''],
-    ['D', '13', 'today'],
-  ]
-
+function PhoneFrame({ label, children, tall }) {
   return (
-    <div className="landing-device" aria-label="Prévia da tela inicial do aplicativo">
-      <div className="landing-device-chrome"><span /><span /><span /></div>
-      <div className="landing-home">
-        <header className="landing-home-title">
-          <h3>Hoje</h3>
-          <span>domingo, 13 de setembro</span>
-        </header>
-
-        <section className="landing-home-now">
-          <span className="landing-home-kicker">Plano de hoje</span>
-          <strong>Push</strong>
-          <div className="landing-home-meta">
-            <b>6 exercícios</b>
-            <span>Peito</span>
-            <span>Ombros</span>
-            <span>Tríceps</span>
-          </div>
-          <div className="landing-home-cta">Começar Push</div>
-        </section>
-
-        <section className="landing-home-week">
-          <div className="landing-home-section-head">
-            <strong>Esta semana</strong>
-            <span>2 / 4 · 3 semanas</span>
-          </div>
-          <div className="landing-home-strip">
-            {week.map(([day, date, state], index) => (
-              <span key={`${day}-${date}-${index}`} className={state ? `is-${state}` : undefined}>
-                <small>{day}</small>
-                <b>{date}</b>
-                <i />
-              </span>
-            ))}
-          </div>
-        </section>
-
-        <section className="landing-home-weight">
-          <div className="landing-home-section-head">
-            <strong>Peso corporal</strong>
-            <span>13 set</span>
-          </div>
-          <div className="landing-home-weight-reading">
-            <strong>79,8</strong>
-            <span>kg</span>
-            <em><Icon name="arrowDown" /> 0,5 kg</em>
-          </div>
-          <div className="chart landing-home-chart">
-            <LineChart points={points} h={88} unit="kg" goal={79.5} />
-          </div>
-        </section>
+    <div className={'landing-phone' + (tall ? ' is-tall' : '')} aria-label={label}>
+      <div className="landing-phone-bezel">
+        <div className="landing-phone-status" aria-hidden="true">
+          <span>9:41</span>
+          <i />
+          <span>100%</span>
+        </div>
+        <div className="landing-phone-screen">{children}</div>
       </div>
     </div>
   )
 }
 
-function WorkoutPreview({ playing }) {
-  const exercise = SHOWCASE_EXERCISE
-  if (!exercise) return null
+function HomePreview() {
+  const points = useMemo(() => buildWeightPreviewPoints(), [])
+  const today = new Date()
+  const dateLabel = today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })
+  const week = [
+    { day: 1, date: 7, dot: 'done' },
+    { day: 2, date: 8, dot: 'plan' },
+    { day: 3, date: 9, dot: 'done' },
+    { day: 4, date: 10, dot: '' },
+    { day: 5, date: 11, dot: 'plan' },
+    { day: 6, date: 12, dot: '' },
+    { day: 0, date: 13, dot: '', today: true },
+  ]
 
   return (
-    <div className="landing-device" aria-label="Prévia de um treino em andamento">
-      <div className="landing-device-chrome"><span /><span /><span /></div>
-      <div className="landing-workout">
-        <div className="landing-workout-bar">
+    <PhoneFrame label="Prévia da tela inicial do aplicativo">
+      <div className="narrow home-view landing-screen-clone">
+        <div className="hdr home-titlebar">
           <div>
-            <strong>Push</strong>
-            <span>8/24 séries</span>
-          </div>
-          <span className="landing-workout-clock">24:18</span>
-        </div>
-
-        <div className="landing-workout-media">
-          <ExerciseGuideAnimation ex={exercise} playing={playing} />
-          <div className="landing-workout-exercise">
-            <strong>{exerciseName(exercise)}</strong>
-            <span>Exercício 3 de 5</span>
+            <h1>{t('Today')}</h1>
+            <div className="sub">{dateLabel}</div>
           </div>
         </div>
 
-        <div className="landing-workout-sets">
-          <div className="landing-workout-set-head">
-            <span>Série</span><span>Peso</span><span>Reps</span><span />
+        <section className="home-now home-now--planned">
+          <div className="home-now-top">
+            <span className="home-now-kicker">{t("Today's plan")}</span>
           </div>
-          {[['1', '60', '10', true], ['2', '62,5', '10', true], ['3', '62,5', '8', false]].map(([n, w, r, done]) => (
-            <div className={'landing-workout-set' + (done ? ' is-done' : ' is-current')} key={n}>
-              <span>{n}</span>
-              <strong>{w}</strong>
-              <strong>{r}</strong>
-              <i>{done ? <Icon name="check" /> : null}</i>
+          <h2>Push</h2>
+          <div className="home-now-context home-now-context--wrap">
+            <b>{exCount(6)}</b>
+            <span>{sentenceCase(t('chest'))}</span>
+            <span>{sentenceCase(t('shoulders'))}</span>
+            <span>{sentenceCase(t('triceps'))}</span>
+          </div>
+          <div className="home-now-actions">
+            <Button variant="primary" icon="play">{t('Start {0}', 'Push')}</Button>
+          </div>
+        </section>
+
+        <section className="home-week-block">
+          <div className="home-section-head">
+            <div>
+              <h2>{t('This week')}</h2>
+              <span>2 / 4 · {t('{0} week streak', 3)}</span>
             </div>
-          ))}
+          </div>
+          <div className="week home-week-strip">
+            {week.map(item => (
+              <button type="button" key={item.date} className={'wday' + (item.today ? ' today' : '')} tabIndex={-1}>
+                <span className="lbl">{t(DAYS[item.day])}</span>
+                <span className="num">{item.date}</span>
+                <span className={'dot' + (item.dot ? ` ${item.dot}` : '')} />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="home-weight-block">
+          <div className="home-section-head">
+            <div>
+              <h2>{t('Body weight')}</h2>
+              <span>13 set</span>
+            </div>
+          </div>
+          <div className="home-weight-reading">
+            <button type="button" tabIndex={-1}>
+              <strong>79,8</strong><span>kg</span>
+            </button>
+            <span style={{ color: 'var(--acc)' }}><Icon name="arrowDown" />0,5 kg</span>
+            <small><Icon name="target" />0,3 kg</small>
+          </div>
+          <div className="chart home-weight-chart">
+            <LineChart points={points} h={104} unit="kg" goal={79.5} />
+          </div>
+        </section>
+      </div>
+    </PhoneFrame>
+  )
+}
+
+function WorkoutPreview() {
+  const exercise = exOr(DEMO_EX_ID)
+  const entry = {
+    id: DEMO_EX_ID,
+    target: { sets: 3, reps: 10, weight: 62.5 },
+    sets: [
+      { w: 60, r: 10, done: true },
+      { w: 62.5, r: 10, done: true },
+      { w: 62.5, r: 8, done: false },
+    ],
+  }
+  const current = entry.sets[2]
+  const currentLabel = setLabel(entry.id, current, entry.target, 'kg')
+
+  return (
+    <PhoneFrame label="Prévia de um treino em andamento" tall>
+      <div className="narrow active-workout workout-player-page landing-screen-clone">
+        <div className="workout-session-bar">
+          <div className="hdr workout-session-header">
+            <div className="workout-session-title">
+              <strong>Push</strong>
+              <span>{t('{0} sets', '8/24')}</span>
+            </div>
+            <span className="wp-session-clock" aria-hidden="true">24:18</span>
+          </div>
         </div>
 
-        <div className="landing-workout-rest">
-          <Icon name="timer" />
-          <div><small>Descanso</small><b>01:18</b></div>
-        </div>
+        <section className="wp-exercise-player is-locked" data-exidx={0}>
+          <div className="wp-series-status"><span>{t('Sets')}</span><strong>2/3</strong></div>
+          <div className="wp-series-track" role="progressbar" aria-label={t('Sets')} aria-valuemin={0} aria-valuemax={3} aria-valuenow={2}>
+            <span className="wp-series-segment is-done" />
+            <span className="wp-series-segment is-done" />
+            <span className="wp-series-segment is-current" />
+          </div>
+
+          <div className="wp-media-card">
+            <div className="wp-card-clock" aria-hidden="true"><Icon name="clock" /><span>24:18</span></div>
+            <div className="wp-exercise-header">
+              <h2 className="wp-exercise-title workout-exercise-name">{exerciseName(exercise)}</h2>
+              <div className="wp-exercise-target">{currentLabel}</div>
+            </div>
+            <div className="wp-media"><Media ex={exercise} /></div>
+            <button type="button" className="wp-exercise-nav wp-exercise-nav--previous" aria-label={t('Previous exercise')} disabled tabIndex={-1}><Icon name="chevronLeft" /></button>
+            <button type="button" className="wp-exercise-nav wp-exercise-nav--next" aria-label={t('Next exercise')} tabIndex={-1}><Icon name="chevronRight" /></button>
+          </div>
+
+          <div className="wp-current-set">
+            <div className="exercise-input-status"><span>{t('Sets')} 3/3</span></div>
+            <div className="wp-current-controls" data-metrics={2}>
+              <div className="wp-metric">
+                <span className="wp-metric-label">{t('Weight ({0})', 'kg')}</span>
+                <div className="stp w">
+                  <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="minus" /></button>
+                  <span className="val">62,5</span>
+                  <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="plus" /></button>
+                </div>
+              </div>
+              <div className="wp-metric">
+                <span className="wp-metric-label">{t('Reps')}</span>
+                <div className="stp r">
+                  <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="minus" /></button>
+                  <span className="val">8</span>
+                  <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="plus" /></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Button variant="primary" intent="quick" icon="play" className="wp-main-action set-start-action" tabIndex={-1}>
+            {t('Start set')} 3
+          </Button>
+          <div className="set-execution-hint">
+            <strong><Icon name="play" />{t('Start set')}</strong>
+            <span>{t('Tap play to start this set.')}</span>
+          </div>
+        </section>
       </div>
-    </div>
+    </PhoneFrame>
   )
 }
 
@@ -211,9 +270,14 @@ function StatsPreview() {
 
   const view = STAT_VIEWS[active]
   return (
-    <div className="landing-device landing-device--wide" aria-label="Prévia da análise corporal">
-      <div className="landing-device-chrome"><span /><span /><span /></div>
-      <div className="landing-stats">
+    <PhoneFrame label="Prévia da análise corporal">
+      <div className="narrow stats-view landing-screen-clone">
+        <div className="hdr">
+          <div>
+            <h1>{t('Stats')}</h1>
+            <div className="sub">{t('Last 30 days')}</div>
+          </div>
+        </div>
         <div className="landing-stat-tabs" role="tablist" aria-label="Visualizações de estatísticas">
           {STAT_VIEWS.map((item, index) => (
             <button
@@ -233,7 +297,7 @@ function StatsPreview() {
           ))}
         </div>
         <div
-          className={'landing-stat-stage ' + (view.className || '')}
+          className={'stats-bodymap-pane landing-stat-stage ' + (view.className || '')}
           key={view.id}
           role="tabpanel"
           id={`landing-panel-${view.id}`}
@@ -242,7 +306,7 @@ function StatsPreview() {
           <BodyMap load={view.load} thresholds={view.thresholds} body="male" decorative />
         </div>
       </div>
-    </div>
+    </PhoneFrame>
   )
 }
 
@@ -292,6 +356,8 @@ export default function Landing({ invitePath = false }) {
 
   return (
     <main className="landing-page">
+      <div className="landing-atmosphere" aria-hidden="true" />
+
       {invitePath && (
         <div className="landing-invite-banner" role="status">
           <strong>Você recebeu um convite profissional.</strong>
@@ -311,26 +377,25 @@ export default function Landing({ invitePath = false }) {
             disabled={entryUnavailable}
             onClick={primaryAction}
           >
-            {localEntry ? 'Abrir aplicativo' : 'Entrar'}
+            {localEntry ? 'Abrir' : 'Entrar'}
           </button>
         </div>
       </header>
 
-      <section className="landing-hero" id="top">
-        <motion.div
-          className="landing-hero-copy"
-          initial={reduced ? false : { opacity: 0, y: 12 }}
+      <div className="landing-stage" id="top">
+        <motion.section
+          className="landing-hero"
+          initial={reduced ? false : { opacity: 0, y: 18 }}
           animate={reduced ? undefined : { opacity: 1, y: 0 }}
-          transition={reduced ? { duration: 0 } : { type: 'spring', duration: .65, bounce: 0 }}
+          transition={reduced ? { duration: 0 } : { type: 'spring', duration: .7, bounce: 0 }}
         >
           <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
-          <h1>Planeje o treino. Registre a carga. Veja a evolução.</h1>
-          <p>Rotina semanal, execução guiada e leitura corporal no mesmo app.</p>
+          <h1>Seu treino, no bolso.</h1>
+          <p>Plano do dia, execução e evolução — como no app.</p>
           <div className="landing-actions">
             <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>
               {primaryLabel}
             </Button>
-            <a className="landing-secondary-action" href="#treino">Ver o app</a>
           </div>
           {!localEntry && (
             <div className="landing-account-actions">
@@ -338,39 +403,36 @@ export default function Landing({ invitePath = false }) {
               {canGuest && <button onClick={enter}>Continuar sem conta</button>}
             </div>
           )}
-        </motion.div>
-        <div className="landing-hero-visual">
+        </motion.section>
+
+        <section className="landing-showcase">
           <HomePreview />
-        </div>
-      </section>
+        </section>
 
-      <section className="landing-section" id="treino">
-        <div className="landing-section-copy">
-          <h2>Treino em andamento</h2>
-          <p>Séries, carga, descanso e animação do exercício na mesma tela.</p>
-        </div>
-        <WorkoutPreview playing={!reduced} />
-      </section>
+        <section className="landing-block" id="treino">
+          <h2>Treino</h2>
+          <p>Mesma tela de séries, carga e animação.</p>
+          <WorkoutPreview />
+        </section>
 
-      <section className="landing-section landing-section--stats" id="estatisticas">
-        <div className="landing-section-copy">
-          <h2>Análise corporal</h2>
-          <p>Equilíbrio, fadiga e força para decidir o próximo treino.</p>
-        </div>
-        <StatsPreview />
-      </section>
+        <section className="landing-block" id="estatisticas">
+          <h2>Corpo</h2>
+          <p>Equilíbrio, fadiga e força no mapa.</p>
+          <StatsPreview />
+        </section>
 
-      <footer className="landing-footer">
-        <a className="landing-footer-brand" href="#top">
-          <img src={BRAND_LOGO} alt="" />
-          <span>Fit Pro Player</span>
-        </a>
-        <nav aria-label="Documentos legais">
-          <a href="#/privacy">Privacidade</a>
-          <a href="#/terms">Termos</a>
-          <a href="#/data-rights">Direitos dos titulares</a>
-        </nav>
-      </footer>
+        <footer className="landing-footer">
+          <a className="landing-footer-brand" href="#top">
+            <img src={BRAND_LOGO} alt="" />
+            <span>Fit Pro Player</span>
+          </a>
+          <nav aria-label="Documentos legais">
+            <a href="#/privacy">Privacidade</a>
+            <a href="#/terms">Termos</a>
+            <a href="#/data-rights">Direitos</a>
+          </nav>
+        </footer>
+      </div>
     </main>
   )
 }
