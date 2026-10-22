@@ -147,6 +147,7 @@ describe('public landing page', () => {
     expect(button('Equilíbrio')).toBeTruthy()
     expect(container.querySelector('.landing-nav-cta--accent')).toBeTruthy()
     expect(container.textContent).not.toContain('Supabase')
+    expect(button('Começar agora')?.querySelector('[data-icon]')).toBeNull()
 
     await act(async () => { button('Começar agora').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
     expect(mocks.setGuest).toHaveBeenCalledWith(true)

@@ -7,7 +7,7 @@ import { effectiveRoutine, effectiveRoutineId } from '../lib/history.js'
 import { EXPERIENCE_LABELS, PROFILE_GOAL_LABELS } from '../lib/profile.js'
 import { ensureStarterRoutines, routineName } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
-import { dayAssignSheet, dayOverrideSheet, planToolsSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
+import { dayAssignSheet, dayOverrideSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
 import { Button } from '../components/ui.jsx'
@@ -84,7 +84,6 @@ export default function Plan() {
     <AppHeader
       title={t('Plan')}
       subtitle={mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')}
-      action={<button className="iconbtn" onClick={planToolsSheet} aria-label={t('Share your plan')} title={t('Share your plan')}><Icon name="upload" /></button>}
     />
 
     {planProgress && <PlanProgress progress={planProgress} />}

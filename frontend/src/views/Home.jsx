@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, workoutVolume, setsDone, setsDoneActive } from '../lib/history.js'
@@ -37,9 +37,14 @@ function SessionMetrics({ workout, unit }) {
 export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
+  const update = useStore(s => s.update)
   const [weekOffset, setWeekOffset] = useState(0)
   const [weightExpanded, setWeightExpanded] = useState(false)
   const reducedMotion = useReducedMotion()
+  const lightTheme = S.theme === 'light'
+  const toggleTheme = () => update(s => { s.theme = lightTheme ? 'dark' : 'light' })
+  const themeIcon = lightTheme ? 'moon' : 'sun'
+  const themeLabel = lightTheme ? t('Dark') : t('Light')
 
   const today = new Date()
   const isoToday = todayISO()
@@ -175,6 +180,26 @@ export default function Home() {
   return <div className="narrow home-view">
     <div className="hdr home-titlebar">
       <div><h1>{t('Today')}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
+      <button
+        type="button"
+        className="iconbtn home-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={themeLabel}
+        title={themeLabel}
+      >
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.span
+            key={themeIcon}
+            className="home-theme-toggle-icon"
+            initial={reducedMotion ? false : { opacity: 0, scale: .72, rotate: lightTheme ? -28 : 28 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={reducedMotion ? undefined : { opacity: 0, scale: .72, rotate: lightTheme ? 28 : -28 }}
+            transition={reducedMotion ? { duration: 0 } : { type: 'spring', duration: .28, bounce: 0 }}
+          >
+            <Icon name={themeIcon} />
+          </motion.span>
+        </AnimatePresence>
+      </button>
     </div>
 
     {planProgress && <PlanProgress progress={planProgress} />}

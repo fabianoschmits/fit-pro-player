@@ -1955,6 +1955,9 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 /* Home is a sequence of sections. The current session gets the clearest action,
    while supporting information stays on the page instead of inside extra boxes. */
 .home-titlebar{margin-bottom:8px}.home-titlebar h1{font-size:30px}
+.home-theme-toggle{position:relative;flex:none;overflow:hidden}
+.home-theme-toggle-icon{display:grid;place-items:center;width:100%;height:100%}
+.home-theme-toggle-icon .icn{width:20px;height:20px}
 .home-now{
   position:relative;margin-bottom:2px;padding:10px 2px 16px;
   border:0;border-radius:0;background:transparent;box-shadow:none;

@@ -503,7 +503,7 @@ export default function Landing({ invitePath = false }) {
             <h1>Seu treino, no bolso.</h1>
             <p>Plano do dia, execução e evolução — como no app.</p>
             <div className="landing-actions">
-              <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>
+              <Button variant="primary" disabled={entryUnavailable} onClick={primaryAction}>
                 {primaryLabel}
               </Button>
             </div>
