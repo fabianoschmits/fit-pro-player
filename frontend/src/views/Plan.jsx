@@ -92,7 +92,7 @@ export default function Plan() {
       <section>
         <div className="row between plan-section-head">
           <h4 className="sec">{t('Week schedule')}</h4>
-          <span className={'tag' + (scheduledDays ? ' acc' : '')}>{scheduledDays} / 7</span>
+          <span className="plan-section-value">{scheduledDays} / 7</span>
         </div>
         <div className="plan-week-card">
           <div className="plan-week-grid">
@@ -114,7 +114,7 @@ export default function Plan() {
       <section>
         <div className="row between plan-section-head">
           <h4 className="sec">{t("Today's workout")}</h4>
-          <span className="tag acc">{fmtDate(today, true)}</span>
+          <span className="plan-section-value">{fmtDate(today, true)}</span>
         </div>
         <button className={'card daily-plan-today' + (todayRoutine ? ' has-routine' : '')} onClick={() => dayOverrideSheet(today)}>
           <span className="daily-plan-icon">{todayRoutine ? <RoutineMuscleThumb routine={todayRoutine} body={S.body} /> : <Icon name="plus" />}</span>
