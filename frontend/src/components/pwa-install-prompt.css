@@ -1,0 +1,140 @@
+.sheet.pwa-install-sheet {
+  max-height: min(92dvh, calc(100dvh - var(--sat)));
+  padding-bottom: calc(12px + var(--sab));
+}
+
+.pwa-install-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 2px 8px;
+  color: var(--label);
+}
+
+.pwa-install-prompt-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pwa-install-prompt-head > div {
+  min-width: 0;
+}
+
+.pwa-install-prompt-kicker {
+  margin: 0 0 4px;
+  color: var(--acc);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.pwa-install-prompt-head h3 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+
+.pwa-install-prompt-head p {
+  margin: 0;
+  color: var(--label-2);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.pwa-install-prompt-os {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--acc-soft);
+  border: var(--hair) solid var(--acc-line);
+}
+
+.pwa-install-prompt-os > .icn {
+  flex: none;
+  margin-top: 2px;
+  color: var(--acc);
+  font-size: 18px;
+}
+
+.pwa-install-prompt-os strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.pwa-install-prompt-os span {
+  color: var(--label-2);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.pwa-install-prompt .pwa-install-status {
+  margin-top: 12px;
+}
+
+.pwa-install-prompt .pwa-platform-picker {
+  margin-top: 16px;
+}
+
+.pwa-install-prompt-guides {
+  margin-top: 4px;
+  max-height: min(38dvh, 320px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.pwa-install-prompt-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 4px;
+}
+
+.pwa-install-prompt-later {
+  width: 100%;
+  min-height: 48px;
+}
+
+.pwa-install-prompt-never {
+  border: 0;
+  background: none;
+  padding: 10px 8px;
+  color: var(--label-3);
+  font-size: 13px;
+  font-weight: 560;
+  text-align: center;
+  cursor: pointer;
+}
+
+.pwa-install-prompt-never:hover {
+  color: var(--label-2);
+}
+
+@media (min-width: 720px) {
+  .sheet.pwa-install-sheet {
+    max-height: min(86dvh, 760px);
+  }
+
+  .pwa-install-prompt-guides {
+    max-height: min(42dvh, 360px);
+  }
+}
+
+@media (max-width: 360px) {
+  .pwa-install-prompt-head h3 {
+    font-size: 18px;
+  }
+
+  .pwa-install-prompt-head {
+    gap: 10px;
+  }
+}

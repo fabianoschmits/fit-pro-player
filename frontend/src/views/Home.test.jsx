@@ -39,6 +39,7 @@ vi.mock('../sheets.jsx', () => ({
 }))
 vi.mock('../components/LineChart.jsx', () => ({ default: () => null }))
 vi.mock('../components/PlanProgress.jsx', () => ({ default: () => null }))
+vi.mock('../components/PwaInstallPrompt.jsx', () => ({ maybeOpenPwaInstallPrompt: () => () => {} }))
 vi.mock('../components/Icon.jsx', () => ({ default: ({ name }) => React.createElement('span', { 'data-icon': name }) }))
 vi.mock('../lib/i18n.js', () => ({ t: value => value, dateLocale: () => 'pt-BR' }))
 

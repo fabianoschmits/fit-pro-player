@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
+import { maybeOpenPwaInstallPrompt } from '../components/PwaInstallPrompt.jsx'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, workoutVolume, setsDone, setsDoneActive } from '../lib/history.js'
 import { fmtNum, fmtDate, fmtDur, fmtVol, todayISO, isoOf, weekKey, DAYS, exCount, sentenceCase, workoutDuration } from '../lib/format.js'
@@ -45,6 +46,8 @@ export default function Home() {
   const toggleTheme = () => update(s => { s.theme = lightTheme ? 'dark' : 'light' })
   const themeIcon = lightTheme ? 'moon' : 'sun'
   const themeLabel = lightTheme ? t('Dark') : t('Light')
+
+  useEffect(() => maybeOpenPwaInstallPrompt(), [S.onboardingDone, S.pwaInstallPrompt])
 
   const today = new Date()
   const isoToday = todayISO()

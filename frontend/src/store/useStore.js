@@ -14,6 +14,7 @@ import { MASS_UNIT, STATE_SCHEMA_VERSION } from '../lib/mass.js'
 import { createSessionRecovery, hasPendingSessionFinalization } from '../lib/session-recovery.js'
 import { markPendingDomains } from '../lib/domain-sync-state.js'
 import { bindAccountActionStore } from '../lib/account-action-store.js'
+import { normalizePwaInstallPrompt } from '../lib/pwa-install-prompt.js'
 
 export const DEF = {
   displayUnit: 'kg', massUnit: MASS_UNIT, stateSchemaVersion: STATE_SCHEMA_VERSION,
@@ -29,7 +30,7 @@ export const DEF = {
   reminder: { on: false, time: '08:00', tz: null }, effort: null, assignedProgram: null,
   notifications: DEFAULT_NOTIFICATION_PREFERENCES,
   // UX prefs — weighBeforeWorkout defaults true; skipped automatically when already weighed today.
-  weighBeforeWorkout: true, onboardingDone: false, simpleMode: true, seenTips: {}, pendingProfessionalEvents: [], professionalProgramDrafts: {}
+  weighBeforeWorkout: true, onboardingDone: false, simpleMode: true, seenTips: {}, pwaInstallPrompt: null, pendingProfessionalEvents: [], professionalProgramDrafts: {}
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 const uuidOrNull = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '')) ? value : null
@@ -75,6 +76,7 @@ export function normalizeState(source) {
   state.planMode = state.planMode === 'daily' ? 'daily' : 'weekly'
   state.notifications = normalizeNotificationPreferences(raw.notifications, raw.reminder)
   state.profile = normalizeProfile(raw.profile, state.body)
+  state.pwaInstallPrompt = normalizePwaInstallPrompt(raw.pwaInstallPrompt)
   syncProfileWeightFromBodyweight(state)
 
   if (!hasCompleteProfile(state.profile) && legacyHasPersonalData(raw)) {

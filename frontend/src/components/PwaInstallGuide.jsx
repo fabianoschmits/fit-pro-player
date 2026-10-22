@@ -13,7 +13,13 @@ const PLATFORMS = [
 const DEFAULT_BROWSER = { ios: 'safari', android: 'chrome', desktop: 'chrome' }
 const CHROME_HELP = 'https://support.google.com/chrome/answer/9658361?hl=pt-BR&co=GENIE.Platform%3D'
 
-const GUIDES = {
+export const PLATFORM_LABELS = {
+  ios: 'iPhone / iPad',
+  android: 'Android',
+  desktop: 'Computador',
+}
+
+export const GUIDES = {
   ios: [
     {
       id: 'safari', title: 'Safari', subtitle: 'Instale pela opção de compartilhar',
@@ -165,7 +171,7 @@ const GUIDES = {
   ],
 }
 
-function installStatus({ installed, canInstall, status }) {
+export function installStatus({ installed, canInstall, status }) {
   if (installed) return ['Fit Pro Player instalado', 'Use o ícone na tela inicial, no Dock ou na lista de aplicativos para abrir.', 'checkCircle']
   if (status === 'prompting') return ['Confirme no navegador', 'A janela de instalação está aberta. Confirme ou cancele para continuar.', 'info']
   if (status === 'accepted') return ['Instalação autorizada', 'Aguarde o navegador concluir. Depois, procure o ícone do Fit Pro Player.', 'info']
@@ -175,7 +181,7 @@ function installStatus({ installed, canInstall, status }) {
   return ['Instale pelo menu do navegador', 'O botão de instalação aparece quando o navegador oferece esse recurso. Você também pode seguir o guia abaixo.', 'info']
 }
 
-function BrowserGuide({ guide, suggested }) {
+export function BrowserGuide({ guide, suggested }) {
   const [open, setOpen] = useState(suggested)
   return <details className="pwa-browser-guide" open={open} onToggle={event => setOpen(event.currentTarget.open)}>
     <summary>
