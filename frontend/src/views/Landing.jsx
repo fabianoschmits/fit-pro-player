@@ -4,10 +4,8 @@ import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
-import { GLYPHS } from '../lib/glyphs.js'
 import { t } from '../lib/i18n.js'
 import ExerciseGuideAnimation from '../components/ExerciseGuideAnimation.jsx'
-import AvatarImage from '../components/AvatarImage.jsx'
 import BodyMap from '../components/BodyMap.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
@@ -16,9 +14,8 @@ import { openAuthSheet } from '../components/AuthSheet.jsx'
 import '../landing.css'
 
 const DAY = 86400000
-const SHOWCASE_EXERCISES = ['0025', '0043', '0032', '0198', '0334']
-  .map(id => EXIDX[id])
-  .filter(Boolean)
+const SHOWCASE_EXERCISE = EXIDX['0025'] || Object.values(EXIDX)[0]
+const BRAND_LOGO = '/brand-logo.png'
 
 const BALANCE_LOAD = {
   chest: 18, 'upper-back': 17, deltoids: 14, biceps: 9, triceps: 11,
@@ -42,32 +39,16 @@ const STRENGTH_LEVELS = [
 ]
 
 const STAT_VIEWS = [
+  { id: 'balance', label: 'Equilíbrio', load: BALANCE_LOAD },
   {
-    id: 'balance', label: 'Equilíbrio muscular', title: 'Volume bem distribuído',
-    subtitle: 'Últimos 30 dias · por séries trabalhadas', load: BALANCE_LOAD,
-    rows: [['Quadríceps', '19 séries', 1], ['Peito', '18 séries', .95], ['Costas', '17 séries', .89]],
-  },
-  {
-    id: 'fatigue', label: 'Fadiga', title: 'Recuperação em andamento',
-    subtitle: 'O mapa mostra onde é melhor descansar', load: FATIGUE_LOAD,
+    id: 'fatigue', label: 'Fadiga', load: FATIGUE_LOAD,
     thresholds: FATIGUE_LEVELS, className: 'hm-fatigue',
-    rows: [['Peito', 'Fadigado', 1], ['Ombros', 'Recuperando', .72], ['Costas', 'Pronto', .35]],
   },
   {
-    id: 'strength', label: 'Força', title: 'Força retida',
-    subtitle: 'Estimativa baseada no histórico de treino', load: STRENGTH_LOAD,
+    id: 'strength', label: 'Força', load: STRENGTH_LOAD,
     thresholds: STRENGTH_LEVELS, className: 'hm-strength',
-    rows: [['Quadríceps', '100%', 1], ['Peito', '98%', .98], ['Tríceps', '95%', .95]],
   },
 ]
-
-const FEATURES = [
-  { step: '01', icon: 'calendar', title: 'Organize', label: 'Plano semanal', copy: 'Rotinas e dias de treino em uma agenda que acompanha a sua semana.' },
-  { step: '02', icon: 'figureStrength', title: 'Execute', label: 'Treino guiado', copy: 'Animação, séries, carga, repetições e descanso na mesma tela.' },
-  { step: '03', icon: 'chartLine', title: 'Acompanhe', label: 'Evolução real', copy: 'Peso, volume e desempenho transformados em histórico legível.' },
-  { step: '04', icon: 'shield', title: 'Decida', label: 'Leitura corporal', copy: 'Equilíbrio, fadiga e força para orientar o próximo treino.' },
-]
-const BRAND_LOGO = '/brand-logo.png'
 
 export function buildWeightPreviewPoints(now = Date.now()) {
   const weights = [82.4, 82.1, 81.9, 81.6, 81.3, 80.9, 80.7, 80.3, 79.8]
@@ -94,106 +75,117 @@ function useReducedMotion() {
   return reduced
 }
 
-function ExerciseShowcase({ paused, reduced }) {
-  const viewport = useRef(null)
-  const move = direction => {
-    const card = viewport.current?.querySelector('.landing-exercise-card')
-    viewport.current?.scrollBy({ left: direction * ((card?.getBoundingClientRect().width || 260) + 16), behavior: 'smooth' })
-  }
-  return (
-    <div className="landing-exercise-carousel">
-      <button className="landing-carousel-control" type="button" aria-label="Exercício anterior" onClick={() => move(-1)}><Icon name="chevronLeft" /></button>
-      <div className="landing-exercise-marquee" ref={viewport}>
-      <div className={'landing-exercise-track' + (paused || reduced ? ' is-paused' : '')}>
-        <div className="landing-exercise-set">
-          {SHOWCASE_EXERCISES.map((exercise, index) => (
-            <article className="landing-exercise-card" key={exercise.id}>
-              <div className="landing-exercise-media">
-                <ExerciseGuideAnimation ex={exercise} playing={!paused && !reduced} />
-              </div>
-              <div className="landing-exercise-copy">
-                <span className="landing-exercise-number">{String(index + 1).padStart(2, '0')}</span>
-                <div><strong>{exerciseName(exercise)}</strong><span>{t(exercise.eq || exercise.bp)}</span></div>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-      </div>
-      <button className="landing-carousel-control" type="button" aria-label="Próximo exercício" onClick={() => move(1)}><Icon name="chevronRight" /></button>
-    </div>
-  )
-}
-
 function HomePreview() {
-  const routineGlyphs = GLYPHS.filter(name => ['figureStrength', 'arm', 'legs', 'pullup'].includes(name))
-  const [activeGlyph, setActiveGlyph] = useState('figureStrength')
+  const points = useMemo(() => buildWeightPreviewPoints(), [])
+  const week = [
+    ['S', '7', 'done'],
+    ['T', '8', 'plan'],
+    ['Q', '9', 'done'],
+    ['Q', '10', ''],
+    ['S', '11', 'plan'],
+    ['S', '12', ''],
+    ['D', '13', 'today'],
+  ]
 
   return (
-    <div className="landing-home-preview" aria-label="Prévia da tela inicial do aplicativo">
-      <div className="landing-home-preview-top">
-        <div><span>SEU DIA</span><strong>Hoje</strong></div>
-        <time dateTime="2026-09-13">DOM · 13 SET.</time>
-      </div>
-      <div className="landing-profile-preview">
-        <div className="landing-profile-avatar" aria-hidden="true">
-          <AvatarImage avatarId="avatar-27" loading="lazy" />
-        </div>
-        <div className="landing-profile-copy">
-          <strong>Alex</strong>
-          <p>Hoje o frango evolui.</p>
-          <span>34 anos · 1,78 m · 78,6 kg</span>
-          <div className="landing-profile-goal">
-            <div><small>META DE PESO</small><b>70%</b></div>
-            <i><b /></i>
+    <div className="landing-device" aria-label="Prévia da tela inicial do aplicativo">
+      <div className="landing-device-chrome"><span /><span /><span /></div>
+      <div className="landing-home">
+        <header className="landing-home-title">
+          <h3>Hoje</h3>
+          <span>domingo, 13 de setembro</span>
+        </header>
+
+        <section className="landing-home-now">
+          <span className="landing-home-kicker">Plano de hoje</span>
+          <strong>Push</strong>
+          <div className="landing-home-meta">
+            <b>6 exercícios</b>
+            <span>Peito</span>
+            <span>Ombros</span>
+            <span>Tríceps</span>
           </div>
-        </div>
-      </div>
-      <div className="landing-today-preview">
-        <div className="landing-today-heading"><span>PLANO DE HOJE</span><small>6 EXERCÍCIOS</small></div>
-        <div className="landing-today-row">
-          <div className="landing-today-glyphs" role="group" aria-label="Escolher silhueta da rotina">
-            {routineGlyphs.map(glyph => (
-              <button
-                key={glyph}
-                type="button"
-                className={'landing-today-icon' + (activeGlyph === glyph ? ' is-active' : '')}
-                aria-label={`Usar silhueta ${glyph}`}
-                aria-pressed={activeGlyph === glyph}
-                onClick={() => setActiveGlyph(glyph)}
-              >
-                <Icon name={glyph} />
-              </button>
+          <div className="landing-home-cta">Começar Push</div>
+        </section>
+
+        <section className="landing-home-week">
+          <div className="landing-home-section-head">
+            <strong>Esta semana</strong>
+            <span>2 / 4 · 3 semanas</span>
+          </div>
+          <div className="landing-home-strip">
+            {week.map(([day, date, state], index) => (
+              <span key={`${day}-${date}-${index}`} className={state ? `is-${state}` : undefined}>
+                <small>{day}</small>
+                <b>{date}</b>
+                <i />
+              </span>
             ))}
           </div>
-          <div><strong>Dia de Peito</strong><small>Peitorais · última vez há 6 dias</small></div>
-          <span className="landing-today-action">Começar <Icon name="chevronRight" /></span>
-        </div>
-      </div>
-      <div className="landing-week-preview" aria-hidden="true">
-        {[['SEG', '07', true], ['TER', '08'], ['QUA', '09', true], ['QUI', '10'], ['SEX', '11', true], ['SÁB', '12'], ['DOM', '13', false, true]].map(([day, date, done, today]) => (
-          <span className={today ? 'is-today' : done ? 'is-done' : ''} key={day}><small>{day}</small><b>{date}</b><i /></span>
-        ))}
+        </section>
+
+        <section className="landing-home-weight">
+          <div className="landing-home-section-head">
+            <strong>Peso corporal</strong>
+            <span>13 set</span>
+          </div>
+          <div className="landing-home-weight-reading">
+            <strong>79,8</strong>
+            <span>kg</span>
+            <em><Icon name="arrowDown" /> 0,5 kg</em>
+          </div>
+          <div className="chart landing-home-chart">
+            <LineChart points={points} h={88} unit="kg" goal={79.5} />
+          </div>
+        </section>
       </div>
     </div>
   )
 }
 
-function WeightPreview() {
-  const points = useMemo(() => buildWeightPreviewPoints(), [])
+function WorkoutPreview({ playing }) {
+  const exercise = SHOWCASE_EXERCISE
+  if (!exercise) return null
+
   return (
-    <div className="landing-product-card landing-weight-card">
-      <div className="landing-preview-toolbar">
-        <div><span className="landing-preview-icon"><Icon name="scale" /></span><div><strong>Peso corporal</strong><span>Visão mensal</span></div></div>
-        <span className="landing-preview-period">30 dias</span>
+    <div className="landing-device" aria-label="Prévia de um treino em andamento">
+      <div className="landing-device-chrome"><span /><span /><span /></div>
+      <div className="landing-workout">
+        <div className="landing-workout-bar">
+          <div>
+            <strong>Push</strong>
+            <span>8/24 séries</span>
+          </div>
+          <span className="landing-workout-clock">24:18</span>
+        </div>
+
+        <div className="landing-workout-media">
+          <ExerciseGuideAnimation ex={exercise} playing={playing} />
+          <div className="landing-workout-exercise">
+            <strong>{exerciseName(exercise)}</strong>
+            <span>Exercício 3 de 5</span>
+          </div>
+        </div>
+
+        <div className="landing-workout-sets">
+          <div className="landing-workout-set-head">
+            <span>Série</span><span>Peso</span><span>Reps</span><span />
+          </div>
+          {[['1', '60', '10', true], ['2', '62,5', '10', true], ['3', '62,5', '8', false]].map(([n, w, r, done]) => (
+            <div className={'landing-workout-set' + (done ? ' is-done' : ' is-current')} key={n}>
+              <span>{n}</span>
+              <strong>{w}</strong>
+              <strong>{r}</strong>
+              <i>{done ? <Icon name="check" /> : null}</i>
+            </div>
+          ))}
+        </div>
+
+        <div className="landing-workout-rest">
+          <Icon name="timer" />
+          <div><small>Descanso</small><b>01:18</b></div>
+        </div>
       </div>
-      <div className="landing-weight-heading">
-        <div><small>HOJE</small><strong>79,8 <span>kg</span></strong></div>
-        <span className="landing-positive"><Icon name="arrowDown" /> 2,6 kg no período</span>
-      </div>
-      <div className="landing-weight-meta"><span>08 de setembro</span><span><i /> Meta 79,5 kg</span></div>
-      <div className="chart landing-weight-chart"><LineChart points={points} h={190} unit="kg" goal={79.5} /></div>
-      <div className="landing-insight"><span className="landing-insight-icon"><Icon name="chartLine" /></span><span><b>Ritmo consistente</b><small>7 das 8 últimas medições ficaram abaixo da anterior.</small></span></div>
     </div>
   )
 }
@@ -219,132 +211,38 @@ function StatsPreview() {
 
   const view = STAT_VIEWS[active]
   return (
-    <div className="landing-product-card landing-stats-card">
-      <div className="landing-stats-head">
-        <div>
-          <div className="landing-card-kicker">ANÁLISE DOS ÚLTIMOS 30 DIAS</div>
-          <h3>{view.title}</h3>
-          <p>{view.subtitle}</p>
-        </div>
-        <span className="landing-preview-live"><i /> DADOS CONECTADOS</span>
-      </div>
-      <div className="landing-stat-tabs" role="tablist" aria-label="Visualizações de estatísticas">
-        {STAT_VIEWS.map((item, index) => (
-          <button key={item.id} ref={element => { tabs.current[index] = element }} role="tab"
-            id={`landing-tab-${item.id}`} aria-controls={`landing-panel-${item.id}`} aria-selected={index === active}
-            tabIndex={index === active ? 0 : -1} className={index === active ? 'is-active' : ''}
-            onKeyDown={event => onTabKeyDown(event, index)} onClick={() => setActive(index)}>{item.label}</button>
-        ))}
-      </div>
-      <div className={'landing-stat-stage ' + (view.className || '')} key={view.id} role="tabpanel"
-        id={`landing-panel-${view.id}`} aria-labelledby={`landing-tab-${view.id}`}>
-        <BodyMap load={view.load} thresholds={view.thresholds} body="male" decorative />
-        <div className="landing-muscle-list">
-          {view.rows.map(([label, value, level]) => (
-            <div className="landing-muscle-row" key={label}>
-              <span>{label}</span>
-              <i><b style={{ '--landing-level': level }} /></i>
-              <strong>{value}</strong>
-            </div>
+    <div className="landing-device landing-device--wide" aria-label="Prévia da análise corporal">
+      <div className="landing-device-chrome"><span /><span /><span /></div>
+      <div className="landing-stats">
+        <div className="landing-stat-tabs" role="tablist" aria-label="Visualizações de estatísticas">
+          {STAT_VIEWS.map((item, index) => (
+            <button
+              key={item.id}
+              ref={element => { tabs.current[index] = element }}
+              role="tab"
+              id={`landing-tab-${item.id}`}
+              aria-controls={`landing-panel-${item.id}`}
+              aria-selected={index === active}
+              tabIndex={index === active ? 0 : -1}
+              className={index === active ? 'is-active' : ''}
+              onKeyDown={event => onTabKeyDown(event, index)}
+              onClick={() => setActive(index)}
+            >
+              {item.label}
+            </button>
           ))}
         </div>
-      </div>
-    </div>
-  )
-}
-
-function WorkoutPreview({ playing }) {
-  const exercise = SHOWCASE_EXERCISES[0]
-  return (
-    <div className="landing-phone" aria-label="Prévia de um treino em andamento">
-      <div className="landing-phone-top"><span><i><Icon name="chevronLeft" /></i> Treino A</span><span>3 de 5</span></div>
-      <div className="landing-phone-progress"><i /></div>
-      <div className="landing-phone-title">
-        <div><small>EXERCÍCIO 3 DE 5</small><strong>{exerciseName(exercise)}</strong></div>
-        <span>Peito · Barra</span>
-      </div>
-      <div className="landing-phone-media"><ExerciseGuideAnimation ex={exercise} playing={playing} /></div>
-      <div className="landing-set-head"><span>SÉRIE</span><span>PESO</span><span>REPS</span><span>FEITO</span></div>
-      {[['1', '60 kg', '10'], ['2', '62,5 kg', '10'], ['3', '62,5 kg', '8']].map((row, index) => (
-        <div className="landing-set-row" key={row[0]}>
-          <span>{row[0]}</span><strong>{row[1]}</strong><strong>{row[2]}</strong>
-          <i className={index < 2 ? 'is-done' : ''}>{index < 2 && <Icon name="check" />}</i>
+        <div
+          className={'landing-stat-stage ' + (view.className || '')}
+          key={view.id}
+          role="tabpanel"
+          id={`landing-panel-${view.id}`}
+          aria-labelledby={`landing-tab-${view.id}`}
+        >
+          <BodyMap load={view.load} thresholds={view.thresholds} body="male" decorative />
         </div>
-      ))}
-      <div className="landing-rest"><span><Icon name="timer" /></span><div><small>DESCANSO</small><b>01:18</b></div><span className="landing-rest-control" aria-hidden="true"><Icon name="pause" /></span></div>
+      </div>
     </div>
-  )
-}
-
-const reveal = reduced => {
-  const canObserve = !reduced
-    && typeof window !== 'undefined'
-    && typeof window.IntersectionObserver === 'function'
-    && typeof globalThis.IntersectionObserver === 'function'
-  if (!canObserve) return { initial: false, transition: { duration: 0 } }
-  return {
-    initial: { opacity: 0, y: 24, filter: 'blur(8px)' },
-    whileInView: { opacity: 1, y: 0, filter: 'blur(0px)' },
-    viewport: { once: true, amount: .18 },
-    transition: { type: 'spring', duration: .7, bounce: 0 },
-  }
-}
-
-function LandingPromoVideo({ reduced }) {
-  const sectionRef = useRef(null)
-  const videoRef = useRef(null)
-
-  useEffect(() => {
-    const section = sectionRef.current
-    const video = videoRef.current
-    if (!section || !video || reduced) return undefined
-
-    const play = () => {
-      const result = video.play?.()
-      result?.catch?.(() => {})
-    }
-    const pause = () => video.pause?.()
-    const observer = typeof IntersectionObserver === 'undefined'
-      ? null
-      : new IntersectionObserver(([entry]) => {
-          if (entry?.isIntersecting) play()
-          else pause()
-        }, { threshold: .55 })
-
-    observer?.observe(section)
-    const activateWithGesture = () => {
-      if (video.paused) play()
-      else pause()
-    }
-    const activateWithKeyboard = event => {
-      if (event.key !== 'Enter' && event.key !== ' ') return
-      event.preventDefault()
-      activateWithGesture()
-    }
-    video.addEventListener('click', activateWithGesture)
-    video.addEventListener('keydown', activateWithKeyboard)
-
-    return () => {
-      observer?.disconnect()
-      video.removeEventListener('click', activateWithGesture)
-      video.removeEventListener('keydown', activateWithKeyboard)
-      pause()
-    }
-  }, [reduced])
-
-  return (
-    <section ref={sectionRef} className="landing-promo-video" data-landing-promo-video>
-      <video
-        ref={videoRef}
-        src="/fit-pro-player-1min.mp4"
-        poster="/fit-pro-player-1min.jpg"
-        playsInline
-        preload="metadata"
-        controls={false}
-        tabIndex="0"
-        aria-label="Vídeo de apresentação do Fit Pro Player"
-      />
-    </section>
   )
 }
 
@@ -353,7 +251,6 @@ export default function Landing({ invitePath = false }) {
   const enterApp = useStore(s => s.enterApp || s.setGuest)
   const canGuest = true
   const reduced = useReducedMotion()
-  const [paused, setPaused] = useState(false)
   const localEntry = STANDALONE || DEMO
 
   useEffect(() => {
@@ -383,145 +280,96 @@ export default function Landing({ invitePath = false }) {
   const primaryAction = auth.status === 'authenticated'
     ? enterLocal
     : auth.configured
-    ? () => openAuthSheet('entry')
-    : enter
+      ? () => openAuthSheet('entry')
+      : enter
   const primaryLabel = auth.status === 'authenticated'
     ? 'Entrar no app'
     : auth.configured
-    ? 'Entrar ou criar conta'
-    : localEntry
-      ? (DEMO ? 'Abrir demonstração' : 'Começar agora')
-      : 'Usar neste dispositivo'
+      ? 'Entrar ou criar conta'
+      : localEntry
+        ? (DEMO ? 'Abrir demonstração' : 'Começar agora')
+        : 'Usar neste dispositivo'
 
   return (
     <main className="landing-page">
-      {invitePath && <div className="landing-invite-banner" role="status"><strong>Você recebeu um convite profissional.</strong><span>Crie sua conta ou entre para conferir o profissional e aceitar o vínculo.</span><Button variant="primary" onClick={() => openAuthSheet('sign_up')}>Criar conta e ver convite</Button></div>}
+      {invitePath && (
+        <div className="landing-invite-banner" role="status">
+          <strong>Você recebeu um convite profissional.</strong>
+          <span>Crie sua conta ou entre para aceitar o vínculo.</span>
+          <Button variant="primary" onClick={() => openAuthSheet('sign_up')}>Criar conta e ver convite</Button>
+        </div>
+      )}
+
       <header className="landing-nav-shell">
         <div className="landing-nav">
           <a className="landing-nav-brand" href="#top" aria-label="Fit Pro Player — início">
             <img src={BRAND_LOGO} alt="" />
-            <span>FIT PRO PLAYER</span>
+            <span>Fit Pro Player</span>
           </a>
-          <nav aria-label="Seções da página">
-            <a href="#treino">Treino</a>
-            <a href="#exercicios">Exercícios</a>
-            <a href="#progresso">Progresso</a>
-            <a href="#estatisticas">Análise corporal</a>
-          </nav>
-          <button className="landing-nav-cta landing-nav-cta--accent" disabled={entryUnavailable} onClick={primaryAction}>{localEntry ? 'Abrir aplicativo' : 'Entrar'}</button>
+          <button
+            className="landing-nav-cta landing-nav-cta--accent"
+            disabled={entryUnavailable}
+            onClick={primaryAction}
+          >
+            {localEntry ? 'Abrir aplicativo' : 'Entrar'}
+          </button>
         </div>
       </header>
 
       <section className="landing-hero" id="top">
-        <motion.div className="landing-hero-copy" initial={reduced ? false : { opacity: 0, x: -22, filter: 'blur(8px)' }} animate={reduced ? undefined : { opacity: 1, x: 0, filter: 'blur(0px)' }} transition={reduced ? { duration: 0 } : { type: 'spring', duration: .8, bounce: 0 }}>
+        <motion.div
+          className="landing-hero-copy"
+          initial={reduced ? false : { opacity: 0, y: 12 }}
+          animate={reduced ? undefined : { opacity: 1, y: 0 }}
+          transition={reduced ? { duration: 0 } : { type: 'spring', duration: .65, bounce: 0 }}
+        >
           <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
-          <div className="landing-eyebrow">SEU TREINO, SEM RUÍDO</div>
-          <h1>Treine com contexto. Evolua com clareza.</h1>
-          <p>Planejamento, execução, progresso e recuperação vivem no mesmo lugar — do primeiro exercício à decisão sobre o próximo treino.</p>
+          <h1>Planeje o treino. Registre a carga. Veja a evolução.</h1>
+          <p>Rotina semanal, execução guiada e leitura corporal no mesmo app.</p>
           <div className="landing-actions">
-            <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>{primaryLabel}</Button>
-            <a className="landing-secondary-action" href="#treino">Conhecer o aplicativo <Icon name="chevronRight" /></a>
+            <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>
+              {primaryLabel}
+            </Button>
+            <a className="landing-secondary-action" href="#treino">Ver o app</a>
           </div>
-           {!localEntry && <div className="landing-account-actions">
-             {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
-            {canGuest && <button onClick={enter}>Continuar sem conta</button>}
-          </div>}
+          {!localEntry && (
+            <div className="landing-account-actions">
+              {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
+              {canGuest && <button onClick={enter}>Continuar sem conta</button>}
+            </div>
+          )}
         </motion.div>
-        <motion.div className="landing-hero-visual" initial={reduced ? false : { opacity: 0, x: 24, rotate: 1.8 }} animate={reduced ? undefined : { opacity: 1, x: 0, rotate: 1.2 }} transition={reduced ? { duration: 0 } : { type: 'spring', duration: .9, bounce: .04, delay: .08 }}>
-          <div className="landing-demo-label"><span /> SUA ROTINA, EM CONTEXTO <b>PRÉVIA DO APP</b></div>
+        <div className="landing-hero-visual">
           <HomePreview />
-        </motion.div>
-        <div className="landing-trust">
-          <span><b>156</b><small>exercícios animados</small></span>
-          <span><b>100%</b><small>funcional offline</small></span>
-          <span><b>0</b><small>anúncios</small></span>
         </div>
       </section>
-      <LandingPromoVideo reduced={reduced} />
 
-      <motion.section className="landing-section landing-workout-section" id="treino" {...reveal(reduced)}>
-        <div className="landing-workout-copy">
-          <span className="landing-section-index">TREINO GUIADO</span>
-          <h2>Da primeira à última série, sem perder o foco.</h2>
-          <p>Carga, repetições, descanso e histórico recente aparecem no momento em que você precisa. Nada compete com a execução.</p>
-          <ul>
-            <li><span>01</span><p><b>Continue de onde parou</b><small>As últimas cargas ficam prontas para consultar.</small></p></li>
-            <li><span>02</span><p><b>Registre no ritmo do treino</b><small>Controles diretos e descanso no mesmo fluxo.</small></p></li>
-            <li><span>03</span><p><b>Termine com o histórico pronto</b><small>Volume e desempenho são calculados na hora.</small></p></li>
-          </ul>
+      <section className="landing-section" id="treino">
+        <div className="landing-section-copy">
+          <h2>Treino em andamento</h2>
+          <p>Séries, carga, descanso e animação do exercício na mesma tela.</p>
         </div>
-        <div className="landing-workout-visual">
-          <div className="landing-demo-label"><span /> TREINO EM ANDAMENTO <b>TERÇA · 09:41</b></div>
-          <WorkoutPreview playing={!paused && !reduced} />
-        </div>
-      </motion.section>
+        <WorkoutPreview playing={!reduced} />
+      </section>
 
-      <motion.section className="landing-section landing-exercises" id="exercicios" {...reveal(reduced)}>
-        <div className="landing-section-head">
-          <div><span className="landing-section-index">BIBLIOTECA VISUAL</span><h2>O movimento certo, na hora que você precisa.</h2></div>
-          <div className="landing-section-side">
-            <p>Consulte a execução dentro do próprio treino. As animações são rápidas, objetivas e podem ser pausadas a qualquer momento.</p>
-            <button className="landing-pause-text" disabled={reduced} onClick={() => setPaused(value => !value)}>
-              <Icon name={paused ? 'play' : 'pause'} /> {reduced ? 'Movimento reduzido pelo sistema' : paused ? 'Continuar animações' : 'Pausar animações'}
-            </button>
-          </div>
-        </div>
-        <ExerciseShowcase paused={paused} reduced={reduced} />
-      </motion.section>
-
-      <motion.section className="landing-section landing-progress-section" id="progresso" {...reveal(reduced)}>
-        <div className="landing-progress-copy">
-          <span className="landing-section-index">PROGRESSO</span>
-          <h2>Um mês inteiro, entendido em poucos segundos.</h2>
-          <p>Cada pesagem aparece na curva. A tendência, a distância até a meta e o ritmo da mudança ficam visíveis de imediato.</p>
-          <div className="landing-mini-metrics">
-            <div><strong>−2,6 kg</strong><span>em 30 dias</span></div>
-            <div><strong>9</strong><span>pesagens</span></div>
-            <div><strong>88%</strong><span>da meta mensal</span></div>
-          </div>
-        </div>
-        <WeightPreview />
-      </motion.section>
-
-      <motion.section className="landing-section landing-stats-section" id="estatisticas" {...reveal(reduced)}>
-        <div className="landing-stats-copy">
-          <span className="landing-section-index">ANÁLISE CORPORAL</span>
-          <h2>Mais contexto para decidir o próximo treino.</h2>
-          <p>O mapa corporal reúne equilíbrio muscular, fadiga e força retida. Você entende onde avançar e onde vale recuperar.</p>
-          <ul>
-            <li><Icon name="chart" /><span><b>Equilíbrio muscular</b> mostra onde o volume está concentrado.</span></li>
-            <li><Icon name="flame" /><span><b>Fadiga</b> ajuda a respeitar o tempo de recuperação.</span></li>
-            <li><Icon name="bolt" /><span><b>Força</b> estima o quanto cada grupo muscular reteve.</span></li>
-          </ul>
+      <section className="landing-section landing-section--stats" id="estatisticas">
+        <div className="landing-section-copy">
+          <h2>Análise corporal</h2>
+          <p>Equilíbrio, fadiga e força para decidir o próximo treino.</p>
         </div>
         <StatsPreview />
-      </motion.section>
-
-      <motion.section className="landing-section landing-feature-section" {...reveal(reduced)}>
-        <div className="landing-flow-head"><span className="landing-section-index">COMO FUNCIONA</span><h2>Da agenda à próxima decisão.</h2><p>O histórico nasce durante o treino. Nada depende de preencher planilhas depois.</p></div>
-        <div className="landing-feature-list">
-          {FEATURES.map(({ step, icon, title, label, copy }) => <article key={title}>
-            <span className="landing-feature-step">{step}</span>
-            <span className="landing-feature-icon"><Icon name={icon} /></span>
-            <div><small>{label}</small><h3>{title}</h3></div>
-            <p>{copy}</p>
-          </article>)}
-        </div>
-      </motion.section>
-
-      <motion.section className="landing-final-cta" {...reveal(reduced)}>
-        <div><span className="landing-section-index">COMECE PELO PRÓXIMO TREINO</span><h2>Menos tempo organizando. Mais clareza para evoluir.</h2><p>Abra o Fit Pro Player e monte a sua primeira rotina em poucos minutos.</p></div>
-        <div className="landing-final-actions">
-          <Button variant="primary" icon="figureStrength" disabled={entryUnavailable} onClick={primaryAction}>{primaryLabel}</Button>
-          <span>{localEntry ? 'Os dados ficam salvos neste navegador.' : 'Protegido pela sua conta Supabase.'}</span>
-        </div>
-      </motion.section>
+      </section>
 
       <footer className="landing-footer">
-        <a className="landing-footer-brand" href="#top"><img src={BRAND_LOGO} alt="" /><span>FIT PRO PLAYER</span></a>
-        <p>Treine com intenção. Acompanhe com clareza.</p>
-        <nav aria-label="Documentos legais"><a href="#/privacy">Privacidade</a><a href="#/terms">Termos</a><a href="#/data-rights">Direitos dos titulares</a></nav>
-        <span>Todos os direitos reservados.</span>
+        <a className="landing-footer-brand" href="#top">
+          <img src={BRAND_LOGO} alt="" />
+          <span>Fit Pro Player</span>
+        </a>
+        <nav aria-label="Documentos legais">
+          <a href="#/privacy">Privacidade</a>
+          <a href="#/terms">Termos</a>
+          <a href="#/data-rights">Direitos dos titulares</a>
+        </nav>
       </footer>
     </main>
   )

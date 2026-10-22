@@ -24,17 +24,14 @@ vi.mock('../components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthShe
 vi.mock('../lib/demo.js', () => ({ DEMO: false, get STANDALONE() { return mocks.standalone } }))
 vi.mock('../lib/i18n.js', () => ({ t: value => value === 'your fingerprint, face or PIN' ? 'biometria ou PIN' : value }))
 vi.mock('../lib/exercises.js', () => {
-  const ids = ['0025', '0043', '0032', '0198', '0334']
+  const ids = ['0025', '0043', '0032']
   return {
-    EXIDX: Object.fromEntries(ids.map((id, index) => [id, { id, n: `Exercise ${index + 1}`, eq: 'barbell' }])),
+    EXIDX: Object.fromEntries(ids.map((id, index) => [id, { id, n: `Exercise ${index + 1}`, eq: 'barbell', bp: 'chest' }])),
     exerciseName: exercise => exercise.n,
   }
 })
 vi.mock('../components/ExerciseGuideAnimation.jsx', () => ({
   default: ({ ex, playing }) => React.createElement('div', { 'data-exercise': ex.id, 'data-playing': playing }),
-}))
-vi.mock('../components/AvatarImage.jsx', () => ({
-  default: ({ avatarId }) => React.createElement('img', { 'data-avatar': avatarId, alt: '' }),
 }))
 vi.mock('../components/BodyMap.jsx', () => ({
   default: props => React.createElement('div', { 'data-body': props.body, 'data-thresholds': !!props.thresholds }),
@@ -59,7 +56,6 @@ beforeEach(() => {
   Object.defineProperty(globalThis, 'navigator', { configurable: true, value: dom.navigator })
   for (const key of ['HTMLElement', 'HTMLIFrameElement', 'Node', 'Element', 'Event', 'MouseEvent', 'KeyboardEvent']) globalThis[key] = dom[key]
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
-  dom.HTMLElement.prototype.scrollBy = vi.fn()
   container = document.createElement('div')
   document.body.append(container)
   root = createRoot(container)
@@ -75,54 +71,34 @@ afterEach(async () => {
 const button = label => [...container.querySelectorAll('button')].find(item => item.textContent.trim() === label)
 
 describe('public landing page', () => {
-  it('places an invisible-control promo video below the hero statistics', async () => {
-    const observers = []
-    dom.IntersectionObserver = class {
-      constructor(callback) {
-        this.callback = callback
-        this.targets = []
-        observers.push(this)
-      }
-      observe = vi.fn(target => this.targets.push(target))
-      unobserve = vi.fn(() => {})
-      disconnect = vi.fn(() => {})
-    }
-    globalThis.IntersectionObserver = dom.IntersectionObserver
-
+  it('keeps a short product page without marketing filler', async () => {
     await act(async () => { root.render(<Landing />) })
 
-    const stats = container.querySelector('.landing-trust')
-    const videoSection = container.querySelector('[data-landing-promo-video]')
-    const video = videoSection.querySelector('video')
-    video.play = vi.fn().mockResolvedValue(undefined)
-    video.pause = vi.fn()
-    expect(stats.closest('.landing-hero').nextElementSibling).toBe(videoSection)
-    expect(video.getAttribute('src')).toBe('/fit-pro-player-1min.mp4')
-    expect(video.controls).toBe(false)
-    expect(video.muted).toBe(false)
-    expect(video.hasAttribute('playsinline')).toBe(true)
-
-    const videoObserver = observers.find(item => item.targets.includes(videoSection))
-    expect(videoObserver).toBeTruthy()
-    await act(async () => { videoObserver.callback([{ isIntersecting: true }]) })
-    expect(video.play).toHaveBeenCalled()
-    await act(async () => { videoObserver.callback([{ isIntersecting: false }]) })
-    expect(video.pause).toHaveBeenCalled()
-    expect(videoObserver.disconnect).toBeTruthy()
+    expect(container.querySelector('[data-landing-promo-video]')).toBeNull()
+    expect(container.querySelector('.landing-trust')).toBeNull()
+    expect(container.querySelector('.landing-eyebrow')).toBeNull()
+    expect(container.querySelector('.landing-feature-list')).toBeNull()
+    expect(container.querySelector('.landing-final-cta')).toBeNull()
+    expect(container.querySelector('.landing-exercise-carousel')).toBeNull()
+    expect(container.querySelector('.landing-nav nav')).toBeNull()
+    expect(container.textContent).not.toContain('Como funciona')
+    expect(container.textContent).not.toContain('BIBLIOTECA VISUAL')
+    expect(container.textContent).not.toContain('SEU TREINO, SEM RUÍDO')
   })
 
-  it('shows the product story and enters the standalone app explicitly', async () => {
+  it('shows brand, home preview, workout and body map, then enters the app', async () => {
     await act(async () => { root.render(<Landing />) })
 
-    expect(container.querySelector('h1').textContent).toContain('Treine com contexto')
-    expect(container.querySelector('.landing-hero-copy').firstElementChild.classList.contains('landing-hero-logo')).toBe(true)
-    expect(container.querySelector('.landing-nav-cta').classList.contains('landing-nav-cta--accent')).toBe(true)
-    expect(container.querySelector('.landing-hero-logo').nextElementSibling.classList.contains('landing-eyebrow')).toBe(true)
-    expect(container.querySelector('[data-avatar]').getAttribute('data-avatar')).toBe('avatar-27')
-    expect(container.querySelectorAll('[data-exercise]').length).toBe(6)
-    expect(container.querySelector('[data-points]').getAttribute('data-points')).toBe('9')
+    expect(container.querySelector('.landing-hero-logo')).toBeTruthy()
+    expect(container.querySelector('h1').textContent).toMatch(/treino|plan|evolu/i)
+    expect(container.querySelector('[aria-label="Prévia da tela inicial do aplicativo"]')).toBeTruthy()
+    expect(container.textContent).toContain('Hoje')
+    expect(container.querySelector('[data-points]')).toBeTruthy()
+    expect(container.querySelector('[aria-label="Prévia de um treino em andamento"]')).toBeTruthy()
+    expect(container.querySelectorAll('[data-exercise]').length).toBe(1)
     expect(container.querySelector('[data-body]').getAttribute('data-body')).toBe('male')
-    expect(button('Equilíbrio muscular').getAttribute('aria-selected')).toBe('true')
+    expect(button('Equilíbrio')).toBeTruthy()
+    expect(container.querySelector('.landing-nav-cta').classList.contains('landing-nav-cta--accent')).toBe(true)
     expect(container.textContent).not.toContain('Supabase')
 
     await act(async () => { button('Começar agora').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
@@ -161,28 +137,14 @@ describe('public landing page', () => {
     expect(mocks.openAuthSheet).toHaveBeenCalledWith('entry')
   })
 
-  it('keeps statistics under visitor control and pauses the exercise previews', async () => {
+  it('lets visitors switch body analysis views', async () => {
     await act(async () => { root.render(<Landing />) })
 
     await act(async () => { button('Fadiga').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
     expect(button('Fadiga').getAttribute('aria-selected')).toBe('true')
-    expect(container.textContent).toContain('Recuperação em andamento')
 
     await act(async () => { button('Fadiga').dispatchEvent(new dom.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })) })
     expect(button('Força').getAttribute('aria-selected')).toBe('true')
-    expect(container.textContent).toContain('Força retida')
-
-    await act(async () => { button('Pausar animações').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
-    expect(button('Continuar animações')).toBeTruthy()
-    expect(container.querySelector('.landing-exercise-track').classList.contains('is-paused')).toBe(true)
-  })
-
-  it('exposes previous and next controls for the exercise carousel', async () => {
-    await act(async () => { root.render(<Landing />) })
-    const controls = [...container.querySelectorAll('.landing-carousel-control')]
-    expect(controls).toHaveLength(2)
-    await act(async () => { controls[1].dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
-    expect(dom.HTMLElement.prototype.scrollBy).toHaveBeenCalledWith(expect.objectContaining({ behavior: 'smooth' }))
   })
 
   it('builds a marked one-month weight-loss series', () => {
