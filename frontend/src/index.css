@@ -2171,6 +2171,26 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .cols{display:block}
 @media (min-width:1000px){
   #app{max-width:1080px;padding-top:calc(32px + var(--sat))}
+  /* Main content uses the same wide desktop canvas as Plan. The active
+     workout remains deliberately compact so its set controls stay reachable. */
+  .home-view,.library-view,.history-view,.workout-start-view{max-width:1080px}
+  .home-route-scenery::before,.page-scenery::before{width:min(100vw,1080px)}
+  .home-route-scenery::before{height:500px;background-position:center top}
+  .page-scenery::before{height:420px;background-position:center top}
+  .profile-hero{min-height:210px;margin-top:18px;padding:34px 34px 28px 244px}
+  .profile-hero::after{left:244px;right:18px}
+  .profile-hero-avatar{left:12px;width:216px;height:256px}
+  .profile-hero-content{gap:12px}
+  .profile-hero-name{font-size:clamp(30px,3vw,42px)}
+  .profile-hero-facts{font-size:15px}
+  .profile-hero-goal-head,.profile-hero-goal-head strong{font-size:13px}
+  .profile-hero-progress{height:5px}
+  .home-titlebar{margin-bottom:20px}.home-titlebar h1{font-size:42px}.hdr .sub{font-size:16px}
+  .home-now{padding:18px 4px 28px}.home-now h2{font-size:28px}.home-now-kicker{font-size:15px}.home-now-context{font-size:14px}.home-now-context b{font-size:14px}
+  .home-section-head h2{font-size:21px}.home-section-head>div:first-child>span{font-size:13px}
+  .home-week-block,.home-weight-block,.home-recent-block{padding-block:24px}
+  .home-weight-reading>button strong{font-size:42px}.home-weight-reading>button span{font-size:16px}
+  .home-recent-list .workout-row{min-height:68px}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
   .cols>*{min-width:0}
   #app .list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
