@@ -4,8 +4,9 @@ import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { DEMO, STANDALONE } from '../lib/demo.js'
 import { EXIDX, exerciseName, exOr } from '../lib/exercises.js'
+import { EXERCISE_SPRITE_POPULARITY_IDS } from '../lib/exercise-guide-assets.js'
 import { setLabel } from '../lib/history.js'
-import { DAYS, exCount, sentenceCase } from '../lib/format.js'
+import { DAYS, exCount, fmtDate, fmtNum, sentenceCase } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import Media from '../components/Media.jsx'
 import BodyMap from '../components/BodyMap.jsx'
@@ -17,13 +18,26 @@ import '../workout-player.css'
 import '../landing.css'
 
 const DAY = 86400000
-const DEMO_EX_ID = EXIDX['0025'] ? '0025' : Object.keys(EXIDX)[0]
 const BRAND_LOGO = '/brand-logo.png'
+const WORKOUT_INTERVAL_MS = 3200
+const WEIGHT_INTERVAL_MS = 1600
+
+const SHOWCASE_EXERCISES = EXERCISE_SPRITE_POPULARITY_IDS
+  .map(id => EXIDX[id])
+  .filter(Boolean)
+  .slice(0, 8)
 
 const BALANCE_LOAD = {
   chest: 18, 'upper-back': 17, deltoids: 14, biceps: 9, triceps: 11,
   abs: 10, obliques: 7, gluteal: 16, quadriceps: 19, hamstring: 14, calves: 8,
 }
+
+const FIXED_MUSCLE_STATS = [
+  { label: 'Costas superior', sets: BALANCE_LOAD['upper-back'] },
+  { label: 'Ombros', sets: BALANCE_LOAD.deltoids },
+  { label: 'Tríceps', sets: BALANCE_LOAD.triceps },
+  { label: 'Bíceps', sets: BALANCE_LOAD.biceps },
+]
 const FATIGUE_LOAD = {
   chest: .68, 'upper-back': .28, deltoids: .55, biceps: .22, triceps: .62,
   abs: .18, obliques: .12, gluteal: .34, quadriceps: .47, hamstring: .30, calves: .08,
@@ -87,8 +101,10 @@ function PhoneFrame({ label, children, tall }) {
   )
 }
 
-function HomePreview() {
+function HomePreview({ reduced }) {
   const points = useMemo(() => buildWeightPreviewPoints(), [])
+  const [cursor, setCursor] = useState(0)
+  const [manual, setManual] = useState(false)
   const today = new Date()
   const dateLabel = today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })
   const week = [
@@ -100,6 +116,24 @@ function HomePreview() {
     { day: 6, date: 12, dot: '' },
     { day: 0, date: 13, dot: '', today: true },
   ]
+  const point = points[cursor] || points.at(-1)
+  const previous = cursor > 0 ? points[cursor - 1] : null
+  const delta = previous ? point.y - previous.y : null
+
+  useEffect(() => {
+    if (manual || reduced || points.length < 2) return undefined
+    const timer = setInterval(() => {
+      setCursor(index => (index + 1) % points.length)
+    }, WEIGHT_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [manual, reduced, points.length])
+
+  const selectPoint = next => {
+    const index = points.findIndex(item => item.d === next.iso || item.d === next.d || item.t === next.t)
+    if (index < 0) return
+    setManual(true)
+    setCursor(index)
+  }
 
   return (
     <PhoneFrame label="Prévia da tela inicial do aplicativo">
@@ -149,18 +183,33 @@ function HomePreview() {
           <div className="home-section-head">
             <div>
               <h2>{t('Body weight')}</h2>
-              <span>13 set</span>
+              <span>{fmtDate(point.d, true)}</span>
             </div>
           </div>
           <div className="home-weight-reading">
             <button type="button" tabIndex={-1}>
-              <strong>79,8</strong><span>kg</span>
+              <strong>{fmtNum(point.y)}</strong><span>kg</span>
             </button>
-            <span style={{ color: 'var(--acc)' }}><Icon name="arrowDown" />0,5 kg</span>
-            <small><Icon name="target" />0,3 kg</small>
+            {delta != null && Math.abs(delta) >= 0.05 && (
+              <span style={{ color: 'var(--acc)' }}>
+                <Icon name={delta > 0 ? 'arrowUp' : 'arrowDown'} />
+                {fmtNum(Math.abs(delta))} kg
+              </span>
+            )}
+            <small><Icon name="target" />{fmtNum(Math.abs(point.y - 79.5))} kg</small>
           </div>
-          <div className="chart home-weight-chart">
-            <LineChart points={points} h={104} unit="kg" goal={79.5} />
+          <div
+            className="chart home-weight-chart landing-weight-interactive"
+            onPointerDown={() => setManual(true)}
+          >
+            <LineChart
+              points={points}
+              h={104}
+              unit="kg"
+              goal={79.5}
+              selectedDate={point.d}
+              onPointEdit={selectPoint}
+            />
           </div>
         </section>
       </div>
@@ -168,23 +217,51 @@ function HomePreview() {
   )
 }
 
-function WorkoutPreview() {
-  const exercise = exOr(DEMO_EX_ID)
+function WorkoutPreview({ reduced }) {
+  const exercises = SHOWCASE_EXERCISES.length ? SHOWCASE_EXERCISES : Object.values(EXIDX).slice(0, 4)
+  const [index, setIndex] = useState(0)
+  const [manual, setManual] = useState(false)
+  const exercise = exercises[index] || exOr(Object.keys(EXIDX)[0])
+  const loads = [
+    { w: 60, r: 10 },
+    { w: 70, r: 8 },
+    { w: 80, r: 5 },
+    { w: 40, r: 12 },
+    { w: 25, r: 15 },
+    { w: 50, r: 10 },
+    { w: 55, r: 8 },
+    { w: 35, r: 12 },
+  ]
+  const load = loads[index % loads.length]
   const entry = {
-    id: DEMO_EX_ID,
-    target: { sets: 3, reps: 10, weight: 62.5 },
+    id: exercise.id,
+    target: { sets: 3, reps: load.r, weight: load.w },
     sets: [
-      { w: 60, r: 10, done: true },
-      { w: 62.5, r: 10, done: true },
-      { w: 62.5, r: 8, done: false },
+      { w: load.w, r: load.r, done: true },
+      { w: load.w + 2.5, r: load.r, done: true },
+      { w: load.w + 2.5, r: Math.max(5, load.r - 2), done: false },
     ],
   }
   const current = entry.sets[2]
   const currentLabel = setLabel(entry.id, current, entry.target, 'kg')
+  const total = exercises.length
+
+  useEffect(() => {
+    if (manual || reduced || total < 2) return undefined
+    const timer = setInterval(() => {
+      setIndex(value => (value + 1) % total)
+    }, WORKOUT_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [manual, reduced, total])
+
+  const go = direction => {
+    setManual(true)
+    setIndex(value => (value + direction + total) % total)
+  }
 
   return (
     <PhoneFrame label="Prévia de um treino em andamento" tall>
-      <div className="narrow active-workout workout-player-page landing-screen-clone">
+      <div className="narrow active-workout workout-player-page landing-screen-clone landing-workout-interactive">
         <div className="workout-session-bar">
           <div className="hdr workout-session-header">
             <div className="workout-session-title">
@@ -195,7 +272,7 @@ function WorkoutPreview() {
           </div>
         </div>
 
-        <section className="wp-exercise-player is-locked" data-exidx={0}>
+        <section className="wp-exercise-player is-locked" data-exidx={index}>
           <div className="wp-series-status"><span>{t('Sets')}</span><strong>2/3</strong></div>
           <div className="wp-series-track" role="progressbar" aria-label={t('Sets')} aria-valuemin={0} aria-valuemax={3} aria-valuenow={2}>
             <span className="wp-series-segment is-done" />
@@ -209,19 +286,43 @@ function WorkoutPreview() {
               <h2 className="wp-exercise-title workout-exercise-name">{exerciseName(exercise)}</h2>
               <div className="wp-exercise-target">{currentLabel}</div>
             </div>
-            <div className="wp-media"><Media ex={exercise} /></div>
-            <button type="button" className="wp-exercise-nav wp-exercise-nav--previous" aria-label={t('Previous exercise')} disabled tabIndex={-1}><Icon name="chevronLeft" /></button>
-            <button type="button" className="wp-exercise-nav wp-exercise-nav--next" aria-label={t('Next exercise')} tabIndex={-1}><Icon name="chevronRight" /></button>
+            <div className="wp-media"><Media ex={exercise} key={exercise.id} /></div>
+            <button
+              type="button"
+              className="wp-exercise-nav wp-exercise-nav--previous"
+              aria-label={t('Previous exercise')}
+              disabled={total < 2}
+              onClick={() => go(-1)}
+            >
+              <Icon name="chevronLeft" />
+            </button>
+            <button
+              type="button"
+              className="wp-exercise-nav wp-exercise-nav--next"
+              aria-label={t('Next exercise')}
+              disabled={total < 2}
+              onClick={() => go(1)}
+            >
+              <Icon name="chevronRight" />
+            </button>
+          </div>
+
+          <div className="wp-exercise-dots" aria-hidden="true">
+            {exercises.map((item, dotIndex) => (
+              <span key={item.id} className={'wp-exercise-dot' + (dotIndex === index ? ' is-active' : dotIndex < index ? ' is-done' : '')} />
+            ))}
           </div>
 
           <div className="wp-current-set">
-            <div className="exercise-input-status"><span>{t('Sets')} 3/3</span></div>
+            <div className="exercise-input-status">
+              <span>{t('Exercise {0} / {1}', index + 1, total)}</span>
+            </div>
             <div className="wp-current-controls" data-metrics={2}>
               <div className="wp-metric">
                 <span className="wp-metric-label">{t('Weight ({0})', 'kg')}</span>
                 <div className="stp w">
                   <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="minus" /></button>
-                  <span className="val">62,5</span>
+                  <span className="val">{fmtNum(current.w)}</span>
                   <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="plus" /></button>
                 </div>
               </div>
@@ -229,7 +330,7 @@ function WorkoutPreview() {
                 <span className="wp-metric-label">{t('Reps')}</span>
                 <div className="stp r">
                   <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="minus" /></button>
-                  <span className="val">8</span>
+                  <span className="val">{fmtNum(current.r)}</span>
                   <button type="button" className="wp-bump-btn" tabIndex={-1} disabled><Icon name="plus" /></button>
                 </div>
               </div>
@@ -304,6 +405,14 @@ function StatsPreview() {
           aria-labelledby={`landing-tab-${view.id}`}
         >
           <BodyMap load={view.load} thresholds={view.thresholds} body="male" decorative />
+        </div>
+        <div className="landing-muscle-stats" aria-label="Séries por grupo muscular">
+          {FIXED_MUSCLE_STATS.map(row => (
+            <div className="landing-muscle-row" key={row.label}>
+              <span>{row.label}</span>
+              <strong>{row.sets} {t(row.sets === 1 ? 'set' : 'sets')}</strong>
+            </div>
+          ))}
         </div>
       </div>
     </PhoneFrame>
@@ -406,13 +515,13 @@ export default function Landing({ invitePath = false }) {
         </motion.section>
 
         <section className="landing-showcase">
-          <HomePreview />
+          <HomePreview reduced={reduced} />
         </section>
 
         <section className="landing-block" id="treino">
           <h2>Treino</h2>
           <p>Mesma tela de séries, carga e animação.</p>
-          <WorkoutPreview />
+          <WorkoutPreview reduced={reduced} />
         </section>
 
         <section className="landing-block" id="estatisticas">

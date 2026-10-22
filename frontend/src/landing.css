@@ -297,10 +297,54 @@ body.landing-mode #tabbar {
 .landing-screen-clone .home-now-actions .btn,
 .landing-screen-clone .wp-main-action,
 .landing-screen-clone .wp-bump-btn,
-.landing-screen-clone .wp-exercise-nav,
 .landing-screen-clone .wday,
 .landing-screen-clone .home-weight-reading button {
   pointer-events: none;
+}
+
+.landing-workout-interactive .wp-exercise-nav {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.landing-workout-interactive .wp-exercise-nav:disabled {
+  pointer-events: none;
+}
+
+.landing-weight-interactive {
+  pointer-events: auto;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.landing-muscle-stats {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 4px 2px 8px;
+}
+
+.landing-muscle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  padding: 0 2px;
+  border-top: var(--hair) solid var(--sep-op);
+  color: var(--label-2);
+  font-size: 13px;
+}
+
+.landing-muscle-row:first-child {
+  border-top: 0;
+}
+
+.landing-muscle-row strong {
+  color: var(--label);
+  font-size: 13px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
 }
 
 .landing-screen-clone .workout-session-bar {
