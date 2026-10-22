@@ -22,7 +22,7 @@ export default function Library() {
   const eqOn = eqOpts.includes(eq) ? eq : ''
   const f = eqOn ? base.filter(e => e.eq === eqOn) : base
 
-  return <div className="library-view page-scenery">
+  return <div className="library-view">
     <AppHeader title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)} backTo="/more" />
     <div style={{ marginBottom: 10 }}>
       <SearchField placeholder={t('Search…')} value={q}

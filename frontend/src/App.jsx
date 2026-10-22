@@ -490,7 +490,7 @@ function Shell() {
       <PageTransition>
         <ErrorBoundary resetKey={`${loc.pathname}${loc.search}`}>
           {publicPrivacyPath ? <PrivacyPages kind={loc.pathname === '/terms' ? 'terms' : loc.pathname === '/data-rights' ? 'rights' : 'privacy'} /> : !(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
-            <>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
+            <div className={loc.pathname === '/home' ? 'home-route-scenery' : undefined}>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
                 <Route path="/tests/home-glass" element={<HomeGlass />} />
                 <Route path="/privacy" element={<PrivacyPages kind="privacy" />} />
@@ -543,7 +543,7 @@ function Shell() {
                 <Route path="/console/faq" element={<ConsoleFaq />} />
                 <Route path="/console/faq/:articleId" element={<ConsoleFaqEditor />} />
                 <Route path="*" element={<Navigate to="/home" replace />} />
-              </Routes></Suspense></>
+              </Routes></Suspense></div>
           )}
         </ErrorBoundary>
       </PageTransition>

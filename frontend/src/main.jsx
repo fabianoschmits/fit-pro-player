@@ -9,6 +9,7 @@ import AppStatus from './components/AppStatus.jsx'
 import { installDiagnostics } from './lib/diagnostics.js'
 import { installPwaViewport } from './lib/pwa-viewport.js'
 import { pwaInstaller } from './lib/pwa-install.js'
+import { preloadPageScenery } from './lib/page-scenery-cache.js'
 import './index.css'
 import './professional.css'
 import './motion-feedback.css'
@@ -94,6 +95,9 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
     document.addEventListener('visibilitychange', checkForUpdate)
     navigator.serviceWorker.ready.then(() => {
       checkForUpdate()
+      const preloadScenery = () => { void preloadPageScenery(document.documentElement.dataset.theme) }
+      if ('requestIdleCallback' in window) window.requestIdleCallback(preloadScenery, { timeout: 5000 })
+      else window.setTimeout(preloadScenery, 1500)
       const preload = () => preloadCoreRoutes().catch(() => {})
       if ('requestIdleCallback' in window) window.requestIdleCallback(preload, { timeout: 5000 })
       else window.setTimeout(preload, 1500)
