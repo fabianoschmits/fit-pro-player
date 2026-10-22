@@ -1188,7 +1188,7 @@ function DayAssign({ day, close }) {
 }
 export const dayAssignSheet = day => ui().openSheet(close => <DayAssign day={day} close={close} />)
 
-export const workoutShareSheet = w => ui().openSheet(close => <WorkoutShareModal w={w} onClose={close} />)
+export const workoutShareSheet = w => ui().openSheet(close => <WorkoutShareModal w={w} onClose={close} />, { className: 'share-sheet-modal' })
 
 function WorkoutDetail({ w, close }) {
   const st = useStore(s => s.S)

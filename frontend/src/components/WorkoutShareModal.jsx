@@ -146,10 +146,11 @@ export function WorkoutShareModal({ w, onClose }) {
   useEffect(() => {
     if (!outerRef.current || !canvasRef.current) return
     const obs = new ResizeObserver(entries => {
-      const width = entries[0].contentRect.width
-      if (width > 0) {
-        canvasRef.current.style.transform = `scale(${width / 1080})`
-        canvasRef.current.style.transformOrigin = 'top left'
+      const { width, height } = entries[0].contentRect
+      if (width > 0 && height > 0) {
+        const scale = Math.min(width / 1080, height / 1920)
+        canvasRef.current.style.transform = `scale(${scale})`
+        canvasRef.current.style.transformOrigin = 'center center'
       }
     })
     obs.observe(outerRef.current)
