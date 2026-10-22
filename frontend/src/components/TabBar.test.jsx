@@ -82,12 +82,12 @@ describe('TabBar folding navigation', () => {
     expect(container.querySelector('output').textContent).toBe('/workout')
   })
 
-  it('starts collapsed with only the current destination available to assistive technology', () => {
+  it('starts expanded with all destinations available to assistive technology', () => {
     render('/stats')
-    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
     expect(toggle().getAttribute('aria-label')).toContain('Estatísticas')
-    expect(container.querySelector('.corner-nav-main').hasAttribute('inert')).toBe(true)
-    expect(container.querySelector('.corner-nav-main').getAttribute('aria-hidden')).toBe('true')
+    expect(container.querySelector('.corner-nav-main').hasAttribute('inert')).toBe(false)
+    expect(container.querySelector('.corner-nav-main').getAttribute('aria-hidden')).toBe('false')
     expect(container.querySelector('.corner-nav-more').hasAttribute('inert')).toBe(true)
   })
 
@@ -106,7 +106,6 @@ describe('TabBar folding navigation', () => {
 
   it('keeps destinations mounted during closing so the sheet can fold back', () => {
     render()
-    click(toggle())
     const sheet = container.querySelector('.corner-nav-main')
     expect(toggle().getAttribute('aria-expanded')).toBe('true')
     expect(sheet.hasAttribute('inert')).toBe(false)
@@ -133,7 +132,7 @@ describe('TabBar folding navigation', () => {
 
   it('detaches after dragging when move mode is enabled and keeps the chosen position after toggling', () => {
     render()
-    click(toggle())
+    // menu starts expanded — open the more menu directly
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
     const tabbar = container.querySelector('#tabbar')
@@ -155,7 +154,7 @@ describe('TabBar folding navigation', () => {
 
   it('snaps like a magnet to bottom footer when dragged near the bottom', () => {
     render()
-    click(toggle())
+    // menu starts expanded — open the more menu directly
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
     const tabbar = container.querySelector('#tabbar')
@@ -180,7 +179,7 @@ describe('TabBar folding navigation', () => {
 
   it('opens more above the pivot, focuses its first entry and restores focus on Escape', () => {
     render()
-    click(toggle())
+    // menu starts expanded — access more trigger directly
     const trigger = container.querySelector('.corner-nav-more-trigger')
     click(trigger)
     expect(trigger.getAttribute('aria-expanded')).toBe('true')
@@ -194,7 +193,7 @@ describe('TabBar folding navigation', () => {
 
   it('switches more menu to open downwards when moved into the upper half of the screen', () => {
     render()
-    click(toggle())
+    // menu starts expanded — open the more menu directly
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
     const tabbar = container.querySelector('#tabbar')
@@ -212,7 +211,7 @@ describe('TabBar folding navigation', () => {
 
   it('only arms movement when its option is selected and reattaches on request after a drag', () => {
     render()
-    click(toggle())
+    // menu starts expanded — open the more menu directly
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
     const tabbar = container.querySelector('#tabbar')
@@ -230,7 +229,7 @@ describe('TabBar folding navigation', () => {
 
   it('keeps the expanded menu unchanged while the page scrolls', () => {
     render('/stats')
-    click(toggle())
+    // menu starts expanded — no click needed
     const tabbar = container.querySelector('#tabbar')
     const before = tabbar.innerHTML
     act(() => window.dispatchEvent(new Event('scroll')))
@@ -240,29 +239,28 @@ describe('TabBar folding navigation', () => {
 
   it('keeps body progress active inside body progress under stats context', () => {
     render('/body-progress')
-    click(toggle())
+    // menu starts expanded — tabs visible without click
     expect(container.querySelector('[data-tab-key="body-progress"]').getAttribute('aria-current')).toBe('page')
   })
 
   it('preserves navigation and the workout entry point after expanding', () => {
     render()
-    click(toggle())
+    // menu starts expanded — click tab directly
     click(container.querySelector('[data-tab-key="start"]'))
     expect(container.querySelector('output').textContent).toBe('/plan')
   })
 
-  it('also starts collapsed for an authenticated account', () => {
+  it('also starts expanded for an authenticated account', () => {
     mocks.state.isGuest = () => false
     mocks.auth = { status: 'authenticated' }
     render()
-    expect(toggle().getAttribute('aria-expanded')).toBe('false')
-    click(toggle())
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
     expect(container.querySelectorAll('.corner-nav-tab')).toHaveLength(4)
   })
 
   it('restores the expanded bottom bar after reopening the app while More starts closed', () => {
     render()
-    click(toggle())
+    // menu starts expanded — open the more menu directly
     click(container.querySelector('.corner-nav-more-trigger'))
     expect(container.querySelector('.corner-nav-more-trigger').getAttribute('aria-expanded')).toBe('true')
     reopenApp()
@@ -274,7 +272,7 @@ describe('TabBar folding navigation', () => {
 
   it('remembers a subsequent collapse instead of restoring an older expanded bar', () => {
     render()
-    click(toggle())
+    // menu starts expanded — first click collapses it, save that, reopen → still collapsed
     reopenApp()
     expect(toggle().getAttribute('aria-expanded')).toBe('true')
     click(toggle())
@@ -284,7 +282,7 @@ describe('TabBar folding navigation', () => {
 
   it('restores a moved position and persists returning the menu to the footer', () => {
     render()
-    click(toggle())
+    // menu starts expanded — open the more menu directly
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
     vi.spyOn(container.querySelector('#tabbar'), 'getBoundingClientRect').mockReturnValue({ left: 0, top: 680, width: 56, height: 52 })
@@ -296,13 +294,13 @@ describe('TabBar folding navigation', () => {
     expect(tabbar.className).toContain('is-free')
     expect(tabbar.style.left).toBe('60px')
     expect(tabbar.style.top).toBe('580px')
-    click(toggle())
+    // menu restored as open; open more and snap back to footer
     click(container.querySelector('.corner-nav-more-trigger'))
     click(container.querySelector('.corner-nav-drag-toggle'))
     reopenApp()
     expect(container.querySelector('#tabbar').className).not.toContain('is-free')
     expect(container.querySelector('#tabbar').style.top).toBe('')
-    expect(toggle().getAttribute('aria-expanded')).toBe('false')
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
   })
 
   it('fits a restored floating pivot to the current viewport', () => {
@@ -315,8 +313,17 @@ describe('TabBar folding navigation', () => {
     expect(toggle().getAttribute('aria-expanded')).toBe('true')
   })
 
-  it.each(['{broken', JSON.stringify({ open: 'true', position: { x: '20', y: 40 } })])('handles invalid stored preferences safely: %s', value => {
-    window.localStorage.setItem('fpp_navigation_layout_v1', value)
+  it('handles unparseable stored preferences safely — falls back to open', () => {
+    // JSON.parse throws → catch returns open:true
+    window.localStorage.setItem('fpp_navigation_layout_v1', '{broken')
+    render()
+    expect(toggle().getAttribute('aria-expanded')).toBe('true')
+    expect(container.querySelector('#tabbar').className).not.toContain('is-free')
+  })
+
+  it('handles stored preferences with invalid types safely — falls back to closed', () => {
+    // open is a string 'true' (not boolean) → open === true is false → collapsed
+    window.localStorage.setItem('fpp_navigation_layout_v1', JSON.stringify({ open: 'true', position: { x: '20', y: 40 } }))
     render()
     expect(toggle().getAttribute('aria-expanded')).toBe('false')
     expect(container.querySelector('#tabbar').className).not.toContain('is-free')

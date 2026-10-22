@@ -186,7 +186,7 @@ it('blocks duplicate FAQ saves and retains the editor for retry on failure', asy
   const submit = () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
   act(() => { submit(); submit() })
   expect(mocks.support.saveFaqArticle).toHaveBeenCalledTimes(1)
-  expect(container.querySelector('[type="submit"]').getAttribute('aria-busy')).toBe('true')
+  expect(container.querySelector('[type="submit"]').getAttribute('data-state')).toBe('loading')
   await act(async () => reject(new Error('offline')))
   expect(container.querySelector('textarea').value).toBe('Resposta revisada')
   expect(container.querySelector('[type="submit"]').disabled).toBe(false)

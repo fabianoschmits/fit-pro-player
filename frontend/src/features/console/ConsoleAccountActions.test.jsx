@@ -46,7 +46,7 @@ it('locks account writes across controls and leaves a failed name edit available
   act(() => { button('Salvar nome').click(); button('Salvar nome').click(); button('Conceder acesso profissional').click() })
   expect(mocks.repo.setDisplayName).toHaveBeenCalledTimes(1)
   expect(mocks.repo.setProfessionalRole).not.toHaveBeenCalled()
-  expect(button('Salvar nome').getAttribute('aria-busy')).toBe('true')
+  expect(button('Salvar nome').getAttribute('data-state')).toBe('loading')
   await act(async () => reject(new Error('Não foi possível salvar')))
   expect(host.querySelector('input').value).toBe('Ana revisada')
   expect(host.querySelector('[data-state="error"]').disabled).toBe(false)
