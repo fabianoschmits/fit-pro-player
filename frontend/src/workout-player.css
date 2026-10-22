@@ -342,12 +342,12 @@
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 6px;
   margin: 6px 0 10px;
-  padding: 6px 10px;
+  padding: 6px 8px;
   border-radius: 12px;
-  font-size: clamp(9px, 2.7vw, 12px);
-  line-height: 1.25;
+  font-size: clamp(8px, 2.35vw, 11.5px);
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
 }
@@ -368,10 +368,9 @@
   min-width: 0;
   font-size: inherit;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: -0.015em;
 }
-.workout-player-page .wp-cancel-set { min-height: 36px; padding: 4px 10px; flex-shrink: 0; margin-left: auto; font-size: 11px; }
+.workout-player-page .wp-cancel-set { display: none; }
 .workout-player-page .ex-done-banner { margin: 12px 0; border-radius: 18px; }
 
 /* Secondary information stays available without competing with the next set. */

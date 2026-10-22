@@ -51,18 +51,14 @@ afterEach(() => {
 })
 
 describe('workout exercise player', () => {
-  it('shows the execution signal only while a set is running and removes it on cancel, completion and rest', () => {
+  it('shows the execution signal only while a set is running and removes it on completion and rest', () => {
     render()
     expect(container.querySelector('.wp-execution-signal')).toBeNull()
 
     click('.wp-main-action')
     expect(container.querySelector('.wp-main-action.is-executing .wp-execution-signal')?.getAttribute('aria-hidden')).toBe('true')
     expect(container.querySelector('.wp-main-action').getAttribute('aria-label')).toBe('Concluir série 1')
-    click('.wp-cancel-set')
-    expect(container.querySelector('.wp-execution-signal')).toBeNull()
 
-    click('.wp-main-action')
-    expect(container.querySelector('.wp-execution-signal')).toBeTruthy()
     click('.wp-main-action')
     expect(rows().map(row => row.done)).toEqual([true, false])
     expect(container.querySelector('.wp-execution-signal')).toBeNull()
@@ -101,11 +97,11 @@ describe('workout exercise player', () => {
     expect(rows()[0].done).toBe(false)
   })
 
-  it('cancels an accidental manual start without logging a set or starting rest', () => {
+  it('stops manual set when stopManualSet is called without logging a set or starting rest', () => {
     render()
     click('.wp-main-action')
     expect(useUI.getState().manualSet).toBeTruthy()
-    click('.wp-cancel-set')
+    act(() => useUI.getState().stopManualSet())
     expect(useUI.getState().manualSet).toBeNull()
     expect(useUI.getState().timer).toBeNull()
     expect(rows().map(row => row.done)).toEqual([false, false])

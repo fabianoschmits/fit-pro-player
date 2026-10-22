@@ -152,7 +152,6 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
     {current && !locked && <div id={hintId} className={'set-execution-hint' + (resting ? ' is-resting' : '')}>
       <strong><Icon name={resting ? 'moon' : executing ? 'flame' : 'play'} />{resting ? t('Resting') : executing ? t('Performing set') : t('Start set')}</strong>
       <span>{resting ? t('When rest ends, tap play to start the next set.') : executing ? t('Tap the highlighted check field when you finish this set.') : t('Tap play to start this set.')}</span>
-      {executing && manualSet && <Button variant="ghost" size="sm" intent="quick" className="wp-cancel-set" onClick={() => useUI.getState().stopManualSet()}>{t('Cancel')}</Button>}
     </div>}
     {/* A timed superset may already show its next member while the previous member owns rest. */}
     <WorkSetOverlay entryIdx={working?.phase === 'rest' ? working.entryIdx : entryIdx} />
