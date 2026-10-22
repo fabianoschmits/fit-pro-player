@@ -21,4 +21,24 @@ describe('preloadPageScenery', () => {
     expect(requested).toHaveLength(4)
     expect(requested.every(url => url.includes('dark'))).toBe(true)
   })
+
+  it('decodes each background after it loads so CSS can paint it without a later decode', async () => {
+    let decoded = 0
+    const NativeImage = window.Image
+    class ImageProbe extends NativeImage {
+      decode() {
+        decoded += 1
+        return Promise.resolve()
+      }
+
+      set src(value) {
+        queueMicrotask(() => this.onload?.())
+      }
+    }
+    vi.stubGlobal('Image', ImageProbe)
+
+    await preloadPageScenery('light')
+
+    expect(decoded).toBe(4)
+  })
 })

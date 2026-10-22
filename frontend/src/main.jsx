@@ -23,6 +23,10 @@ createRoot(document.getElementById('root')).render(
   <StrictMode><AuthProvider><App /><AppStatus /></AuthProvider></StrictMode>
 )
 
+// Backgrounds are CSS images, so request and decode them before a route first
+// needs to paint them. Waiting for the service worker/idle time caused a flash.
+void preloadPageScenery(document.documentElement.dataset.theme)
+
 // Not in the mobile build: the native shell already serves everything from disk.
 if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' || ['localhost', '127.0.0.1'].includes(location.hostname))) {
   const hadController = !!navigator.serviceWorker.controller
@@ -95,9 +99,6 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
     document.addEventListener('visibilitychange', checkForUpdate)
     navigator.serviceWorker.ready.then(() => {
       checkForUpdate()
-      const preloadScenery = () => { void preloadPageScenery(document.documentElement.dataset.theme) }
-      if ('requestIdleCallback' in window) window.requestIdleCallback(preloadScenery, { timeout: 5000 })
-      else window.setTimeout(preloadScenery, 1500)
       const preload = () => preloadCoreRoutes().catch(() => {})
       if ('requestIdleCallback' in window) window.requestIdleCallback(preload, { timeout: 5000 })
       else window.setTimeout(preload, 1500)

@@ -16,7 +16,10 @@ export function preloadPageScenery(theme) {
   const sources = sceneryByTheme[theme === 'light' ? 'light' : 'dark']
   return Promise.all(sources.map(source => new Promise(resolve => {
     const image = new Image()
-    image.onload = resolve
+    image.onload = () => {
+      const decoded = typeof image.decode === 'function' ? image.decode() : undefined
+      Promise.resolve(decoded).catch(() => {}).then(resolve)
+    }
     image.onerror = resolve
     image.src = source
   })))
