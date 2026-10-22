@@ -186,10 +186,10 @@ function readNavigationLayout() {
     const saved = JSON.parse(window.localStorage.getItem(NAVIGATION_LAYOUT_KEY) || 'null')
     const point = saved?.position
     return {
-      open: saved?.open === true,
+      open: saved === null ? true : saved?.open === true,
       position: Number.isFinite(point?.x) && Number.isFinite(point?.y) ? constrainPosition(point) : null,
     }
-  } catch { return { open: false, position: null } }
+  } catch { return { open: true, position: null } }
 }
 
 export default function TabBar({ onStart }) {
