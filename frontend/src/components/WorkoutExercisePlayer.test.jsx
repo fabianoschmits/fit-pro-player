@@ -229,4 +229,14 @@ describe('workout exercise player', () => {
     click('.wp-series-details .wp-add-set-btn')
     expect(onAddSet).toHaveBeenCalledTimes(1)
   })
+
+  it('renders Repetições label and spawns floating animation on bump buttons', () => {
+    render()
+    expect(container.textContent).toContain('Repetições')
+    expect(container.querySelector('.wp-bump-float')).toBeNull()
+    click('.wp-current-controls .w button:last-child')
+    expect(container.querySelector('.wp-bump-float--plus')?.textContent).toBe('+')
+    click('.wp-current-controls .w button:first-child')
+    expect(container.querySelector('.wp-bump-float--minus')?.textContent).toBe('−')
+  })
 })

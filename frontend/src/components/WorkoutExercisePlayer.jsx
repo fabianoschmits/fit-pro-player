@@ -65,19 +65,38 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
   const kind = ['rir', 'rpe'].includes(cfg.effort) ? cfg.effort : effortOf(S)
   const col3 = mode === 'reps' && EFFORT[kind] ? { ...EFFORT[kind], eff: kind, dec: true, opt: true, hd: t(EFFORT[kind].hd) } : null
   const columns = [{ col: col1, cls: 'w' }, ...(col2 ? [{ col: col2, cls: 'r' }] : []), ...(col3 ? [{ col: col3, cls: 'eff' }] : [])]
+  const [floats, setFloats] = useState([])
+  const nextFloatId = useRef(1)
+
   const bump = (s, i, col, direction) => {
     const value = col.eff ? stepEffort(col.eff, s[col.f], direction)
       : Math.max(0, Math.round(((s[col.f] || 0) + direction * col.step) * 100) / 100)
+    const floatId = nextFloatId.current++
+    const btnKey = `${col.f}-${direction > 0 ? 'inc' : 'dec'}`
+    setFloats(prev => [...prev, { id: floatId, btnKey, symbol: direction > 0 ? '+' : '−' }])
+    setTimeout(() => {
+      setFloats(prev => prev.filter(f => f.id !== floatId))
+    }, 700)
     onField(i, col.f, value)
   }
-  const cell = (s, i, col, cls) => <div className={'stp ' + cls}>
-    <button type="button" aria-label={`${t('Decrease')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, -1)}><Icon name="minus" /></button>
-    <span className="val"><NumberField decimal={col.dec} nullable={col.opt}
-      value={col.f === 'w' ? (toDisplayMass(s[col.f] ?? 0, displayUnit) ?? '') : (s[col.f] ?? '')}
-      aria-label={col.hd} disabled={locked}
-      onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : col.f === 'w' ? fromDisplayMass(v, displayUnit) : v)} /></span>
-    <button type="button" aria-label={`${t('Increase')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, 1)}><Icon name="plus" /></button>
-  </div>
+  const cell = (s, i, col, cls) => {
+    const decFloats = floats.filter(f => f.btnKey === `${col.f}-dec`)
+    const incFloats = floats.filter(f => f.btnKey === `${col.f}-inc`)
+    return <div className={'stp ' + cls}>
+      <button type="button" className="wp-bump-btn" aria-label={`${t('Decrease')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, -1)}>
+        <Icon name="minus" />
+        {decFloats.map(f => <span key={f.id} className="wp-bump-float wp-bump-float--minus" aria-hidden="true">{f.symbol}</span>)}
+      </button>
+      <span className="val"><NumberField decimal={col.dec} nullable={col.opt}
+        value={col.f === 'w' ? (toDisplayMass(s[col.f] ?? 0, displayUnit) ?? '') : (s[col.f] ?? '')}
+        aria-label={col.hd} disabled={locked}
+        onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : col.f === 'w' ? fromDisplayMass(v, displayUnit) : v)} /></span>
+      <button type="button" className="wp-bump-btn" aria-label={`${t('Increase')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, 1)}>
+        <Icon name="plus" />
+        {incFloats.map(f => <span key={f.id} className="wp-bump-float wp-bump-float--plus" aria-hidden="true">{f.symbol}</span>)}
+      </button>
+    </div>
+  }
 
   const startSet = () => {
     if (!ready) return

@@ -196,7 +196,7 @@ export default {
   "Minutes": "Minutos",
   "Speed (km/h)": "Velocidade (km/h)",
   "Sets": "Séries",
-  "Reps": "Reps",
+  "Reps": "Repetições",
   "Weight ({0})": "Peso ({0})",
   "Add to routine": "Adicionar ao treino",
   "Remove exercise": "Remover exercício",
