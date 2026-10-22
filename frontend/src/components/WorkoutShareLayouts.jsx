@@ -190,11 +190,16 @@ function PerformanceCard({ w, st, innerRef, themeId }) {
 
         {/* Footer */}
         <footer className="share-card-footer">
-          <div className="share-footer-quote">
-            <span className="share-footer-text">{t('Consistência gera resultado.')}</span>
-            <span className="share-footer-accent-line" />
+          <div className="share-footer-top-row">
+            <div className="share-footer-quote">
+              <span className="share-footer-text">{t('Consistência gera resultado.')}</span>
+              <span className="share-footer-accent-line" />
+            </div>
+            <span className="share-footer-brand">FIT PRO PLAYER</span>
           </div>
-          <span className="share-footer-brand">FIT PRO PLAYER</span>
+          <div className="share-footer-url">
+            <span>www.fitpp.com.br</span>
+          </div>
         </footer>
       </div>
     </div>
