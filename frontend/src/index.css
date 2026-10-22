@@ -524,15 +524,23 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   #tabbar.corner-nav:not(.is-free){
     --menu-width:min(480px,calc(100vw - 48px));
     --menu-height:60px;
-    left:50%;
+    left:24px;
     right:auto;
     bottom:max(20px,var(--sab));
-    transform:translateX(-50%);
+    width:64px;
     font-size:11.5px;
+    transform:none;
+  }
+  #tabbar.corner-nav:not(.is-free).is-open{
+    width:var(--menu-width);
+    transform:none;
+  }
+  #tabbar.corner-nav:not(.is-free):not(.is-open){
+    transform:none;
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-shell{
     display:flex;
-    justify-content:center;
+    justify-content:flex-start;
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-toggle{
     width:64px;
@@ -576,7 +584,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
     line-height:13px;
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-more-trigger{
-    left:11px;
+    left:10px;
     width:44px;
     height:26px;
     bottom:calc(100% + 8px);
