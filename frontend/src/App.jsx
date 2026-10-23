@@ -526,6 +526,7 @@ function Shell() {
                 <Route path="/library" element={<Library />} />
                 <Route path="/community" element={<Community />} />
                 <Route path="/community/profile" element={<Community />} />
+                <Route path="/community/user/:userId" element={<Community />} />
                 <Route path="/more" element={<Navigate to="/home" replace />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/support/tickets" element={<SupportTickets />} />

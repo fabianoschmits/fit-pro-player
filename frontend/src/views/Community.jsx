@@ -90,10 +90,13 @@ function CommunityPostSkeleton() {
 export default function Community() {
   const auth = useAuth(); const navigate = useNavigate(); const location = useLocation(); const client = getBrowserSupabaseClient()
   const profileMode = location.pathname === '/community/profile'
+  const publicUserId = location.pathname.match(/^\/community\/user\/([^/]+)$/)?.[1] || null
+  const viewedUserId = publicUserId || (profileMode ? userId : null)
   const localProfile = useStore(state => state.S.profile)
   const userId = auth.user?.id
   const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState('')
   const [ownIdentity, setOwnIdentity] = useState(null)
+  const [viewedProfile, setViewedProfile] = useState(null)
   const [showFeedTop, setShowFeedTop] = useState(false)
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
@@ -112,12 +115,15 @@ export default function Community() {
     feedLoadingRef.current = true; reset ? setLoading(true) : setLoadingMore(true); setError('')
     if (reset) { feedOffsetRef.current = 0; setHasMore(true) }
     const from = reset ? 0 : feedOffsetRef.current
+    const postsQuery = client.from('community_posts').select('*, author:profiles!community_posts_author_id_fkey(id,display_name,avatar_ref), likes:community_likes(user_id,user:profiles!community_likes_user_id_fkey(id,display_name,avatar_ref)), comments:community_comments(id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref),likes:community_comment_likes(user_id))')
+    if (viewedUserId) postsQuery.eq('author_id', viewedUserId)
     const [{ data, error: queryError }, { data: identity }] = await Promise.all([
-      client.from('community_posts').select('*, author:profiles!community_posts_author_id_fkey(id,display_name,avatar_ref), likes:community_likes(user_id,user:profiles!community_likes_user_id_fkey(id,display_name,avatar_ref)), comments:community_comments(id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref),likes:community_comment_likes(user_id))').order('created_at', { ascending: false }).range(from, from + FEED_PAGE_SIZE - 1),
-      client.from('profiles').select('id,display_name,avatar_ref').eq('id', userId).maybeSingle(),
+      postsQuery.order('created_at', { ascending: false }).range(from, from + FEED_PAGE_SIZE - 1),
+      client.from('profiles').select('id,display_name,avatar_ref').eq('id', viewedUserId || userId).maybeSingle(),
     ])
     const resolvedIdentity = identity || ownIdentity || { id: userId, display_name: localProfile?.name, avatar_ref: localProfile?.avatarRef, avatar_id: localProfile?.avatarId }
-    setOwnIdentity(resolvedIdentity)
+    if (viewedUserId && viewedUserId !== userId) setViewedProfile(identity || (data || [])[0]?.author || null)
+    else setOwnIdentity(resolvedIdentity)
     const enriched = (data || []).map(post => ({ ...post, author: post.author_id === userId ? { ...post.author, ...resolvedIdentity } : post.author, likes: (post.likes || []).map(like => like.user_id === userId ? { ...like, user: { ...like.user, ...resolvedIdentity } } : like) }))
     if (queryError) setError(queryError.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : queryError.message)
     else {
@@ -127,7 +133,7 @@ export default function Community() {
       setPosts(rankPosts(merged, feedSeedRef.current))
     }
     setLoading(false); setLoadingMore(false); feedLoadingRef.current = false
-  }, [client, userId, localProfile, hasMore, posts])
+  }, [client, userId, localProfile, hasMore, posts, viewedUserId])
   const loadNotifications = useCallback(async () => {
     if (!client || !userId) return
     const { data } = await client.from('community_notifications').select('*, actor:profiles!community_notifications_actor_id_fkey(display_name), post:community_posts(id)').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(30)
@@ -225,6 +231,7 @@ export default function Community() {
   const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setCommentsDisabled(Boolean(post.comments_disabled)); setFile(null); setComposerOpen(true) }
   const markNotificationsRead = async () => { if (unread) await client.from('community_notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))) }
   const showBlockedNotice = postId => { setBlockedNoticeId(postId); window.setTimeout(() => setBlockedNoticeId(current => current === postId ? null : current), 2200) }
+  const openUser = id => { if (id) navigate(id === userId ? '/community/profile' : `/community/user/${id}`) }
   const returnToFeedTop = async () => { window.scrollTo({ top: 0, behavior: 'smooth' }); await load(true) }
 
   return <div className="community-view page-scenery">
@@ -235,10 +242,10 @@ export default function Community() {
       <button className="community-notifications" aria-label="Notificações" onClick={() => { setNotificationsOpen(true); markNotificationsRead() }}><Icon name="bell" />{unread > 0 && <b>{unread}</b>}</button>
       <button className="community-profile-button" aria-label="Meu perfil" onClick={() => navigate('/community/profile')}><Avatar profile={{ display_name: localProfile?.name, avatar_id: localProfile?.avatarId }} /></button>
     </div>
-    {profileMode && <div className="community-profile-heading"><Avatar profile={{ display_name: localProfile?.name, avatar_id: localProfile?.avatarId }} size="sm" /><strong>{localProfile?.name || 'Meu perfil'}</strong></div>}
+    {(profileMode || publicUserId) && <div className="community-profile-heading"><Avatar profile={profileMode ? { display_name: localProfile?.name, avatar_id: localProfile?.avatarId } : viewedProfile} size="sm" /><strong>{profileMode ? (localProfile?.name || 'Meu perfil') : (viewedProfile?.display_name || 'Perfil')}</strong></div>}
     {error && <div className="community-error">{error}</div>}
-    {loading && posts.length === 0 && showSkeleton ? <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).length === 0 && !loading ? <div className="community-empty">{profileMode ? 'Você ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).map(post => <article className="community-post" key={post.id}>
-      <header className="community-post-head"><Avatar profile={post.author} /><div><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></div>{post.author_id === userId && <div className={`community-post-menu${activeMenuId === post.id ? ' is-open' : ''}`}><button type="button" className="community-more" aria-label="Mais opções" onClick={() => setActiveMenuId(current => current === post.id ? null : post.id)}>•••</button><div className="community-post-menu-actions"><button onClick={() => { setActiveMenuId(null); openEdit(post) }}>Editar</button><button onClick={() => { setActiveMenuId(null); deletePost(post) }}>Excluir</button></div></div>}</header>
+    {loading && posts.length === 0 && showSkeleton ? <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div> : posts.length === 0 && !loading ? <div className="community-empty">{profileMode ? 'Você ainda não publicou fotos.' : publicUserId ? 'Este usuário ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div> : posts.map(post => <article className="community-post" key={post.id}>
+      <header className="community-post-head"><button type="button" className="community-author-link" onClick={() => openUser(post.author_id)} aria-label={`Abrir perfil de ${post.author?.display_name || 'Usuário'}`}><Avatar profile={post.author} /><span><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></span></button>{post.author_id === userId && <div className={`community-post-menu${activeMenuId === post.id ? ' is-open' : ''}`}><button type="button" className="community-more" aria-label="Mais opções" onClick={() => setActiveMenuId(current => current === post.id ? null : post.id)}>•••</button><div className="community-post-menu-actions"><button onClick={() => { setActiveMenuId(null); openEdit(post) }}>Editar</button><button onClick={() => { setActiveMenuId(null); deletePost(post) }}>Excluir</button></div></div>}</header>
       <CommunityImage post={post} client={client} />
       <div className="community-post-body"><div className="community-actions"><span className="community-like-action"><button className={post.likes?.some(x => x.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes?.length || 0}</button>{likeAnimations.filter(item => item.postId === post.id).map(item => <span key={item.id} className="community-like-float" aria-hidden="true"><Icon name="heart" /></span>)}</span><span className="community-comment-action">{post.comments_disabled && blockedNoticeId === post.id && <span className="community-blocked-notice" role="status">Os comentários estão bloqueados.</span>}<button className={post.comments_disabled ? 'community-comment-button is-blocked' : ''} aria-label={post.comments_disabled ? 'Comentários bloqueados' : 'Abrir comentários'} onClick={() => post.comments_disabled ? showBlockedNotice(post.id) : setCommentsPost(post)}><Icon name="message" /> {post.comments?.length || 0}</button></span></div>{post.likes?.length > 0 && <div className="community-liker-summary"><span className="community-liker-stack" aria-hidden="true">{post.likes.slice(0, 3).map((like, index) => <Avatar key={`${like.user_id}-${index}`} profile={like.user || { display_name: 'Usuário' }} size="xs" />)}</span><span>{post.likes.slice(0, 2).map(like => like.user?.display_name || 'Usuário').join(', ')}{post.likes.length > 2 ? ` e outras ${post.likes.length - 2} pessoas curtiram` : post.likes.length === 1 ? ' curtiu' : ' curtiram'}</span></div>}{post.caption && <p>{post.caption}</p>}{post.comments?.slice(0, 2).map(comment => <div className="community-comment-preview" key={comment.id}><strong>{comment.author?.display_name || 'Usuário'}</strong> {comment.body}</div>)}{post.comments?.length > 2 && !post.comments_disabled && <button className="community-see-comments" onClick={() => setCommentsPost(post)}>Ver todos os comentários <Icon name="chevronRight" /></button>}</div>
     </article>)}
