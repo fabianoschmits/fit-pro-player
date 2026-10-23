@@ -92,7 +92,7 @@ export default function Community() {
   const profileMode = location.pathname === '/community/profile'
   const localProfile = useStore(state => state.S.profile)
   const userId = auth.user?.id
-  const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState('')
+  const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState('')
   const [showFeedTop, setShowFeedTop] = useState(false)
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
@@ -128,6 +128,11 @@ export default function Community() {
     setNotifications(data || [])
   }, [client, userId])
   useEffect(() => { load(true); loadNotifications() }, [loadNotifications, userId])
+  useEffect(() => {
+    if (!loading || posts.length > 0) { setShowSkeleton(false); return undefined }
+    const timer = window.setTimeout(() => setShowSkeleton(true), 220)
+    return () => window.clearTimeout(timer)
+  }, [loading, posts.length])
   useEffect(() => {
     if (!client || !userId || typeof client.channel !== 'function') return undefined
     const channel = client.channel(`community-notifications:${userId}`)
@@ -212,7 +217,7 @@ export default function Community() {
     </div>
     {profileMode && <div className="community-profile-heading"><Avatar profile={{ display_name: localProfile?.name, avatar_id: localProfile?.avatarId }} size="sm" /><strong>{localProfile?.name || 'Meu perfil'}</strong></div>}
     {error && <div className="community-error">{error}</div>}
-    {loading && posts.length === 0 ? <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).length === 0 ? <div className="community-empty">{profileMode ? 'Você ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).map(post => <article className="community-post" key={post.id}>
+    {loading && posts.length === 0 && showSkeleton ? <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).length === 0 && !loading ? <div className="community-empty">{profileMode ? 'Você ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).map(post => <article className="community-post" key={post.id}>
       <header className="community-post-head"><Avatar profile={post.author} /><div><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></div>{post.author_id === userId && <div className={`community-post-menu${activeMenuId === post.id ? ' is-open' : ''}`}><button type="button" className="community-more" aria-label="Mais opções" onClick={() => setActiveMenuId(current => current === post.id ? null : post.id)}>•••</button><div className="community-post-menu-actions"><button onClick={() => { setActiveMenuId(null); openEdit(post) }}>Editar</button><button onClick={() => { setActiveMenuId(null); deletePost(post) }}>Excluir</button></div></div>}</header>
       <CommunityImage post={post} client={client} />
       <div className="community-post-body"><div className="community-actions"><button className={post.likes?.some(x => x.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes?.length || 0}</button><button onClick={() => setCommentsPost(post)}><Icon name="message" /> {post.comments?.length || 0}</button></div>{post.likes?.length > 0 && <div className="community-liker-summary"><span className="community-liker-stack" aria-hidden="true">{post.likes.slice(0, 3).map((like, index) => <Avatar key={`${like.user_id}-${index}`} profile={like.user || { display_name: 'Usuário' }} size="xs" />)}</span><span>{post.likes.slice(0, 2).map(like => like.user?.display_name || 'Usuário').join(', ')}{post.likes.length > 2 ? ` e outras ${post.likes.length - 2} pessoas curtiram` : post.likes.length === 1 ? ' curtiu' : ' curtiram'}</span></div>}{post.caption && <p>{post.caption}</p>}{post.comments?.slice(0, 2).map(comment => <div className="community-comment-preview" key={comment.id}><strong>{comment.author?.display_name || 'Usuário'}</strong> {comment.body}</div>)}{post.comments?.length > 2 && <button className="community-see-comments" onClick={() => setCommentsPost(post)}>Ver todos os comentários <Icon name="chevronRight" /></button>}</div>
