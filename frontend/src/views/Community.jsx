@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -22,14 +22,15 @@ export default function Community() {
   const userId = auth.user?.id
   const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('')
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false)
+  const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
   const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [saving, setSaving] = useState(false)
+  const fileInputRef = useRef(null)
 
   const load = useCallback(async () => {
     if (!client || !userId) return
     setLoading(true); setError('')
     const { data, error: queryError } = await client.from('community_posts').select('*, author:profiles!community_posts_author_id_fkey(id,display_name,avatar_ref), likes:community_likes(user_id), comments:community_comments(id,body,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref))').order('created_at', { ascending: false }).limit(40)
-    if (queryError) setError(queryError.message); else setPosts(data || [])
+    if (queryError) setError(queryError.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : queryError.message); else setPosts(data || [])
     setLoading(false)
   }, [client, userId])
   const loadNotifications = useCallback(async () => {
@@ -60,25 +61,41 @@ export default function Community() {
     if (upload.error) { setError(upload.error.message); setSaving(false); return }
     const { data: publicUrl } = client.storage.from(BUCKET).getPublicUrl(path)
     const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: publicUrl.publicUrl, caption }).select().single()
-    if (inserted.error) setError(inserted.error.message); else { setComposerOpen(false); setFile(null); setCaption(''); await load() }
+    if (inserted.error) setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message); else { setComposerOpen(false); setFile(null); setCaption(''); await load() }
     setSaving(false)
   }
+  const updatePost = async event => {
+    event.preventDefault(); if (!editingPost || saving) return
+    setSaving(true)
+    const { error: updateError } = await client.from('community_posts').update({ caption: caption.trim() }).eq('id', editingPost.id).eq('author_id', userId)
+    if (updateError) setError(updateError.message); else { setPosts(current => current.map(post => post.id === editingPost.id ? { ...post, caption: caption.trim() } : post)); setEditingPost(null); setComposerOpen(false); setCaption('') }
+    setSaving(false)
+  }
+  const deletePost = async post => {
+    if (!window.confirm('Excluir esta postagem?')) return
+    const { error: deleteError } = await client.from('community_posts').delete().eq('id', post.id).eq('author_id', userId)
+    if (deleteError) setError(deleteError.message); else setPosts(current => current.filter(item => item.id !== post.id))
+  }
+  const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setComposerOpen(true); event.target.value = '' }
+  const openNewPost = () => fileInputRef.current?.click()
+  const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setFile(null); setComposerOpen(true) }
   const markNotificationsRead = async () => { if (unread) await client.from('community_notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))) }
 
   return <div className="community-view page-scenery">
     <AppHeader title="Comunidade" subtitle="Compartilhe sua evolução com a comunidade" backTo="/home" />
     <div className="community-toolbar">
-      <button className="community-primary-action" onClick={() => setComposerOpen(true)}><Icon name="camera" /> Nova postagem</button>
+      <input ref={fileInputRef} className="community-file-input" type="file" accept="image/*" onChange={chooseFile} />
+      <button className="community-primary-action" onClick={openNewPost}><Icon name="camera" /> Nova postagem</button>
       <button className="community-notifications" aria-label="Notificações" onClick={() => { setNotificationsOpen(true); markNotificationsRead() }}><Icon name="bell" />{unread > 0 && <b>{unread}</b>}</button>
     </div>
     {error && <div className="community-error">{error}</div>}
     {loading ? <div className="community-empty">Carregando comunidade…</div> : posts.length === 0 ? <div className="community-empty">Ainda não há postagens. Compartilhe seu primeiro treino!</div> : posts.map(post => <article className="community-post" key={post.id}>
-      <header className="community-post-head"><Avatar profile={post.author} /><div><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></div><button className="community-more" aria-label="Mais opções">•••</button></header>
+      <header className="community-post-head"><Avatar profile={post.author} /><div><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></div>{post.author_id === userId && <div className="community-post-menu"><button className="community-more" aria-label="Mais opções">•••</button><div className="community-post-menu-actions"><button onClick={() => openEdit(post)}>Editar</button><button onClick={() => deletePost(post)}>Excluir</button></div></div>}</header>
       <img className="community-post-image" src={post.image_path} alt={post.caption || 'Foto de treino'} loading="lazy" />
       <div className="community-post-body"><div className="community-actions"><button className={post.likes?.some(x => x.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes?.length || 0}</button><button onClick={() => setCommentsPost(post)}><Icon name="message" /> {post.comments?.length || 0}</button></div>{post.caption && <p>{post.caption}</p>}{post.comments?.slice(0, 2).map(comment => <div className="community-comment-preview" key={comment.id}><strong>{comment.author?.display_name || 'Usuário'}</strong> {comment.body}</div>)}{post.comments?.length > 2 && <button className="community-see-comments" onClick={() => setCommentsPost(post)}>Ver todos os comentários <Icon name="chevronRight" /></button>}</div>
     </article>)}
 
-    <AnimatePresence>{composerOpen && <div className="community-overlay" onMouseDown={e => e.target === e.currentTarget && setComposerOpen(false)}><motion.form className="community-sheet" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={createPost}><div className="community-sheet-handle" /><h2>Nova postagem</h2><label className="community-upload">{file ? file.name : 'Escolha uma foto do treino'}<input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] || null)} /></label><textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={500} placeholder="Conte como foi o treino…" /><button className="community-primary-action" disabled={!file || saving}>{saving ? 'Publicando…' : 'Publicar foto'}</button></motion.form></div>}</AnimatePresence>
+    <AnimatePresence>{composerOpen && <div className="community-overlay" onMouseDown={e => e.target === e.currentTarget && setComposerOpen(false)}><motion.form className="community-sheet community-composer-sheet" drag="y" dragConstraints={{ top: 0, bottom: 500 }} dragElastic={0.2} onDragEnd={(_, info) => { if (info.offset.y > 120) setComposerOpen(false) }} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={editingPost ? updatePost : createPost}><div className="community-sheet-inner"><div className="community-sheet-handle" /><div className="community-sheet-title"><h2>{editingPost ? 'Editar postagem' : 'Nova postagem'}</h2><button type="button" onClick={() => setComposerOpen(false)}><Icon name="xmark" /></button></div></div>{file && <img className="community-composer-preview" src={URL.createObjectURL(file)} alt="Prévia da postagem" />}{!editingPost && <label className="community-upload community-upload-inline">{file ? 'Trocar foto' : 'Escolha uma foto do treino'}<input type="file" accept="image/*" onChange={chooseFile} /></label>}<div className="community-sheet-inner"><textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={500} placeholder="Conte como foi o treino…" /><button className="community-primary-action" disabled={(!file && !editingPost) || saving}>{saving ? 'Salvando…' : editingPost ? 'Salvar alterações' : 'Publicar foto'}</button></div></motion.form></div>}</AnimatePresence>
     <AnimatePresence>{commentsPost && <CommentsSheet post={commentsPost} onClose={() => setCommentsPost(null)} onSubmit={submitComment} />}</AnimatePresence>
     <AnimatePresence>{notificationsOpen && <div className="community-overlay community-overlay--top" onMouseDown={e => e.target === e.currentTarget && setNotificationsOpen(false)}><motion.div className="community-notification-sheet" initial={{ y: '-100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }}><div className="community-sheet-title"><h2>Notificações</h2><button onClick={() => setNotificationsOpen(false)}><Icon name="xmark" /></button></div>{notifications.length === 0 ? <div className="community-empty">Você está em dia.</div> : notifications.map(n => <button className="community-notification" key={n.id} onClick={() => { setNotificationsOpen(false); if (n.post_id) navigate(`/community?post=${n.post_id}`) }}><Icon name={n.type === 'like' ? 'heart' : 'message'} /><span><strong>{n.actor?.display_name || 'Alguém'}</strong> {n.type === 'like' ? 'curtiu sua postagem.' : 'comentou na sua postagem.'}</span></button>)}</motion.div></div>}</AnimatePresence>
   </div>
