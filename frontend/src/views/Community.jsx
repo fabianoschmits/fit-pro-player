@@ -54,23 +54,11 @@ async function compressCommunityImage(file) {
 
 function CommunityImage({ post, client }) {
   const path = storagePathFromValue(post.image_path)
-  const [src, setSrc] = useState('')
+  const publicUrl = path && client ? client.storage.from(BUCKET).getPublicUrl(path).data?.publicUrl : ''
+  const [src, setSrc] = useState(publicUrl)
   useEffect(() => {
-    let alive = true; let objectUrl = ''
-    const loadImage = async () => {
-      if (!client || !path) return
-      const downloaded = await client.storage.from(BUCKET).download(path)
-      if (downloaded.data) {
-        objectUrl = URL.createObjectURL(downloaded.data)
-        if (alive) setSrc(objectUrl)
-        return
-      }
-      const publicUrl = path.startsWith('http') ? path : client.storage.from(BUCKET).getPublicUrl(path).data?.publicUrl
-      if (alive && publicUrl) setSrc(publicUrl)
-    }
-    loadImage()
-    return () => { alive = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
-  }, [client, path])
+    setSrc(path?.startsWith('http') ? path : publicUrl || '')
+  }, [path, publicUrl])
   return src ? <img className="community-post-image" src={src} alt={post.caption || 'Foto de treino'} loading="lazy" /> : <div className="community-post-image community-post-image--loading" aria-label="Carregando foto" />
 }
 
@@ -88,6 +76,7 @@ export default function Community() {
   const localProfile = useStore(state => state.S.profile)
   const userId = auth.user?.id
   const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState('')
+  const [showFeedTop, setShowFeedTop] = useState(false)
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
   const [activeMenuId, setActiveMenuId] = useState(null)
@@ -122,6 +111,11 @@ export default function Community() {
     setNotifications(data || [])
   }, [client, userId])
   useEffect(() => { load(true); loadNotifications() }, [loadNotifications, userId])
+  useEffect(() => {
+    const onScroll = () => setShowFeedTop(window.scrollY > 280)
+    onScroll(); window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
   useEffect(() => {
     if (profileMode || !feedSentinelRef.current) return undefined
     const observer = new IntersectionObserver(entries => { if (entries[0]?.isIntersecting) load(false) }, { rootMargin: '700px 0px' })
@@ -177,8 +171,10 @@ export default function Community() {
   const openNewPost = () => fileInputRef.current?.click()
   const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setFile(null); setComposerOpen(true) }
   const markNotificationsRead = async () => { if (unread) await client.from('community_notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))) }
+  const returnToFeedTop = async () => { window.scrollTo({ top: 0, behavior: 'smooth' }); await load(true) }
 
   return <div className="community-view page-scenery">
+    {showFeedTop && <button type="button" className="community-feed-top" aria-label="Voltar ao topo e atualizar o feed" onClick={returnToFeedTop}>↑</button>}
     <div className="community-toolbar">
       <input ref={fileInputRef} className="community-file-input" type="file" accept="image/*" onChange={chooseFile} />
       <button className="community-primary-action" onClick={openNewPost}><Icon name="camera" /> Nova postagem</button>
