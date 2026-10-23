@@ -241,7 +241,7 @@ export default function Community() {
     const compressed = await compressCommunityImage(await cropCommunityImage(file, crop))
     const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
     const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
-    if (upload.error) { setError(upload.error.message); setSaving(false); return }
+    if (upload.error) { setPendingPost(null); URL.revokeObjectURL(localPreview); setError(upload.error.message); setSaving(false); return }
     const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption, comments_disabled: false }).select().single()
     if (inserted.error) { setPendingPost(null); URL.revokeObjectURL(localPreview); setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message) } else { const optimistic = { ...inserted.data, author: ownIdentity || { id: userId, display_name: localProfile?.name, avatar_ref: localProfile?.avatarRef, avatar_id: localProfile?.avatarId }, likes: [], comments: [] }; setComposerOpen(false); setFile(null); setCaption(''); await new Promise(resolve => window.setTimeout(resolve, 700 + Math.random() * 1400)); setPosts(current => [optimistic, ...current.filter(item => item.id !== optimistic.id)]); setPendingPost(null); URL.revokeObjectURL(localPreview); await load() }
     setSaving(false)
@@ -254,7 +254,7 @@ export default function Community() {
       const compressed = await compressCommunityImage(await cropCommunityImage(file, crop))
       const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
       const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
-      if (upload.error) { setError(upload.error.message); setSaving(false); return }
+      if (upload.error) { setPendingPost(null); URL.revokeObjectURL(localPreview); setError(upload.error.message); setSaving(false); return }
       imagePath = path
     }
     const { error: updateError } = await client.from('community_posts').update({ caption: caption.trim(), image_path: imagePath, comments_disabled: commentsDisabled }).eq('id', editingPost.id).eq('author_id', userId)
