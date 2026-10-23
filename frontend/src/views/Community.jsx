@@ -38,7 +38,7 @@ const storagePathFromValue = value => {
   return value
 }
 
-async function compressCommunityImage(await cropCommunityImage(file, crop)) {
+async function compressCommunityImage(file) {
   if (!file?.type?.startsWith('image/')) return file
   try {
   const bitmap = await createImageBitmap(file)
