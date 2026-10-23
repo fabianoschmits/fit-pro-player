@@ -57,7 +57,7 @@ async function cropCommunityImage(file, crop) {
   if (!file || !crop) return file
   try {
     const bitmap = await createImageBitmap(file)
-    const aspect = crop.aspect === 'portrait' ? 4 / 5 : crop.aspect === 'original' ? bitmap.width / bitmap.height : 1
+    const aspect = crop.aspect === 'portrait' ? 3 / 4 : 4 / 3
     const sourceAspect = bitmap.width / bitmap.height
     let cropWidth = bitmap.width; let cropHeight = bitmap.height
     if (sourceAspect > aspect) cropWidth = bitmap.height * aspect
@@ -82,7 +82,7 @@ function CommunityCropEditor({ file, crop, setCrop, onConfirm, onChangeFile }) {
     const rect = event.currentTarget.getBoundingClientRect()
     setCrop(current => ({ ...current, x: Math.max(0, Math.min(100, current.x - (event.movementX / rect.width) * 100)), y: Math.max(0, Math.min(100, current.y - (event.movementY / rect.height) * 100)) }))
   }
-  return <div className={`community-crop-editor community-crop-editor--${crop.aspect}`}><div className="community-crop-viewport" onPointerDown={event => { event.stopPropagation(); setDragging(true) }} onPointerUp={event => { event.stopPropagation(); setDragging(false) }} onPointerLeave={() => setDragging(false)} onPointerMove={event => { event.stopPropagation(); move(event) }}><img src={source} alt="Ajuste da foto" draggable="false" style={{ objectPosition: `${crop.x}% ${crop.y}%` }} /></div><div className="community-crop-options"><button type="button" className={crop.aspect === 'square' ? 'is-active' : ''} onClick={() => setCrop(current => ({ ...current, aspect: 'square' }))}>Quadrado</button><button type="button" className={crop.aspect === 'portrait' ? 'is-active' : ''} onClick={() => setCrop(current => ({ ...current, aspect: 'portrait' }))}>Vertical</button></div><small>Arraste a foto para escolher o corte</small><button type="button" className="community-crop-confirm" onClick={onConfirm}>OK</button><label className="community-crop-change">Trocar foto<input type="file" accept="image/*" onChange={onChangeFile} /></label></div>
+  return <div className={`community-crop-editor community-crop-editor--${crop.aspect}`}><div className="community-crop-viewport" onPointerDown={event => { event.stopPropagation(); setDragging(true) }} onPointerUp={event => { event.stopPropagation(); setDragging(false) }} onPointerLeave={() => setDragging(false)} onPointerMove={event => { event.stopPropagation(); move(event) }}><img src={source} alt="Ajuste da foto" draggable="false" style={{ objectPosition: `${crop.x}% ${crop.y}%` }} /></div><div className="community-crop-options"><button type="button" className={crop.aspect === 'landscape' ? 'is-active' : ''} onClick={() => setCrop(current => ({ ...current, aspect: 'landscape' }))}>Horizontal</button><button type="button" className={crop.aspect === 'portrait' ? 'is-active' : ''} onClick={() => setCrop(current => ({ ...current, aspect: 'portrait' }))}>Vertical</button></div><small>Arraste a foto para escolher o corte</small><button type="button" className="community-crop-confirm" onClick={onConfirm}>OK</button><label className="community-crop-change">Trocar foto<input type="file" accept="image/*" onChange={onChangeFile} /></label></div>
 }
 
 function CommunityImage({ post, client }) {
@@ -133,7 +133,7 @@ export default function Community() {
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
   const [activeMenuId, setActiveMenuId] = useState(null); const [blockedNoticeId, setBlockedNoticeId] = useState(null); const [likeAnimations, setLikeAnimations] = useState([])
-  const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [commentsDisabled, setCommentsDisabled] = useState(false); const [saving, setSaving] = useState(false); const [crop, setCrop] = useState({ aspect: 'square', x: 50, y: 50 }); const [cropConfirmed, setCropConfirmed] = useState(false)
+  const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [commentsDisabled, setCommentsDisabled] = useState(false); const [saving, setSaving] = useState(false); const [crop, setCrop] = useState({ aspect: 'landscape', x: 50, y: 50 }); const [cropConfirmed, setCropConfirmed] = useState(false)
   const fileInputRef = useRef(null); const feedOffsetRef = useRef(0); const feedLoadingRef = useRef(false); const feedSeedRef = useRef(randomId()); const feedSentinelRef = useRef(null)
   useEffect(() => {
     if (!activeMenuId) return undefined
@@ -266,7 +266,7 @@ export default function Community() {
     const { error: deleteError } = await client.from('community_posts').delete().eq('id', post.id).eq('author_id', userId)
     if (deleteError) setError(deleteError.message); else { const imagePath = storagePathFromValue(post.image_path); if (imagePath) await client.storage.from(BUCKET).remove([imagePath]); setPosts(current => current.filter(item => item.id !== post.id)) }
   }
-  const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setCrop({ aspect: 'square', x: 50, y: 50 }); setCropConfirmed(false); setComposerOpen(true); event.target.value = '' }
+  const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setCrop({ aspect: 'landscape', x: 50, y: 50 }); setCropConfirmed(false); setComposerOpen(true); event.target.value = '' }
   const confirmCrop = async () => { if (!file) return; setSaving(true); const cropped = await cropCommunityImage(file, crop); setFile(cropped); setCropConfirmed(true); setSaving(false) }
   const openNewPost = () => fileInputRef.current?.click()
   const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setCommentsDisabled(Boolean(post.comments_disabled)); setFile(null); setCropConfirmed(true); setComposerOpen(true) }
