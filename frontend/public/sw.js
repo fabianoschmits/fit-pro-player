@@ -1,7 +1,7 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
    Media (img/gif) cache-first; everything else network-first with offline fallback.
    Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v30'
+const CACHE = 'fit-pro-player-rt-v31'
 const MEDIA_LIMIT = 256
 async function remember(request, response, media = false) {
   const cache = await caches.open(CACHE)
@@ -13,7 +13,7 @@ async function remember(request, response, media = false) {
 }
 
 // Existing sessions decide when an update may activate. First installation needs no skip.
-self.addEventListener('install', () => {})
+self.addEventListener('install', event => { event.waitUntil(self.skipWaiting()) })
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => {
     // Keep one previous shell until the new worker has populated its runtime cache. If an
