@@ -99,8 +99,8 @@ export function AuthProvider({ children, client: injectedClient, location: injec
     };
     const enforceActiveAccount = async sessionUser => {
       if (!sessionUser?.id || typeof client?.from !== 'function') return;
-      const { data, error } = await client.from('profiles').select('suspended_at').eq('id', sessionUser.id).limit(1);
-      if (error || !data?.[0]?.suspended_at) return;
+      const { data, error } = await client.rpc('is_current_user_suspended');
+      if (error || !data) return;
       await client.auth.signOut();
       if (!disposed) {
         setState(current => ({
