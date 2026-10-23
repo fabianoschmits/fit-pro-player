@@ -126,7 +126,7 @@ export default function Community() {
   const publicUserId = location.pathname.match(/^\/community\/user\/([^/]+)$/)?.[1] || null
   const viewedUserId = publicUserId || (profileMode ? userId : null)
   const localProfile = useStore(state => state.S.profile)
-  const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState('')
+  const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState(''); const [pendingPost, setPendingPost] = useState(null)
   const [ownIdentity, setOwnIdentity] = useState(null)
   const [viewedProfile, setViewedProfile] = useState(null)
   const [showFeedTop, setShowFeedTop] = useState(false)
@@ -236,13 +236,14 @@ export default function Community() {
   const updateCommentCount = comment => setPosts(current => current.map(item => item.id === comment.post_id ? { ...item, comments: (item.comments || []).filter(itemComment => itemComment.id !== comment.id) } : item))
   const createPost = async event => {
     event.preventDefault(); if (!file || saving) return
+    const localPreview = URL.createObjectURL(file); setPendingPost({ preview: localPreview });
     setSaving(true); setError('')
     const compressed = await compressCommunityImage(await cropCommunityImage(file, crop))
     const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
     const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
     if (upload.error) { setError(upload.error.message); setSaving(false); return }
     const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption, comments_disabled: false }).select().single()
-    if (inserted.error) setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message); else { setComposerOpen(false); setFile(null); setCaption(''); await load() }
+    if (inserted.error) { setPendingPost(null); URL.revokeObjectURL(localPreview); setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message) } else { const optimistic = { ...inserted.data, author: ownIdentity || { id: userId, display_name: localProfile?.name, avatar_ref: localProfile?.avatarRef, avatar_id: localProfile?.avatarId }, likes: [], comments: [] }; setComposerOpen(false); setFile(null); setCaption(''); await new Promise(resolve => window.setTimeout(resolve, 700 + Math.random() * 1400)); setPosts(current => [optimistic, ...current.filter(item => item.id !== optimistic.id)]); setPendingPost(null); URL.revokeObjectURL(localPreview); await load() }
     setSaving(false)
   }
   const updatePost = async event => {
@@ -284,6 +285,7 @@ export default function Community() {
       {(profileMode || publicUserId) && <div className="community-profile-heading"><Avatar profile={profileMode ? { display_name: localProfile?.name, avatar_ref: localProfile?.avatarRef, avatar_id: localProfile?.avatarId } : viewedProfile} size="sm" /><strong>{profileMode ? (localProfile?.name || 'Meu perfil') : (viewedProfile?.display_name || 'Perfil')}</strong><button type="button" className="community-profile-back" onClick={() => location.state?.fromFeed ? navigate(-1) : navigate('/community')} aria-label="Voltar ao feed"><Icon name="chevronLeft" /> Voltar</button></div>}
     </div>
     {error && <div className="community-error">{error}</div>}
+    {pendingPost && !profileMode && !publicUserId && <div className="community-post-uploading" aria-live="polite"><img src={pendingPost.preview} alt="Sua postagem sendo enviada" /><div><strong>Publicando sua foto…</strong><span /></div></div>}
     {loading && posts.length === 0 && showSkeleton ? <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div> : posts.length === 0 && !loading ? <div className="community-empty">{profileMode ? 'Você ainda não publicou fotos.' : publicUserId ? 'Este usuário ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div> : posts.map(post => <article className="community-post" key={post.id}>
       <header className="community-post-head"><button type="button" className="community-author-link" onClick={() => openUser(post.author_id)} aria-label={`Abrir perfil de ${post.author?.display_name || 'Usuário'}`}><Avatar profile={post.author} /><span><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></span></button>{post.author_id === userId && <div className={`community-post-menu${activeMenuId === post.id ? ' is-open' : ''}`}><button type="button" className="community-more" aria-label="Mais opções" onClick={() => setActiveMenuId(current => current === post.id ? null : post.id)}>•••</button><div className="community-post-menu-actions"><button onClick={() => { setActiveMenuId(null); openEdit(post) }}>Editar</button><button onClick={() => { setActiveMenuId(null); deletePost(post) }}>Excluir</button></div></div>}</header>
       <CommunityImage post={post} client={client} />
