@@ -58,7 +58,7 @@ function CommunityImage({ post, client }) {
 
 function Avatar({ profile, size = 'md' }) {
   const initials = (profile?.display_name || '?').slice(0, 1).toUpperCase()
-  const avatar = profile?.avatar_ref || profile?.avatar_id
+  const avatar = profile?.avatar_ref || profile?.avatar_id || 'avatar-27'
   return avatar
     ? <img className={`community-avatar community-avatar--${size}`} src={avatar.startsWith('http') || avatar.startsWith('data:') ? avatar : avatarSrc(avatar)} alt="" />
     : <span className={`community-avatar community-avatar--${size}`}>{initials}</span>
