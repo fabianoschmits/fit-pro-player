@@ -24,3 +24,4 @@
 .community-composer-sheet>.community-sheet-inner:first-child{padding-top:8px;padding-bottom:8px}.community-composer-sheet .community-sheet-title h2{font-size:1.05rem;line-height:1.15}.community-composer-sheet .community-sheet-title button{width:30px;height:30px}
 .community-overlay--sheet .community-composer-sheet{overflow-y:auto;overflow-x:hidden}.community-crop-editor{min-height:0}.community-crop-viewport{max-height:min(38vh,300px)}.community-crop-editor--portrait .community-crop-viewport{max-height:min(42vh,340px)}.community-crop-options,.community-crop-confirm,.community-crop-change,.community-crop-editor small{flex-shrink:0}
 .community-composer-sheet .community-sheet-handle{margin-bottom:6px}.community-composer-sheet>.community-sheet-inner:first-child{padding-top:2px;padding-bottom:6px}
+.community-cropped-preview{display:block;width:100%;max-height:34vh;object-fit:contain;border-radius:12px;background:#101415;margin-bottom:10px}
