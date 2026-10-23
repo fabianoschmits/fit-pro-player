@@ -19,7 +19,7 @@ import { getVisualId, findIconMorph } from './icon-morph-registry.jsx'
 import { resolveNavigationContext } from '../lib/navigation-contexts.js'
 
 const NAVIGATION_LAYOUT_KEY = 'fpp_navigation_layout_v1'
-const PIVOT_WIDTH = 56
+const PIVOT_WIDTH = 28
 const menuHeightForWidth = width => width < 768 ? 68 : 52
 const MAX_ARM_WIDTH = 320
 
@@ -393,6 +393,9 @@ export default function TabBar({ onStart }) {
         </button>
         <div id="corner-nav-main" className="corner-nav-main" aria-hidden={!open} inert={!open}>
           {navItems.map((item, index) => <DockSlotButton key={`slot-${index}`} item={item} state={S} active={currentKey === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
+          <button type="button" className="corner-nav-more-tab" aria-label="Mais opções" onClick={() => setMoreOpen(true)}>
+            <span className="corner-nav-icon"><Icon name="more" /></span><span>Mais</span>
+          </button>
         </div>
       </div>
       <div id="corner-nav-more" className={'corner-nav-more' + (moreOpen ? ' is-visible' : '')} role="menu" aria-label={t('Mais opções')} aria-hidden={!moreOpen} inert={!moreOpen}>

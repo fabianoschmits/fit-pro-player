@@ -424,7 +424,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   --menu-width:100vw;--menu-height:var(--primary-menu-height);
   --more-space:calc(100dvh - var(--menu-height) - 40px - var(--sat));
   position:fixed;z-index:50;left:0;right:auto;bottom:0;
-  width:56px;height:var(--menu-height);font-size:10px;pointer-events:none;
+  width:28px;height:var(--menu-height);font-size:10px;pointer-events:none;
 }
 #tabbar.corner-nav.is-open{width:var(--menu-width)}
 .corner-nav *{box-sizing:border-box}
@@ -435,7 +435,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   box-shadow:0 -6px 24px color-mix(in srgb,var(--label) 8%,transparent);
 }
 .corner-nav-toggle{
-  position:relative;z-index:2;width:56px;height:100%;padding:0 4px;
+  position:relative;z-index:2;width:28px;height:100%;padding:0 2px;
   display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;
   border-radius:0;border-right:var(--hair) solid var(--surface-border);
   background:var(--acc);color:var(--on-acc);pointer-events:auto;
@@ -450,7 +450,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav-icon{width:28px;height:28px;display:grid;place-items:center;flex:none}
 .corner-nav-icon .icn{width:20px;height:20px;--icon-stroke:1.75}
 .corner-nav-main{
-  position:absolute;z-index:1;left:56px;top:0;width:calc(var(--menu-width) - 56px);height:100%;
+  position:absolute;z-index:1;left:28px;top:0;width:calc(var(--menu-width) - 28px);height:100%;
   display:flex;align-items:stretch;padding:0;border-radius:0;
   background:color-mix(in srgb,var(--bg-el) 24%,transparent);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
@@ -474,6 +474,8 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   border-radius:0;background:transparent;color:color-mix(in srgb,var(--label) 84%,transparent);
 }
 .corner-nav-tab>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px}
+.corner-nav-more-tab{position:relative;flex:1;min-width:0;height:var(--menu-height);padding:0 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;border-radius:0;background:transparent;color:color-mix(in srgb,var(--label) 84%,transparent);font:inherit;cursor:pointer}
+.corner-nav-more-tab>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px}
 .corner-nav-tab.is-active{color:var(--acc);background:var(--acc-soft)}
 .corner-nav-tab.is-active::after{content:"";position:absolute;left:25%;right:25%;bottom:3px;height:2px;background:var(--acc)}
 .corner-nav-tab--start .corner-nav-icon{background:var(--acc);color:var(--on-acc);border-radius:8px}
@@ -513,10 +515,10 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav-drag-toggle{border-top:var(--hair) solid var(--surface-border);margin-top:5px}
 .corner-nav button:focus-visible{outline:2px solid var(--acc);outline-offset:-3px}
 .corner-nav.is-move-ready .corner-nav-toggle{outline:2px dashed var(--on-acc);outline-offset:-5px}
-#tabbar.corner-nav.is-free{width:56px}
+#tabbar.corner-nav.is-free{width:28px}
 .corner-nav.is-free .corner-nav-toggle{padding-bottom:0;border-radius:0 0 0 12px}
 .corner-nav.is-free .corner-nav-main{padding-bottom:0;border-radius:0 0 12px 0;overflow-x:auto;scrollbar-width:none}
-.corner-nav.is-free .corner-nav-tab{min-width:44px}
+.corner-nav.is-free :is(.corner-nav-tab,.corner-nav-more-tab){min-width:44px}
 .corner-nav.is-free:not(.is-open) .corner-nav-toggle{border-radius:0 0 12px 12px}
 .corner-nav.opens-down .corner-nav-more-trigger{
   bottom:auto;top:calc(100% + 6px);
@@ -535,7 +537,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav.opens-left:not(.opens-down) .corner-nav-more{
   transform-origin:bottom right;
 }
-.corner-nav.opens-left .corner-nav-main{left:auto;right:56px;transform-origin:right center;transform:perspective(900px) rotateY(88deg);border-radius:0 0 0 12px}
+.corner-nav.opens-left .corner-nav-main{left:auto;right:28px;transform-origin:right center;transform:perspective(900px) rotateY(88deg);border-radius:0 0 0 12px}
 .corner-nav.is-open.opens-left .corner-nav-main{transform:perspective(900px) rotateY(0deg)}
 .corner-nav.is-open.opens-left .corner-nav-toggle{border-radius:0 0 12px 0}
 @media(min-width:768px){
@@ -545,7 +547,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
     left:50%;
     right:auto;
     bottom:max(20px,var(--sab));
-    width:64px;
+    width:32px;
     font-size:11.5px;
     transform:translateX(-50%);
   }
@@ -561,7 +563,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
     justify-content:flex-start;
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-toggle{
-    width:64px;
+    width:32px;
     padding-bottom:0;
     border-radius:14px 0 0 14px;
     box-shadow:0 8px 30px color-mix(in srgb,var(--label) 12%,transparent);
@@ -575,8 +577,8 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
     height:22px;
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-main{
-    left:64px;
-    width:calc(var(--menu-width) - 64px);
+    left:32px;
+    width:calc(var(--menu-width) - 32px);
     padding-bottom:0;
     border-radius:0 14px 14px 0;
     box-shadow:0 8px 30px color-mix(in srgb,var(--label) 12%,transparent);
@@ -584,20 +586,20 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   #tabbar.corner-nav:not(.is-free):not(.is-open) .corner-nav-toggle{
     border-radius:14px;
   }
-  #tabbar.corner-nav:not(.is-free) .corner-nav-tab{
+  #tabbar.corner-nav:not(.is-free) :is(.corner-nav-tab,.corner-nav-more-tab){
     min-width:56px;
     padding:0 4px;
     gap:3px;
   }
-  #tabbar.corner-nav:not(.is-free) .corner-nav-tab .corner-nav-icon{
+  #tabbar.corner-nav:not(.is-free) :is(.corner-nav-tab,.corner-nav-more-tab) .corner-nav-icon{
     width:32px;
     height:32px;
   }
-  #tabbar.corner-nav:not(.is-free) .corner-nav-tab .corner-nav-icon .icn{
+  #tabbar.corner-nav:not(.is-free) :is(.corner-nav-tab,.corner-nav-more-tab) .corner-nav-icon .icn{
     width:22px;
     height:22px;
   }
-  #tabbar.corner-nav:not(.is-free) .corner-nav-tab>span:last-child{
+  #tabbar.corner-nav:not(.is-free) :is(.corner-nav-tab,.corner-nav-more-tab)>span:last-child{
     font-size:11px;
     line-height:13px;
   }

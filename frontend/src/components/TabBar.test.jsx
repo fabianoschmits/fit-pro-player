@@ -308,7 +308,7 @@ describe('TabBar folding navigation', () => {
     render()
     const tabbar = container.querySelector('#tabbar')
     expect(tabbar.className).toContain('is-free')
-    expect(Number.parseFloat(tabbar.style.left)).toBeLessThanOrEqual(window.innerWidth - 56)
+    expect(Number.parseFloat(tabbar.style.left)).toBeLessThanOrEqual(window.innerWidth - 28)
     expect(Number.parseFloat(tabbar.style.top)).toBeLessThanOrEqual(window.innerHeight - 52)
     expect(toggle().getAttribute('aria-expanded')).toBe('true')
   })
