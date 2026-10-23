@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { useStore } from '../store/useStore.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import Icon from '../components/Icon.jsx'
-import AppHeader from '../components/AppHeader.jsx'
 import './community.css'
 import { avatarSrc } from '../lib/avatars.js'
 
@@ -51,7 +50,8 @@ function Avatar({ profile, size = 'md' }) {
 }
 
 export default function Community() {
-  const auth = useAuth(); const navigate = useNavigate(); const client = getBrowserSupabaseClient()
+  const auth = useAuth(); const navigate = useNavigate(); const location = useLocation(); const client = getBrowserSupabaseClient()
+  const profileMode = location.pathname === '/community/profile'
   const localProfile = useStore(state => state.S.profile)
   const userId = auth.user?.id
   const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('')
@@ -123,14 +123,15 @@ export default function Community() {
   const markNotificationsRead = async () => { if (unread) await client.from('community_notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))) }
 
   return <div className="community-view page-scenery">
-    <AppHeader title="Comunidade" subtitle="Compartilhe sua evolução com a comunidade" backTo="/home" />
     <div className="community-toolbar">
       <input ref={fileInputRef} className="community-file-input" type="file" accept="image/*" onChange={chooseFile} />
       <button className="community-primary-action" onClick={openNewPost}><Icon name="camera" /> Nova postagem</button>
       <button className="community-notifications" aria-label="Notificações" onClick={() => { setNotificationsOpen(true); markNotificationsRead() }}><Icon name="bell" />{unread > 0 && <b>{unread}</b>}</button>
+      <button className="community-profile-button" aria-label="Meu perfil" onClick={() => navigate('/community/profile')}><Avatar profile={{ display_name: localProfile?.name, avatar_id: localProfile?.avatarId }} /></button>
     </div>
+    {profileMode && <div className="community-profile-heading"><Avatar profile={{ display_name: localProfile?.name, avatar_id: localProfile?.avatarId }} size="sm" /><strong>{localProfile?.name || 'Meu perfil'}</strong></div>}
     {error && <div className="community-error">{error}</div>}
-    {loading ? <div className="community-empty">Carregando comunidade…</div> : posts.length === 0 ? <div className="community-empty">Ainda não há postagens. Compartilhe seu primeiro treino!</div> : posts.map(post => <article className="community-post" key={post.id}>
+    {loading ? <div className="community-empty">Carregando comunidade…</div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).length === 0 ? <div className="community-empty">{profileMode ? 'Você ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div> : (profileMode ? posts.filter(post => post.author_id === userId) : posts).map(post => <article className="community-post" key={post.id}>
       <header className="community-post-head"><Avatar profile={post.author} /><div><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></div>{post.author_id === userId && <div className="community-post-menu"><button className="community-more" aria-label="Mais opções">•••</button><div className="community-post-menu-actions"><button onClick={() => openEdit(post)}>Editar</button><button onClick={() => deletePost(post)}>Excluir</button></div></div>}</header>
       <CommunityImage post={post} client={client} />
       <div className="community-post-body"><div className="community-actions"><button className={post.likes?.some(x => x.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes?.length || 0}</button>{post.likes?.length > 0 && <span className="community-liker-stack" aria-label={`${post.likes.length} curtidas`}>{post.likes.slice(0, 4).map((like, index) => <Avatar key={`${like.user_id}-${index}`} profile={like.user || { display_name: 'Usuário' }} size="xs" />)}</span>}<button onClick={() => setCommentsPost(post)}><Icon name="message" /> {post.comments?.length || 0}</button></div>{post.caption && <p>{post.caption}</p>}{post.comments?.slice(0, 2).map(comment => <div className="community-comment-preview" key={comment.id}><strong>{comment.author?.display_name || 'Usuário'}</strong> {comment.body}</div>)}{post.comments?.length > 2 && <button className="community-see-comments" onClick={() => setCommentsPost(post)}>Ver todos os comentários <Icon name="chevronRight" /></button>}</div>
