@@ -112,6 +112,18 @@ export default function Community() {
   }, [client, userId])
   useEffect(() => { load(true); loadNotifications() }, [loadNotifications, userId])
   useEffect(() => {
+    if (!client || !userId || typeof client.channel !== 'function') return undefined
+    const channel = client.channel(`community-notifications:${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_notifications', filter: `recipient_id=eq.${userId}` }, () => {
+        loadNotifications()
+      })
+      .subscribe()
+    // Realtime is immediate when available; the fallback also covers a
+    // temporarily disconnected mobile background session.
+    const fallback = window.setInterval(loadNotifications, 30000)
+    return () => { window.clearInterval(fallback); client.removeChannel?.(channel) }
+  }, [client, userId, loadNotifications])
+  useEffect(() => {
     const onScroll = () => setShowFeedTop(window.scrollY > 280)
     onScroll(); window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
