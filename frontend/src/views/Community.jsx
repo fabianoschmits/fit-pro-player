@@ -147,11 +147,11 @@ export default function Community() {
     feedLoadingRef.current = true; reset ? setLoading(true) : setLoadingMore(true); setError('')
     if (reset) { feedOffsetRef.current = 0; setHasMore(true) }
     const from = reset ? 0 : feedOffsetRef.current
-    const postsQuery = client.from('community_posts').select('*, author:profiles!community_posts_author_id_fkey(id,display_name,avatar_ref), likes:community_likes(user_id,user:profiles!community_likes_user_id_fkey(id,display_name,avatar_ref)), comments:community_comments(id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref),likes:community_comment_likes(user_id))')
+    const postsQuery = client.from('community_posts').select('*, author:profiles!community_posts_author_id_fkey(id,display_name,avatar_ref,avatar_id), likes:community_likes(user_id,user:profiles!community_likes_user_id_fkey(id,display_name,avatar_ref,avatar_id)), comments:community_comments(id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref,avatar_id),likes:community_comment_likes(user_id))')
     if (viewedUserId) postsQuery.eq('author_id', viewedUserId)
     const [{ data, error: queryError }, { data: identity }] = await Promise.all([
       postsQuery.order('created_at', { ascending: false }).range(from, from + FEED_PAGE_SIZE - 1),
-      client.from('profiles').select('id,display_name,avatar_ref').eq('id', viewedUserId || userId).maybeSingle(),
+      client.from('profiles').select('id,display_name,avatar_ref,avatar_id').eq('id', viewedUserId || userId).maybeSingle(),
     ])
     const scopedData = viewedUserId ? (data || []).filter(post => post.author_id === viewedUserId) : (data || [])
     const resolvedIdentity = identity || ownIdentity || { id: userId, display_name: localProfile?.name, avatar_ref: localProfile?.avatarRef, avatar_id: localProfile?.avatarId }
@@ -225,7 +225,7 @@ export default function Community() {
   const submitComment = async (post, body, parentCommentId = null) => {
     if (post.comments_disabled) return
     const text = body.trim(); if (!text) return
-    const { data: inserted, error: insertError } = await client.from('community_comments').insert({ post_id: post.id, author_id: userId, body: text, parent_comment_id: parentCommentId }).select('id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref),likes:community_comment_likes(user_id)').single()
+    const { data: inserted, error: insertError } = await client.from('community_comments').insert({ post_id: post.id, author_id: userId, body: text, parent_comment_id: parentCommentId }).select('id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref,avatar_id),likes:community_comment_likes(user_id)').single()
     if (insertError) { setError(insertError.message); return { error: insertError } }
     const comment = { ...inserted, author: inserted.author || ownIdentity }
     setPosts(current => current.map(item => item.id === post.id ? { ...item, comments: [...(item.comments || []), comment] } : item))
@@ -316,5 +316,6 @@ function CommentsSheet({ post, client, userId, ownIdentity, ownProfile, authUser
 }
 
 function CommentRow({ comment, highlighted, userId, onLike, onReply, onOpenUser, canManage, menuOpen, onMenu, onEdit, onDelete }) { const liked = comment.likes?.some(item => item.user_id === userId); return <div data-community-comment-id={comment.id} className={`community-comment-row${highlighted ? ' is-reply-target' : ''}`}><button type="button" className="community-comment-author-link" onClick={() => onOpenUser?.(comment.author_id)} aria-label={`Abrir perfil de ${comment.author?.display_name || 'Usuário'}`}><Avatar profile={comment.author} size="sm" /></button><div className="community-comment-content"><div className="community-comment-heading"><button type="button" className="community-comment-name-link" onClick={() => onOpenUser?.(comment.author_id)}>{comment.author?.display_name || 'Usuário'}</button>{canManage && <div className={`community-comment-menu${menuOpen ? ' is-open' : ''}`}><button type="button" className="community-comment-more" aria-label="Opções do comentário" onClick={onMenu}>•••</button>{menuOpen && <div className="community-comment-menu-actions"><button type="button" onClick={onEdit}>Editar</button><button type="button" onClick={onDelete}>Excluir</button></div>}</div>}</div><small>{fmtDate(comment.created_at)}</small><p>{comment.body}</p><div className="community-comment-actions"><button className={liked ? 'is-liked' : ''} onClick={() => onLike(comment)}><Icon name="heart" /> {comment.likes?.length || 0}</button><button type="button" onPointerDown={event => { event.preventDefault(); onReply() }}>Responder</button></div></div></div> }
+
 
 
