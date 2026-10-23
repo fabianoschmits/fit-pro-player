@@ -81,9 +81,9 @@ function Avatar({ profile, size = 'md' }) {
 
 function CommunityPostSkeleton() {
   return <article className="community-post community-post-skeleton" aria-hidden="true">
-    <div className="community-post-head"><span className="community-skeleton-block community-skeleton-avatar" /><div className="community-skeleton-copy"><span className="community-skeleton-block community-skeleton-name" /><span className="community-skeleton-block community-skeleton-date" /></div></div>
+    <div className="community-post-head"><span className="community-skeleton-block community-skeleton-avatar" /><div className="community-skeleton-copy"><span className="community-skeleton-block community-skeleton-name" /><span className="community-skeleton-block community-skeleton-date" /></div><span className="community-skeleton-block community-skeleton-menu" /></div>
     <div className="community-post-image community-skeleton-block community-skeleton-image" />
-    <div className="community-post-body"><div className="community-skeleton-actions"><span className="community-skeleton-block" /><span className="community-skeleton-block" /></div><span className="community-skeleton-block community-skeleton-line community-skeleton-line--wide" /><span className="community-skeleton-block community-skeleton-line" /></div>
+    <div className="community-post-body"><div className="community-skeleton-actions"><span className="community-skeleton-block community-skeleton-action" /><span className="community-skeleton-block community-skeleton-action community-skeleton-action--short" /></div><div className="community-skeleton-likers"><span className="community-skeleton-block community-skeleton-mini-avatar" /><span className="community-skeleton-block community-skeleton-mini-avatar" /><span className="community-skeleton-block community-skeleton-mini-avatar" /><span className="community-skeleton-block community-skeleton-liker-copy" /></div><span className="community-skeleton-block community-skeleton-line community-skeleton-line--wide" /><span className="community-skeleton-block community-skeleton-line" /><span className="community-skeleton-block community-skeleton-line community-skeleton-line--comment" /></div>
   </article>
 }
 
