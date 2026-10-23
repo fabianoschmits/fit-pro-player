@@ -359,6 +359,13 @@ export default function TabBar({ onStart }) {
   })
   const navItems = resolved.items
   const currentKey = resolved.activeKey
+  const extraNav = resolved.contextId === 'home'
+    ? { icon: 'list', label: t('Exercises'), to: '/library' }
+    : resolved.contextId === 'training'
+      ? { icon: 'dumbbell', label: t('Start workout'), to: '/workout' }
+      : resolved.contextId === 'workout'
+        ? { icon: 'list', label: t('Exercises'), to: '/library' }
+        : { icon: 'calendar', label: t('Plan'), to: '/plan' }
   const secondary = groups.flatMap(([, links]) => links).find(item => item.to === loc.pathname)
   const currentItem = resolved.pivotItem || navItems.find(item => item.k === currentKey) || (secondary && { ...secondary, label: () => secondary.title }) || navItems[0]
   // Expand toward the side with room, preserving the pivot's chosen location.
@@ -393,8 +400,8 @@ export default function TabBar({ onStart }) {
         </button>
         <div id="corner-nav-main" className="corner-nav-main" aria-hidden={!open} inert={!open}>
           {navItems.map((item, index) => <DockSlotButton key={`slot-${index}`} item={item} state={S} active={currentKey === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
-          <button type="button" className="corner-nav-more-tab" aria-label="Mais opções" onClick={() => setMoreOpen(true)}>
-            <span className="corner-nav-icon"><Icon name="more" /></span><span>Mais</span>
+          <button type="button" className="corner-nav-more-tab" aria-label={extraNav.label} onClick={() => go(extraNav.to)}>
+            <span className="corner-nav-icon"><Icon name={extraNav.icon} /></span><span>{extraNav.label}</span>
           </button>
         </div>
       </div>
