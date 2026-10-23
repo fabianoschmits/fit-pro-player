@@ -360,7 +360,7 @@ export default function TabBar({ onStart }) {
   const navItems = resolved.items
   const currentKey = resolved.activeKey
   const extraNav = resolved.contextId === 'home'
-    ? { icon: 'list', label: t('Exercises'), to: '/library' }
+    ? { icon: 'heart', label: 'Comunidade', to: '/community' }
     : resolved.contextId === 'training'
       ? { icon: 'dumbbell', label: t('Start workout'), to: '/workout' }
       : resolved.contextId === 'workout'

@@ -48,6 +48,7 @@ const loadWorkout = () => import('./views/Workout.jsx')
 const loadStats = () => import('./views/Stats.jsx')
 const loadHistory = () => import('./views/History.jsx')
 const loadLibrary = () => import('./views/Library.jsx')
+const loadCommunity = () => import('./views/Community.jsx')
 const loadSettings = () => import('./views/Settings.jsx')
 const loadPersonalData = () => import('./views/PersonalData.jsx')
 const loadBodyProgress = () => import('./views/BodyProgress.jsx')
@@ -77,6 +78,7 @@ const Workout = lazy(loadWorkout)
 const Stats = lazy(loadStats)
 const History = lazy(loadHistory)
 const Library = lazy(loadLibrary)
+const Community = lazy(loadCommunity)
 const Settings = lazy(loadSettings)
 const MotionFeedback = lazy(() => import('./views/MotionFeedback.jsx'))
 const PersonalData = lazy(loadPersonalData)
@@ -111,7 +113,7 @@ const SupportTicket = lazy(loadSupportTicket)
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
   loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(), loadPersonalData(),
-  loadLibrary(), loadSettings(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadProfessionalPrograms(), loadStudentProfessionals(), loadSheets(),
+    loadLibrary(), loadCommunity(), loadSettings(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadProfessionalPrograms(), loadStudentProfessionals(), loadSheets(),
 ])
 
 const startFlow = (...args) => loadSheets().then(module => module.startFlow(...args))
@@ -522,6 +524,7 @@ function Shell() {
                 <Route path="/student/professionals/:professionalId" element={<StudentProfessionalDetail />} />
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
+                <Route path="/community" element={<Community />} />
                 <Route path="/more" element={<Navigate to="/home" replace />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/support/tickets" element={<SupportTickets />} />
