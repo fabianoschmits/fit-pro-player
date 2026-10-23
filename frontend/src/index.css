@@ -194,7 +194,7 @@ body.resting #app{padding-bottom:calc(172px + var(--primary-menu-height) + var(-
 
 /* Page art stays behind the header and fades into the app surface before controls begin. */
 .page-scenery{position:relative;isolation:isolate}
-.page-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 8px));left:50%;width:min(100vw,560px);height:322px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,transparent 34%,var(--bg) 100%),var(--page-scenery);background-position:center top;background-repeat:no-repeat;background-size:100% auto,cover;opacity:.9}
+.page-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 8px));left:50%;width:min(100vw,560px);height:322px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 32%,transparent),transparent 48%),linear-gradient(to bottom,transparent 34%,var(--bg) 100%),var(--page-scenery);background-position:center top,center top,center top;background-repeat:no-repeat;background-size:100% auto,100% auto,cover;opacity:.9}
 .plan-view{--page-scenery:url('./assets/page-backgrounds/plan-dark.png')}
 .workout-start-view,.workout-player-page{--page-scenery:url('./assets/page-backgrounds/workout-dark.png')}
 .library-view,.history-view{--page-scenery:url('./assets/page-backgrounds/library-dark.png')}
@@ -202,8 +202,9 @@ body.resting #app{padding-bottom:calc(172px + var(--primary-menu-height) + var(-
 :root[data-theme="light"] :is(.workout-start-view,.workout-player-page){--page-scenery:url('./assets/page-backgrounds/workout-light.png')}
 :root[data-theme="light"] :is(.library-view,.history-view){--page-scenery:url('./assets/page-backgrounds/library-light.png')}
 .home-route-scenery{position:relative;isolation:isolate}
-.home-route-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 20px));left:50%;width:min(100vw,560px);height:452px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-dark.png');background-position:center top,center -48px;background-repeat:no-repeat;background-size:100% auto,cover;opacity:.8}
-:root[data-theme="light"] .home-route-scenery::before{background-image:linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-light.png')}
+.home-route-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 20px));left:50%;width:min(100vw,560px);height:452px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 32%,transparent),transparent 48%),linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-dark.png');background-position:center top,center top,center -48px;background-repeat:no-repeat;background-size:100% auto,100% auto,cover;opacity:.8}
+:root[data-theme="light"] .home-route-scenery::before{background-image:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 32%,transparent),transparent 48%),linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-light.png')}
+:is(.page-scenery,.home-route-scenery) :is(.hdr h1,.hdr .sub,.profile-hero-name,.profile-hero-facts,.profile-hero-goal-head){text-shadow:0 1px 4px color-mix(in srgb,var(--bg) 30%,transparent)}
 .plan-view::before{height:300px;background-position:center 6%;opacity:.86}
 .workout-start-view::before{height:278px;background-position:center 8%;opacity:.82}
 .workout-player-page::before{height:272px;background-position:center 10%;opacity:.38}
