@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../auth/AuthProvider.jsx'
+import { useStore } from '../store/useStore.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import Icon from '../components/Icon.jsx'
 import AppHeader from '../components/AppHeader.jsx'
@@ -10,16 +11,39 @@ import { avatarSrc } from '../lib/avatars.js'
 
 const BUCKET = 'community-posts'
 const fmtDate = value => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
+const storagePathFromValue = value => {
+  if (!value) return ''
+  const marker = `/object/public/${BUCKET}/`
+  const signedMarker = `/object/sign/${BUCKET}/`
+  if (value.includes(marker)) return decodeURIComponent(value.split(marker)[1].split('?')[0])
+  if (value.includes(signedMarker)) return decodeURIComponent(value.split(signedMarker)[1].split('?')[0])
+  return value
+}
+
+function CommunityImage({ post, client }) {
+  const path = storagePathFromValue(post.image_path)
+  const [src, setSrc] = useState(() => path.startsWith('http') ? path : client?.storage.from(BUCKET).getPublicUrl(path).data?.publicUrl || path)
+  const [fallbackTried, setFallbackTried] = useState(false)
+  const retrySigned = async () => {
+    if (fallbackTried || !client) return
+    setFallbackTried(true)
+    const signed = await client.storage.from(BUCKET).createSignedUrl(path, 3600)
+    if (signed.data?.signedUrl) setSrc(signed.data.signedUrl)
+  }
+  return <img className="community-post-image" src={src} alt={post.caption || 'Foto de treino'} loading="lazy" onError={retrySigned} />
+}
 
 function Avatar({ profile, size = 'md' }) {
   const initials = (profile?.display_name || '?').slice(0, 1).toUpperCase()
-  return profile?.avatar_ref
-    ? <img className={`community-avatar community-avatar--${size}`} src={profile.avatar_ref.startsWith('http') || profile.avatar_ref.startsWith('data:') ? profile.avatar_ref : avatarSrc(profile.avatar_ref)} alt="" />
+  const avatar = profile?.avatar_ref || profile?.avatar_id
+  return avatar
+    ? <img className={`community-avatar community-avatar--${size}`} src={avatar.startsWith('http') || avatar.startsWith('data:') ? avatar : avatarSrc(avatar)} alt="" />
     : <span className={`community-avatar community-avatar--${size}`}>{initials}</span>
 }
 
 export default function Community() {
   const auth = useAuth(); const navigate = useNavigate(); const client = getBrowserSupabaseClient()
+  const localProfile = useStore(state => state.S.profile)
   const userId = auth.user?.id
   const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [error, setError] = useState('')
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -31,9 +55,10 @@ export default function Community() {
     if (!client || !userId) return
     setLoading(true); setError('')
     const { data, error: queryError } = await client.from('community_posts').select('*, author:profiles!community_posts_author_id_fkey(id,display_name,avatar_ref), likes:community_likes(user_id,user:profiles!community_likes_user_id_fkey(id,display_name,avatar_ref)), comments:community_comments(id,body,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref))').order('created_at', { ascending: false }).limit(40)
-    if (queryError) setError(queryError.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : queryError.message); else setPosts(data || [])
+    const enriched = (data || []).map(post => ({ ...post, author: post.author_id === userId ? { ...post.author, display_name: post.author?.display_name || localProfile?.name, avatar_id: localProfile?.avatarId } : post.author, likes: (post.likes || []).map(like => like.user_id === userId ? { ...like, user: { ...like.user, avatar_id: localProfile?.avatarId, display_name: like.user?.display_name || localProfile?.name } } : like) }))
+    if (queryError) setError(queryError.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : queryError.message); else setPosts(enriched)
     setLoading(false)
-  }, [client, userId])
+  }, [client, userId, localProfile])
   const loadNotifications = useCallback(async () => {
     if (!client || !userId) return
     const { data } = await client.from('community_notifications').select('*, actor:profiles!community_notifications_actor_id_fkey(display_name), post:community_posts(id)').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(30)
@@ -60,8 +85,7 @@ export default function Community() {
     const path = `${userId}/${crypto.randomUUID()}-${file.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
     const upload = await client.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
     if (upload.error) { setError(upload.error.message); setSaving(false); return }
-    const { data: publicUrl } = client.storage.from(BUCKET).getPublicUrl(path)
-    const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: publicUrl.publicUrl, caption }).select().single()
+    const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption }).select().single()
     if (inserted.error) setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message); else { setComposerOpen(false); setFile(null); setCaption(''); await load() }
     setSaving(false)
   }
@@ -73,7 +97,7 @@ export default function Community() {
       const path = `${userId}/${crypto.randomUUID()}-${file.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
       const upload = await client.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
       if (upload.error) { setError(upload.error.message); setSaving(false); return }
-      imagePath = client.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+      imagePath = path
     }
     const { error: updateError } = await client.from('community_posts').update({ caption: caption.trim(), image_path: imagePath }).eq('id', editingPost.id).eq('author_id', userId)
     if (updateError) setError(updateError.message); else { setPosts(current => current.map(post => post.id === editingPost.id ? { ...post, caption: caption.trim(), image_path: imagePath } : post)); setEditingPost(null); setComposerOpen(false); setCaption(''); setFile(null) }
@@ -99,7 +123,7 @@ export default function Community() {
     {error && <div className="community-error">{error}</div>}
     {loading ? <div className="community-empty">Carregando comunidade…</div> : posts.length === 0 ? <div className="community-empty">Ainda não há postagens. Compartilhe seu primeiro treino!</div> : posts.map(post => <article className="community-post" key={post.id}>
       <header className="community-post-head"><Avatar profile={post.author} /><div><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></div>{post.author_id === userId && <div className="community-post-menu"><button className="community-more" aria-label="Mais opções">•••</button><div className="community-post-menu-actions"><button onClick={() => openEdit(post)}>Editar</button><button onClick={() => deletePost(post)}>Excluir</button></div></div>}</header>
-      <img className="community-post-image" src={post.image_path} alt={post.caption || 'Foto de treino'} loading="lazy" />
+      <CommunityImage post={post} client={client} />
       <div className="community-post-body"><div className="community-actions"><button className={post.likes?.some(x => x.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes?.length || 0}</button>{post.likes?.length > 0 && <span className="community-liker-stack" aria-label={`${post.likes.length} curtidas`}>{post.likes.slice(0, 4).map((like, index) => <Avatar key={`${like.user_id}-${index}`} profile={like.user || { display_name: 'Usuário' }} size="xs" />)}</span>}<button onClick={() => setCommentsPost(post)}><Icon name="message" /> {post.comments?.length || 0}</button></div>{post.caption && <p>{post.caption}</p>}{post.comments?.slice(0, 2).map(comment => <div className="community-comment-preview" key={comment.id}><strong>{comment.author?.display_name || 'Usuário'}</strong> {comment.body}</div>)}{post.comments?.length > 2 && <button className="community-see-comments" onClick={() => setCommentsPost(post)}>Ver todos os comentários <Icon name="chevronRight" /></button>}</div>
     </article>)}
 
