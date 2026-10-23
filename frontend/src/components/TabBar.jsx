@@ -400,7 +400,7 @@ export default function TabBar({ onStart }) {
         </button>
         <div id="corner-nav-main" className="corner-nav-main" aria-hidden={!open} inert={!open}>
           {navItems.map((item, index) => <DockSlotButton key={`slot-${index}`} item={item} state={S} active={currentKey === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
-          <button type="button" className="corner-nav-more-tab" aria-label={extraNav.label} onClick={() => go(extraNav.to)}>
+          <button type="button" className={`corner-nav-more-tab${loc.pathname === extraNav.to || (extraNav.to === '/community' && loc.pathname.startsWith('/community/')) ? ' is-active' : ''}`} aria-label={extraNav.label} aria-current={loc.pathname === extraNav.to || (extraNav.to === '/community' && loc.pathname.startsWith('/community/')) ? 'page' : undefined} onClick={() => go(extraNav.to)}>
             <span className="corner-nav-icon"><Icon name={extraNav.icon} /></span><span>{extraNav.label}</span>
           </button>
         </div>

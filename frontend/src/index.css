@@ -475,6 +475,8 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 }
 .corner-nav-tab>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px}
 .corner-nav-more-tab{position:relative;flex:1;min-width:0;height:var(--menu-height);padding:0 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;border-radius:0;background:transparent;color:color-mix(in srgb,var(--label) 84%,transparent);font:inherit;cursor:pointer}
+.corner-nav-more-tab.is-active{color:var(--acc);background:var(--acc-soft)}
+.corner-nav-more-tab.is-active::after{content:"";position:absolute;left:25%;right:25%;bottom:3px;height:2px;background:var(--acc)}
 .corner-nav-more-tab>span:last-child{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px}
 .corner-nav-tab.is-active{color:var(--acc);background:var(--acc-soft)}
 .corner-nav-tab.is-active::after{content:"";position:absolute;left:25%;right:25%;bottom:3px;height:2px;background:var(--acc)}
