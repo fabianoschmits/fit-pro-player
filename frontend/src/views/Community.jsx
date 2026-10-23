@@ -140,7 +140,13 @@ export default function Community() {
     const { data } = await client.from('community_notifications').select('*, actor:profiles!community_notifications_actor_id_fkey(display_name), post:community_posts(id)').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(30)
     setNotifications(data || [])
   }, [client, userId])
-  useEffect(() => { load(true); loadNotifications() }, [loadNotifications, userId])
+  useEffect(() => {
+    setPosts([])
+    feedOffsetRef.current = 0
+    feedLoadingRef.current = false
+    load(true)
+    loadNotifications()
+  }, [loadNotifications, userId, viewedUserId])
   useEffect(() => {
     if (!loading || posts.length > 0) { setShowSkeleton(false); return undefined }
     const timer = window.setTimeout(() => setShowSkeleton(true), 220)
