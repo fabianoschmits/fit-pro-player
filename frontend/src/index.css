@@ -736,13 +736,13 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .plan-day:active{transform:scale(.94)}
 .plan-day.on{--plan-day-ink:color-mix(in srgb,#071f24 88%,var(--acc));background:var(--acc);color:var(--plan-day-ink);border-color:var(--acc);box-shadow:0 5px 12px color-mix(in srgb,var(--acc) 24%,transparent)}
 .plan-day-icon .plan-routine-body-thumb{width:26px;height:34px}
-.plan-day.on .plan-routine-body-thumb{--bm-base:color-mix(in srgb,var(--plan-day-ink) 70%,var(--acc))}
-.plan-day.on .plan-routine-body-thumb .bm-sil{fill:color-mix(in srgb,var(--plan-day-ink) 76%,var(--acc))}
-.plan-day.on .plan-routine-body-thumb .bm-m.l0{fill:color-mix(in srgb,var(--plan-day-ink) 48%,var(--acc))}
-.plan-day.on .plan-routine-body-thumb .bm-m.l1{fill:color-mix(in srgb,var(--plan-day-ink) 58%,var(--acc))}
-.plan-day.on .plan-routine-body-thumb .bm-m.l2{fill:color-mix(in srgb,var(--plan-day-ink) 68%,var(--acc))}
-.plan-day.on .plan-routine-body-thumb .bm-m.l3{fill:color-mix(in srgb,var(--plan-day-ink) 78%,var(--acc))}
-.plan-day.on .plan-routine-body-thumb .bm-m.l4{fill:var(--plan-day-ink)}
+.plan-day.on .plan-routine-body-thumb{--bm-base:color-mix(in srgb,var(--on-acc) 28%,var(--acc));opacity:.76}
+.plan-day.on .plan-routine-body-thumb .bm-sil{fill:color-mix(in srgb,var(--on-acc) 68%,var(--acc))}
+.plan-day.on .plan-routine-body-thumb .bm-m.l0{fill:color-mix(in srgb,var(--on-acc) 38%,var(--acc))}
+.plan-day.on .plan-routine-body-thumb .bm-m.l1{fill:color-mix(in srgb,var(--on-acc) 52%,var(--acc))}
+.plan-day.on .plan-routine-body-thumb .bm-m.l2{fill:color-mix(in srgb,var(--on-acc) 64%,var(--acc))}
+.plan-day.on .plan-routine-body-thumb .bm-m.l3{fill:color-mix(in srgb,var(--on-acc) 74%,var(--acc))}
+.plan-day.on .plan-routine-body-thumb .bm-m.l4{fill:color-mix(in srgb,var(--on-acc) 84%,var(--acc))}
 .plan-day.has-other{color:var(--label-3)}
 .plan-day-label{font-size:11px;text-transform:uppercase;letter-spacing:.03em;font-weight:600}
 .plan-day-icon{font-size:18px;display:flex}
