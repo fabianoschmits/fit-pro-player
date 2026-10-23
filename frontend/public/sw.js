@@ -1,7 +1,7 @@
 /* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
    Media (img/gif) cache-first; everything else network-first with offline fallback.
    Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v28'
+const CACHE = 'fit-pro-player-rt-v29'
 const MEDIA_LIMIT = 256
 async function remember(request, response, media = false) {
   const cache = await caches.open(CACHE)
