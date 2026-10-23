@@ -97,7 +97,7 @@ export default function Community() {
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
   const [activeMenuId, setActiveMenuId] = useState(null)
-  const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [saving, setSaving] = useState(false)
+  const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [commentsDisabled, setCommentsDisabled] = useState(false); const [saving, setSaving] = useState(false)
   const fileInputRef = useRef(null); const feedOffsetRef = useRef(0); const feedLoadingRef = useRef(false); const feedSeedRef = useRef(randomId()); const feedSentinelRef = useRef(null)
   useEffect(() => {
     if (!activeMenuId) return undefined
@@ -166,6 +166,7 @@ export default function Community() {
     if (!liked && post.author_id !== userId) await client.from('community_notifications').insert({ recipient_id: post.author_id, actor_id: userId, type: 'like', post_id: post.id })
   }
   const submitComment = async (post, body, parentCommentId = null) => {
+    if (post.comments_disabled) return
     const text = body.trim(); if (!text) return
     const { error: insertError } = await client.from('community_comments').insert({ post_id: post.id, author_id: userId, body: text, parent_comment_id: parentCommentId })
     if (insertError) setError(insertError.message); else { await load(); if (post.author_id !== userId) await client.from('community_notifications').insert({ recipient_id: post.author_id, actor_id: userId, type: 'comment', post_id: post.id }) }
@@ -177,7 +178,7 @@ export default function Community() {
     const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
     const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
     if (upload.error) { setError(upload.error.message); setSaving(false); return }
-    const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption }).select().single()
+    const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption, comments_disabled: false }).select().single()
     if (inserted.error) setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message); else { setComposerOpen(false); setFile(null); setCaption(''); await load() }
     setSaving(false)
   }
@@ -192,8 +193,8 @@ export default function Community() {
       if (upload.error) { setError(upload.error.message); setSaving(false); return }
       imagePath = path
     }
-    const { error: updateError } = await client.from('community_posts').update({ caption: caption.trim(), image_path: imagePath }).eq('id', editingPost.id).eq('author_id', userId)
-    if (updateError) setError(updateError.message); else { setPosts(current => current.map(post => post.id === editingPost.id ? { ...post, caption: caption.trim(), image_path: imagePath } : post)); setEditingPost(null); setComposerOpen(false); setCaption(''); setFile(null) }
+    const { error: updateError } = await client.from('community_posts').update({ caption: caption.trim(), image_path: imagePath, comments_disabled: commentsDisabled }).eq('id', editingPost.id).eq('author_id', userId)
+    if (updateError) setError(updateError.message); else { setPosts(current => current.map(post => post.id === editingPost.id ? { ...post, caption: caption.trim(), image_path: imagePath, comments_disabled: commentsDisabled } : post)); setEditingPost(null); setComposerOpen(false); setCaption(''); setFile(null) }
     setSaving(false)
   }
   const deletePost = async post => {
@@ -203,7 +204,7 @@ export default function Community() {
   }
   const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setComposerOpen(true); event.target.value = '' }
   const openNewPost = () => fileInputRef.current?.click()
-  const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setFile(null); setComposerOpen(true) }
+  const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setCommentsDisabled(Boolean(post.comments_disabled)); setFile(null); setComposerOpen(true) }
   const markNotificationsRead = async () => { if (unread) await client.from('community_notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))) }
   const returnToFeedTop = async () => { window.scrollTo({ top: 0, behavior: 'smooth' }); await load(true) }
 
@@ -225,7 +226,7 @@ export default function Community() {
     {loadingMore && <div className="community-skeleton-list community-skeleton-list--more"><CommunityPostSkeleton /></div>}
     {!profileMode && <div ref={feedSentinelRef} className="community-feed-sentinel" aria-hidden="true">{loadingMore ? 'Carregando mais postagens…' : hasMore ? '' : 'Sem mais postagens por aqui.'}</div>}
 
-    <AnimatePresence>{composerOpen && <div className="community-overlay community-overlay--sheet" onMouseDown={e => e.target === e.currentTarget && setComposerOpen(false)}><motion.form className="community-sheet community-composer-sheet" drag="y" dragConstraints={{ top: 0, bottom: 500 }} dragElastic={0.2} onDragEnd={(_, info) => { if (info.offset.y > 120) setComposerOpen(false) }} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={editingPost ? updatePost : createPost}><div className="community-sheet-inner"><div className="community-sheet-handle" /><div className="community-sheet-title"><h2>{editingPost ? 'Editar postagem' : 'Nova postagem'}</h2><button type="button" onClick={() => setComposerOpen(false)}><Icon name="xmark" /></button></div></div>{file && <img className="community-composer-preview" src={URL.createObjectURL(file)} alt="Prévia da postagem" />}{!editingPost && <label className="community-upload community-upload-inline">{file ? 'Trocar foto' : 'Escolha uma foto do treino'}<input type="file" accept="image/*" onChange={chooseFile} /></label>}{editingPost && <label className="community-upload community-upload-inline">{file ? 'Trocar foto selecionada' : 'Trocar foto (opcional)'}<input type="file" accept="image/*" onChange={chooseFile} /></label>}<div className="community-sheet-inner"><textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={500} placeholder="Conte como foi o treino…" /><button className="community-primary-action" disabled={(!file && !editingPost) || saving}>{saving ? (editingPost ? 'Salvando…' : 'Publicando…') : editingPost ? 'Salvar alterações' : 'Publicar foto'}</button></div></motion.form></div>}</AnimatePresence>
+    <AnimatePresence>{composerOpen && <div className="community-overlay community-overlay--sheet" onMouseDown={e => e.target === e.currentTarget && setComposerOpen(false)}><motion.form className="community-sheet community-composer-sheet" drag="y" dragConstraints={{ top: 0, bottom: 500 }} dragElastic={0.2} onDragEnd={(_, info) => { if (info.offset.y > 120) setComposerOpen(false) }} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={editingPost ? updatePost : createPost}><div className="community-sheet-inner"><div className="community-sheet-handle" /><div className="community-sheet-title"><h2>{editingPost ? 'Editar postagem' : 'Nova postagem'}</h2><button type="button" onClick={() => setComposerOpen(false)}><Icon name="xmark" /></button></div></div>{editingPost && !file && <CommunityImage post={editingPost} client={client} />}{file && <img className="community-composer-preview" src={URL.createObjectURL(file)} alt="Prévia da postagem" />}{!editingPost && <label className="community-upload community-upload-inline">{file ? 'Trocar foto' : 'Escolha uma foto do treino'}<input type="file" accept="image/*" onChange={chooseFile} /></label>}<div className="community-sheet-inner"><textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={500} placeholder="Conte como foi o treino…" />{editingPost && <label className="community-comments-toggle"><input type="checkbox" checked={!commentsDisabled} onChange={e => setCommentsDisabled(!e.target.checked)} /> Permitir comentários nesta postagem</label>}<button className="community-primary-action" disabled={(!file && !editingPost) || saving}>{saving ? (editingPost ? 'Salvando…' : 'Publicando…') : editingPost ? 'Salvar alterações' : 'Publicar foto'}</button></div></motion.form></div>}</AnimatePresence>
     <AnimatePresence>{commentsPost && <CommentsSheet post={commentsPost} client={client} userId={userId} onClose={() => setCommentsPost(null)} onSubmit={submitComment} />}</AnimatePresence>
     <AnimatePresence>{notificationsOpen && <div className="community-overlay community-overlay--top" onMouseDown={e => e.target === e.currentTarget && setNotificationsOpen(false)}><motion.div className="community-notification-sheet" initial={{ y: '-100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }}><div className="community-sheet-title"><h2>Notificações</h2><button onClick={() => setNotificationsOpen(false)}><Icon name="xmark" /></button></div>{notifications.length === 0 ? <div className="community-empty">Você está em dia.</div> : notifications.map(n => <button className="community-notification" key={n.id} onClick={() => { setNotificationsOpen(false); if (n.post_id) navigate(`/community?post=${n.post_id}`) }}><Icon name={n.type === 'like' ? 'heart' : 'message'} /><span><strong>{n.actor?.display_name || 'Alguém'}</strong> {n.type === 'like' ? 'curtiu sua postagem.' : 'comentou na sua postagem.'}</span></button>)}</motion.div></div>}</AnimatePresence>
   </div>
