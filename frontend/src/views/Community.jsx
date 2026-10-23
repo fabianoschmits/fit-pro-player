@@ -9,6 +9,7 @@ import './community.css'
 import { avatarSrc } from '../lib/avatars.js'
 
 const BUCKET = 'community-posts'
+const randomId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
 const FEED_PAGE_SIZE = 20
 const feedHash = (id, seed) => {
   let hash = 2166136261
@@ -89,7 +90,7 @@ export default function Community() {
   const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
   const [activeMenuId, setActiveMenuId] = useState(null)
   const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [saving, setSaving] = useState(false)
-  const fileInputRef = useRef(null); const feedOffsetRef = useRef(0); const feedLoadingRef = useRef(false); const feedSeedRef = useRef(crypto.randomUUID?.() || String(Math.random())); const feedSentinelRef = useRef(null)
+  const fileInputRef = useRef(null); const feedOffsetRef = useRef(0); const feedLoadingRef = useRef(false); const feedSeedRef = useRef(randomId()); const feedSentinelRef = useRef(null)
   useEffect(() => {
     if (!activeMenuId) return undefined
     const closeMenu = event => { if (!event.target.closest?.('.community-post-menu')) setActiveMenuId(null) }
@@ -160,7 +161,7 @@ export default function Community() {
     event.preventDefault(); if (!file || saving) return
     setSaving(true); setError('')
     const compressed = await compressCommunityImage(file)
-    const path = `${userId}/${crypto.randomUUID()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
+    const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
     const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
     if (upload.error) { setError(upload.error.message); setSaving(false); return }
     const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption }).select().single()
@@ -173,7 +174,7 @@ export default function Community() {
     let imagePath = editingPost.image_path
     if (file) {
       const compressed = await compressCommunityImage(file)
-      const path = `${userId}/${crypto.randomUUID()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
+      const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
       const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
       if (upload.error) { setError(upload.error.message); setSaving(false); return }
       imagePath = path
