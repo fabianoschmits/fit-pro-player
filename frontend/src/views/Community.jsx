@@ -19,6 +19,21 @@ const storagePathFromValue = value => {
   return value
 }
 
+async function compressCommunityImage(file) {
+  if (!file?.type?.startsWith('image/')) return file
+  try {
+  const bitmap = await createImageBitmap(file)
+  const maxEdge = 1600
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+  return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg', lastModified: Date.now() }) : file
+  } catch { return file }
+}
+
 function CommunityImage({ post, client }) {
   const path = storagePathFromValue(post.image_path)
   const [src, setSrc] = useState('')
@@ -91,8 +106,9 @@ export default function Community() {
   const createPost = async event => {
     event.preventDefault(); if (!file || saving) return
     setSaving(true); setError('')
-    const path = `${userId}/${crypto.randomUUID()}-${file.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
-    const upload = await client.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
+    const compressed = await compressCommunityImage(file)
+    const path = `${userId}/${crypto.randomUUID()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
+    const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
     if (upload.error) { setError(upload.error.message); setSaving(false); return }
     const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption }).select().single()
     if (inserted.error) setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message); else { setComposerOpen(false); setFile(null); setCaption(''); await load() }
@@ -103,8 +119,9 @@ export default function Community() {
     setSaving(true)
     let imagePath = editingPost.image_path
     if (file) {
-      const path = `${userId}/${crypto.randomUUID()}-${file.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
-      const upload = await client.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false })
+      const compressed = await compressCommunityImage(file)
+      const path = `${userId}/${crypto.randomUUID()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
+      const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
       if (upload.error) { setError(upload.error.message); setSaving(false); return }
       imagePath = path
     }
@@ -115,7 +132,7 @@ export default function Community() {
   const deletePost = async post => {
     if (!window.confirm('Excluir esta postagem?')) return
     const { error: deleteError } = await client.from('community_posts').delete().eq('id', post.id).eq('author_id', userId)
-    if (deleteError) setError(deleteError.message); else setPosts(current => current.filter(item => item.id !== post.id))
+    if (deleteError) setError(deleteError.message); else { const imagePath = storagePathFromValue(post.image_path); if (imagePath) await client.storage.from(BUCKET).remove([imagePath]); setPosts(current => current.filter(item => item.id !== post.id)) }
   }
   const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setComposerOpen(true); event.target.value = '' }
   const openNewPost = () => fileInputRef.current?.click()
