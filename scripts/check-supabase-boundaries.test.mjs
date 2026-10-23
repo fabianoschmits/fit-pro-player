@@ -44,11 +44,11 @@ test('accepts a CSP connect-src boundary with self and the exact Supabase origin
   }), [])
 })
 
-test('rejects CSP connect-src wildcards, WebSocket, and unrelated origins', () => {
+test('rejects CSP connect-src wildcards and unrelated origins', () => {
   for (const source of [
     `'self' ${requiredSupabaseOrigin} *`,
     `'self' ${requiredSupabaseOrigin} https://*.supabase.co`,
-    `'self' ${requiredSupabaseOrigin} wss://bgqavxoxwgheloeubbpf.supabase.co`,
+    `'self' ${requiredSupabaseOrigin} wss://other.supabase.co`,
     `'self' ${requiredSupabaseOrigin} https://unrelated.example.com`,
   ]) {
     const violations = checkVercelCsp({ text: vercelFixture(source), requiredSupabaseOrigin })

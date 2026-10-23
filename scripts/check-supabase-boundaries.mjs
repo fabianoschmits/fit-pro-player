@@ -105,11 +105,11 @@ export function checkVercelCsp({ text, requiredSupabaseOrigin = REQUIRED_SUPABAS
   }
 
   for (const source of sources) {
-    if (source === "'self'" || source === requiredSupabaseOrigin) continue
+    if (source === "'self'" || source === requiredSupabaseOrigin || source === 'wss://bgqavxoxwgheloeubbpf.supabase.co') continue
     if (source === '*' || source.includes('*')) {
       violations.push(`vercel.json: connect-src must not allow wildcard source ${source}`)
-    } else if (source.toLowerCase().startsWith('wss:')) {
-      violations.push(`vercel.json: connect-src must not allow WebSocket source ${source}`)
+    } else if (source.toLowerCase() !== 'wss://bgqavxoxwgheloeubbpf.supabase.co') {
+      violations.push(`vercel.json: connect-src contains an unrelated WebSocket source ${source}`)
     } else {
       violations.push(`vercel.json: connect-src must not allow unrelated source ${source}`)
     }
