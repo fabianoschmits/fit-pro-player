@@ -38,7 +38,7 @@ const storagePathFromValue = value => {
   return value
 }
 
-async function compressCommunityImage(file) {
+async function compressCommunityImage(await cropCommunityImage(file, crop)) {
   if (!file?.type?.startsWith('image/')) return file
   try {
   const bitmap = await createImageBitmap(file)
@@ -51,6 +51,38 @@ async function compressCommunityImage(file) {
   const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82))
   return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg', lastModified: Date.now() }) : file
   } catch { return file }
+}
+
+async function cropCommunityImage(file, crop) {
+  if (!file || !crop) return file
+  try {
+    const bitmap = await createImageBitmap(file)
+    const aspect = crop.aspect === 'portrait' ? 4 / 5 : crop.aspect === 'original' ? bitmap.width / bitmap.height : 1
+    const sourceAspect = bitmap.width / bitmap.height
+    let cropWidth = bitmap.width; let cropHeight = bitmap.height
+    if (sourceAspect > aspect) cropWidth = bitmap.height * aspect
+    else if (sourceAspect < aspect) cropHeight = bitmap.width / aspect
+    const maxX = bitmap.width - cropWidth; const maxY = bitmap.height - cropHeight
+    const sx = Math.max(0, Math.min(maxX, (crop.x / 100) * maxX - cropWidth / 2 + cropWidth / 2))
+    const sy = Math.max(0, Math.min(maxY, (crop.y / 100) * maxY - cropHeight / 2 + cropHeight / 2))
+    const width = Math.min(1600, Math.round(cropWidth)); const height = Math.max(1, Math.round(width / aspect))
+    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height
+    canvas.getContext('2d').drawImage(bitmap, sx, sy, cropWidth, cropHeight, 0, 0, width, height); bitmap.close()
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82))
+    return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg', lastModified: Date.now() }) : file
+  } catch { return file }
+}
+
+function CommunityCropEditor({ file, crop, setCrop }) {
+  const [dragging, setDragging] = useState(false)
+  const source = useMemo(() => URL.createObjectURL(file), [file])
+  useEffect(() => () => URL.revokeObjectURL(source), [source])
+  const move = event => {
+    if (!dragging) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    setCrop(current => ({ ...current, x: Math.max(0, Math.min(100, current.x - (event.movementX / rect.width) * 100)), y: Math.max(0, Math.min(100, current.y - (event.movementY / rect.height) * 100)) }))
+  }
+  return <div className={`community-crop-editor community-crop-editor--${crop.aspect}`}><div className="community-crop-viewport" onPointerDown={() => setDragging(true)} onPointerUp={() => setDragging(false)} onPointerLeave={() => setDragging(false)} onPointerMove={move}><img src={source} alt="Ajuste da foto" draggable="false" style={{ objectPosition: `${crop.x}% ${crop.y}%` }} /></div><div className="community-crop-options"><button type="button" className={crop.aspect === 'square' ? 'is-active' : ''} onClick={() => setCrop(current => ({ ...current, aspect: 'square' }))}>Quadrado</button><button type="button" className={crop.aspect === 'portrait' ? 'is-active' : ''} onClick={() => setCrop(current => ({ ...current, aspect: 'portrait' }))}>Vertical</button><button type="button" className={crop.aspect === 'original' ? 'is-active' : ''} onClick={() => setCrop(current => ({ ...current, aspect: 'original' }))}>Original</button></div><small>Arraste a foto para escolher o corte</small></div>
 }
 
 function CommunityImage({ post, client }) {
@@ -101,7 +133,7 @@ export default function Community() {
   const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
   const [activeMenuId, setActiveMenuId] = useState(null); const [blockedNoticeId, setBlockedNoticeId] = useState(null); const [likeAnimations, setLikeAnimations] = useState([])
-  const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [commentsDisabled, setCommentsDisabled] = useState(false); const [saving, setSaving] = useState(false)
+  const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [commentsDisabled, setCommentsDisabled] = useState(false); const [saving, setSaving] = useState(false); const [crop, setCrop] = useState({ aspect: 'square', x: 50, y: 50 })
   const fileInputRef = useRef(null); const feedOffsetRef = useRef(0); const feedLoadingRef = useRef(false); const feedSeedRef = useRef(randomId()); const feedSentinelRef = useRef(null)
   useEffect(() => {
     if (!activeMenuId) return undefined
@@ -205,7 +237,7 @@ export default function Community() {
   const createPost = async event => {
     event.preventDefault(); if (!file || saving) return
     setSaving(true); setError('')
-    const compressed = await compressCommunityImage(file)
+    const compressed = await compressCommunityImage(await cropCommunityImage(file, crop))
     const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
     const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
     if (upload.error) { setError(upload.error.message); setSaving(false); return }
@@ -218,7 +250,7 @@ export default function Community() {
     setSaving(true)
     let imagePath = editingPost.image_path
     if (file) {
-      const compressed = await compressCommunityImage(file)
+      const compressed = await compressCommunityImage(await cropCommunityImage(file, crop))
       const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
       const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
       if (upload.error) { setError(upload.error.message); setSaving(false); return }
@@ -233,7 +265,7 @@ export default function Community() {
     const { error: deleteError } = await client.from('community_posts').delete().eq('id', post.id).eq('author_id', userId)
     if (deleteError) setError(deleteError.message); else { const imagePath = storagePathFromValue(post.image_path); if (imagePath) await client.storage.from(BUCKET).remove([imagePath]); setPosts(current => current.filter(item => item.id !== post.id)) }
   }
-  const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setComposerOpen(true); event.target.value = '' }
+  const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setCrop({ aspect: 'square', x: 50, y: 50 }); setComposerOpen(true); event.target.value = '' }
   const openNewPost = () => fileInputRef.current?.click()
   const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setCommentsDisabled(Boolean(post.comments_disabled)); setFile(null); setComposerOpen(true) }
   const markNotificationsRead = async () => { if (unread) await client.from('community_notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))) }
@@ -259,7 +291,7 @@ export default function Community() {
     {loadingMore && <div className="community-skeleton-list community-skeleton-list--more"><CommunityPostSkeleton /></div>}
     {!profileMode && <div ref={feedSentinelRef} className="community-feed-sentinel" aria-live="polite">{loadingMore ? 'Carregando mais postagens…' : hasMore ? '' : 'Sem mais postagens por aqui.'}</div>}
 
-    <AnimatePresence>{composerOpen && <div className="community-overlay community-overlay--sheet" onMouseDown={e => e.target === e.currentTarget && setComposerOpen(false)}><motion.form className="community-sheet community-composer-sheet" drag="y" dragConstraints={{ top: 0, bottom: 500 }} dragElastic={0.2} onDragEnd={(_, info) => { if (info.offset.y > 120) setComposerOpen(false) }} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={editingPost ? updatePost : createPost}><div className="community-sheet-inner"><div className="community-sheet-handle" /><div className="community-sheet-title"><h2>{editingPost ? 'Editar postagem' : 'Nova postagem'}</h2><button type="button" onClick={() => setComposerOpen(false)}><Icon name="xmark" /></button></div></div>{editingPost && !file && <CommunityImage post={editingPost} client={client} />}{file && <img className="community-composer-preview" src={URL.createObjectURL(file)} alt="Prévia da postagem" />}{!editingPost && <label className="community-upload community-upload-inline">{file ? 'Trocar foto' : 'Escolha uma foto do treino'}<input type="file" accept="image/*" onChange={chooseFile} /></label>}<div className="community-sheet-inner"><textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={500} placeholder="Conte como foi o treino…" />{editingPost && <label className="community-comments-toggle"><input type="checkbox" checked={!commentsDisabled} onChange={e => setCommentsDisabled(!e.target.checked)} /> Permitir comentários nesta postagem</label>}<button className="community-primary-action" disabled={(!file && !editingPost) || saving}>{saving ? (editingPost ? 'Salvando…' : 'Publicando…') : editingPost ? 'Salvar alterações' : 'Publicar foto'}</button></div></motion.form></div>}</AnimatePresence>
+    <AnimatePresence>{composerOpen && <div className="community-overlay community-overlay--sheet" onMouseDown={e => e.target === e.currentTarget && setComposerOpen(false)}><motion.form className="community-sheet community-composer-sheet" drag="y" dragConstraints={{ top: 0, bottom: 500 }} dragElastic={0.2} onDragEnd={(_, info) => { if (info.offset.y > 120) setComposerOpen(false) }} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={editingPost ? updatePost : createPost}><div className="community-sheet-inner"><div className="community-sheet-handle" /><div className="community-sheet-title"><h2>{editingPost ? 'Editar postagem' : 'Nova postagem'}</h2><button type="button" onClick={() => setComposerOpen(false)}><Icon name="xmark" /></button></div></div>{editingPost && !file && <CommunityImage post={editingPost} client={client} />}{file && <CommunityCropEditor file={file} crop={crop} setCrop={setCrop} />}{!editingPost && <label className="community-upload community-upload-inline">{file ? 'Trocar foto' : 'Escolha uma foto do treino'}<input type="file" accept="image/*" onChange={chooseFile} /></label>}<div className="community-sheet-inner"><textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={500} placeholder="Conte como foi o treino…" />{editingPost && <label className="community-comments-toggle"><input type="checkbox" checked={!commentsDisabled} onChange={e => setCommentsDisabled(!e.target.checked)} /> Permitir comentários nesta postagem</label>}<button className="community-primary-action" disabled={(!file && !editingPost) || saving}>{saving ? (editingPost ? 'Salvando…' : 'Publicando…') : editingPost ? 'Salvar alterações' : 'Publicar foto'}</button></div></motion.form></div>}</AnimatePresence>
     <AnimatePresence>{commentsPost && <CommentsSheet key={commentsPost.id} post={commentsPost} client={client} userId={userId} ownIdentity={ownIdentity} ownProfile={localProfile} authUser={auth.user} onClose={() => setCommentsPost(null)} onSubmit={submitComment} onCommentDeleted={updateCommentCount} onOpenUser={openUser} />}</AnimatePresence>
     <AnimatePresence>{notificationsOpen && <div className="community-overlay community-overlay--top" onMouseDown={e => e.target === e.currentTarget && setNotificationsOpen(false)}><motion.div className="community-notification-sheet" initial={{ y: '-100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }}><div className="community-sheet-title"><h2>Notificações</h2><button onClick={() => setNotificationsOpen(false)}><Icon name="xmark" /></button></div>{notifications.length === 0 ? <div className="community-empty">Você está em dia.</div> : notifications.map(n => <button className="community-notification" key={n.id} onClick={() => { setNotificationsOpen(false); if (n.post_id) navigate(`/community?post=${n.post_id}`) }}><Icon name={n.type === 'like' ? 'heart' : 'message'} /><span><strong>{n.actor?.display_name || 'Alguém'}</strong> {n.type === 'like' ? 'curtiu sua postagem.' : 'comentou na sua postagem.'}</span></button>)}</motion.div></div>}</AnimatePresence>
   </div>
