@@ -100,7 +100,7 @@ function CommunityImage({ post, client }) {
     const downloaded = await client.storage.from(BUCKET).download(path)
     if (downloaded.data) setSrc(URL.createObjectURL(downloaded.data))
   }
-  return src ? <img className="community-post-image" src={src} alt={post.caption || 'Foto de treino'} loading="lazy" onError={useAuthenticatedFallback} /> : <div className="community-post-image community-post-image--loading" aria-label="Carregando foto" />
+  return src ? <img className="community-post-image" src={src} alt={post.caption || 'Foto de treino'} loading="lazy" onLoad={event => { event.currentTarget.dataset.orientation = event.currentTarget.naturalWidth >= event.currentTarget.naturalHeight ? "landscape" : "portrait" }} onError={useAuthenticatedFallback} /> : <div className="community-post-image community-post-image--loading" aria-label="Carregando foto" />
 }
 
 function Avatar({ profile, size = 'md' }) {
