@@ -89,11 +89,11 @@ function CommunityPostSkeleton() {
 
 export default function Community() {
   const auth = useAuth(); const navigate = useNavigate(); const location = useLocation(); const client = getBrowserSupabaseClient()
+  const userId = auth.user?.id
   const profileMode = location.pathname === '/community/profile'
   const publicUserId = location.pathname.match(/^\/community\/user\/([^/]+)$/)?.[1] || null
   const viewedUserId = publicUserId || (profileMode ? userId : null)
   const localProfile = useStore(state => state.S.profile)
-  const userId = auth.user?.id
   const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState('')
   const [ownIdentity, setOwnIdentity] = useState(null)
   const [viewedProfile, setViewedProfile] = useState(null)
