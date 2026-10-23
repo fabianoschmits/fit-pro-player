@@ -75,6 +75,12 @@ export default function Community() {
   const [activeMenuId, setActiveMenuId] = useState(null)
   const [file, setFile] = useState(null); const [caption, setCaption] = useState(''); const [saving, setSaving] = useState(false)
   const fileInputRef = useRef(null)
+  useEffect(() => {
+    if (!activeMenuId) return undefined
+    const closeMenu = event => { if (!event.target.closest?.('.community-post-menu')) setActiveMenuId(null) }
+    document.addEventListener('pointerdown', closeMenu)
+    return () => document.removeEventListener('pointerdown', closeMenu)
+  }, [activeMenuId])
 
   const load = useCallback(async () => {
     if (!client || !userId) return
