@@ -54,12 +54,20 @@ async function compressCommunityImage(file) {
 
 function CommunityImage({ post, client }) {
   const path = storagePathFromValue(post.image_path)
-  const publicUrl = path && client ? client.storage.from(BUCKET).getPublicUrl(path).data?.publicUrl : ''
-  const [src, setSrc] = useState(publicUrl)
+  const publicUrl = path?.startsWith('http') ? path : path && client ? client.storage.from(BUCKET).getPublicUrl(path).data?.publicUrl : ''
+  const [src, setSrc] = useState(publicUrl || '')
+  const [fallbackTried, setFallbackTried] = useState(false)
   useEffect(() => {
-    setSrc(path?.startsWith('http') ? path : publicUrl || '')
-  }, [path, publicUrl])
-  return src ? <img className="community-post-image" src={src} alt={post.caption || 'Foto de treino'} loading="lazy" /> : <div className="community-post-image community-post-image--loading" aria-label="Carregando foto" />
+    setSrc(publicUrl || '')
+    setFallbackTried(false)
+  }, [publicUrl])
+  const useAuthenticatedFallback = async () => {
+    if (fallbackTried || !client || !path || path.startsWith('http')) return
+    setFallbackTried(true)
+    const downloaded = await client.storage.from(BUCKET).download(path)
+    if (downloaded.data) setSrc(URL.createObjectURL(downloaded.data))
+  }
+  return src ? <img className="community-post-image" src={src} alt={post.caption || 'Foto de treino'} loading="lazy" onError={useAuthenticatedFallback} /> : <div className="community-post-image community-post-image--loading" aria-label="Carregando foto" />
 }
 
 function Avatar({ profile, size = 'md' }) {
