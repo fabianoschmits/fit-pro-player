@@ -10,7 +10,7 @@ import Icon from './Icon.jsx'
 import { Button } from './ui.jsx'
 import '../workout-themes.css'
 import '../workout-share-layouts.css'
-import { LayoutDashboard as ShareCardLayout } from './WorkoutShareLayouts.jsx'
+import { LayoutDashboard as ShareCardLayout, WORKOUT_SHARE_LAYOUTS } from './WorkoutShareLayouts.jsx'
 import { shareWorkoutImage } from '../lib/workout-share.js'
 import { FppActionFeedback } from './FppFeedback.jsx'
 
@@ -127,8 +127,8 @@ function LayoutDashboard({ w, st, innerRef, themeId }) {
   )
 }
 
-function WorkoutStoryPreview({ w, st, innerRef, themeId }) {
-  return <ShareCardLayout w={w} st={st} innerRef={innerRef} themeId={themeId} />
+function WorkoutStoryPreview({ w, st, innerRef, themeId, layoutId }) {
+  return <ShareCardLayout w={w} st={st} innerRef={innerRef} themeId={themeId} layoutId={layoutId} />
 }
 
 // ── Main modal component ───────────────────────────────────────────────────
@@ -136,11 +136,32 @@ export function WorkoutShareModal({ w, onClose }) {
   const st = useStore(s => s.S)
   const [generating, setGenerating] = useState(false)
   const [phase, setPhase] = useState('generating')
+  const [layoutIndex, setLayoutIndex] = useState(0)
   const [shareOutcomes, setShareOutcomes] = useState({ share: 'shared', more: 'shared' })
   const [error, setError] = useState(null)
   const operation = useRef(false)
   const canvasRef = useRef(null)   // points to .workout-story-canvas (1080×1920)
   const outerRef = useRef(null)    // points to the visible scaler container
+  const layoutSwipe = useRef(null)
+  const activeLayout = WORKOUT_SHARE_LAYOUTS[layoutIndex]
+
+  const selectLayout = nextIndex => {
+    setLayoutIndex(Math.max(0, Math.min(WORKOUT_SHARE_LAYOUTS.length - 1, nextIndex)))
+  }
+
+  const startLayoutSwipe = (x, y) => {
+    layoutSwipe.current = { x, y }
+  }
+
+  const finishLayoutSwipe = (x, y) => {
+    const start = layoutSwipe.current
+    layoutSwipe.current = null
+    if (!start) return
+    const distanceX = x - start.x
+    const distanceY = y - start.y
+    if (Math.abs(distanceX) < 42 || Math.abs(distanceX) <= Math.abs(distanceY)) return
+    selectLayout(layoutIndex + (distanceX < 0 ? 1 : -1))
+  }
 
   // Scale the canvas to fit the visible preview frame
   useEffect(() => {
@@ -151,12 +172,28 @@ export function WorkoutShareModal({ w, onClose }) {
         const scale = Math.min(width / 1080, height / 1920)
         canvasRef.current.style.transform = `scale(${scale})`
         canvasRef.current.style.transformOrigin = 'center center'
-        const sheet = outerRef.current.closest('.sheet.share-sheet-modal')
-        sheet?.style.setProperty('--share-preview-width', `${Math.round(width)}px`)
       }
     })
     obs.observe(outerRef.current)
     return () => obs.disconnect()
+  }, [])
+
+  // The modal is as wide as its 9:16 preview. This must not run from the
+  // preview observer itself: changing the sheet width would resize that target
+  // again and can create an observer feedback loop in Chromium.
+  useEffect(() => {
+    const syncSheetWidth = () => {
+      const outer = outerRef.current
+      const sheet = outer?.closest('.sheet.share-sheet-modal')
+      if (!outer || !sheet) return
+      const previewWidth = `${Math.round(outer.getBoundingClientRect().width)}px`
+      if (sheet.style.getPropertyValue('--share-preview-width') !== previewWidth) {
+        sheet.style.setProperty('--share-preview-width', previewWidth)
+      }
+    }
+    syncSheetWidth()
+    window.addEventListener('resize', syncSheetWidth)
+    return () => window.removeEventListener('resize', syncSheetWidth)
   }, [])
 
   // ── Generate PNG ─────────────────────────────────────────────────────────
@@ -185,14 +222,40 @@ export function WorkoutShareModal({ w, onClose }) {
       check()
     })
 
-    return toPng(canvas, {
-      width: 1080,
-      height: 1920,
-      pixelRatio: 1,
-      cacheBust: true,
-      style: { transform: 'none', transformOrigin: 'top left' },
-      includeQueryParams: true,
-    })
+    const lionLogo = canvas.querySelector('.share-card-logo')
+    const originalLogoSource = lionLogo?.getAttribute('src')
+    try {
+      // Keep the mascot as the visible brand mark while converting it to an
+      // in-memory source for html-to-image's cloned DOM on mobile webviews.
+      if (lionLogo && originalLogoSource === '/brand-logo.png') {
+        try {
+          const response = await fetch(originalLogoSource, { cache: 'reload' })
+          if (response.ok) {
+            const logoBlob = await response.blob()
+            const logoDataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onload = () => resolve(reader.result)
+              reader.onerror = reject
+              reader.readAsDataURL(logoBlob)
+            })
+            lionLogo.setAttribute('src', logoDataUrl)
+            await lionLogo.decode?.().catch(() => undefined)
+          }
+        } catch {
+          // The normal loaded image remains available for the capture offline.
+        }
+      }
+      return await toPng(canvas, {
+        width: 1080,
+        height: 1920,
+        pixelRatio: 1,
+        cacheBust: true,
+        style: { transform: 'none', transformOrigin: 'top left' },
+        includeQueryParams: true,
+      })
+    } finally {
+      if (lionLogo && originalLogoSource) lionLogo.setAttribute('src', originalLogoSource)
+    }
   }
 
   // ── Save to device ────────────────────────────────────────────────────────
@@ -251,10 +314,19 @@ export function WorkoutShareModal({ w, onClose }) {
   return (
     <div className="workout-share-sheet">
       {/* Story preview frame */}
-      <div className="workout-share-preview-area">
+      <div
+        className="workout-share-preview-area"
+        data-nodrag
+        onTouchStart={event => startLayoutSwipe(event.touches[0].clientX, event.touches[0].clientY)}
+        onTouchEnd={event => finishLayoutSwipe(event.changedTouches[0].clientX, event.changedTouches[0].clientY)}
+        onMouseDown={event => startLayoutSwipe(event.clientX, event.clientY)}
+        onMouseUp={event => finishLayoutSwipe(event.clientX, event.clientY)}
+      >
         <div ref={outerRef} className="workout-share-scaler-outer">
           <div className="workout-share-scaler-inner">
-            <WorkoutStoryPreview w={w} st={st} innerRef={canvasRef} themeId="t1" />
+            <div className="workout-share-card-transition" key={activeLayout.id}>
+              <WorkoutStoryPreview w={w} st={st} innerRef={canvasRef} themeId="t1" layoutId={activeLayout.id} />
+            </div>
           </div>
         </div>
       </div>
@@ -266,6 +338,24 @@ export function WorkoutShareModal({ w, onClose }) {
 
       {/* Pinned action buttons */}
       <div className="workout-share-actions">
+        <div className="workout-share-layout-picker" role="tablist" aria-label="Estilos de compartilhamento" data-nodrag>
+          <span className="workout-share-layout-name" aria-live="polite">{activeLayout.name}</span>
+          <div className="workout-share-layout-dots">
+            {WORKOUT_SHARE_LAYOUTS.map((layout, index) => (
+              <button
+                key={layout.id}
+                type="button"
+                role="tab"
+                aria-selected={index === layoutIndex}
+                aria-label={`Selecionar estilo ${layout.name}`}
+                className="workout-share-layout-dot"
+                onClick={() => selectLayout(index)}
+              >
+                <span className="sr-only">{layout.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
         <Button
           variant="primary"
           activation="animated"

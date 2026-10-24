@@ -5,7 +5,20 @@ import { toDisplayMass } from '../lib/mass.js'
 import { loadOfWorkouts, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
-import shareBrandLogo from '../assets/share-brand-logo.svg?inline'
+
+export const WORKOUT_SHARE_LAYOUTS = [
+  { id: 'premium', name: 'Premium' },
+  { id: 'minimal', name: 'Minimal' },
+  { id: 'editorial', name: 'Editorial' },
+  { id: 'neon', name: 'Neon' },
+  { id: 'brutal', name: 'Brutal' },
+  { id: 'receipt', name: 'Recibo' },
+  { id: 'polaroid', name: 'Polaroid' },
+  { id: 'split', name: 'Split' },
+  { id: 'medal', name: 'Conquista' },
+  { id: 'luxury', name: 'Luxury' },
+  { id: 'poster', name: 'Poster' },
+]
 
 function maxLoad(entry) {
   return Math.max(0, ...(Array.isArray(entry?.sets) ? entry.sets : []).filter(set => set?.done && Number.isFinite(Number(set.w))).map(set => Number(set.w)))
@@ -72,12 +85,12 @@ function formatWorkoutTitle(name) {
   return name
 }
 
-function PerformanceCard({ w, st, innerRef, themeId }) {
+function PerformanceCard({ w, st, innerRef, themeId, layoutId = 'premium' }) {
   const summary = buildWorkoutShareSummary(w, st)
   const tagsToShow = summary.muscleTags.slice(0, 3)
 
   return (
-    <div ref={innerRef} className={`workout-story-canvas share-card ${themeId || ''}`}>
+    <div ref={innerRef} className={`workout-story-canvas share-card share-layout-${layoutId} ${themeId || ''}`}>
       <div className="share-card-backdrop" />
       <div className="share-card-grain" />
 
@@ -85,7 +98,7 @@ function PerformanceCard({ w, st, innerRef, themeId }) {
         {/* Header: Logo and Date */}
         <header className="share-card-brand">
           <div className="share-card-logo-wrap">
-            <img src={shareBrandLogo} alt="Fit Pro Player" className="share-card-logo" />
+            <img src="/brand-logo.png" alt="Fit Pro Player" className="share-card-logo" />
           </div>
           <div className="share-card-date-col">
             <span className="share-card-date">{summary.date}</span>

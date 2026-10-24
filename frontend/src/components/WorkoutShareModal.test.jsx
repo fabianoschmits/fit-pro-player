@@ -9,10 +9,13 @@ const mocks = vi.hoisted(() => ({ toPng: vi.fn(), share: vi.fn() }))
 vi.mock('html-to-image', () => ({ toPng: mocks.toPng }))
 vi.mock('../lib/workout-share.js', () => ({ shareWorkoutImage: mocks.share }))
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => false } }))
-vi.mock('./WorkoutShareLayouts.jsx', () => ({ LayoutDashboard: ({ innerRef }) => <div ref={innerRef}><div className="share-card-map"><svg><path /></svg></div></div> }))
+vi.mock('./WorkoutShareLayouts.jsx', () => ({
+  WORKOUT_SHARE_LAYOUTS: [{ id: 'premium', name: 'Premium' }, { id: 'minimal', name: 'Minimal' }],
+  LayoutDashboard: ({ innerRef }) => <div ref={innerRef}><div className="share-card-map"><svg><path /></svg></div></div>,
+}))
 
 let root, container, originalFonts
-const buttons = () => [...container.querySelectorAll('.workout-share-actions button')]
+const buttons = () => [...container.querySelectorAll('.workout-share-actions .share-btn-action')]
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -77,5 +80,18 @@ describe('workout share action lifetime', () => {
     expect(container.querySelector('[role="status"][data-state="error"]')).toBeNull()
     expect(container.querySelector('[data-state="success"]')).toBeNull()
     expect(buttons().every(button => !button.disabled)).toBe(true)
+  })
+
+  it('still creates the share image when the lion asset cannot be inlined', async () => {
+    const lion = document.createElement('img')
+    lion.className = 'share-card-logo'
+    lion.setAttribute('src', '/brand-logo.png')
+    container.querySelector('.share-card-map').parentElement.append(lion)
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+
+    await act(async () => buttons()[0].click())
+
+    expect(mocks.toPng).toHaveBeenCalledTimes(1)
+    expect(lion.getAttribute('src')).toBe('/brand-logo.png')
   })
 })

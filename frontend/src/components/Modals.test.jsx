@@ -43,8 +43,8 @@ let container
 let historyMock
 let locationMock
 
-function sheet(id, { locked = false, render = () => React.createElement('div') } = {}) {
-  return { id, locked, kind: 'sheet', render }
+function sheet(id, { locked = false, className = '', render = () => React.createElement('div') } = {}) {
+  return { id, locked, className, kind: 'sheet', render }
 }
 
 function installDom() {
@@ -197,5 +197,18 @@ describe('Modals mouse dragging', () => {
     await act(async () => { mouse(sheetEl, 'mousemove', 120) })
     expect(sheetEl.style.transform).toBe('')
     expect(mocks.state.sheets).toHaveLength(1)
+  })
+
+  it('keeps a narrow share sheet horizontally centered while dragging downward', async () => {
+    await setSheets([sheet('share', { className: 'share-sheet-modal' })])
+    const sheetEl = container.querySelector('.sheet')
+    sheetEl.scrollTop = 0
+
+    await act(async () => {
+      mouse(sheetEl, 'mousedown', 10)
+      mouse(sheetEl, 'mousemove', 60)
+    })
+
+    expect(sheetEl.style.transform).toBe('translate(-50%, 50px)')
   })
 })

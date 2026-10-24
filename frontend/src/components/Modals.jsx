@@ -47,6 +47,9 @@ function Sheet({ sheet, exiting }) {
   const titleId = useId()
   useDialogFocus(ref, { active: !exiting, titleId, layerRef })
   const drag = useRef({ startY: null, delta: 0, startedAt: 0, kind: null })
+  const dragTransform = delta => sheet.className.includes('share-sheet-modal')
+    ? `translate(-50%, ${delta}px)`
+    : `translateY(${delta}px)`
 
   const onTouchStart = e => {
     const el = ref.current
@@ -65,7 +68,7 @@ function Sheet({ sheet, exiting }) {
     if (d.delta > 0 && el.scrollTop <= 0) {
       e.preventDefault()
       el.style.transition = 'none'
-      el.style.transform = `translateY(${d.delta}px)`
+      el.style.transform = dragTransform(d.delta)
     } else d.delta = 0
   }
   const onTouchEnd = () => {
@@ -96,7 +99,7 @@ function Sheet({ sheet, exiting }) {
     if (d.delta > 0 && el.scrollTop <= 0) {
       e.preventDefault()
       el.style.transition = 'none'
-      el.style.transform = `translateY(${d.delta}px)`
+      el.style.transform = dragTransform(d.delta)
     } else d.delta = 0
   }
   const onMouseUp = () => onTouchEnd()

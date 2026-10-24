@@ -36,7 +36,7 @@ test('workout sharing keeps the generated card visible from history', async ({ p
   const logo = card.locator('.share-card-logo')
   await expect(shareSheet).toBeVisible()
   await expect(card).toBeVisible()
-  await expect(logo).toHaveAttribute('src', /^data:image\/svg\+xml/)
+  await expect(logo).toHaveAttribute('src', '/brand-logo.png')
 
   const layout = await shareSheet.evaluate(sheet => {
     const preview = sheet.querySelector('.workout-share-preview-area')
@@ -53,6 +53,21 @@ test('workout sharing keeps the generated card visible from history', async ({ p
   expect(layout.cardWidth).toBeGreaterThan(layout.previewHeight * 0.5)
   expect(layout.cardHeight).toBeGreaterThan(200)
   expect(layout.sheetWidth).toBeCloseTo(layout.cardWidth, 0)
+})
+
+test('workout sharing selects one of eleven card layouts with a horizontal swipe', async ({ page }) => {
+  await openWorkoutHistory(page)
+  await page.locator('.sheet').getByRole('button', { name: 'Compartilhar treino', exact: true }).click()
+
+  const shareSheet = page.locator('.sheet.share-sheet-modal')
+  const picker = shareSheet.getByRole('tablist', { name: 'Estilos de compartilhamento' })
+  await expect(picker.getByRole('tab')).toHaveCount(11)
+  await expect(picker.getByRole('tab', { selected: true })).toHaveText('Premium')
+
+  const preview = shareSheet.locator('.workout-share-preview-area')
+  await preview.dragTo(preview, { sourcePosition: { x: 280, y: 220 }, targetPosition: { x: 30, y: 220 } })
+
+  await expect(picker.getByRole('tab', { selected: true })).toHaveText('Minimal')
 })
 
 test('outside clicks dismiss only the top confirmation without deleting the workout', async ({ page }) => {
