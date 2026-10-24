@@ -40,11 +40,14 @@ test('workout sharing keeps the generated card visible from history', async ({ p
     const preview = sheet.querySelector('.workout-share-preview-area')
     const card = sheet.querySelector('.workout-story-canvas')
     return {
+      previewWidth: preview.getBoundingClientRect().width,
       previewHeight: preview.getBoundingClientRect().height,
+      cardWidth: card.getBoundingClientRect().width,
       cardHeight: card.getBoundingClientRect().height,
     }
   })
   expect(layout.previewHeight).toBeGreaterThan(200)
+  expect(layout.cardWidth).toBeGreaterThan(layout.previewHeight * 0.5)
   expect(layout.cardHeight).toBeGreaterThan(200)
 })
 
