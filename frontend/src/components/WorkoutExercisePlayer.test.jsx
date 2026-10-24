@@ -235,4 +235,24 @@ describe('workout exercise player', () => {
     click('.wp-current-controls .w button:first-child')
     expect(container.querySelector('.wp-bump-float--minus')?.textContent).toBe('−')
   })
+
+  it('explains repetitions and RIR from the compact labels without changing the set controls', () => {
+    mutate(entry => { entry.target.effort = 'rir' })
+    render()
+
+    const reps = [...container.querySelectorAll('.wp-metric-label')].find(node => node.textContent === 'Repetições')
+    expect(reps.tagName).toBe('BUTTON')
+    act(() => reps.click())
+    expect(container.textContent).toContain('Quantidade de vezes que você executa o movimento nesta série.')
+
+    const rir = [...container.querySelectorAll('.wp-metric-label')].find(node => node.textContent === 'RIR')
+    act(() => rir.click())
+    expect(container.textContent).toContain('Repetições em reserva: quantas você ainda conseguiria fazer antes da falha.')
+
+    mutate(entry => { entry.target.effort = 'rpe' })
+    render()
+    const rpe = [...container.querySelectorAll('.wp-metric-label')].find(node => node.textContent === 'RPE')
+    act(() => rpe.click())
+    expect(container.textContent).toContain('Esforço percebido: o quão perto da falha esta série ficou, numa escala de 1 a 10.')
+  })
 })

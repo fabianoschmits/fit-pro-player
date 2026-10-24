@@ -70,13 +70,13 @@ beforeEach(() => {
   animations = []
   originalAnimate = Object.getOwnPropertyDescriptor(Element.prototype, 'animate')
   animate = vi.fn(function (keyframes, options) {
-    let finish
+    let finish, cancel
     const animation = {
       target: this,
       keyframes,
       options,
-      cancel: vi.fn(),
-      finished: new Promise(resolve => { finish = resolve }),
+      cancel: vi.fn(() => cancel(new DOMException('The animation was canceled.', 'AbortError'))),
+      finished: new Promise((resolve, reject) => { finish = resolve; cancel = reject }),
       finish: () => { animation.onfinish?.(); finish(animation) },
       pause: vi.fn(),
       play: vi.fn(),

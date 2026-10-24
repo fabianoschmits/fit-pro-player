@@ -13,6 +13,7 @@ import WorkSetOverlay from './WorkSetOverlay.jsx'
 import Icon from './Icon.jsx'
 import { Button, Check, NumberField } from './ui.jsx'
 import { Elapsed } from '../views/Workout.jsx'
+import MetricInfoButton from './MetricInfoButton.jsx'
 
 export default function WorkoutExercisePlayer({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onStartTimed,
   onAddSet, onPrevious, onNext, previousDisabled, nextDisabled, exerciseDots }) {
@@ -65,6 +66,13 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
   const kind = ['rir', 'rpe'].includes(cfg.effort) ? cfg.effort : effortOf(S)
   const col3 = mode === 'reps' && EFFORT[kind] ? { ...EFFORT[kind], eff: kind, dec: true, opt: true, hd: t(EFFORT[kind].hd) } : null
   const columns = [{ col: col1, cls: 'w' }, ...(col2 ? [{ col: col2, cls: 'r' }] : []), ...(col3 ? [{ col: col3, cls: 'eff' }] : [])]
+  const metricHelp = col => col.eff === 'rir'
+    ? 'Repetições em reserva: quantas você ainda conseguiria fazer antes da falha.'
+    : col.eff === 'rpe'
+      ? 'Esforço percebido: o quão perto da falha esta série ficou, numa escala de 1 a 10.'
+      : col.f === 'r'
+        ? 'Quantidade de vezes que você executa o movimento nesta série.'
+        : ''
   const [floats, setFloats] = useState([])
   const nextFloatId = useRef(1)
 
@@ -137,7 +145,9 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
         {!cardio && !timed && isPerSide(cfg) && <span className="wp-per-side">{t('{0} per side', fmtNum(sideReps(current.r)))}</span>}
       </div>
       <div className="wp-current-controls" data-metrics={columns.length}>
-        {columns.map(({ col, cls }) => <div className="wp-metric" key={col.f}><span className="wp-metric-label">{col.hd}</span>{cell(current, currentIndex, col, cls)}</div>)}
+        {columns.map(({ col, cls }) => <div className="wp-metric" key={col.f}>{metricHelp(col)
+          ? <MetricInfoButton className="wp-metric-label" label={col.hd} description={metricHelp(col)} disabled={locked} />
+          : <span className="wp-metric-label">{col.hd}</span>}{cell(current, currentIndex, col, cls)}</div>)}
       </div>
     </div>}
     {locked && onStartWorkout ? <Button variant="primary" intent="quick" icon="play" className="wp-main-action exercise-start-card" onClick={onStartWorkout}>{t('Start workout')}</Button>

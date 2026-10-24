@@ -52,6 +52,9 @@ export default function PageTransition({ children }) {
           duration: 180,
           easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
         })
+        // The Web Animations API rejects `finished` when a route change cancels
+        // an in-flight fade. It is an expected lifecycle event, not an error.
+        animation.finished?.catch(() => {})
       }
       return true
     }

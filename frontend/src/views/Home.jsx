@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore.js'
 import { maybeOpenPwaInstallPrompt } from '../components/PwaInstallPrompt.jsx'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, workoutVolume, setsDone, setsDoneActive } from '../lib/history.js'
-import { fmtNum, fmtDate, fmtDur, fmtVol, todayISO, isoOf, weekKey, DAYS, exCount, sentenceCase, workoutDuration } from '../lib/format.js'
+import { fmtNum, fmtDate, fmtDur, fmtTrainingVolume, todayISO, isoOf, weekKey, DAYS, exCount, sentenceCase, workoutDuration } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor, repeatWorkout, WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
@@ -31,7 +31,7 @@ function SessionMetrics({ workout, unit }) {
   return <div className="home-now-metrics">
     <span><small>{t('Duration')}</small><b>{fmtDur(Math.max(0, (workout.end || workout.start) - workout.start))}</b></span>
     <span><small>{t('Sets')}</small><b>{setsDone(workout)}</b></span>
-    <span><small>{t('Volume')}</small><b>{fmtVol(workoutVolume(workout), unit)}</b></span>
+    <span><small>{t('Volume')}</small><b>{fmtTrainingVolume(workoutVolume(workout), unit).replace(/^Volume: /, '')}</b></span>
   </div>
 }
 

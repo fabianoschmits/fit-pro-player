@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { toPng } from 'html-to-image'
 import { t } from '../lib/i18n.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
-import { fmtDate, fmtVol, fmtDur, workoutDuration } from '../lib/format.js'
+import { fmtDate, fmtTrainingVolume, fmtDur, workoutDuration } from '../lib/format.js'
 import { useStore } from '../store/useStore.js'
 import { loadOfWorkouts } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
@@ -80,7 +80,7 @@ function LayoutDashboard({ w, st, innerRef, themeId }) {
             <div className="wsc-stat-box">
               <div className="wsc-stat-icon"><Icon name="dumbbell" /></div>
               <div className="wsc-stat-info">
-                <span className="wsc-stat-val">{fmtVol(w.vol, st.displayUnit || 'kg')}</span>
+                <span className="wsc-stat-val">{fmtTrainingVolume(w.vol, st.displayUnit || 'kg').replace(/^Volume: /, '')}</span>
                 <span className="wsc-stat-label">{t('Volume')}</span>
               </div>
             </div>

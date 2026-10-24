@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText } from './lib/exercises.js'
-import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, isoOf, uid, routineId, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase, workoutDuration } from './lib/format.js'
+import { fmtDate, fmtHistoryDate, fmtNum, fmtTrainingVolume, fmtDur, durPart, todayISO, isoOf, uid, routineId, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase, workoutDuration } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps, suggestedWeightFor } from './lib/history.js'
 import { shouldWeighBeforeWorkout, hasWeighedToday } from './lib/ux.js'
 import { beep, vibrate } from './lib/sound.js'
@@ -16,6 +16,7 @@ import Media, { Thumb } from './components/Media.jsx'
 import ExerciseGuideAnimation from './components/ExerciseGuideAnimation.jsx'
 import Stepper from './components/Stepper.jsx'
 import Icon from './components/Icon.jsx'
+import MetricInfoButton from './components/MetricInfoButton.jsx'
 import { Button, Slider, Switch, Segmented, SelectRow, Row } from './components/ui.jsx'
 import { glyphOf, GLYPH_GROUPS, DEFAULT_GLYPH } from './lib/glyphs.js'
 import BodyMap from './components/BodyMap.jsx'
@@ -1197,7 +1198,7 @@ function WorkoutDetail({ w, close }) {
   const reduced = useReducedMotion()
   return <>
     <h3>{w.name}</h3>
-    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(workoutDuration(w)), fmtVol(w.vol, displayUnit), ...(w.bw ? [fmtNum(toDisplayMass(w.bw, displayUnit)) + ' ' + displayUnit] : [])].join(' · ')}</div>
+    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtHistoryDate(w.d), ...durPart(workoutDuration(w)), fmtTrainingVolume(w.vol, displayUnit), ...(w.bw ? [fmtNum(toDisplayMass(w.bw, displayUnit)) + ' ' + displayUnit] : [])].join(' · ')}</div>
     {w.entries.map((e, i) => {
       const ex = EXIDX[e.id]
       const hasAnimation = ex && hasExerciseGuideAsset(ex)
@@ -1207,18 +1208,19 @@ function WorkoutDetail({ w, close }) {
       return <div key={i} className={'workout-entry-detail' + (expanded ? ' is-open' : '')}>
         <button
           type="button"
-          className="workout-entry-toggle"
+          className={'workout-entry-toggle' + (w.prs && w.prs.includes(e.id) ? ' has-pr' : '')}
           disabled={!hasAnimation}
           aria-expanded={expanded}
           aria-label={title}
           onClick={() => setOpenEntry(cur => cur === i ? null : i)}
         >
           {ex && <Thumb ex={ex} />}
-          <div className="grow"><div className="tt capitalize" style={{ fontWeight: 600 }}>{title} {w.prs && w.prs.includes(e.id) && <span className="pr"><Icon name="trophy" />{getLang() === 'pt' ? 'RP' : 'PR'}</span>}</div>
+          <div className="grow"><div className="tt capitalize" style={{ fontWeight: 600 }}>{title}</div>
             {doneSets.length ? <div className="workout-entry-sets">{doneSets.map((s, setIndex) => <span key={setIndex}>{setLabel(e.id, s, e.target, displayUnit)}</span>)}</div>
               : <div className="ss">{t('no sets')}</div>}</div>
           {hasAnimation && <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="chev" />}
         </button>
+        {w.prs && w.prs.includes(e.id) && <MetricInfoButton className="pr" label={<><Icon name="trophy" />{getLang() === 'pt' ? 'RP' : 'PR'}</>} description="Recorde pessoal: você superou sua melhor marca anterior neste exercício." />}
         <AnimatePresence initial={false}>
           {expanded && <motion.div className="workout-entry-motion"
             initial={reduced ? false : { height: 0, opacity: 0 }}
@@ -1277,7 +1279,7 @@ function Calendar({ start, close }) {
       <h3 style={{ margin: 0 }}>{t(MONTHS_LONG[mo])} {y}</h3>
       <button className="iconbtn" onClick={() => setCur(new Date(y, mo + 1, 1))} aria-label={t('Next month')}><Icon name="chevronRight" /></button>
     </div>
-    <div className="small muted" style={{ textAlign: 'center' }}>{monthWs.length ? `${t(monthWs.length === 1 ? '{0} workout' : '{0} workouts', monthWs.length)} · ${fmtDur(monthMs)} · ${fmtVol(monthVol, st.displayUnit || 'kg')}` : t('No workouts this month')}</div>
+    <div className="small muted" style={{ textAlign: 'center' }}>{monthWs.length ? `${t(monthWs.length === 1 ? '{0} workout' : '{0} workouts', monthWs.length)} · ${fmtDur(monthMs)} · ${fmtTrainingVolume(monthVol, st.displayUnit || 'kg')}` : t('No workouts this month')}</div>
     <div className="cal-grid">{['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(l => <div key={l} className="cal-h">{t(l)}</div>)}{cells}</div>
     <div className="cal-legend">
       <span><i style={{ background: 'var(--acc)' }} />{t('Trained')}</span>
@@ -1292,13 +1294,15 @@ export const calendarSheet = start => ui().openSheet(close => <Calendar start={s
 /* shared small workout row (used in lists) */
 export function WorkoutRow({ w, onClick }) {
   const st = useStore(s => s.S)
-  return <button type="button" className="item workout-row" onClick={onClick}>
+  return <div className="workout-row-shell">
+    <button type="button" className={'item workout-row' + (w.prs?.length ? ' has-pr' : '')} onClick={onClick}>
     <span className="lrow-i workout-row-icon"><WorkoutMuscleThumb workout={w} body={st.body} /></span>
     <div className="grow"><div className="tt">{w.name}</div>
-      <div className="ss">{[fmtDate(w.d, true), ...durPart(workoutDuration(w)), t('{0} sets', setsDone(w)), fmtVol(w.vol, st.displayUnit || 'kg')].join(' · ')}</div></div>
-    {w.prs && w.prs.length > 0 && <span className="pr"><Icon name="trophy" />{w.prs.length} {getLang() === 'pt' ? 'RP' : 'PR'}</span>}
+      <div className="ss">{[fmtHistoryDate(w.d), ...durPart(workoutDuration(w)), t('{0} sets', setsDone(w)), fmtTrainingVolume(w.vol, st.displayUnit || 'kg')].join(' · ')}</div></div>
     <Icon name="chevronRight" className="chev" />
-  </button>
+    </button>
+    {w.prs && w.prs.length > 0 && <MetricInfoButton className="pr" label={<><Icon name="trophy" />{w.prs.length} {getLang() === 'pt' ? 'RP' : 'PR'}</>} description="Recorde pessoal: você superou sua melhor marca anterior neste treino." />}
+  </div>
 }
 
 /* ============================ workout lifecycle ============================ */
@@ -1506,7 +1510,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     <div className="finish-metrics">
       <div className="finish-metric"><div className="l">{t('Duration')}</div><div className="v">{fmtDur(workoutDuration(w))}</div></div>
       <div className="finish-metric"><div className="l">{t('Exercises')}</div><div className="v">{w.entries.length}</div></div>
-      <div className="finish-metric"><div className="l">{t('Volume')}</div><div className="v">{fmtVol(w.vol, st.displayUnit || 'kg')}</div></div>
+      <div className="finish-metric"><div className="l">{t('Volume')}</div><div className="v">{fmtTrainingVolume(w.vol, st.displayUnit || 'kg').replace(/^Volume: /, '')}</div></div>
       <div className="finish-metric"><div className="l">{t('Sets')}</div><div className="v">{setsDone(w)}</div></div>
       <div className="finish-metric"><div className="l">{t('PRs')}</div><div className="v">{prs.length || '—'}</div></div>
     </div>

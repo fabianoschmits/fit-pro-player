@@ -13,6 +13,16 @@ vi.mock('./lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => moc
 vi.mock('./lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 // Presentation animation is irrelevant to ownership and keeps deferred reads deterministic.
 vi.mock('./components/PageTransition.jsx', () => ({ default: ({ children }) => <div id="app">{children}</div> }))
+// This suite verifies account synchronization; rendering Motion's browser
+// animations in happy-dom can reject when the fixture unmounts mid-transition.
+vi.mock('framer-motion', () => ({
+  AnimatePresence: ({ children }) => children,
+  motion: {
+    span: ({ initial, animate, exit, transition, ...props }) => <span {...props} />,
+    section: ({ initial, animate, exit, transition, ...props }) => <section {...props} />,
+  },
+  useReducedMotion: () => true,
+}))
 vi.mock('./lib/notification-client.js', async importOriginal => ({
   ...await importOriginal(), startNotificationCoordinator: () => () => {},
   syncNotificationPreferences: () => {}, syncNotificationVisibility: () => {},

@@ -1656,6 +1656,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .modal-layer.is-closing .center{animation:popout var(--fast) var(--ease) both}
 
 .workout-entry-detail{
+  position:relative;
   margin-bottom:9px;
   border-radius:8px;
   background:var(--surface);
@@ -1679,6 +1680,8 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .workout-entry-toggle .grow{
   align-self:center;
 }
+.workout-entry-toggle.has-pr .grow{padding-right:58px}
+.workout-entry-detail>.metric-info{position:absolute;z-index:1;right:40px;top:23px}
 .workout-entry-sets{
   display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;
 }
@@ -1894,6 +1897,12 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   border-radius:6px;padding:3px 8px;font-size:12px;font-weight:500;
 }
 .pr .icn{font-size:13px}
+.metric-info{position:relative;display:inline-flex;vertical-align:middle}
+.metric-info-trigger{padding:0;color:inherit;font:inherit;text-align:inherit;background:none;border:0;cursor:pointer}
+.metric-info-popover{position:absolute;z-index:30;right:0;bottom:calc(100% + 8px);width:min(230px,70vw);padding:8px 10px;border:var(--hair) solid var(--surface-border);border-radius:8px;background:var(--surface-2);box-shadow:var(--toast-shadow);color:var(--label);font-size:12px;font-weight:500;line-height:1.35;text-transform:none;animation:metric-info-in 180ms cubic-bezier(.2,.8,.2,1)}
+@keyframes metric-info-in{from{opacity:0;transform:translateY(5px);filter:blur(2px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@media (prefers-reduced-motion:reduce){.metric-info-popover{animation:none}}
+.pr.metric-info-trigger{display:inline-flex;align-items:center;gap:4px}
 
 /* --- toast --- */
 #toast{
@@ -2034,8 +2043,8 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .home-recent-block{padding-bottom:0}.home-recent-block .home-section-head>.btn{width:auto}
 .home-recent-list{gap:0;overflow:hidden;border:var(--hair) solid var(--surface-border);border-radius:4px;background:var(--surface)}
 .home-recent-list .workout-row{border-radius:0;background:transparent;transform:none}
-.home-recent-list .workout-row+.workout-row{border-top:var(--hair) solid var(--sep-op)}
-.workout-row{width:100%;text-align:left}
+.home-recent-list .workout-row-shell+.workout-row-shell .workout-row{border-top:var(--hair) solid var(--sep-op)}
+.workout-row-shell{position:relative}.workout-row{width:100%;text-align:left}.workout-row.has-pr{padding-right:78px}.workout-row-shell>.metric-info{position:absolute;z-index:1;right:30px;top:50%;transform:translateY(-50%)}
 .workout-row-icon{width:32px;height:32px;border-radius:0;background:transparent;font-size:17px;overflow:hidden}.workout-row-icon .plan-routine-body-thumb{width:32px;height:32px}
 
 .library-view,.history-view{width:100%;max-width:760px;margin-inline:auto}

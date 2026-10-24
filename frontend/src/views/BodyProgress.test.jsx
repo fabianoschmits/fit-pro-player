@@ -50,7 +50,7 @@ const inputValue = async (element, value) => act(async () => {
 beforeEach(() => {
   vi.useFakeTimers()
   vi.setSystemTime(new Date(2026, 8, 13, 12))
-  window.matchMedia = () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })
+  window.matchMedia = () => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })
   window.requestAnimationFrame = callback => callback()
   mocks.S = { body: 'female', bodyMeasurements: [], bodyMeasurementGoals: {} }
   mocks.persistence = { state: 'saved' }
@@ -142,6 +142,9 @@ describe('body progress page', () => {
     await click(button('Braço direito no corpo'))
     await act(async () => vi.advanceTimersByTime(250))
     expect(container.textContent).toContain('Braço direito')
+    expect(mocks.mapProps.selected).toBe('right-arm')
+    expect(container.querySelectorAll('#body-measurement-value')).toHaveLength(1)
+    expect(container.querySelector('.bp-editor-heading h2').textContent).toBe('Circunferência do braço direito')
     const armInput = container.querySelector('#body-measurement-value')
     await inputValue(armInput, '36,2')
     await click(button('Salvar medida'))

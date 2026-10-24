@@ -322,7 +322,10 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   useEffect(() => setGoalDraft(goal), [selected, goal])
   useEffect(() => { setSaveError(''); setGoalError('') }, [selected])
 
-  const selectPart = id => setSelected(id)
+  const selectPart = id => {
+    setDraft(weekValues[id] ?? null)
+    setSelected(id)
+  }
   const saveMeasurement = async event => {
     event.preventDefault()
     if (!part || !(draft > 0) || draft > 400) return
@@ -364,12 +367,10 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
     <div className="bp-workspace-side">
       <section className="card bp-editor-card" aria-live="polite">
         {part ? <>
-        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={selected}
             initial={reducedMotion ? false : { opacity: 0, y: 6, filter: 'blur(3px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -3, filter: 'blur(2px)' }}
             transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.2, 0.8, 0.2, 1] }}
           >
             <div className="bp-editor-heading">
@@ -379,7 +380,7 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
               </span>
             </div>
 
-            {pair.length === 2 && <Segmented className="bp-side-choice" value={selected} onChange={setSelected} options={pair.map(item => ({ value: item.id, label: item.side === 'left' ? 'Esquerdo' : 'Direito' }))} />}
+            {pair.length === 2 && <Segmented className="bp-side-choice" value={selected} onChange={selectPart} options={pair.map(item => ({ value: item.id, label: item.side === 'left' ? 'Esquerdo' : 'Direito' }))} />}
 
             <div className="bp-reading-row">
               <div><span>Última medida</span><strong>{formatCm(currentValue)}</strong></div>
@@ -408,7 +409,6 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
             </div>
             {goalError && <FppActionFeedback state="error">{goalError}</FppActionFeedback>}
           </motion.div>
-        </AnimatePresence>
 
         <div className="bp-mini-history">
           <div className="bp-section-head responsive"><div><span className="bp-eyebrow">Histórico em centímetros</span><h3>{part.circumferenceLabel}</h3></div><Segmented className="seg-inline" value={period} onChange={setPeriod} options={PERIODS} /></div>

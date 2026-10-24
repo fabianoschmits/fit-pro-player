@@ -17,6 +17,12 @@ export function fmtDate(iso, long) {
   const d = new Date(iso + 'T12:00:00')
   return d.toLocaleDateString(dateLocale(), long ? { weekday: 'short', day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short' })
 }
+export function fmtHistoryDate(iso) {
+  const d = new Date(iso + 'T12:00:00')
+  const weekday = d.toLocaleDateString(dateLocale(), { weekday: 'long' }).replace(/-feira$/i, '')
+  const date = d.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short' })
+  return `${weekday.charAt(0).toLocaleUpperCase(dateLocale()) + weekday.slice(1)}, ${date}`
+}
 export function fmtDur(ms) {
   const m = Math.floor(ms / 60000)
   return m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + ' min'
@@ -40,6 +46,11 @@ export const sentenceCase = value => {
 }
 // Volume is stored in kg-repetitions and converted at this presentation boundary.
 export const fmtVol = (v, unit) => fmtNum(toDisplayMass(v, unit) ?? 0) + ' ' + unit
+export const fmtTrainingVolume = (v, unit = 'kg') => {
+  const value = toDisplayMass(v, unit) ?? 0
+  if (unit === 'kg' && value >= 1000) return `Volume: ${fmtNum(value / 1000)} t`
+  return `Volume: ${fmtNum(value)} ${unit}`
+}
 // Plural forms are not automatic when the English string is the key.
 export const exCount = n => t(n === 1 ? '{0} exercise' : '{0} exercises', n)
 
