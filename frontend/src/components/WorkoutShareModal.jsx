@@ -131,6 +131,52 @@ function WorkoutStoryPreview({ w, st, innerRef, themeId, layoutId }) {
   return <ShareCardLayout w={w} st={st} innerRef={innerRef} themeId={themeId} layoutId={layoutId} />
 }
 
+const loadShareImage = source => new Promise((resolve, reject) => {
+  const image = new Image()
+  image.onload = () => resolve(image)
+  image.onerror = reject
+  image.src = source
+})
+
+// html-to-image can lose regular <img> elements in native webviews even though
+// the same image is visible in the DOM. Compose the already-loaded mark onto
+// its generated PNG so the published image always has the user's visible logo.
+export async function composeShareImageWithLogo(cardDataUrl, logo, card, {
+  loadImage = loadShareImage,
+  createCanvas = () => document.createElement('canvas'),
+} = {}) {
+  if (!cardDataUrl || !logo || !card) return cardDataUrl
+
+  const logoBounds = logo.getBoundingClientRect()
+  const cardBounds = card.getBoundingClientRect()
+  if (!logoBounds.width || !logoBounds.height || !cardBounds.width || !cardBounds.height) return cardDataUrl
+
+  try {
+    const exportedCard = await loadImage(cardDataUrl)
+    const output = createCanvas()
+    output.width = 1080
+    output.height = 1920
+    const context = output.getContext('2d')
+    if (!context) return cardDataUrl
+
+    const scaleX = 1080 / cardBounds.width
+    const scaleY = 1920 / cardBounds.height
+    context.drawImage(exportedCard, 0, 0, 1080, 1920)
+    context.drawImage(
+      logo,
+      (logoBounds.left - cardBounds.left) * scaleX,
+      (logoBounds.top - cardBounds.top) * scaleY,
+      logoBounds.width * scaleX,
+      logoBounds.height * scaleY,
+    )
+    return output.toDataURL('image/png')
+  } catch {
+    // A share image without a second render is still preferable to failing the
+    // native share flow if a webview rejects canvas composition.
+    return cardDataUrl
+  }
+}
+
 // ── Main modal component ───────────────────────────────────────────────────
 export function WorkoutShareModal({ w, onClose }) {
   const st = useStore(s => s.S)
@@ -165,18 +211,22 @@ export function WorkoutShareModal({ w, onClose }) {
 
   // Scale the canvas to fit the visible preview frame
   useEffect(() => {
+    const scaleCanvas = ({ width, height }) => {
+      const canvas = canvasRef.current
+      if (!canvas || width <= 0 || height <= 0) return
+      const scale = Math.min(width / 1080, height / 1920)
+      canvas.style.transform = `scale(${scale})`
+      canvas.style.transformOrigin = 'center center'
+    }
+
     if (!outerRef.current || !canvasRef.current) return
     const obs = new ResizeObserver(entries => {
-      const { width, height } = entries[0].contentRect
-      if (width > 0 && height > 0) {
-        const scale = Math.min(width / 1080, height / 1920)
-        canvasRef.current.style.transform = `scale(${scale})`
-        canvasRef.current.style.transformOrigin = 'center center'
-      }
+      scaleCanvas(entries[0].contentRect)
     })
     obs.observe(outerRef.current)
+    scaleCanvas(outerRef.current.getBoundingClientRect())
     return () => obs.disconnect()
-  }, [])
+  }, [layoutIndex])
 
   // The modal is as wide as its 9:16 preview. This must not run from the
   // preview observer itself: changing the sheet width would resize that target
@@ -223,39 +273,18 @@ export function WorkoutShareModal({ w, onClose }) {
     })
 
     const lionLogo = canvas.querySelector('.share-card-logo')
-    const originalLogoSource = lionLogo?.getAttribute('src')
-    try {
-      // Keep the mascot as the visible brand mark while converting it to an
-      // in-memory source for html-to-image's cloned DOM on mobile webviews.
-      if (lionLogo && originalLogoSource === '/brand-logo.png') {
-        try {
-          const response = await fetch(originalLogoSource, { cache: 'reload' })
-          if (response.ok) {
-            const logoBlob = await response.blob()
-            const logoDataUrl = await new Promise((resolve, reject) => {
-              const reader = new FileReader()
-              reader.onload = () => resolve(reader.result)
-              reader.onerror = reject
-              reader.readAsDataURL(logoBlob)
-            })
-            lionLogo.setAttribute('src', logoDataUrl)
-            await lionLogo.decode?.().catch(() => undefined)
-          }
-        } catch {
-          // The normal loaded image remains available for the capture offline.
-        }
-      }
-      return await toPng(canvas, {
+    const cardDataUrl = await toPng(canvas, {
         width: 1080,
         height: 1920,
         pixelRatio: 1,
         cacheBust: true,
         style: { transform: 'none', transformOrigin: 'top left' },
         includeQueryParams: true,
+        // The mark is drawn into the resulting bitmap below. Removing it from
+        // the DOM clone avoids a double logo in browsers that do capture imgs.
+        filter: node => !node.classList?.contains('share-card-logo'),
       })
-    } finally {
-      if (lionLogo && originalLogoSource) lionLogo.setAttribute('src', originalLogoSource)
-    }
+    return composeShareImageWithLogo(cardDataUrl, lionLogo, canvas)
   }
 
   // ── Save to device ────────────────────────────────────────────────────────
