@@ -17,6 +17,15 @@ describe('navigation-contexts resolver', () => {
     expect(res.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'stats'])
   })
 
+  it.each(['/community', '/community/profile', '/community/user/other-user'])('selects only Community on %s, including the collapsed menu', pathname => {
+    const res = resolveNavigationContext({ pathname })
+    expect(res.contextId).toBe('home')
+    expect(res.activeKey).toBe('community')
+    expect(res.items.some(item => item.k === res.activeKey)).toBe(false)
+    expect(res.pivotItem?.to).toBe('/community')
+    expect(res.pivotItem?.label()).toBe('Comunidade')
+  })
+
   it('resolves Training context on /plan and /library', () => {
     const resPlan = resolveNavigationContext({ pathname: '/plan' })
     expect(resPlan.contextId).toBe('training')

@@ -51,9 +51,9 @@ select ok(
   'snapshot table has RLS enabled'
 );
 select is(
-  (select count(*)::integer from pg_trigger where tgrelid = 'public.account_snapshots'::regclass and not tgisinternal),
-  0,
-  'snapshot timestamps are controlled by the CAS operation'
+  (select string_agg(tgname, ',' order by tgname) from pg_trigger where tgrelid = 'public.account_snapshots'::regclass and not tgisinternal),
+  'community_identity_snapshot',
+  'only the public identity sync trigger exists; snapshot timestamps remain controlled by the CAS operation'
 );
 select ok(
   (select proconfig @> array['search_path=public, pg_temp'] from pg_proc where oid = 'public.save_own_account_snapshot(bigint, integer, jsonb)'::regprocedure),

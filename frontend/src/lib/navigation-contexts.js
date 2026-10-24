@@ -60,6 +60,9 @@ export function resolveNavigationContext({
   if (normPath === '/home' || normPath === '/' || normPath === '/tests/home-glass') {
     detectedContext = 'home'
     activeKey = 'home'
+  } else if (normPath === '/community' || normPath.startsWith('/community/')) {
+    detectedContext = 'home'
+    activeKey = 'community'
   } else if (normPath === '/workout') {
     detectedContext = 'workout'
     activeKey = 'start'
@@ -279,7 +282,9 @@ export function resolveNavigationContext({
   // Determine pivotItem: represents the current page when the menu is closed
   let pivotItem = items.find(item => item.k === activeKey) || null
   if (!pivotItem) {
-    if (activeKey === 'prof-overview') {
+    if (activeKey === 'community') {
+      pivotItem = { k: 'community', icon: 'heart', to: '/community', label: () => 'Comunidade' }
+    } else if (activeKey === 'prof-overview') {
       pivotItem = { k: 'prof-overview', icon: 'clipboard', to: '/professional', label: () => 'Área profissional' }
     } else if (activeKey === 'prof-profile') {
       pivotItem = { k: 'prof-profile', icon: 'personCircle', to: '/professional/profile', label: () => 'Perfil profissional' }

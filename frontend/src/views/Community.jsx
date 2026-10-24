@@ -1,322 +1,267 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { useStore } from '../store/useStore.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
+import { avatarSrc, isAvatarId } from '../lib/avatars.js'
+import { resolveCommunityIdentity, hydrateCommunityPost, COMMUNITY_PROFILE_FIELDS } from '../lib/community-identity.js'
+import { communityFeedSession, COMMUNITY_POST_SELECT, COMMUNITY_COMMENT_SELECT } from '../lib/community-feed.js'
+import { acquireUpdateBlocker } from '../lib/reload-safety.js'
 import Icon from '../components/Icon.jsx'
+import CommunityComments from '../components/community/CommunityComments.jsx'
+import CommunityPostMedia, { CommunityImage, CommunityPostSkeleton, communityStoragePath } from '../components/community/CommunityPostMedia.jsx'
+import CommunityCropEditor, { cropCommunityImage, useFilePreview } from '../components/community/CommunityComposerMedia.jsx'
 import './community.css'
-import { avatarSrc } from '../lib/avatars.js'
 
 const BUCKET = 'community-posts'
-const randomId = () => globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`
-const FEED_PAGE_SIZE = 20
-const feedHash = (id, seed) => {
-  let hash = 2166136261
-  for (const char of `${seed}:${id}`) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
-  return (hash >>> 0) / 4294967295
-}
-const rankPosts = (items, seed) => {
-  const now = Date.now()
-  return [...items].sort((a, b) => {
-    const score = post => {
-      const ageHours = Math.max(0, (now - new Date(post.created_at).getTime()) / 3600000)
-      const engagement = (post.likes?.length || 0) * 3 + (post.comments?.length || 0) * 2
-      const freshness = 12 / Math.pow(1 + ageHours / 24, 0.72)
-      return engagement + freshness + feedHash(post.id, seed) * 2.5
-    }
-    return score(b) - score(a)
-  })
-}
 const fmtDate = value => new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(value))
-const storagePathFromValue = value => {
-  if (!value) return ''
-  const marker = `/object/public/${BUCKET}/`
-  const signedMarker = `/object/sign/${BUCKET}/`
-  if (value.includes(marker)) return decodeURIComponent(value.split(marker)[1].split('?')[0])
-  if (value.includes(signedMarker)) return decodeURIComponent(value.split(signedMarker)[1].split('?')[0])
-  return value
-}
-
-async function compressCommunityImage(file) {
-  if (!file?.type?.startsWith('image/')) return file
-  try {
-  const bitmap = await createImageBitmap(file)
-  const maxEdge = 1600
-  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.max(1, Math.round(bitmap.width * scale)); canvas.height = Math.max(1, Math.round(bitmap.height * scale))
-  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  bitmap.close()
-  const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82))
-  return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg', lastModified: Date.now() }) : file
-  } catch { return file }
-}
-
-async function cropCommunityImage(file, crop) {
-  if (!file || !crop) return file
-  try {
-    const bitmap = await createImageBitmap(file)
-    const aspect = crop.aspect === 'portrait' ? 3 / 4 : 4 / 3
-    const sourceAspect = bitmap.width / bitmap.height
-    let cropWidth = bitmap.width; let cropHeight = bitmap.height
-    if (sourceAspect > aspect) cropWidth = bitmap.height * aspect
-    else if (sourceAspect < aspect) cropHeight = bitmap.width / aspect
-    const maxX = bitmap.width - cropWidth; const maxY = bitmap.height - cropHeight
-    const sx = Math.max(0, Math.min(maxX, (crop.x / 100) * maxX - cropWidth / 2 + cropWidth / 2))
-    const sy = Math.max(0, Math.min(maxY, (crop.y / 100) * maxY - cropHeight / 2 + cropHeight / 2))
-    const width = Math.min(1600, Math.round(cropWidth)); const height = Math.max(1, Math.round(width / aspect))
-    const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height
-    canvas.getContext('2d').drawImage(bitmap, sx, sy, cropWidth, cropHeight, 0, 0, width, height); bitmap.close()
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82))
-    return blob ? new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg', lastModified: Date.now() }) : file
-  } catch { return file }
-}
-
-function CommunityCropEditor({ file, crop, setCrop, onConfirm, onChangeFile }) {
-  const [dragging, setDragging] = useState(false)
-  const source = useMemo(() => URL.createObjectURL(file), [file])
-  useEffect(() => () => URL.revokeObjectURL(source), [source])
-  const move = event => {
-    if (!dragging) return
-    const rect = event.currentTarget.getBoundingClientRect()
-    setCrop(current => ({ ...current, x: Math.max(0, Math.min(100, current.x - (event.movementX / rect.width) * 100)), y: Math.max(0, Math.min(100, current.y - (event.movementY / rect.height) * 100)) }))
-  }
-  return <div className={`community-crop-editor community-crop-editor--${crop.aspect}`}><div className="community-crop-viewport" onPointerDown={event => { event.stopPropagation(); setDragging(true) }} onPointerUp={event => { event.stopPropagation(); setDragging(false) }} onPointerLeave={() => setDragging(false)} onPointerMove={event => { event.stopPropagation(); move(event) }}><img src={source} alt="Ajuste da foto" draggable="false" style={{ objectPosition: `${crop.x}% ${crop.y}%` }} /></div><div className="community-crop-options" role="group" aria-label="Formato da foto"><button type="button" aria-label="Formato horizontal" className={`community-crop-orientation ${crop.aspect === 'landscape' ? 'is-active' : ''}`} onClick={() => setCrop(current => ({ ...current, aspect: 'landscape' }))}><i className="community-orientation-icon community-orientation-icon--landscape" /></button><button type="button" aria-label="Formato vertical" className={`community-crop-orientation ${crop.aspect === 'portrait' ? 'is-active' : ''}`} onClick={() => setCrop(current => ({ ...current, aspect: 'portrait' }))}><i className="community-orientation-icon community-orientation-icon--portrait" /></button></div><small>Arraste a foto para escolher o corte</small><button type="button" className="community-crop-confirm" onClick={onConfirm}>OK</button><label className="community-crop-change">Trocar foto<input type="file" accept="image/*" onChange={onChangeFile} /></label></div>
-}
-
-function CommunityImage({ post, client }) {
-  const path = storagePathFromValue(post.image_path)
-  const publicUrl = path?.startsWith('http') ? path : path && client ? client.storage.from(BUCKET).getPublicUrl(path).data?.publicUrl : ''
-  const [src, setSrc] = useState(publicUrl || '')
-  const [fallbackTried, setFallbackTried] = useState(false)
-  useEffect(() => {
-    setSrc(publicUrl || '')
-    setFallbackTried(false)
-  }, [publicUrl])
-  const useAuthenticatedFallback = async () => {
-    if (fallbackTried || !client || !path || path.startsWith('http')) return
-    setFallbackTried(true)
-    const downloaded = await client.storage.from(BUCKET).download(path)
-    if (downloaded.data) setSrc(URL.createObjectURL(downloaded.data))
-  }
-  return src ? <img className="community-post-image" src={src} alt={post.caption || 'Foto de treino'} loading="lazy" onLoad={event => { event.currentTarget.dataset.orientation = event.currentTarget.naturalWidth >= event.currentTarget.naturalHeight ? "landscape" : "portrait" }} onError={useAuthenticatedFallback} /> : <div className="community-post-image community-post-image--loading" aria-label="Carregando foto" />
-}
-
 function Avatar({ profile, size = 'md' }) {
-  const initials = (profile?.display_name || '?').slice(0, 1).toUpperCase()
-  const avatar = profile?.avatar_ref || profile?.avatar_id || 'avatar-27'
-  return avatar
-    ? <img className={`community-avatar community-avatar--${size}`} src={avatar.startsWith('http') || avatar.startsWith('data:') ? avatar : avatarSrc(avatar)} alt="" />
-    : <span className={`community-avatar community-avatar--${size}`}>{initials}</span>
-}
-
-function CommunityPostSkeleton() {
-  return <article className="community-post community-post-skeleton" aria-hidden="true">
-    <div className="community-post-head"><span className="community-skeleton-block community-skeleton-avatar" /><div className="community-skeleton-copy"><span className="community-skeleton-block community-skeleton-name" /><span className="community-skeleton-block community-skeleton-date" /></div><span className="community-skeleton-block community-skeleton-menu" /></div>
-    <div className="community-post-image community-skeleton-block community-skeleton-image" />
-    <div className="community-post-body"><div className="community-skeleton-actions"><span className="community-skeleton-block community-skeleton-action" /><span className="community-skeleton-block community-skeleton-action community-skeleton-action--short" /></div><div className="community-skeleton-likers"><span className="community-skeleton-block community-skeleton-mini-avatar" /><span className="community-skeleton-block community-skeleton-mini-avatar" /><span className="community-skeleton-block community-skeleton-mini-avatar" /><span className="community-skeleton-block community-skeleton-liker-copy" /></div><span className="community-skeleton-block community-skeleton-line community-skeleton-line--wide" /><span className="community-skeleton-block community-skeleton-line" /><span className="community-skeleton-block community-skeleton-line community-skeleton-line--comment" /></div>
-  </article>
+  const avatar = profile?.avatar_ref
+  const src = isAvatarId(avatar) ? avatarSrc(avatar) : /^(https:\/\/|data:image\/|blob:)/.test(avatar || '') ? avatar : null
+  const [failed, setFailed] = useState(false)
+  useEffect(() => setFailed(false), [src])
+  return src && !failed ? <img className={`community-avatar community-avatar--${size}`} src={src} alt="" onError={() => setFailed(true)} /> : <span className={`community-avatar community-avatar--${size}`}>{(profile?.display_name || '?').slice(0, 1).toUpperCase()}</span>
 }
 
 export default function Community() {
-  const auth = useAuth(); const navigate = useNavigate(); const location = useLocation(); const client = getBrowserSupabaseClient()
+  const { user } = useAuth()
+  return <CommunitySession key={user?.id || 'guest'} />
+}
+
+function CommunitySession() {
+  const auth = useAuth(), navigate = useNavigate(), location = useLocation(), client = getBrowserSupabaseClient()
   const userId = auth.user?.id
   const profileMode = location.pathname === '/community/profile'
-  const publicUserId = location.pathname.match(/^\/community\/user\/([^/]+)$/)?.[1] || null
-  const viewedUserId = publicUserId || (profileMode ? userId : null)
+  const viewedUserId = location.pathname.match(/^\/community\/user\/([^/]+)$/)?.[1] || (profileMode ? userId : null)
+  const scope = viewedUserId || 'feed'
   const localProfile = useStore(state => state.S.profile)
-  const [posts, setPosts] = useState([]); const [loading, setLoading] = useState(true); const [showSkeleton, setShowSkeleton] = useState(false); const [loadingMore, setLoadingMore] = useState(false); const [hasMore, setHasMore] = useState(true); const [error, setError] = useState(''); const [pendingPost, setPendingPost] = useState(null)
-  const [ownIdentity, setOwnIdentity] = useState(null)
-  const [viewedProfile, setViewedProfile] = useState(null)
-  const [showFeedTop, setShowFeedTop] = useState(false)
-  const [commentsPost, setCommentsPost] = useState(null); const [notificationsOpen, setNotificationsOpen] = useState(false)
-  const [notifications, setNotifications] = useState([]); const [composerOpen, setComposerOpen] = useState(false); const [editingPost, setEditingPost] = useState(null)
-  const [activeMenuId, setActiveMenuId] = useState(null); const [blockedNoticeId, setBlockedNoticeId] = useState(null); const [likeAnimations, setLikeAnimations] = useState([])
-  const [file, setFile] = useState(null); const [composerExpanded, setComposerExpanded] = useState(false); const [caption, setCaption] = useState(''); const [commentsDisabled, setCommentsDisabled] = useState(false); const [saving, setSaving] = useState(false); const [crop, setCrop] = useState({ aspect: 'landscape', x: 50, y: 50 }); const [cropConfirmed, setCropConfirmed] = useState(false)
-  const fileInputRef = useRef(null); const feedOffsetRef = useRef(0); const feedLoadingRef = useRef(false); const feedSeedRef = useRef(randomId()); const feedSentinelRef = useRef(null)
-  useEffect(() => {
-    if (!activeMenuId) return undefined
-    const closeMenu = event => { if (!event.target.closest?.('.community-post-menu')) setActiveMenuId(null) }
-    document.addEventListener('pointerdown', closeMenu)
-    return () => document.removeEventListener('pointerdown', closeMenu)
-  }, [activeMenuId])
+  const localScope = useStore.getState().getActiveLocalScope()
+  const store = useMemo(() => communityFeedSession(client, userId), [client, userId])
+  const page = useSyncExternalStore(store.subscribe, useCallback(() => store.snapshot(scope), [store, scope]))
+  const [publicOwn, setPublicOwn] = useState(null), [viewedProfile, setViewedProfile] = useState(null)
+  const ownIdentity = useMemo(() => resolveCommunityIdentity({ userId, publicProfile: publicOwn, localProfile: localScope?.userId === userId ? localProfile : null, authUser: auth.user }), [userId, publicOwn, localProfile, localScope, auth.user])
+  const posts = useMemo(() => page.posts.map(post => hydrateCommunityPost(post, ownIdentity)), [page.posts, ownIdentity])
+  const [error, setError] = useState(''), [commentsId, setCommentsId] = useState(null), [notificationsOpen, setNotificationsOpen] = useState(false)
+  const commentsPost = posts.find(post => post.id === commentsId)
+  const [notifications, setNotifications] = useState([]), [composerOpen, setComposerOpen] = useState(false), [editingPost, setEditingPost] = useState(null)
+  const [file, setFile] = useState(null), [caption, setCaption] = useState(''), [commentsDisabled, setCommentsDisabled] = useState(false)
+  const [saving, setSaving] = useState(false), [pendingPost, setPendingPost] = useState(false), [cropConfirmed, setCropConfirmed] = useState(false), [composerExpanded, setComposerExpanded] = useState(false)
+  const [crop, setCrop] = useState({ aspect: 'landscape', x: 50, y: 50 }), [activeMenuId, setActiveMenuId] = useState(null), [blockedNoticeId, setBlockedNoticeId] = useState(null)
+  const [showFeedTop, setShowFeedTop] = useState(false), [likeAnimations, setLikeAnimations] = useState([])
+  const fileInput = useRef(null), sentinel = useRef(null), pendingLikes = useRef(new Set()), savingRef = useRef(false), currentUser = useRef(userId), noticeTimer = useRef(null)
+  currentUser.current = userId
+  const preview = useFilePreview(file)
+  const blockUpdates = Boolean(composerOpen || commentsId || pendingPost || saving)
+  const mutatePost = (id, updater) => store.updatePost(id, updater)
+  const changeComments = (id, updater) => mutatePost(id, post => ({ ...post, comments: updater(post.comments || []) }))
 
-  const load = useCallback(async (reset = false) => {
-    if (!client || !userId || feedLoadingRef.current || (!reset && !hasMore)) return
-    feedLoadingRef.current = true; reset ? setLoading(true) : setLoadingMore(true); setError('')
-    if (reset) { feedOffsetRef.current = 0; setHasMore(true) }
-    const from = reset ? 0 : feedOffsetRef.current
-    const postsQuery = client.from('community_posts').select('*, author:profiles!community_posts_author_id_fkey(id,display_name,avatar_ref,avatar_id), likes:community_likes(user_id,user:profiles!community_likes_user_id_fkey(id,display_name,avatar_ref,avatar_id)), comments:community_comments(id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref,avatar_id),likes:community_comment_likes(user_id))')
-    if (viewedUserId) postsQuery.eq('author_id', viewedUserId)
-    const [{ data, error: queryError }, { data: identity }] = await Promise.all([
-      postsQuery.order('created_at', { ascending: false }).range(from, from + FEED_PAGE_SIZE - 1),
-      client.from('profiles').select('id,display_name,avatar_ref,avatar_id').eq('id', viewedUserId || userId).maybeSingle(),
-    ])
-    const scopedData = viewedUserId ? (data || []).filter(post => post.author_id === viewedUserId) : (data || [])
-    const resolvedIdentity = identity || ownIdentity || { id: userId, display_name: localProfile?.name, avatar_ref: localProfile?.avatarRef, avatar_id: localProfile?.avatarId }
-    if (viewedUserId && viewedUserId !== userId) setViewedProfile(identity || scopedData[0]?.author || null)
-    else setOwnIdentity(resolvedIdentity)
-    const enriched = scopedData.map(post => ({ ...post, author: post.author_id === userId ? { ...post.author, ...resolvedIdentity } : post.author, likes: (post.likes || []).map(like => like.user_id === userId ? { ...like, user: { ...like.user, ...resolvedIdentity } } : like) }))
-    if (queryError) setError(queryError.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : queryError.message)
-    else {
-      const merged = reset ? enriched : [...posts, ...enriched.filter(item => !posts.some(existing => existing.id === item.id))]
-      feedOffsetRef.current = from + enriched.length
-      setHasMore(enriched.length === FEED_PAGE_SIZE)
-      setPosts(rankPosts(merged, feedSeedRef.current))
-    }
-    setLoading(false); setLoadingMore(false); feedLoadingRef.current = false
-  }, [client, userId, localProfile, hasMore, posts, viewedUserId])
-  const loadNotifications = useCallback(async () => {
+  useEffect(() => () => { currentUser.current = null; clearTimeout(noticeTimer.current) }, [])
+
+  useEffect(() => {
     if (!client || !userId) return
-    const { data } = await client.from('community_notifications').select('*, actor:profiles!community_notifications_actor_id_fkey(display_name), post:community_posts(id)').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(30)
-    setNotifications(data || [])
+    let cancelled = false
+    client.from('profiles').select(COMMUNITY_PROFILE_FIELDS).eq('id', userId).maybeSingle().then(({ data }) => { if (!cancelled) setPublicOwn(data) }).catch(() => {})
+    return () => { cancelled = true }
   }, [client, userId])
   useEffect(() => {
-    setPosts([])
-    feedOffsetRef.current = 0
-    feedLoadingRef.current = false
-    load(true)
-    loadNotifications()
-  }, [loadNotifications, userId, viewedUserId])
+    setCommentsId(null); setActiveMenuId(null); setViewedProfile(null); setError('')
+    if (!client || !userId) return
+    let cancelled = false
+    if (!store.snapshot(scope).initialized) void store.load(scope)
+    if (viewedUserId) client.from('profiles').select(COMMUNITY_PROFILE_FIELDS).eq('id', viewedUserId).maybeSingle().then(({ data, error: failure }) => {
+      if (!cancelled) { setViewedProfile(data); if (failure) setError('Não foi possível carregar este perfil.') }
+    }).catch(() => { if (!cancelled) setError('Não foi possível carregar este perfil.') })
+    const position = store.snapshot(scope).scrollY
+    const frame = requestAnimationFrame(() => window.scrollTo(0, position))
+    const onScroll = () => { store.saveScroll(scope, window.scrollY); setShowFeedTop(window.scrollY > 280) }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => { cancelled = true; cancelAnimationFrame(frame); window.removeEventListener('scroll', onScroll) }
+  }, [client, userId, scope, viewedUserId, store])
   useEffect(() => {
-    if (!loading || posts.length > 0) { setShowSkeleton(false); return undefined }
-    const timer = window.setTimeout(() => setShowSkeleton(true), 220)
-    return () => window.clearTimeout(timer)
-  }, [loading, posts.length])
+    if (!sentinel.current || !userId || typeof IntersectionObserver === 'undefined' || page.error || page.loading || !page.hasMore) return
+    const observer = new IntersectionObserver(entries => { if (entries.some(entry => entry.isIntersecting)) void store.load(scope) }, { rootMargin: '500px 0px' })
+    observer.observe(sentinel.current); return () => observer.disconnect()
+  }, [store, scope, userId, page.loading, page.hasMore, page.error])
   useEffect(() => {
-    if (!client || !userId || typeof client.channel !== 'function') return undefined
-    const channel = client.channel(`community-notifications:${userId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_notifications', filter: `recipient_id=eq.${userId}` }, () => {
-        loadNotifications()
-      })
-      .subscribe()
-    // Realtime is immediate when available; the fallback also covers a
-    // temporarily disconnected mobile background session.
-    const fallback = window.setInterval(loadNotifications, 30000)
-    return () => { window.clearInterval(fallback); client.removeChannel?.(channel) }
+    if (!activeMenuId) return
+    const close = event => { if (!event.target.closest?.('.community-post-menu')) setActiveMenuId(null) }
+    document.addEventListener('pointerdown', close); return () => document.removeEventListener('pointerdown', close)
+  }, [activeMenuId])
+  useEffect(() => {
+    if (blockUpdates) return acquireUpdateBlocker()
+  }, [blockUpdates])
+  useEffect(() => {
+    if (!composerOpen && !commentsId && !notificationsOpen) return
+    const close = event => { if (event.key === 'Escape' && !savingRef.current) { setComposerOpen(false); setCommentsId(null); setNotificationsOpen(false) } }
+    document.addEventListener('keydown', close); return () => document.removeEventListener('keydown', close)
+  }, [composerOpen, commentsId, notificationsOpen])
+
+  const loadNotifications = useCallback(async () => {
+    if (!client || !userId || document.visibilityState === 'hidden') return
+    try {
+      const { data, error: failure } = await client.from('community_notifications').select('*,actor:profiles!community_notifications_actor_id_fkey(id,display_name,avatar_ref)').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(30)
+      if (!failure && currentUser.current === userId) setNotifications(data || [])
+    } catch { /* Preserve the last successful list while reconnecting. */ }
+  }, [client, userId])
+  useEffect(() => {
+    setNotifications([]); void loadNotifications()
+    if (!client || !userId) return
+    const channel = client.channel?.(`community-notifications:${userId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'community_notifications', filter: `recipient_id=eq.${userId}` }, loadNotifications).subscribe()
+    const interval = setInterval(loadNotifications, 30000)
+    window.addEventListener('online', loadNotifications); document.addEventListener('visibilitychange', loadNotifications)
+    return () => { clearInterval(interval); if (channel) client.removeChannel(channel); window.removeEventListener('online', loadNotifications); document.removeEventListener('visibilitychange', loadNotifications) }
   }, [client, userId, loadNotifications])
+  // Keep open comments current, without replacing pending interactions or reordering the feed.
   useEffect(() => {
-    const onScroll = () => setShowFeedTop(window.scrollY > 280)
-    onScroll(); window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+    if (!commentsId || !client) return
+    let cancelled = false, busy = false
+    const refresh = async () => {
+      if (cancelled || busy || document.visibilityState === 'hidden') return
+      const before = store.snapshot(scope).posts.find(post => post.id === commentsId)
+      if (!before || before.comments?.some(comment => comment.pending)) return
+      busy = true
+      try {
+        const { data, error: failure } = await client.from('community_posts').select(COMMUNITY_POST_SELECT).eq('id', commentsId).maybeSingle()
+        if (!cancelled && !failure && data) store.updatePost(commentsId, current => current === before ? data : current)
+      } catch { /* A later refresh will retry. */ } finally { busy = false }
+    }
+    void refresh(); const interval = setInterval(refresh, 10000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [client, commentsId, scope, store])
   useEffect(() => {
-    if (profileMode || !feedSentinelRef.current) return undefined
-    const observer = new IntersectionObserver(entries => { if (entries[0]?.isIntersecting) load(false) }, { rootMargin: '700px 0px' })
-    observer.observe(feedSentinelRef.current)
-    return () => observer.disconnect()
-  }, [load, profileMode])
+    const postId = new URLSearchParams(location.search).get('post')
+    if (!postId || !client || !userId || scope !== 'feed') return
+    let cancelled = false
+    client.from('community_posts').select(COMMUNITY_POST_SELECT).eq('id', postId).maybeSingle().then(({ data, error: failure }) => {
+      if (cancelled) return
+      if (failure || !data) { setError('Esta postagem não está mais disponível.'); return }
+      store.addPost(data); setCommentsId(data.comments_disabled ? null : data.id)
+      requestAnimationFrame(() => window.scrollTo({ top: 0 }))
+    }).catch(() => { if (!cancelled) setError('Não foi possível abrir esta postagem.') })
+    return () => { cancelled = true }
+  }, [location.search, client, userId, scope, store])
 
-  const unread = useMemo(() => notifications.filter(n => !n.read_at).length, [notifications])
+  const notify = async (recipient, type, postId, commentId = null) => {
+    if (!recipient || recipient === userId) return
+    try { await client.from('community_notifications').insert({ recipient_id: recipient, actor_id: userId, type, post_id: postId, comment_id: commentId }) } catch { /* Do not undo a saved interaction if notification delivery fails. */ }
+  }
   const toggleLike = async post => {
-    const liked = post.likes?.some(x => x.user_id === userId)
-    if (!liked) {
-      const animationId = randomId()
-      setLikeAnimations(current => [...current, { id: animationId, postId: post.id }])
-      window.setTimeout(() => setLikeAnimations(current => current.filter(item => item.id !== animationId)), 700)
-    }
-    const ownLike = { user_id: userId, user: ownIdentity || { id: userId, display_name: localProfile?.name || auth.user?.user_metadata?.name || auth.user?.user_metadata?.full_name || 'Usuário', avatar_id: localProfile?.avatarId || 'avatar-27', avatar_ref: localProfile?.avatarRef } }
-    setPosts(current => current.map(item => item.id === post.id ? { ...item, likes: liked ? item.likes.filter(x => x.user_id !== userId) : [...(item.likes || []), ownLike] } : item))
-    const result = liked ? await client.from('community_likes').delete().match({ post_id: post.id, user_id: userId }) : await client.from('community_likes').insert({ post_id: post.id, user_id: userId })
-    if (result.error) load()
-    if (!liked && post.author_id !== userId) await client.from('community_notifications').insert({ recipient_id: post.author_id, actor_id: userId, type: 'like', post_id: post.id })
+    if (pendingLikes.current.has(post.id)) return
+    pendingLikes.current.add(post.id); setError('')
+    const likes = post.likes || [], liked = likes.some(like => like.user_id === userId)
+    mutatePost(post.id, current => ({ ...current, likes: [...(current.likes || []).filter(like => like.user_id !== userId), ...(!liked ? [{ user_id: userId, user: ownIdentity }] : [])] }))
+    if (!liked) { const id = crypto.randomUUID(); setLikeAnimations(items => [...items, { id, postId: post.id }]); setTimeout(() => setLikeAnimations(items => items.filter(item => item.id !== id)), 1500) }
+    try {
+      const result = liked ? await client.from('community_likes').delete().match({ post_id: post.id, user_id: userId }) : await client.from('community_likes').insert({ post_id: post.id, user_id: userId })
+      if (result.error) throw result.error
+      if (!liked) void notify(post.author_id, 'like', post.id)
+    } catch (failure) { mutatePost(post.id, current => ({ ...current, likes: [...(current.likes || []).filter(like => like.user_id !== userId), ...likes.filter(like => like.user_id === userId)] })); setError(failure.message) }
+    finally { pendingLikes.current.delete(post.id) }
   }
-  const submitComment = async (post, body, parentCommentId = null) => {
-    if (post.comments_disabled) return
-    const text = body.trim(); if (!text) return
-    const { data: inserted, error: insertError } = await client.from('community_comments').insert({ post_id: post.id, author_id: userId, body: text, parent_comment_id: parentCommentId }).select('id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(id,display_name,avatar_ref,avatar_id),likes:community_comment_likes(user_id)').single()
-    if (insertError) { setError(insertError.message); return { error: insertError } }
-    const comment = { ...inserted, author: inserted.author || ownIdentity }
-    setPosts(current => current.map(item => item.id === post.id ? { ...item, comments: [...(item.comments || []), comment] } : item))
-    setCommentsPost(current => current?.id === post.id ? { ...current, comments: [...(current.comments || []), comment] } : current)
-    if (post.author_id !== userId) await client.from('community_notifications').insert({ recipient_id: post.author_id, actor_id: userId, type: 'comment', post_id: post.id })
-    return { comment }
+  const submitComment = async (post, body, parentId) => {
+    if (post.comments_disabled) return { error: Error('Os comentários estão bloqueados.') }
+    try {
+      const { data, error: failure } = await client.from('community_comments').insert({ post_id: post.id, author_id: userId, body: body.trim(), parent_comment_id: parentId }).select(COMMUNITY_COMMENT_SELECT).single()
+      if (failure) throw failure
+      const comment = { ...data, author: ownIdentity }
+      const recipients = new Set([post.author_id, post.comments?.find(item => item.id === parentId)?.author_id])
+      for (const recipient of recipients) void notify(recipient, 'comment', post.id, comment.id)
+      return { comment }
+    } catch (failure) { return { error: failure } }
   }
-  const updateCommentCount = comment => setPosts(current => current.map(item => item.id === comment.post_id ? { ...item, comments: (item.comments || []).filter(itemComment => itemComment.id !== comment.id) } : item))
-  const createPost = async event => {
-    event.preventDefault(); if (!file || saving) return
-    const localPreview = URL.createObjectURL(file); setPendingPost({ preview: localPreview });
-    setSaving(true); setError('')
-    const compressed = await compressCommunityImage(await cropCommunityImage(file, crop))
-    const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
-    const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
-    if (upload.error) { setPendingPost(null); URL.revokeObjectURL(localPreview); setError(upload.error.message); setSaving(false); return }
-    const inserted = await client.from('community_posts').insert({ author_id: userId, image_path: path, caption, comments_disabled: false }).select().single()
-    if (inserted.error) { setPendingPost(null); URL.revokeObjectURL(localPreview); setError(inserted.error.code === 'PGRST205' ? 'A Comunidade ainda não foi ativada no banco. Aplique a migração community no Supabase.' : inserted.error.message) } else { const authorIdentity = { id: userId, display_name: localProfile?.name || ownIdentity?.display_name, avatar_ref: localProfile?.avatarRef || ownIdentity?.avatar_ref, avatar_id: localProfile?.avatarId || ownIdentity?.avatar_id }; const optimistic = { ...inserted.data, author: { ...(ownIdentity || {}), ...authorIdentity }, likes: [], comments: [] }; setComposerOpen(false); setFile(null); setCaption(''); await new Promise(resolve => window.setTimeout(resolve, 700 + Math.random() * 1400)); setPosts(current => [optimistic, ...current.filter(item => item.id !== optimistic.id)]); setPendingPost(null); URL.revokeObjectURL(localPreview); await load() }
-    setSaving(false)
+  const closeComposer = () => { if (savingRef.current) return; setComposerOpen(false); setEditingPost(null); setFile(null); setCaption('') }
+  const chooseFile = event => {
+    const next = event.target.files?.[0]; event.target.value = ''
+    if (!next || savingRef.current) return
+    if (!next.type.startsWith('image/')) { setError('Escolha um arquivo de imagem.'); return }
+    setEditingPost(null); setCaption(''); setCommentsDisabled(false); setError(''); setFile(next); setCrop({ aspect: 'landscape', x: 50, y: 50 }); setCropConfirmed(false); setComposerExpanded(false); setComposerOpen(true)
   }
-  const updatePost = async event => {
-    event.preventDefault(); if (!editingPost || saving) return
-    setSaving(true)
-    let imagePath = editingPost.image_path
-    if (file) {
-      const compressed = await compressCommunityImage(await cropCommunityImage(file, crop))
-      const path = `${userId}/${randomId()}-${compressed.name.replace(/[^a-z0-9.]/gi, '-').toLowerCase()}`
-      const upload = await client.storage.from(BUCKET).upload(path, compressed, { contentType: compressed.type, upsert: false })
-      if (upload.error) { setPendingPost(null); URL.revokeObjectURL(localPreview); setError(upload.error.message); setSaving(false); return }
-      imagePath = path
-    }
-    const { error: updateError } = await client.from('community_posts').update({ caption: caption.trim(), image_path: imagePath, comments_disabled: commentsDisabled }).eq('id', editingPost.id).eq('author_id', userId)
-    if (updateError) setError(updateError.message); else { setPosts(current => current.map(post => post.id === editingPost.id ? { ...post, caption: caption.trim(), image_path: imagePath, comments_disabled: commentsDisabled } : post)); setEditingPost(null); setComposerOpen(false); setCaption(''); setFile(null) }
-    setSaving(false)
+  const confirmCrop = async () => {
+    if (!file || savingRef.current) return
+    savingRef.current = true; setSaving(true); setError('')
+    try { setFile(await cropCommunityImage(file, crop)); setCropConfirmed(true) } catch (failure) { setError(failure.message) }
+    finally { savingRef.current = false; setSaving(false) }
   }
-  const deletePost = async post => {
+  const publish = async event => {
+    event.preventDefault()
+    if (savingRef.current || (!editingPost && (!file || !cropConfirmed))) return
+    savingRef.current = true; setSaving(true); setError('')
+    let uploadedPath = null, inserted = false
+    try {
+      if (editingPost) {
+        const patch = { caption: caption.trim(), comments_disabled: commentsDisabled }
+        const result = await client.from('community_posts').update(patch).eq('id', editingPost.id).eq('author_id', userId)
+        if (result.error) throw result.error
+        mutatePost(editingPost.id, current => ({ ...current, ...patch }))
+      } else {
+        setPendingPost(true)
+        uploadedPath = `${userId}/${crypto.randomUUID()}.jpg`
+        const upload = await client.storage.from(BUCKET).upload(uploadedPath, file, { contentType: 'image/jpeg', upsert: false })
+        if (upload.error) throw upload.error
+        const result = await client.from('community_posts').insert({ author_id: userId, image_path: uploadedPath, caption: caption.trim(), comments_disabled: false }).select().single()
+        if (result.error) throw result.error
+        inserted = true
+        store.addPost({ ...result.data, author: ownIdentity, comments: [], likes: [] })
+        store.saveScroll('feed', 0)
+        if (scope !== 'feed') navigate('/community')
+        requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }))
+      }
+      setComposerOpen(false); setEditingPost(null); setFile(null); setCaption('')
+    } catch (failure) {
+      if (uploadedPath && !inserted) { try { await client.storage.from(BUCKET).remove([uploadedPath]) } catch { /* surfaced publication error remains retryable */ } }
+      setError(failure.message || 'Não foi possível publicar. Tente novamente.')
+    } finally { savingRef.current = false; setSaving(false); setPendingPost(false) }
+  }
+  const removePost = async post => {
     if (!window.confirm('Excluir esta postagem?')) return
-    const { error: deleteError } = await client.from('community_posts').delete().eq('id', post.id).eq('author_id', userId)
-    if (deleteError) setError(deleteError.message); else { const imagePath = storagePathFromValue(post.image_path); if (imagePath) await client.storage.from(BUCKET).remove([imagePath]); setPosts(current => current.filter(item => item.id !== post.id)) }
+    try {
+      const result = await client.from('community_posts').delete().eq('id', post.id).eq('author_id', userId)
+      if (result.error) throw result.error
+      store.removePost(post.id); setActiveMenuId(null)
+      const path = communityStoragePath(post.image_path)
+      if (path?.startsWith(`${userId}/`)) {
+        const removed = await client.storage.from(BUCKET).remove([path])
+        if (removed.error) setError('Postagem excluída. Não foi possível remover o arquivo da foto agora.')
+      }
+    } catch (failure) { setError(failure.message) }
   }
-  const chooseFile = event => { const nextFile = event.target.files?.[0] || null; if (!nextFile) return; setFile(nextFile); setCrop({ aspect: 'landscape', x: 50, y: 50 }); setCropConfirmed(false); setComposerOpen(true); event.target.value = '' }
-  const confirmCrop = async () => { if (!file) return; setSaving(true); const cropped = await cropCommunityImage(file, crop); setFile(cropped); setCropConfirmed(true); setSaving(false) }
-  const openNewPost = () => fileInputRef.current?.click()
-  const openEdit = post => { setEditingPost(post); setCaption(post.caption || ''); setCommentsDisabled(Boolean(post.comments_disabled)); setFile(null); setCropConfirmed(true); setComposerOpen(true) }
-  const markNotificationsRead = async () => { if (unread) await client.from('community_notifications').update({ read_at: new Date().toISOString() }).eq('recipient_id', userId).is('read_at', null); setNotifications(current => current.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }))) }
-  const showBlockedNotice = postId => { setBlockedNoticeId(postId); window.setTimeout(() => setBlockedNoticeId(current => current === postId ? null : current), 2200) }
-  const openUser = id => { if (id) navigate(id === userId ? '/community/profile' : `/community/user/${id}`, { state: { fromFeed: true } }) }
-  const returnToFeedTop = async () => { window.scrollTo({ top: 0, behavior: 'smooth' }); await load(true) }
-
+  const openEdit = post => { setEditingPost(post); setFile(null); setCaption(post.caption || ''); setCommentsDisabled(post.comments_disabled); setCropConfirmed(true); setError(''); setComposerOpen(true); setActiveMenuId(null) }
+  const openUser = id => { if (id) { store.saveScroll(scope, window.scrollY); setCommentsId(null); navigate(id === userId ? '/community/profile' : `/community/user/${id}`) } }
+  const markRead = async () => {
+    setNotificationsOpen(true)
+    const ids = notifications.filter(item => !item.read_at).map(item => item.id)
+    if (!ids.length) return
+    try {
+      const read_at = new Date().toISOString(), result = await client.from('community_notifications').update({ read_at }).eq('recipient_id', userId).in('id', ids)
+      if (result.error) throw result.error
+      setNotifications(items => items.map(item => ids.includes(item.id) ? { ...item, read_at } : item))
+    } catch { setError('Não foi possível marcar as notificações como lidas.') }
+  }
+  if (!userId || !client) return <div className="community-empty">Entre na sua conta para acessar a Comunidade.</div>
   return <div className="community-view page-scenery">
-    {showFeedTop && <button type="button" className="community-feed-top" aria-label="Voltar ao topo e atualizar o feed" onClick={returnToFeedTop}>↑</button>}
-    <div className="community-toolbar">
-      <input ref={fileInputRef} className="community-file-input" type="file" accept="image/*" onChange={chooseFile} />
-      <button className="community-primary-action" onClick={openNewPost}><Icon name="camera" /> Nova postagem</button>
-      <button className="community-notifications" aria-label="Notificações" onClick={() => { setNotificationsOpen(true); markNotificationsRead() }}><Icon name="bell" />{unread > 0 && <b>{unread}</b>}</button>
-      <button className="community-profile-button" aria-label="Meu perfil" onClick={() => navigate('/community/profile')}><Avatar profile={{ display_name: localProfile?.name, avatar_id: localProfile?.avatarId }} /></button>
-      {(profileMode || publicUserId) && <div className="community-profile-heading"><Avatar profile={profileMode ? { display_name: localProfile?.name, avatar_ref: localProfile?.avatarRef, avatar_id: localProfile?.avatarId } : viewedProfile} size="sm" /><strong>{profileMode ? (localProfile?.name || 'Meu perfil') : (viewedProfile?.display_name || 'Perfil')}</strong><button type="button" className="community-profile-back" onClick={() => location.state?.fromFeed ? navigate(-1) : navigate('/community')} aria-label="Voltar ao feed"><Icon name="chevronLeft" /> Voltar</button></div>}
-    </div>
-    {error && <div className="community-error">{error}</div>}
-    {pendingPost && !profileMode && !publicUserId && <div className="community-post-uploading" aria-live="polite"><img src={pendingPost.preview} alt="Sua postagem sendo enviada" /><div><strong>Publicando sua foto…</strong><span /></div></div>}
-    {loading && posts.length === 0 && showSkeleton ? <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div> : posts.length === 0 && !loading ? <div className="community-empty">{profileMode ? 'Você ainda não publicou fotos.' : publicUserId ? 'Este usuário ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div> : posts.map(post => <article className="community-post" key={post.id}>
-      <header className="community-post-head"><button type="button" className="community-author-link" onClick={() => openUser(post.author_id)} aria-label={`Abrir perfil de ${post.author?.display_name || 'Usuário'}`}><Avatar profile={post.author} /><span><strong>{post.author?.display_name || 'Usuário'}</strong><small>{fmtDate(post.created_at)}</small></span></button>{post.author_id === userId && <div className={`community-post-menu${activeMenuId === post.id ? ' is-open' : ''}`}><button type="button" className="community-more" aria-label="Mais opções" onClick={() => setActiveMenuId(current => current === post.id ? null : post.id)}>•••</button><div className="community-post-menu-actions"><button onClick={() => { setActiveMenuId(null); openEdit(post) }}>Editar</button><button onClick={() => { setActiveMenuId(null); deletePost(post) }}>Excluir</button></div></div>}</header>
-      <CommunityImage post={post} client={client} />
-      <div className="community-post-body"><div className="community-actions"><span className="community-like-action"><button className={post.likes?.some(x => x.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes?.length || 0}</button>{likeAnimations.filter(item => item.postId === post.id).map(item => <span key={item.id} className="community-like-float" aria-hidden="true"><Icon name="heart" /></span>)}</span><span className="community-comment-action">{post.comments_disabled && blockedNoticeId === post.id && <span className="community-blocked-notice" role="status">Os comentários estão bloqueados.</span>}<button className={post.comments_disabled ? 'community-comment-button is-blocked' : ''} aria-label={post.comments_disabled ? 'Comentários bloqueados' : 'Abrir comentários'} onClick={() => post.comments_disabled ? showBlockedNotice(post.id) : setCommentsPost(post)}><Icon name="message" /> {post.comments?.length || 0}</button></span></div>{post.likes?.length > 0 && <div className="community-liker-summary"><span className="community-liker-stack" aria-hidden="true">{post.likes.slice(0, 3).map((like, index) => <Avatar key={`${like.user_id}-${index}`} profile={like.user || { display_name: 'Usuário' }} size="xs" />)}</span><span>{post.likes.slice(0, 2).map(like => like.user?.display_name || 'Usuário').join(', ')}{post.likes.length > 2 ? ` e outras ${post.likes.length - 2} pessoas curtiram` : post.likes.length === 1 ? ' curtiu' : ' curtiram'}</span></div>}{post.caption && <p>{post.caption}</p>}{post.comments?.slice(0, 2).map(comment => <div className="community-comment-preview" key={comment.id}><strong>{comment.author?.display_name || 'Usuário'}</strong> {comment.body}</div>)}{post.comments?.length > 2 && !post.comments_disabled && <button className="community-see-comments" onClick={() => setCommentsPost(post)}>Ver todos os comentários <Icon name="chevronRight" /></button>}</div>
-    </article>)}
-    {loadingMore && <div className="community-skeleton-list community-skeleton-list--more"><CommunityPostSkeleton /></div>}
-    {!profileMode && <div ref={feedSentinelRef} className="community-feed-sentinel" aria-live="polite">{loadingMore ? 'Carregando mais postagens…' : hasMore ? '' : 'Sem mais postagens por aqui.'}</div>}
-
-    <AnimatePresence>{composerOpen && <div className="community-overlay community-overlay--sheet" onMouseDown={e => e.target === e.currentTarget && setComposerOpen(false)}><motion.form className={`community-sheet community-composer-sheet ${composerExpanded ? 'is-expanded' : ''}`} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={editingPost ? updatePost : createPost}><div className="community-sheet-inner"><div className="community-sheet-handle" /><div className="community-sheet-title"><h2>{editingPost ? 'Editar postagem' : 'Nova postagem'}</h2><div className="community-sheet-title-actions">{file && !cropConfirmed && <button type="button" aria-label="Expandir editor" onClick={() => setComposerExpanded(value => !value)}><Icon name={composerExpanded ? 'chevron-down' : 'chevron-up'} /></button>}<button type="button" onClick={() => setComposerOpen(false)}><Icon name="xmark" /></button></div></div></div>{editingPost && !file && <CommunityImage post={editingPost} client={client} />}{file && !cropConfirmed && <CommunityCropEditor file={file} crop={crop} setCrop={setCrop} onConfirm={confirmCrop} onChangeFile={chooseFile} />}{!editingPost && !file && <label className="community-upload community-upload-inline">Escolha uma foto do treino<input type="file" accept="image/*" onChange={chooseFile} /></label>}{cropConfirmed && <div className="community-sheet-inner">{file && <img className="community-cropped-preview" src={URL.createObjectURL(file)} alt="Foto recortada" />}<textarea value={caption} onChange={e => setCaption(e.target.value)} maxLength={500} placeholder="Conte como foi o treino…" />{editingPost && <label className="community-comments-toggle"><input type="checkbox" checked={!commentsDisabled} onChange={e => setCommentsDisabled(!e.target.checked)} /> Permitir comentários nesta postagem</label>}<button className="community-primary-action" disabled={(!file && !editingPost) || (file && !cropConfirmed) || saving}>{saving ? (editingPost ? 'Salvando…' : 'Publicando…') : editingPost ? 'Salvar alterações' : 'Publicar foto'}</button></div>}</motion.form></div>}</AnimatePresence>
-    <AnimatePresence>{commentsPost && <CommentsSheet key={commentsPost.id} post={commentsPost} client={client} userId={userId} ownIdentity={ownIdentity} ownProfile={localProfile} authUser={auth.user} onClose={() => setCommentsPost(null)} onSubmit={submitComment} onCommentDeleted={updateCommentCount} onOpenUser={openUser} />}</AnimatePresence>
-    <AnimatePresence>{notificationsOpen && <div className="community-overlay community-overlay--top" onMouseDown={e => e.target === e.currentTarget && setNotificationsOpen(false)}><motion.div className="community-notification-sheet" initial={{ y: '-100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }}><div className="community-sheet-title"><h2>Notificações</h2><button onClick={() => setNotificationsOpen(false)}><Icon name="xmark" /></button></div>{notifications.length === 0 ? <div className="community-empty">Você está em dia.</div> : notifications.map(n => <button className="community-notification" key={n.id} onClick={() => { setNotificationsOpen(false); if (n.post_id) navigate(`/community?post=${n.post_id}`) }}><Icon name={n.type === 'like' ? 'heart' : 'message'} /><span><strong>{n.actor?.display_name || 'Alguém'}</strong> {n.type === 'like' ? 'curtiu sua postagem.' : 'comentou na sua postagem.'}</span></button>)}</motion.div></div>}</AnimatePresence>
+    {showFeedTop && <button className="community-feed-top" aria-label="Voltar ao topo e atualizar o feed" onClick={() => { store.saveScroll(scope, 0); window.scrollTo({ top: 0, behavior: 'smooth' }); void store.load(scope, true) }}>↑</button>}
+    <div className="community-toolbar"><input ref={fileInput} className="community-file-input" type="file" accept="image/*" onChange={chooseFile} /><button className="community-primary-action" onClick={() => fileInput.current?.click()}><Icon name="camera" /> Nova postagem</button><button className="community-notifications" aria-label="Notificações" onClick={markRead}><Icon name="bell" />{notifications.some(item => !item.read_at) && <b>Novas notificações</b>}</button><div className="community-profile-tools"><button className="community-profile-button" aria-label="Meu perfil" onClick={() => openUser(userId)}><Avatar profile={ownIdentity} /></button>{viewedUserId && <button className="community-profile-back" onClick={() => navigate('/community')}><Icon name="chevronLeft" /> Voltar</button>}</div>{viewedUserId && <div className="community-profile-heading"><Avatar profile={viewedUserId === userId ? ownIdentity : viewedProfile} size="sm" /><strong>{viewedUserId === userId ? ownIdentity.display_name : viewedProfile?.display_name || 'Carregando perfil…'}</strong></div>}</div>
+    {(error || page.error) && <div className="community-error" role="alert">{error || page.error}{page.error && <button onClick={() => store.load(scope, true)}>Tentar novamente</button>}</div>}
+    {pendingPost && <div className="community-post-uploading" role="status"><img src={preview || undefined} alt="" /><div><strong>Publicando sua foto…</strong><span /></div></div>}
+    {!page.initialized && !page.error && !posts.length && <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div>}
+    {page.initialized && !page.loading && !posts.length && !page.error && <div className="community-empty">{viewedUserId ? 'Este usuário ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div>}
+    {posts.map(post => <CommunityPostMedia key={post.id} post={post} client={client}>{image => <article className="community-post" data-post-id={post.id}>
+      <header className="community-post-head"><button className="community-author-link" onClick={() => openUser(post.author_id)} aria-label={`Abrir perfil de ${post.author.display_name}`}><Avatar profile={post.author} /><span><strong>{post.author.display_name}</strong><small>{fmtDate(post.created_at)}</small></span></button>{post.author_id === userId && <div className={`community-post-menu${activeMenuId === post.id ? ' is-open' : ''}`}><button className="community-more" aria-label="Mais opções" onClick={() => setActiveMenuId(activeMenuId === post.id ? null : post.id)}>•••</button><div className="community-post-menu-actions"><button onClick={() => openEdit(post)}>Editar</button><button onClick={() => removePost(post)}>Excluir</button></div></div>}</header>
+      {image}
+      <div className="community-post-body"><div className="community-actions"><span className="community-like-action"><button aria-label="Curtir postagem" className={post.likes.some(like => like.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes.length}</button>{likeAnimations.filter(item => item.postId === post.id).map(item => <span className="community-like-float" key={item.id} aria-hidden="true"><Icon name="heart" /></span>)}</span><span className="community-comment-action">{blockedNoticeId === post.id && <span className="community-blocked-notice" role="status">Os comentários estão bloqueados.</span>}<button className={post.comments_disabled ? 'community-comment-button is-blocked' : ''} aria-label="Abrir comentários" onClick={() => { if (!post.comments_disabled) setCommentsId(post.id); else { clearTimeout(noticeTimer.current); setBlockedNoticeId(post.id); noticeTimer.current = setTimeout(() => setBlockedNoticeId(null), 2200) } }}><Icon name="message" /> {post.comments.length}</button></span></div>
+        {post.likes.length > 0 && <div className="community-liker-summary"><span className="community-liker-stack" aria-hidden="true">{post.likes.slice(0, 3).map(like => <Avatar key={like.user_id} profile={like.user} size="xs" />)}</span><span>{post.likes.slice(0, 2).map(like => like.user.display_name).join(', ')}{post.likes.length > 2 ? ` e outras ${post.likes.length - 2} pessoas curtiram` : post.likes.length === 1 ? ' curtiu' : ' curtiram'}</span></div>}
+        {post.caption && <p>{post.caption}</p>}{post.comments.filter(comment => !comment.parent_comment_id).slice(0, 2).map(comment => <div className="community-comment-preview" key={comment.id}><button className="community-comment-name-link" onClick={() => openUser(comment.author_id)}>{comment.author.display_name}</button> {comment.body}</div>)}{post.comments.length > 0 && !post.comments_disabled && <button className="community-see-comments" onClick={() => setCommentsId(post.id)}>Ver todos os comentários <Icon name="chevronRight" /></button>}
+      </div>
+    </article>}</CommunityPostMedia>)}
+    {page.loading && posts.length > 0 && <CommunityPostSkeleton />}
+    <div ref={sentinel} className={page.hasMore || !posts.length ? 'community-feed-sentinel-trigger' : 'community-feed-sentinel'}>{!page.hasMore && posts.length > 0 ? 'Sem mais postagens por aqui.' : ''}</div>
+    <AnimatePresence>{composerOpen && <div className="community-overlay community-overlay--sheet" onMouseDown={event => event.target === event.currentTarget && closeComposer()}><motion.form role="dialog" aria-modal="true" aria-label={editingPost ? 'Editar postagem' : 'Nova postagem'} className={`community-sheet community-composer-sheet${composerExpanded ? ' is-expanded' : ''}`} initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} onSubmit={publish}><div className="community-sheet-inner"><div className="community-sheet-title"><h2>{editingPost ? 'Editar postagem' : 'Nova postagem'}</h2><div className="community-sheet-title-actions">{!cropConfirmed && <button type="button" aria-label="Expandir editor" onClick={() => setComposerExpanded(value => !value)}><Icon name={composerExpanded ? 'chevronDown' : 'chevronUp'} /></button>}<button type="button" aria-label="Fechar postagem" disabled={saving} onClick={closeComposer}><Icon name="xmark" /></button></div></div></div>
+      {error && <div className="community-error" role="alert">{error}</div>}
+      {file && !cropConfirmed && <CommunityCropEditor file={file} crop={crop} setCrop={setCrop} onConfirm={confirmCrop} onChangeFile={chooseFile} saving={saving} />}
+      {cropConfirmed && <div className="community-sheet-inner">{file ? <img className="community-cropped-preview" src={preview || undefined} alt="Foto recortada" /> : editingPost && <CommunityImage post={editingPost} client={client} />}<textarea value={caption} onChange={event => setCaption(event.target.value)} maxLength={500} placeholder="Conte como foi o treino…" />{editingPost && <label className="community-comments-toggle"><input type="checkbox" checked={!commentsDisabled} onChange={event => setCommentsDisabled(!event.target.checked)} /> Permitir comentários nesta postagem</label>}<button className="community-primary-action" disabled={saving}>{saving ? editingPost ? 'Salvando…' : 'Publicando…' : editingPost ? 'Salvar alterações' : 'Publicar foto'}</button></div>}
+    </motion.form></div>}</AnimatePresence>
+    <AnimatePresence>{commentsPost && <CommunityComments key={commentsPost.id} post={commentsPost} client={client} userId={userId} ownIdentity={ownIdentity} AvatarComponent={Avatar} onClose={() => setCommentsId(null)} onSubmit={submitComment} onCommentsChange={changeComments} onOpenUser={openUser} />}</AnimatePresence>
+    <AnimatePresence>{notificationsOpen && <div className="community-overlay community-overlay--top" onMouseDown={event => event.target === event.currentTarget && setNotificationsOpen(false)}><motion.div role="dialog" aria-modal="true" aria-label="Notificações" className="community-notification-sheet" initial={{ y: '-100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }}><div className="community-sheet-title"><h2>Notificações</h2><button aria-label="Fechar notificações" onClick={() => setNotificationsOpen(false)}><Icon name="xmark" /></button></div>{!notifications.length && <div className="community-empty">Você está em dia.</div>}{notifications.map(item => <button className="community-notification" key={item.id} onClick={() => { setNotificationsOpen(false); navigate(`/community?post=${item.post_id}`) }}><Avatar profile={item.actor} size="sm" /><span><strong>{item.actor?.display_name || 'Usuário'}</strong> {item.type === 'like' ? 'curtiu sua postagem.' : 'comentou na sua postagem.'}</span></button>)}</motion.div></div>}</AnimatePresence>
   </div>
 }
-
-function CommentsSheet({ post, client, userId, ownIdentity, ownProfile, authUser, onClose, onSubmit, onCommentDeleted, onOpenUser }) {
-  const [body, setBody] = useState(''); const [replyTo, setReplyTo] = useState(null); const [editingComment, setEditingComment] = useState(null); const [activeMenuId, setActiveMenuId] = useState(null); const [highlightedId, setHighlightedId] = useState(null); const [expanded, setExpanded] = useState(() => new Set()); const [comments, setComments] = useState(post.comments || []); const inputRef = useRef(null)
-  useEffect(() => { if (!activeMenuId) return undefined; const close = event => { if (!event.target.closest?.('.community-comment-menu')) setActiveMenuId(null) }; document.addEventListener('pointerdown', close); return () => document.removeEventListener('pointerdown', close) }, [activeMenuId])
-  const selectReply = comment => { inputRef.current?.focus({ preventScroll: true }); setReplyTo(comment); window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 60) }
-  useEffect(() => { if (replyTo) { setExpanded(previous => new Set(previous).add(replyTo.id)); requestAnimationFrame(() => { document.querySelector(`[data-community-comment-id="${replyTo.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }); inputRef.current?.focus() }); setHighlightedId(replyTo.id); const timer = window.setTimeout(() => setHighlightedId(null), 2200); return () => window.clearTimeout(timer) } }, [replyTo])
-  const toggleCommentLike = async comment => { const liked = comment.likes?.some(item => item.user_id === userId); setComments(items => items.map(item => item.id === comment.id ? { ...item, likes: liked ? item.likes.filter(x => x.user_id !== userId) : [...(item.likes || []), { user_id: userId }] } : item)); const result = liked ? await client.from('community_comment_likes').delete().match({ comment_id: comment.id, user_id: userId }) : await client.from('community_comment_likes').insert({ comment_id: comment.id, user_id: userId }); if (result.error) setComments(post.comments || []) }
-  const roots = comments.filter(comment => !comment.parent_comment_id); const repliesFor = id => comments.filter(comment => comment.parent_comment_id === id)
-  const editComment = comment => { setEditingComment(comment); setReplyTo(null); setActiveMenuId(null); setBody(comment.body); requestAnimationFrame(() => inputRef.current?.focus()) }
-  const deleteComment = async comment => { setActiveMenuId(null); const result = await client.from('community_comments').delete().eq('id', comment.id).eq('author_id', userId); if (result.error) return; setComments(items => items.filter(item => item.id !== comment.id)); onCommentDeleted?.(comment) }
-  const renderComment = comment => <CommentRow comment={comment} highlighted={highlightedId === comment.id} userId={userId} onLike={toggleCommentLike} onReply={() => selectReply(comment)} onOpenUser={onOpenUser} canManage={comment.author_id === userId} menuOpen={activeMenuId === comment.id} onMenu={() => setActiveMenuId(activeMenuId === comment.id ? null : comment.id)} onEdit={() => editComment(comment)} onDelete={() => deleteComment(comment)} />
-  const renderThread = comment => { const replies = repliesFor(comment.id); return <div className={`community-comment-thread${comment.parent_comment_id ? ' community-comment-thread--nested' : ''}`} key={comment.id}>{renderComment(comment)}{replies.length > 0 && <button className="community-reply-toggle" onClick={() => setExpanded(previous => { const next = new Set(previous); next.has(comment.id) ? next.delete(comment.id) : next.add(comment.id); return next })}>{expanded.has(comment.id) ? 'Ocultar' : 'Ver'} {replies.length} resposta{replies.length > 1 ? 's' : ''}</button>}{expanded.has(comment.id) && replies.map(renderThread)}</div> }
-  const submit = async event => { event.preventDefault(); const text = body.trim(); if (!text) return; if (editingComment) { const result = await client.from('community_comments').update({ body: text }).eq('id', editingComment.id).eq('author_id', userId); if (!result.error) setComments(items => items.map(item => item.id === editingComment.id ? { ...item, body: text } : item)); setEditingComment(null); setBody(''); return } const identity = ownIdentity || { id: userId, display_name: ownProfile?.name || authUser?.user_metadata?.name || authUser?.user_metadata?.full_name || 'Usuário', avatar_id: ownProfile?.avatarId || 'avatar-27', avatar_ref: ownProfile?.avatarRef }; const optimisticId = `local-${Date.now()}`; const optimistic = { id: optimisticId, post_id: post.id, body: text, parent_comment_id: replyTo?.id || null, created_at: new Date().toISOString(), author_id: userId, author: identity, likes: [] }; setComments(previous => [...previous, optimistic]); const result = await onSubmit(post, text, replyTo?.id); if (result?.comment) setComments(items => items.map(item => item.id === optimisticId ? result.comment : item)); else if (result?.error) setComments(items => items.filter(item => item.id !== optimisticId)); setBody(''); setReplyTo(null) }
-  return <div className="community-overlay" onMouseDown={e => e.target === e.currentTarget && onClose()}><motion.div className="community-sheet community-comments-sheet" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}><div className="community-sheet-handle" /><div className="community-sheet-title"><h2>Comentários</h2><button onClick={onClose}><Icon name="xmark" /></button></div>{replyTo && <div className="community-replying">Respondendo a <strong>{replyTo.author?.display_name || 'usuário'}</strong><button type="button" onClick={() => setReplyTo(null)}>Cancelar</button></div>}{editingComment && <div className="community-replying">Editando seu comentário<button type="button" onClick={() => { setEditingComment(null); setBody('') }}>Cancelar</button></div>}<div className="community-comments-scroll">{roots.map(renderThread)}</div><form className="community-comment-form" onSubmit={submit}><input ref={inputRef} value={body} onChange={e => setBody(e.target.value)} placeholder={editingComment ? 'Edite seu comentário…' : replyTo ? `Respondendo a ${replyTo.author?.display_name || 'usuário'}…` : 'Escreva um comentário…'} /><button aria-label={editingComment ? 'Salvar comentário' : 'Enviar comentário'}><Icon name="send" /></button></form></motion.div></div>
-}
-
-function CommentRow({ comment, highlighted, userId, onLike, onReply, onOpenUser, canManage, menuOpen, onMenu, onEdit, onDelete }) { const liked = comment.likes?.some(item => item.user_id === userId); return <div data-community-comment-id={comment.id} className={`community-comment-row${highlighted ? ' is-reply-target' : ''}`}><button type="button" className="community-comment-author-link" onClick={() => onOpenUser?.(comment.author_id)} aria-label={`Abrir perfil de ${comment.author?.display_name || 'Usuário'}`}><Avatar profile={comment.author} size="sm" /></button><div className="community-comment-content"><div className="community-comment-heading"><button type="button" className="community-comment-name-link" onClick={() => onOpenUser?.(comment.author_id)}>{comment.author?.display_name || 'Usuário'}</button>{canManage && <div className={`community-comment-menu${menuOpen ? ' is-open' : ''}`}><button type="button" className="community-comment-more" aria-label="Opções do comentário" onClick={onMenu}>•••</button>{menuOpen && <div className="community-comment-menu-actions"><button type="button" onClick={onEdit}>Editar</button><button type="button" onClick={onDelete}>Excluir</button></div>}</div>}</div><small>{fmtDate(comment.created_at)}</small><p>{comment.body}</p><div className="community-comment-actions"><button className={liked ? 'is-liked' : ''} onClick={() => onLike(comment)}><Icon name="heart" /> {comment.likes?.length || 0}</button><button type="button" onPointerDown={event => { event.preventDefault(); onReply() }}>Responder</button></div></div></div> }
-
-
-
-

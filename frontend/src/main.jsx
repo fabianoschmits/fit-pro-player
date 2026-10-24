@@ -49,6 +49,7 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
     window.location.reload()
   }
   useStore.subscribe(() => { if (updatePending && canReloadForUpdate(useStore.getState().S)) requestSafeReload() })
+  window.addEventListener('fitproplayer:reload-safety-changed', () => { if (updatePending) requestSafeReload() })
   const assetSignatureOf = doc => [...doc.querySelectorAll('script[type="module"][src],link[rel="stylesheet"][href]')]
     .map(el => el.getAttribute('src') || el.getAttribute('href'))
     .filter(Boolean)

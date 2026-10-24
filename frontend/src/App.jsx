@@ -472,7 +472,7 @@ function Shell() {
   useEffect(() => { setLang(S.lang || DEFAULT_LANG) }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || DEFAULT_LANG) === 'pt' ? 'pt-BR' : (S.lang || DEFAULT_LANG) }, [langV, S.lang])
   // every tab/route change starts at the top of the page
-  useEffect(() => { window.scrollTo(0, 0) }, [loc.pathname])
+  useEffect(() => { if (!loc.pathname.startsWith('/community')) window.scrollTo(0, 0) }, [loc.pathname])
   // First entry is a single, resumable setup inside Plan. Until it is complete, other routes
   // cannot accidentally surface an empty dashboard or the retired Home overlay.
   useEffect(() => {
