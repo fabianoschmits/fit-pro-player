@@ -1,0 +1,66 @@
+/* Content-sized cards leave room for the actual exercise, on every layout. */
+.share-card.share-compact .share-card-content {
+  display: grid;
+  box-sizing: border-box;
+  height: 1920px;
+  min-height: 0;
+  padding: 52px;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 130px 230px 150px 250px max-content minmax(220px, 1fr) 90px;
+  grid-template-areas: 'brand' 'hero' 'stats' 'muscles' 'exercises' 'highlight' 'footer';
+}
+.share-card.share-compact .share-card-content > * { margin: 0; min-width: 0; min-height: 0; }
+.share-card.share-compact .share-card-brand { grid-area: brand; align-items: center; }
+.share-card.share-compact .share-card-logo { width: 140px; height: auto; max-height: 130px; object-fit: contain; }
+.share-card.share-compact .share-card-date-col { padding-top: 0; }
+.share-card.share-compact .share-card-hero { grid-area: hero; align-self: center; }
+.share-card.share-compact .share-card-title { font-size: 64px; line-height: 1.06; }
+.share-card.share-compact .share-card-subtags { font-size: 19px; letter-spacing: .02em; }
+.share-card.share-compact .share-card-badge { font-size: 21px; margin-bottom: 14px; padding: 8px 16px; }
+.share-card.share-compact .share-card-stats { grid-area: stats; gap: 12px; }
+.share-card.share-compact .share-stat-box { padding: 18px !important; justify-content: center; }
+.share-card.share-compact .share-stat-icon { width: 30px; height: 30px; font-size: 18px; margin-bottom: 10px; }
+.share-card.share-compact .share-stat-value { font-size: 38px; margin-bottom: 6px; }
+.share-card.share-compact .share-stat-label { font-size: 17px; }
+.share-card.share-compact .share-card-muscles-panel { grid-area: muscles; padding: 22px; }
+.share-card.share-compact .share-muscles-info h2 { font-size: 30px; }
+.share-card.share-compact .share-muscles-info p { font-size: 21px; margin-bottom: 16px; }
+.share-card.share-compact .share-muscles-map-wrapper { width: 340px; height: 205px; }
+.share-card.share-compact .share-muscle-chip { font-size: 18px; padding: 8px 14px; }
+.share-card.share-compact .share-card-exercises { grid-area: exercises; padding: 22px; align-self: start; }
+.share-card.share-compact .share-exercises-title { margin-bottom: 12px; }
+.share-card.share-compact .share-exercises-title span { font-size: 30px; }
+.share-card.share-compact .share-card-exercise { padding: 11px 0 !important; }
+.share-card.share-compact .share-card-index { width: 38px; height: 38px; font-size: 18px; }
+.share-card.share-compact .share-card-exercise-name { font-size: 25px; }
+.share-card.share-compact .share-card-exercise-load { font-size: 25px; }
+.share-card.share-compact .share-card-footer { grid-area: footer; justify-content: flex-end; gap: 12px; }
+.share-card.share-compact .share-footer-text { font-size: 23px; }
+.share-exercise-highlight { grid-area: highlight; display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 20px 30px; border-radius: 24px; background: var(--alt-panel, #112328); border: 1px solid #496165; overflow: hidden; }
+.share-highlight-copy { flex: 1; min-width: 0; color: #f2faf8; }
+.share-highlight-label { color: var(--alt-accent, #71e5d5); font-size: 22px; font-weight: 700; }
+.share-highlight-copy h2 { font-size: 34px; line-height: 1.12; margin: 14px 0; overflow-wrap: anywhere; }
+.share-highlight-copy strong { font-size: 42px; color: var(--alt-accent, #71e5d5); }
+.share-highlight-copy p { font-size: 22px; color: #c4d5d3; margin: 12px 0 0; }
+.share-highlight-sprite { width: 380px; height: 100%; max-height: 360px; object-fit: contain; flex-shrink: 0; mix-blend-mode: screen; }
+.share-card.share-compact:not(.has-highlight) .share-card-content { grid-template-rows: 130px 230px 150px 250px max-content 1fr 90px; }
+
+.share-card.share-compact.share-layout-editorial .share-card-content { grid-template-areas: 'brand' 'hero' 'muscles' 'stats' 'exercises' 'highlight' 'footer'; grid-template-rows: 130px 230px 250px 150px max-content minmax(220px, 1fr) 90px; }
+.share-card.share-compact.share-layout-neon .share-card-content { grid-template-columns: 320px minmax(0, 1fr); grid-template-areas: 'brand brand' 'hero hero' 'stats muscles' 'exercises exercises' 'highlight highlight' 'footer footer'; grid-template-rows: 130px 230px 390px max-content minmax(240px, 1fr) 90px; }
+.share-card.share-compact.share-layout-neon .share-muscles-map-wrapper { height: 200px !important; }
+.share-card.share-compact.share-layout-neon .share-muscles-info p { display: none; }
+.share-card.share-compact.share-layout-neon .share-stat-value { font-size: 32px; }
+.share-card.share-compact.share-layout-brutal .share-card-content { grid-template-rows: 130px 230px 210px 230px max-content minmax(220px, 1fr) 90px; }
+.share-card.share-compact.share-layout-receipt .share-card-content { grid-template-areas: 'brand' 'hero' 'exercises' 'stats' 'highlight' 'muscles' 'footer'; grid-template-rows: 130px 230px max-content 150px minmax(220px, 1fr) 230px 90px; }
+.share-card.share-compact.share-layout-polaroid .share-card-content { height: 1848px; padding: 28px !important; grid-template-rows: 130px 230px 150px 230px max-content minmax(220px, 1fr) 90px; }
+.share-card.share-compact.share-layout-split .share-card-content { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-areas: 'brand brand' 'hero hero' 'stats stats' 'exercises muscles' 'highlight highlight' 'footer footer'; grid-template-rows: 130px 230px 150px max-content minmax(240px, 1fr) 90px; }
+.share-card.share-compact.share-layout-split .share-muscles-map-wrapper { height: 260px !important; }
+.share-card.share-compact.share-layout-split .share-card-exercise { padding-block: 12px !important; }
+.share-card.share-compact.share-layout-split .share-card-exercise-name { font-size: 23px !important; }
+.share-card.share-compact.share-layout-medal .share-card-content { grid-template-areas: 'brand' 'hero' 'muscles' 'stats' 'exercises' 'highlight' 'footer'; grid-template-rows: 130px 230px 230px 210px max-content minmax(220px, 1fr) 90px; }
+.share-card.share-compact.share-layout-luxury .share-card-content { grid-template-areas: 'brand' 'hero' 'stats' 'exercises' 'highlight' 'muscles' 'footer'; grid-template-rows: 130px 230px 180px max-content minmax(220px, 1fr) 230px 90px; }
+.share-card.share-compact.share-layout-poster .share-card-content { grid-template-rows: 130px 230px 240px 230px max-content minmax(220px, 1fr) 90px; }
+.share-card.share-compact.share-layout-poster .share-card-hero { padding: 20px; }
+.share-card.share-compact.share-layout-poster .share-card-title { font-size: 58px; }
+.share-card.share-compact.share-layout-poster .share-stat-box:first-child .share-stat-value { font-size: 48px; }

@@ -147,9 +147,9 @@ export async function composeShareImageWithLogo(cardDataUrl, logo, card, {
 } = {}) {
   if (!cardDataUrl || !logo || !card) return cardDataUrl
 
-  const logoBounds = logo.getBoundingClientRect()
+  const marks = Array.isArray(logo) ? logo : [logo]
   const cardBounds = card.getBoundingClientRect()
-  if (!logoBounds.width || !logoBounds.height || !cardBounds.width || !cardBounds.height) return cardDataUrl
+  if (!cardBounds.width || !cardBounds.height) return cardDataUrl
 
   try {
     const exportedCard = await loadImage(cardDataUrl)
@@ -162,13 +162,20 @@ export async function composeShareImageWithLogo(cardDataUrl, logo, card, {
     const scaleX = 1080 / cardBounds.width
     const scaleY = 1920 / cardBounds.height
     context.drawImage(exportedCard, 0, 0, 1080, 1920)
-    context.drawImage(
-      logo,
-      (logoBounds.left - cardBounds.left) * scaleX,
-      (logoBounds.top - cardBounds.top) * scaleY,
-      logoBounds.width * scaleX,
-      logoBounds.height * scaleY,
-    )
+    for (const mark of marks) {
+      const bounds = mark.getBoundingClientRect()
+      if (!bounds.width || !bounds.height) continue
+      // Preserve object-fit: contain for square sprite frames and the lion.
+      const fit = mark.naturalWidth && mark.naturalHeight
+        ? Math.min(bounds.width / mark.naturalWidth, bounds.height / mark.naturalHeight) : 1
+      const width = mark.naturalWidth ? mark.naturalWidth * fit : bounds.width
+      const height = mark.naturalHeight ? mark.naturalHeight * fit : bounds.height
+      context.globalCompositeOperation = mark.classList?.contains('share-highlight-sprite') ? 'screen' : 'source-over'
+      context.drawImage(mark,
+        (bounds.left - cardBounds.left + (bounds.width - width) / 2) * scaleX,
+        (bounds.top - cardBounds.top + (bounds.height - height) / 2) * scaleY,
+        width * scaleX, height * scaleY)
+    }
     return output.toDataURL('image/png')
   } catch {
     // A share image without a second render is still preferable to failing the
@@ -192,6 +199,7 @@ export function WorkoutShareModal({ w, onClose }) {
   const activeLayout = WORKOUT_SHARE_LAYOUTS[layoutIndex]
 
   const selectLayout = nextIndex => {
+    if (operation.current) return
     setLayoutIndex(Math.max(0, Math.min(WORKOUT_SHARE_LAYOUTS.length - 1, nextIndex)))
   }
 
@@ -254,6 +262,15 @@ export function WorkoutShareModal({ w, onClose }) {
     // html-to-image clones the node. Make every async resource ready first;
     // otherwise the clone can contain the fallback silhouette and omit the logo.
     await document.fonts?.ready
+    await new Promise((resolve, reject) => {
+      const started = performance.now()
+      const check = () => {
+        if (!canvas.querySelector('[data-share-loading="true"]')) return resolve()
+        if (performance.now() - started > 10000) return reject(new Error('Exercise image is still loading'))
+        requestAnimationFrame(check)
+      }
+      check()
+    })
     const images = [...canvas.querySelectorAll('img')]
     await Promise.all(images.map(image => {
       if (!image.complete) return new Promise(resolve => {
@@ -272,19 +289,25 @@ export function WorkoutShareModal({ w, onClose }) {
       check()
     })
 
-    const lionLogo = canvas.querySelector('.share-card-logo')
-    const cardDataUrl = await toPng(canvas, {
+    const marks = [...canvas.querySelectorAll('.share-card-logo, .share-highlight-sprite')]
+    const opacity = marks.map(mark => mark.style.opacity)
+    let cardDataUrl
+    try {
+      // Preserve layout space in the clone; draw raster assets directly into
+      // the PNG to avoid the mobile webview's missing-image capture bug.
+      marks.forEach(mark => { mark.style.opacity = '0' })
+      cardDataUrl = await toPng(canvas, {
         width: 1080,
         height: 1920,
         pixelRatio: 1,
         cacheBust: true,
         style: { transform: 'none', transformOrigin: 'top left' },
         includeQueryParams: true,
-        // The mark is drawn into the resulting bitmap below. Removing it from
-        // the DOM clone avoids a double logo in browsers that do capture imgs.
-        filter: node => !node.classList?.contains('share-card-logo'),
       })
-    return composeShareImageWithLogo(cardDataUrl, lionLogo, canvas)
+    } finally {
+      marks.forEach((mark, index) => { mark.style.opacity = opacity[index] })
+    }
+    return marks.length ? composeShareImageWithLogo(cardDataUrl, marks, canvas) : cardDataUrl
   }
 
   // ── Save to device ────────────────────────────────────────────────────────

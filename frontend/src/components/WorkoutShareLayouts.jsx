@@ -1,10 +1,45 @@
+import { useEffect, useState } from 'react'
 import { t } from '../lib/i18n.js'
+import { exerciseGuideAsset } from '../lib/exercise-guide-assets.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { fmtDate, fmtDur, fmtNum, workoutDuration } from '../lib/format.js'
 import { toDisplayMass } from '../lib/mass.js'
 import { loadOfWorkouts, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
+import '../workout-share-compact.css'
+
+const SHARE_FRAME_LOADERS = import.meta.glob('../assets/exercise-sprites/*/frames.js', { import: 'default' })
+
+export function selectShareExerciseFrame(frames) {
+  return Array.isArray(frames) && frames.length > 1 ? frames[Math.min(3, frames.length - 1)] : null
+}
+
+function ExerciseHighlight({ row, unit }) {
+  const [asset, setAsset] = useState(null)
+  const slug = exerciseGuideAsset(row)?.slug
+  useEffect(() => {
+    let alive = true
+    setAsset(null)
+    const loader = SHARE_FRAME_LOADERS[`../assets/exercise-sprites/${slug}/frames.js`]
+    Promise.resolve(loader?.()).then(frames => {
+      if (alive) setAsset({ slug, source: selectShareExerciseFrame(frames) })
+    }).catch(() => { if (alive) setAsset({ slug, source: null }) })
+    return () => { alive = false }
+  }, [slug])
+  const ready = asset?.slug === slug
+  return (
+    <section className="share-exercise-highlight" data-share-loading={!ready ? 'true' : undefined}>
+      <div className="share-highlight-copy">
+        <span className="share-highlight-label">{t('Destaque do treino')}</span>
+        <h2>{row.name}</h2>
+        <strong>{row.maxWeight > 0 ? `${fmtNum(toDisplayMass(row.maxWeight, unit))} ${unit}` : t('Peso corporal')}</strong>
+        <p>{row.completedSets} {t('séries')} · {row.reps} {t('repetições')}</p>
+      </div>
+      {ready && asset.source && <img className="share-highlight-sprite" src={asset.source} alt={row.name} data-exercise-id={row.id} />}
+    </section>
+  )
+}
 
 export const WORKOUT_SHARE_LAYOUTS = [
   { id: 'premium', name: 'Premium' },
@@ -42,10 +77,13 @@ export function buildWorkoutShareSummary(w, st) {
   const exerciseRows = entries.map(entry => {
     const exercise = EXIDX[entry.id]
     return {
+      id: entry.id,
       name: exercise ? exerciseName(exercise) : (entry.n || entry.id || t('Exercise')),
       equipment: exercise?.eq || entry.eq || 'body weight',
       sets: Array.isArray(entry.sets) ? entry.sets.length : 0,
       maxWeight: maxLoad(entry),
+      completedSets: (entry.sets || []).filter(set => set?.done).length,
+      reps: (entry.sets || []).filter(set => set?.done).reduce((total, set) => total + Math.max(0, Number(set.r) || 0), 0),
     }
   })
   const topLoad = exerciseRows.reduce((best, row) => row.maxWeight > best.weight ? { weight: row.maxWeight, exercise: row.name, equipment: row.equipment } : best, { weight: 0, exercise: '', equipment: '' })
@@ -55,6 +93,8 @@ export function buildWorkoutShareSummary(w, st) {
   const muscleTags = worked.map(m => t(MUSCLE_NAME[m])).filter(Boolean)
   const totalVolume = sumVolume(entries)
   const totalWeight = topLoad.weight > 0 ? topLoad.weight : totalVolume
+  const highlight = exerciseRows.filter(row => row.completedSets > 0 && exerciseGuideAsset(row))
+    .reduce((best, row) => !best || row.maxWeight > best.maxWeight ? row : best, null)
 
   return {
     name: w?.name?.trim() || t('Treino'),
@@ -67,6 +107,7 @@ export function buildWorkoutShareSummary(w, st) {
     totalWeight,
     displayUnit,
     exerciseRows,
+    highlight,
     load,
     muscleTags,
   }
@@ -90,7 +131,7 @@ function PerformanceCard({ w, st, innerRef, themeId, layoutId = 'premium' }) {
   const tagsToShow = summary.muscleTags.slice(0, 3)
 
   return (
-    <div ref={innerRef} className={`workout-story-canvas share-card share-layout-${layoutId} ${themeId || ''}`}>
+    <div ref={innerRef} className={`workout-story-canvas share-card share-compact share-layout-${layoutId} ${summary.highlight ? 'has-highlight' : ''} ${themeId || ''}`}>
       <div className="share-card-backdrop" />
       <div className="share-card-grain" />
 
@@ -149,9 +190,9 @@ function PerformanceCard({ w, st, innerRef, themeId, layoutId = 'premium' }) {
           <div className="share-stat-box">
             <div className="share-stat-icon"><Icon name="plate" /></div>
             <strong className="share-stat-value">
-              {summary.topLoad.weight > 0 ? `${fmtNum(toDisplayMass(summary.topLoad.weight, summary.displayUnit))} ${summary.displayUnit}` : `${summary.sets * 5} kg`}
+              {summary.topLoad.weight > 0 ? `${fmtNum(toDisplayMass(summary.topLoad.weight, summary.displayUnit))} ${summary.displayUnit}` : '—'}
             </strong>
-            <small className="share-stat-label">{t('CARGA TOTAL')}</small>
+            <small className="share-stat-label">{t('MAIOR CARGA')}</small>
           </div>
         </section>
 
@@ -201,6 +242,8 @@ function PerformanceCard({ w, st, innerRef, themeId, layoutId = 'premium' }) {
             )}
           </div>
         </section>
+
+        {summary.highlight && <ExerciseHighlight row={summary.highlight} unit={summary.displayUnit} />}
 
         {/* Footer */}
         <footer className="share-card-footer">

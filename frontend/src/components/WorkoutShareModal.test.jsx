@@ -71,6 +71,24 @@ describe('workout share action lifetime', () => {
     ])
   })
 
+  it('preserves square sprite proportions and its screen blend in the exported image', async () => {
+    const draws = []
+    const context = { drawImage: (...args) => draws.push(args) }
+    const sprite = {
+      naturalWidth: 768, naturalHeight: 768,
+      classList: { contains: name => name === 'share-highlight-sprite' },
+      getBoundingClientRect: () => ({ left: 100, top: 200, width: 100, height: 80 }),
+    }
+    await composeShareImageWithLogo('png', [sprite], {
+      getBoundingClientRect: () => ({ left: 0, top: 0, width: 270, height: 480 }),
+    }, {
+      loadImage: async () => 'snapshot',
+      createCanvas: () => ({ getContext: () => context, toDataURL: () => 'composited' }),
+    })
+    expect(draws[1]).toEqual([sprite, 440, 800, 320, 320])
+    expect(context.globalCompositeOperation).toBe('screen')
+  })
+
   it('rescales the newly selected layout to the story preview frame', () => {
     container.querySelector('.workout-share-scaler-outer').getBoundingClientRect = () => ({ width: 180, height: 320 })
     act(() => resizeObservers[0].callback([{ contentRect: { width: 180, height: 320 } }]))

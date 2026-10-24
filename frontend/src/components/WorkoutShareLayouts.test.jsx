@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { buildWorkoutShareSummary } from './WorkoutShareLayouts.jsx'
+import { buildWorkoutShareSummary, selectShareExerciseFrame } from './WorkoutShareLayouts.jsx'
 
 describe('workout share summary', () => {
+  it('selects frame four or the last frame without showing the starting pose', () => {
+    expect(selectShareExerciseFrame(['a', 'b', 'c', 'd', 'e'])).toBe('d')
+    expect(selectShareExerciseFrame(['a', 'b', 'c'])).toBe('c')
+    expect(selectShareExerciseFrame(['a'])).toBeNull()
+  })
+
+  it('highlights the correct mapped exercise using only completed sets', () => {
+    const summary = buildWorkoutShareSummary({ entries: [
+      { id: 'unknown', sets: [{ done: true, w: 300 }] },
+      { id: '0025', sets: [{ done: true, w: 40, r: 8 }, { done: false, w: 200, r: 10 }] },
+      { id: '0047', sets: [{ done: true, w: 60, r: 10 }, { done: true, w: 60, r: 8 }] },
+    ] }, {})
+    expect(summary.highlight).toMatchObject({ id: '0047', maxWeight: 60, completedSets: 2, reps: 18 })
+  })
+
   it('keeps the important metrics and reports all exercises', () => {
     const summary = buildWorkoutShareSummary({
       name: 'Push day', d: '2026-10-14', start: 0, end: 3_600_000, vol: 1250,

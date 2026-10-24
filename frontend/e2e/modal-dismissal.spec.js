@@ -78,12 +78,16 @@ test('all share compositions keep five exercise rows and footer within the story
   await openWorkoutHistory(page, true)
   await page.locator('.sheet').getByRole('button', { name: 'Compartilhar treino', exact: true }).click()
   const tabs = page.getByRole('tablist', { name: 'Estilos de compartilhamento' }).getByRole('tab')
-  for (let i = 1; i < 11; i++) {
+  for (let i = 0; i < 11; i++) {
     await tabs.nth(i).click()
     const card = page.locator('.workout-story-canvas')
+    const sprite = card.locator('.share-highlight-sprite')
+    await expect(sprite).toHaveAttribute('data-exercise-id', '0025')
+    await expect(sprite).toHaveAttribute('src', /bench-press\/frame-4/)
+    await expect.poll(() => sprite.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true)
     await expect.poll(() => card.evaluate(el => {
       const bounds = el.getBoundingClientRect()
-      const selectors = ['.share-card-logo', '.share-card-title', '.share-card-stats', '.share-card-muscles-panel', '.share-card-exercises', '.share-card-footer', '.share-card-exercise:last-child']
+      const selectors = ['.share-card-logo', '.share-card-title', '.share-card-stats', '.share-card-muscles-panel', '.share-card-exercises', '.share-card-footer', '.share-card-exercise:last-child', '.share-exercise-highlight', '.share-highlight-sprite']
       return selectors.every(selector => {
         const rect = el.querySelector(selector).getBoundingClientRect()
         return rect.width > 0 && rect.height > 0 && rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 && rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1
@@ -91,6 +95,19 @@ test('all share compositions keep five exercise rows and footer within the story
     })).toBe(true)
     await card.screenshot({ path: testInfo.outputPath(`layout-${i}.png`), animations: 'disabled' })
   }
+})
+
+test('shares the compact workout card with its exercise illustration as a PNG', async ({ page }, testInfo) => {
+  await openWorkoutHistory(page, true)
+  await page.locator('.sheet').getByRole('button', { name: 'Compartilhar treino', exact: true }).click()
+  await page.evaluate(() => Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }))
+  await expect(page.locator('.share-highlight-sprite')).toBeVisible()
+  const downloaded = page.waitForEvent('download')
+  await page.locator('.share-btn-action').click()
+  const file = await downloaded
+  expect(file.suggestedFilename()).toMatch(/treino-fpp-.*\.png/)
+  await file.saveAs(testInfo.outputPath('shared-workout.png'))
+  await expect(page.locator('.share-btn-action')).toContainText('Imagem salva')
 })
 
 test('outside clicks dismiss only the top confirmation without deleting the workout', async ({ page }) => {
