@@ -31,6 +31,11 @@ function useBodyPaths() {
 const LOCAL_SHAPE_SLUGS = new Set(['biceps', 'triceps', 'forearm', 'quadriceps', 'hamstring', 'calves', 'tibialis', 'adductors'])
 const SIDE_AWARE_SLUGS = LOCAL_SHAPE_SLUGS
 
+// Match the share-card CSS exactly. SVG-specific computed properties are not
+// always copied by html-to-image, so the inline fallback must use the same
+// palette that the person sees in the preview (including unworked muscles).
+const CAPTURE_MUSCLE_COLORS = ['#27373e', '#2c595c', '#327b80', '#3bb2b4', '#44e8d8']
+
 export function anatomicalSideForPath(index, count, viewName) {
   const visualSide = index < count / 2 ? 'left' : 'right'
   return viewName === 'front'
@@ -87,7 +92,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
     >
       {INERT.map(slug => {
         const paths = view.p[slug] || []
-        const rendered = paths.map((d, i) => <path key={slug + i} className={'bm-sil' + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')} d={d} style={captureSafe ? { fill: '#48615a' } : undefined} />)
+        const rendered = paths.map((d, i) => <path key={slug + i} className={'bm-sil' + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')} d={d} style={captureSafe ? { fill: '#1a2529' } : undefined} />)
         if (slug !== 'neck' || !shapeScales) return rendered
         const scale = shapeScaleForPath(shapeScales, slug, 0, 1, viewName)
         return <g key={slug} className="bm-shape-group" style={{ transform: `scaleX(${scale})` }}>{rendered}</g>
@@ -98,14 +103,14 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
           key={slug + i}
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '')}
           d={d}
-          style={captureSafe ? { fill: ['#243d36', '#688d57', '#8fbd58', '#b7ef54', '#e4ff9a'][levels[slug] || 0] } : undefined}
+          style={captureSafe ? { fill: CAPTURE_MUSCLE_COLORS[levels[slug] || 0] } : undefined}
           onClick={onMuscle ? () => onMuscle(slug, viewName) : undefined}
           {...pathA11y(slug, i)}
         />)
         const renderPath = (d, i, local = false, scale = 1) => <path
           key={slug + i}
           className={'bm-m l' + (levels[slug] || 0) + (pathIsSelected(slug, i, paths.length) ? ' sel' : '') + (local ? ' bm-shape-path' : '')}
-          style={{ ...(local ? { transform: `scaleX(${scale})` } : {}), ...(captureSafe ? { fill: ['#243d36', '#688d57', '#8fbd58', '#b7ef54', '#e4ff9a'][levels[slug] || 0] } : {}) }}
+          style={{ ...(local ? { transform: `scaleX(${scale})` } : {}), ...(captureSafe ? { fill: CAPTURE_MUSCLE_COLORS[levels[slug] || 0] } : {}) }}
           d={d}
           onClick={onMuscle ? () => onMuscle(slug, viewName) : undefined}
           {...pathA11y(slug, i)}

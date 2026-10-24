@@ -103,6 +103,13 @@ test('shares the compact workout card with its exercise illustration as a PNG', 
   await page.locator('.sheet').getByRole('button', { name: 'Compartilhar treino', exact: true }).click()
   await page.evaluate(() => Object.defineProperty(navigator, 'share', { configurable: true, value: undefined }))
   await expect(page.locator('.share-highlight-sprite')).toBeVisible()
+  const mapPreview = await page.locator('.workout-story-canvas').evaluate(card => {
+    const cardRect = card.getBoundingClientRect()
+    const map = card.querySelector('.share-card-map')
+    const rect = map.getBoundingClientRect()
+    const colors = ['.bm-m.l4', '.bm-sil'].map(selector => getComputedStyle(map.querySelector(selector)).fill.match(/[\d.]+/g).slice(0, 3).map(Number))
+    return { x: (rect.left - cardRect.left) * 1080 / cardRect.width, y: (rect.top - cardRect.top) * 1920 / cardRect.height, width: rect.width * 1080 / cardRect.width, height: rect.height * 1920 / cardRect.height, colors }
+  })
   const downloaded = page.waitForEvent('download')
   await page.locator('.share-btn-action').click()
   const file = await downloaded
@@ -111,6 +118,24 @@ test('shares the compact workout card with its exercise illustration as a PNG', 
   const png = await readFile(testInfo.outputPath('shared-workout.png'))
   expect(png.readUInt32BE(16)).toBe(1080)
   expect(png.readUInt32BE(20)).toBe(1920)
+  const matchingPixels = await page.evaluate(async ({ source, map }) => {
+    const image = new Image()
+    image.src = source
+    await image.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = 1080; canvas.height = 1920
+    const context = canvas.getContext('2d')
+    context.drawImage(image, 0, 0)
+    const pixels = context.getImageData(Math.round(map.x), Math.round(map.y), Math.round(map.width), Math.round(map.height)).data
+    return map.colors.map(color => {
+      let count = 0
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (color.every((channel, index) => Math.abs(channel - pixels[i + index]) <= 5)) count++
+      }
+      return count
+    })
+  }, { source: `data:image/png;base64,${png.toString('base64')}`, map: mapPreview })
+  for (const count of matchingPixels) expect(count).toBeGreaterThan(20)
   await expect(page.locator('.share-btn-action')).toContainText('Imagem salva')
 })
 
