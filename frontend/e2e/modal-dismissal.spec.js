@@ -27,6 +27,27 @@ test('workout history stays open for inside clicks and closes on its backdrop', 
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).workouts.length)).toBe(1)
 })
 
+test('workout sharing keeps the generated card visible from history', async ({ page }) => {
+  await openWorkoutHistory(page)
+  await page.locator('.sheet').getByRole('button', { name: 'Compartilhar treino', exact: true }).click()
+
+  const shareSheet = page.locator('.sheet.share-sheet-modal')
+  const card = shareSheet.locator('.workout-story-canvas')
+  await expect(shareSheet).toBeVisible()
+  await expect(card).toBeVisible()
+
+  const layout = await shareSheet.evaluate(sheet => {
+    const preview = sheet.querySelector('.workout-share-preview-area')
+    const card = sheet.querySelector('.workout-story-canvas')
+    return {
+      previewHeight: preview.getBoundingClientRect().height,
+      cardHeight: card.getBoundingClientRect().height,
+    }
+  })
+  expect(layout.previewHeight).toBeGreaterThan(200)
+  expect(layout.cardHeight).toBeGreaterThan(200)
+})
+
 test('outside clicks dismiss only the top confirmation without deleting the workout', async ({ page }) => {
   await openWorkoutHistory(page)
   await page.locator('.sheet').getByRole('button', { name: 'Excluir treino', exact: true }).click()
