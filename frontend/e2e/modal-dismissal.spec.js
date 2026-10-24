@@ -33,8 +33,10 @@ test('workout sharing keeps the generated card visible from history', async ({ p
 
   const shareSheet = page.locator('.sheet.share-sheet-modal')
   const card = shareSheet.locator('.workout-story-canvas')
+  const logo = card.locator('.share-card-logo')
   await expect(shareSheet).toBeVisible()
   await expect(card).toBeVisible()
+  await expect(logo).toHaveAttribute('src', /^data:image\/svg\+xml/)
 
   const layout = await shareSheet.evaluate(sheet => {
     const preview = sheet.querySelector('.workout-share-preview-area')
@@ -44,11 +46,13 @@ test('workout sharing keeps the generated card visible from history', async ({ p
       previewHeight: preview.getBoundingClientRect().height,
       cardWidth: card.getBoundingClientRect().width,
       cardHeight: card.getBoundingClientRect().height,
+      sheetWidth: sheet.getBoundingClientRect().width,
     }
   })
   expect(layout.previewHeight).toBeGreaterThan(200)
   expect(layout.cardWidth).toBeGreaterThan(layout.previewHeight * 0.5)
   expect(layout.cardHeight).toBeGreaterThan(200)
+  expect(layout.sheetWidth).toBeCloseTo(layout.cardWidth, 0)
 })
 
 test('outside clicks dismiss only the top confirmation without deleting the workout', async ({ page }) => {

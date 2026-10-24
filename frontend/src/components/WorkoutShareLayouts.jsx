@@ -5,6 +5,7 @@ import { toDisplayMass } from '../lib/mass.js'
 import { loadOfWorkouts, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
 import BodyMap from './BodyMap.jsx'
 import Icon from './Icon.jsx'
+import shareBrandLogo from '../assets/share-brand-logo.svg?inline'
 
 function maxLoad(entry) {
   return Math.max(0, ...(Array.isArray(entry?.sets) ? entry.sets : []).filter(set => set?.done && Number.isFinite(Number(set.w))).map(set => Number(set.w)))
@@ -84,7 +85,7 @@ function PerformanceCard({ w, st, innerRef, themeId }) {
         {/* Header: Logo and Date */}
         <header className="share-card-brand">
           <div className="share-card-logo-wrap">
-            <img src="/brand-logo.png" alt="Fit Pro Player" className="share-card-logo" />
+            <img src={shareBrandLogo} alt="Fit Pro Player" className="share-card-logo" />
           </div>
           <div className="share-card-date-col">
             <span className="share-card-date">{summary.date}</span>
@@ -211,4 +212,3 @@ export function LayoutMinimal(props) { return <PerformanceCard {...props} /> }
 export function LayoutReceipt(props) { return <PerformanceCard {...props} /> }
 export function LayoutBrutal(props) { return <PerformanceCard {...props} /> }
 export function LayoutPolaroid(props) { return <PerformanceCard {...props} /> }
-

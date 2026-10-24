@@ -151,6 +151,8 @@ export function WorkoutShareModal({ w, onClose }) {
         const scale = Math.min(width / 1080, height / 1920)
         canvasRef.current.style.transform = `scale(${scale})`
         canvasRef.current.style.transformOrigin = 'center center'
+        const sheet = outerRef.current.closest('.sheet.share-sheet-modal')
+        sheet?.style.setProperty('--share-preview-width', `${Math.round(width)}px`)
       }
     })
     obs.observe(outerRef.current)
