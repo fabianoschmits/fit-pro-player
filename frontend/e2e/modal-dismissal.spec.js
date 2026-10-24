@@ -1,13 +1,17 @@
 import { test, expect } from '@playwright/test'
 import { seed, stateFixture, USER } from './fixtures.test.js'
 
-async function openWorkoutHistory(page) {
+async function openWorkoutHistory(page, dense = false) {
   const state = stateFixture()
   state.workouts = [{
     id: 'completed-workout', name: 'Treino de teste', d: '2026-10-10',
     start: 1791633600000, end: 1791635400000, vol: 200,
     entries: [{ id: '0025', sets: [{ w: 20, r: 10, done: true }] }],
   }]
+  if (dense) {
+    state.workouts[0].name = 'Push pesado de ombros e peito'
+    state.workouts[0].entries = ['0025', '0033', '0041', '0051', '0061'].map(id => ({ id, sets: [{ w: 107.5, r: 10, done: true }] }))
+  }
   await seed(page, { state })
   await page.goto('/#/history')
   await page.locator('.history-list .workout-row').click()
@@ -68,6 +72,25 @@ test('workout sharing selects one of eleven card layouts with a horizontal swipe
   await preview.dragTo(preview, { sourcePosition: { x: 280, y: 220 }, targetPosition: { x: 30, y: 220 } })
 
   await expect(picker.getByRole('tab', { selected: true })).toHaveText('Minimal')
+})
+
+test('all share compositions keep five exercise rows and footer within the story', async ({ page }, testInfo) => {
+  await openWorkoutHistory(page, true)
+  await page.locator('.sheet').getByRole('button', { name: 'Compartilhar treino', exact: true }).click()
+  const tabs = page.getByRole('tablist', { name: 'Estilos de compartilhamento' }).getByRole('tab')
+  for (let i = 1; i < 11; i++) {
+    await tabs.nth(i).click()
+    const card = page.locator('.workout-story-canvas')
+    await expect.poll(() => card.evaluate(el => {
+      const bounds = el.getBoundingClientRect()
+      const selectors = ['.share-card-logo', '.share-card-title', '.share-card-stats', '.share-card-muscles-panel', '.share-card-exercises', '.share-card-footer', '.share-card-exercise:last-child']
+      return selectors.every(selector => {
+        const rect = el.querySelector(selector).getBoundingClientRect()
+        return rect.width > 0 && rect.height > 0 && rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 && rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1
+      })
+    })).toBe(true)
+    await card.screenshot({ path: testInfo.outputPath(`layout-${i}.png`), animations: 'disabled' })
+  }
 })
 
 test('outside clicks dismiss only the top confirmation without deleting the workout', async ({ page }) => {

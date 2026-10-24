@@ -10,14 +10,14 @@ export const WORKOUT_SHARE_LAYOUTS = [
   { id: 'premium', name: 'Premium' },
   { id: 'minimal', name: 'Minimal' },
   { id: 'editorial', name: 'Editorial' },
-  { id: 'neon', name: 'Neon' },
-  { id: 'brutal', name: 'Brutal' },
-  { id: 'receipt', name: 'Recibo' },
-  { id: 'polaroid', name: 'Polaroid' },
-  { id: 'split', name: 'Split' },
-  { id: 'medal', name: 'Conquista' },
-  { id: 'luxury', name: 'Luxury' },
-  { id: 'poster', name: 'Poster' },
+  { id: 'neon', name: 'Atlas' },
+  { id: 'brutal', name: 'Blocos' },
+  { id: 'receipt', name: 'Sessão' },
+  { id: 'polaroid', name: 'Moldura' },
+  { id: 'split', name: 'Colunas' },
+  { id: 'medal', name: 'Foco' },
+  { id: 'luxury', name: 'Linhas' },
+  { id: 'poster', name: 'Impacto' },
 ]
 
 function maxLoad(entry) {

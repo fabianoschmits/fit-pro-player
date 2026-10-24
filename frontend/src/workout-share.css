@@ -759,115 +759,188 @@
   text-transform: lowercase;
 }
 
-/* ── Alternate share layouts ─────────────────────────────── */
-.share-layout-minimal {
-  --share-bg: #eef2f1;
-  --share-card-bg: #ffffff;
-  --share-ink: #102724;
-  --share-muted: #5b716d;
-  --share-accent: #12786f;
-  --share-tag-bg: #dff1ed;
-  --share-tag-border: #b4dcd5;
+/* Alternate compositions share the Premium palette and reading hierarchy.
+   IDs are stable for the picker; only the presentation changes. */
+.share-card:where(:not(.share-layout-premium)) {
+  --alt-ink: #f2faf8;
+  --alt-muted: #b1c8c6;
+  --alt-accent: #71e5d5;
+  --alt-panel: #112328;
 }
-.share-layout-minimal .share-card-backdrop { background: linear-gradient(150deg, #f7fbfa, #d8ebe6); }
-.share-layout-minimal .share-card-grain, .share-layout-minimal .share-card-muscles-panel { display: none; }
-.share-layout-minimal .share-card-content { padding: 82px 76px 56px; }
-.share-layout-minimal .share-card-brand { margin-bottom: 76px; border-bottom: 2px solid #aecbc4; padding-bottom: 28px; }
-.share-layout-minimal .share-card-title { color: #102724; font-size: 92px; }
-.share-layout-minimal .share-card-subtags { color: #50736d; }
-.share-layout-minimal .share-card-stats { border-block: 1px solid #adc9c3; padding: 28px 0; }
-.share-layout-minimal .share-stat-box, .share-layout-minimal .share-card-exercises { background: transparent; border: 0; box-shadow: none; }
-.share-layout-minimal .share-card-exercises { padding-inline: 0; }
-.share-layout-minimal .share-card-exercise-name, .share-layout-minimal .share-exercises-title span, .share-layout-minimal .share-footer-text { color: #102724; }
+.share-card:where(:not(.share-layout-premium)) .share-card-backdrop {
+  background: radial-gradient(ellipse at 100% 0, #173e40, transparent 55%), #081316;
+}
+.share-card:where(:not(.share-layout-premium)) .share-card-grain { display: none; }
+.share-card:where(:not(.share-layout-premium)) .share-card-content {
+  box-sizing: border-box;
+  height: 1920px;
+  min-height: 0;
+  padding: 60px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 150px 250px 200px 340px minmax(0, 1fr) 120px;
+  grid-template-areas: "brand" "hero" "stats" "muscles" "exercises" "footer";
+  gap: 24px;
+}
+.share-card:where(:not(.share-layout-premium)) .share-card-content > * { min-width: 0; min-height: 0; margin: 0; }
+.share-card:where(:not(.share-layout-premium)) .share-card-brand { grid-area: brand; align-items: center; }
+.share-card:where(:not(.share-layout-premium)) .share-card-logo { width: 150px; height: 140px; object-fit: contain; filter: none; }
+.share-card:where(:not(.share-layout-premium)) .share-card-date-col { padding: 0; }
+.share-card:where(:not(.share-layout-premium)) .share-card-hero { grid-area: hero; align-self: center; }
+.share-card:where(:not(.share-layout-premium)) .share-card-title {
+  font-size: 76px; line-height: 1.06; letter-spacing: -.035em;
+  color: var(--alt-ink); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.share-card:where(:not(.share-layout-premium)) .share-hero-accent { color: inherit; }
+.share-card:where(:not(.share-layout-premium)) .share-card-subtags { font-size: 20px; letter-spacing: .02em; flex-wrap: wrap; gap: 8px; }
+.share-card:where(:not(.share-layout-premium)) .share-card-stats { grid-area: stats; gap: 16px; }
+.share-card:where(:not(.share-layout-premium)) .share-stat-box {
+  min-width: 0; padding: 22px; border-radius: 20px;
+  border: 1px solid #315055; background: var(--alt-panel); box-shadow: none;
+}
+.share-card:where(:not(.share-layout-premium)) .share-stat-icon { width: 42px; height: 42px; margin-bottom: 16px; background: #1b3c40; color: var(--alt-accent); }
+.share-card:where(:not(.share-layout-premium)) .share-stat-value { font-size: 42px; color: var(--alt-ink); }
+.share-card:where(:not(.share-layout-premium)) .share-stat-label { font-size: 18px; letter-spacing: .02em; }
+.share-card:where(:not(.share-layout-premium)) .share-card-muscles-panel { grid-area: muscles; padding: 26px; background: var(--alt-panel); border: 1px solid #315055; box-shadow: none; }
+.share-card:where(:not(.share-layout-premium)) .share-muscles-info h2 { font-size: 34px; color: var(--alt-ink); }
+.share-card:where(:not(.share-layout-premium)) .share-muscles-info p { font-size: 22px; }
+.share-card:where(:not(.share-layout-premium)) .share-muscles-map-wrapper { width: 390px; height: 260px; }
+.share-card:where(:not(.share-layout-premium)) .share-muscle-chip { background: #18383c; color: #d4f6ef; border-color: #3a6466; padding: 10px 16px; }
+.share-card:where(:not(.share-layout-premium)) .share-card-exercises { grid-area: exercises; padding: 28px; background: var(--alt-panel); border: 1px solid #315055; box-shadow: none; }
+.share-card:where(:not(.share-layout-premium)) .share-exercises-title span { font-size: 34px; color: var(--alt-ink); }
+.share-card:where(:not(.share-layout-premium)) .share-card-exercise { padding: 16px 0; border-color: #315055; gap: 16px; }
+.share-card:where(:not(.share-layout-premium)) .share-card-exercise-name { color: var(--alt-ink); font-size: 27px; }
+.share-card:where(:not(.share-layout-premium)) .share-card-exercise-eq { width: 140px; font-size: 20px; }
+.share-card:where(:not(.share-layout-premium)) .share-card-exercise-load { color: var(--alt-accent); font-size: 27px; }
+.share-card:where(:not(.share-layout-premium)) .share-card-index { background: #1a3a3e; border-color: #3a6466; color: var(--alt-accent); }
+.share-card:where(:not(.share-layout-premium)) .share-card-footer { grid-area: footer; justify-content: flex-end; }
+.share-card:where(:not(.share-layout-premium)) :is(.share-card-date, .share-card-subtags, .share-stat-label, .share-muscles-info p, .share-card-exercise-eq, .share-footer-brand, .share-footer-url span, .share-card-empty) { color: var(--alt-muted); }
+.share-card:where(:not(.share-layout-premium)) .share-footer-text { color: var(--alt-ink); }
 
-.share-layout-editorial { --share-bg: #e5ecf3; --share-card-bg: #f9fbfd; --share-ink: #0b2239; --share-muted: #4b647c; --share-accent: #e75c35; --share-tag-bg: #d8e5ef; --share-tag-border: #aebfce; }
-.share-layout-editorial .share-card-backdrop { background: linear-gradient(125deg, #0b2239 0 29%, #e7eef5 29% 100%); }
-.share-layout-editorial .share-card-content { padding: 58px; }
-.share-layout-editorial .share-card-brand { margin-left: 290px; }
-.share-layout-editorial .share-card-logo-wrap { position: absolute; top: 80px; left: 60px; width: 230px; }
-.share-layout-editorial .share-card-logo { width: 230px; filter: none; }
-.share-layout-editorial .share-card-date { color: #0b2239; }
-.share-layout-editorial .share-card-hero { margin-top: 80px; }
-.share-layout-editorial .share-card-title { color: #0b2239; font-size: 96px; max-width: 860px; }
-.share-layout-editorial .share-card-stats { grid-template-columns: repeat(2, 1fr); }
-.share-layout-editorial .share-card-muscles-panel, .share-layout-editorial .share-card-exercises { background: rgba(255,255,255,.72); box-shadow: none; }
+/* 01 / Essential: open rows and a compact summary strip. */
+.share-layout-minimal { --alt-accent: #a4e5d6; --alt-panel: #142a28; }
+.share-layout-editorial { --alt-accent: #a9ceff; --alt-panel: #17283e; }
+.share-layout-neon { --alt-accent: #9de1ef; --alt-panel: #123039; }
+.share-layout-brutal { --alt-accent: #efcf8b; --alt-panel: #30291c; }
+.share-layout-receipt { --alt-accent: #e3bba5; --alt-panel: #30241f; }
+.share-layout-polaroid { --alt-accent: #c9bef5; --alt-panel: #28243b; }
+.share-layout-split { --alt-accent: #d0e49c; --alt-panel: #262e1d; }
+.share-layout-medal { --alt-accent: #a8d9be; --alt-panel: #1d3028; }
+.share-layout-luxury { --alt-accent: #e8b9ce; --alt-panel: #30222b; }
+.share-layout-poster { --alt-accent: #ffbca7; --alt-panel: #34231f; }
+.share-layout-editorial .share-card-backdrop { background: linear-gradient(150deg, #15283f, #090f19); }
+.share-layout-neon .share-card-backdrop { background: linear-gradient(150deg, #153b45, #07161d); }
+.share-layout-brutal .share-card-backdrop { background: linear-gradient(150deg, #302a1e, #15130e); }
+.share-layout-receipt .share-card-backdrop { background: linear-gradient(150deg, #312720, #181210); }
+.share-layout-polaroid .share-card-backdrop { background: linear-gradient(150deg, #2c2842, #12101b); }
+.share-layout-split .share-card-backdrop { background: linear-gradient(150deg, #29351e, #11170e); }
+.share-layout-medal .share-card-backdrop { background: linear-gradient(150deg, #243d31, #0c1913); }
+.share-layout-luxury .share-card-backdrop { background: linear-gradient(150deg, #352430, #180f15); }
+.share-layout-poster .share-card-backdrop { background: linear-gradient(150deg, #422b23, #1b1110); }
+.share-card:where(:not(.share-layout-premium)) :is(.share-card-badge, .share-stat-icon, .share-card-index, .share-muscle-chip) {
+  background: var(--alt-panel); color: var(--alt-accent); border-color: #63747a;
+}
+.share-card:where(:not(.share-layout-premium)) :is(.share-card-badge-icon, .share-footer-accent-line, .share-card-date-bar) { background: var(--alt-accent); color: #0b171b; }
+.share-layout-minimal .share-card-content { grid-template-rows: 150px 270px 170px 340px minmax(0, 1fr) 120px; }
+.share-layout-minimal :is(.share-stat-box, .share-card-exercises, .share-card-muscles-panel) { background: transparent !important; border: 0 !important; border-radius: 0; }
+.share-layout-minimal .share-card-stats { border-block: 2px solid #315055; }
+.share-layout-minimal .share-stat-icon { display: none; }
+.share-layout-minimal .share-stat-box { justify-content: center; }
+.share-layout-minimal .share-card-exercises { border-top: 2px solid #315055 !important; padding-inline: 0 !important; }
+.share-layout-minimal .share-card-index { background: transparent !important; border: 0; }
 
-.share-layout-neon { --share-bg: #090015; --share-card-bg: #120a25; --share-ink: #f5ecff; --share-muted: #ba9bdc; --share-accent: #ff4fd8; --share-tag-bg: #2b1241; --share-tag-border: #7738aa; }
-.share-layout-neon .share-card-backdrop { background: radial-gradient(circle at 85% 5%, #00d9ff55, transparent 32%), radial-gradient(circle at 12% 68%, #ff28c755, transparent 34%), #090015; }
-.share-layout-neon .share-card-grain { opacity: .1; }
-.share-layout-neon .share-card-logo { filter: drop-shadow(0 0 15px #ff4fd8); }
-.share-layout-neon .share-card-title, .share-layout-neon .share-stat-value { text-shadow: 0 0 20px #ff4fd888; }
-.share-layout-neon .share-stat-box, .share-layout-neon .share-card-muscles-panel, .share-layout-neon .share-card-exercises { border-color: #a82cd777; box-shadow: 0 0 24px #a82cd733; }
+/* 02 / Editorial: anatomical spread before the numerical summary. */
+.share-layout-editorial .share-card-content { grid-template-areas: "brand" "hero" "muscles" "stats" "exercises" "footer"; grid-template-rows: 150px 240px 380px 180px minmax(0, 1fr) 120px; }
+.share-layout-editorial .share-card-hero { border-left: 8px solid var(--alt-accent); padding-left: 30px; }
+.share-layout-editorial .share-card-muscles-panel { border-radius: 0 60px 0 60px; }
+.share-layout-editorial .share-stat-icon { display: none; }
+.share-layout-editorial .share-stat-box { justify-content: center; border-radius: 0 !important; border-width: 0 0 3px !important; }
 
-.share-layout-brutal { --share-bg: #f6ed00; --share-card-bg: #f6ed00; --share-ink: #080808; --share-muted: #080808; --share-accent: #ff3a00; --share-tag-bg: #fff; --share-tag-border: #080808; }
-.share-layout-brutal .share-card-backdrop { background: repeating-linear-gradient(-45deg, #f6ed00 0 34px, #ffe500 34px 68px); }
-.share-layout-brutal .share-card-content { padding: 46px; }
-.share-layout-brutal .share-card-logo { filter: grayscale(1) contrast(2); }
-.share-layout-brutal .share-card-date, .share-layout-brutal .share-card-subtags, .share-layout-brutal .share-stat-label, .share-layout-brutal .share-muscles-info p, .share-layout-brutal .share-card-exercise-eq { color: #080808; }
-.share-layout-brutal .share-card-title { color: #080808; font-size: 108px; line-height: .88; text-transform: uppercase; }
-.share-layout-brutal .share-stat-box, .share-layout-brutal .share-card-muscles-panel, .share-layout-brutal .share-card-exercises { border: 7px solid #080808; border-radius: 0; box-shadow: 12px 12px 0 #ff3a00; background: #f6ed00; }
-.share-layout-brutal .share-card-exercise-name, .share-layout-brutal .share-exercises-title span, .share-layout-brutal .share-footer-text { color: #080808; }
+/* 03 / Atlas: anatomy on the right, four metrics stacked on the left. */
+.share-layout-neon .share-card-content { grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: 150px 250px 650px minmax(0, 1fr) 120px; grid-template-areas: "brand brand" "hero hero" "stats muscles" "exercises exercises" "footer footer"; }
+.share-layout-neon .share-card-stats { grid-template-columns: 1fr; }
+.share-layout-neon .share-stat-box { display: grid; grid-template-columns: 48px 1fr; align-content: center; column-gap: 18px; padding: 18px !important; }
+.share-layout-neon .share-stat-icon { grid-row: span 2; margin: 0 !important; align-self: center; }
+.share-layout-neon .share-card-muscles-panel { flex-direction: column; justify-content: space-around; align-items: stretch; }
+.share-layout-neon .share-muscles-info { flex: 0; }
+.share-layout-neon .share-muscles-map-wrapper { width: 100% !important; height: 330px !important; }
 
-.share-layout-receipt { --share-bg: #f7f0dc; --share-card-bg: #f7f0dc; --share-ink: #20201c; --share-muted: #67655b; --share-accent: #20201c; --share-tag-bg: transparent; --share-tag-border: #20201c; }
-.share-layout-receipt .share-card-backdrop { background: #f7f0dc; }
-.share-layout-receipt .share-card-grain { opacity: .12; mix-blend-mode: multiply; }
-.share-layout-receipt .share-card-content { padding: 60px 72px; font-family: 'Courier New', monospace; }
-.share-layout-receipt .share-card-brand { border-bottom: 3px dashed #20201c; padding-bottom: 24px; }
-.share-layout-receipt .share-card-logo { filter: grayscale(1) contrast(1.4); }
-.share-layout-receipt .share-card-title { color: #20201c; font-size: 73px; text-transform: uppercase; }
-.share-layout-receipt .share-card-stats { grid-template-columns: repeat(2, 1fr); gap: 0; border: 3px dashed #20201c; }
-.share-layout-receipt .share-stat-box, .share-layout-receipt .share-card-muscles-panel, .share-layout-receipt .share-card-exercises { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
-.share-layout-receipt .share-stat-box { border-right: 2px dashed #20201c; }
-.share-layout-receipt .share-card-muscles-panel { display: none; }
-.share-layout-receipt .share-card-exercises { border-top: 3px dashed #20201c; border-bottom: 3px dashed #20201c; padding-inline: 0; }
-.share-layout-receipt .share-card-exercise-name, .share-layout-receipt .share-exercises-title span, .share-layout-receipt .share-footer-text { color: #20201c; }
+/* 04 / Blocks: an asymmetric metric grid, squared edges and bold dividers. */
+.share-layout-brutal .share-card-content { grid-template-rows: 150px 240px 310px 300px minmax(0, 1fr) 120px; }
+.share-layout-brutal .share-card-stats { grid-template-columns: 1.3fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.share-layout-brutal .share-stat-box:first-child { grid-row: span 2; justify-content: center; border-left: 8px solid var(--alt-accent) !important; }
+.share-layout-brutal .share-stat-box:last-child { grid-column: span 2; }
+.share-layout-brutal .share-stat-box:not(:first-child) .share-stat-icon { display: none; }
+.share-layout-brutal .share-stat-box { border-radius: 4px !important; }
+.share-layout-brutal :is(.share-card-muscles-panel, .share-card-exercises) { border-radius: 4px; }
+.share-layout-brutal .share-card-exercises { border-top: 5px solid var(--alt-accent) !important; }
 
-.share-layout-polaroid { --share-bg: #9cb6b4; --share-card-bg: #fffdf7; --share-ink: #19201f; --share-muted: #536664; --share-accent: #e86b51; --share-tag-bg: #f7dfd7; --share-tag-border: #e5b4a5; }
-.share-layout-polaroid .share-card-backdrop { background: linear-gradient(140deg, #738f8b, #c7d9d5); }
-.share-layout-polaroid .share-card-content { margin: 56px; padding: 56px; background: #fffdf7; box-shadow: 0 28px 54px #20313066; }
-.share-layout-polaroid .share-card-brand { border-bottom: 1px solid #d4cfbf; padding-bottom: 18px; }
-.share-layout-polaroid .share-card-title, .share-layout-polaroid .share-exercises-title span, .share-layout-polaroid .share-card-exercise-name, .share-layout-polaroid .share-footer-text { color: #19201f; }
-.share-layout-polaroid .share-card-title { font-family: Georgia, serif; font-size: 86px; font-style: italic; }
-.share-layout-polaroid .share-card-stats { grid-template-columns: repeat(2, 1fr); }
-.share-layout-polaroid .share-stat-box, .share-layout-polaroid .share-card-muscles-panel, .share-layout-polaroid .share-card-exercises { background: #fffdf7; box-shadow: none; border-color: #e2dbca; }
+/* 05 / Session: exercise log first, with a restrained ruled treatment. */
+.share-layout-receipt .share-card-content { grid-template-rows: 150px 240px minmax(0, 1fr) 180px 300px 120px; grid-template-areas: "brand" "hero" "exercises" "stats" "muscles" "footer"; }
+.share-layout-receipt .share-card-exercises { border-radius: 0; border-inline: 0 !important; background: transparent !important; }
+.share-layout-receipt .share-card-exercise { border-bottom-style: dashed; padding-block: 23px !important; }
+.share-layout-receipt .share-stat-icon { display: none; }
+.share-layout-receipt .share-stat-box { justify-content: center; border-radius: 8px !important; }
+.share-layout-receipt .share-card-brand { border-bottom: 1px solid #416467; }
 
-.share-layout-split { --share-bg: #101923; --share-card-bg: #172737; --share-ink: #edf8fa; --share-muted: #9bb5c1; --share-accent: #ff9d4d; --share-tag-bg: #1e3445; --share-tag-border: #456176; }
-.share-layout-split .share-card-backdrop { background: linear-gradient(90deg, #ff9d4d 0 18%, #101923 18% 100%); }
-.share-layout-split .share-card-content { padding-left: 104px; }
-.share-layout-split .share-card-hero { border-left: 8px solid #ff9d4d; padding-left: 28px; }
-.share-layout-split .share-card-stats { grid-template-columns: 1fr 1fr; gap: 14px; }
-.share-layout-split .share-stat-box:nth-child(odd) { transform: translateX(-34px); }
-.share-layout-split .share-card-muscles-panel { align-items: flex-end; }
+/* 06 / Frame: inset portrait with a continuous fine outline. */
+.share-layout-polaroid .share-card-content { margin: 36px; height: 1848px !important; padding: 36px !important; border: 2px solid #547b7d; border-radius: 44px; grid-template-rows: 150px 240px 180px 320px minmax(0, 1fr) 120px; }
+.share-layout-polaroid .share-card-hero { text-align: center; }
+.share-layout-polaroid .share-card-subtags { justify-content: center; }
+.share-layout-polaroid .share-card-stats { gap: 0 !important; border-radius: 24px; overflow: hidden; background: var(--alt-panel); }
+.share-layout-polaroid .share-stat-box { background: transparent !important; border: 0 !important; border-right: 1px solid #406063 !important; border-radius: 0 !important; padding: 18px !important; }
+.share-layout-polaroid .share-card-exercise-eq { display: none; }
 
-.share-layout-medal { --share-bg: #1b160a; --share-card-bg: #2b2410; --share-ink: #fff8d2; --share-muted: #c8b77b; --share-accent: #f7c948; --share-tag-bg: #3f3412; --share-tag-border: #90742a; }
-.share-layout-medal .share-card-backdrop { background: radial-gradient(circle at 50% 0, #80651d55, transparent 36%), linear-gradient(#211b0d, #100e08); }
-.share-layout-medal .share-card-brand { justify-content: center; }
-.share-layout-medal .share-card-date-col { position: absolute; right: 60px; }
+/* 07 / Columns: a left rail of exercises beside the anatomy. */
+.share-layout-split .share-card-content { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); grid-template-rows: 150px 260px 200px minmax(0, 1fr) 120px; grid-template-areas: "brand brand" "hero hero" "stats stats" "exercises muscles" "footer footer"; }
+.share-layout-split .share-card-muscles-panel { flex-direction: column; align-items: stretch; justify-content: space-between; }
+.share-layout-split .share-muscles-info { flex: 0; }
+.share-layout-split .share-muscles-map-wrapper { width: 100% !important; height: 400px !important; }
+.share-layout-split .share-card-exercise { flex-wrap: wrap; gap: 10px !important; padding-block: 20px !important; }
+.share-layout-split .share-card-exercise-eq { display: none; }
+.share-layout-split .share-card-exercise-name { white-space: normal; font-size: 25px !important; }
+.share-layout-split .share-card-exercise-load { width: 100%; padding-left: 58px; text-align: left; }
+
+/* 08 / Focus: central title and paired metrics beneath the anatomy. */
+.share-layout-medal .share-card-content { grid-template-rows: 150px 230px 300px 300px minmax(0, 1fr) 120px; grid-template-areas: "brand" "hero" "muscles" "stats" "exercises" "footer"; }
 .share-layout-medal .share-card-hero { text-align: center; }
-.share-layout-medal .share-card-badge { background: #f7c948; color: #1b160a; border-color: #fff0a3; }
-.share-layout-medal .share-card-title { color: #fff8d2; font-family: Georgia, serif; }
 .share-layout-medal .share-card-subtags { justify-content: center; }
-.share-layout-medal .share-stat-box, .share-layout-medal .share-card-muscles-panel, .share-layout-medal .share-card-exercises { border-color: #90742a; background: #2b2410; }
+.share-layout-medal .share-card-stats { grid-template-columns: 1fr 1fr; }
+.share-layout-medal .share-stat-box { display: grid; grid-template-columns: 52px 1fr; column-gap: 20px; align-content: center; }
+.share-layout-medal .share-stat-icon { grid-row: span 2; margin: 0 !important; align-self: center; }
+.share-layout-medal .share-card-muscles-panel { background: transparent !important; border: 0 !important; }
+.share-layout-medal .share-card-brand { border-bottom: 2px solid #315055; }
 
-.share-layout-luxury { --share-bg: #070707; --share-card-bg: #101010; --share-ink: #f7f0df; --share-muted: #aa9f8e; --share-accent: #c9a45a; --share-tag-bg: #191714; --share-tag-border: #5d4c2c; }
-.share-layout-luxury .share-card-backdrop { background: radial-gradient(circle at 80% 10%, #c9a45a22, transparent 34%), #070707; }
-.share-layout-luxury .share-card-content { padding: 78px 68px; }
-.share-layout-luxury .share-card-brand { border-bottom: 1px solid #5d4c2c; padding-bottom: 30px; }
-.share-layout-luxury .share-card-logo { filter: grayscale(1) sepia(1) saturate(.8) drop-shadow(0 4px 12px #000); }
-.share-layout-luxury .share-card-title { color: #f7f0df; font-family: Georgia, serif; font-weight: 500; letter-spacing: -.06em; }
-.share-layout-luxury .share-card-stats { gap: 8px; }
-.share-layout-luxury .share-stat-box, .share-layout-luxury .share-card-muscles-panel, .share-layout-luxury .share-card-exercises { border-color: #3f3523; background: #101010; box-shadow: none; }
+/* 09 / Lines: left-aligned type and horizontal metrics without boxes. */
+.share-layout-luxury .share-card-content { grid-template-rows: 150px 250px 260px minmax(0, 1fr) 300px 120px; grid-template-areas: "brand" "hero" "stats" "exercises" "muscles" "footer"; }
+.share-layout-luxury .share-card-stats { grid-template-columns: 1fr 1fr; }
+.share-layout-luxury .share-stat-box { background: transparent !important; border: 0 !important; border-bottom: 1px solid #547b7d !important; border-radius: 0 !important; padding: 16px !important; flex-direction: row; align-items: center; gap: 18px; flex-wrap: wrap; }
+.share-layout-luxury .share-stat-icon { display: none; }
+.share-layout-luxury .share-stat-value { margin: 0; }
+.share-layout-luxury .share-card-exercises { background: transparent !important; border: 0 !important; padding-inline: 0 !important; }
+.share-layout-luxury .share-card-muscles-panel { border-radius: 8px; }
 
-.share-layout-poster { --share-bg: #13090b; --share-card-bg: #1b0b0d; --share-ink: #fff4e9; --share-muted: #c59585; --share-accent: #ee4a36; --share-tag-bg: #391214; --share-tag-border: #9c3028; }
-.share-layout-poster .share-card-backdrop { background: linear-gradient(160deg, #ed4b36 0 19%, transparent 19% 100%), radial-gradient(circle at 85% 87%, #ee4a3655, transparent 30%), #13090b; }
-.share-layout-poster .share-card-content { padding: 52px; }
-.share-layout-poster .share-card-logo-wrap { order: 2; }
-.share-layout-poster .share-card-date-col { padding-top: 0; }
-.share-layout-poster .share-card-hero { margin-top: 120px; }
-.share-layout-poster .share-card-title { font-size: 118px; line-height: .86; text-transform: uppercase; color: #fff4e9; max-width: 900px; }
-.share-layout-poster .share-card-stats { grid-template-columns: repeat(2, 1fr); }
-.share-layout-poster .share-card-muscles-panel { display: none; }
-.share-layout-poster .share-card-exercises { border-left: 9px solid #ee4a36; border-radius: 0; }
+/* 10 / Impact: wide title band and a prominent duration tile. */
+.share-layout-neon .share-card-muscles-panel { border-top: 4px solid var(--alt-accent) !important; border-radius: 40px 8px 40px 8px; }
+.share-layout-neon .share-stat-box { border-left: 4px solid var(--alt-accent) !important; }
+.share-layout-receipt .share-card-index { border-radius: 50%; }
+.share-layout-receipt .share-card-muscles-panel { border-radius: 8px; border-style: dashed !important; }
+.share-layout-polaroid .share-card-exercises { border-radius: 28px; border-bottom: 5px solid var(--alt-accent) !important; }
+.share-layout-split .share-card-exercises { border-radius: 24px 4px 4px 24px; }
+.share-layout-split .share-card-muscles-panel { border-radius: 4px 24px 24px 4px; border-bottom: 6px solid var(--alt-accent) !important; }
+.share-layout-medal .share-stat-box { border-radius: 50px 16px 16px 50px !important; }
+.share-layout-medal .share-card-exercises { border-top: 3px solid var(--alt-accent) !important; }
+.share-layout-luxury .share-card-muscles-panel { border-inline: 4px solid var(--alt-accent) !important; }
+.share-layout-poster .share-card-content { grid-template-rows: 150px 280px 300px 300px minmax(0, 1fr) 120px; }
+.share-layout-poster .share-card-hero { background: var(--alt-panel); padding: 28px; border-radius: 28px 28px 4px 4px; }
+.share-layout-poster .share-card-stats { grid-template-columns: 1.4fr 1fr; grid-template-rows: repeat(3, 1fr); }
+.share-layout-poster .share-stat-box:first-child { grid-row: span 3; justify-content: center; background: var(--alt-panel) !important; }
+.share-layout-poster .share-stat-box:first-child .share-stat-value { font-size: 62px; }
+.share-layout-poster .share-stat-box:not(:first-child) { flex-direction: row; align-items: center; justify-content: space-between; padding: 14px 22px !important; }
+.share-layout-poster .share-stat-box:not(:first-child) .share-stat-value { font-size: 32px; margin: 0; }
+.share-layout-poster .share-stat-box:not(:first-child) .share-stat-icon { display: none; }
+.share-layout-poster .share-card-exercises { border-radius: 4px 4px 28px 28px; }
 
 
 /* ============================================================
