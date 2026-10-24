@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { readFile } from 'node:fs/promises'
 import { seed, stateFixture, USER } from './fixtures.test.js'
 
 async function openWorkoutHistory(page, dense = false) {
@@ -107,6 +108,9 @@ test('shares the compact workout card with its exercise illustration as a PNG', 
   const file = await downloaded
   expect(file.suggestedFilename()).toMatch(/treino-fpp-.*\.png/)
   await file.saveAs(testInfo.outputPath('shared-workout.png'))
+  const png = await readFile(testInfo.outputPath('shared-workout.png'))
+  expect(png.readUInt32BE(16)).toBe(1080)
+  expect(png.readUInt32BE(20)).toBe(1920)
   await expect(page.locator('.share-btn-action')).toContainText('Imagem salva')
 })
 

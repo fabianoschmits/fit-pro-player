@@ -157,7 +157,12 @@ export async function composeShareImageWithLogo(cardDataUrl, logo, card, {
     output.width = 1080
     output.height = 1920
     const context = output.getContext('2d')
-    if (!context) return cardDataUrl
+    if (!context) throw new Error('Image canvas unavailable')
+
+    // Downsample the 2x capture with high-quality filtering. PNG itself is
+    // lossless: its quality improves through rasterization, not a JPEG quality flag.
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = 'high'
 
     const scaleX = 1080 / cardBounds.width
     const scaleY = 1920 / cardBounds.height
@@ -177,10 +182,9 @@ export async function composeShareImageWithLogo(cardDataUrl, logo, card, {
         width * scaleX, height * scaleY)
     }
     return output.toDataURL('image/png')
-  } catch {
-    // A share image without a second render is still preferable to failing the
-    // native share flow if a webview rejects canvas composition.
-    return cardDataUrl
+  } catch (cause) {
+    // Do not silently share the oversized intermediate image without its marks.
+    throw new Error('Unable to finish share image', { cause })
   }
 }
 
@@ -299,7 +303,7 @@ export function WorkoutShareModal({ w, onClose }) {
       cardDataUrl = await toPng(canvas, {
         width: 1080,
         height: 1920,
-        pixelRatio: 1,
+        pixelRatio: 2,
         cacheBust: true,
         style: { transform: 'none', transformOrigin: 'top left' },
         includeQueryParams: true,
@@ -307,7 +311,7 @@ export function WorkoutShareModal({ w, onClose }) {
     } finally {
       marks.forEach((mark, index) => { mark.style.opacity = opacity[index] })
     }
-    return marks.length ? composeShareImageWithLogo(cardDataUrl, marks, canvas) : cardDataUrl
+    return composeShareImageWithLogo(cardDataUrl, marks, canvas)
   }
 
   // ── Save to device ────────────────────────────────────────────────────────

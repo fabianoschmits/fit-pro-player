@@ -87,6 +87,8 @@ describe('workout share action lifetime', () => {
     })
     expect(draws[1]).toEqual([sprite, 440, 800, 320, 320])
     expect(context.globalCompositeOperation).toBe('screen')
+    expect(context.imageSmoothingEnabled).toBe(true)
+    expect(context.imageSmoothingQuality).toBe('high')
   })
 
   it('rescales the newly selected layout to the story preview frame', () => {
