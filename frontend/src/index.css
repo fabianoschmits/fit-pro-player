@@ -1671,6 +1671,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   transition:background 180ms cubic-bezier(.2,.8,.2,1),transform 180ms cubic-bezier(.2,.8,.2,1);
 }
 .workout-entry-toggle:disabled{cursor:default}
+.workout-entry-toggle.is-static{cursor:default}
 .workout-entry-toggle:not(:disabled):active{transform:scale(.99)}
 .workout-entry-toggle:not(:disabled):hover{background:var(--surface-2)}
 .workout-entry-toggle .thumb.exercise-muscle-thumb{
@@ -1685,7 +1686,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .workout-entry-sets{
   display:flex;flex-wrap:wrap;gap:6px;margin-top:7px;
 }
-.workout-entry-sets span{
+.workout-entry-sets>span{
   display:inline-flex;align-items:center;min-height:24px;
   padding:3px 7px;border-radius:6px;
   background:var(--surface-2);color:var(--label-2);

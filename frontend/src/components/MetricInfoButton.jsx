@@ -59,7 +59,7 @@ export default function MetricInfoButton({ label, description, className = '', d
   }
 
   return <span className="metric-info">
-    <button ref={triggerRef} type="button" className={`metric-info-trigger ${className}`.trim()} disabled={disabled} aria-expanded={open} onClick={toggle}>{label}</button>
+    <button ref={triggerRef} type="button" className={`metric-info-trigger ${className}`.trim()} disabled={disabled} aria-expanded={open} onClick={event => { event.stopPropagation(); toggle() }}>{label}</button>
     {open && typeof document !== 'undefined' && createPortal(<span ref={popoverRef} className={'metric-info-popover' + (position?.above ? ' is-above' : '')} role="tooltip" style={position ? { left: position.left, top: position.top } : { visibility: 'hidden' }}>{description}</span>, document.body)}
   </span>
 }

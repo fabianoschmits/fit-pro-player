@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MetricInfoButton from './MetricInfoButton.jsx'
 
 let container
@@ -44,6 +44,16 @@ describe('metric info button', () => {
     act(() => rir.click())
 
     expect(document.body.querySelectorAll('.metric-info-popover')).toHaveLength(1)
+    expect(document.body.querySelector('.metric-info-popover')?.textContent).toBe('Repetições em reserva.')
+  })
+
+  it('does not activate the surrounding exercise card when its label is clicked', () => {
+    const openExercise = vi.fn()
+    act(() => root.render(<div onClick={openExercise}><MetricInfoButton label="RIR 3" description="Repetições em reserva." /></div>))
+
+    act(() => container.querySelector('button').click())
+
+    expect(openExercise).not.toHaveBeenCalled()
     expect(document.body.querySelector('.metric-info-popover')?.textContent).toBe('Repetições em reserva.')
   })
 })

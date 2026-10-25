@@ -1191,6 +1191,12 @@ export const dayAssignSheet = day => ui().openSheet(close => <DayAssign day={day
 
 export const workoutShareSheet = w => ui().openSheet(close => <WorkoutShareModal w={w} onClose={close} />, { className: 'share-sheet-modal' })
 
+function WorkoutSetLabel({ label }) {
+  const rir = label.match(/^(.*?)( \(RIR [^)]+\))$/)
+  if (!rir) return label
+  return <>{rir[1]}<MetricInfoButton className="workout-set-rir" label={rir[2]} description="Repetições em reserva: quantas você ainda conseguiria fazer antes da falha." /></>
+}
+
 function WorkoutDetail({ w, close }) {
   const st = useStore(s => s.S)
   const displayUnit = st.displayUnit || 'kg'
@@ -1205,21 +1211,28 @@ function WorkoutDetail({ w, close }) {
       const expanded = openEntry === i && hasAnimation
       const title = ex ? exerciseName(ex) : (e.n || e.id)
       const doneSets = e.sets.filter(s => s.done)
+      const toggleEntry = () => setOpenEntry(cur => cur === i ? null : i)
       return <div key={i} className={'workout-entry-detail' + (expanded ? ' is-open' : '')}>
-        <button
-          type="button"
-          className={'workout-entry-toggle' + (w.prs && w.prs.includes(e.id) ? ' has-pr' : '')}
-          disabled={!hasAnimation}
+        <div
+          className={'workout-entry-toggle' + (w.prs && w.prs.includes(e.id) ? ' has-pr' : '') + (!hasAnimation ? ' is-static' : '')}
+          role={hasAnimation ? 'button' : undefined}
+          tabIndex={hasAnimation ? 0 : undefined}
           aria-expanded={expanded}
+          aria-disabled={hasAnimation ? undefined : true}
           aria-label={title}
-          onClick={() => setOpenEntry(cur => cur === i ? null : i)}
+          onClick={hasAnimation ? toggleEntry : undefined}
+          onKeyDown={event => {
+            if (!hasAnimation || (event.key !== 'Enter' && event.key !== ' ')) return
+            event.preventDefault()
+            toggleEntry()
+          }}
         >
           {ex && <Thumb ex={ex} />}
           <div className="grow"><div className="tt capitalize" style={{ fontWeight: 600 }}>{title}</div>
-            {doneSets.length ? <div className="workout-entry-sets">{doneSets.map((s, setIndex) => <span key={setIndex}>{setLabel(e.id, s, e.target, displayUnit)}</span>)}</div>
+            {doneSets.length ? <div className="workout-entry-sets">{doneSets.map((s, setIndex) => <span key={setIndex}><WorkoutSetLabel label={setLabel(e.id, s, e.target, displayUnit)} /></span>)}</div>
               : <div className="ss">{t('no sets')}</div>}</div>
           {hasAnimation && <Icon name={expanded ? 'chevronUp' : 'chevronDown'} className="chev" />}
-        </button>
+        </div>
         {w.prs && w.prs.includes(e.id) && <MetricInfoButton className="pr" label={<><Icon name="trophy" />{getLang() === 'pt' ? 'RP' : 'PR'}</>} description="Recorde pessoal: você superou sua melhor marca anterior neste exercício." />}
         <AnimatePresence initial={false}>
           {expanded && <motion.div className="workout-entry-motion"
