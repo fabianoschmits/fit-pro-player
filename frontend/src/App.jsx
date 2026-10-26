@@ -78,6 +78,7 @@ const Workout = lazy(loadWorkout)
 const Stats = lazy(loadStats)
 const History = lazy(loadHistory)
 const Library = lazy(loadLibrary)
+const CommunityMessages = lazy(() => import('./views/CommunityMessages.jsx'))
 const Community = lazy(loadCommunity)
 const Settings = lazy(loadSettings)
 const MotionFeedback = lazy(() => import('./views/MotionFeedback.jsx'))
@@ -525,6 +526,8 @@ function Shell() {
                 <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/community" element={<Community />} />
+                <Route path="/community/messages" element={<CommunityMessages />} />
+                <Route path="/community/messages/:peerId" element={<CommunityMessages />} />
                 <Route path="/community/profile" element={<Community />} />
                 <Route path="/community/user/:userId" element={<Community />} />
                 <Route path="/more" element={<Navigate to="/home" replace />} />
