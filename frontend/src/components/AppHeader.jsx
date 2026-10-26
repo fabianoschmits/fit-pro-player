@@ -8,7 +8,7 @@ import { Button } from './ui.jsx'
  * The shell owns primary navigation; this component only gives a screen a
  * predictable title, optional supporting text, and one contextual action.
  */
-export function AppHeader({ title, subtitle, backTo, action, className = '' }) {
+export function AppHeader({ title, subtitle, backTo, action, identity, className = '' }) {
   const navigate = useNavigate()
   return (
     <header className={`app-header ${className}`.trim()}>
@@ -18,6 +18,7 @@ export function AppHeader({ title, subtitle, backTo, action, className = '' }) {
             <Icon name="chevronLeft" />
           </Button>
         )}
+        {identity}
         <div className="app-header-copy">
           <h1>{title}</h1>
           {subtitle && <p className="sub">{subtitle}</p>}

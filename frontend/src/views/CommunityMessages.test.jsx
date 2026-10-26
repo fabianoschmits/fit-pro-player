@@ -9,8 +9,8 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ user: { id: '1111
 vi.mock('../lib/supabase-client.js', () => { const client = { rpc: (...args) => mocks.rpc(...args), from: () => ({ select() { return this }, eq() { return this }, maybeSingle: () => mocks.profile() }) }; return { getBrowserSupabaseClient: () => client } })
 import CommunityMessages from './CommunityMessages.jsx'
 let host, root
-beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.rpc.mockReset().mockResolvedValue({ data: [] }); mocks.profile.mockReset().mockResolvedValue({ data: { display_name: 'Bruno' } }); host = document.createElement('div'); document.body.append(host); root = createRoot(host) })
-afterEach(async () => { await act(async () => root.unmount()); host.remove() })
+beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; window.confirm = vi.fn(() => true); mocks.rpc.mockReset().mockResolvedValue({ data: [] }); mocks.profile.mockReset().mockResolvedValue({ data: { display_name: 'Bruno', avatar_ref: 'avatar-05' } }); host = document.createElement('div'); document.body.append(host); root = createRoot(host) })
+afterEach(async () => { await act(async () => root.unmount()); host.remove(); delete window.confirm })
 const mount = async (path = `/community/messages/${peer}`) => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/community/messages/:peerId?" element={<CommunityMessages />} /></Routes></MemoryRouter>))
 it('retains failed drafts, prevents double submits, and reuses nonce on retry', async () => {
   let reject
@@ -57,4 +57,15 @@ it('fills history gaps on refresh and updates receipts on older loaded messages'
   await act(async () => window.dispatchEvent(new Event('online')))
   expect(host.querySelectorAll('.chat-bubble')).toHaveLength(52)
   expect(host.querySelector('[aria-label="Lida"]')).not.toBeNull()
+})
+it('shows the participant photo and lets the sender delete an own message from its menu', async () => {
+  const own = { id: '1', sender_id: '11111111-1111-4111-8111-111111111111', recipient_id: peer, body: 'Minha mensagem', created_at: '2026-10-25T12:00:00Z' }
+  mocks.rpc.mockImplementation(async name => ({ data: name === 'community_message_history' ? [own] : null }))
+  await mount()
+  expect(host.querySelector('.dm-header-avatar')).not.toBeNull()
+  await act(async () => host.querySelector('[aria-label="Ações da mensagem"]').click())
+  await act(async () => [...host.querySelectorAll('button')].find(button => button.textContent.includes('Apagar mensagem')).click())
+  expect(mocks.rpc).toHaveBeenCalledWith('community_delete_message', { p_message_id: '1' })
+  await act(async () => new Promise(resolve => setTimeout(resolve, 220)))
+  expect(host.textContent).not.toContain('Minha mensagem')
 })

@@ -47,7 +47,15 @@ begin
  if public.community_message_unread_count()<>0 then raise exception 'Read failed'; end if;
  perform set_config('request.jwt.claim.sub',a::text,true);
  if public.community_message_history(b)->0->>'read_at' is null then raise exception 'Read receipt failed'; end if;
- for i in 1..28 loop perform public.community_send_message(b,'Rate test',gen_random_uuid()); end loop;
+ perform public.community_mark_conversation_unread(b);
+ inbox:=public.community_message_inbox();
+ if inbox->0->>'unread_count'<>'1' then raise exception 'Mark unread failed'; end if;
+ if public.community_message_unread_count()<>1 then raise exception 'Forced unread count failed'; end if;
+ perform public.community_delete_message(first_id::bigint);
+ if exists(select 1 from public.community_direct_messages where id=first_id::bigint) then raise exception 'Own message was not deleted'; end if;
+ perform public.community_hide_conversation(b);
+ if public.community_message_inbox()<>'[]'::jsonb then raise exception 'Conversation was not hidden'; end if;
+ for i in 1..29 loop perform public.community_send_message(b,'Rate test',gen_random_uuid()); end loop;
  begin
    perform public.community_send_message(b,'Rate overflow',gen_random_uuid());
    raise exception 'Rate limit missing';
