@@ -21,7 +21,14 @@ function Avatar({ profile, className = '' }) {
 const formatTime = value => new Date(value).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
 function ActionMenu({ label, open, onToggle, children, className = '' }) {
-  return <div className={`dm-action-menu ${className}${open ? ' is-open' : ''}`.trim()}>
+  const root = useRef(null)
+  useEffect(() => {
+    if (!open) return
+    const close = event => { if (!root.current?.contains(event.target)) onToggle() }
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [open, onToggle])
+  return <div ref={root} className={`dm-action-menu ${className}${open ? ' is-open' : ''}`.trim()}>
     <button type="button" className="dm-menu-trigger" aria-label={label} aria-expanded={open} onClick={event => { event.stopPropagation(); onToggle() }}><Icon name="more" /></button>
     {open && <div className="dm-menu-popover" role="menu">{children}</div>}
   </div>
@@ -83,7 +90,7 @@ function Inbox({ repo, userId }) {
 
 function Conversation({ repo, client, userId, peerId }) {
   const navigate = useNavigate()
-  const [profile, setProfile] = useState(null), [profileError, setProfileError] = useState(''), [messages, setMessages] = useState([]), [body, setBody] = useState('')
+  const [profile, setProfile] = useState(null), [profileError, setProfileError] = useState(''), [messages, setMessages] = useState([]), [body, setBody] = useState(''), [editing, setEditing] = useState(null)
   const [error, setError] = useState(''), [loading, setLoading] = useState(true), [sending, setSending] = useState(false), [older, setOlder] = useState(false), [loadingOlder, setLoadingOlder] = useState(false), [menu, setMenu] = useState(null), [removing, setRemoving] = useState(() => new Set())
   const thread = useRef(null), active = useRef(true), inFlight = useRef(false), sendLock = useRef(false), nonce = useRef(null), initialized = useRef(false), atBottom = useRef(true), oldestDisplayed = useRef(null), removedMessageIds = useRef(new Set())
   const validPeer = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(peerId) && peerId !== userId
@@ -139,8 +146,15 @@ function Conversation({ repo, client, userId, peerId }) {
     if (sendLock.current || !body.trim() || !profile || !validPeer) return
     sendLock.current = true; setSending(true); setError('')
     const draft = body
-    if (!nonce.current || nonce.current.body !== draft) nonce.current = { body: draft, id: crypto.randomUUID() }
     try {
+      if (editing) {
+        const updated = await repo.editMessage(editing.id, draft)
+        if (!active.current) return
+        setMessages(previous => previous.map(message => message.id === editing.id ? { ...message, ...(updated || {}), body: draft.trim() } : message))
+        setEditing(null); setBody('')
+        return
+      }
+      if (!nonce.current || nonce.current.body !== draft) nonce.current = { body: draft, id: crypto.randomUUID() }
       await repo.send(peerId, draft, nonce.current.id)
       if (!active.current) return
       setBody(''); nonce.current = null; atBottom.current = true
@@ -172,15 +186,17 @@ function Conversation({ repo, client, userId, peerId }) {
       if (active.current) { setRemoving(previous => { const next = new Set(previous); next.delete(message.id); return next }); setError('Não foi possível apagar a mensagem. Tente novamente.') }
     }
   }
+  const beginEdit = message => { setMenu(null); nonce.current = null; setEditing(message); setBody(message.body) }
+  const cancelEdit = () => { setEditing(null); setBody(''); nonce.current = null }
   return <div className="chat-page dm-conversation"><div className="chat-header"><AppHeader title={profile?.display_name || 'Conversa'} subtitle="Mensagem privada" backTo="/community/messages" identity={<Avatar profile={profile} className="dm-header-avatar" />} action={<ActionMenu label="Ações da conversa" open={menu === 'conversation'} onToggle={() => setMenu(menu === 'conversation' ? null : 'conversation')} className="dm-conversation-menu"><button role="menuitem" onClick={() => void actOnConversation('profile')}>Ver perfil</button><button role="menuitem" onClick={() => void actOnConversation('unread')}>Marcar como não lida</button><button role="menuitem" className="dm-danger" onClick={() => void actOnConversation('hide')}>Apagar conversa</button></ActionMenu>} /></div>
     <div className="chat-thread" ref={thread} aria-label="Conversa" aria-live="polite" onScroll={() => { const el = thread.current; atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80 }}>
       {!validPeer && <p role="alert">Este destinatário não está disponível.</p>}
       {loading && <p role="status">Carregando conversa…</p>}
       {older && <div className="chat-load-older-row"><button className="chat-load-older-btn" disabled={loadingOlder} onClick={loadOlder}>{loadingOlder ? 'Carregando…' : 'Carregar mensagens anteriores'}</button></div>}
       {!loading && validPeer && !messages.length && <p className="dm-empty">Envie a primeira mensagem para começar a conversa.</p>}
-      {messages.map(message => { const own = message.sender_id === userId, kind = own ? 'user' : 'admin'; return <div key={message.id} className={`chat-bubble-row chat-bubble-row--${kind} is-first${removing.has(message.id) ? ' dm-message-removing' : ''}`}><div className={`chat-bubble chat-bubble--${kind}`}><p>{message.body}</p><time className="chat-time">{formatTime(message.created_at)}</time>{own && <span className={`chat-tick${message.read_at ? ' dm-read' : ''}`} aria-label={message.read_at ? 'Lida' : 'Enviada'}><Icon name="check" />{message.read_at && <Icon name="check" />}</span>}{own && <ActionMenu label="Ações da mensagem" open={menu === `message:${message.id}`} onToggle={() => setMenu(menu === `message:${message.id}` ? null : `message:${message.id}`)} className="dm-message-menu"><button role="menuitem" className="dm-danger" onClick={() => void deleteMessage(message)}>Apagar mensagem</button></ActionMenu>}</div></div> })}
+      {messages.map(message => { const own = message.sender_id === userId, kind = own ? 'user' : 'admin'; return <div key={message.id} className={`chat-bubble-row chat-bubble-row--${kind} is-first${removing.has(message.id) ? ' dm-message-removing' : ''}`}><div className={`chat-bubble chat-bubble--${kind}`}><p>{message.body}</p><time className="chat-time">{formatTime(message.created_at)}</time>{own && <span className={`chat-tick${message.read_at ? ' dm-read' : ''}`} aria-label={message.read_at ? 'Lida' : 'Enviada'}><Icon name="check" />{message.read_at && <Icon name="check" />}</span>}{own && <ActionMenu label="Ações da mensagem" open={menu === `message:${message.id}`} onToggle={() => setMenu(menu === `message:${message.id}` ? null : `message:${message.id}`)} className="dm-message-menu"><button role="menuitem" onClick={() => beginEdit(message)}>Editar mensagem</button><button role="menuitem" className="dm-danger" onClick={() => void deleteMessage(message)}>Apagar mensagem</button></ActionMenu>}</div></div> })}
     </div>
     {(error || profileError) && <div className="support-error dm-error" role="alert">{profileError || error} <button onClick={() => { void loadProfile(); void refresh() }}>Tentar novamente</button></div>}
-    <form className="chat-input-bar" onSubmit={send}><div className="chat-input-col"><textarea className="chat-textarea" rows={1} aria-label="Nova mensagem" placeholder="Escreva uma mensagem…" maxLength={3000} value={body} disabled={sending || !profile || !validPeer} onChange={event => setBody(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) void send(event) }} /><div className="chat-input-meta">{body.length}/3000</div></div><button className="chat-send-btn" aria-label="Enviar mensagem" disabled={sending || !body.trim() || !profile || !validPeer}><Icon name="send" /></button></form>
+    <form className="chat-input-bar" onSubmit={send}><div className="chat-input-col">{editing && <div className="dm-editing"><span>Editando mensagem</span><button type="button" onClick={cancelEdit}>Cancelar</button></div>}<textarea className="chat-textarea" rows={1} aria-label="Nova mensagem" placeholder="Escreva uma mensagem…" maxLength={3000} value={body} disabled={sending || !profile || !validPeer} onChange={event => setBody(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) void send(event) }} /></div><button className="chat-send-btn" aria-label={editing ? 'Salvar mensagem' : 'Enviar mensagem'} disabled={sending || !body.trim() || !profile || !validPeer}><Icon name={editing ? 'check' : 'send'} /></button></form>
   </div>
 }

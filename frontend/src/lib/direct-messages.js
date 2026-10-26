@@ -13,6 +13,11 @@ export function createMessageRepository(client) {
     markUnread: peer => rpc('community_mark_conversation_unread', { p_peer: peer }),
     hideConversation: peer => rpc('community_hide_conversation', { p_peer: peer }),
     deleteMessage: messageId => rpc('community_delete_message', { p_message_id: messageId }),
+    async editMessage(messageId, body) {
+      const trimmed = body.trim()
+      if (!trimmed || trimmed.length > 3000) throw new Error('A mensagem deve ter entre 1 e 3000 caracteres.')
+      return rpc('community_update_message', { p_message_id: messageId, p_body: trimmed })
+    },
     async send(peer, body, nonce) {
       const trimmed = body.trim()
       if (!trimmed || trimmed.length > 3000) throw new Error('A mensagem deve ter entre 1 e 3000 caracteres.')

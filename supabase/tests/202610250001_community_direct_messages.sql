@@ -18,6 +18,8 @@ begin
  if notices<>1 or count_before<>1 then raise exception 'First message notification missing'; end if;
  set local role authenticated;
  second_id:=public.community_send_message(b,'Mais uma',gen_random_uuid());
+ perform public.community_update_message(first_id::bigint,'Olá revisado');
+ if public.community_message_history(b)->0->>'body'<>'Olá revisado' then raise exception 'Own message edit failed'; end if;
  reset role;
  select count(*), coalesce(max(message_count),0) into notices,count_before from public.community_notifications where recipient_id=b and actor_id=a and type='message';
  if notices<>1 or count_before<>2 then raise exception 'Messages were not grouped'; end if;
@@ -38,6 +40,10 @@ begin
  if exists(select 1 from public.community_direct_messages where id=first_id::bigint) then raise exception 'Third party can read message'; end if;
  if public.community_message_history(a)<>'[]'::jsonb then raise exception 'Third party history leak'; end if;
  if public.community_message_inbox()<>'[]'::jsonb then raise exception 'Third party inbox leak'; end if;
+ begin
+   perform public.community_update_message(first_id::bigint,'Tentativa externa');
+   raise exception 'Third party edit allowed';
+ exception when raise_exception then if sqlerrm<>'Mensagem indisponível' then raise; end if; end;
  perform public.community_read_messages(a,first_id::bigint);
  perform set_config('request.jwt.claim.sub',b::text,true);
  if public.community_message_unread_count()<>2 then raise exception 'Unread count failed'; end if;

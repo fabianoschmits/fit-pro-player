@@ -23,10 +23,12 @@ describe('private messages', () => {
     await repo.markUnread('peer')
     await repo.hideConversation('peer')
     await repo.deleteMessage('42')
+    await repo.editMessage('42', 'Mensagem atualizada')
     expect(rpc.mock.calls).toEqual([
       ['community_mark_conversation_unread', { p_peer: 'peer' }],
       ['community_hide_conversation', { p_peer: 'peer' }],
       ['community_delete_message', { p_message_id: '42' }],
+      ['community_update_message', { p_message_id: '42', p_body: 'Mensagem atualizada' }],
     ])
   })
 })
