@@ -24,7 +24,7 @@ import Community from './Community.jsx'
 const alice = { id: 'alice', display_name: 'Alice saved', avatar_ref: 'avatar-27' }
 const bob = { id: 'bob', display_name: 'Bruno', avatar_ref: 'avatar-05' }
 const makePost = (id, author) => ({ id, author_id: author.id, author, image_path: `${author.id}/${id}.jpg`, caption: id, created_at: '2026-10-23T12:00:00Z', comments: [], likes: [] })
-let root, container, writes, rows, failure, navigate
+let root, container, writes, rows, notificationRows, failure, navigate
 function client() {
   return { storage: { from: () => ({ upload: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) }) }, from(table) {
     const query = { table, filters: [], operation: 'select', select(fields) { if (fields?.includes('avatar_id')) throw Error('Invalid public column'); return this }, eq(key,value) { this.filters.push([key,value]); return this }, order() { return this }, limit() { return this }, or() { return this }, in() { return this }, is() { return this }, maybeSingle() { this.singleResult = true; return this }, single() { this.singleResult = true; return this }, match(value) { this.filters.push(...Object.entries(value)); return this }, insert(value) { this.operation = 'insert'; this.value = value; return this }, update(value) { this.operation = 'update'; this.value = value; return this }, delete() { this.operation = 'delete'; return this }, then(resolve,reject) {
@@ -37,13 +37,14 @@ function client() {
           return { error: null }
         }
         if (table === 'profiles') return { data: this.filters[0]?.[1] === 'bob' ? bob : alice }
+        if (table === 'community_notifications') return { data: notificationRows }
         let data = table === 'community_posts' ? rows.filter(row => this.filters.every(([key,value]) => row[key] === value)) : []
         return { data: this.singleResult ? data[0] || null : data }
       }).then(resolve,reject)
     } }; return query
   } }
 }
-beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.user = { id: 'alice' }; mocks.profile = { name: 'Alice', avatarId: 'avatar-80' }; writes = []; rows = [makePost('mine',alice),makePost('theirs',bob)]; failure = ''; mocks.client = client(); mocks.crop.mockReset(); window.scrollTo = vi.fn(); window.requestAnimationFrame = callback => { callback(); return 1 }; window.cancelAnimationFrame = vi.fn(); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
+beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.user = { id: 'alice' }; mocks.profile = { name: 'Alice', avatarId: 'avatar-80' }; writes = []; rows = [makePost('mine',alice),makePost('theirs',bob)]; notificationRows = []; failure = ''; mocks.client = client(); mocks.crop.mockReset(); window.scrollTo = vi.fn(); window.requestAnimationFrame = callback => { callback(); return 1 }; window.cancelAnimationFrame = vi.fn(); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
 async function mount(path='/community') { function Page() { navigate = useNavigate(); return <Community /> }; await act(async () => root.render(<MemoryRouter initialEntries={[path]}><Page /></MemoryRouter>)) }
 const click = async button => act(async () => button.click())

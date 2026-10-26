@@ -2,7 +2,7 @@
 begin;
 do $$
 declare a uuid:=gen_random_uuid(); b uuid:=gen_random_uuid(); c uuid:=gen_random_uuid();
- n uuid:=gen_random_uuid(); first_id text; repeated_id text; history jsonb; inbox jsonb;
+ n uuid:=gen_random_uuid(); first_id text; second_id text; repeated_id text; history jsonb; inbox jsonb; notices integer; count_before integer;
 begin
  insert into auth.users(id) values(a),(b),(c);
  perform set_config('request.jwt.claim.sub',a::text,true);
@@ -13,6 +13,15 @@ begin
  history:=public.community_message_history(b);
  if jsonb_array_length(history)<>1 then raise exception 'Sender history failed'; end if;
  if (history->0->>'sender_id')<>a::text then raise exception 'Incorrect sender'; end if;
+ reset role;
+ select count(*), coalesce(max(message_count),0) into notices,count_before from public.community_notifications where recipient_id=b and actor_id=a and type='message';
+ if notices<>1 or count_before<>1 then raise exception 'First message notification missing'; end if;
+ set local role authenticated;
+ second_id:=public.community_send_message(b,'Mais uma',gen_random_uuid());
+ reset role;
+ select count(*), coalesce(max(message_count),0) into notices,count_before from public.community_notifications where recipient_id=b and actor_id=a and type='message';
+ if notices<>1 or count_before<>2 then raise exception 'Messages were not grouped'; end if;
+ set local role authenticated;
  begin
    insert into public.community_direct_messages(sender_id,recipient_id,body,client_nonce) values(b,a,'Spoof',gen_random_uuid());
    raise exception 'Direct insertion allowed';
@@ -31,14 +40,14 @@ begin
  if public.community_message_inbox()<>'[]'::jsonb then raise exception 'Third party inbox leak'; end if;
  perform public.community_read_messages(a,first_id::bigint);
  perform set_config('request.jwt.claim.sub',b::text,true);
- if public.community_message_unread_count()<>1 then raise exception 'Unread count failed'; end if;
+ if public.community_message_unread_count()<>2 then raise exception 'Unread count failed'; end if;
  inbox:=public.community_message_inbox();
- if jsonb_array_length(inbox)<>1 or inbox->0->>'body'<>'Olá' then raise exception 'Inbox failed'; end if;
- perform public.community_read_messages(a,first_id::bigint);
+ if jsonb_array_length(inbox)<>1 or inbox->0->>'body'<>'Mais uma' then raise exception 'Inbox failed'; end if;
+ perform public.community_read_messages(a,second_id::bigint);
  if public.community_message_unread_count()<>0 then raise exception 'Read failed'; end if;
  perform set_config('request.jwt.claim.sub',a::text,true);
  if public.community_message_history(b)->0->>'read_at' is null then raise exception 'Read receipt failed'; end if;
- for i in 1..29 loop perform public.community_send_message(b,'Rate test',gen_random_uuid()); end loop;
+ for i in 1..28 loop perform public.community_send_message(b,'Rate test',gen_random_uuid()); end loop;
  begin
    perform public.community_send_message(b,'Rate overflow',gen_random_uuid());
    raise exception 'Rate limit missing';
