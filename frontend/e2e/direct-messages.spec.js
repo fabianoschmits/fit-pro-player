@@ -23,6 +23,13 @@ test('opens inbox from community, reads a conversation and sends from profile', 
   await page.getByRole('button', { name: 'Enviar mensagem', exact: true }).click()
   await expect(page.locator('.chat-bubble--user')).toContainText('Sim, às 19h!')
   await expect(page.getByLabel('Nova mensagem')).toHaveValue('')
+  await page.getByLabel('Ações da mensagem').click()
+  const editAction = page.getByRole('menuitem', { name: 'Editar mensagem', exact: true })
+  await expect(editAction).toBeVisible()
+  expect(await editAction.evaluate(element => {
+    const box = element.getBoundingClientRect(), top = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+    return top?.closest('[role="menu"]') === element.closest('[role="menu"]')
+  })).toBe(true)
   await page.screenshot({ path: `test-results/dm-chat-${test.info().project.name}.png` })
   await page.goto(`/#/community/user/${STUDENT}`)
   await page.getByRole('button', { name: 'Enviar mensagem', exact: true }).click()
