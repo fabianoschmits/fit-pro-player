@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed, USER, STUDENT } from './fixtures.test.js'
+import { seed, stateFixture, USER, STUDENT } from './fixtures.test.js'
 
 test('opens inbox from community, reads a conversation and sends from profile', async ({ page }) => {
   const messages = [{ id: '1', sender_id: STUDENT, recipient_id: USER, body: 'Vamos treinar hoje?', created_at: '2026-10-25T18:00:00Z', read_at: null }]
@@ -35,4 +35,21 @@ test('opens inbox from community, reads a conversation and sends from profile', 
   await page.getByRole('button', { name: 'Enviar mensagem', exact: true }).click()
   await expect(page).toHaveURL(new RegExp(`/community/messages/${STUDENT}`))
   await expect(page.locator('.chat-bubble--user')).toContainText('Sim, às 19h!')
+})
+
+test('keeps message menus readable in the light theme', async ({ page }) => {
+  const messages = [{ id: '1', sender_id: USER, recipient_id: STUDENT, body: 'Mensagem enviada', created_at: '2026-10-25T18:00:00Z', read_at: null }]
+  await seed(page, { authenticated: true, state: { ...stateFixture(), theme: 'light' }, rpc: {
+    is_current_user_suspended: false,
+    community_message_history: () => messages,
+    community_read_messages: null,
+  } })
+  await page.route('**/rest/v1/profiles?*', route => route.fulfill({ contentType: 'application/json', body: JSON.stringify({ id: STUDENT, display_name: 'Bruno', avatar_ref: 'avatar-05' }) }))
+  await page.goto(`/#/community/messages/${STUDENT}`)
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await page.getByLabel('Ações da mensagem').click()
+  const editAction = page.getByRole('menuitem', { name: 'Editar mensagem', exact: true })
+  await expect(editAction).toBeVisible()
+  expect(await editAction.evaluate(element => getComputedStyle(element).color)).not.toBe('rgb(255, 255, 255)')
+  await page.screenshot({ path: `test-results/dm-chat-light-${test.info().project.name}.png` })
 })
