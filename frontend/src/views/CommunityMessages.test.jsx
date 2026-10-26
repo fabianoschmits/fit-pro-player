@@ -29,6 +29,17 @@ it('retains failed drafts, prevents double submits, and reuses nonce on retry', 
   expect(sends()[0][1].p_nonce).toBe(sends()[1][1].p_nonce)
   expect(host.querySelector('textarea').value).toBe('')
 })
+it('keeps Enter in the composer and sends only from the send button', async () => {
+  await mount()
+  const input = host.querySelector('textarea')
+  await act(async () => { Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set.call(input, 'Primeira linha\nSegunda linha'); input.dispatchEvent(new Event('input', { bubbles: true })) })
+  const enter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+  await act(async () => input.dispatchEvent(enter))
+  expect(enter.defaultPrevented).toBe(false)
+  expect(mocks.rpc.mock.calls.filter(([name]) => name === 'community_send_message')).toHaveLength(0)
+  await act(async () => host.querySelector('[aria-label="Enviar mensagem"]').click())
+  expect(mocks.rpc).toHaveBeenCalledWith('community_send_message', expect.objectContaining({ p_body: 'Primeira linha\nSegunda linha' }))
+})
 it('shows inbox unread counts and preview', async () => {
   mocks.rpc.mockResolvedValue({ data: [{ peer_id: peer, display_name: 'Bruno', body: 'Bora treinar?', created_at: '2026-10-25T12:00:00Z', unread_count: 2 }] })
   await mount('/community/messages')
