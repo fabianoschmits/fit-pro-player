@@ -5,6 +5,8 @@ import { createSupportRepository } from '../lib/support.js'
 import { FppSkeleton } from '../components/FppFeedback.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import Icon from '../components/Icon.jsx'
+import { useStore } from '../store/useStore.js'
+import { avatarSrc, isAvatarId } from '../lib/avatars.js'
 import '../support.css'
 
 const STATUS_LABELS = {
@@ -25,6 +27,7 @@ function formatDate(iso) {
 
 export default function SupportTickets() {
   const repo = useMemo(() => createSupportRepository({ client: getBrowserSupabaseClient() }), [])
+  const profile = useStore(state => state.S.profile)
   const [tickets, setTickets] = useState([]), [busy, setBusy] = useState(true), [error, setError] = useState('')
   useEffect(() => {
     let live = true
@@ -62,11 +65,9 @@ export default function SupportTickets() {
             <Link
               className={`ticket-chat-row${isUnread ? ' ticket-chat-row--unread' : ''}`}
               key={ticket.ticketId}
-              to={`/support/tickets/${ticket.ticketId}`}
+              to={ticket.reportContext ? `/community/user/${ticket.reportContext.reportedUserId}?post=${ticket.reportContext.postId}${ticket.reportContext.commentId ? `&comment=${ticket.reportContext.commentId}` : ''}` : `/support/tickets/${ticket.ticketId}`}
             >
-              <div className="ticket-chat-avatar">
-                <span>{(ticket.subject || 'S')[0].toUpperCase()}</span>
-              </div>
+              <div className="ticket-chat-avatar">{ticket.reportContext?.imagePath ? <img src={getBrowserSupabaseClient().storage.from('community-posts').getPublicUrl(ticket.reportContext.imagePath).data.publicUrl} alt="" /> : isAvatarId(profile?.avatarId) ? <img src={avatarSrc(profile.avatarId)} alt="" /> : <span>{(ticket.subject || 'S')[0].toUpperCase()}</span>}</div>
               <div className="ticket-chat-body">
                 <div className="ticket-chat-top">
                   <strong className="ticket-chat-subject">{ticket.subject}</strong>
