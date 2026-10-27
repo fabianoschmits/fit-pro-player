@@ -141,4 +141,5 @@ it('presents a social feed header, composer invitation and own profile summary',
   expect(container.querySelector('[data-community-composer]')?.textContent).toContain('Compartilhe seu treino')
   expect(container.querySelector('[data-community-feed-context]')?.textContent).toBe('Recentes')
   expect(container.querySelector('[data-community-profile-summary]')?.textContent).toContain('Suas postagens')
+  expect(container.querySelector('[data-community-profile-summary]')?.textContent).toContain('Mensagens')
 })
