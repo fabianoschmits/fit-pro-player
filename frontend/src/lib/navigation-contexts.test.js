@@ -14,7 +14,7 @@ describe('navigation-contexts resolver', () => {
     const res = resolveNavigationContext({ pathname: '/home' })
     expect(res.contextId).toBe('home')
     expect(res.activeKey).toBe('home')
-    expect(res.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'stats'])
+    expect(res.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'progress'])
   })
 
   it.each(['/community', '/community/profile', '/community/user/other-user'])('selects only Community on %s, including the collapsed menu', pathname => {
@@ -45,9 +45,9 @@ describe('navigation-contexts resolver', () => {
     expect(plan.items.map(i => i.k)).toEqual(['home', 'plan', 'library', 'start'])
     expect(plan.items[3].label(active)).toBe('Retomar')
 
-    const stats = resolveNavigationContext({ pathname: '/stats', hasActiveWorkout: true, workoutState: active })
-    expect(stats.items.map(i => i.k)).toEqual(['home', 'stats', 'body-progress', 'start'])
-    expect(stats.items[3].label(active)).toBe('Retomar')
+    const progress = resolveNavigationContext({ pathname: '/progress', hasActiveWorkout: true, workoutState: active })
+    expect(progress.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'progress'])
+    expect(progress.items[2].label(active)).toBe('Retomar')
 
     const privacy = resolveNavigationContext({ pathname: '/privacy-settings', hasActiveWorkout: true, workoutState: active })
     expect(privacy.activeKey).toBe('privacy-settings')
@@ -68,42 +68,18 @@ describe('navigation-contexts resolver', () => {
     expect(res.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'history'])
   })
 
-  it('resolves Stats context on /stats and /body-progress', () => {
-    const resStats = resolveNavigationContext({ pathname: '/stats' })
-    expect(resStats.contextId).toBe('stats')
-    expect(resStats.activeKey).toBe('stats')
-    expect(resStats.items.map(i => i.k)).toEqual(['home', 'stats', 'body-progress', 'history'])
-
-    const resBody = resolveNavigationContext({ pathname: '/body-progress' })
-    expect(resBody.contextId).toBe('stats')
-    expect(resBody.activeKey).toBe('body-progress')
-    expect(resBody.items.map(i => i.k)).toEqual(['home', 'stats', 'body-progress', 'history'])
+  it.each(['/progress', '/progress/history', '/progress/body', '/stats', '/history', '/body-progress'])('resolves Progress context on %s', pathname => {
+    const result = resolveNavigationContext({ pathname })
+    expect(result.contextId).toBe('progress')
+    expect(result.activeKey).toBe('progress')
+    expect(result.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'progress'])
   })
 
-  it('resolves /history with origin context (Training vs Stats)', () => {
-    // Coming from plan / training
-    const resFromTraining = resolveNavigationContext({
-      pathname: '/history',
-      navigationState: { fromContext: 'training' },
-    })
-    expect(resFromTraining.contextId).toBe('training')
-    expect(resFromTraining.activeKey).toBe('history')
-    expect(resFromTraining.items.map(i => i.k)).toEqual(['home', 'plan', 'library', 'history'])
-
-    // Coming from stats
-    const resFromStats = resolveNavigationContext({
-      pathname: '/history',
-      navigationState: { fromContext: 'stats' },
-    })
-    expect(resFromStats.contextId).toBe('stats')
-    expect(resFromStats.activeKey).toBe('history')
-    expect(resFromStats.items.map(i => i.k)).toEqual(['home', 'stats', 'body-progress', 'history'])
-
-    // Direct access fallback uses sessionStorage if previously visited
-    window.sessionStorage.setItem(NAVIGATION_CONTEXT_STORAGE_KEY, 'stats')
-    const resFallback = resolveNavigationContext({ pathname: '/history' })
-    expect(resFallback.contextId).toBe('stats')
-    expect(resFallback.activeKey).toBe('history')
+  it.each(['/account', '/more'])('resolves Account as a primary navigation destination on %s', pathname => {
+    const result = resolveNavigationContext({ pathname })
+    expect(result.contextId).toBe('account')
+    expect(result.activeKey).toBe('account')
+    expect(result.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'progress'])
   })
 
   it('resolves Account context on /settings, /personal-data and privacy paths', () => {

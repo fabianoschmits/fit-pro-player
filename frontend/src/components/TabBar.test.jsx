@@ -72,7 +72,7 @@ describe('TabBar folding navigation', () => {
 
   it('keeps Retomar available from contextual screens while an active workout exists', () => {
     mocks.state.S = { ...mocks.state.S, active: { id: 'active-workout' } }
-    render('/stats')
+    render('/progress')
     click(toggle())
     const resume = container.querySelector('[data-tab-key="start"]')
     expect(resume.textContent).toContain('Retomar')
@@ -83,9 +83,9 @@ describe('TabBar folding navigation', () => {
   })
 
   it('starts expanded with all destinations available to assistive technology', () => {
-    render('/stats')
+    render('/progress')
     expect(toggle().getAttribute('aria-expanded')).toBe('true')
-    expect(toggle().getAttribute('aria-label')).toContain('Estatísticas')
+    expect(toggle().getAttribute('aria-label')).toContain('Evolução')
     expect(container.querySelector('.corner-nav-main').hasAttribute('inert')).toBe(false)
     expect(container.querySelector('.corner-nav-main').getAttribute('aria-hidden')).toBe('false')
     expect(container.querySelector('.corner-nav-more').hasAttribute('inert')).toBe(true)
@@ -228,7 +228,7 @@ describe('TabBar folding navigation', () => {
   })
 
   it('keeps the expanded menu unchanged while the page scrolls', () => {
-    render('/stats')
+    render('/progress')
     // menu starts expanded — no click needed
     const tabbar = container.querySelector('#tabbar')
     const before = tabbar.innerHTML
@@ -240,7 +240,7 @@ describe('TabBar folding navigation', () => {
   it('keeps body progress active inside body progress under stats context', () => {
     render('/body-progress')
     // menu starts expanded — tabs visible without click
-    expect(container.querySelector('[data-tab-key="body-progress"]').getAttribute('aria-current')).toBe('page')
+    expect(container.querySelector('[data-tab-key="progress"]').getAttribute('aria-current')).toBe('page')
   })
 
   it('preserves navigation and the workout entry point after expanding', () => {
@@ -336,7 +336,7 @@ describe('TabBar folding navigation', () => {
 
     // At /home: home | plan | start | stats
     expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key')))
-      .toEqual(['home', 'plan', 'start', 'stats'])
+      .toEqual(['home', 'plan', 'start', 'progress'])
 
     // Click "Plano" — navigates to /plan, keeping TabBar mounted
     click(container.querySelector('[data-tab-key="plan"]'))
@@ -370,9 +370,9 @@ describe('TabBar folding navigation', () => {
     expect(container.querySelector('[data-tab-key="library"]').getAttribute('aria-current')).toBe('page')
 
     // 3. Stats context
-    renderAndOpen('/stats')
-    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'stats', 'body-progress', 'history'])
-    expect(container.querySelector('[data-tab-key="stats"]').getAttribute('aria-current')).toBe('page')
+    renderAndOpen('/progress')
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'plan', 'start', 'progress'])
+    expect(container.querySelector('[data-tab-key="progress"]').getAttribute('aria-current')).toBe('page')
 
     // 4. Support context
     renderAndOpen('/support')
@@ -440,6 +440,7 @@ describe('TabBar folding navigation', () => {
     // Rapid navigation to stats doesn't break the dock
     click(slot0) // back to home
     if (toggle().getAttribute('aria-expanded') !== 'true') click(toggle())
-    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'plan', 'start', 'stats'])
+    expect(Array.from(container.querySelectorAll('.corner-nav-tab')).map(el => el.getAttribute('data-tab-key'))).toEqual(['home', 'plan', 'start', 'progress'])
   })
 })
+

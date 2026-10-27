@@ -4,11 +4,11 @@ import { startTabShortLabel } from './ux.js'
 export const NAVIGATION_CONTEXT_STORAGE_KEY = 'fpp_last_nav_context'
 
 /**
- * Persists the latest active main context (training or stats) in sessionStorage.
+ * Persists the latest active main context (training or progress) in sessionStorage.
  */
 export function persistNavigationContext(contextId) {
   if (typeof window === 'undefined' || !window.sessionStorage) return
-  if (contextId === 'training' || contextId === 'stats') {
+  if (contextId === 'training' || contextId === 'progress') {
     try {
       window.sessionStorage.setItem(NAVIGATION_CONTEXT_STORAGE_KEY, contextId)
     } catch {}
@@ -70,10 +70,12 @@ export function resolveNavigationContext({
     detectedContext = 'training'
     if (normPath.startsWith('/plan')) activeKey = 'plan'
     else if (normPath === '/library') activeKey = 'library'
-  } else if (normPath === '/stats' || normPath === '/body-progress' || normPath === '/stats/body-progress') {
-    detectedContext = 'stats'
-    if (normPath === '/stats') activeKey = 'stats'
-    else activeKey = 'body-progress'
+  } else if (normPath === '/progress' || normPath === '/progress/history' || normPath === '/progress/body' || normPath === '/stats' || normPath === '/history' || normPath === '/body-progress' || normPath === '/stats/body-progress') {
+    detectedContext = 'progress'
+    activeKey = 'progress'
+  } else if (normPath === '/account' || normPath === '/more') {
+    detectedContext = 'account'
+    activeKey = 'account'
   } else if (
     normPath === '/settings' ||
     normPath === '/personal-data' ||
@@ -127,16 +129,6 @@ export function resolveNavigationContext({
         activeKey = 'prof-overview'
       }
     }
-  } else if (normPath === '/history') {
-    // Shared page: preserve origin context
-    const originContext =
-      navigationState?.fromContext ||
-      previousContext ||
-      getStoredNavigationContext() ||
-      'training'
-
-    detectedContext = originContext === 'stats' ? 'stats' : 'training'
-    activeKey = 'history'
   } else {
     // Default fallback
     detectedContext = 'home'
@@ -144,7 +136,7 @@ export function resolveNavigationContext({
   }
 
   // Update session storage if in persistent context
-  if (detectedContext === 'training' || detectedContext === 'stats') {
+  if (detectedContext === 'training' || detectedContext === 'progress') {
     persistNavigationContext(detectedContext)
   }
 
@@ -157,7 +149,7 @@ export function resolveNavigationContext({
         { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
         { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
         { k: 'start', icon: 'dumbbell', action: true, label: s => startTabShortLabel(s) },
-        { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
+        { k: 'progress', icon: 'chart', to: '/progress', label: () => 'Evolução' },
       ]
       break
 
@@ -179,16 +171,25 @@ export function resolveNavigationContext({
       ]
       break
 
-    case 'stats':
+    case 'progress':
       items = [
         { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
-        { k: 'stats', icon: 'chart', to: '/stats', label: () => t('Stats') },
-        { k: 'body-progress', icon: 'chartLine', to: '/body-progress', label: () => 'Corpo' },
-        { k: 'history', icon: 'history', to: '/history', label: () => t('History') },
+        { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
+        { k: 'start', icon: 'dumbbell', action: true, to: '/workout', label: s => startTabShortLabel(s) },
+        { k: 'progress', icon: 'chart', to: '/progress', label: () => 'Evolução' },
       ]
       break
 
     case 'account':
+      if (activeKey === 'account') {
+        items = [
+          { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
+          { k: 'plan', icon: 'calendar', to: '/plan', label: () => t('Plan') },
+          { k: 'start', icon: 'dumbbell', action: true, to: '/workout', label: s => startTabShortLabel(s) },
+          { k: 'progress', icon: 'chart', to: '/progress', label: () => 'Evolução' },
+        ]
+        break
+      }
       items = [
         { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
         { k: 'settings', icon: 'gear', to: '/settings', label: () => t('Settings') },
