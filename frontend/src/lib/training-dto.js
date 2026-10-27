@@ -1,6 +1,7 @@
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 const isText = value => typeof value === 'string' && value.length > 0
 const isNullableText = value => value === null || isText(value)
+const isNullableShortText = value => value === null || value === undefined || (isText(value) && value.length <= 500)
 const isRevision = value => Number.isSafeInteger(value) && value > 0
 const isIsoDate = value => {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
@@ -27,6 +28,7 @@ export function parseWorkoutSession(value, accountId) {
     || !isObject(value.prescription_snapshot)
     || !isText(value.started_at)
     || !isNullableText(value.completed_at)
+    || !isNullableShortText(value.note)
     || !isText(value.updated_at)) {
     invalid('workout-session')
   }
@@ -43,6 +45,7 @@ export function parseWorkoutSession(value, accountId) {
     prescriptionSnapshot: value.prescription_snapshot,
     startedAt: value.started_at,
     completedAt: value.completed_at,
+    ...(value.note ? { note: value.note } : {}),
     updatedAt: value.updated_at,
   }
 }
@@ -152,7 +155,13 @@ export function parseCompletedWorkoutRecords(value, accountId) {
     const parsed = parseCompletionOperation(operation, accountId)
     return [parsed.sessionId, parsed.workout]
   }))
-  return parseWorkoutHistory(value.sessions, accountId).map(session => ({ session, workout: completions.get(session.id) || null }))
+  return parseWorkoutHistory(value.sessions, accountId).map(session => {
+    const workout = completions.get(session.id) || null
+    return {
+      session,
+      workout: workout ? { ...workout, ...(session.note && !workout.note ? { note: session.note } : {}) } : null,
+    }
+  })
 }
 
 function parseBodyweightEntry(value, accountId) {

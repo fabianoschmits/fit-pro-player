@@ -1205,6 +1205,7 @@ function WorkoutDetail({ w, close }) {
   return <>
     <h3>{w.name}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{[fmtHistoryDate(w.d), ...durPart(workoutDuration(w)), fmtTrainingVolume(w.vol, displayUnit), ...(w.bw ? [fmtNum(toDisplayMass(w.bw, displayUnit)) + ' ' + displayUnit] : [])].join(' · ')}</div>
+    {w.note && <div className="workout-note"><strong>{t('Nota do treino')}</strong><p>{w.note}</p></div>}
     {w.entries.map((e, i) => {
       const ex = EXIDX[e.id]
       const hasAnimation = ex && hasExerciseGuideAsset(ex)
@@ -1311,7 +1312,8 @@ export function WorkoutRow({ w, onClick }) {
     <button type="button" className={'item workout-row' + (w.prs?.length ? ' has-pr' : '')} onClick={onClick}>
     <span className="lrow-i workout-row-icon"><WorkoutMuscleThumb workout={w} body={st.body} /></span>
     <div className="grow"><div className="tt">{w.name}</div>
-      <div className="ss">{[fmtHistoryDate(w.d), ...durPart(workoutDuration(w)), t('{0} sets', setsDone(w)), fmtTrainingVolume(w.vol, st.displayUnit || 'kg')].join(' · ')}</div></div>
+      <div className="ss">{[fmtHistoryDate(w.d), ...durPart(workoutDuration(w)), t('{0} sets', setsDone(w)), fmtTrainingVolume(w.vol, st.displayUnit || 'kg')].join(' · ')}</div>
+      {w.note && <div className="workout-row-note">{w.note}</div>}</div>
     <Icon name="chevronRight" className="chev" />
     </button>
     {w.prs && w.prs.length > 0 && <MetricInfoButton className="pr" label={<><Icon name="trophy" />{w.prs.length} {getLang() === 'pt' ? 'RP' : 'PR'}</>} description="Recorde pessoal: você superou sua melhor marca anterior neste treino." />}
@@ -1513,6 +1515,30 @@ function WorkoutComplete({ close }) {
 }
 export const workoutCompleteSheet = () => ui().openSheet(close => <WorkoutComplete close={close} />, { kind: 'center' })
 
+function WorkoutFinishNote({ close }) {
+  const [note, setNote] = useState('')
+  return <div className="workout-finish-note">
+    <div className="finish-summary-heading">
+      <Icon name="pencil" />
+      <div><h3>{t('Adicionar nota')}</h3><span>{t('Registre algo rápido sobre este treino para consultar no histórico.')}</span></div>
+    </div>
+    <label className="workout-finish-note-field" htmlFor="workout-finish-note">{t('Nota curta (opcional)')}</label>
+    <textarea
+      id="workout-finish-note"
+      className="input"
+      maxLength={500}
+      rows={3}
+      value={note}
+      placeholder={t('Ex.: aumentei a carga com boa execução.')}
+      onChange={event => setNote(event.target.value)}
+    />
+    <div className="workout-finish-note-count">{note.length}/500</div>
+    <Button variant="primary" icon="flag" onClick={() => { close(); doFinishWorkout(note) }}>{t('Finish workout')}</Button>
+  </div>
+}
+
+const workoutFinishNoteSheet = () => ui().openSheet(close => <WorkoutFinishNote close={close} />, { kind: 'center' })
+
 function FinishSummary({ w, prs, e1prs = [], close }) {
   const st = useStore(s => s.S)
   return <div className="finish-summary">
@@ -1527,6 +1553,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
       <div className="finish-metric"><div className="l">{t('Sets')}</div><div className="v">{setsDone(w)}</div></div>
       <div className="finish-metric"><div className="l">{t('PRs')}</div><div className="v">{prs.length || '—'}</div></div>
     </div>
+    {w.note && <div className="workout-note finish-note"><strong>{t('Sua nota')}</strong><p>{w.note}</p></div>}
     {(prs.length > 0 || e1prs.length > 0) && <div style={{ textAlign: 'left', marginBottom: 12 }}>
       {prs.map(id => <div key={id} className="small accent capitalize row" style={{ gap: 5 }}><Icon name="trophy" style={{ fontSize: 13 }} />{t('New PR:')} {EXIDX[id] ? exerciseName(EXIDX[id]) : id}</div>)}
       {e1prs.map(p => <div key={p.id} className="small accent capitalize row" style={{ gap: 5 }}><Icon name="chartLine" style={{ fontSize: 13 }} />{t('Best estimated 1RM:')} {(EXIDX[p.id] || {}).n || p.id} · {fmtNum(toDisplayMass(p.est, st.displayUnit || 'kg'))} {st.displayUnit || 'kg'}</div>)}
@@ -1545,11 +1572,11 @@ export function finishWorkout() {
   if (!A) return
   const done = setsDoneActive(A)
   const total = A.entries.reduce((n, e) => n + e.sets.length, 0)
-  if (!done) { confirmSheet({ title: t('Nothing logged yet'), message: t('You haven’t checked off any sets. Finish the workout anyway?'), confirmText: t('Finish anyway'), onConfirm: doFinishWorkout }); return }
-  if (done < total) { confirmSheet({ title: t('Finish early?'), message: t(total - done === 1 ? '{0} set still unchecked. Finish the workout now?' : '{0} sets still unchecked. Finish the workout now?', total - done), confirmText: t('Finish workout'), onConfirm: doFinishWorkout }); return }
-  doFinishWorkout()
+  if (!done) { confirmSheet({ title: t('Nothing logged yet'), message: t('You haven’t checked off any sets. Finish the workout anyway?'), confirmText: t('Finish anyway'), onConfirm: workoutFinishNoteSheet }); return }
+  if (done < total) { confirmSheet({ title: t('Finish early?'), message: t(total - done === 1 ? '{0} set still unchecked. Finish the workout now?' : '{0} sets still unchecked. Finish the workout now?', total - done), confirmText: t('Finish workout'), onConfirm: workoutFinishNoteSheet }); return }
+  workoutFinishNoteSheet()
 }
-function doFinishWorkout() {
+function doFinishWorkout(note) {
   stopWorkoutExecution()
   const st = S()
   const A = st.active
@@ -1570,6 +1597,7 @@ function doFinishWorkout() {
     end: Date.now(),
     prs,
     endedEarly,
+    note,
     snapshotFor: e => EXIDX[e.id]?.custom ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
   })
   w.vol = workoutVolume(w)
@@ -1578,6 +1606,7 @@ function doFinishWorkout() {
     endedEarly,
     durationMs: w.durationMs,
     entries: A.entries,
+    ...(w.note ? { note: w.note } : {}),
   })
   update(s => {
     w.entries.forEach(e => {

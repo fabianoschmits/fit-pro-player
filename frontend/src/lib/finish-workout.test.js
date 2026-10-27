@@ -62,6 +62,22 @@ describe('completed workout boundary', () => {
     expect(buildCompletedWorkout(active, { end: 2000, endedEarly: true })).toMatchObject({ endedEarly: true })
   })
 
+  it('keeps a trimmed short note with the completed workout record', () => {
+    const active = {
+      id: 'active-1', d: '2026-08-08', start: 1000,
+      entries: [{ id: '0025', sets: [{ done: true, w: 60, r: 8 }] }],
+    }
+
+    expect(buildCompletedWorkout(active, { end: 2000, note: '  Melhor execução no supino.  ' }))
+      .toMatchObject({ note: 'Melhor execução no supino.' })
+  })
+
+  it('does not persist an empty or oversized workout note', () => {
+    const active = { id: 'active-1', d: '2026-08-08', start: 1000, entries: [] }
+    expect(buildCompletedWorkout(active, { end: 2000, note: '   ' })).not.toHaveProperty('note')
+    expect(buildCompletedWorkout(active, { end: 2000, note: 'x'.repeat(501) })).not.toHaveProperty('note')
+  })
+
   it('persists the accumulated active duration instead of the wall-clock gap', () => {
     const active = { id: 'active-1', d: '2026-08-08', start: 1_000, durationMs: 45_000, entries: [] }
 

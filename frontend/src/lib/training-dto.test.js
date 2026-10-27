@@ -37,6 +37,14 @@ describe('training DTOs', () => {
     expect(() => parsePreferences({ user_id: 'account-2' }, 'account-1')).toThrow('invalid-account-preferences')
   })
 
+  it('keeps the structured session note when loading completed history', async () => {
+    const { parseCompletedWorkoutRecords } = await load()
+    expect(parseCompletedWorkoutRecords({
+      sessions: [row({ status: 'completed', completed_at: '2026-10-19T11:00:00Z', note: 'Boa energia hoje.' })],
+      operations: [{ session_id: 'session-1', user_id: 'account-1', kind: 'session_completed', payload: { workout: { id: 'session-1', entries: [] } } }],
+    }, 'account-1')).toEqual([{ session: expect.objectContaining({ note: 'Boa energia hoje.' }), workout: { id: 'session-1', entries: [], note: 'Boa energia hoje.' } }])
+  })
+
   it('maps body records into the view contract and rejects foreign or malformed values', async () => {
     const { parseBodyData } = await load()
     expect(parseBodyData({

@@ -114,6 +114,21 @@ describe('confirmed action feedback', () => {
 })
 
 describe('local workout persistence feedback', () => {
+  it('stores the optional completion note with the workout history record', async () => {
+    useStore.getState().update(s => { s.active = { id: 'a', name: 'Treino', start: 1000, entries: [{ id: '0025', target: {}, sets: [{ w: 40, r: 8, done: true }] }] } })
+    finishWorkout()
+    mountSheet()
+    const note = container.querySelector('#workout-finish-note')
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value').set.call(note, '  Aumentei a carga com controle.  ')
+      note.dispatchEvent(new Event('input', { bubbles: true }))
+    })
+    await act(async () => container.querySelector('button.primary').click())
+
+    expect(useStore.getState().S.workouts).toHaveLength(1)
+    expect(useStore.getState().S.workouts[0].note).toBe('Aumentei a carga com controle.')
+  })
+
   it('keeps a saved pointer exercise configuration open for the success confirmation', async () => {
     vi.useFakeTimers()
     useStore.getState().update(s => { s.routines = [{ id: 'r', ex: [] }] })
@@ -152,6 +167,9 @@ describe('local workout persistence feedback', () => {
     useStore.getState().update(s => { s.active = { id: 'a', name: 'Treino', start: 1000, entries: [{ id: '0025', target: {}, sets: [{ w: 0, r: 8, done: true }] }] } })
     const write = vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('quota') })
     finishWorkout()
+    mountSheet()
+    expect(container.querySelector('#workout-finish-note')).not.toBeNull()
+    await act(async () => container.querySelector('button.primary').click())
     mountSheet()
     expect(useStore.getState().S.active).toBeNull()
     expect(useStore.getState().S.workouts).toHaveLength(1)

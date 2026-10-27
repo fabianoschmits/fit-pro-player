@@ -1,7 +1,14 @@
 // The persisted boundary for a finished session. Keep this pure so compatibility tests can
 // exercise the exact shape the UI writes without mounting React or mutating store state.
-export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snapshotFor, endedEarly = false } = {}) {
+export function normalizeWorkoutNote(value) {
+  if (typeof value !== 'string') return null
+  const note = value.trim()
+  return note && note.length <= 500 ? note : null
+}
+
+export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snapshotFor, endedEarly = false, note } = {}) {
   const start = active?.start || end
+  const normalizedNote = normalizeWorkoutNote(note)
   const entries = (active?.entries || []).map(entry => {
     const completed = {
       id: entry.id,
@@ -31,6 +38,7 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
     prs,
     ...(Number.isFinite(active?.durationMs) ? { durationMs: Math.max(0, Math.round(active.durationMs)) } : {}),
     ...(endedEarly ? { endedEarly: true } : {}),
+    ...(normalizedNote ? { note: normalizedNote } : {}),
     ...(active.professionalExecutionId ? {
       professionalExecutionId: active.professionalExecutionId,
       assignmentId: active.assignmentId,
