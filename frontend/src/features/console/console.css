@@ -167,6 +167,10 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .console-chat-header-actions { display: flex; align-items: center; gap: 6px; flex: none; flex-wrap: wrap; }
+.console-report-context { display: grid; gap: 6px; margin: 10px 14px; padding: 12px; border: 1px solid color-mix(in srgb, var(--orange) 45%, var(--line)); border-radius: 12px; background: color-mix(in srgb, var(--orange) 9%, var(--surface)); }
+.console-report-context strong { color: var(--label); }
+.console-report-context span, .console-report-context p { margin: 0; color: var(--label-2); font-size: .86rem; line-height: 1.4; }
+.console-report-context a { width: fit-content; color: var(--acc); font-weight: 700; }
 
 /* Scrollable Thread with WhatsApp atmosphere */
 .console-chat-thread {

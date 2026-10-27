@@ -114,6 +114,16 @@ it('opens normalized ticket data and submits replies using its real ID', async (
   expect(mocks.support.reply).toHaveBeenCalledWith('ticket-1', 'Abra a página Plano.')
 })
 
+it('shows reported community context with its canonical verification link', async () => {
+  mocks.support.adminTicketDetail.mockResolvedValue({ ...ticket(), subject: 'Denúncia de comentário', categoryLabel: 'Denúncia de comunidade', reportContext: { targetKind: 'comment', reason: 'spam', contentExcerpt: 'Conteúdo denunciado', verificationLink: '/community?post=post-1' } })
+  await render('/console/support/ticket-1')
+  expect(container.textContent).toContain('Conteúdo denunciado')
+  expect(container.textContent).toContain('Spam')
+  const link = [...container.querySelectorAll('a')].find(anchor => anchor.textContent.includes('Abrir publicação'))
+  expect(link?.getAttribute('href')).toBe('/community?post=post-1')
+  expect(link?.getAttribute('target')).toBe('_blank')
+})
+
 it('preserves a reply draft and shows a useful error when sending fails', async () => {
   mocks.support.reply.mockRejectedValue(new Error('connection failed'))
   await render('/console/support/ticket-1')
