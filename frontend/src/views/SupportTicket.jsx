@@ -210,7 +210,6 @@ export default function SupportTicket() {
       {/* Header — Fixed on top */}
       <div className="chat-header">
         <AppHeader title={ticket?.subject || 'Chamado'} subtitle={ticket?.categoryLabel} backTo="/support/tickets" />
-        {ticket?.reportContext && <Link className="support-report-preview" to={reportPath(ticket.reportContext)}><div>{ticket.reportContext.imagePath && <img src={getBrowserSupabaseClient().storage.from('community-posts').getPublicUrl(ticket.reportContext.imagePath).data.publicUrl} alt="Miniatura do conteúdo denunciado" />}</div><span><strong>Conteúdo denunciado</strong><small>{ticket.reportContext.commentId ? 'Ver comentário destacado na publicação' : 'Ver publicação denunciada'}</small></span><Icon name="chevronRight" /></Link>}
         {ticket && (
           <span className={`support-status support-status--${ticket.status} chat-status-badge`}>
             {STATUS_LABELS[ticket.status]}
@@ -236,6 +235,7 @@ export default function SupportTicket() {
 
         {busy && !ticket && <FppSkeleton label="Carregando conversa…" />}
         {error && <p role="alert" className="support-error chat-error">{error}</p>}
+        {ticket?.reportContext && <div className="chat-bubble-row chat-bubble-row--user is-first"><Link className="chat-report-preview" to={reportPath(ticket.reportContext)}>{ticket.reportContext.imagePath && !ticket.reportContext.commentId ? <img src={getBrowserSupabaseClient().storage.from('community-posts').getPublicUrl(ticket.reportContext.imagePath).data.publicUrl} alt="Miniatura da publicação denunciada" /> : <p>{ticket.reportContext.contentExcerpt || 'Comentário denunciado'}</p>}<span>{ticket.reportContext.commentId ? 'Comentário denunciado — ver destacado' : 'Publicação denunciada — ver conteúdo'} <Icon name="chevronRight" /></span></Link></div>}
 
         {visibleMessages.map((msg, i) => {
           const isUser  = msg.author_kind === 'user'
