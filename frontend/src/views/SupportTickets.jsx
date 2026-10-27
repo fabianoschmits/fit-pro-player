@@ -65,7 +65,7 @@ export default function SupportTickets() {
             <Link
               className={`ticket-chat-row${isUnread ? ' ticket-chat-row--unread' : ''}`}
               key={ticket.ticketId}
-              to={ticket.reportContext ? `/community/user/${ticket.reportContext.reportedUserId}?post=${ticket.reportContext.postId}${ticket.reportContext.commentId ? `&comment=${ticket.reportContext.commentId}` : ''}` : `/support/tickets/${ticket.ticketId}`}
+              to={`/support/tickets/${ticket.ticketId}`}
             >
               <div className="ticket-chat-avatar">{ticket.reportContext?.imagePath ? <img src={getBrowserSupabaseClient().storage.from('community-posts').getPublicUrl(ticket.reportContext.imagePath).data.publicUrl} alt="" /> : isAvatarId(profile?.avatarId) ? <img src={avatarSrc(profile.avatarId)} alt="" /> : <span>{(ticket.subject || 'S')[0].toUpperCase()}</span>}</div>
               <div className="ticket-chat-body">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createSupportRepository } from '../lib/support.js'
 import { FppSkeleton } from '../components/FppFeedback.jsx'
@@ -13,6 +13,7 @@ const MAX_CHARS        = 3000   // max chars per message
 const COOLDOWN_MS      = 8000   // min ms between sends
 const RATE_WINDOW_MS   = 60000  // sliding window duration
 const RATE_MAX_SENDS   = 5      // max sends in that window
+const reportPath = context => `/community/user/${context.reportedUserId}?post=${context.postId}${context.commentId ? `&comment=${context.commentId}` : ''}`
 
 const STATUS_LABELS = {
   unread: 'Não lida', read: 'Lida', pending: 'Pendente',
@@ -209,6 +210,7 @@ export default function SupportTicket() {
       {/* Header — Fixed on top */}
       <div className="chat-header">
         <AppHeader title={ticket?.subject || 'Chamado'} subtitle={ticket?.categoryLabel} backTo="/support/tickets" />
+        {ticket?.reportContext && <Link className="support-report-preview" to={reportPath(ticket.reportContext)}><div>{ticket.reportContext.imagePath && <img src={getBrowserSupabaseClient().storage.from('community-posts').getPublicUrl(ticket.reportContext.imagePath).data.publicUrl} alt="Miniatura do conteúdo denunciado" />}</div><span><strong>Conteúdo denunciado</strong><small>{ticket.reportContext.commentId ? 'Ver comentário destacado na publicação' : 'Ver publicação denunciada'}</small></span><Icon name="chevronRight" /></Link>}
         {ticket && (
           <span className={`support-status support-status--${ticket.status} chat-status-badge`}>
             {STATUS_LABELS[ticket.status]}
