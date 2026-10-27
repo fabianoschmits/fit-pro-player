@@ -24,7 +24,7 @@ import Community from './Community.jsx'
 const alice = { id: 'alice', display_name: 'Alice saved', avatar_ref: 'avatar-27' }
 const bob = { id: 'bob', display_name: 'Bruno', avatar_ref: 'avatar-05' }
 const makePost = (id, author) => ({ id, author_id: author.id, author, image_path: `${author.id}/${id}.jpg`, caption: id, created_at: '2026-10-23T12:00:00Z', comments: [], likes: [] })
-let root, container, writes, rows, notificationRows, failure, navigate
+let root, container, writes, rows, notificationRows, failure, missingProfile, navigate
 function client() {
   return { storage: { from: () => ({ upload: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) }) }, from(table) {
     const query = { table, filters: [], operation: 'select', select(fields) { if (fields?.includes('avatar_id')) throw Error('Invalid public column'); return this }, eq(key,value) { this.filters.push([key,value]); return this }, order() { return this }, limit() { return this }, or() { return this }, in() { return this }, is() { return this }, maybeSingle() { this.singleResult = true; return this }, single() { this.singleResult = true; return this }, match(value) { this.filters.push(...Object.entries(value)); return this }, insert(value) { this.operation = 'insert'; this.value = value; return this }, update(value) { this.operation = 'update'; this.value = value; return this }, delete() { this.operation = 'delete'; return this }, then(resolve,reject) {
@@ -36,7 +36,7 @@ function client() {
           if (table === 'community_posts' && this.operation === 'insert') { const post = { ...makePost('new-post', alice), ...this.value }; rows.unshift(post); return { data: post } }
           return { error: null }
         }
-        if (table === 'profiles') return { data: this.filters[0]?.[1] === 'bob' ? bob : alice }
+        if (table === 'profiles') return { data: missingProfile && this.filters[0]?.[1] === 'missing' ? null : this.filters[0]?.[1] === 'bob' ? bob : alice }
         if (table === 'community_notifications') return { data: notificationRows }
         let data = table === 'community_posts' ? rows.filter(row => this.filters.every(([key,value]) => row[key] === value)) : []
         return { data: this.singleResult ? data[0] || null : data }
@@ -44,7 +44,7 @@ function client() {
     } }; return query
   } }
 }
-beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.user = { id: 'alice' }; mocks.profile = { name: 'Alice', avatarId: 'avatar-80' }; writes = []; rows = [makePost('mine',alice),makePost('theirs',bob)]; notificationRows = []; failure = ''; mocks.client = client(); mocks.crop.mockReset(); window.scrollTo = vi.fn(); window.requestAnimationFrame = callback => { callback(); return 1 }; window.cancelAnimationFrame = vi.fn(); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
+beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.user = { id: 'alice' }; mocks.profile = { name: 'Alice', avatarId: 'avatar-80' }; writes = []; rows = [makePost('mine',alice),makePost('theirs',bob)]; notificationRows = []; failure = ''; missingProfile = false; mocks.client = client(); mocks.crop.mockReset(); window.scrollTo = vi.fn(); window.requestAnimationFrame = callback => { callback(); return 1 }; window.cancelAnimationFrame = vi.fn(); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
 async function mount(path='/community') { function Page() { navigate = useNavigate(); return <Community /> }; await act(async () => root.render(<MemoryRouter initialEntries={[path]}><Page /></MemoryRouter>)) }
 const click = async button => act(async () => button.click())
@@ -109,4 +109,21 @@ it('discards private composer state when the authenticated account changes', asy
   await act(async () => root.render(render()))
   expect(container.querySelector('[aria-label="Nova postagem"]')).toBeNull()
   expect(container.querySelector('.community-profile-tools img').src).toContain('avatar-05')
+})
+
+it('exposes truthful interaction states', async () => {
+  await mount()
+  const like = container.querySelector('[aria-label="Curtir postagem"]')
+  expect(like.getAttribute('aria-pressed')).toBe('false')
+  await click(like)
+  expect(like.getAttribute('aria-pressed')).toBe('true')
+  await click(container.querySelector('[aria-label="Mais opções"]'))
+  expect(container.querySelector('[aria-label="Mais opções"]').getAttribute('aria-expanded')).toBe('true')
+})
+
+it('shows an unavailable state for a missing community profile', async () => {
+  missingProfile = true
+  await mount('/community/user/missing')
+  expect(container.textContent).toContain('Este perfil não está disponível.')
+  expect(container.textContent).not.toContain('Carregando perfil…')
 })

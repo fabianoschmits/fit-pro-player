@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Icon from '../Icon.jsx'
+import { useDialogFocus } from '../../lib/dialog-focus.js'
 
 // Requests outlive an open sheet. Keep the guard for the authenticated client
 // so reopening cannot send an opposite operation before the first one settles.
@@ -24,7 +25,8 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
   const [body, setBody] = useState(''), [replyTo, setReplyTo] = useState(null), [editing, setEditing] = useState(null)
   const [menu, setMenu] = useState(null), [highlight, setHighlight] = useState(null), [expanded, setExpanded] = useState(() => new Set())
   const [error, setError] = useState(''), [sending, setSending] = useState(false)
-  const input = useRef(null), pending = useRef(pendingComments(client, userId)), sendingRef = useRef(false), timer = useRef(null)
+  const input = useRef(null), dialog = useRef(null), pending = useRef(pendingComments(client, userId)), sendingRef = useRef(false), timer = useRef(null)
+  useDialogFocus(dialog, { onClose, locked: sending, titleId: 'community-comments-title' })
   const change = updater => onCommentsChange(post.id, updater)
   useEffect(() => () => clearTimeout(timer.current), [])
   useEffect(() => {
@@ -109,19 +111,19 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
       <div data-community-comment-id={comment.id} className={`community-comment-row${highlight === comment.id ? ' is-reply-target' : ''}`}>
         <button className="community-comment-author-link" onClick={() => onOpenUser(comment.author_id)} aria-label={`Abrir perfil de ${comment.author?.display_name}`}><Avatar profile={comment.author} size="sm" /></button>
         <div className="community-comment-content"><div className="community-comment-heading"><button className="community-comment-name-link" onClick={() => onOpenUser(comment.author_id)}>{comment.author?.display_name || 'Usuário'}</button>
-          {comment.author_id === userId && !comment.pending && <div className="community-comment-menu"><button disabled={sending} className="community-comment-more" aria-label="Opções do comentário" onClick={() => setMenu(menu === comment.id ? null : comment.id)}>•••</button>{menu === comment.id && <div className="community-comment-menu-actions"><button disabled={sending} onClick={() => { if (sendingRef.current) return; input.current?.focus(); setEditing(comment); setReplyTo(null); setBody(comment.body); setMenu(null) }}>Editar</button><button disabled={sending} onClick={() => remove(comment)}>Excluir</button></div>}</div>}
-        </div><small>{comment.pending ? 'Enviando…' : fmtDate(comment.created_at)}</small><p>{comment.body}</p><div className="community-comment-actions"><button disabled={comment.pending} className={liked ? 'is-liked' : ''} onClick={() => toggleLike(comment)}><Icon name="heart" /> {comment.likes?.length || 0}</button><button disabled={sending || comment.pending || post.comments_disabled} onClick={() => selectReply(comment)}>Responder</button></div></div>
+          {comment.author_id === userId && !comment.pending && <div className="community-comment-menu"><button disabled={sending} className="community-comment-more" aria-label="Opções do comentário" aria-expanded={menu === comment.id} onClick={() => setMenu(menu === comment.id ? null : comment.id)}>•••</button>{menu === comment.id && <div className="community-comment-menu-actions"><button disabled={sending} onClick={() => { if (sendingRef.current) return; input.current?.focus(); setEditing(comment); setReplyTo(null); setBody(comment.body); setMenu(null) }}>Editar</button><button disabled={sending} onClick={() => remove(comment)}>Excluir</button></div>}</div>}
+        </div><small>{comment.pending ? 'Enviando…' : fmtDate(comment.created_at)}</small><p>{comment.body}</p><div className="community-comment-actions"><button disabled={comment.pending} aria-label={liked ? 'Remover curtida do comentário' : 'Curtir comentário'} aria-pressed={liked} className={liked ? 'is-liked' : ''} onClick={() => toggleLike(comment)}><Icon name="heart" /> {comment.likes?.length || 0}</button><button disabled={sending || comment.pending || post.comments_disabled} onClick={() => selectReply(comment)}>Responder</button></div></div>
       </div>
       {replies.length > 0 && <button className="community-reply-toggle" onClick={() => setExpanded(previous => { const result = new Set(previous); result.has(comment.id) ? result.delete(comment.id) : result.add(comment.id); return result })}>{expanded.has(comment.id) ? 'Ocultar' : 'Ver'} {replies.length} resposta{replies.length === 1 ? '' : 's'}</button>}
       {expanded.has(comment.id) && replies.map(reply => renderThread(reply, next))}
     </div>
   }
-  return <div className="community-overlay" onMouseDown={event => event.target === event.currentTarget && onClose()}><motion.div role="dialog" aria-modal="true" aria-label="Comentários" className="community-sheet community-comments-sheet" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}>
-    <div className="community-sheet-handle" /><div className="community-sheet-title"><h2>Comentários</h2><button aria-label="Fechar comentários" onClick={onClose}><Icon name="xmark" /></button></div>
+  return <div className="community-overlay" onMouseDown={event => event.target === event.currentTarget && onClose()}><motion.div ref={dialog} role="dialog" aria-modal="true" aria-label="Comentários" className="community-sheet community-comments-sheet" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}>
+    <div className="community-sheet-handle" /><div className="community-sheet-title"><h2 id="community-comments-title">Comentários</h2><button aria-label="Fechar comentários" onClick={onClose}><Icon name="xmark" /></button></div>
     <div className="community-comments-scroll">{comments.filter(item => !item.parent_comment_id).map(item => renderThread(item))}</div>
     {replyTo && <div className="community-replying">Respondendo a <strong>{replyTo.author?.display_name}</strong><button disabled={sending} onClick={() => { if (!sendingRef.current) setReplyTo(null) }}>Cancelar</button></div>}
     {editing && <div className="community-replying">Editando seu comentário<button disabled={sending} onClick={() => { if (sendingRef.current) return; setEditing(null); setBody('') }}>Cancelar</button></div>}
     {error && <div className="community-error" role="alert">{error}</div>}
-    <form className="community-comment-form" onSubmit={submit}><input ref={input} value={body} onChange={event => setBody(event.target.value)} maxLength={500} disabled={sending || post.comments_disabled} placeholder={post.comments_disabled ? 'Comentários bloqueados' : replyTo ? `Respondendo a ${replyTo.author?.display_name}…` : 'Escreva um comentário…'} /><button disabled={sending || !body.trim() || post.comments_disabled} aria-label={editing ? 'Salvar comentário' : 'Enviar comentário'}><Icon name="send" /></button></form>
+    <form className="community-comment-form" onSubmit={submit}><label className="sr-only" htmlFor="community-comment-body">Comentário</label><input id="community-comment-body" ref={input} value={body} onChange={event => setBody(event.target.value)} maxLength={500} disabled={sending || post.comments_disabled} placeholder={post.comments_disabled ? 'Comentários bloqueados' : replyTo ? `Respondendo a ${replyTo.author?.display_name}…` : 'Escreva um comentário…'} /><button disabled={sending || !body.trim() || post.comments_disabled} aria-label={editing ? 'Salvar comentário' : 'Enviar comentário'}><Icon name="send" /></button></form>
   </motion.div></div>
 }

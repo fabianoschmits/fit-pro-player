@@ -174,3 +174,12 @@ it('invalidates a reply or edit target removed by another session before it can 
   expect(container.querySelector('[role="alert"]')?.textContent).toContain('excluído')
   expect(client.writes).toHaveLength(0)
 })
+
+it('moves focus into the sheet and restores it to the trigger when closed', async () => {
+  const trigger = document.createElement('button'); trigger.textContent = 'Abrir comentários'; document.body.append(trigger); trigger.focus()
+  await mount()
+  expect(document.activeElement).toBe(container.querySelector('[aria-label="Fechar comentários"]'))
+  await click(container.querySelector('[aria-label="Fechar comentários"]'))
+  expect(document.activeElement).toBe(trigger)
+  trigger.remove()
+})
