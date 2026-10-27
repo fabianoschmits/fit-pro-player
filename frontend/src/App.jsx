@@ -47,6 +47,7 @@ const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
 const loadWorkout = () => import('./views/Workout.jsx')
 const loadStats = () => import('./views/Stats.jsx')
 const loadHistory = () => import('./views/History.jsx')
+const loadMore = () => import('./views/More.jsx')
 const loadLibrary = () => import('./views/Library.jsx')
 const loadCommunity = () => import('./views/Community.jsx')
 const loadSettings = () => import('./views/Settings.jsx')
@@ -77,6 +78,7 @@ const RoutineEdit = lazy(loadRoutineEdit)
 const Workout = lazy(loadWorkout)
 const Stats = lazy(loadStats)
 const History = lazy(loadHistory)
+const More = lazy(loadMore)
 const Library = lazy(loadLibrary)
 const CommunityMessages = lazy(() => import('./views/CommunityMessages.jsx'))
 const Community = lazy(loadCommunity)
@@ -159,6 +161,11 @@ function applyPrefs(theme, accent) {
 
 function RouteFallback() {
   return <div className="narrow" data-route-loading=""><FppSkeleton label={t('Loading…')} rows={3} /></div>
+}
+
+export function CanonicalRedirect({ to }) {
+  const location = useLocation()
+  return <Navigate replace to={{ pathname: to, search: location.search, hash: location.hash }} state={location.state} />
 }
 
 export function ProfileHeader({ S, preview }) {
@@ -503,9 +510,13 @@ function Shell() {
                 <Route path="/plan" element={<Plan />} />
                 <Route path="/plan/r/:id" element={<RoutineEdit />} />
                 <Route path="/workout" element={<Workout />} />
-                <Route path="/stats" element={<Stats />} />
-                <Route path="/body-progress" element={<BodyProgress />} />
-                <Route path="/stats/body-progress" element={<BodyProgress />} />
+                <Route path="/progress" element={<Stats />} />
+                <Route path="/progress/history" element={<History />} />
+                <Route path="/progress/body" element={<BodyProgress />} />
+                <Route path="/stats" element={<CanonicalRedirect to="/progress" />} />
+                <Route path="/history" element={<CanonicalRedirect to="/progress/history" />} />
+                <Route path="/body-progress" element={<CanonicalRedirect to="/progress/body" />} />
+                <Route path="/stats/body-progress" element={<CanonicalRedirect to="/progress/body" />} />
                 <Route path="/professional-profile" element={<ProfessionalProfile />} />
                 <Route path="/professional/profile" element={<ProfessionalProfile />} />
                 <Route path="/professional/profile/edit" element={<ProfessionalProfile />} />
@@ -523,14 +534,14 @@ function Shell() {
                 <Route path="/student/professionals/add" element={<StudentProfessionals />} />
                 <Route path="/student/professionals/materials" element={<StudentProfessionalMaterials />} />
                 <Route path="/student/professionals/:professionalId" element={<StudentProfessionalDetail />} />
-                <Route path="/history" element={<History />} />
                 <Route path="/library" element={<Library />} />
                 <Route path="/community" element={<Community />} />
                 <Route path="/community/messages" element={<CommunityMessages />} />
                 <Route path="/community/messages/:peerId" element={<CommunityMessages />} />
                 <Route path="/community/profile" element={<Community />} />
                 <Route path="/community/user/:userId" element={<Community />} />
-                <Route path="/more" element={<Navigate to="/home" replace />} />
+                <Route path="/account" element={<More />} />
+                <Route path="/more" element={<CanonicalRedirect to="/account" />} />
                 <Route path="/support" element={<Support />} />
                 <Route path="/support/tickets" element={<SupportTickets />} />
                 <Route path="/support/tickets/new" element={<SupportComposer />} />

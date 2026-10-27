@@ -22,7 +22,7 @@ describe('support repository', () => {
 
   it('maps report context from an administrative ticket detail', async () => {
     const client = clientWith({ ticket: { id: 'report-ticket-1' }, category: { slug: 'community_report', label: 'Denúncia de comunidade' }, messages: [], events: [], report_context: { target_kind: 'comment', post_id: 'post-1', comment_id: 'comment-1', reported_user_id: 'author-1', reason: 'spam', description: null, content_excerpt: 'Texto denunciado', verification_link: '/community?post=post-1' } })
-    await expect(createSupportRepository({ client }).adminTicketDetail('report-ticket-1')).resolves.toEqual(expect.objectContaining({ reportContext: { targetKind: 'comment', postId: 'post-1', commentId: 'comment-1', reportedUserId: 'author-1', reason: 'spam', description: null, contentExcerpt: 'Texto denunciado', verificationLink: '/community?post=post-1' } }))
+    await expect(createSupportRepository({ client }).adminTicketDetail('report-ticket-1')).resolves.toEqual(expect.objectContaining({ reportContext: { targetKind: 'comment', postId: 'post-1', commentId: 'comment-1', reportedUserId: 'author-1', reason: 'spam', description: null, contentExcerpt: 'Texto denunciado', imagePath: null, verificationLink: '/community?post=post-1' } }))
   })
 
   it('normalizes ticket rows to the frontend contract', async () => {
