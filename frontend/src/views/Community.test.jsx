@@ -127,3 +127,11 @@ it('shows an unavailable state for a missing community profile', async () => {
   expect(container.textContent).toContain('Este perfil não está disponível.')
   expect(container.textContent).not.toContain('Carregando perfil…')
 })
+
+it('presents a social feed header, composer invitation and own profile summary', async () => {
+  await mount()
+  expect(container.querySelector('h1')?.textContent).toBe('Comunidade')
+  expect(container.querySelector('[data-community-composer]')?.textContent).toContain('Compartilhe seu treino')
+  expect(container.querySelector('[data-community-feed-context]')?.textContent).toBe('Recentes')
+  expect(container.querySelector('[data-community-profile-summary]')?.textContent).toContain('Suas postagens')
+})

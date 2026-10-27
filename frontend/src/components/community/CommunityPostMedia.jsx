@@ -89,8 +89,10 @@ export default function CommunityPostMedia({ post, client, children }) {
   const [attempt, setAttempt] = useState(0)
   const status = state.url === url ? state.status : 'loading'
   const ready = status === 'ready'
-  return <div className={`community-post-gate${ready ? ' is-ready' : ''}`} aria-busy={status === 'loading'}>
-    <div data-media-content aria-hidden={!ready || undefined} inert={!ready || undefined}>{children(<CommunityImage post={post} client={client} attempt={attempt} onStatus={value => setState({ url, status: value })} />)}</div>
-    {!ready && <div className="community-media-placeholder"><CommunityPostSkeleton />{status === 'error' ? <div className="community-media-error" role="status"><p>Não foi possível carregar esta foto.</p><button type="button" onClick={() => { setState({ url, status: 'loading' }); setAttempt(value => value + 1) }}>Tentar novamente</button></div> : <span className="community-media-loading-label" role="status">Carregando postagem…</span>}</div>}
+  const retry = () => { setState({ url, status: 'loading' }); setAttempt(value => value + 1) }
+  const media = <div className={`community-media-slot${ready ? ' is-ready' : ''}${status === 'error' ? ' is-error' : ''}`} aria-busy={status === 'loading'}>
+    <CommunityImage post={post} client={client} attempt={attempt} onStatus={value => setState({ url, status: value })} />
+    {!ready && <div className="community-media-placeholder">{status === 'error' ? <div className="community-media-error" role="status"><p>Não foi possível carregar esta foto.</p><button type="button" onClick={retry}>Tentar novamente</button></div> : <><CommunityPostSkeleton /><span className="community-media-loading-label" role="status">Carregando foto…</span></>}</div>}
   </div>
+  return <div className="community-post-gate" aria-busy={status === 'loading'}>{children(media)}</div>
 }
