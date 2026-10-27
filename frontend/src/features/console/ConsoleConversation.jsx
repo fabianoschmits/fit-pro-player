@@ -7,6 +7,7 @@ import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
 import useConsoleResource from './useConsoleResource.js'
 import { Alert, SectionBody, Chip, Loading, fmtDateTime, SectionTitle, CxButton } from './ConsoleUI.jsx'
 import Icon from '../../components/Icon.jsx'
+import { avatarSrc, isAvatarId } from '../../lib/avatars.js'
 import { useFppAction } from '../../components/useFppAction.js'
 import { fppActionInput } from '../../components/fpp-action-timing.js'
 import { supportStatusLabel, supportPriorityLabel, ticketTone } from './support-model.js'
@@ -126,9 +127,7 @@ export default function ConsoleConversation() {
           {/* WhatsApp-style Sticky Chat Header */}
           <header className="console-chat-header">
             <div className="console-chat-header-main">
-              <div className="console-chat-header-avatar" aria-hidden="true">
-                {(data.person?.displayName || ticket.email || 'U')[0].toUpperCase()}
-              </div>
+              <div className="console-chat-header-avatar" aria-hidden="true">{data.person?.avatarRef && isAvatarId(data.person.avatarRef) ? <img src={avatarSrc(data.person.avatarRef)} alt="" /> : (data.person?.displayName || ticket.email || 'U')[0].toUpperCase()}</div>
               <div className="console-chat-header-info">
                 <h1 className="console-chat-header-title">{ticket.subject}</h1>
                 <p className="console-chat-header-sub">
