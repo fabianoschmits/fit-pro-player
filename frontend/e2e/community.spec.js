@@ -6,7 +6,8 @@ const profiles = { [USER]: { id: USER, display_name: 'Pessoa Teste', avatar_ref:
 const makePost = (id, author) => ({ id, author_id: author, author: profiles[author], image_path: `${author}/${id}.jpg`, caption: 'Treino concluído', created_at: '2026-10-23T12:00:00Z', comments_disabled: false, likes: [], comments: [] })
 async function setup(page, delayImage = false) {
   const state = stateFixture(); state.profile.avatarId='avatar-80'; state.theme=delayImage ? 'dark' : 'light'
-  await seed(page, { authenticated: true, state, rpc: { is_current_user_suspended: false, account_preferences: { user_id:USER, revision:1, display_unit:'kg', preferences:state } } })
+  const reports=[]
+  await seed(page, { authenticated: true, state, rpc: { is_current_user_suspended: false, account_preferences: { user_id:USER, revision:1, display_unit:'kg', preferences:state }, community_report_content: args => { reports.push(args); return '99999999-9999-4999-8999-999999999999' } } })
   const posts = [makePost('11111111-1111-4111-8111-000000000001', STUDENT),makePost('11111111-1111-4111-8111-000000000002',USER)]
   let releaseImage
   const imageGate = new Promise(resolve => { releaseImage=resolve })
@@ -31,7 +32,7 @@ async function setup(page, delayImage = false) {
     if(table==='community_comments' && method==='DELETE') { const id=url.searchParams.get('id').replace('eq.',''); for(const post of posts) post.comments=post.comments.filter(comment=>comment.id!==id) }
     await route.fulfill({contentType:'application/json',body:JSON.stringify(result)})
   })
-  return {posts,releaseImage}
+  return {posts,releaseImage,reports}
 }
 
 test('keeps social feed actions available while post photos load and preserves identity, comments and profile navigation', async ({page}) => {
@@ -97,4 +98,17 @@ test('crop modes keep the preview proportions, separate caption step, and publis
   await dialog.getByRole('button',{name:'Publicar foto'}).click()
   await expect(dialog).not.toBeVisible()
   await expect(page.locator('.community-post-gate').first()).toContainText('Publicação QA recortada')
+})
+
+test('reports another author’s publication through the social menu with its canonical target', async ({page}) => {
+  const { reports } = await setup(page)
+  await page.goto('/#/community')
+  const theirs=page.locator(`[data-post-id="11111111-1111-4111-8111-000000000001"]`)
+  await theirs.getByLabel('Mais opções').click()
+  await theirs.getByRole('button',{name:'Denunciar',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'Denunciar conteúdo'})
+  await dialog.getByLabel('Spam ou atividade suspeita').click()
+  await dialog.getByRole('button',{name:'Enviar denúncia',exact:true}).click()
+  await expect.poll(() => reports.length).toBe(1)
+  expect(reports[0]).toMatchObject({p_target_kind:'post',p_post_id:'11111111-1111-4111-8111-000000000001',p_comment_id:null,p_reason:'spam'})
 })
