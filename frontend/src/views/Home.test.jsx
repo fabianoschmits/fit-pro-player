@@ -91,3 +91,18 @@ describe('home theme toggle', () => {
     expect(mocks.state.S.theme).toBe('dark')
   })
 })
+
+describe('home next action', () => {
+  it('marks the next action, weekly progress and secondary progress regions', async () => {
+    await act(async () => root.render(<MemoryRouter><Home /></MemoryRouter>))
+    expect(container.querySelector('[data-home-section="next-action"]')).toBeTruthy()
+    expect(container.querySelector('[data-home-section="week-progress"]')).toBeTruthy()
+    expect(container.querySelector('[data-home-section="secondary-progress"]')).toBeTruthy()
+  })
+
+  it('prioritizes resuming an active session', async () => {
+    mocks.state.S.active = { name: 'Força', start: Date.now(), cur: 0, entries: [{ id: 'squat', sets: [] }] }
+    await act(async () => root.render(<MemoryRouter><Home /></MemoryRouter>))
+    expect(container.querySelector('[data-home-section="next-action"]')?.textContent).toContain('Resume')
+  })
+})

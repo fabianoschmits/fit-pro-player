@@ -206,9 +206,9 @@ export default function Home() {
     </div>
 
     {planProgress && <PlanProgress progress={planProgress} />}
-    {renderNow()}
+    <div data-home-section="next-action">{renderNow()}</div>
 
-    <section className="home-week-block">
+    <section className="home-week-block" data-home-section="week-progress">
       <div className="home-section-head">
         <div><h2>{weekLabel}</h2><span>{workoutsThisWeek}{plannedPerWeek ? ` / ${plannedPerWeek}` : ''} {t('this week')} · {t('{0} week streak', streakWeeks(S))}</span></div>
         <div className="home-week-actions">
@@ -221,7 +221,7 @@ export default function Home() {
       <div className="week home-week-strip">{strip}</div>
     </section>
 
-    <motion.section layout={!reducedMotion} transition={weightTransition} className={'home-weight-block' + (weightExpanded ? ' is-expanded' : '')}>
+    <motion.section layout={!reducedMotion} transition={weightTransition} data-home-section="secondary-progress" className={'home-weight-block' + (weightExpanded ? ' is-expanded' : '')}>
       <div className="home-section-head">
         <div><h2>{t('Body weight')}</h2>{bw && <span>{fmtDate(bw.d, true)}</span>}</div>
         <div className="row home-weight-actions">
