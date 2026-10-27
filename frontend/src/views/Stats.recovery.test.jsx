@@ -197,7 +197,7 @@ describe('Stats muscle recovery view runtime', () => {
     await mountStats()
 
     await click(container.querySelector('.stats-body-progress-link'))
-    expect(mocks.navigate).toHaveBeenCalledWith('/body-progress')
+    expect(mocks.navigate).toHaveBeenCalledWith('/progress/body')
   })
 
   it('dispatches real clicks through Balance, Fatigue, and Strength and preserves selection', async () => {

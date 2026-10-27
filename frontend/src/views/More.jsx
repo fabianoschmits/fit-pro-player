@@ -54,7 +54,7 @@ export default function More() {
   })
 
   return <div className="narrow more-page">
-    <AppHeader title={t('More')} subtitle={t('Settings, history & account')} />
+    <AppHeader title="Conta" subtitle={t('Settings, history & account')} />
 
     <button type="button" className="more-account-card" onClick={() => nav('/personal-data')}>
       <span className="more-account-avatar"><AvatarImage avatarId={profile.avatarId} alt="" /></span>
@@ -70,8 +70,8 @@ export default function More() {
 
     <Section title="Treino" className="more-section" collapsible defaultOpen={false}>
       <MenuRow icon="list" tint="var(--teal)" title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)} onClick={() => nav('/library')} />
-      <MenuRow icon="history" tint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')} onClick={() => nav('/history')} />
-      <MenuRow icon="chartLine" tint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo" onClick={() => nav('/body-progress')} />
+      <MenuRow icon="history" tint="var(--blue)" title={t('History')} subtitle={t('All your past workouts')} onClick={() => nav('/progress/history')} />
+      <MenuRow icon="chartLine" tint="var(--teal)" title="Evolução corporal" subtitle="Medidas semanais e evolução do corpo" onClick={() => nav('/progress/body')} />
     </Section>
 
     {(account || professional) && <Section title="Profissional" className="more-section" collapsible defaultOpen>

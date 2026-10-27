@@ -7,7 +7,7 @@ const state = { S: { workouts: [] } }
 
 vi.mock('../store/useStore.js', () => ({ useStore: selector => selector(state) }))
 vi.mock('../lib/i18n.js', () => ({ t: value => value, dateLocale: () => 'pt-BR' }))
-vi.mock('../components/AppHeader.jsx', () => ({ default: () => <header>Histórico</header> }))
+vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, backTo }) => <header data-back-to={backTo}>{title}</header> }))
 vi.mock('../sheets.jsx', () => ({ WorkoutRow: () => null, workoutDetailSheet: vi.fn() }))
 
 import History from './History.jsx'
@@ -31,4 +31,9 @@ it('renders the empty history state before any workout is recorded', async () =>
   await act(async () => root.render(<History />))
   expect(container.textContent).toContain('No workouts yet.')
   expect(container.querySelector('svg')).not.toBeNull()
+})
+
+it('returns from history to the canonical progress destination', async () => {
+  await act(async () => root.render(<History />))
+  expect(container.querySelector('header').dataset.backTo).toBe('/progress')
 })

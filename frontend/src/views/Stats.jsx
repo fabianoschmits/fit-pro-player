@@ -412,8 +412,8 @@ export default function Stats() {
   if (showEff) exOpts.push({ value: 'effort', label: t('Effort') })
 
   return <div className="stats-view">
-    <AppHeader title={t('Stats')} subtitle={t('Progress & history')} className="stats-titlebar"
-      action={<button className="iconbtn" aria-label={t('History')} onClick={() => nav('/history', { state: { fromContext: 'stats' } })}><Icon name="history" /></button>} />
+    <AppHeader title="Evolução" subtitle={t('Progress & history')} className="stats-titlebar"
+      action={<button className="iconbtn" aria-label={t('History')} onClick={() => nav('/progress/history')}><Icon name="history" /></button>} />
     <section className="stats-overview" aria-label={t('Stats')}>
       <div><span>{t('Workouts')}</span><b>{workouts.length}</b></div>
       <div><span>{t('This month')}</span><b>{monthW}</b></div>
@@ -424,7 +424,7 @@ export default function Stats() {
     <button
       type="button"
       className="card stats-body-progress-link"
-      onClick={() => nav('/body-progress')}
+      onClick={() => nav('/progress/body')}
     >
       <span className="stats-body-progress-icon"><Icon name="ruler" /></span>
       <span><strong>Evolução corporal</strong><small>Medidas semanais, histórico e comparação</small></span>

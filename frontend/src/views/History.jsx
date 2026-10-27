@@ -13,7 +13,7 @@ export default function History() {
     return result
   }, new Map())
   return <div className="history-view page-scenery">
-    <AppHeader title={t('History')} subtitle={t('{0} workouts', S.workouts.length)} backTo="/more" className="history-titlebar" />
+    <AppHeader title={t('History')} subtitle={t('{0} workouts', S.workouts.length)} backTo="/progress" className="history-titlebar" />
     {S.workouts.length ? <div className="history-groups">{[...groups].map(([month, workouts]) => {
       const date = new Date(`${month}-01T12:00:00`)
       const label = Number.isNaN(date.getTime()) ? month : date.toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' })
