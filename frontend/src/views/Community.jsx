@@ -144,7 +144,7 @@ function CommunitySession() {
     client.from('community_posts').select(COMMUNITY_POST_SELECT).eq('id', postId).maybeSingle().then(({ data, error: failure }) => {
       if (cancelled) return
       if (failure || !data) { setError('Esta postagem não está mais disponível.'); return }
-      store.addPost(data); setHighlightedPostId(data.id); setHighlightCommentId(commentId); setCommentsId(commentId && !data.comments_disabled ? data.id : null)
+      store.addPost(data); setHighlightedPostId(data.id); setHighlightCommentId(commentId); setCommentsId(commentId ? data.id : null)
       requestAnimationFrame(() => window.scrollTo({ top: 0 }))
     }).catch(() => { if (!cancelled) setError('Não foi possível abrir esta postagem.') })
     return () => { cancelled = true }
