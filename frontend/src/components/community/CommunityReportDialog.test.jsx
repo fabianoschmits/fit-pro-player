@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ report: vi.fn() }))
@@ -13,7 +14,7 @@ beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.report.mock
 afterEach(async () => { await act(async () => root?.unmount()); container?.remove(); vi.restoreAllMocks() })
 
 async function mount(onClose = vi.fn()) {
-  await act(async () => root.render(<CommunityReportDialog client={{}} target={{ targetKind: 'comment', postId: 'post-1', commentId: 'comment-1', authorId: 'author-1', authorName: 'Bruno' }} onClose={onClose} />))
+  await act(async () => root.render(<MemoryRouter><CommunityReportDialog client={{}} target={{ targetKind: 'comment', postId: 'post-1', commentId: 'comment-1', authorId: 'author-1', authorName: 'Bruno' }} onClose={onClose} /></MemoryRouter>))
   return onClose
 }
 const choose = async value => { await act(async () => container.querySelector(`input[value="${value}"]`).click()) }
@@ -37,11 +38,14 @@ it('sends the selected community target and preserves a failed description', asy
   expect(container.querySelector('[role="alert"]').textContent).toContain('Sem conexão')
 })
 
-it('closes after successfully creating the support report', async () => {
+it('confirms the report and directs the user to their support tickets', async () => {
   mocks.report.mockResolvedValueOnce('ticket-1')
   const close = await mount(); await choose('spam'); await submit()
-  await act(async () => { await new Promise(resolve => setTimeout(resolve, 1200)) })
-  expect(close).toHaveBeenCalledTimes(1)
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 300)) })
+  expect(container.querySelector('[role="status"]').textContent).toContain('Denúncia enviada')
+  const tickets = [...container.querySelectorAll('a')].find(link => link.textContent.includes('meus chamados'))
+  expect(tickets?.getAttribute('href')).toBe('/support/tickets')
+  expect(close).not.toHaveBeenCalled()
 })
 
 it.each(['spam', 'harassment', 'inappropriate', 'misinformation'])('accepts the %s predefined reason', async reason => {
