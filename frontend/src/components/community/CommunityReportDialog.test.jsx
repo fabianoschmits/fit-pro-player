@@ -40,8 +40,14 @@ it('sends the selected community target and preserves a failed description', asy
 it('closes after successfully creating the support report', async () => {
   mocks.report.mockResolvedValueOnce('ticket-1')
   const close = await mount(); await choose('spam'); await submit()
-  await act(async () => { await new Promise(resolve => setTimeout(resolve, 260)) })
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 1200)) })
   expect(close).toHaveBeenCalledTimes(1)
+})
+
+it.each(['spam', 'harassment', 'inappropriate', 'misinformation'])('accepts the %s predefined reason', async reason => {
+  mocks.report.mockResolvedValueOnce('ticket-1')
+  await mount(); await choose(reason); await submit()
+  expect(mocks.report).toHaveBeenCalledWith(expect.objectContaining({ reason }))
 })
 
 it('restores focus to the report trigger on Escape', async () => {

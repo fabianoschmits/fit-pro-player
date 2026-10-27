@@ -138,7 +138,7 @@ export default function ConsoleConversation() {
               {ticket.priority !== 'normal' && <Chip tone="warn">{supportPriorityLabel[ticket.priority]}</Chip>}
             </div>
           </header>
-          {ticket.reportContext && <section className="console-report-context" aria-label="Conteúdo denunciado"><strong>Conteúdo denunciado</strong><span>{ticket.reportContext.targetKind === 'post' ? 'Publicação' : 'Comentário'} · {({ spam: 'Spam', harassment: 'Assédio ou discurso de ódio', inappropriate: 'Conteúdo impróprio', misinformation: 'Informação enganosa', other: 'Outro' })[ticket.reportContext.reason] || ticket.reportContext.reason}</span><p>{ticket.reportContext.contentExcerpt}</p>{ticket.reportContext.description && <p>{ticket.reportContext.description}</p>}<a href={ticket.reportContext.verificationLink} target="_blank" rel="noreferrer">Abrir publicação</a></section>}
+          {ticket.reportContext && <section className="console-report-context" aria-label="Conteúdo denunciado"><strong>Conteúdo denunciado</strong><span>{ticket.reportContext.targetKind === 'post' ? 'Publicação' : 'Comentário'} · {({ spam: 'Spam', harassment: 'Assédio ou discurso de ódio', inappropriate: 'Conteúdo impróprio', misinformation: 'Informação enganosa', other: 'Outro' })[ticket.reportContext.reason] || ticket.reportContext.reason}</span><p>{ticket.reportContext.contentExcerpt}</p>{ticket.reportContext.description && <p>{ticket.reportContext.description}</p>}<a href={`/#${ticket.reportContext.verificationLink}`} target="_blank" rel="noreferrer">Abrir publicação</a></section>}
 
           {/* WhatsApp-style Thread */}
           <div className="console-chat-thread" ref={threadRef} onScroll={handleScroll} aria-live="polite" aria-label="Histórico de mensagens">

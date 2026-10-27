@@ -120,7 +120,7 @@ it('shows reported community context with its canonical verification link', asyn
   expect(container.textContent).toContain('Conteúdo denunciado')
   expect(container.textContent).toContain('Spam')
   const link = [...container.querySelectorAll('a')].find(anchor => anchor.textContent.includes('Abrir publicação'))
-  expect(link?.getAttribute('href')).toBe('/community?post=post-1')
+  expect(link?.getAttribute('href')).toBe('/#/community?post=post-1')
   expect(link?.getAttribute('target')).toBe('_blank')
 })
 

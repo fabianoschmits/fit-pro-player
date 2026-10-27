@@ -136,7 +136,7 @@ it('offers reporting only on another person’s comment and includes the reply t
   expect(row('mine').querySelector('[aria-label="Opções do comentário"]')).not.toBeNull()
   await click(row('reply').querySelector('[aria-label="Opções do comentário"]'))
   await click(byText('Denunciar'))
-  expect(report).toHaveBeenCalledWith(expect.objectContaining({ id: 'reply', post_id: 'post-1', author_id: 'author' }))
+  expect(report).toHaveBeenCalledWith(expect.objectContaining({ id: 'reply', post_id: 'post-1', author_id: 'author' }), expect.any(HTMLButtonElement))
 })
 
 it('keeps the composer context stable while a comment is being sent', async () => {
