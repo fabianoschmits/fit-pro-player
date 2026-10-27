@@ -26,7 +26,7 @@ const bob = { id: 'bob', display_name: 'Bruno', avatar_ref: 'avatar-05' }
 const makePost = (id, author) => ({ id, author_id: author.id, author, image_path: `${author.id}/${id}.jpg`, caption: id, created_at: '2026-10-23T12:00:00Z', comments: [], likes: [] })
 let root, container, writes, rows, notificationRows, failure, missingProfile, missingOwnProfile, navigate
 function client() {
-  return { storage: { from: () => ({ upload: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) }) }, from(table) {
+  return { rpc: vi.fn(async () => ({ data: 'ticket-1', error: null })), storage: { from: () => ({ upload: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) }) }, from(table) {
     const query = { table, filters: [], operation: 'select', select(fields) { if (fields?.includes('avatar_id')) throw Error('Invalid public column'); return this }, eq(key,value) { this.filters.push([key,value]); return this }, order() { return this }, limit() { return this }, or() { return this }, in() { return this }, is() { return this }, maybeSingle() { this.singleResult = true; return this }, single() { this.singleResult = true; return this }, match(value) { this.filters.push(...Object.entries(value)); return this }, insert(value) { this.operation = 'insert'; this.value = value; return this }, update(value) { this.operation = 'update'; this.value = value; return this }, delete() { this.operation = 'delete'; return this }, then(resolve,reject) {
       return Promise.resolve().then(() => {
         if (this.operation !== 'select') {
@@ -77,6 +77,17 @@ it('rolls back an unsuccessful like rather than appending another page', async (
   await click(container.querySelector('[aria-label="Curtir postagem"]'))
   expect(container.querySelector('.community-liker-summary')).toBeNull()
   expect(container.querySelector('[role="alert"]').textContent).toContain('Offline')
+})
+
+it('shows a report action in another author’s menu and sends its post context', async () => {
+  await mount()
+  const post = container.querySelector('article[data-post-id="theirs"]')
+  await click(post.querySelector('[aria-label="Mais opções"]'))
+  await click([...post.querySelectorAll('button')].find(button => button.textContent === 'Denunciar'))
+  expect(container.querySelector('[role="dialog"]').textContent).toContain('Denunciar conteúdo')
+  await click(container.querySelector('input[value="spam"]'))
+  await click([...container.querySelectorAll('button')].find(button => button.textContent === 'Enviar denúncia'))
+  expect(mocks.client.rpc).toHaveBeenCalledWith('community_report_content', expect.objectContaining({ p_target_kind: 'post', p_post_id: 'theirs', p_comment_id: null, p_reason: 'spam' }))
 })
 it('closes comment sheets before navigating to the clicked author', async () => {
   rows[0].comments=[{id:'comment',post_id:'mine',author_id:'bob',author:bob,body:'Oi',created_at:'2026-10-23T12:00:00Z',likes:[]}]

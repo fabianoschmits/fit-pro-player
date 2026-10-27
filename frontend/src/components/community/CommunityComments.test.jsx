@@ -24,13 +24,13 @@ function mockClient(result = { error: null }) {
     }
   }
 }
-async function mount({ comments = [], onSubmit = async (_post, body, parent) => ({ comment: comment('saved', body, ownIdentity, parent) }), client = mockClient(), onOpenUser } = {}) {
+async function mount({ comments = [], onSubmit = async (_post, body, parent) => ({ comment: comment('saved', body, ownIdentity, parent) }), client = mockClient(), onOpenUser, onReport } = {}) {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   function Harness() {
     const [post, setPost] = useState({ id: 'post-1', comments })
     const [open, setOpen] = useState(true)
     currentPost = post; changePost = setPost
-    return <><output>{post.comments.length}</output><button data-reopen onClick={() => setOpen(true)}>Reabrir</button>{open && <CommunityComments post={post} client={client} userId="viewer" ownIdentity={ownIdentity} AvatarComponent={Avatar} onClose={() => setOpen(false)} onSubmit={onSubmit} onCommentsChange={(id, updater) => setPost(previous => previous.id === id ? { ...previous, comments: updater(previous.comments) } : previous)} onOpenUser={onOpenUser} />}</>
+    return <><output>{post.comments.length}</output><button data-reopen onClick={() => setOpen(true)}>Reabrir</button>{open && <CommunityComments post={post} client={client} userId="viewer" ownIdentity={ownIdentity} AvatarComponent={Avatar} onClose={() => setOpen(false)} onSubmit={onSubmit} onCommentsChange={(id, updater) => setPost(previous => previous.id === id ? { ...previous, comments: updater(previous.comments) } : previous)} onOpenUser={onOpenUser} onReport={onReport} />}</>
   }
   await act(async () => root.render(<Harness />))
 }
@@ -128,6 +128,15 @@ it('reflects incoming comments while open and opens the clicked author profile',
   expect(row('external').textContent).toContain('Comentário novo')
   await click(row('external').querySelector('.community-comment-name-link'))
   expect(open).toHaveBeenCalledWith('author')
+})
+
+it('offers reporting only on another person’s comment and includes the reply target', async () => {
+  const report = vi.fn()
+  await mount({ comments: [comment('mine', 'Meu comentário', ownIdentity), comment('reply', 'Resposta de Bruno')], onReport: report })
+  expect(row('mine').querySelector('[aria-label="Opções do comentário"]')).not.toBeNull()
+  await click(row('reply').querySelector('[aria-label="Opções do comentário"]'))
+  await click(byText('Denunciar'))
+  expect(report).toHaveBeenCalledWith(expect.objectContaining({ id: 'reply', post_id: 'post-1', author_id: 'author' }))
 })
 
 it('keeps the composer context stable while a comment is being sent', async () => {
