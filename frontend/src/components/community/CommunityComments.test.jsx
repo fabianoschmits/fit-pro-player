@@ -24,13 +24,13 @@ function mockClient(result = { error: null }) {
     }
   }
 }
-async function mount({ comments = [], onSubmit = async (_post, body, parent) => ({ comment: comment('saved', body, ownIdentity, parent) }), client = mockClient(), onOpenUser, onReport } = {}) {
+async function mount({ comments = [], onSubmit = async (_post, body, parent) => ({ comment: comment('saved', body, ownIdentity, parent) }), client = mockClient(), onOpenUser, onReport, highlightCommentId = null } = {}) {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
   function Harness() {
     const [post, setPost] = useState({ id: 'post-1', comments })
     const [open, setOpen] = useState(true)
     currentPost = post; changePost = setPost
-    return <><output>{post.comments.length}</output><button data-reopen onClick={() => setOpen(true)}>Reabrir</button>{open && <CommunityComments post={post} client={client} userId="viewer" ownIdentity={ownIdentity} AvatarComponent={Avatar} onClose={() => setOpen(false)} onSubmit={onSubmit} onCommentsChange={(id, updater) => setPost(previous => previous.id === id ? { ...previous, comments: updater(previous.comments) } : previous)} onOpenUser={onOpenUser} onReport={onReport} />}</>
+    return <><output>{post.comments.length}</output><button data-reopen onClick={() => setOpen(true)}>Reabrir</button>{open && <CommunityComments post={post} client={client} userId="viewer" ownIdentity={ownIdentity} AvatarComponent={Avatar} onClose={() => setOpen(false)} onSubmit={onSubmit} onCommentsChange={(id, updater) => setPost(previous => previous.id === id ? { ...previous, comments: updater(previous.comments) } : previous)} onOpenUser={onOpenUser} onReport={onReport} highlightCommentId={highlightCommentId} />}</>
   }
   await act(async () => root.render(<Harness />))
 }
@@ -120,6 +120,23 @@ it('starts replies collapsed on each open and supports replying to a reply with 
   expect(row('nested').textContent).toContain('Minha resposta')
   await click(container.querySelector('[aria-label="Fechar comentários"]')); await click(container.querySelector('[data-reopen]'))
   expect(row('child')).toBeNull(); expect(row('nested')).toBeNull()
+})
+
+it('opens every ancestor and highlights the exact reported reply from a report link', async () => {
+  const scrollIntoView = vi.fn()
+  const previous = Object.getOwnPropertyDescriptor(window.HTMLElement.prototype, 'scrollIntoView')
+  Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView })
+  try {
+    await mount({ comments: [comment('root', 'Comentário principal'), comment('reply', 'Resposta intermediária', otherIdentity, 'root'), comment('reported', 'Comentário denunciado', otherIdentity, 'reply')], highlightCommentId: 'reported' })
+    expect(row('root')).not.toBeNull()
+    expect(row('reply')).not.toBeNull()
+    expect(row('reported')).not.toBeNull()
+    expect(row('reported').classList.contains('is-reply-target')).toBe(true)
+    expect(scrollIntoView).toHaveBeenCalled()
+  } finally {
+    if (previous) Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', previous)
+    else delete window.HTMLElement.prototype.scrollIntoView
+  }
 })
 
 it('reflects incoming comments while open and opens the clicked author profile', async () => {
