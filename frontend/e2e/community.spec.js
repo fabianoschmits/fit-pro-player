@@ -34,13 +34,17 @@ async function setup(page, delayImage = false) {
   return {posts,releaseImage}
 }
 
-test('gates posts until their photo is ready and preserves identity, comments and profile navigation', async ({page}) => {
+test('keeps social feed actions available while post photos load and preserves identity, comments and profile navigation', async ({page}) => {
   const {releaseImage}=await setup(page,true)
   await page.goto('/#/community')
   await expect(page.locator('.community-post-gate').first()).toHaveAttribute('aria-busy','true')
-  await expect(page.locator('[data-media-content]').first()).toHaveAttribute('inert','')
-  releaseImage()
+  await expect(page.getByRole('heading',{name:'Comunidade'})).toBeVisible()
+  await expect(page.locator('[data-community-composer]')).toBeVisible()
+  await expect(page.locator('[data-community-feed-context]')).toHaveText('Recentes')
   const theirs=page.locator(`[data-post-id="11111111-1111-4111-8111-000000000001"]`)
+  await expect(theirs.locator('> .community-post-head')).toBeVisible()
+  await expect(theirs.getByLabel('Curtir postagem')).toHaveAttribute('aria-pressed','false')
+  releaseImage()
   await expect(theirs).toBeVisible()
   await expect(page.locator('#corner-nav-main [aria-current="page"]')).toHaveCount(1)
   await expect(page.locator('#corner-nav-main [aria-current="page"]')).toHaveAttribute('aria-label','Comunidade')

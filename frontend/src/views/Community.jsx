@@ -80,7 +80,7 @@ function CommunitySession() {
     if (viewedUserId) client.from('profiles').select(COMMUNITY_PROFILE_FIELDS).eq('id', viewedUserId).maybeSingle().then(({ data, error: failure }) => {
       if (!cancelled) {
         setViewedProfile(data)
-        setViewedProfileState(data ? 'ready' : 'unavailable')
+        setViewedProfileState(data || viewedUserId === userId ? 'ready' : 'unavailable')
         if (failure) setError('Não foi possível carregar este perfil.')
       }
     }).catch(() => { if (!cancelled) { setViewedProfileState('unavailable'); setError('Não foi possível carregar este perfil.') } })
