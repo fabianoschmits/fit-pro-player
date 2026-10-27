@@ -115,12 +115,12 @@ it('opens normalized ticket data and submits replies using its real ID', async (
 })
 
 it('shows reported community context with its canonical verification link', async () => {
-  mocks.support.adminTicketDetail.mockResolvedValue({ ...ticket(), subject: 'Denúncia de comentário', categoryLabel: 'Denúncia de comunidade', reportContext: { targetKind: 'comment', reason: 'spam', contentExcerpt: 'Conteúdo denunciado', verificationLink: '/community?post=post-1' } })
+  mocks.support.adminTicketDetail.mockResolvedValue({ ...ticket(), subject: 'Denúncia de comentário', categoryLabel: 'Denúncia de comunidade', reportContext: { targetKind: 'comment', postId: 'post-1', commentId: 'comment-1', reportedUserId: 'user-1', reason: 'spam', contentExcerpt: 'Conteúdo denunciado', verificationLink: '/community?post=post-1' } })
   await render('/console/support/ticket-1')
   expect(container.textContent).toContain('Conteúdo denunciado')
   expect(container.textContent).toContain('Spam')
-  const link = [...container.querySelectorAll('a')].find(anchor => anchor.textContent.includes('Abrir publicação'))
-  expect(link?.getAttribute('href')).toBe('/#/community?post=post-1')
+  const link = [...container.querySelectorAll('a')].find(anchor => anchor.textContent.includes('Abrir conteúdo denunciado'))
+  expect(link?.getAttribute('href')).toBe('/#/community/user/user-1?post=post-1&comment=comment-1')
   expect(link?.getAttribute('target')).toBe('_blank')
 })
 

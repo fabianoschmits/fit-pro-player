@@ -20,7 +20,7 @@ export function commentDescendants(comments, id) {
   return ids
 }
 
-export default function CommunityComments({ post, client, userId, ownIdentity, onClose, onSubmit, onCommentsChange, onOpenUser, onReport, AvatarComponent: Avatar }) {
+export default function CommunityComments({ post, client, userId, ownIdentity, onClose, onSubmit, onCommentsChange, onOpenUser, onReport, highlightCommentId = null, AvatarComponent: Avatar }) {
   const comments = post.comments || []
   const [body, setBody] = useState(''), [replyTo, setReplyTo] = useState(null), [editing, setEditing] = useState(null)
   const [menu, setMenu] = useState(null), [highlight, setHighlight] = useState(null), [expanded, setExpanded] = useState(() => new Set())
@@ -36,6 +36,18 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
     if (removedEdit) setEditing(null)
     if (removedReply || removedEdit) setError('Este comentário foi excluído. Seu texto foi mantido para você escolher onde enviá-lo.')
   }, [comments, replyTo, editing])
+  useEffect(() => {
+    if (!highlightCommentId) return
+    const target = comments.find(comment => comment.id === highlightCommentId)
+    if (!target) return
+    setHighlight(target.id)
+    setExpanded(previous => {
+      const next = new Set(previous); let parent = target.parent_comment_id
+      while (parent) { next.add(parent); parent = comments.find(comment => comment.id === parent)?.parent_comment_id }
+      return next
+    })
+    requestAnimationFrame(() => document.querySelector(`[data-community-comment-id="${target.id}"]`)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }))
+  }, [comments, highlightCommentId])
   useEffect(() => {
     if (!menu) return
     const close = event => { if (!event.target.closest?.('.community-comment-menu')) setMenu(null) }

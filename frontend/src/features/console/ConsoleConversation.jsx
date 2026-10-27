@@ -12,6 +12,11 @@ import { fppActionInput } from '../../components/fpp-action-timing.js'
 import { supportStatusLabel, supportPriorityLabel, ticketTone } from './support-model.js'
 
 const MAX_CHARS = 3000
+const reportVerificationPath = context => {
+  const query = new URLSearchParams({ post: context.postId })
+  if (context.commentId) query.set('comment', context.commentId)
+  return `/community/user/${context.reportedUserId}?${query}`
+}
 
 export default function ConsoleConversation() {
   const { ticketId } = useParams()
@@ -138,7 +143,7 @@ export default function ConsoleConversation() {
               {ticket.priority !== 'normal' && <Chip tone="warn">{supportPriorityLabel[ticket.priority]}</Chip>}
             </div>
           </header>
-          {ticket.reportContext && <section className="console-report-context" aria-label="Conteúdo denunciado"><strong>Conteúdo denunciado</strong><span>{ticket.reportContext.targetKind === 'post' ? 'Publicação' : 'Comentário'} · {({ spam: 'Spam', harassment: 'Assédio ou discurso de ódio', inappropriate: 'Conteúdo impróprio', misinformation: 'Informação enganosa', other: 'Outro' })[ticket.reportContext.reason] || ticket.reportContext.reason}</span><p>{ticket.reportContext.contentExcerpt}</p>{ticket.reportContext.description && <p>{ticket.reportContext.description}</p>}<a href={`/#${ticket.reportContext.verificationLink}`} target="_blank" rel="noreferrer">Abrir publicação</a></section>}
+          {ticket.reportContext && <section className="console-report-context" aria-label="Conteúdo denunciado"><strong>Conteúdo denunciado</strong><span>{ticket.reportContext.targetKind === 'post' ? 'Publicação' : 'Comentário'} · {({ spam: 'Spam', harassment: 'Assédio ou discurso de ódio', inappropriate: 'Conteúdo impróprio', misinformation: 'Informação enganosa', other: 'Outro' })[ticket.reportContext.reason] || ticket.reportContext.reason}</span><p>{ticket.reportContext.contentExcerpt}</p>{ticket.reportContext.description && <p>{ticket.reportContext.description}</p>}<a href={`/#${reportVerificationPath(ticket.reportContext)}`} target="_blank" rel="noreferrer">Abrir conteúdo denunciado</a></section>}
 
           {/* WhatsApp-style Thread */}
           <div className="console-chat-thread" ref={threadRef} onScroll={handleScroll} aria-live="polite" aria-label="Histórico de mensagens">
