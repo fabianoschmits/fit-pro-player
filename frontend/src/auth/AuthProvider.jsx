@@ -14,6 +14,7 @@ function publicUser(user) {
   return {
     id: user.id,
     email: user.email || null,
+    displayName: typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : '',
     emailConfirmedAt: user.email_confirmed_at || null,
     isAnonymous: Boolean(user.is_anonymous),
   };

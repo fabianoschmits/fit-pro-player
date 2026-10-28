@@ -62,7 +62,12 @@ export function decimalNumber(value) {
 }
 
 export const weightInput = value => decimalInput(value, 3, 1)
-export const heightInput = value => decimalInput(value, 1, 2)
+export function heightInput(value, previous = '') {
+  // Backspace over the automatic separator must also allow clearing the meters.
+  if (/^\d,$/.test(previous) && value === previous[0]) return ''
+  const digits = String(value ?? '').replace(/\D/g, '').slice(0, 3)
+  return digits ? `${digits[0]},${digits.slice(1)}` : ''
+}
 export const weightText = value => value > 0 ? String(Math.round(value * 10) / 10).replace('.', ',') : ''
 export const heightText = heightCm => heightCm > 0 ? (heightCm / 100).toFixed(2).replace('.', ',') : ''
 export const heightCmFromText = value => {

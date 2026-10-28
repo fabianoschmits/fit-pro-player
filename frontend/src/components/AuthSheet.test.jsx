@@ -79,6 +79,11 @@ afterEach(async () => {
 });
 
 describe('AuthSheet', () => {
+  it('capitalizes signup names using the onboarding rules', async () => {
+    await render('sign_up');
+    await setValue(input('Name'), 'joÃO da SILVA');
+    expect(input('Name').value).toBe('João da Silva');
+  });
   it('keeps pointer sign-in open through activation and success confirmation', async () => {
     vi.useFakeTimers();
     await render();

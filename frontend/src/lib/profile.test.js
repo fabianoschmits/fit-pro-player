@@ -8,6 +8,14 @@ import {
 import { AVATARS, DEFAULT_AVATAR_ID } from './avatars.js'
 
 describe('personal profile', () => {
+  it('inserts the height separator while typing and accepts pasted centimeters', () => {
+    expect(heightInput('1')).toBe('1,')
+    expect(heightInput('1,7')).toBe('1,7')
+    expect(heightInput('1,75')).toBe('1,75')
+    expect(heightInput('175')).toBe('1,75')
+    expect(heightInput('')).toBe('')
+    expect(heightInput('1', '1,')).toBe('')
+  })
   it('normalizes legacy body choice into the profile', () => {
     expect(normalizeProfile(null, 'female').sex).toBe('female')
     expect(normalizeProfile({ name: 'Ana', sex: 'female' }, 'male')).toMatchObject({ name: 'Ana', sex: 'female' })

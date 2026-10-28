@@ -90,8 +90,15 @@ describe('AuthProvider', () => {
     await act(async () => Promise.resolve());
 
     expect(latest.status).toBe('authenticated');
-    expect(latest.user).toEqual({ id: user.id, email: user.email, emailConfirmedAt: user.email_confirmed_at, isAnonymous: false });
+    expect(latest.user).toEqual({ id: user.id, email: user.email, displayName: '', emailConfirmedAt: user.email_confirmed_at, isAnonymous: false });
     expect(latest.user).not.toHaveProperty('access_token');
+  });
+
+  it('exposes the signup display name for onboarding', async () => {
+    const client = createFakeClient({ session: { user: { ...user, user_metadata: { display_name: 'João da Silva' } } } });
+    await renderProvider(client);
+    expect(latest.user.displayName).toBe('João da Silva');
+    expect(latest.user).not.toHaveProperty('user_metadata');
   });
 
   it('creates an anonymous session for continue-without-account', async () => {

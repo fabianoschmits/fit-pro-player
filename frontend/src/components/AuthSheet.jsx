@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { useAuth } from '../auth/AuthProvider.jsx';
+import { formatPersonName } from '../lib/profile.js';
 import { t } from '../lib/i18n.js';
 import { useUI } from '../store/useUI.js';
 import { useStore } from '../store/useStore.js';
@@ -38,7 +39,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const auth = useAuth();
   const offlineName = useStore(s => s.S?.profile?.name || '');
   const [mode, setMode] = useState(() => initial(initialMode));
-  const [values, setValues] = useState(() => ({ name: offlineName, email: '', password: '', confirmation: '', accountType: 'student' }));
+  const [values, setValues] = useState(() => ({ name: formatPersonName(offlineName), email: '', password: '', confirmation: '', accountType: 'student' }));
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
@@ -65,14 +66,14 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   }, [initialMode]);
 
   useEffect(() => {
-    if (offlineName && !values.name) setValues(current => ({ ...current, name: offlineName }));
+    if (offlineName && !values.name) setValues(current => ({ ...current, name: formatPersonName(offlineName) }));
   }, [offlineName, values.name]);
 
   useEffect(() => {
     if (error) alertRef.current?.focus();
   }, [error]);
 
-  const change = key => event => setValues(current => ({ ...current, [key]: event.target.value }));
+  const change = key => event => setValues(current => ({ ...current, [key]: key === 'name' ? formatPersonName(event.target.value) : event.target.value }));
   const showMode = next => {
     if (submitLock.current) return;
     setMode(next);

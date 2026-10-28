@@ -8,7 +8,7 @@ import Icon from '../components/Icon.jsx'
 import { Button, Segmented, TextField } from '../components/ui.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 import { useStore } from '../store/useStore.js'
-import { EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS, defaultBirthDate, formatPersonName, heightCmFromText, heightText, normalizeProfile, weightText } from '../lib/profile.js'
+import { EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS, defaultBirthDate, formatPersonName, heightCmFromText, heightInput, heightText, normalizeProfile, weightText } from '../lib/profile.js'
 import { t } from '../lib/i18n.js'
 import { todayISO } from '../lib/format.js'
 
@@ -44,7 +44,7 @@ function MeasuresField({ height, weight, onSave }) {
     <div className="personal-field-head"><span>Medidas</span>{editing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setError(''); setDraft({ height, weight }); setEditing(false) }}>Cancelar</button><PersonalSaveButton onSave={save} onError={setError} /></span> : <button type="button" className="personal-edit" onClick={() => { setDraft({ height, weight }); setEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
     {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
     <div className="personal-field-summary">{height} m · {weight} kg</div>
-    <div className="personal-field-editor"><div className="personal-measures-editor"><label>Altura<input className="field" inputMode="decimal" value={draft.height} onChange={event => setDraft(current => ({ ...current, height: event.target.value }))} /></label><label>Peso<input className="field" inputMode="decimal" value={draft.weight} onChange={event => setDraft(current => ({ ...current, weight: event.target.value }))} /></label></div></div>
+    <div className="personal-field-editor"><div className="personal-measures-editor"><label>Altura<input className="field" inputMode="decimal" value={draft.height} onChange={event => setDraft(current => ({ ...current, height: heightInput(event.target.value, current.height) }))} /></label><label>Peso<input className="field" inputMode="decimal" value={draft.weight} onChange={event => setDraft(current => ({ ...current, weight: event.target.value }))} /></label></div></div>
   </section>
 }
 

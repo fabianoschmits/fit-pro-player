@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
+import { useAuth } from '../auth/AuthProvider.jsx'
 import { useUI } from '../store/useUI.js'
 import { DAYN, DAYS, exCount, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
@@ -32,6 +33,7 @@ function Choice({ selected, icon, title, copy, onClick }) {
 }
 
 export default function PlanWizard({ editing = false, onCancel, onDone }) {
+  const auth = useAuth()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const setProfilePreview = useUI(s => s.setProfilePreview)
@@ -43,7 +45,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
   const [direction, setDirection] = useState(1)
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(() => ({
-    name: formatPersonName(profile.name || ''),
+    name: formatPersonName(profile.name || auth.user?.displayName || ''),
     avatarId: profile.avatarId,
     birthDate: profile.birthDate || defaultBirthDate(),
     sex: profile.sex || (S.body === 'female' ? 'female' : 'male'),
@@ -254,7 +256,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
       <span className="wizard-label">{t('Weight unit')}</span>
       <Segmented options={[{ value: 'kg', label: 'kg' }, { value: 'lb', label: 'lb' }]} value={draft.unit} onChange={switchUnit} />
       <div className="wizard-measure-grid">
-        <label><span>{t('Height')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="1,76" value={draft.height} onChange={event => set({ height: heightInput(event.target.value) })} /><i>m</i></span></label>
+        <label><span>{t('Height')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="1,76" value={draft.height} onChange={event => set({ height: heightInput(event.target.value, draft.height) })} /><i>m</i></span></label>
         <label><span>{t('Body weight')}</span><span className="wizard-input-unit"><input className="field" inputMode="decimal" placeholder="71,2" value={draft.startWeight} onChange={event => set({ startWeight: weightInput(event.target.value) })} /><i>{draft.unit}</i></span></label>
       </div>
       <label className="wizard-label" htmlFor="wizard-target">{t('Target weight')} <small>{t('optional')}</small></label>
