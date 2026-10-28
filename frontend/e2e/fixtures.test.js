@@ -23,6 +23,7 @@ export async function seed(page,{professional=false,authenticated=professional,s
     let data=[]
     if(url.pathname.includes('/auth/v1/user'))data=user
     else if(name==='account_snapshots')data={user_id:USER,revision:1,state_schema_version:1,payload:state,updated_at:'2026-10-02T12:00:00Z'}
+    else if(name==='is_current_user_suspended' && !Object.hasOwn(rpc,name))data=false
     else if(name==='user_roles')data=professional?[{role:'professional'}]:[]
     else if(name==='save_own_account_snapshot')data=[{status:'APPLIED',revision:2,updated_at:new Date().toISOString()}]
     else if(Object.hasOwn(rpc,name))data=typeof rpc[name]==='function'?rpc[name](JSON.parse(route.request().postData()||'{}')):rpc[name]

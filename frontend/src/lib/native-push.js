@@ -1,4 +1,4 @@
-const KINDS = new Set(['workout_reminder','weight_reminder','measurement_reminder','program_updated','program_removed','relationship_accepted','relationship_ended','student_workout_completed','student_workout_abandoned','verification_changed'])
+const KINDS = new Set(['workout_reminder','weight_reminder','measurement_reminder','program_received','program_updated','program_removed','relationship_accepted','relationship_ended','student_workout_completed','student_workout_abandoned','verification_changed'])
 const ROUTES = new Set(['/home','/plan','/workout','/body-progress','/professional/profile','/professional','/professional/students','/professional/programs','/student/professionals','/settings'])
 const permission = value => value === 'granted' || value === 'denied' ? value : 'default'
 const safeRoute = href => {

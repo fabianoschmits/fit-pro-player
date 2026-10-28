@@ -13,13 +13,17 @@ const program = { id:PROGRAM, professional_user_id:USER, title:'Força e condici
 const version = { id:VERSION, program_id:PROGRAM, version_number:2, weekly_plan:plan, published_at:'2026-10-04T12:00:00Z' }
 const material = { assignment_id:ASSIGNMENT, program_id:PROGRAM, version_id:VERSION, title:'Programa atual', status:'active', version_number:2, assigned_at:'2026-10-04T12:00:00Z', published_at:version.published_at, weekly_plan:plan }
 const rpc = {
+  professional_dashboard_summary:{active_students:1,attention_students:0,today_workouts:0,active_programs:1,pending_invites:0,today:[],recent_activity:[]},
+  professional_students_page:{items:[{student_user_id:STUDENT,display_name:name,attention_reasons:[]}],total:1,offset:0,has_more:false},
+  professional_programs_page:{items:[program],total:1,offset:0,has_more:false},
+  professional_student_note:{body:'',updated_at:null},
   professional_profiles:{ user_id:USER, professional_name:name, bio:professionals[0].bio, specialties:professionals[0].specialties, city_region:professionals[0].city_region, verification_status:'verified' },
   professional_client_summaries:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', program_id:PROGRAM, program_title:program.title }],
   professional_client_detail:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', assignments:[], executions:[] }],
   professional_student_relationships:[{ id:'relationship', professional_user_id:USER, student_user_id:STUDENT, status:'active', created_at:'2026-10-01T12:00:00Z' }],
   professional_invites:[{ id:'invite', code:'A1B2C3D4E5', status:'pending', created_at:'2026-10-04T12:00:00Z' }],
   programs:[program], program_versions:[version],
-  student_professional_summaries:professionals,
+  student_professional_cards:professionals,
   student_professional_detail:args => { const person = professionals.find(item => item.professional_user_id === args.p_professional_user_id); return person ? [{ professional:person, relationship:{ id:person.relationship_id, status:'active', linked_at:person.linked_at }, materials:[person === professionals[0] ? material : { ...material, assignment_id:'old-assignment', title:'Corrida histórica', status:'revoked' }], executions:[] }] : [] },
   program_assignments:[{ id:ASSIGNMENT, professional_user_id:PRO, student_user_id:USER, program_id:PROGRAM, version_id:VERSION, status:'active', created_at:'2026-10-04T12:00:00Z' }],
   student_program_overview:{ assignment:{id:ASSIGNMENT}, program:{title:material.title}, professional:{id:PRO,name}, version:{id:VERSION,versionNumber:2,weeklyPlan:plan,publishedAt:version.published_at}, executions:[] },
@@ -44,31 +48,20 @@ test('an account without professional access opens onboarding from More', async 
   await expect(page.getByRole('button',{name:'Criar perfil profissional',exact:true})).toBeVisible()
 })
 
-test('a narrow workspace keeps readable flat sections and prioritizes the next workout', async ({page}) => {
-  await page.setViewportSize({width:320,height:780})
-  await seed(page,{professional:true,rpc})
-  await page.goto('/#/student/professionals')
-  await expect(page.getByRole('heading',{name:'Programa atual',level:2,exact:true})).toBeVisible()
-  const headings = await page.locator('.management-content h2').allTextContents()
-  expect(headings.indexOf('Próximo treino')).toBeLessThan(headings.findIndex(text => text.startsWith('Profissionais vinculados')))
-  const panel = page.locator('.management-panel').first()
-  expect(await panel.evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
-  expect(await panel.evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThanOrEqual(280)
-  const person = page.locator('.management-person-link h3').first()
-  expect(await person.evaluate(el => el.getBoundingClientRect().width)).toBeGreaterThan(190)
-  const active = page.locator('.management-nav [aria-current="page"]')
-  expect(await active.evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
-  expect(await active.evaluate(el => getComputedStyle(el).boxShadow)).toBe('none')
-  await page.getByRole('link',{name:'Voltar ao aplicativo',exact:true}).click()
-  await expect(page).toHaveURL(/#\/more$/)
+test('a narrow workspace displays professionals and links to the plan library', async ({page}) => {
+ await page.setViewportSize({width:320,height:780});await seed(page,{professional:true,rpc});await page.goto('/#/student/professionals')
+ await expect(page.getByRole('link',{name:'Planos recebidos · Abrir biblioteca'})).toBeVisible()
+ await expect(page.locator('.management-person-link')).toHaveCount(2)
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2)).toBe(true)
+ await page.getByRole('link',{name:'Voltar ao aplicativo',exact:true}).click();await expect(page).toHaveURL(/#\/account$/)
 })
 
 test('browser Back recovers a workspace after a failed page import', async ({page}) => {
   await seed(page,{professional:true,rpc})
   await page.route('**/src/views/ProfessionalPrograms.jsx*', route => route.fulfill({contentType:'application/javascript',body:'throw new Error("Fixture program unavailable"); export default function Page() { return null }'}))
   await page.goto('/#/professional')
-  await page.getByRole('navigation',{name:'Navegação da área profissional'}).getByRole('link',{name:'Programas',exact:true}).click()
-  await expect(page).toHaveURL(/#\/professional\/programs$/)
+  await page.locator('[data-tab-key="prof-programs"]').click()
+  await expect(page).toHaveURL(/#\/professional\/templates$/)
   await expect(page.locator('.management-layout')).toHaveCount(0)
   await expect(page.getByRole('button',{name:/Recarregar/})).toBeVisible()
   await page.goBack()
@@ -86,10 +79,10 @@ test('reserved routes, aliases and handoff queries resolve through the applicati
   }
   await page.evaluate(() => sessionStorage.removeItem('fpp-pending-invite'))
   await page.goto(`/#/professional/students?program=${PROGRAM}&version=${VERSION}`)
-  await page.locator('.management-student-record').first().click()
-  await expect(page).toHaveURL(new RegExp(`program=${PROGRAM}&version=${VERSION}`))
-  await expect(page.locator('.management-section-nav [aria-current="page"]')).toHaveText('Treino')
-  await page.reload(); await expect(page.locator('.management-section-nav [aria-current="page"]')).toHaveText('Treino')
+  await page.locator('.management-record').first().click()
+  await expect(page).toHaveURL(new RegExp(`/professional/students/${STUDENT}$`))
+  await expect(page.getByRole('heading',{name:'Plano atual'})).toBeVisible()
+  await page.reload();await expect(page.getByRole('heading',{name:'Plano atual'})).toBeVisible()
 })
 
 test('code entry remains accessible before onboarding and acceptance', async ({page}) => {
@@ -121,28 +114,25 @@ test('a direct invitation alias selects and reveals Add in the mobile management
   expect(bounds.right).toBeLessThanOrEqual(bounds.navRight + 1)
 })
 
-test('program creation opens its addressable editor and returns to its detail', async ({page}) => {
-  let created = null
-  await seed(page,{professional:true,rpc:{programs:() => created ? [created] : [], create_program:args => { created={...program,title:args.p_title,description:args.p_description};return created }}})
-  await page.goto('/#/professional/programs/new')
-  await page.getByRole('textbox',{name:'Nome do programa',exact:true}).fill('Novo programa integrado')
-  await page.getByRole('textbox',{name:'Descrição do programa',exact:true}).fill('Progressão individual')
-  await page.getByRole('button',{name:'Criar programa',exact:true}).click()
-  await expect(page).toHaveURL(new RegExp(`professional/programs/${PROGRAM}/edit`))
-  await expect(page.locator('.professional-program-editor')).toBeVisible()
-  await page.reload(); await expect(page.locator('.professional-program-editor')).toBeVisible()
-  await page.getByRole('button',{name:'Cancelar',exact:true}).click()
-  await expect(page).toHaveURL(new RegExp(`professional/programs/${PROGRAM}$`))
-  await expect(page.getByRole('heading',{name:'Novo programa integrado',exact:true,level:1})).toBeVisible()
+test('legacy program creation redirects to the shared template editor', async ({page}) => {
+ let created=null
+ await seed(page,{professional:true,rpc:{programs:()=>created?[created]:[],program_versions:[],create_program:args=>{created={...program,title:args.p_title};return created}}})
+ await page.goto('/#/professional/programs/new')
+ await page.getByRole('textbox',{name:'Nome do modelo',exact:true}).fill('Novo modelo integrado')
+ await page.getByRole('button',{name:'Criar modelo',exact:true}).click()
+ await expect(page).toHaveURL(new RegExp(`professional/templates/${PROGRAM}$`))
+ await expect(page.locator('.training-plan-workspace')).toBeVisible()
+ await page.reload();await expect(page.locator('.training-plan-workspace')).toBeVisible()
+ await page.getByRole('button',{name:'Cancelar',exact:true}).click();await expect(page).toHaveURL(/professional\/templates$/)
 })
 
 test('material selection stays independent and historical inspection preserves the current plan', async ({page}) => {
   await seed(page,{authenticated:true,rpc})
   await page.goto('/#/student/professionals')
-  await expect(page.getByRole('heading',{name:'Programa atual',exact:true,level:2})).toBeVisible()
+  await expect(page.locator('.management-person-link')).toHaveCount(2)
   const currentAssignment = () => page.evaluate(userId => JSON.parse(localStorage.getItem(`fpp_account_cache_v1:${userId}`)).state.assignedProgram, USER)
   const initial = await currentAssignment()
-  expect(initial.assignmentId).toBe(ASSIGNMENT)
+  expect(initial).toBeNull()
   await page.getByRole('link',{name:'Ver materiais',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Bruno de teste',exact:true})).toBeVisible()
   await page.getByRole('link',{name:/Corrida histórica/}).click()
@@ -156,19 +146,19 @@ test('material selection stays independent and historical inspection preserves t
 
 test('empty and failed management reads retain navigation, retry and keyboard focus', async ({page},testInfo) => {
   await page.setViewportSize({width:360,height:800}); await page.emulateMedia({reducedMotion:'reduce'})
-  await seed(page,{authenticated:true,rpc:{student_professional_summaries:[],student_program_overview:{}}})
+  await seed(page,{authenticated:true,rpc:{student_professional_cards:[],student_program_overview:{}}})
   await page.goto('/#/student/professionals')
   await expect(page.getByText('Você ainda não possui profissionais vinculados.',{exact:true})).toBeVisible()
   await page.screenshot({path:testInfo.outputPath('management-empty-360.png'),fullPage:true})
   const failure = async route => route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({message:'fixture read failure'})})
-  await page.route('**/rest/v1/rpc/student_professional_summaries',failure)
+  await page.route('**/rest/v1/rpc/student_professional_cards',failure)
   await page.reload()
   const retry = page.getByRole('button',{name:'Tentar novamente',exact:true})
   await expect(retry).toBeVisible()
   await page.keyboard.press('Tab'); await retry.focus()
   expect(await retry.evaluate(button => getComputedStyle(button).outlineWidth)).toBe('2px')
   await page.screenshot({path:testInfo.outputPath('management-error-focus-360.png'),fullPage:true})
-  await page.unroute('**/rest/v1/rpc/student_professional_summaries',failure)
+  await page.unroute('**/rest/v1/rpc/student_professional_cards',failure)
   await retry.click(); await expect(page.getByText('Você ainda não possui profissionais vinculados.',{exact:true})).toBeVisible()
   await page.getByRole('link',{name:'Adicionar profissional',exact:true}).first().click()
   await expect(page.locator('#student-invite-code')).toBeVisible()

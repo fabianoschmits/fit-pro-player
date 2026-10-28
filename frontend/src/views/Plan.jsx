@@ -1,3 +1,5 @@
+import TrainingPlanWorkspace, { RoutineList } from '../components/training/TrainingPlanWorkspace.jsx'
+import PlanLibrary from '../components/training/PlanLibrary.jsx'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -28,7 +30,7 @@ export default function Plan() {
 
   if (!S.onboardingDone || editingProfile) {
     const closeEditor = () => { setEditingProfile(false); nav('/plan', { replace: true }) }
-    return <PlanWizard editing={editingProfile} onCancel={closeEditor} onDone={closeEditor} />
+    return <><PlanLibrary /><PlanWizard editing={editingProfile} onCancel={closeEditor} onDone={closeEditor} /></>
   }
 
   const addRoutine = () => {
@@ -62,23 +64,7 @@ export default function Plan() {
     })
   }
 
-  const routineList = <section>
-    <div className="row between plan-section-head">
-      <h4 className="sec">{t('Routines')}</h4>
-      <Button size="sm" variant="tinted" icon="plus" onClick={addRoutine}>{t('New')}</Button>
-    </div>
-    <div className="list plan-routine-list">{S.routines.map(routine => {
-      const days = WEEK_DAYS.filter(day => S.week[day] === routine.id)
-      return <button key={routine.id} className="item" onClick={() => nav('/plan/r/' + routine.id)}>
-        <span className="lrow-i"><RoutineMuscleThumb routine={routine} body={S.body} /></span>
-        <span className="grow">
-          <span className="tt">{routineName(routine)}</span>
-          <span className="ss">{exCount(routine.ex.length)}{mode === 'weekly' && days.length ? ` · ${days.map(day => t(DAYS[day])).join(' · ')}` : ''}</span>
-        </span>
-        <Icon name="chevronRight" className="chev" />
-      </button>
-    })}</div>
-  </section>
+  const routineList = <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={S.assignedProgram ? undefined : addRoutine} />
 
   return <div className="plan-view page-scenery">
     <AppHeader
@@ -88,29 +74,8 @@ export default function Plan() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    {mode === 'weekly' ? <div className="cols plan-cols">
-      <section>
-        <div className="row between plan-section-head">
-          <h4 className="sec">{t('Week schedule')}</h4>
-          <span className="plan-section-value">{scheduledDays} / 7</span>
-        </div>
-        <div className="plan-week-card">
-          <div className="plan-week-grid">
-            {WEEK_DAYS.map(day => {
-              const routine = S.routines.find(r => r.id === S.week[day])
-              return <button key={day} className={'plan-day' + (routine ? ' on' : '')}
-                aria-label={`${t(DAYN[day])}: ${routine ? routineName(routine) : t('Rest')}`}
-                aria-pressed={!!routine} onClick={() => dayAssignSheet(day)}>
-                <span className="plan-day-label">{t(DAYS[day])}</span>
-                <span className="plan-day-icon">{routine ? <RoutineMuscleThumb routine={routine} body={S.body} /> : <Icon name="moon" />}</span>
-                <span className="plan-day-name">{routine ? routineName(routine) : t('Rest')}</span>
-              </button>
-            })}
-          </div>
-        </div>
-      </section>
-      {routineList}
-    </div> : <div className="cols plan-cols daily-plan-cols">
+    <PlanLibrary />
+    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={S.assignedProgram ? undefined : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={S.assignedProgram ? undefined : addRoutine} /> : <div className="cols plan-cols daily-plan-cols">
       <section>
         <div className="row between plan-section-head">
           <h4 className="sec">{t("Today's workout")}</h4>
@@ -133,7 +98,7 @@ export default function Plan() {
       {routineList}
     </div>}
 
-    <section className="plan-mode-section">
+    <section className="plan-mode-section" hidden={Boolean(S.assignedProgram)}>
       <h4 className="sec">{t('Plan style')}</h4>
       <div className="plan-mode-card">
         <div><strong>{t('Change plan mode')}</strong><small>{t('Your profile, routines and history are kept in both modes.')}</small></div>

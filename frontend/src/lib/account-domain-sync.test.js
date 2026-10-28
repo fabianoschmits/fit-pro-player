@@ -177,3 +177,12 @@ it('does not resurrect a deleted workout from a stale in-flight history read', a
   h.sync.acceptRemote('history', [{ workout: { id: 'session-1', d: '2026-10-19', entries: [] } }])
   expect(h.state().workouts).toEqual([])
 })
+it('recovers local personal changes into the library when another device selected a different plan',async()=>{
+ const h=harness();h.setState({...h.state(),activeLibraryId:'old',_pendingSync:{plan:true}})
+ h.repository.savePlan.mockRejectedValue({kind:'selection-conflict'})
+ h.repository.saveDetachedPlan=vi.fn().mockResolvedValue('backup')
+ h.repository.loadPlan=vi.fn().mockResolvedValue({routines:[],schedule:{revision:5,mode:'weekly',values:{libraryId:'new'}}})
+ await h.sync.start()
+ expect(h.repository.saveDetachedPlan).toHaveBeenCalledWith(expect.objectContaining({state:expect.objectContaining({activeLibraryId:'old'})}))
+ expect(h.state().activeLibraryId).toBe('new');expect(h.state()._pendingSync.plan).toBe(false)
+})

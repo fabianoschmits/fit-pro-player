@@ -7,6 +7,7 @@ import { DAYN, DAYS, uid, routineId, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { planSetupProgress, smartDefaultConfig } from '../lib/ux.js'
 import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
+import ExerciseCard from '../components/training/ExerciseCard.jsx'
 import { Thumb } from '../components/Media.jsx'
 import { exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
@@ -83,17 +84,23 @@ export function RoutineTemplatePicker({ currentId, close }) {
   </div>
 }
 
-export default function RoutineEdit() {
+export default function RoutineEdit() { return <RoutineEditor /> }
+
+export function RoutineEditor({ state, onUpdate, routineId: suppliedId, basePath = '/plan', onSave, onBack, onOpen, readOnly = false, mode = 'athlete' } = {}) {
   const nav = useNavigate()
-  const { id } = useParams()
-  const S = useStore(s => s.S)
-  const update = useStore(s => s.update)
+  const { id: routeId } = useParams()
+  const id = suppliedId || routeId
+  const stored = useStore(s => s.S)
+  const storeUpdate = useStore(s => s.update)
+  const S = state || stored
+  readOnly = readOnly || Boolean(S.routines.find(x => x.id === id)?.assigned)
+  const update = readOnly ? () => {} : onUpdate || storeUpdate
   const [organizing, setOrganizing] = useState(false)
   const [selectedMuscle, setSelectedMuscle] = useState(null)
   const [saveError, setSaveError] = useState('')
   const muscleMapRef = useRef(null)
   const r = S.routines.find(x => x.id === id)
-  useEffect(() => { if (!r) nav('/plan') }, [!!r])
+  useEffect(() => { if (!r) { if (onBack) onBack(); else nav(basePath) } }, [!!r])
   useEffect(() => {
     if (!selectedMuscle) return undefined
     const clear = event => {
@@ -137,10 +144,12 @@ export default function RoutineEdit() {
     delete copy.starterCustomName
     update(state => { state.routines.push(copy) })
     useUI.getState().toast(t('Routine duplicated'))
-    nav('/plan/r/' + copy.id)
+    if (onOpen) onOpen(copy.id)
+    else nav(basePath + '/r/' + copy.id)
   }
   const saveRoutine = async () => {
     setSaveError('')
+    if (onSave) return onSave()
     if (!(await useStore.getState().flushPersistence())) throw new Error('local-write-failed')
   }
   const deleteRoutine = () => confirmSheet({
@@ -162,14 +171,15 @@ export default function RoutineEdit() {
   const assignedDays = WEEK_DAYS.filter(day => S.week[day] === id)
   const planProgress = planSetupProgress(S)
   const displayName = routineName(r)
-  const canDelete = !r.assigned
+  readOnly = readOnly || Boolean(r.assigned)
+  const canDelete = !readOnly
 
   return <div className="narrow routine-builder">
     {planProgress && <PlanProgress progress={planProgress} />}
     <div className="hdr routine-builder-head">
-      <button className="iconbtn" onClick={() => nav('/plan')} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
+      <button className="iconbtn" onClick={() => onBack ? onBack() : nav(basePath)} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
       <div className="routine-name-wrap">
-        <input className="input routine-name" value={displayName}
+        <input className="input routine-name" value={displayName} readOnly={readOnly}
           onChange={e => update(s => { const routine = s.routines.find(x => x.id === id); routine.name = e.target.value; delete routine.starterKey; routine.starterCustomName = true })}
           onBlur={e => update(s => { s.routines.find(x => x.id === id).name = e.target.value.trim() || t('Routine') })}
           aria-label={t('Routine')} />
@@ -179,7 +189,7 @@ export default function RoutineEdit() {
 
     <div className="row between routine-section-head">
       <h4 className="sec">{t('Exercises')}</h4>
-      {r.ex.length > 1 && <Button size="sm" variant="tinted" onClick={() => setOrganizing(v => !v)}>{organizing ? t('Done') : t('Edit')}</Button>}
+      {!readOnly && r.ex.length > 1 && <Button size="sm" variant="tinted" onClick={() => setOrganizing(v => !v)}>{organizing ? t('Done') : t('Edit')}</Button>}
     </div>
 
     {r.ex.length ? <div className="list routine-exercise-list">{r.ex.map((entry, i) => {
@@ -188,13 +198,9 @@ export default function RoutineEdit() {
       return <div key={i}>
         {unitFirst.has(i) && <div className="ss-label"><Icon name="link" />{t('Superset')}</div>}
         <div className={'item' + (inSS.has(i) ? ' in-ss' : '')}>
-          <button className="routine-item-main" onClick={() => {
-            exConfigSheet(ex, entry, cfg => edit(x => { x[i] = { id: x[i].id, sg: x[i].sg, ...cfg } }), () => edit(x => { x.splice(i, 1); cleanupSg(x) }), r)
-          }}>
-            <Thumb ex={ex} />
-            <span className="grow"><span className="tt capitalize">{exerciseName(ex)}</span><span className="ss">{exLine(entry, S.displayUnit || 'kg')}</span></span>
-            {!organizing && <Icon name="chevronRight" className="chev" />}
-          </button>
+          <ExerciseCard entry={entry} onChange={mode === 'professional' && !readOnly ? patch => edit(x => { x[i] = { ...x[i], ...patch } }) : undefined} unit={S.displayUnit || 'kg'} onEdit={readOnly ? undefined : () => {
+            exConfigSheet(ex, entry, cfg => edit(x => { x[i] = { ...x[i], ...cfg } }), () => edit(x => { x.splice(i, 1); cleanupSg(x) }), r)
+          }} />
           {organizing && <span className="routine-item-tools">
             {i > 0 && <button className={'iconbtn' + (linkedPrev ? ' on-ss' : '')} title={t('Superset with exercise above')} aria-label={t('Superset with exercise above')} onClick={ev => { ev.stopPropagation(); toggleLink(i) }}><Icon name="link" /></button>}
             <button className="iconbtn" aria-label={t('Move up')} disabled={i === 0} onClick={ev => { ev.stopPropagation(); move(i, -1) }}><Icon name="chevronUp" /></button>
@@ -205,11 +211,11 @@ export default function RoutineEdit() {
     })}</div> : <div className="empty routine-empty"><div className="ico"><Icon name="dumbbell" /></div>{t('No exercises yet — add your first one.')}</div>}
 
     {organizing && <div className="small dim row routine-organize-help"><Icon name="link" />{t('Tap the link button on an exercise to superset it with the one above — you’ll do them back-to-back.')}</div>}
-    <div className="routine-builder-actions">
+    <div className="routine-builder-actions" hidden={readOnly}>
       <Button variant="tinted" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
       <Button variant="plain" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
     </div>
-    {!r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Start with a suggested or existing workout')}</Button>}
+    {!readOnly && mode === 'athlete' && !r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Start with a suggested or existing workout')}</Button>}
 
     <div className="card routine-week-card">
       <div className="row between routine-card-title">
@@ -222,7 +228,7 @@ export default function RoutineEdit() {
           const other = !selected && S.routines.find(x => x.id === S.week[day])
           return <button key={day} className={'plan-day' + (selected ? ' on' : '') + (other ? ' has-other' : '')}
             aria-label={`${t(DAYN[day])}: ${selected ? displayName : other ? routineName(other) : t('Rest')}`}
-            aria-pressed={selected} onClick={() => toggleDay(day)}>
+            disabled={readOnly} aria-pressed={selected} onClick={() => toggleDay(day)}>
             <span className="plan-day-label">{t(DAYS[day])}</span>
             <span className="plan-day-icon">{selected ? <RoutineMuscleThumb routine={r} body={S.body} /> : other ? <RoutineMuscleThumb routine={other} body={S.body} /> : <Icon name="moon" />}</span>
             <span className="plan-day-name">{selected ? displayName : other ? routineName(other) : t('Rest')}</span>
@@ -232,8 +238,8 @@ export default function RoutineEdit() {
     </div>
 
     {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
-    <div className="routine-completion-actions">
-      <Button feedback="persistence" variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => nav('/plan')} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+    <div className="routine-completion-actions" hidden={readOnly}>
+      <Button feedback="persistence" variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => onBack ? onBack() : nav(basePath)} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
         onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
       {canDelete && <Button variant="danger" icon="trash" onClick={deleteRoutine}>{t('Delete routine')}</Button>}
     </div>
@@ -252,7 +258,7 @@ export default function RoutineEdit() {
       </div>
     })()}
 
-    <details className="routine-advanced" style={S.simpleMode !== false ? { display: 'none' } : undefined}>
+    <details className="routine-advanced" style={readOnly || S.simpleMode !== false ? { display: 'none' } : undefined}>
       <summary><span><Icon name="gear" />{t('More')}</span><Icon name="chevronDown" /></summary>
       <div className="routine-advanced-body">
         <div className="sect-b">

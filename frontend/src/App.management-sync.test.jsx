@@ -117,7 +117,7 @@ it.each(['section', '/student/professionals/materials', '/home'])('keeps unlink 
   const pendingVersion = deferred(); const unlink = deferred()
   mocks.repo.version.mockReturnValue(pendingVersion.promise)
   mocks.repo.revokeRelationship.mockImplementation(async () => { await unlink.promise; linked = false })
-  await render(); expect(mocks.repo.version).toHaveBeenCalledWith('old-version')
+  await render(); expect(mocks.repo.version).not.toHaveBeenCalled()
   await click('Desvincular'); await click('Confirmar')
   await go(destination === 'section' ? '/student/professionals/p1?section=history' : destination)
   await act(async () => unlink.resolve({}))
@@ -145,6 +145,7 @@ it('preserves a legitimate overview replacement across unlink completion and the
   await render(); await click('Desvincular'); await click('Confirmar')
   mocks.repo.assignedPrograms.mockResolvedValue([replacement]); mocks.repo.studentProfessionals.mockResolvedValue([person('p2')])
   await go('/student/professionals')
+  await act(async () => useStore.getState().replaceState(assignedPlanToState({ ...useStore.getState().S }, version('replacement-version'), replacement)))
   expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('replacement')
   await act(async () => unlink.resolve({}))
   await act(async () => pendingVersion.resolve(version('old-version')))
@@ -164,73 +165,19 @@ it('rejects Shell and unlink completions after switching the actual store accoun
   expect(useStore.getState().S.routines.map(item => item.id)).toEqual(['personal-r'])
 })
 
-it('also invalidates a pending overview version when successful unlink ends its assignment', async () => {
-  const pending = deferred(); mocks.repo.version.mockReturnValue(pending.promise)
-  window.location.hash = '#/student/professionals'
-  await render(); expect(mocks.repo.version).toHaveBeenCalledTimes(2)
-  await go('/student/professionals/p1?section=relationship'); await click('Desvincular'); await click('Confirmar')
-  await act(async () => pending.resolve(version('old-version')))
-  expect(useStore.getState().S.assignedProgram).toBeNull()
-  expect(useStore.getState().S.routines.map(item => item.id)).toEqual(['personal-r'])
-})
-
-it('does not let an older empty Shell assignment read clear a newer overview replacement', async () => {
-  const pending = deferred(); mocks.repo.assignedPrograms.mockReturnValueOnce(pending.promise)
-  await render()
-  mocks.repo.assignedPrograms.mockResolvedValue([replacement]); mocks.repo.studentProfessionals.mockResolvedValue([person('p2')])
-  await go('/student/professionals')
-  expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('replacement')
-  await act(async () => pending.resolve([]))
-  expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('replacement')
-})
-
-it('preserves an already cached assignment after a newer overview confirms it and an older empty Shell read finishes', async () => {
-  const pending = deferred(); mocks.repo.assignedPrograms.mockReturnValueOnce(pending.promise)
-  await render(); await go('/student/professionals')
-  expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('old-active')
-  await act(async () => pending.resolve([]))
-  expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('old-active')
-})
-
-it('preserves an uncached empty plan after the overview confirms no assignment before the old Shell version finishes', async () => {
-  await seedAccount('11111111-1111-4111-8111-111111111111', false)
-  const pending = deferred(); mocks.repo.version.mockReturnValueOnce(pending.promise)
-  await render(); linked = false; await go('/student/professionals')
-  expect(container.textContent).toContain('Você ainda não recebeu um programa ativo.')
-  await act(async () => pending.resolve(version('old-version')))
-  expect(useStore.getState().S.assignedProgram).toBeNull()
-  expect(useStore.getState().S.routines.map(item => item.id)).toEqual(['personal-r'])
-})
-
-it('settles a usable overview when the concurrent Shell first adopts the same valid assignment', async () => {
-  await seedAccount('11111111-1111-4111-8111-111111111111', false)
-  const shellVersion = deferred(); const overviewVersion = deferred()
-  mocks.repo.version.mockReturnValueOnce(shellVersion.promise).mockReturnValueOnce(overviewVersion.promise)
-  mocks.repo.studentOverview.mockResolvedValue(overview(oldAssignment, 'Current program'))
-  await render(); await go('/student/professionals')
-  expect(mocks.repo.version).toHaveBeenCalledTimes(2)
-  await act(async () => shellVersion.resolve(version('old-version')))
-  await act(async () => overviewVersion.resolve(version('old-version')))
-  expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('old-active')
-  expect(container.textContent).toContain('Current program')
-  expect(container.textContent).toContain('Ana Silva')
-})
-
-it.each(['version', 'empty'])('refreshes the still-mounted overview instead of applying an obsolete %s snapshot over a replacement', async snapshot => {
-  const pending = deferred()
-  mocks.repo.assignedPrograms.mockResolvedValueOnce([])
-  await render()
-  if (snapshot === 'version') mocks.repo.version.mockReturnValueOnce(pending.promise)
-  else { mocks.repo.assignedPrograms.mockResolvedValueOnce([]); mocks.repo.studentProfessionals.mockReturnValueOnce(pending.promise) }
-  await go('/student/professionals')
+it('never adopts a new delivery while opening professional pages', async () => {
   mocks.repo.assignedPrograms.mockResolvedValue([replacement])
-  mocks.repo.studentProfessionals.mockResolvedValue([person('p2')])
-  mocks.repo.studentOverview.mockResolvedValue(overview(replacement, 'Replacement program'))
-  await act(async () => useStore.getState().replaceState(assignedPlanToState({ ...useStore.getState().S }, version('replacement-version'), replacement)))
-  await act(async () => pending.resolve(snapshot === 'version' ? version('old-version') : []))
-  expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('replacement')
-  expect(container.textContent).toContain('Replacement program')
-  expect(container.textContent).toContain('Bruno Reis')
+  await render(); await go('/student/professionals')
+  expect(useStore.getState().S.assignedProgram?.assignmentId).toBe('old-active')
+  expect(mocks.repo.assignedPrograms).not.toHaveBeenCalled()
+  expect(mocks.repo.version).not.toHaveBeenCalled()
+})
+it('keeps a personal plan unchanged when a professional has delivered a plan', async () => {
+  await seedAccount('11111111-1111-4111-8111-111111111111', false)
+  await render(); await go('/student/professionals')
+  expect(useStore.getState().S.assignedProgram).toBeNull()
+  expect(useStore.getState().S.routines.map(r => r.id)).toEqual(['personal-r'])
+  expect(container.querySelector('a[href="#/plan"]')).not.toBeNull()
 })
 
 it('continuously preserves a code from anonymous sign-in through explicit accept and then resumes personal onboarding', async () => {

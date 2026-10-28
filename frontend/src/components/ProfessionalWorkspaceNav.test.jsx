@@ -20,7 +20,7 @@ describe('professional workspace navigation', () => {
     expect(container.textContent).toContain('Visão geral')
     expect(container.textContent).toContain('Alunos')
     expect(container.textContent).toContain('Convites')
-    expect(container.textContent).toContain('Programas')
+    expect(container.textContent).toContain('Modelos')
     expect(container.querySelector('[aria-current="page"]')?.textContent).toBe('Alunos')
   })
 })

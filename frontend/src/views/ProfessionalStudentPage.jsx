@@ -1,120 +1,30 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../auth/AuthProvider.jsx'
-import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
-import { professionalDate, statusLabel } from '../lib/professional-ux.js'
-import { t } from '../lib/i18n.js'
-import { Button, TextField } from '../components/ui.jsx'
-import { FppSkeleton } from '../components/FppFeedback.jsx'
-import { useFppAction } from '../components/useFppAction.js'
-import { ProfessionalPrescription, ProfessionalSessionDetail, professionalDayLabel } from '../components/ProfessionalPrescription.jsx'
+import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import ManagementLayout from '../components/ManagementLayout.jsx'
-import { ManagementPanel as Section, ManagementEmpty, ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
-
-const TABS = [['summary', 'Resumo'], ['training', 'Treino'], ['history', 'Histórico'], ['relationship', 'Vínculo']]
-
+import { ManagementAvatar } from '../components/ManagementUI.jsx'
+import { ProfessionalSessionDetail } from '../components/ProfessionalPrescription.jsx'
+import { Button, TextArea } from '../components/ui.jsx'
+import { confirmSheet } from '../sheets.jsx'
+import { professionalDate } from '../lib/professional-ux.js'
+import { useAuth } from '../auth/AuthProvider.jsx'
 export default function ProfessionalStudentPage() {
-  const auth = useAuth(); const { studentId } = useParams()
-  return <StudentWorkspace key={`${auth.user?.id}:${studentId}`} userId={auth.user?.id} studentId={studentId} />
+ const {studentId}=useParams(),{user}=useAuth()
+ return <StudentProfile key={`${user?.id}:${studentId}`} studentId={studentId} professionalId={user?.id}/>
 }
-
-function StudentWorkspace({ userId, studentId }) {
-  const navigate = useNavigate(); const [params, setParams] = useSearchParams()
-  const currentParams = useRef(params); currentParams.current = params
-  const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const identity = `${userId}:${studentId}`; const owner = useRef(identity); owner.current = identity
-  const [client, setClient] = useState(null); const [detail, setDetail] = useState(null); const [versions, setVersions] = useState([])
-  const tab = params.has('section') ? (TABS.some(([value]) => value === params.get('section')) ? params.get('section') : 'summary') : params.get('version') ? 'training' : 'summary'
-  const versionId = params.get('version') || ''; const programId = params.get('program') || ''
-  const [programs, setPrograms] = useState([]); const [assignedVersion, setAssignedVersion] = useState(null); const [trainingBusy, setTrainingBusy] = useState(false); const [trainingError, setTrainingError] = useState(''); const [trainingReload, setTrainingReload] = useState(0); const [confirmEnd, setConfirmEnd] = useState(false)
-  const sectionUrl = value => { const next = new URLSearchParams(params); next.set('section', value); return `?${next}` }
-  const choose = (key, value) => { const next = new URLSearchParams(params); next.set(key, value); if (key === 'program') next.delete('version'); setParams(next) }
-  const [busy, setBusy] = useState(Boolean(userId)); const [saving, setSaving] = useState(false); const [error, setError] = useState(''); const [confirmRevoke, setConfirmRevoke] = useState(false)
-  const mutationPending = useRef(false)
-  const [query, setQuery] = useState(''); const [limit, setLimit] = useState(20)
-  const refresh = async () => {
-    const requestOwner = identity; setBusy(true); setError('')
-    try {
-      const [summaries, nextDetail, relationships] = await Promise.all([repo.clientSummaries(), repo.clientDetail(studentId), repo.relationships(userId)])
-      if (owner.current !== requestOwner) return
-      setClient(summaries.find(item => item.studentUserId === studentId) || (nextDetail ? { studentUserId: studentId, displayName: nextDetail.displayName || t('Aluno') } : null))
-      setDetail(nextDetail ? { ...nextDetail, relationship: relationships.find(item => item.student_user_id === studentId && item.status === 'active') || null } : null)
-
-    } catch { if (owner.current === requestOwner) setError(t('Não foi possível carregar este aluno.')) }
-    finally { if (owner.current === requestOwner) setBusy(false) }
-  }
-  useEffect(() => { owner.current = identity; if (userId && studentId) refresh(); return () => { owner.current = null } }, [identity])
-  useEffect(() => {
-    if (tab !== 'training' || !detail) return
-    let activeRequest = true
-    setTrainingBusy(true); setTrainingError(''); setVersions([]); setAssignedVersion(null)
-    const active = detail.assignments?.find(item => item.status === 'active')
-    Promise.all([repo.programs(), active?.version_id ? repo.version(active.version_id) : null]).then(async ([items, current]) => {
-      if (!activeRequest) return
-      const available = items.filter(item => !item.archived)
-      setPrograms(available); setAssignedVersion(current)
-      const selected = available.find(item => item.id === programId)
-      const list = selected ? await repo.versions(selected.id) : []
-      if (activeRequest) setVersions(list.map(version => ({ ...version, programTitle: selected.title })))
-    }).catch(() => { if (activeRequest) setTrainingError(t('Não foi possível carregar as versões.')) }).finally(() => { if (activeRequest) setTrainingBusy(false) })
-    return () => { activeRequest = false }
-  }, [tab, programId, detail, trainingReload])
-  const assign = async () => {
-    const version = versions.find(item => item.id === versionId); if (!version || mutationPending.current) return false
-    mutationPending.current = true
-    const requestOwner = identity; setSaving(true); setError('')
-    try { await repo.assignProgramVersion({ programId: version.program_id, versionId: version.id, studentUserId: studentId }); if (owner.current !== requestOwner) return false; return version.id }
-    catch (cause) { if (owner.current === requestOwner) setError(t('Não foi possível enviar esta versão.')); throw cause }
-    finally { mutationPending.current = false; if (owner.current === requestOwner) setSaving(false) }
-  }
-  const revoke = async () => {
-    const relationship = detail?.relationship; if (!relationship?.id || mutationPending.current) return false
-    mutationPending.current = true
-    const requestOwner = identity; setSaving(true); setError('')
-    try { await repo.revokeRelationship(relationship.id); if (owner.current !== requestOwner) return false; return true }
-    catch (cause) { if (owner.current === requestOwner) setError(t('Não foi possível encerrar o vínculo.')); throw cause }
-    finally { mutationPending.current = false; if (owner.current === requestOwner) setSaving(false) }
-  }
-  const endAssignment = async id => {
-    if (!id || mutationPending.current) return false
-    mutationPending.current = true
-    const requestOwner = identity; setSaving(true); setError('')
-    try { await repo.revokeAssignment(id); if (owner.current !== requestOwner) return false; return true }
-    catch (cause) { if (owner.current === requestOwner) setError(t('Não foi possível encerrar o programa.')); throw cause }
-    finally { mutationPending.current = false; if (owner.current === requestOwner) setSaving(false) }
-  }
-  // Keep completion attached to the person workspace when a pending action's tab changes.
-  const assignmentAction = useFppAction({ onAction: assign, onSuccess: async assignedVersionId => {
-    if (owner.current !== identity) return
-    const next = new URLSearchParams(currentParams.current)
-    if (next.get('version') === assignedVersionId) { next.delete('version'); if (!next.has('section')) next.set('section', 'training') }
-    setParams(next, { replace: true }); await refresh()
-  } })
-  const revokeAction = useFppAction({ onAction: revoke, onSuccess: () => { if (owner.current === identity) navigate('/professional/students', { replace: true }) } })
-  const endingAction = useFppAction({ onAction: () => endAssignment(detail?.assignments?.find(item => item.status === 'active')?.id), onSuccess: async () => {
-    if (owner.current !== identity) return
-    setConfirmEnd(false); await refresh()
-  } })
-  const operationLocked = saving || assignmentAction.locked || revokeAction.locked || endingAction.locked
-  if (!userId || busy || !client || !detail) return <ManagementLayout className="professional-page" title={t('Aluno')} backTo="/professional/students">{busy ? <FppSkeleton label={t('Carregando aluno…')} /> : <ManagementEmpty title={!userId ? t('Entre na sua conta para continuar.') : error || t('Aluno não encontrado.')} action={<div className="row-actions">{error && <Button onClick={refresh}>{t('Tentar novamente')}</Button>}<Link className="management-button" to="/professional/students">{t('Voltar para alunos')}</Link></div>} />}</ManagementLayout>
-  const executions = detail.executions || []; const latestExecution = executions[0]
-  const active = detail.assignments?.find(assignment => assignment.status === 'active')
-  const selectedVersion = versions.find(version => version.id === versionId)
-  const visible = executions.filter(item => `${professionalDayLabel(item.day_key)} ${statusLabel(item.status)} ${professionalDate(item.started_at, true)}`.toLocaleLowerCase().includes(query.toLocaleLowerCase().trim()))
-  return <ManagementLayout className="professional-page professional-student-page" title={client.displayName} subtitle={client.programTitle || t('Sem programa ativo')} backTo="/professional/students">
-    {error && <p role="alert" className="management-error">{error} <button className="link" onClick={refresh}>{t('Tentar novamente')}</button></p>}
-    <div className="management-person-strip"><ManagementAvatar name={client.displayName} /><div><strong>{client.displayName}</strong><p className="muted">{t('Vínculo criado em {0}.', professionalDate(client.relationshipCreatedAt))}</p></div><ManagementStatus tone={detail.relationship ? 'success' : 'neutral'}>{t(detail.relationship ? 'Vínculo ativo' : 'Vínculo encerrado')}</ManagementStatus></div>
-    <nav className="management-section-nav" aria-label={t('Detalhe do aluno')}>{TABS.map(([value, label]) => <Link to={sectionUrl(value)} aria-current={tab === value ? 'page' : undefined} key={value}>{t(label)}</Link>)}</nav>
-    {tab === 'summary' && <Section title={t('Resumo')}><dl className="management-summary-facts"><div><dt>{t('programa atual')}</dt><dd>{client.programTitle || t('Sem programa ativo')}</dd></div><div><dt>{t('último treino')}</dt><dd>{latestExecution ? statusLabel(latestExecution.status) : t('Nenhum treino registrado')}</dd>{latestExecution && <dd className="muted small">{professionalDate(latestExecution.started_at, true)}</dd>}</div><div><dt>{t('execuções')}</dt><dd>{executions.length}</dd></div></dl><div className="row-actions"><Link className="management-button management-button-primary" to={sectionUrl('training')}>{t('Gerenciar treino')}</Link><Link className="management-button" to={sectionUrl('history')}>{t('Histórico de treinos')}</Link></div></Section>}
-    {tab === 'training' && <Section title={t('Gerenciar treino')}>{trainingError && <p role="alert" className="management-error">{trainingError} <button className="link" onClick={() => setTrainingReload(value => value + 1)}>{t('Tentar novamente')}</button></p>}{trainingBusy && <FppSkeleton label={t('Carregando versões…')} rows={2} />}<div className="professional-current-prescription"><h3>{t('Programa atual')}</h3><p>{client.programTitle || t('Nenhum programa enviado')}</p>{assignedVersion && <ProfessionalPrescription plan={assignedVersion.weekly_plan} />}</div>
-      <div className="professional-send-prescription"><h3>{t('Enviar nova versão')}</h3><label>{t('Programa')}<select aria-label={t('Programa')} value={programId} disabled={operationLocked || trainingBusy} onChange={event => choose('program', event.target.value)}><option value="">{t('Selecione um programa')}</option>{programs.map(program => <option key={program.id} value={program.id}>{program.title}</option>)}</select></label>
-      <label>{t('Enviar nova versão')}<select aria-label={t('Versão do programa')} value={versionId} disabled={operationLocked || trainingBusy || !programId} onChange={event => choose('version', event.target.value)}><option value="">{t('Selecione uma versão')}</option>{versions.map(version => <option key={version.id} value={version.id}>{version.programTitle} / {t('Versão {0}', version.version_number)}</option>)}</select></label>
-      {selectedVersion && <div className="management-prescription-preview"><strong>{selectedVersion.programTitle} / {t('Versão {0}', selectedVersion.version_number)}</strong><ProfessionalPrescription plan={selectedVersion.weekly_plan} /><p className="muted">{t('Ao enviar, o programa ativo anterior será encerrado.')}</p></div>}
-      <div className="row-actions"><Button variant="primary" intent="primary" state={assignmentAction.state} disabled={!selectedVersion || operationLocked || trainingBusy || !detail.relationship} onClick={assignmentAction.run} loadingLabel={t('Enviando…')} errorLabel={t('Tentar novamente')}>{t('Enviar versão')}</Button><Button onClick={() => navigate('/professional/programs')}>{t('Abrir programas')}</Button>{active && <Button variant="ghost" disabled={operationLocked} onClick={() => setConfirmEnd(true)}>{t('Encerrar programa ativo')}</Button>}</div>
-      </div>{confirmEnd && active && <div className="danger-confirm"><p>{t('Encerrar programa ativo?')}</p><Button variant="danger" intent="critical" state={endingAction.state} disabled={operationLocked} onClick={endingAction.run} loadingLabel={t('Salvando…')} successLabel={t('Encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button activation="immediate" disabled={operationLocked} onClick={() => setConfirmEnd(false)}>{t('Cancelar')}</Button></div>}
-    </Section>}
-    {tab === 'history' && <Section title={t('Histórico de treinos')}><TextField aria-label={t('Buscar execução')} placeholder={t('Buscar por dia ou status')} value={query} onChange={event => { setQuery(event.target.value); setLimit(20) }} />{visible.length ? visible.slice(0, limit).map(item => <details className="management-history-entry" key={item.id}><summary><strong>{professionalDayLabel(item.day_key)}</strong><span className="muted"> {statusLabel(item.status)} · {professionalDate(item.started_at, true)}</span></summary><ProfessionalSessionDetail execution={item} /></details>) : <p className="muted">{t('Nenhuma execução registrada.')}</p>}{visible.length > limit && <Button onClick={() => setLimit(value => value + 20)}>{t('Carregar mais')}</Button>}</Section>}
-    {tab === 'relationship' && <Section title={t('Vínculo')}><p>{t(detail.relationship ? 'Profissional e aluno estão vinculados.' : 'Vínculo encerrado')}</p><p className="muted">{t('Encerrar o vínculo também encerra as atribuições e o acesso profissional às execuções. O histórico pessoal do aluno é preservado.')}</p>{confirmRevoke ? <div className="danger-confirm"><span>{t('Encerrar vínculo?')}</span><Button variant="danger" intent="critical" state={revokeAction.state} disabled={operationLocked} onClick={revokeAction.run} loadingLabel={t('Desvinculando…')} successLabel={t('Vínculo encerrado')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button activation="immediate" disabled={operationLocked} onClick={() => setConfirmRevoke(false)}>{t('Cancelar')}</Button></div> : <Button variant="ghost" disabled={!detail.relationship || operationLocked} onClick={() => setConfirmRevoke(true)}>{t('Encerrar vínculo')}</Button>}</Section>}
-  </ManagementLayout>
+function StudentProfile({studentId,professionalId}) {
+ const repo=useMemo(()=>createProfessionalWorkflowRepository({client:getBrowserSupabaseClient()}),[])
+ const [data,setData]=useState(null),[note,setNote]=useState(''),[error,setError]=useState(''),[reload,setReload]=useState(0),[history,setHistory]=useState(null)
+ useEffect(()=>{let alive=true;Promise.all([repo.clientDetail(studentId),repo.studentNote(studentId),repo.studentPlanDraft(studentId)]).then(([detail,note,draft])=>{if(alive){setData({...detail,draft});setNote(note.body);setError('')}}).catch(()=>{if(alive)setError('Não foi possível carregar este aluno.')});return()=>{alive=false}},[repo,studentId,reload])
+ const plan=data?.assignments?.find(item=>item.status==='active')
+ return <ManagementLayout title={data?.displayName || 'Aluno'} backTo="/professional/students">
+ {error&&<p role="alert">{error}<Button onClick={()=>setReload(x=>x+1)}>Tentar novamente</Button></p>}
+ {data&&<><div className="card row"><ManagementAvatar name={data.displayName}/><div><h2>{data.displayName}</h2><p>Aluno desde {professionalDate(data.relationshipCreatedAt)}</p></div></div>
+ <section className="card"><h2>Plano atual</h2><h3>{data.draft?.title || plan?.program_title || 'Nenhum plano criado'}</h3><p>{data.draft && data.draft.revision!==data.draft.sent_revision ? 'Alterações não enviadas' : plan ? `Plano enviado em ${professionalDate(plan.created_at)}` : 'Crie o primeiro plano para este aluno.'}</p><Link className="management-button management-button-primary" to={`/professional/students/${studentId}/plan`}>{data.draft || plan ? 'Gerenciar plano' : `Criar plano para ${data.displayName || 'aluno'}`}</Link></section>
+ <section className="card"><h2>Atividade recente</h2>{data.executions?.slice(0,3).map(item=><p key={item.id}>{professionalDate(item.started_at)} · {item.status==='completed'?'Treino concluído':item.status==='abandoned'?'Treino interrompido':'Treino iniciado'}</p>)}<Button onAction={async()=>setHistory(await repo.executionPage({studentId}))}>Histórico</Button>{history?.items.map(item=><details key={item.id}><summary>{professionalDate(item.startedAt)}</summary><ProfessionalSessionDetail execution={{...item,prescription_snapshot:item.prescriptionSnapshot}}/></details>)}{history?.hasMore&&<Button onAction={async()=>{const next=await repo.executionPage({studentId,offset:history.items.length});setHistory({...next,items:[...history.items,...next.items]})}}>Carregar mais</Button>}</section>
+ <details className="card"><summary>Anotações privadas</summary><TextArea aria-label="Anotações privadas" maxLength={2000} value={note} onChange={e=>setNote(e.target.value)}/><Button onAction={()=>repo.saveStudentNote({studentId,body:note})} onError={()=>setError('Não foi possível salvar a anotação.')}>Salvar anotação</Button></details>
+ <section className="card"><h2>Vínculo</h2><p>Aluno vinculado à sua conta.</p><Button onClick={()=>confirmSheet({title:'Encerrar vínculo?',message:'O histórico do aluno será preservado.',confirmText:'Encerrar vínculo',danger:true,onConfirm:async()=>{const relations=await repo.relationships(studentId);const relation=relations.find(r=>r.student_user_id===studentId&&r.professional_user_id===professionalId&&r.status==='active');if(!relation)return false;await repo.revokeRelationship(relation.id);setReload(x=>x+1);return true}})}>Encerrar vínculo</Button></section>
+ </>}
+ </ManagementLayout>
 }

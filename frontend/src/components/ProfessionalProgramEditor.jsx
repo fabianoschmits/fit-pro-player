@@ -1,111 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Button, TextArea, TextField } from './ui.jsx'
-import { ManagementPanel as Section } from './ManagementUI.jsx'
-import Dialog from './Dialog.jsx'
-import { DAYS, normalizeWeeklyPlan, validateWeeklyPlan } from '../lib/professional-program.js'
+import { useState } from 'react'
 import { useStore } from '../store/useStore.js'
-import { t } from '../lib/i18n.js'
-import ProfessionalExercisePicker from './ProfessionalExercisePicker.jsx'
-import { exerciseName, isCardio } from '../lib/exercises.js'
-
-const labels = { sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça', wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado' }
-
-const modeDefaults = entry => ({ ...entry, rest: entry.rest ?? 90,
-  ...(entry.mode === 'time' ? { sec: entry.sec ?? 45 } : {}),
-  ...(entry.mode === 'cardio' ? { min: entry.min ?? 20, speed: entry.speed ?? 8 } : {}),
-})
-const editorPlan = plan => Object.fromEntries(Object.entries(plan).map(([day, entries]) => [day, entries.map(modeDefaults)]))
-
-export default function ProfessionalProgramEditor({ exercises = [], initialPlan = {}, initialMetadata, draftKey, onPublish, onPublished, onSaveMetadata, onCancel }) {
-  const [saved] = useState(() => draftKey ? useStore.getState().S.professionalProgramDrafts?.[draftKey] : null)
-  const [day, setDay] = useState('monday')
-  const [copyTo, setCopyTo] = useState('tuesday')
-  const [draft, setDraft] = useState(() => editorPlan(saved?.plan || normalizeWeeklyPlan(initialPlan)))
-  const [metadata, setMetadata] = useState(() => saved?.metadata || initialMetadata || {})
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [copyConfirmation, setCopyConfirmation] = useState(null)
-  const [error, setError] = useState('')
-  const [pending, setPending] = useState(false)
-  const pendingRef = useRef(false)
-  const current = draft[day] || []
-  useEffect(() => {
-    if (!draftKey) return
-    try { useStore.getState().update(state => { state.professionalProgramDrafts ||= {}; state.professionalProgramDrafts[draftKey] = { plan: draft, metadata, savedAt: new Date().toISOString() } }) }
-    catch { /* Draft persistence stays in the background. */ }
-  }, [draft, metadata, draftKey])
-  const selectedIds = useMemo(() => new Set(current.map(entry => entry.exerciseId)), [current])
-  const add = exercise => setDraft(value => ((value[day] || []).length >= 50 || (value[day] || []).some(entry => entry.exerciseId === exercise.id)) ? value : ({ ...value, [day]: [...(value[day] || []), { exerciseId: exercise.id, sets: 3, reps: 8, load: 0, rest: 90, ...(isCardio(exercise) ? { mode: 'cardio', min: 20, speed: 8 } : {}) }] }))
-  const copyDay = () => {
-    if (draft[copyTo]?.length) setCopyConfirmation({ source: day, target: copyTo })
-    else setDraft(state => ({ ...state, [copyTo]: structuredClone(state[day] || []) }))
-  }
-  const update = (index, key, value) => setDraft(state => ({ ...state, [day]: state[day].map((entry, i) => i === index ? { ...entry, [key]: value } : entry) }))
-  const changeMode = (index, mode) => editEntries(entries => entries.map((entry, i) => i === index ? modeDefaults({ ...entry, mode }) : entry))
-  const changeEffort = (index, effort) => editEntries(entries => entries.map((entry, i) => {
-    if (i !== index) return entry
-    const next = { ...entry, effort }
-    delete next.rir; delete next.rpe
-    if (effort === 'rir' || effort === 'rpe') next[effort] = entry[effort] ?? (effort === 'rpe' ? 7 : 2)
-    return next
-  }))
-  const editEntries = fn => setDraft(state => ({ ...state, [day]: fn([...(state[day] || [])]) }))
-  const move = (index, delta) => editEntries(entries => { const other = index + delta; [entries[index], entries[other]] = [entries[other], entries[index]]; return entries })
-  const publish = async () => {
-    if (pendingRef.current) return false
-    const result = validateWeeklyPlan(draft)
-    if (!result.ok) { setError(t(result.error === 'weekly-plan-empty' ? 'Adicione pelo menos um exercício antes de publicar.' : 'Revise os exercícios e os valores informados.')); return false }
-    if (initialMetadata && !metadata.title?.trim()) { setError(t('Informe o nome do programa.')); return false }
-    pendingRef.current = true
-    setError(''); setPending(true)
-    try {
-      const published = initialMetadata ? await onPublish(result.value, metadata) : await onPublish(result.value)
-      if (published === false) return false
-      if (draftKey) useStore.getState().update(state => { delete state.professionalProgramDrafts?.[draftKey] })
-      return published
-    } catch (cause) { setError(t('Não foi possível publicar. Seu rascunho foi mantido; tente novamente.')); throw cause }
-    finally { pendingRef.current = false; setPending(false) }
-  }
-  const field = (entry, index, key, label, fallback = 0) => <label>{t(label)}<TextField type="number" step="any" min="0" value={entry[key] ?? fallback} disabled={pending} onChange={event => update(index, key, event.target.value)} /></label>
-  const saveMetadata = async () => {
-    if (pendingRef.current || !metadata.title?.trim()) return false
-    pendingRef.current = true
-    setPending(true); setError('')
-    try { return await onSaveMetadata(metadata) }
-    catch (cause) { setError(t('Não foi possível salvar os dados. Seu rascunho foi mantido.')); throw cause }
-    finally { pendingRef.current = false; setPending(false) }
-  }
-  return <div className="professional-program-editor">
-    <div className="row between"><div><h3>{t('Montar semana')}</h3><p className="muted small">{t('Escolha o dia, adicione exercícios e ajuste a prescrição. Depois publique e envie ao aluno.')}</p></div><Button activation="immediate" disabled={pending} onClick={onCancel}>{t('Cancelar')}</Button></div>
-    {error && <p role="alert" className="error">{error}</p>}
-    {initialMetadata && <details className="professional-program-metadata"><summary>{t('Dados do programa')}</summary><div className="professional-metadata-fields"><label>{t('Nome do programa')}<TextField maxLength={160} value={metadata.title || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, title: event.target.value })} /></label><label>{t('Descrição do programa')}<TextArea maxLength={2000} value={metadata.description || ''} disabled={pending} onChange={event => setMetadata({ ...metadata, description: event.target.value })} /></label>{onSaveMetadata && <Button feedback="persistence" disabled={pending || !metadata.title?.trim()} onAction={saveMetadata} loadingLabel={t('Salvando…')} successLabel={t('Saved')} errorLabel={t('Tentar novamente')}>{t('Salvar dados do programa')}</Button>}</div></details>}
-    <div className="chips" role="tablist" aria-label={t('Dias do programa')}>{DAYS.map(item => <button type="button" role="tab" key={item} disabled={pending} className={'chip' + (day === item ? ' on' : '')} aria-selected={day === item} onClick={() => setDay(item)}>{t(labels[item])}<span className="professional-day-count">{draft[item]?.length || 0}</span></button>)}</div>
-    <Section title={t('{0} · {1} exercício(s)', t(labels[day]), current.length)}>
-      <details className="professional-day-tools"><summary>{t('Organize days')}</summary><div className="row-actions"><label>{t('Dia de destino')}<select value={copyTo} disabled={pending} onChange={event => setCopyTo(event.target.value)}>{DAYS.map(item => <option key={item} value={item}>{t(labels[item])}</option>)}</select></label><Button disabled={pending || copyTo === day || !current.length} onClick={copyDay}>{t('Copiar dia')}</Button><Button disabled={pending || copyTo === day} onClick={() => setDraft(state => ({ ...state, [copyTo]: state[day] || [], [day]: state[copyTo] || [] }))}>{t('Trocar dias')}</Button></div></details>
-      {!current.length && <p className="muted">{t('Nenhum exercício neste dia.')}</p>}
-      {current.map((entry, index) => <article className="professional-prescription-editor" key={`${entry.exerciseId}-${index}`}>
-        <div className="row between professional-prescription-heading"><strong><span className="professional-exercise-order">{index + 1}.</span> {exerciseName(exercises.find(ex => ex.id === entry.exerciseId) || { id: entry.exerciseId, n: entry.exerciseId })}</strong><div className="row-actions"><Button aria-label={t('Mover exercício {0} para cima', index + 1)} disabled={pending || index === 0} onClick={() => move(index, -1)}>↑</Button><Button aria-label={t('Mover exercício {0} para baixo', index + 1)} disabled={pending || index === current.length - 1} onClick={() => move(index, 1)}>↓</Button><Button aria-label={t('Duplicar exercício {0}', index + 1)} disabled={pending || current.length >= 50} onClick={() => editEntries(entries => { entries.splice(index + 1, 0, structuredClone(entry)); return entries })}>{t('Duplicar')}</Button><Button disabled={pending} onClick={() => editEntries(entries => entries.filter((_, i) => i !== index))}>{t('Remover')}</Button></div></div>
-        <div className="professional-editor-grid program-fields">
-          <label>{t('Tipo de execução')}<select value={entry.mode || 'reps'} disabled={pending} onChange={event => changeMode(index, event.target.value)}><option value="reps">{t('Reps')}</option><option value="time">{t('Duração (s)')}</option><option value="cardio">{t('Cardio')}</option></select></label>
-          {field(entry, index, 'sets', 'Séries', 3)}
-          {entry.mode === 'time' ? field(entry, index, 'sec', 'Duração (s)', 45) : entry.mode === 'cardio' ? <>{field(entry, index, 'min', 'Duração (min)', 20)}{field(entry, index, 'speed', 'Velocidade (km/h)', 8)}</> : field(entry, index, 'reps', 'Reps', 8)}
-          {entry.mode !== 'cardio' && <>{field(entry, index, 'load', 'Carga')}<label>{t('Unidade')}<select disabled={pending} value={entry.unit || 'kg'} onChange={event => update(index, 'unit', event.target.value)}><option value="kg">kg</option><option value="lb">lb</option></select></label></>}
-          {field(entry, index, 'rest', 'Descanso (s)', 90)}
-        </div>
-        <details className="professional-prescription-advanced"><summary>{t('Opções avançadas')}</summary><div className="professional-editor-grid program-fields">
-          <label>{t('Esforço')}<select value={entry.effort || 'none'} disabled={pending} onChange={event => changeEffort(index, event.target.value)}><option value="none">{t('Sem esforço prescrito')}</option><option value="rir">RIR</option><option value="rpe">RPE</option></select></label>
-          {['rir', 'rpe'].includes(entry.effort) && field(entry, index, entry.effort, entry.effort.toUpperCase(), entry.effort === 'rpe' ? 7 : 2)}
-          <label>{t('Grupo de superset')}<TextField value={entry.sg || ''} maxLength={80} disabled={pending} placeholder={t('Mesmo grupo para exercícios em sequência')} onChange={event => update(index, 'sg', event.target.value)} /></label>
-          <label>{t('Notas')}<TextArea value={entry.notes || ''} maxLength={500} disabled={pending} onChange={event => update(index, 'notes', event.target.value)} /></label>
-        </div></details>
-      </article>)}
-      <Button variant="primary" disabled={pending} onClick={() => setPickerOpen(true)}>{t('Adicionar exercício')}</Button>
-    </Section>
-    {pickerOpen && <ProfessionalExercisePicker exercises={exercises} selectedIds={selectedIds} exerciseCount={current.length} dayLabel={t(labels[day])} onAdd={add} onClose={() => setPickerOpen(false)} />}
-    {copyConfirmation && <Dialog title={t('Substituir exercícios do dia?')} onClose={() => setCopyConfirmation(null)}>
-      <p>{t('Os exercícios de {0} serão substituídos pelos de {1}.', t(labels[copyConfirmation.target]), t(labels[copyConfirmation.source]))}</p>
-      <div className="row-actions"><Button variant="primary" onClick={() => { setDraft(state => ({ ...state, [copyConfirmation.target]: structuredClone(state[copyConfirmation.source] || []) })); setCopyConfirmation(null) }}>{t('Substituir dia')}</Button><Button activation="immediate" onClick={() => setCopyConfirmation(null)}>{t('Cancelar')}</Button></div>
-    </Dialog>}
-    <p className="muted small">{t('Publicar salva uma versão do programa. O envio ao aluno é feito no próximo passo.')}</p>
-    <Button variant="primary" intent="primary" disabled={pending} onAction={publish} onSuccess={onPublished} loadingLabel={t('Publicando…')} successLabel={t('Nova versão publicada.')} errorLabel={t('Tentar novamente')}>{t('Publicar nova versão')}</Button>
-  </div>
+import { RoutineEditor } from '../views/RoutineEdit.jsx'
+import TrainingPlanWorkspace from './training/TrainingPlanWorkspace.jsx'
+import { weeklyPlanToWorkspace, workspaceToWeeklyPlan } from '../lib/training-workspace.js'
+import { validateWeeklyPlan } from '../lib/professional-program.js'
+import { Button, TextField, TextArea } from './ui.jsx'
+export default function ProfessionalProgramEditor({ initialPlan = {}, initialMetadata = {}, onPublish, onPublished, onSaveMetadata, onCancel }) {
+ const prefs = useStore(s => s.S)
+ const [state, setState] = useState(() => weeklyPlanToWorkspace(initialPlan, initialMetadata.workoutTitles)), [routineId, setRoutineId] = useState(null), [metadata, setMetadata] = useState(initialMetadata), [error, setError] = useState('')
+ const update = fn => setState(old => { const next = structuredClone(old); fn(next); return next })
+ if (routineId) return <RoutineEditor state={{ ...prefs, ...state }} onUpdate={update} routineId={routineId} mode="professional" onOpen={setRoutineId} onSave={async () => true} onBack={() => setRoutineId(null)} />
+ const save = async () => {
+   const { weeklyPlan, workoutTitles } = workspaceToWeeklyPlan(state)
+   if (!validateWeeklyPlan(weeklyPlan).ok) { setError('Adicione exercícios e organize os dias antes de salvar.'); throw new Error('invalid-plan') }
+   const id = await onPublish(weeklyPlan, metadata, workoutTitles)
+   onPublished?.(id)
+ }
+ return <div className="training-plan-workspace">
+   <TextField aria-label="Nome do modelo" value={metadata.title || ''} onChange={e => setMetadata({ ...metadata, title: e.target.value })} />
+   <details className="card"><summary>Mais opções</summary><TextArea aria-label="Descrição" value={metadata.description || ''} onChange={e => setMetadata({ ...metadata, description: e.target.value })} />{onSaveMetadata && <Button onAction={() => onSaveMetadata(metadata)}>Salvar informações</Button>}</details>
+   {error && <p role="alert">{error}</p>}
+   <TrainingPlanWorkspace state={{ ...prefs, ...state }} onOpen={setRoutineId} onAdd={() => { const id = crypto.randomUUID(); update(next => next.routines.push({ id, name: `Treino ${String.fromCharCode(65 + next.routines.length)}`, ex: [] })); setRoutineId(id) }} />
+   <div className="row"><Button onAction={save} onError={() => setError('Não foi possível salvar o modelo.')} variant="primary">Salvar modelo</Button><Button onClick={onCancel}>Cancelar</Button></div>
+ </div>
 }

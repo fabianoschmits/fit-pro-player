@@ -9,6 +9,7 @@ vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => nu
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
 vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: mocks.state, replaceState: mocks.replace, invalidateAssignedProgramReads: () => {}, getScopeToken: () => ({ ...mocks.scopeToken }), isScopeCurrent: token => token.scope === mocks.scopeToken.scope && token.generation === mocks.scopeToken.generation }) } }))
 vi.mock('../sheets.jsx', () => ({ startFlow: mocks.start }))
+vi.mock('../components/Media.jsx', () => ({ default: () => <div>Animation</div>, Thumb: () => null }))
 import StudentProfessionalDetail from './StudentProfessionalDetail.jsx'
 import { assignedPlanToState } from '../lib/assigned-program.js'
 const detail = id => ({ professional: { professionalId: id, professionalName: id === 'p1' ? 'Ana Silva' : 'João Reis', specialties: ['Força'], bio: 'Acompanhamento', cityRegion: 'São Paulo', registrationType: 'CREF', registrationNumber: '123' }, relationship: { id: `r-${id}`, status: 'active', linkedAt: '2026-09-01' }, materials: [{ assignmentId: `a-${id}`, title: `Programa ${id}`, status: 'replaced', versionNumber: 1, weeklyPlan: { monday: [{ exerciseId: 'squat', sets: 3, reps: 10 }] } }], executions: [{ id: 'e1', day_key: 'monday', status: 'completed', started_at: '2026-10-01', payload: {} }] })

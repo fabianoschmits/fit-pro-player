@@ -1,140 +1,16 @@
 // @vitest-environment happy-dom
-import React, { act } from 'react'
-import { createRoot } from 'react-dom/client'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
-import { Window } from 'happy-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'pro-1' } }, repo: { clientSummaries: vi.fn().mockResolvedValue([{ studentUserId: 's1', displayName: 'Ana', programTitle: 'Força', versionNumber: 1 }]), clientDetail: vi.fn().mockResolvedValue({ studentUserId: 's1', displayName: 'Ana', assignments: [{ id: 'a1', program_title: 'Força', version_number: 1 }], executions: [{ id: 'e1', day_key: 'monday', status: 'completed' }] }), relationships: vi.fn().mockResolvedValue([{ id: 'r1', student_user_id: 's1', status: 'active' }]), programs: vi.fn().mockResolvedValue([]), versions: vi.fn().mockResolvedValue([]), revokeRelationship: vi.fn(), assignProgramVersion: vi.fn().mockResolvedValue({}), revokeAssignment: vi.fn().mockResolvedValue({}), version: vi.fn().mockResolvedValue(null) } }))
-vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
-vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, action }) => <header><h1>{title}</h1>{action}</header> }))
+import React,{act} from 'react'
+import {createRoot} from 'react-dom/client'
+import {MemoryRouter,Routes,Route} from 'react-router-dom'
+import {beforeEach,afterEach,it,expect,vi} from 'vitest'
+const mocks=vi.hoisted(()=>({repo:{clientDetail:vi.fn(),studentNote:vi.fn(),studentPlanDraft:vi.fn(),executionPage:vi.fn()}}))
+vi.mock('../auth/AuthProvider.jsx',()=>({useAuth:()=>({user:{id:'pro'}})}))
+vi.mock('../lib/professional-workflow.js',()=>({createProfessionalWorkflowRepository:()=>mocks.repo}))
 import ProfessionalStudentPage from './ProfessionalStudentPage.jsx'
-function CurrentLocation() { return <output data-location>{useLocation().search}</output> }
-
-let dom, root, container
-beforeEach(() => { vi.clearAllMocks(); mocks.auth.user = { id: 'pro-1' }; dom = new Window({ url: 'https://app.example/#/professional/students/s1' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
-afterEach(async () => { await act(async () => root.unmount()); dom.close() })
-
-describe('professional student detail', () => {
-  it('locks assignment and ending together, then retries a failed assignment without losing its selection', async () => {
-    let fail
-    mocks.repo.assignProgramVersion.mockImplementationOnce(() => new Promise((_, reject) => { fail = reject }))
-    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [{ id: 'a1', status: 'active' }], executions: [] })
-    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Força' }])
-    mocks.repo.versions.mockResolvedValueOnce([{ id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: {} }])
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?section=training&program=p1&version=v1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Encerrar programa ativo').click())
-    const send = [...container.querySelectorAll('button')].find(button => button.textContent === 'Enviar versão')
-    const end = container.querySelector('.danger-confirm .btn.danger')
-    await act(async () => { send.click(); end.click() })
-    expect(mocks.repo.assignProgramVersion).toHaveBeenCalledTimes(1)
-    expect(mocks.repo.revokeAssignment).not.toHaveBeenCalled()
-    expect(send.getAttribute('aria-busy')).toBe('true')
-    await act(async () => fail(new Error('offline')))
-    expect(send.getAttribute('data-state')).toBe('error')
-    expect(container.querySelector('select[aria-label="Versão do programa"]').value).toBe('v1')
-    expect(container.querySelector('[role="alert"]').textContent).toContain('Não foi possível enviar esta versão.')
-    await act(async () => send.click())
-    expect(mocks.repo.assignProgramVersion).toHaveBeenCalledTimes(2)
-    expect(container.querySelector('[role="alert"]')).toBeNull()
-  })
-
-  it.each([
-    ['relationship', 'Encerrar vínculo', 'revokeRelationship', 'Não foi possível encerrar o vínculo.'],
-    ['training', 'Encerrar programa ativo', 'revokeAssignment', 'Não foi possível encerrar o programa.'],
-  ])('keeps the confirmed %s action available after a failure and blocks repeat submissions', async (section, label, method, failure) => {
-    let fail
-    mocks.repo[method].mockImplementationOnce(() => new Promise((_, reject) => { fail = reject })).mockResolvedValueOnce({})
-    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [{ id: 'a1', status: 'active' }], executions: [] })
-    await act(async () => root.render(<MemoryRouter initialEntries={[`/professional/students/s1?section=${section}`]}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /><Route path="/professional/students" element={<p>Students destination</p>} /></Routes></MemoryRouter>))
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === label).click())
-    const confirm = container.querySelector('.danger-confirm .btn.danger')
-    await act(async () => { confirm.click(); confirm.click() })
-    expect(mocks.repo[method]).toHaveBeenCalledTimes(1)
-    expect(confirm.getAttribute('aria-busy')).toBe('true')
-    await act(async () => fail(new Error('offline')))
-    expect(confirm.getAttribute('data-state')).toBe('error')
-    expect(confirm.disabled).toBe(false)
-    expect(container.querySelector('[role="alert"]').textContent).toContain(failure)
-    await act(async () => confirm.click())
-    expect(mocks.repo[method]).toHaveBeenCalledTimes(2)
-    expect(container.querySelector('[role="alert"]')).toBeNull()
-  })
-
-  it('preserves the current history section when a pending version assignment finishes', async () => {
-    let finishAssignment
-    mocks.repo.assignProgramVersion.mockImplementationOnce(() => new Promise(resolve => { finishAssignment = resolve }))
-    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Força' }])
-    mocks.repo.versions.mockResolvedValueOnce([{ id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: {} }])
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?section=training&program=p1&version=v1&from=library']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes><CurrentLocation /></MemoryRouter>))
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Enviar versão').click())
-    await act(async () => [...container.querySelectorAll('a')].find(link => link.textContent === 'Histórico').click())
-    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [{ id: 'new', status: 'active' }], executions: [{ id: 'new-execution', day_key: 'tuesday', status: 'completed' }] })
-    await act(async () => finishAssignment({}))
-    const currentSection = container.querySelector('nav[aria-label="Detalhe do aluno"] a[aria-current="page"]')
-    expect(currentSection.textContent).toBe('Histórico')
-    expect(currentSection.getAttribute('href')).toContain('program=p1')
-    expect(currentSection.getAttribute('href')).toContain('from=library')
-    expect(currentSection.getAttribute('href')).not.toContain('version=v1')
-    expect(container.querySelector('[data-location]').textContent).toBe('?section=history&program=p1&from=library')
-    expect(container.textContent).toContain('Terça')
-  })
-  it('opens a handoff in training, fetches only that program and assigns the selected version', async () => {
-    mocks.repo.programs.mockResolvedValueOnce([{ id: 'p1', title: 'Força' }, { id: 'p2', title: 'Corrida' }])
-    mocks.repo.versions.mockResolvedValueOnce([{ id: 'v1', program_id: 'p1', version_number: 1, weekly_plan: {} }])
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?program=p1&version=v1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
-    expect(container.textContent).toContain('Gerenciar treino')
-    expect(mocks.repo.versions.mock.calls).toEqual([['p1']])
-    expect(container.querySelector('select[aria-label="Versão do programa"]').value).toBe('v1')
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Enviar versão').click())
-    expect(mocks.repo.assignProgramVersion).toHaveBeenCalledWith({ programId: 'p1', versionId: 'v1', studentUserId: 's1' })
-    expect(container.querySelector('nav[aria-label="Detalhe do aluno"] a[aria-current="page"]').textContent).toBe('Treino')
-  })
-  it('uses summary for an invalid section and does not fetch program versions', async () => {
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?section=invalid&program=p1&version=v1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
-    expect(container.querySelector('nav[aria-label="Detalhe do aluno"] a[aria-current="page"]').textContent).toBe('Resumo')
-    expect(mocks.repo.programs).not.toHaveBeenCalled()
-    expect(mocks.repo.versions).not.toHaveBeenCalled()
-  })
-  it('does not show a late student response after switching account', async () => {
-    let finishOld
-    mocks.repo.clientDetail.mockImplementationOnce(() => new Promise(resolve => { finishOld = resolve }))
-    const view = () => <MemoryRouter initialEntries={['/professional/students/s1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>
-    await act(async () => root.render(view()))
-    mocks.auth.user = { id: 'pro-2' }
-    mocks.repo.clientSummaries.mockResolvedValueOnce([{ studentUserId: 's1', displayName: 'Nova pessoa' }])
-    await act(async () => root.render(view()))
-    await act(async () => finishOld({ displayName: 'Pessoa antiga', assignments: [], executions: [{ id: 'old', status: 'abandoned' }] }))
-    expect(container.textContent).toContain('Nova pessoa')
-    expect(container.textContent).not.toContain('Abandonado')
-  })
-  it('restores a history deep link and preserves handoff parameters in section links', async () => {
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1?section=history&program=p1&version=v1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
-    expect(container.textContent).toContain('Histórico de treinos')
-    expect(container.querySelector('a[aria-current="page"][href*="section=history"]')).toBeTruthy()
-    expect(container.querySelector('a[href*="section=training"]')?.getAttribute('href')).toContain('version=v1')
-    expect(mocks.repo.versions).not.toHaveBeenCalled()
-  })
-
-  it('shows prescribed and actual loads, completed sets and unit for an execution', async () => {
-    mocks.repo.clientDetail.mockResolvedValueOnce({ assignments: [], executions: [{ id: 'e', day_key: 'monday', status: 'completed', payload: { unit: 'kg', prescription: [{ id: 'bench', sets: 3, reps: 8, weight: 40, rest: 90 }], entries: [{ id: 'bench', target: { weight: 40 }, sets: [{ done: true, w: 35, r: 7 }, { done: false, w: 40, r: 8 }] }] } }] })
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
-    await act(async () => [...container.querySelectorAll('a')].find(button => button.textContent === 'Histórico').click())
-    expect(container.textContent).toContain('Prescrito')
-    expect(container.textContent).toContain('Realizado')
-    expect(container.textContent).toContain('35 kg')
-    expect(container.textContent).toContain('40 kg')
-    expect(container.textContent).toContain('1/2')
-  })
-  it('separates summary, training, history and relationship actions', async () => {
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students/s1']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} /></Routes></MemoryRouter>))
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    expect(container.textContent).toContain('Ana')
-    expect(container.textContent).toContain('Resumo')
-    expect(container.textContent).toContain('Treino')
-    expect(container.textContent).toContain('Histórico')
-    expect(container.textContent).toContain('Vínculo')
-  })
-})
+let root,container
+beforeEach(()=>{globalThis.IS_REACT_ACT_ENVIRONMENT=true;mocks.repo.clientDetail.mockResolvedValue({displayName:'Ana',assignments:[],executions:[]});mocks.repo.studentNote.mockResolvedValue({body:'Privado'});mocks.repo.studentPlanDraft.mockResolvedValue(null);container=document.createElement('div');root=createRoot(container)})
+afterEach(async()=>{await act(async()=>root.unmount());vi.clearAllMocks()})
+const render=()=>act(async()=>root.render(<MemoryRouter initialEntries={['/professional/students/s']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage/>}/></Routes></MemoryRouter>))
+it('opens the linked student and leads directly to their plan',async()=>{await render();expect(container.textContent).toContain('Ana');expect(container.querySelector('a[href="/professional/students/s/plan"]')).not.toBeNull();expect(container.querySelector('select')).toBeNull();expect(mocks.repo.clientDetail).toHaveBeenCalledWith('s')})
+it('indicates unsent changes and keeps notes separate',async()=>{mocks.repo.studentPlanDraft.mockResolvedValueOnce({title:'ABC',revision:2,sent_revision:1});await render();expect(container.textContent).toContain('Alterações não enviadas');expect(container.querySelector('textarea').value).toBe('Privado')})
+it('does not show student data after a forbidden read',async()=>{mocks.repo.clientDetail.mockRejectedValueOnce(new Error('42501'));await render();expect(container.querySelector('[role="alert"]')).not.toBeNull();expect(container.querySelector('textarea')).toBeNull()})

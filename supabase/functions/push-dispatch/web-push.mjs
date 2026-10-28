@@ -83,7 +83,7 @@ const copy = {
 
 const kindCopy = {
   workout_reminder: 0, weight_reminder: 1, measurement_reminder: 1,
-  program_updated: 2, program_removed: 2, relationship_accepted: 2, relationship_ended: 2,
+  program_received: 2, program_updated: 2, program_removed: 2, relationship_accepted: 2, relationship_ended: 2,
   student_workout_completed: 2, student_workout_abandoned: 2, verification_changed: 2,
 };
 

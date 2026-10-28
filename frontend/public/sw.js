@@ -41,7 +41,7 @@ self.addEventListener('message', e => {
 })
 
 const NOTIFICATION_KINDS = new Set(['workout_reminder', 'weight_reminder',
-  'measurement_reminder', 'program_updated', 'program_removed', 'relationship_accepted',
+  'measurement_reminder', 'program_received','program_updated', 'program_removed', 'relationship_accepted',
   'relationship_ended', 'student_workout_completed', 'student_workout_abandoned', 'verification_changed'])
 const NOTIFICATION_ROUTES = new Set(['/home', '/plan', '/workout', '/stats', '/body-progress',
   '/professional-profile', '/professional/profile', '/professional', '/professional/invites',

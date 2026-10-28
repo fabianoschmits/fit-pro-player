@@ -121,7 +121,7 @@ export function resolveNavigationContext({
     } else {
       detectedContext = 'professional'
       if (normPath === '/professional/students') activeKey = 'prof-students'
-      else if (normPath.startsWith('/professional/programs')) activeKey = 'prof-programs'
+      else if ((normPath.startsWith('/professional/programs') || normPath.startsWith('/professional/templates'))) activeKey = 'prof-programs'
       else if (normPath.startsWith('/professional/invites')) activeKey = 'prof-invites'
       else if (normPath === '/professional/profile' || normPath.startsWith('/professional/profile/') || normPath === '/professional-profile') {
         activeKey = 'prof-profile'
@@ -242,7 +242,7 @@ export function resolveNavigationContext({
       items = [
         { k: 'home', icon: 'house', to: '/home', label: () => t('Home') },
         { k: 'prof-students', icon: 'personCircle', to: '/professional/students', label: () => 'Alunos' },
-        { k: 'prof-programs', icon: 'clipboard', to: '/professional/programs', label: () => 'Programas' },
+        { k: 'prof-programs', icon: 'clipboard', to: '/professional/templates', label: () => 'Modelos' },
         { k: 'prof-invites', icon: 'bell', to: '/professional/invites', label: () => 'Convites' },
       ]
       break

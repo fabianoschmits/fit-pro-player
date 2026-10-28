@@ -1,0 +1,15 @@
+// Disposable PostgreSQL/WASM harness. Auth identity is stubbed; production is never contacted.
+// pgcrypto provisioning is omitted because this suite does not invoke invite/crypto functions.
+import { PGlite } from '@electric-sql/pglite'
+import { readFileSync, readdirSync } from 'node:fs'
+const db = new PGlite()
+await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',raw_app_meta_data jsonb default '{}',created_at timestamptz default now(),updated_at timestamptz default now()); create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$; grant usage on schema public,auth to authenticated,anon,service_role; grant execute on function auth.uid() to public;`)
+const files = readdirSync('supabase/migrations').filter(name => name.startsWith('202609') || ['202610020014_professional_readiness.sql','202610040015_notifications.sql','202610050015_student_professional_management.sql','202610090016_professional_program_metadata.sql','202610090017_professional_workspace_reads.sql','202610190001_domain_training_state.sql','20261022110000_remove_redundant_advisory_locks.sql','20261022120000_handle_initial_insert_unique_violation.sql','20261027120000_plan_library.sql'].includes(name)).sort()
+for (const name of files) {
+ try { await db.exec(readFileSync('supabase/migrations/'+name,'utf8').replace(/^\uFEFF/,'').replace(/create extension if not exists pgcrypto;/i,'')); console.log('APPLIED '+name) }
+ catch(e) { console.error('FAILED '+name+' '+e.message); process.exit(1) }
+}
+try { await db.exec(readFileSync('supabase/tests/20261027120000_plan_library.sql','utf8').replace(/^\uFEFF/,'')); console.log('PASS plan library integration') } catch(e) { console.error(e.message,e.where);process.exit(1) }
+await db.close()
+
+

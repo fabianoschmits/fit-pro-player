@@ -13,10 +13,16 @@ export function applyDomainState(state, domain, data) {
     return next
   }
   if (domain === 'plan') {
+    const revision = data.schedule?.revision || 0
+    if (revision < (state.planServerRevision || 0)) return state
+    next.planServerRevision = revision
     next.routines = data.routines.map(routine => ({ ...cloneRecord(routine.prescription), id: routine.id, name: routine.title }))
     next.planMode = data.schedule?.mode || 'weekly'
     next.week = cloneRecord(data.schedule?.values?.week)
     next.dayPlan = cloneRecord(data.schedule?.values?.dayPlan)
+    next.activeLibraryId = data.schedule?.values?.libraryId || null
+    next.activeLibraryTitle = data.schedule?.values?.libraryTitle || null
+    next.assignedProgram = data.schedule?.values?.assignedProgram || null
     return next
   }
   if (domain === 'body') {

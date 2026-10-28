@@ -42,3 +42,9 @@ describe('domain state projection', () => {
     expect(applyDomainState({ workouts: [] }, 'history', records).workouts.map(workout => workout.id)).toEqual(['old', 'new'])
   })
 })
+it('rejects a stale refresh after a newer selected plan was applied', () => {
+ const selected = { planServerRevision: 8, activeLibraryId: 'new', routines:[{id:'new-routine'}], week:{1:'new-routine'}, workouts:[{id:'history'}] }
+ expect(applyDomainState(selected,'plan',{schedule:{revision:7,values:{libraryId:'old'}},routines:[]})).toBe(selected)
+ const next=applyDomainState(selected,'plan',{schedule:{revision:9,mode:'weekly',values:{libraryId:'personal',week:{1:'own'}}},routines:[{id:'own',title:'Meu ABC',prescription:{ex:[]}}]})
+ expect(next.activeLibraryId).toBe('personal');expect(next.assignedProgram).toBeNull();expect(next.workouts).toBe(selected.workouts)
+})

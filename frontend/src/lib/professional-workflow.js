@@ -72,6 +72,7 @@ const toStudentProfessional = value => ({
   verificationStatus: value?.verification_status || 'unverified',
   linkedAt: value?.linked_at || null,
   activeProgramTitle: value?.active_program_title || null,
+  receivedCount: Number(value?.received_count || 0),
 })
 
 const toStudentProfessionalDetail = value => value ? ({
@@ -120,6 +121,7 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const revokeRelationship = id => rpc('revoke_professional_relationship', { p_relationship_id: id })
   const revokeInvite = id => rpc('revoke_professional_invite', { p_invite_id: id })
   const programs = () => read('programs', q => q.select('*').order('updated_at', { ascending: false }).limit(500))
+  const program = id => read('programs', q => q.select('*').eq('id', id).limit(1)).then(rows => rows[0] || null)
   const versions = programId => read('program_versions', q => q.select('*').eq('program_id', programId).order('version_number', { ascending: false }).limit(100))
   const version = versionId => read('program_versions', q => q.select('*').eq('id', versionId)).then(rows => rows[0] || null)
   const createProgram = (_userId, title, description = '') => rpc('create_program', { p_title: title.trim(), p_description: description.trim() || null })
@@ -148,7 +150,13 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
     const { workout_titles, ...version } = value.version
     return { ...value, version: { ...version, workoutTitles: workout_titles || {} } }
   })
-  const studentProfessionals = () => rpc('student_professional_summaries', {}).then(rows => (rows || []).map(toStudentProfessional))
+  const studentProfessionals = () => rpc('student_professional_cards', {}).then(rows => (rows || []).map(toStudentProfessional))
   const studentProfessionalDetail = professionalId => rpc('student_professional_detail', { p_professional_user_id: professionalId }).then(rows => toStudentProfessionalDetail(rows?.[0]))
-  return Object.freeze({ toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  const planLibrary = (offset = 0) => rpc('athlete_plan_library_page', { p_offset: offset, p_limit: 30 })
+  const applyLibraryPlan = id => rpc('apply_library_plan', { p_plan_id: id })
+  const savePersonalPlan = title => rpc('save_personal_library_plan', { p_title: title })
+  const studentPlanDraft = studentId => read('professional_plan_drafts', q => q.select('*').eq('student_id', studentId).limit(1)).then(rows => rows[0] || null)
+  const savePlanDraft = (studentId, title, workspace, revision) => rpc('save_student_plan_draft', { p_student_id: studentId, p_title: title, p_workspace: workspace, p_expected_revision: revision })
+  const sendPlan = (studentId, revision) => rpc('send_student_plan', { p_student_id: studentId, p_expected_revision: revision })
+  return Object.freeze({ program, planLibrary, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }

@@ -1,37 +1,15 @@
 // @vitest-environment happy-dom
-import React, { act } from 'react'
-import { createRoot } from 'react-dom/client'
-import { MemoryRouter } from 'react-router-dom'
-import { Window } from 'happy-dom'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'pro-1' } }, repo: { professionalRole: vi.fn().mockResolvedValue(true), clientSummaries: vi.fn().mockResolvedValue([{ studentUserId: 's1', displayName: 'Ana', programTitle: 'Força' }, { studentUserId: 's2', displayName: 'Bruno', programTitle: null }]) } }))
-vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
-vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
-vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../components/AppHeader.jsx', () => ({ default: ({ title, action }) => <header><h1>{title}</h1>{action}</header> }))
+import React,{act} from 'react'
+import {createRoot} from 'react-dom/client'
+import {MemoryRouter} from 'react-router-dom'
+import {beforeEach,afterEach,it,expect,vi} from 'vitest'
+const mocks=vi.hoisted(()=>({repo:{studentPage:vi.fn()}}))
+vi.mock('../auth/AuthProvider.jsx',()=>({useAuth:()=>({user:{id:'pro'}})}))
+vi.mock('../lib/professional-workflow.js',()=>({createProfessionalWorkflowRepository:()=>mocks.repo}))
 import ProfessionalStudents from './ProfessionalStudents.jsx'
-
-let dom, root, container
-beforeEach(() => { dom = new Window({ url: 'https://app.example/#/professional/students' }); globalThis.window = dom; globalThis.document = dom.document; globalThis.IS_REACT_ACT_ENVIRONMENT = true; container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
-afterEach(async () => { await act(async () => root.unmount()); dom.close() })
-
-describe('professional students page', () => {
-  it('searches names while retaining the selected version handoff', async () => {
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students?program=p1&version=v1']}><ProfessionalStudents /></MemoryRouter>))
-    const input = container.querySelector('input[aria-label="Buscar aluno"]')
-    await act(async () => { Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(input, 'ana'); input.dispatchEvent(new Event('input', { bubbles: true })) })
-    expect(container.textContent).toContain('Ana')
-    expect(container.textContent).not.toContain('Bruno')
-    expect(container.querySelector('a[href="/professional/students/s1?program=p1&version=v1"]')).toBeTruthy()
-  })
-  it('searches and filters real active students without mixing invites', async () => {
-    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/students']}><ProfessionalStudents /></MemoryRouter>))
-    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
-    expect(container.textContent).toContain('Ana')
-    expect(container.textContent).toContain('Bruno')
-    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Sem programa').click())
-    expect(container.textContent).toContain('Bruno')
-    expect(container.textContent).not.toContain('Ana')
-  })
-})
+let root,container
+beforeEach(()=>{vi.useFakeTimers();globalThis.IS_REACT_ACT_ENVIRONMENT=true;mocks.repo.studentPage.mockResolvedValue({items:[{studentUserId:'s',displayName:'Ana',currentProgram:{title:'ABC'},attentionReasons:[]}],total:1});container=document.createElement('div');root=createRoot(container)})
+afterEach(async()=>{await act(async()=>root.unmount());vi.useRealTimers();vi.clearAllMocks()})
+const render=async()=>{await act(async()=>root.render(<MemoryRouter><ProfessionalStudents/></MemoryRouter>));await act(async()=>vi.advanceTimersByTimeAsync(220))}
+it('opens the student from a card and sends filters to the server',async()=>{await render();expect(container.querySelector('a[href="/professional/students/s"]')).not.toBeNull();await act(async()=>[...container.querySelectorAll('button')].find(x=>x.textContent==='Sem plano').click());await act(async()=>vi.advanceTimersByTimeAsync(220));expect(mocks.repo.studentPage).toHaveBeenLastCalledWith({search:'',status:'without_program',offset:0})})
+it('shows an actionable load error',async()=>{mocks.repo.studentPage.mockRejectedValueOnce(new Error('offline'));await render();expect(container.querySelector('[role="alert"]').textContent).toContain('Tentar novamente')})

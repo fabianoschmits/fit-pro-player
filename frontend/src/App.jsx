@@ -93,6 +93,7 @@ const InviteLanding = lazy(loadInviteLanding)
 const ProfessionalStudents = lazy(loadProfessionalStudents)
 const ProfessionalStudentPage = lazy(loadProfessionalStudentPage)
 const ProfessionalPrograms = lazy(loadProfessionalPrograms)
+const ProfessionalStudentPlan = lazy(() => import('./views/ProfessionalStudentPlan.jsx'))
 const StudentProfessionals = lazy(loadStudentProfessionals)
 const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ default: module.StudentConnect })))
 const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
@@ -308,31 +309,6 @@ function Shell() {
   }, [auth.status, auth.user?.id, boot])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
-    let disposed = false
-    const token = useStore.getState().getAssignedProgramReadToken()
-    const currentScope = () => !disposed && useStore.getState().isAssignedProgramReadCurrent(token, auth.user.id)
-    const client = getBrowserSupabaseClient()
-    if (!client) return undefined
-    const repository = createProfessionalWorkflowRepository({ client })
-    Promise.all([repository.professionalRole(auth.user.id), repository.assignedPrograms(auth.user.id)]).then(async ([isProfessional, assignments]) => {
-      if (!currentScope() || isProfessional) return
-      const latest = assignments[0]
-      if (!latest) {
-        useStore.getState().invalidateAssignedProgramReads(token)
-        const current = useStore.getState().S
-        if (current.assignedProgram) useStore.getState().replaceState(clearAssignedProgramFromState({ ...current }))
-        return
-      }
-      const version = await repository.version(latest.version_id)
-      if (!currentScope() || !version) return
-      useStore.getState().invalidateAssignedProgramReads(token)
-      const current = useStore.getState().S
-      if (current.assignedProgram?.versionId !== version.id || current.assignedProgram?.assignmentId !== latest.id) useStore.getState().replaceState(assignedPlanToState({ ...current }, version, latest))
-    }).catch(() => {})
-    return () => { disposed = true }
-  }, [auth.status, auth.user?.id, ready, appEntered])
-  useEffect(() => {
-    if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
     const client = getBrowserSupabaseClient()
     if (!client || typeof client.rpc !== 'function') return undefined
     const accountId = auth.user.id
@@ -423,6 +399,7 @@ function Shell() {
     const messages = {
       workout_reminder: 'Your planned workout is coming up.',
       weight_reminder: 'Time to record your weight.', measurement_reminder: 'Time to record your body measurements.',
+      program_received: 'Novo plano recebido. Abra sua biblioteca para visualizar e aplicar.',
       program_updated: 'Your training plan has an update.', program_removed: 'Your training plan has an update.',
       relationship_accepted: 'Your professional connection has an update.', relationship_ended: 'Your professional connection has an update.',
       student_workout_completed: 'A student recorded a workout update.', student_workout_abandoned: 'A student recorded a workout update.',
@@ -524,6 +501,12 @@ function Shell() {
                 <Route path="/professional/invites" element={<ProfessionalInvites />} />
                 <Route path="/professional/students" element={<ProfessionalStudents />} />
                 <Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} />
+                <Route path="/professional/students/:studentId/plan" element={<ProfessionalStudentPlan />} />
+                <Route path="/professional/students/:studentId/plan/r/:routineId" element={<ProfessionalStudentPlan />} />
+                <Route path="/professional/templates" element={<ProfessionalPrograms />} />
+                <Route path="/professional/templates/new" element={<ProfessionalPrograms />} />
+                <Route path="/professional/templates/:programId" element={<ProfessionalPrograms />} />
+                <Route path="/professional/templates/:programId/edit" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/new" element={<ProfessionalPrograms />} />
                 <Route path="/professional/programs/:programId" element={<ProfessionalPrograms />} />

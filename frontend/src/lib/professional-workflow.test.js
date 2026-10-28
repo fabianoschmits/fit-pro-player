@@ -132,13 +132,13 @@ describe('professional management repository', () => {
       professionalId: 'pro-1', relationshipId: 'link-1', professionalName: 'Ana',
       bio: 'Treino adaptado', specialties: ['força'], cityRegion: 'São Paulo',
       registrationType: 'CREF', registrationNumber: '123', verificationStatus: 'verified',
-      linkedAt: '2026-10-01', activeProgramTitle: 'Força',
+      linkedAt: '2026-10-01', activeProgramTitle: 'Força', receivedCount: 0,
     }, {
       professionalId: 'pro-2', relationshipId: 'link-2', professionalName: 'Bia',
       bio: null, specialties: [], cityRegion: null, registrationType: null,
-      registrationNumber: null, verificationStatus: 'unverified', linkedAt: null, activeProgramTitle: null,
+      registrationNumber: null, verificationStatus: 'unverified', linkedAt: null, activeProgramTitle: null, receivedCount: 0,
     }])
-    expect(rpc).toHaveBeenCalledExactlyOnceWith('student_professional_summaries', {})
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('student_professional_cards', {})
   })
 
   it('normalizes selected professional detail and assigned material without changing execution shape', async () => {
@@ -151,7 +151,7 @@ describe('professional management repository', () => {
     const repository = createProfessionalWorkflowRepository({ client: { rpc } })
 
     expect(await repository.studentProfessionalDetail('pro-1')).toEqual({
-      professional: { professionalId: 'pro-1', relationshipId: 'link-1', professionalName: 'Ana', bio: null, specialties: [], cityRegion: null, registrationType: null, registrationNumber: null, verificationStatus: 'unverified', linkedAt: '2026-10-01', activeProgramTitle: null },
+      professional: { professionalId: 'pro-1', relationshipId: 'link-1', professionalName: 'Ana', bio: null, specialties: [], cityRegion: null, registrationType: null, registrationNumber: null, verificationStatus: 'unverified', linkedAt: '2026-10-01', activeProgramTitle: null, receivedCount: 0 },
       relationship: { id: 'link-1', status: 'active', linkedAt: '2026-10-01' },
       materials: [{ assignmentId: 'a-1', programId: 'p-1', versionId: 'v-1', title: 'Força', description: 'Base', objective: null, status: 'revoked', versionNumber: 2, publishedAt: '2026-09-30', assignedAt: '2026-10-02', weeklyPlan: { monday: [] }, workoutTitles: {} }],
       executions: [{ id: 'e-1', assignment_id: 'a-1', version_id: 'v-1', student_user_id: 's-1', day_key: 'monday', status: 'completed', payload: { sets: 3 }, started_at: '2026-10-02', completed_at: '2026-10-02', prescription_snapshot: {}, program_title: 'Força', version_number: 2 }],

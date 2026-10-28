@@ -38,15 +38,16 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
     })
     if (domain === 'plan') {
       const input = {
-        mode: state.planMode, schedule: { week: state.week, dayPlan: state.dayPlan },
+        mode: state.planMode, schedule: { week: state.week, dayPlan: state.dayPlan, ...(state.activeLibraryId ? { libraryId: state.activeLibraryId, libraryTitle: state.activeLibraryTitle } : {}) },
         routines: state.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
       }
-      try { return await repository.savePlan({ ...input, expectedRevision: planRevision }) }
+      try { return await repository.savePlan({ ...input, expectedRevision: Math.max(planRevision, state.planServerRevision || 0) }) }
       catch (error) {
         if (error?.kind !== 'revision-conflict') throw error
         const fresh = await repository.loadPlan()
+        if ((fresh.schedule?.values?.libraryId || null) !== (state.activeLibraryId || null)) throw error
         planRevision = fresh.schedule?.revision || 0
-        return repository.savePlan({ ...input, expectedRevision: planRevision })
+        return repository.savePlan({ ...input, expectedRevision: Math.max(planRevision, state.planServerRevision || 0) })
       }
     }
     const input = { displayUnit: state.displayUnit, values: preferenceValues(state) }
@@ -60,7 +61,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   }
 
   function recordRevision(domain, data) {
-    if (domain === 'plan') planRevision = data.schedule?.revision || 0
+    if (domain === 'plan') planRevision = Math.max(planRevision, data.schedule?.revision || 0, getState().planServerRevision || 0)
     if (domain === 'preferences') preferenceRevision = data.revision || 0
   }
 
@@ -99,6 +100,20 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
         let saved
         try { saved = await save(domain, state) }
         catch (error) {
+          if (domain === 'plan' && error?.kind === 'selection-conflict') {
+            try {
+              await repository.saveDetachedPlan({ title: 'Meu plano · alterações recuperadas', state })
+              const remote = await repository.loadPlan()
+              if (!current()) break
+              recordRevision(domain, remote)
+              if (planFingerprint(getState()) !== sentFingerprint) continue
+              const next = applyDomainState(getState(), domain, remote)
+              next._pendingSync = { ...next._pendingSync, plan: false }
+              replaceState(next)
+              failures.delete(domain)
+              continue
+            } catch (recoveryError) { failures.set(domain, recoveryError?.kind || 'request-failed'); break }
+          }
           failures.set(domain, error?.kind || 'request-failed')
           if (error?.retryable && isOnline() && !retryTimers.has(domain)) {
             const attempts = retryAttempts.get(domain) || 0

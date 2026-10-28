@@ -31,6 +31,7 @@ function mapError(error) {
   if (code === '40001') {
     return new TrainingRepositoryError('revision-conflict', { code, retryable: true, cause: error })
   }
+  if (code === '42501' && message.includes('plan selection changed')) return new TrainingRepositoryError('selection-conflict', { code, cause: error })
   if (code === '42501' && message.includes('workout session not found')) return new TrainingRepositoryError('session-missing', { code, retryable: true, cause: error })
   if (code === '42501' || code === 'PGRST301' || error?.status === 401) return new TrainingRepositoryError('forbidden', { code, cause: error })
   if (code === '55000') return new TrainingRepositoryError('finalized', { code, cause: error })
@@ -208,6 +209,12 @@ export function createTrainingRepository({ client, accountId }) {
       }, parsePreferences)
     },
 
+    saveDetachedPlan({ title, state }) {
+      return rpc('store_personal_plan_snapshot', { p_title: title, p_plan: {
+        mode: state.planMode, schedule: { week: state.week, dayPlan: state.dayPlan },
+        routines: state.routines.map(({ id, name, ...prescription }) => ({ id, title: name, prescription })),
+      } }, value => value)
+    },
     savePlan({ expectedRevision, mode, schedule, routines }) {
       return rpc('save_athlete_plan', {
         p_expected_revision: expectedRevision,

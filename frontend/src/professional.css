@@ -330,3 +330,19 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .management-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .management-button{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 14px;border-radius:10px;border:1px solid var(--sep);color:var(--label);background:var(--surface);font-size:14px;font-weight:600;text-decoration:none}
 .management-button-primary{background:var(--acc);color:var(--on-acc);border-color:transparent}
+.training-exercise-card { width:100%; min-width:0; padding:0; overflow:hidden; }
+.training-exercise-card .routine-item-main { width:100%; min-height:64px; padding:12px; text-align:left; }
+.training-exercise-details { padding:12px; overflow-wrap:anywhere; }
+.training-exercise-details .exmedia { max-width:100%; }
+.training-plan-workspace, .plan-library { min-width:0; }
+.plan-library { display:grid; gap:12px; margin-bottom:24px; }
+.plan-library section { display:grid; gap:12px; min-width:0; }
+.training-plan-workspace [hidden], .routine-builder [hidden], .plan-view [hidden] { display:none !important; }
+.routine-exercise-list > div > .item { flex-wrap:wrap; padding:0; }
+.routine-item-tools { margin-left:auto; }
+@media(max-width:430px) {
+ .training-plan-workspace .plan-cols { display:grid; grid-template-columns:minmax(0,1fr); }
+ .training-plan-workspace .plan-day-name { overflow-wrap:anywhere; }
+ .plan-library .row { flex-wrap:wrap; }
+ .management-student-record { flex-wrap:wrap; }
+}

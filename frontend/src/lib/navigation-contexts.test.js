@@ -161,7 +161,7 @@ describe('navigation-contexts resolver', () => {
     const resPrograms = resolveNavigationContext({ pathname: '/professional/programs' })
     expect(resPrograms.contextId).toBe('professional')
     expect(resPrograms.activeKey).toBe('prof-programs')
-    expect(resPrograms.pivotItem?.label()).toBe('Programas')
+    expect(resPrograms.pivotItem?.label()).toBe('Modelos')
 
     const resProgramNew = resolveNavigationContext({ pathname: '/professional/programs/new' })
     expect(resProgramNew.contextId).toBe('professional')

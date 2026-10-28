@@ -5,7 +5,7 @@ import useManagementNavVisibility from './useManagementNavVisibility.js'
 const LINKS = [
   ['Visão geral', '/professional'],
   ['Alunos', '/professional/students'],
-  ['Programas', '/professional/programs'],
+  ['Modelos', '/professional/templates'],
   ['Convites', '/professional/invites'],
   ['Perfil', '/professional/profile'],
 ]

@@ -1,3 +1,4 @@
+import ExerciseCard from './training/ExerciseCard.jsx'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { normalizeWeeklyPlan } from '../lib/professional-program.js'
 import { t } from '../lib/i18n.js'
@@ -12,7 +13,7 @@ export function ProfessionalPrescription({ plan = {}, entries, unit = 'kg' }) {
   const days = entries ? { session: entries } : normalizeWeeklyPlan(plan)
   return <div className="professional-prescription">{Object.entries(days).map(([day, items]) => <div key={day}>
     {day !== 'session' && <h4>{professionalDayLabel(day)}</h4>}
-    {items.map((entry, index) => <div className="professional-prescription-row" key={`${entry.exerciseId || entry.id}-${index}`}><strong>{nameOf(entry.exerciseId || entry.id)}</strong><span>{entry.sets} × {dose(entry)}{entry.mode !== 'cardio' ? ` / ${entry.load ?? entry.weight ?? 0} ${entry.unit || unit}` : ''}</span><span className="muted">{t('Descanso (s)')}: {entry.rest ?? '—'}{entry.sg ? ` / ${t('Grupo de superset')}: ${entry.sg}` : ''}{entry.rir != null ? ` / RIR ${entry.rir}` : ''}{entry.rpe != null ? ` / RPE ${entry.rpe}` : ''}</span>{entry.notes && <p>{entry.notes}</p>}</div>)}
+    {items.map((entry, index) => <ExerciseCard key={`${entry.exerciseId || entry.id}-${index}`} entry={{ ...entry, id: entry.exerciseId || entry.id, weight: entry.load ?? entry.weight ?? 0 }} unit={unit} />)}
   </div>)}</div>
 }
 
