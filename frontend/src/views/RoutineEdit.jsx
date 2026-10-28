@@ -174,7 +174,7 @@ export function RoutineEditor({ state, onUpdate, routineId: suppliedId, basePath
   readOnly = readOnly || Boolean(r.assigned)
   const canDelete = !readOnly
 
-  return <div className="narrow routine-builder">
+  return <div className={`narrow routine-builder${mode === 'professional' ? ' management-routine-editor' : ''}`}>
     {planProgress && <PlanProgress progress={planProgress} />}
     <div className="hdr routine-builder-head">
       <button className="iconbtn" onClick={() => onBack ? onBack() : nav(basePath)} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>

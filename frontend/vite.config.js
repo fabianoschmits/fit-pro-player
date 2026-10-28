@@ -7,6 +7,7 @@ const media = process.env.MEDIA_TARGET || 'http://127.0.0.1:8888'
 
 export default defineConfig({
   plugins: [inlineAppleTouchIcon(), react()],
+  optimizeDeps: { include: ['qrcode'] },
   test: { exclude: [...configDefaults.exclude, 'e2e/**'] },
   base: './',
   server: {

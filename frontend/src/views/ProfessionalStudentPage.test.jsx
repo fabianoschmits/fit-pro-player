@@ -14,3 +14,13 @@ const render=()=>act(async()=>root.render(<MemoryRouter initialEntries={['/profe
 it('opens the linked student and leads directly to their plan',async()=>{await render();expect(container.textContent).toContain('Ana');expect(container.querySelector('a[href="/professional/students/s/plan"]')).not.toBeNull();expect(container.querySelector('select')).toBeNull();expect(mocks.repo.clientDetail).toHaveBeenCalledWith('s')})
 it('indicates unsent changes and keeps notes separate',async()=>{mocks.repo.studentPlanDraft.mockResolvedValueOnce({title:'ABC',revision:2,sent_revision:1});await render();expect(container.textContent).toContain('Alterações não enviadas');expect(container.querySelector('textarea').value).toBe('Privado')})
 it('does not show student data after a forbidden read',async()=>{mocks.repo.clientDetail.mockRejectedValueOnce(new Error('42501'));await render();expect(container.querySelector('[role="alert"]')).not.toBeNull();expect(container.querySelector('textarea')).toBeNull()})
+it('opens private notes through the profile navigation without losing the loaded draft',async()=>{
+ await render()
+ const link=container.querySelector('a[href="/professional/students/s?section=notes"]')
+ expect(link).not.toBeNull()
+ await act(async()=>link.dispatchEvent(new MouseEvent('click',{bubbles:true,button:0})))
+ const notes=container.querySelector('textarea').closest('details')
+ expect(notes.hidden).toBe(false)
+ expect(notes.open).toBe(true)
+ expect(container.querySelector('textarea').value).toBe('Privado')
+})

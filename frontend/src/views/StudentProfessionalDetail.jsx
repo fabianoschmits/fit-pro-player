@@ -1,7 +1,8 @@
+import Link from '../components/ManagementLink.jsx'
 import TrainingPlanPreview from '../components/training/TrainingPlanPreview.jsx'
 import { weeklyPlanToWorkspace } from '../lib/training-workspace.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
@@ -67,9 +68,9 @@ function DetailWorkspace({ professionalId }) {
   const materials = data.materials || []; const materialId = params.get('material')
   const selectedMaterial = materials.find(item => item.assignmentId === materialId)
   const displayed = materialId ? selectedMaterial ? [selectedMaterial] : [] : materials
-  return <ManagementLayout audience="student" className="student-professional-detail" title={person.professionalName} subtitle={t('Acompanhamento profissional')} backTo="/student/professionals">
+  return <ManagementLayout audience="student" className="student-professional-detail" title={t('Perfil profissional')} subtitle={t('Acompanhamento profissional')} backTo="/student/professionals">
     {actionError && <p role="alert" className="management-error">{actionError}</p>}
-    <div className="management-person-strip"><ManagementAvatar name={person.professionalName} /><div><strong>{person.professionalName}</strong>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}</div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus></div>
+    <div className="management-person-strip"><ManagementAvatar name={person.professionalName} avatarRef={person.avatarRef} userId={person.professionalId} /><div><strong>{person.professionalName}</strong>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}</div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus></div>
     <nav className="management-section-nav" aria-label={t('Detalhe do profissional')}>{SECTIONS.map(([value, label]) => <Link key={value} to={sectionUrl(value)} aria-current={section === value ? 'page' : undefined}>{t(label)}</Link>)}</nav>
     {section === 'summary' && <div className="management-person-facts"><ManagementPanel title={t('Apresentação')}><p>{person.bio || t('O profissional ainda não adicionou uma apresentação.')}</p>{person.specialties?.length > 0 && <><h3>{t('Especialidades')}</h3><p>{person.specialties.join(' · ')}</p></>}{person.cityRegion && <><h3>{t('Localização')}</h3><p>{person.cityRegion}</p></>}</ManagementPanel><ManagementPanel title={t('Registro profissional')}>{person.registrationType || person.registrationNumber ? <p>{[person.registrationType, person.registrationNumber].filter(Boolean).join(' ')}</p> : <p className="muted">{t('Registro não informado.')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(person.verificationStatus))}</p><Link className="management-button" to={sectionUrl('training')}>{t('Ver treino recebido')}</Link></ManagementPanel></div>}
     {section === 'training' && <ManagementPanel title={t('Treino recebido')} description={t('Até 100 materiais recentes deste profissional.')}>

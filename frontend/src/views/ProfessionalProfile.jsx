@@ -1,6 +1,8 @@
+import { useStore } from '../store/useStore.js'
+import Link from '../components/ManagementLink.jsx'
 import { t } from '../lib/i18n.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalProfileRepository } from '../lib/professional-profile.js'
@@ -21,6 +23,7 @@ export default function ProfessionalProfile() {
 
 function ProfileWorkspace({ auth }) {
   const navigate = useNavigate()
+  const avatarId = useStore(s => s.S.profile?.avatarId)
   const { pathname } = useLocation()
   const repository = useMemo(() => createProfessionalProfileRepository({ client: getBrowserSupabaseClient() }), [])
   const [profile, setProfile] = useState(EMPTY)
@@ -100,7 +103,7 @@ function ProfileWorkspace({ auth }) {
   return <ManagementLayout title={t('Perfil profissional')} subtitle={t('Sua apresentação para os alunos.')} backTo="/more" action={<Link className="management-button management-button-primary" to="/professional/profile/edit">{t('Editar perfil')}</Link>}>
     {notice && <FppActionFeedback state="success" className="management-notice">{notice}</FppActionFeedback>}
     <ManagementPanel className="management-profile-identity">
-      <div className="management-person-heading"><ManagementAvatar name={profile.professionalName} /><div><h2>{profile.professionalName || t('Sem perfil profissional')}</h2>{profile.cityRegion && <p>{profile.cityRegion}</p>}</div></div>
+      <div className="management-person-heading"><ManagementAvatar name={profile.professionalName} avatarRef={avatarId} userId={auth.user?.id} /><div><h2>{profile.professionalName || t('Sem perfil profissional')}</h2>{profile.cityRegion && <p>{profile.cityRegion}</p>}</div></div>
       <div className="management-profile-bio"><h3>{t('Apresentação')}</h3><p>{profile.bio || t('Adicione uma apresentação curta.')}</p></div>
     </ManagementPanel>
     <div className="management-profile-details">

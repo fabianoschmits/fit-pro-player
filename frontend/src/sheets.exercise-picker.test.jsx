@@ -8,6 +8,7 @@ vi.mock('./components/Media.jsx', () => ({
   Thumb: ({ ex }) => <span className="thumb" data-thumb-id={ex.id} />,
 }))
 vi.mock('./lib/sound.js', () => ({ beep: vi.fn(), vibrate: vi.fn() }))
+vi.mock('./components/ExerciseSpriteThumb.jsx', () => ({ default: ({ ex }) => <span className="thumb" data-thumb-id={ex.id} /> }))
 
 import { exercisePicker } from './sheets.jsx'
 import { DEF, useStore } from './store/useStore.js'

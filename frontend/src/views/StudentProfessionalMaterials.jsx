@@ -1,5 +1,6 @@
+import Link from '../components/ManagementLink.jsx'
 import { useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'

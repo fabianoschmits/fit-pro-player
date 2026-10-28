@@ -1,5 +1,6 @@
+import Link from './ManagementLink.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
@@ -57,6 +58,6 @@ function InviteWorkspace({ initialCode }) {
     </ManagementPanel>
     {busy && <FppSkeleton label={t('Consultando convite…')} rows={2} />}
     {!busy && data && !preview && data.code === code && <ManagementPanel title={t('Convite indisponível')}><p role="alert">{t('Convite inválido ou expirado.')}</p><p className="muted">{t('Peça um novo código ao profissional.')}</p></ManagementPanel>}
-    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" intent="primary" disabled={accepting || busy} onAction={accept} onSuccess={() => { if (alive.current) navigate('/student/professionals?invite=accepted', { replace: true }) }} loadingLabel={t('Vinculando…')} errorLabel={t('Tentar novamente')}>{t('Vincular a este profissional')}</Button></ManagementPanel>}
+    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} avatarRef={preview.avatar_ref} userId={preview.professional_user_id} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" intent="primary" disabled={accepting || busy} onAction={accept} onSuccess={() => { if (alive.current) navigate('/student/professionals?invite=accepted', { replace: true }) }} loadingLabel={t('Vinculando…')} errorLabel={t('Tentar novamente')}>{t('Vincular a este profissional')}</Button></ManagementPanel>}
   </ManagementLayout>
 }

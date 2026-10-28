@@ -60,7 +60,7 @@ test('browser Back recovers a workspace after a failed page import', async ({pag
   await seed(page,{professional:true,rpc})
   await page.route('**/src/views/ProfessionalPrograms.jsx*', route => route.fulfill({contentType:'application/javascript',body:'throw new Error("Fixture program unavailable"); export default function Page() { return null }'}))
   await page.goto('/#/professional')
-  await page.locator('[data-tab-key="prof-programs"]').click()
+  await page.locator('.management-nav').getByRole('link', { name: 'Modelos', exact: true }).click()
   await expect(page).toHaveURL(/#\/professional\/templates$/)
   await expect(page.locator('.management-layout')).toHaveCount(0)
   await expect(page.getByRole('button',{name:/Recarregar/})).toBeVisible()
@@ -121,8 +121,8 @@ test('legacy program creation redirects to the shared template editor', async ({
  await page.getByRole('textbox',{name:'Nome do modelo',exact:true}).fill('Novo modelo integrado')
  await page.getByRole('button',{name:'Criar modelo',exact:true}).click()
  await expect(page).toHaveURL(new RegExp(`professional/templates/${PROGRAM}$`))
- await expect(page.locator('.training-plan-workspace')).toBeVisible()
- await page.reload();await expect(page.locator('.training-plan-workspace')).toBeVisible()
+ await expect(page.locator('.training-plan-workspace').first()).toBeVisible()
+ await page.reload();await expect(page.locator('.training-plan-workspace').first()).toBeVisible()
  await page.getByRole('button',{name:'Cancelar',exact:true}).click();await expect(page).toHaveURL(/professional\/templates$/)
 })
 
@@ -185,7 +185,7 @@ for (const width of [320,360,390,1280,1440]) for (const theme of ['light','dark'
     const selected = page.locator('.management-nav [aria-current="page"]')
     if (await selected.count()) {
       await expect.poll(async () => selected.evaluate(link => {const a=link.getBoundingClientRect(),b=link.closest('nav').getBoundingClientRect();return a.left>=b.left-2 && a.right<=b.right+2}),{message:route}).toBe(true)
-      expect(await selected.evaluate(el => getComputedStyle(el).backgroundColor),route).toBe('rgba(0, 0, 0, 0)')
+      expect(await selected.evaluate(el => getComputedStyle(el).color),route).not.toBe(await selected.evaluate(el => getComputedStyle(el.closest('nav')).color))
       expect(await selected.evaluate(el => getComputedStyle(el).boxShadow),route).toBe('none')
     }
     await page.screenshot({path:testInfo.outputPath(`management-${width}-${theme}-${index}.png`),fullPage:true})

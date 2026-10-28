@@ -1,5 +1,6 @@
+import Link from '../components/ManagementLink.jsx'
 import { useCallback, useMemo } from 'react'
-import { Link, Navigate, useLocation, useSearchParams } from 'react-router-dom'
+import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
@@ -39,7 +40,7 @@ function ProfessionalsOverview() {
     {busy ? <FppSkeleton label={t('Carregando…')} /> : data && <>
       <Link className="management-shortcut" to="/plan">Planos recebidos · Abrir biblioteca</Link>
       <ManagementPanel title={t('Profissionais vinculados ({0})', data.professionals.length)}>{data.professionals.length ? <div className="management-person-list">{data.professionals.map(person => <Link className="management-person-link" to={`/student/professionals/${person.professionalId}`} key={person.professionalId}>
-        <ManagementAvatar name={person.professionalName} /><div><h3>{person.professionalName}</h3>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}<p>{person.receivedCount || 0} planos recebidos</p><small className="muted">{t('Desde {0}', professionalDate(person.linkedAt))}</small></div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus>
+        <ManagementAvatar name={person.professionalName} avatarRef={person.avatarRef} userId={person.professionalId} /><div><h3>{person.professionalName}</h3>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}<p>{person.receivedCount || 0} planos recebidos</p><small className="muted">{t('Desde {0}', professionalDate(person.linkedAt))}</small></div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus>
       </Link>)}</div> : <ManagementEmpty title={t('Você ainda não possui profissionais vinculados.')} description={t('Use o convite recebido para começar o acompanhamento.')} action={<Link className="management-button" to="/student/professionals/add">{t('Adicionar profissional')}</Link>} />}</ManagementPanel>
       <Link className="management-shortcut" aria-label={t('Ver materiais')} to="/student/professionals/materials"><span><strong>{t('Ver materiais')}</strong><small>{t('Programas e prescrições dos seus profissionais')}</small></span><span aria-hidden="true">›</span></Link>
     </>}

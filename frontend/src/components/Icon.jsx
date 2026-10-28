@@ -98,6 +98,9 @@ const P = {
 
   /* ---- objects ---- */
   person: <><circle cx="12" cy="8" r="3.8" /><path d="M4.8 20.4a7.2 7.2 0 0 1 14.4 0" /></>,
+  person2: <><circle cx="9" cy="8" r="3" /><path d="M3 20v-1a6 6 0 0 1 12 0v1M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 5v1" /></>,
+  personPlus: <><circle cx="9" cy="8" r="3" /><path d="M3 20v-1a6 6 0 0 1 12 0v1M19 8v6M16 11h6" /></>,
+  envelope: <><rect x="3" y="5" width="18" height="14" rx="3" /><path d="m4 7 8 6 8-6" /></>,
   personCircle: <><circle cx="12" cy="12" r="8.4" /><circle cx="12" cy="10" r="2.9" /><path d="M6.6 18.4a5.8 5.8 0 0 1 10.8 0" /></>,
   clipboard: <><rect x="5.4" y="4.8" width="13.2" height="15.8" rx="2.6" /><path d="M9 4.8a1.6 1.6 0 0 1 1.6-1.6h2.8A1.6 1.6 0 0 1 15 4.8v1.4H9Z" /><path d="M9.2 11.6h5.6M9.2 15.2h4" /></>,
   list: <path d="M8.4 6.6h11.2M8.4 12h11.2M8.4 17.4h11.2M4.6 6.6h.01M4.6 12h.01M4.6 17.4h.01" />,

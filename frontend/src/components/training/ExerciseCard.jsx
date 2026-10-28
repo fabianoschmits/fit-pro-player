@@ -1,5 +1,6 @@
 import { useId, useState } from 'react'
-import Media, { Thumb } from '../Media.jsx'
+import Media from '../Media.jsx'
+import ExerciseSpriteThumb from '../ExerciseSpriteThumb.jsx'
 import { exOr, exerciseName } from '../../lib/exercises.js'
 import { exLine } from '../../lib/history.js'
 import { t } from '../../lib/i18n.js'
@@ -10,7 +11,7 @@ export default function ExerciseCard({ entry, unit = 'kg', onEdit, onChange, chi
   const id = useId(), ex = exOr(entry.id)
   return <article className="card training-exercise-card">
     <button className="routine-item-main" aria-expanded={expanded} aria-controls={id} onClick={() => setExpanded(value => !value)}>
-      <Thumb ex={ex} /><span className="grow"><strong className="tt">{exerciseName(ex)}</strong><span className="ss">{exLine(entry, unit)}{entry.rest != null ? ` · ${entry.rest}s` : ''}</span><span className="ss">{t(ex.tg || ex.bp)}{ex.secondaryMuscles?.length ? ` · ${ex.secondaryMuscles.map(t).join(' · ')}` : ''}</span></span><Icon name={expanded ? 'chevronUp' : 'chevronDown'} />
+      <ExerciseSpriteThumb ex={ex} /><span className="grow"><strong className="tt">{exerciseName(ex)}</strong><span className="ss">{exLine(entry, unit)}{entry.rest != null ? ` · ${entry.rest}s` : ''}</span><span className="ss">{t(ex.tg || ex.bp)}{ex.secondaryMuscles?.length ? ` · ${ex.secondaryMuscles.map(t).join(' · ')}` : ''}</span></span><Icon name={expanded ? 'chevronUp' : 'chevronDown'} />
     </button>
     {expanded && <div id={id} className="training-exercise-details"><Media ex={ex} compact />
       <p>{exLine(entry, unit)}</p>{entry.rest != null && <p>{entry.rest} s · {t('Rest')}</p>}

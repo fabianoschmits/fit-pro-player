@@ -1,3 +1,4 @@
+import ExerciseSpriteThumb from './components/ExerciseSpriteThumb.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from './store/useStore.js'
@@ -806,7 +807,7 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
         return <div key={e.id} className={'item picker-item' + (selected ? ' item-selected' : '') + (previewing ? ' is-previewing' : '')}>
           <button type="button" className="picker-item-main" aria-expanded={previewing} aria-controls={previewing ? previewDomId : undefined}
             onClick={() => setPreviewId(current => current === e.id ? null : e.id)}>
-            <Thumb ex={e} /><span className="grow"><span className="tt">{exerciseName(e)}</span><span className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</span></span>
+            <ExerciseSpriteThumb ex={e} /><span className="grow"><span className="tt">{exerciseName(e)}</span><span className="ss">{sentenceCase(t(e.tg || e.bp))} · {sentenceCase(t(e.eq))}</span></span>
             {selected && <span className="tag acc"><Icon name="check" />{t('already in')}</span>}
             {!selected && usage[e.id] && <span className="tag acc"><Icon name="starFill" /></span>}
             <Icon name={previewing ? 'chevronUp' : 'chevronDown'} className="chev" />

@@ -12,6 +12,7 @@ import { pwaInstaller } from './lib/pwa-install.js'
 import { preloadPageScenery } from './lib/page-scenery-cache.js'
 import './index.css'
 import './professional.css'
+import './management-workspace.css'
 import './motion-feedback.css'
 
 installPwaViewport({ native: MOBILE })

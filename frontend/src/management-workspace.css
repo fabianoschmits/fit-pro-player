@@ -1,0 +1,159 @@
+/* Reference layout, using the application's existing light/dark and accent tokens. */
+.management-layout { background:var(--bg); }
+body:has(.management-layout,.management-routine-editor) #tabbar { display:none; }
+.management-layout .management-main { padding:24px 18px; }
+.management-layout .management-header { margin-bottom:24px; align-items:center; }
+.management-layout .management-header h1 { font-size:26px; font-weight:750; letter-spacing:-.035em; }
+.management-layout .management-header .sub { font-size:13px; }
+.management-layout .management-content { gap:18px; }
+.management-layout [hidden] { display:none !important; }
+.management-layout .management-content .card { margin-block:0; }
+.management-layout .management-content > .training-plan-workspace { display:grid; gap:16px; }
+.management-layout .training-plan-workspace > details.card { padding:14px; }
+.management-content h2 { margin:0 0 12px; font-size:16px; line-height:1.4; font-weight:650; }
+.management-content h3 { font-size:17px; line-height:1.4; }
+.management-content p { line-height:1.55; }
+.management-layout .management-panel,
+.management-layout .management-content > .card,
+.management-layout .management-content > section.card,
+.management-layout .management-content > div > details.card {
+  padding:18px; border:1px solid var(--sep-op); border-radius:16px; background:var(--surface); box-shadow:none;
+}
+.management-layout .management-panel + .management-panel { padding-top:18px; }
+.management-layout .management-panel-heading { margin-bottom:14px; }
+.management-panel-heading h2 { margin:0; }
+.management-layout .management-profile-details,
+.management-layout .management-person-facts { padding:0; border:0; gap:14px; }
+.management-layout .management-profile-details > .management-panel,
+.management-layout .management-person-facts > .management-panel { padding:18px; }
+.management-layout .management-avatar { width:46px; height:46px; border-radius:50%; overflow:hidden; background:var(--surface-2); font-size:16px; }
+.management-avatar .profile-avatar-image { width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+.management-layout .management-record { padding:14px; margin:0; gap:13px; border:1px solid var(--sep-op); border-radius:14px; background:var(--surface); min-height:88px; box-shadow:none; }
+.management-layout section > .management-record + .management-record { margin-top:9px; }
+.management-layout .management-record strong { font-size:15px; font-weight:650; }
+.management-layout .management-record p { margin:4px 0 6px; font-size:13px; }
+.management-record > span:last-child:not(.management-avatar) { color:var(--label-2); font-size:22px; }
+.management-layout .management-person-list,
+.management-layout .management-record-list,
+.management-layout .management-material-list { gap:10px; }
+.management-layout .management-person-link { grid-template-columns:46px minmax(0,1fr); padding:14px; gap:8px 12px; border:1px solid var(--sep-op); border-radius:14px; background:var(--surface-2); }
+.management-layout .management-person-link h3 { font-size:15px; }
+.management-layout .management-person-link > .management-status { grid-column:2; grid-row:auto; }
+.management-layout .management-person-strip { display:grid; grid-template-columns:46px minmax(0,1fr); gap:10px 12px; padding:18px; border-radius:16px; background:var(--surface); }
+.management-layout .management-person-strip > .management-status { grid-column:2; margin-left:0; }
+.management-student-identity { display:flex; align-items:center; gap:14px; }
+.management-student-identity > div { min-width:0; }
+.management-student-identity h2 { color:var(--label); font-size:19px; margin-bottom:5px; overflow-wrap:anywhere; }
+.management-student-identity p { font-size:12px; color:var(--label-2); margin:0; }
+.management-layout .management-status { width:fit-content; padding:3px 8px; border-radius:20px; font-size:11px; line-height:1.4; }
+.management-layout .management-status[data-tone="success"] { color:var(--acc); background:var(--acc-soft); border-color:transparent; }
+.management-layout .management-status[data-tone="warning"] { color:var(--orange); background:color-mix(in srgb,var(--orange) 10%,var(--surface)); border-color:transparent; }
+.management-layout .management-status[data-tone="error"] { background:color-mix(in srgb,var(--red) 10%,var(--surface)); border-color:transparent; }
+.management-layout .management-filter { border:0; gap:8px; }
+.management-layout .management-filter button { border:1px solid var(--sep); background:var(--surface); border-radius:24px; padding:8px 14px; min-height:44px; }
+.management-layout .management-filter button[aria-pressed="true"] { color:var(--on-acc); background:var(--acc); border-color:var(--acc); }
+.management-layout .field,.management-layout select { background:var(--field-fill); border-radius:11px; min-height:46px; }
+.management-layout .searchf .field { padding-left:40px; }
+.management-layout .management-overview { gap:10px; border:0; padding:0; }
+.management-layout .management-overview > * { display:flex; flex-direction:column; align-items:flex-start; gap:7px; min-width:0; padding:16px 12px; border:1px solid var(--sep-op); border-radius:14px; background:var(--surface); font-size:12px; color:var(--label-2); }
+.management-layout .management-overview > :first-child { background:color-mix(in srgb,var(--acc) 8%,var(--surface)); }
+.management-layout .management-overview > a:first-child,.management-layout .management-overview > a:last-child { padding:16px 12px; }
+.management-layout .management-overview strong { font-size:26px; color:var(--label); }
+.management-layout .management-overview > :nth-child(2) strong { color:var(--acc); }
+.management-layout .management-overview > :last-child strong { color:var(--red); }
+.management-layout .management-quick-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.management-layout .management-quick-actions .management-shortcut { flex-direction:column; justify-content:center; gap:9px; min-height:88px; padding:12px 4px; border:1px solid color-mix(in srgb,var(--acc) 18%,var(--sep)); border-radius:13px; background:var(--acc-soft); text-align:center; font-size:11px; }
+.management-quick-actions .icn { color:var(--acc); font-size:23px; }
+.management-layout .management-shortcut:not(.management-quick-actions .management-shortcut) { border:1px solid var(--sep); border-radius:12px; padding:14px; background:var(--surface); }
+.management-layout .management-button { border-radius:10px; background:var(--surface-2); padding:11px 15px; min-height:46px; }
+.management-layout .management-button-primary { background:var(--acc); }
+.management-layout .btn { border-radius:10px; min-height:46px; }
+.management-layout .management-section-nav { gap:16px; border-bottom:1px solid var(--sep); }
+.management-layout .management-section-nav a { padding:10px 2px; border-bottom:2px solid transparent; }
+.management-layout .management-section-nav a[aria-current="page"] { color:var(--acc); border-bottom-color:var(--acc); }
+.management-layout .management-profile-identity { padding:24px 18px; }
+.management-profile-identity .management-person-heading { flex-direction:column; text-align:center; gap:14px; }
+.management-profile-identity .management-avatar { width:94px; height:94px; font-size:30px; }
+.management-profile-identity .management-person-heading h2 { margin-bottom:5px; font-size:23px; }
+.management-layout .management-profile-bio { margin-top:20px; padding-top:18px; }
+.management-layout .management-specialties { gap:8px; }
+.management-layout .management-specialties li { border:1px solid var(--sep); background:var(--surface-2); border-radius:20px; padding:6px 10px; font-size:12px; }
+.management-layout .management-facts > div { grid-template-columns:minmax(90px,.6fr) minmax(0,1.4fr); align-items:start; }
+.management-layout .management-form-group { border:1px solid var(--sep-op); border-radius:16px; padding:16px; background:var(--surface); }
+.management-layout .management-form-group legend { padding:0 8px; }
+.management-layout .management-form-actions { gap:10px; }
+.management-layout .management-invite-list { gap:12px; }
+.management-layout .management-invite { padding:16px; border:1px solid var(--sep); border-radius:14px; background:var(--surface-2); }
+.management-layout .management-invite + .management-invite { padding-top:16px; }
+.management-layout .management-invite .invite-code { font-size:22px; letter-spacing:.05em; }
+.management-invite-qr { display:block; width:112px; height:112px; border-radius:8px; margin-bottom:16px; }
+.management-layout .management-invite:has(.management-invite-qr) { display:grid; grid-template-columns:112px minmax(0,1fr); column-gap:16px; align-items:start; }
+.management-invite:has(.management-invite-qr) > .management-invite-qr { grid-column:1; grid-row:1 / span 3; margin:0; }
+.management-invite:has(.management-invite-qr) > :not(.management-invite-qr) { grid-column:2; }
+.management-invite:has(.management-invite-qr) > .row-actions,.management-invite:has(.management-invite-qr) > .danger-confirm { grid-column:1 / -1; margin-top:12px; }
+.management-layout .management-invite .row-actions { gap:8px; }
+.management-layout .management-invite .row-actions > .btn { flex:1 1 auto; }
+.management-layout .danger-confirm { padding:14px; border:1px solid color-mix(in srgb,var(--red) 35%,var(--sep)); border-radius:12px; background:var(--surface); }
+.management-layout .management-material-detail,.management-layout .management-history-entry { border:1px solid var(--sep); border-radius:12px; background:var(--surface-2); padding:10px 14px; margin-top:10px; }
+.management-layout .management-empty { padding:20px 4px; gap:12px; }
+.management-layout .management-template-icon { display:grid; place-items:center; width:48px; height:60px; flex:none; background:var(--acc-soft); color:var(--acc); border-radius:10px; font-size:25px; }
+.management-layout .training-plan-workspace .plan-cols { display:grid; grid-template-columns:minmax(0,1fr); gap:20px; }
+.management-layout .plan-week-card { background:transparent; border:0; padding:0; box-shadow:none; }
+.management-layout .plan-week-grid { gap:5px; }
+.management-layout .plan-day { border:1px solid var(--sep-op); border-radius:11px; background:var(--surface); padding:9px 2px; min-width:0; }
+.management-layout .plan-day.on { background:var(--acc-soft); border-color:color-mix(in srgb,var(--acc) 35%,var(--sep)); }
+.management-layout .plan-day:disabled { opacity:1; }
+.management-layout .plan-day-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; font-size:10px; }
+.management-layout .plan-routine-list { border:0; background:transparent; display:grid; gap:10px; overflow:visible; }
+.management-layout .plan-routine-list .item { background:var(--surface); border:1px solid var(--sep-op); border-radius:14px; min-height:92px; padding:12px; }
+.management-layout .plan-routine-list .lrow-i { width:46px; height:62px; background:none; }
+.management-layout .management-plan-status { border-left:3px solid var(--acc); font-size:13px; }
+.management-layout .management-plan-status[data-pending="true"] { border-left-color:var(--orange); }
+.management-layout .management-plan-actions { position:sticky; bottom:calc(80px + var(--sab)); z-index:4; padding:12px; border:1px solid var(--sep); border-radius:14px; background:var(--surface); display:flex; flex-wrap:wrap; gap:8px; }
+.management-plan-actions > .btn { flex:1; }
+.exercise-sprite-thumb { display:block; overflow:hidden; }
+.exercise-sprite-thumb img { width:100%; height:100%; object-fit:contain; }
+:is(.management-layout,.management-routine-editor) .training-exercise-card { border:1px solid var(--sep-op); border-radius:15px; margin-bottom:10px; background:var(--surface); }
+:is(.management-layout,.management-routine-editor) .routine-item-main { display:flex; align-items:center; gap:12px; padding:12px; min-height:104px; }
+:is(.management-layout,.management-routine-editor) .routine-item-main > .thumb { width:76px; height:80px; flex:none; border-radius:9px; }
+:is(.management-layout,.management-routine-editor) .routine-item-main .grow { min-width:0; }
+:is(.management-layout,.management-routine-editor) .routine-item-main .tt { font-size:15px; line-height:1.4; }
+:is(.management-layout,.management-routine-editor) .routine-item-main .ss { font-size:12px; line-height:1.5; margin-top:4px; white-space:normal; }
+:is(.management-layout,.management-routine-editor) .training-exercise-details { padding:16px; border-top:1px solid var(--sep); }
+:is(.management-layout,.management-routine-editor) .training-exercise-details > details { background:var(--surface-2); padding:12px; border-radius:12px; }
+:is(.management-layout,.management-routine-editor) .training-exercise-details label { display:grid; gap:8px; margin-block:12px; }
+.management-routine-editor { background:var(--bg); }
+/* Portal dialogs inherit the same tokens; selectors are limited to this workspace. */
+body:has(.management-layout,.management-routine-editor) .dialog-surface { background:var(--surface); border-radius:20px; border-color:var(--sep); }
+body:has(.management-layout,.management-routine-editor) :is(.sheet,.modal-layer > .center) { background:var(--surface); border:1px solid var(--sep); }
+body:has(.management-layout,.management-routine-editor) .picker-item { background:var(--surface-2); border:1px solid var(--sep); border-radius:12px; margin-bottom:8px; overflow:hidden; }
+body:has(.management-layout,.management-routine-editor) .picker-item-main .exercise-sprite-thumb { width:56px; height:62px; flex:none; }
+body:has(.management-layout,.management-routine-editor) .professional-picker-row { margin-bottom:8px; border:1px solid var(--sep); border-radius:12px; overflow:hidden; }
+.management-layout .management-nav .icn { font-size:22px; flex:none; }
+.management-layout .management-nav a { border-radius:12px; gap:10px; min-height:48px; }
+.management-layout .management-nav a[aria-current="page"] { color:var(--acc); background:var(--acc-soft); }
+@media(max-width:959px) {
+  .management-layout .management-sidebar { position:fixed; bottom:0; left:0; right:0; z-index:40; padding:6px 10px calc(6px + var(--sab)); border-top:1px solid var(--sep); border-bottom:0; background:var(--bg); }
+  .management-layout .management-nav { display:flex; justify-content:space-around; gap:2px; overflow:visible; }
+  .management-layout .management-nav a { flex:1 1 0; min-width:0; flex-direction:column; justify-content:center; gap:4px; font-size:10px; text-align:center; padding:7px 3px; white-space:normal; line-height:1.25; }
+  .management-layout .management-topbar { padding:4px 16px; }
+  .management-layout .management-brand small { display:none; }
+  #app:has(.management-layout) { padding-bottom:calc(100px + var(--sab)); }
+}
+@media(min-width:960px) {
+  .management-layout .management-main { padding:30px; }
+  .management-layout .management-sidebar { padding-top:30px; }
+  .management-layout .management-nav a { padding:12px; }
+  .management-layout .management-content { max-width:860px; }
+  .management-layout .management-plan-actions { bottom:20px; }
+  .management-layout .training-plan-workspace .plan-cols { grid-template-columns:minmax(0,1fr) minmax(0,1.1fr); align-items:start; }
+}
+@media(max-width:360px) {
+  .management-layout .management-main { padding:18px 12px; }
+  .management-layout .management-header h1 { font-size:23px; }
+  .management-layout .management-overview > * { padding:12px 9px; font-size:11px; }
+  .management-layout .management-panel { padding:14px; }
+  .management-layout .management-invite:has(.management-invite-qr) { grid-template-columns:84px minmax(0,1fr); column-gap:12px; }
+  .management-invite-qr { width:84px; height:84px; }
+  .management-layout .management-invite .invite-code { font-size:18px; letter-spacing:0; }
+}

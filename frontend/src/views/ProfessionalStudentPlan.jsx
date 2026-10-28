@@ -46,9 +46,9 @@ function StudentPlan({ studentId, routineId }) {
    {error && <p role="alert">{error}</p>}
    {loading ? <p role="status">Carregando plano…</p> : !student ? <p>Aluno indisponível.</p> : !state ? <div className="card"><h2>Criar plano</h2><Button onClick={() => create()}>Criar do zero</Button><Button onAction={async () => { const page = await repo.programPage({ archived: false }); if (alive.current) setTemplates(page) }}>Usar um modelo</Button>{templates?.items.map(item => <Button key={item.id} onClick={() => chooseTemplate(item)}>{item.title}</Button>)}</div> : <>
      <TextField aria-label="Nome do plano" maxLength={160} value={title} onChange={e => { setTitle(e.target.value); setDirty(true) }} />
-     <div className="card" role="status"><strong>{dirty || draft?.sent_revision !== draft?.revision ? 'Alterações não enviadas' : 'Plano enviado ao aluno'}</strong>{draft && !dirty && <p>Rascunho salvo · {new Date(draft.updated_at).toLocaleString('pt-BR')}</p>}</div>
+     <div className="card management-plan-status" data-pending={dirty || draft?.sent_revision !== draft?.revision} role="status"><strong>{dirty || draft?.sent_revision !== draft?.revision ? 'Alterações não enviadas' : 'Plano enviado ao aluno'}</strong>{draft && !dirty && <p>Rascunho salvo · {new Date(draft.updated_at).toLocaleString('pt-BR')}</p>}</div>
      <TrainingPlanWorkspace state={{ ...prefs, ...state }} onOpen={id => nav(`${base}/r/${id}`)} onAdd={() => { const id = crypto.randomUUID(); update(next => { next.routines.push({ id, name: `Treino ${String.fromCharCode(65 + next.routines.length)}`, ex: [] }) }); nav(`${base}/r/${id}`) }} />
-     <div className="row"><Button feedback="persistence" disabled={busy || !title.trim()} onAction={save}>Salvar para depois</Button><Button variant="primary" disabled={busy || !title.trim()} onClick={send}>{draft?.sent_revision ? 'Enviar atualização' : 'Enviar ao aluno'}</Button></div>
+     <div className="row management-plan-actions"><Button feedback="persistence" disabled={busy || !title.trim()} onAction={save}>Salvar para depois</Button><Button variant="primary" disabled={busy || !title.trim()} onClick={send}>{draft?.sent_revision ? 'Enviar atualização' : 'Enviar ao aluno'}</Button></div>
    </>}
  </ManagementLayout>
 }
