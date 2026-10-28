@@ -13,6 +13,6 @@ const updatesMigration = 'supabase/migrations/202610280001_library_updates.sql'
 await db.exec(readFileSync(updatesMigration, 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/20261027120000_plan_library.sql','utf8').replace(/^\uFEFF/,'')); console.log('PASS plan library integration') } catch(e) { console.error(e.message,e.where);process.exit(1) }
 try { await db.exec(readFileSync('supabase/tests/202610280001_library_updates.sql', 'utf8')); console.log('PASS library updates and personal routines') } catch(e) { console.error(e.message,e.where);process.exit(1) }
+await db.exec(readFileSync('supabase/migrations/202610280002_professional_plan_auto_updates.sql', 'utf8'))
+try { await db.exec(readFileSync('supabase/tests/202610280002_professional_plan_auto_updates.sql', 'utf8')); console.log('PASS automatic professional plan updates') } catch(e) { console.error(e.message,e.where);process.exit(1) }
 await db.close()
-
-

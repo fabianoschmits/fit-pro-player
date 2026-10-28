@@ -12,6 +12,8 @@ import { Button } from '../ui.jsx'
 import { confirmSheet } from '../../sheets.jsx'
 import { useUI } from '../../store/useUI.js'
 import Icon from '../Icon.jsx'
+import { compareProfessionalPlanVersions } from '../../lib/professional-plan-diff.js'
+import { useNavigate } from 'react-router-dom'
 
 const PAGE_SIZE = 5
 
@@ -23,12 +25,32 @@ function PlanPreviewSheet({ item, state, routineId, close }) {
   </section>
 }
 
-export default function PlanLibrary() {
-  const { user } = useAuth()
-  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} />
+const fieldNames = { sets: 'Séries', reps: 'Repetições', load: 'Carga', rest: 'Descanso', duration: 'Duração', distance: 'Distância', notes: 'Observações', rir: 'RIR', rpe: 'RPE' }
+function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
+  const update = item.plan_update
+  const diff = compareProfessionalPlanVersions(update?.previous_version, update?.next_version || item.version)
+  const day = diff.days.find(entry => entry.day === DAYS[workout.day])
+  const title = workout.routine.name
+  return <section className="plan-library-preview-sheet plan-update-sheet">
+    <div className="row between sheet-title-row"><h2>{update?.is_first ? 'Novo plano do seu profissional' : 'Treino atualizado'}</h2><Button size="sm" variant="tinted" onClick={close}>Fechar</Button></div>
+    <p><strong>{title}{day?.previousTitle && day.previousTitle !== day.nextTitle ? ` · ${day.previousTitle} → ${day.nextTitle}` : ''}</strong><br />Prof. {item.professional_name || 'Profissional'}</p>
+    {day?.type === 'added' && <p><span className="tag acc">Adicionado</span> Novo treino programado para este dia.</p>}
+    {day?.type === 'removed' && <p><span className="tag">Removido</span> Este treino não está mais programado neste dia.</p>}
+    {day?.exercises.added.map(exercise => <p key={`a-${exercise.exerciseId}`}><span className="tag acc">Adicionado</span> {exercise.exerciseId} {exercise.sets ? `· ${exercise.sets} × ${exercise.reps || ''}` : ''}</p>)}
+    {day?.exercises.removed.map(exercise => <p key={`r-${exercise.exerciseId}`}><span className="tag">Removido</span> {exercise.exerciseId} {exercise.sets ? `· ${exercise.sets} × ${exercise.reps || ''}` : ''}</p>)}
+    {day?.exercises.changed.map(exercise => <div className="card" key={exercise.exerciseId}><strong>Alterado · {exercise.exerciseId}</strong>{exercise.changes.map(change => <small className="block" key={change.field}>{fieldNames[change.field] || change.field}: {String(change.previous ?? '—')} → {String(change.next ?? '—')}</small>)}</div>)}
+    {day?.exercises.reordered && <p><span className="tag">Alterado</span> A ordem dos exercícios foi atualizada.</p>}
+    <div className="row gap"><Button variant="primary" onClick={() => { acknowledge(); close(); onView() }}>Ver treino atualizado</Button><Button variant="tinted" onClick={() => { acknowledge(); close() }}>Entendi</Button></div>
+  </section>
 }
 
-function AccountPlanLibrary({ user }) {
+export default function PlanLibrary({ onUpdates }) {
+  const { user } = useAuth()
+  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates} />
+}
+
+function AccountPlanLibrary({ user, onUpdates }) {
+  const nav = useNavigate()
   const state = useStore(s => s.S)
   const update = useStore(s => s.update)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
@@ -67,7 +89,26 @@ function AccountPlanLibrary({ user }) {
     })
   } })
 
+  const acknowledge = async item => {
+    const update = item.plan_update
+    if (!update) return
+    const request = generation.current
+    try {
+      if (repo.markProfessionalPlanUpdateSeen) await repo.markProfessionalPlanUpdateSeen(item.id, update.next_version?.id || item.version?.id)
+      else await repo.markLibraryWorkoutSeen(item.id, DAYS[0], item.version?.id)
+      if (request !== generation.current) return
+      setData(current => ({ ...current, items: current.items.map(entry => entry.id === item.id ? { ...entry, workout_updates: {}, plan_update: null } : entry) }))
+    } catch { if (request === generation.current) setError('Não foi possível marcar a atualização como vista. Tente novamente.') }
+  }
   const open = async workout => {
+    const { item, workspace, routine, day } = workout
+    if (item.workout_updates?.[DAYS[day]] && item.plan_update) {
+      useUI.getState().openSheet(close => <PlanUpdateSheet item={item} workout={workout} close={close} acknowledge={() => acknowledge(item)} onView={() => { const activeRoutineId = useStore.getState().S.week[day]; if (activeRoutineId) nav(`/plan/r/${activeRoutineId}`); else openPreview(workout) }} />, { className: 'plan-preview-sheet-shell' })
+      return
+    }
+    openPreview(workout)
+  }
+  const openPreview = async workout => {
     const { item, workspace, routine, day } = workout
     useUI.getState().openSheet(close => <PlanPreviewSheet item={{ ...item, title: routine.name }} state={workspace} routineId={routine.id} close={close} />, { className: 'plan-preview-sheet-shell' })
     const dayKey = DAYS[day], changeVersion = item.workout_updates?.[dayKey]
@@ -88,6 +129,9 @@ function AccountPlanLibrary({ user }) {
     const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)
     return workspace.routines.map(routine => ({ item, workspace, routine, day: Number(Object.entries(workspace.week).find(([, id]) => id === routine.id)?.[0]) }))
   }), [data.items])
+  useEffect(() => {
+    onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => open(workout)])))
+  }, [professionalWorkouts, onUpdates])
   const shownWorkouts = professionalWorkouts.slice(0, visible)
   const removeFromDay = workout => confirmSheet({
     title: 'Retirar treino deste dia?',
@@ -98,7 +142,7 @@ function AccountPlanLibrary({ user }) {
 
   if (!user?.id) return null
   return <section className="plan-library received-workouts">
-    <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Abra um treino para ver os detalhes e aplique quando quiser usar o plano no seu perfil.</p></div>
+    <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Seu plano profissional ativo é atualizado automaticamente. Abra um treino para ver os detalhes.</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {!shownWorkouts.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
     <div className="received-workout-list">{shownWorkouts.map(workout => {

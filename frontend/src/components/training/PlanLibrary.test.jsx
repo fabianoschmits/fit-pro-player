@@ -9,6 +9,7 @@ vi.mock('../../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ user: { id: 's
 vi.mock('../../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => ({ planLibrary: mocks.page, markLibraryWorkoutSeen: mocks.seen }) }))
 vi.mock('../../store/useUI.js', () => ({ useUI: { getState: () => ({ openSheet: mocks.open }) } }))
+vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
 const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const delivery = () => ({ id: 'delivery', source_type: 'professional', professional_name: 'Ana',
   workout_updates: { monday: 'changed-version' },

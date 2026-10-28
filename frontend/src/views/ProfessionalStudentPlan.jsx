@@ -33,7 +33,7 @@ function StudentPlan({ studentId, routineId }) {
  }
  const send = () => {
    if (!validateWeeklyPlan(workspaceToWeeklyPlan(state).weeklyPlan).ok) { setError('Adicione exercícios e organize os dias antes de enviar.'); return }
-   confirmSheet({ title: draft?.sent_revision ? `Atualizar plano enviado para ${student?.displayName || 'aluno'}?` : `Enviar plano para ${student?.displayName || 'aluno'}?`, message: `${state.routines.length} treinos · ${Object.keys(state.week).length} dias na semana. O aluno receberá o plano na biblioteca e escolherá quando aplicar.`, confirmText: draft?.sent_revision ? 'Enviar atualização' : 'Enviar plano', onConfirm: async () => {
+   confirmSheet({ title: draft?.sent_revision ? `Atualizar plano enviado para ${student?.displayName || 'aluno'}?` : `Enviar plano para ${student?.displayName || 'aluno'}?`, message: `${state.routines.length} treinos · ${Object.keys(state.week).length} dias na semana. A nova versão será aplicada automaticamente nas próximas execuções e o aluno verá o que mudou.`, confirmText: draft?.sent_revision ? 'Enviar atualização' : 'Enviar plano', onConfirm: async () => {
      try { const saved = dirty || !draft ? await save() : draft; setBusy(true); await repo.sendPlan(studentId, saved.revision); if (alive.current) setDraft({ ...saved, sent_revision: saved.revision }); return true }
      catch { if (alive.current) setError('Não foi possível enviar o plano. Tente novamente.'); return false }
      finally { if (alive.current) setBusy(false) }

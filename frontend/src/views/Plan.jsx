@@ -1,6 +1,6 @@
 import { PlanWeek, RoutineList } from '../components/training/TrainingPlanWorkspace.jsx'
 import PlanLibrary from '../components/training/PlanLibrary.jsx'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { routineId, todayISO } from '../lib/format.js'
@@ -24,6 +24,8 @@ export default function Plan() {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const [editingProfile, setEditingProfile] = useState(() => new URLSearchParams(location.search).get('profile') === 'edit')
+  const [updatedDays, setUpdatedDays] = useState({})
+  const receiveUpdates = useCallback(updates => setUpdatedDays(updates), [])
 
   if (!S.onboardingDone || editingProfile) {
     const closeEditor = () => { setEditingProfile(false); nav('/plan', { replace: true }) }
@@ -86,9 +88,9 @@ export default function Plan() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    {mode === 'weekly' && <div className="training-plan-workspace"><PlanWeek state={S} onDay={usingProfessionalPlan ? removeProfessionalDay : dayAssignSheet} /></div>}
+    {mode === 'weekly' && <div className="training-plan-workspace"><PlanWeek state={S} updates={updatedDays} onDay={day => updatedDays[day] ? updatedDays[day]() : (usingProfessionalPlan ? removeProfessionalDay(day) : dayAssignSheet(day))} /></div>}
 
-    <PlanLibrary />
+    <PlanLibrary onUpdates={receiveUpdates} />
 
     <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />
 
