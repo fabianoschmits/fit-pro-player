@@ -3,17 +3,16 @@ import PlanLibrary from '../components/training/PlanLibrary.jsx'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
-import { DAYN, DAYS, routineId, exCount, fmtDate, todayISO } from '../lib/format.js'
+import { routineId, exCount, fmtDate, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { effectiveRoutine, effectiveRoutineId } from '../lib/history.js'
-import { EXPERIENCE_LABELS, PROFILE_GOAL_LABELS } from '../lib/profile.js'
 import { ensureStarterRoutines, routineName } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
-import { dayAssignSheet, dayOverrideSheet, workoutDetailSheet, WorkoutRow } from '../sheets.jsx'
+import { dayAssignSheet, dayOverrideSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
 import { Button } from '../components/ui.jsx'
-import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
+import { DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 import PlanWizard from '../components/PlanWizard.jsx'
 import AppHeader from '../components/AppHeader.jsx'
@@ -44,7 +43,6 @@ export default function Plan() {
   const todayRoutine = effectiveRoutine(S, today)
   const scheduledDays = WEEK_DAYS.filter(day => S.week[day] && S.routines.some(r => r.id === S.week[day])).length
   const planProgress = planSetupProgress(S)
-  const recentWorkouts = [...S.workouts].reverse().slice(0, 5)
   const mode = S.planMode === 'daily' ? 'daily' : 'weekly'
   const usingProfessionalPlan = Boolean(S.assignedProgram)
   const headerTitle = usingProfessionalPlan
@@ -94,12 +92,6 @@ export default function Plan() {
         </button>
         <p className="sect-f daily-plan-help">{t('Pick a workout each day. Weekly assignments stay saved in case you switch back.')}</p>
 
-        <div className="row between plan-section-head">
-          <h4 className="sec">{t('Previous workouts')}</h4>
-          {!!recentWorkouts.length && <button className="small accent" onClick={() => nav('/history', { state: { fromContext: 'training' } })}>{t('View all')}</button>}
-        </div>
-        {recentWorkouts.length ? <div className="list">{recentWorkouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
-          : <div className="card daily-plan-empty"><Icon name="history" /><strong>{t('Your completed workouts will appear here.')}</strong></div>}
       </section>
       {routineList}
     </div>}

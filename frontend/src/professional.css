@@ -344,6 +344,9 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .plan-professional-mode { display:flex; flex-direction:column; gap:3px; }
 .plan-professional-mode strong { font-size:15px; }
 .plan-professional-mode small { color:var(--label-2); font-size:12px; line-height:1.4; }
+.plan-library-preview-sheet { display:grid; gap:12px; padding:4px 2px 16px; }
+.plan-library-preview-sheet h2 { margin:0; font-size:18px; }
+.plan-library-preview-sheet > p { margin:0; color:var(--label-2); font-size:13px; }
 .training-plan-workspace [hidden], .routine-builder [hidden], .plan-view [hidden] { display:none !important; }
 .routine-exercise-list > div > .item { flex-wrap:wrap; padding:0; }
 .routine-item-tools { margin-left:auto; }

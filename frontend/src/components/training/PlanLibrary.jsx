@@ -9,6 +9,15 @@ import { parsePlan } from '../../lib/training-dto.js'
 import { applyDomainState } from '../../lib/domain-state.js'
 import { Button, TextField } from '../ui.jsx'
 import { confirmSheet } from '../../sheets.jsx'
+import { useUI } from '../../store/useUI.js'
+
+function PlanPreviewSheet({ item, state, close }) {
+  return <section className="plan-library-preview-sheet">
+    <div className="row between sheet-title-row"><h2>{item.title}</h2><Button size="sm" variant="tinted" onClick={close}>Fechar</Button></div>
+    <p>{item.professional_name ? `Prof. ${item.professional_name}` : 'Criado por mim'}</p>
+    <TrainingPlanPreview state={state} />
+  </section>
+}
 export default function PlanLibrary() {
   const { user } = useAuth()
   return <AccountPlanLibrary key={user?.id || 'guest'} user={user} />
@@ -16,7 +25,7 @@ export default function PlanLibrary() {
 function AccountPlanLibrary({ user }) {
   const state = useStore(s => s.S)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [preview, setPreview] = useState(null), [name, setName] = useState('Meu plano'), [busy, setBusy] = useState(false)
+  const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [name, setName] = useState('Meu plano'), [busy, setBusy] = useState(false)
   const generation = useRef(0)
   const refresh = useCallback(async (offset = 0) => {
     const request = ++generation.current
@@ -43,12 +52,16 @@ function AccountPlanLibrary({ user }) {
     })
   } })
   if (!user?.id) return null
-  const open = item => { setPreview(item.source_type === 'professional' ? weeklyPlanToWorkspace(item.version.weekly_plan, item.version.workout_titles) : { routines: item.personal_plan.routines.map(r => ({ ...r.prescription, id: r.id, name: r.title })), week: item.personal_plan.schedule.week || {} }) }
+  const open = item => {
+    const previewState = item.source_type === 'professional'
+      ? weeklyPlanToWorkspace(item.version.weekly_plan, item.version.workout_titles)
+      : { routines: item.personal_plan.routines.map(r => ({ ...r.prescription, id: r.id, name: r.title })), week: item.personal_plan.schedule.week || {} }
+    useUI.getState().openSheet(close => <PlanPreviewSheet item={item} state={previewState} close={close} />, { className: 'plan-preview-sheet-shell' })
+  }
   return <section className="plan-library">
     <div className="plan-library-head"><h3>Biblioteca de planos</h3><p>Escolha qual plano você quer usar sem perder os demais.</p></div>
     <div className="card"><small>Plano ativo</small><h2>{state.activeLibraryTitle || 'Meu plano'}</h2><p>{state.assignedProgram ? `Prof. ${data.items.find(item => item.id === state.activeLibraryId)?.professional_name || 'Profissional'}` : 'Criado por mim'}</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
-    {preview ? <div className="card"><Button onClick={() => setPreview(null)}>Fechar visualização</Button><TrainingPlanPreview state={preview} /></div> : null}
     {[['self','Meus planos'],['professional','Planos dos profissionais']].map(([type, title]) => <section key={type}><h3>{title}</h3>{data.items.filter(item => item.source_type === type).map(item => {
       const active = state.activeLibraryId === item.id
       const update = type === 'professional' && item.version?.version_number > 1 && !active && !data.items.some(other => other.program_id === item.program_id && other.version?.version_number > item.version.version_number)
