@@ -52,6 +52,9 @@ const toClientSummary = value => ({
 })
 
 const toClientDetail = value => value ? ({
+  profile: value.profile || {},
+  weightHistory: value.weight_history || [],
+  measurements: value.measurements || [],
   studentUserId: value.student_user_id || null,
   displayName: value.display_name || 'Aluno',
   avatarRef: value.avatar_ref || null,

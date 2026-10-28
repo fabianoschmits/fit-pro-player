@@ -364,3 +364,5 @@ body:has(.app-status-global) #app{padding-bottom:170px}
  .received-workout-card { padding-left:12px; gap:8px; }.received-workout-card>.btn { padding-inline:10px; font-size:12px; }.received-workout-copy small { font-size:11px; }
  .management-student-record { flex-wrap:wrap; }
 }
+
+.professional-student-identity{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer}.professional-student-identity:focus-visible{outline:2px solid var(--acc);outline-offset:3px}.professional-student-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:16px;margin:16px 0}.professional-student-facts dt{font-size:12px;opacity:.7}.professional-student-facts dd{margin:4px 0 0;font-weight:600}.professional-student-details table{width:100%;border-collapse:collapse;text-align:left}.professional-student-details th,.professional-student-details td{padding:10px 0;border-bottom:1px solid var(--separator)}.professional-student-details h3{margin-top:24px}
