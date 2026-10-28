@@ -43,7 +43,7 @@ function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
   const update = item.plan_update
   const diff = compareProfessionalPlanVersions(update?.previous_version, update?.next_version || item.version)
   const day = diff.days.find(entry => entry.day === DAYS[workout.day])
-  const title = workout.routine.name
+  const title = workout.routine?.name || day?.previousTitle || day?.nextTitle || 'Descanso'
   return <section className="plan-library-preview-sheet plan-update-sheet">
     <div className="row between sheet-title-row"><h2>{update?.is_first ? 'Novo plano do seu profissional' : 'Treino atualizado'}</h2><Button size="sm" variant="tinted" onClick={close}>Fechar</Button></div>
     <p><strong>{title}{day?.previousTitle && day.previousTitle !== day.nextTitle ? ` · ${day.previousTitle} → ${day.nextTitle}` : ''}</strong><br />Prof. {item.professional_name || 'Profissional'}</p>
@@ -54,7 +54,7 @@ function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
     {day?.exercises.removed.map(exercise => <p key={`r-${exercise.exerciseId}`}><span className="tag">Removido</span> {exerciseLabel(exercise.exerciseId)} {exercise.sets ? `· ${exercise.sets} × ${exercise.reps || ''}` : ''}</p>)}
     {day?.exercises.changed.map(exercise => <div className="card" key={exercise.exerciseId}><strong>{exerciseLabel(exercise.exerciseId)}</strong>{exercise.changes.map(change => <small className="block" key={change.field}>{fieldLabel(fieldNames)[change.field] || 'Configuração'}: {displayValue(change.field, change.previous)} → {displayValue(change.field, change.next)}</small>)}</div>)}
     {day?.exercises.reordered && <p><span className="tag">Alterado</span> A ordem dos exercícios foi atualizada.</p>}
-    <div className="row gap"><Button variant="primary" onClick={() => { acknowledge(); close(); onView() }}>Ver treino atualizado</Button><Button variant="tinted" onClick={() => { acknowledge(); close() }}>Entendi</Button></div>
+    <div className="row gap">{workout.routine?.id && day?.type !== 'removed' && <Button variant="primary" onClick={() => { acknowledge(); close(); onView() }}>Ver treino atualizado</Button>}<Button variant="tinted" onClick={() => { acknowledge(); close() }}>Entendi</Button></div>
   </section>
 }
 
@@ -129,6 +129,7 @@ function AccountPlanLibrary({ user, onUpdates }) {
   }
   const openPreview = async workout => {
     const { item, workspace, routine, day } = workout
+    if (!routine?.id) return
     useUI.getState().openSheet(close => <PlanPreviewSheet item={{ ...item, title: routine.name }} state={workspace} routineId={routine.id} close={close} />, { className: 'plan-preview-sheet-shell' })
     const dayKey = DAYS[day], changeVersion = item.workout_updates?.[dayKey]
     if (!changeVersion) return
@@ -146,7 +147,11 @@ function AccountPlanLibrary({ user, onUpdates }) {
   }
   const professionalWorkouts = useMemo(() => data.items.filter(item => item.source_type === 'professional').flatMap(item => {
     const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)
-    return workspace.routines.map(routine => ({ item, workspace, routine, day: Number(Object.entries(workspace.week).find(([, id]) => id === routine.id)?.[0]) }))
+    const previous = weeklyPlanToWorkspace(item.plan_update?.previous_version?.weekly_plan, item.plan_update?.previous_version?.workout_titles)
+    const currentByDay = new Map(workspace.routines.map(routine => [Number(Object.entries(workspace.week).find(([, id]) => id === routine.id)?.[0]), routine]))
+    const previousByDay = new Map(previous.routines.map(routine => [Number(Object.entries(previous.week).find(([, id]) => id === routine.id)?.[0]), routine]))
+    const pendingDays = Object.keys(item.workout_updates || {}).map(day => DAYS.indexOf(day))
+    return [...new Set([...currentByDay.keys(), ...pendingDays])].map(day => ({ item, workspace, routine: currentByDay.get(day) || previousByDay.get(day), day }))
   }), [data.items])
   useEffect(() => {
     onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => open(workout)])))

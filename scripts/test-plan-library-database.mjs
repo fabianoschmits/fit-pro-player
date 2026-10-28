@@ -17,4 +17,5 @@ await db.exec(readFileSync('supabase/migrations/202610280002_professional_plan_a
 try { await db.exec(readFileSync('supabase/tests/202610280002_professional_plan_auto_updates.sql', 'utf8')); console.log('PASS automatic professional plan updates') } catch(e) { console.error(e.message,e.where);process.exit(1) }
 await db.exec(readFileSync('supabase/migrations/202610280003_professional_plan_day_views.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610280003_professional_plan_day_views.sql', 'utf8')); console.log('PASS professional plan day views') } catch(e) { console.error(e.message,e.where);process.exit(1) }
+await db.exec(readFileSync('supabase/migrations/202610280004_carry_seen_professional_plan_days.sql', 'utf8'))
 await db.close()
