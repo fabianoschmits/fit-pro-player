@@ -8,7 +8,7 @@ import { t } from '../lib/i18n.js'
 import { effectiveRoutineId } from '../lib/history.js'
 import { ensureStarterRoutines } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
-import { dayAssignSheet } from '../sheets.jsx'
+import { confirmSheet, dayAssignSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import { DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
@@ -66,7 +66,17 @@ export default function Plan() {
     })
   }
 
-  const routineList = <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} />
+  const personalRoutines = S.routines.filter(routine => !routine.assigned)
+  const removeProfessionalDay = day => {
+    const routine = S.routines.find(item => item.id === S.week[day])
+    if (!routine) return
+    confirmSheet({
+      title: 'Retirar treino deste dia?',
+      message: `${routine.name} continuará disponível nos seus planos recebidos.`,
+      confirmText: 'Retirar treino',
+      onConfirm: () => { update(state => { delete state.week[day] }); return true },
+    })
+  }
 
   return <div className="plan-view page-scenery">
     <AppHeader
@@ -76,7 +86,9 @@ export default function Plan() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={usingProfessionalPlan ? undefined : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} /> : routineList}
+    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={usingProfessionalPlan ? removeProfessionalDay : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} routines={personalRoutines} routineTitle="Seus treinos criados" /> : <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />}
+
+    <PlanLibrary />
 
     <section className="plan-mode-section">
       <h4 className="sec">{t('Plan style')}</h4>
@@ -87,7 +99,6 @@ export default function Plan() {
             <button className={mode === 'daily' ? 'on' : ''} aria-pressed={mode === 'daily'} onClick={() => switchMode('daily')}><Icon name="dumbbell" /><span>{t('Daily plan')}</span>{mode === 'daily' && <Icon name="check" />}</button>
           </div></>}
       </div>
-      <PlanLibrary />
     </section>
   </div>
 }

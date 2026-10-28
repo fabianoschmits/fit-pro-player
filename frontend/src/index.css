@@ -741,8 +741,10 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 }
 .plan-day:active{transform:scale(.94)}
 .plan-day.on{background:var(--acc-soft);color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc-line)}
+.plan-day.professional{background:color-mix(in srgb,var(--acc-soft) 72%,var(--surface));box-shadow:inset 0 0 0 1px var(--acc-line)}
 .plan-day.has-other{color:var(--label-3)}
 .plan-day-label{font-size:11px;text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.plan-day-professional{display:inline-flex;align-items:center;gap:2px;max-width:100%;padding:1px 4px;border-radius:99px;background:color-mix(in srgb,var(--acc) 15%,transparent);color:var(--acc);font-size:8px;font-weight:700;line-height:1.2}.plan-day-professional .icn{width:9px;height:9px}
 .plan-day-icon{font-size:18px;display:flex}
 .plan-day-name{font-size:10px;line-height:1.1;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
 .plan-section-value{color:var(--acc);font-size:13px;font-weight:720;font-variant-numeric:tabular-nums}
