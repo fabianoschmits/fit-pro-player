@@ -5,6 +5,7 @@ import { useStore } from '../../store/useStore.js'
 import { createProfessionalWorkflowRepository } from '../../lib/professional-workflow.js'
 import { getBrowserSupabaseClient } from '../../lib/supabase-client.js'
 import { weeklyPlanToWorkspace } from '../../lib/training-workspace.js'
+import { DAYS } from '../../lib/professional-program.js'
 import { parsePlan } from '../../lib/training-dto.js'
 import { applyDomainState } from '../../lib/domain-state.js'
 import { Button } from '../ui.jsx'
@@ -66,7 +67,23 @@ function AccountPlanLibrary({ user }) {
     })
   } })
 
-  const open = (item, previewState, routineId = null) => useUI.getState().openSheet(close => <PlanPreviewSheet item={item} state={previewState} routineId={routineId} close={close} />, { className: 'plan-preview-sheet-shell' })
+  const open = async workout => {
+    const { item, workspace, routine, day } = workout
+    useUI.getState().openSheet(close => <PlanPreviewSheet item={{ ...item, title: routine.name }} state={workspace} routineId={routine.id} close={close} />, { className: 'plan-preview-sheet-shell' })
+    const dayKey = DAYS[day], changeVersion = item.workout_updates?.[dayKey]
+    if (!changeVersion) return
+    const request = generation.current
+    try {
+      await repo.markLibraryWorkoutSeen(item.id, dayKey, changeVersion)
+      if (request !== generation.current) return
+      setData(current => ({ ...current, items: current.items.map(entry => {
+        if (entry.id !== item.id || entry.workout_updates?.[dayKey] !== changeVersion) return entry
+        const updates = { ...entry.workout_updates }
+        delete updates[dayKey]
+        return { ...entry, workout_updates: updates }
+      }) }))
+    } catch { if (request === generation.current) setError('Não foi possível marcar a atualização como vista. Abra o treino novamente para tentar.') }
+  }
   const professionalWorkouts = useMemo(() => data.items.filter(item => item.source_type === 'professional').flatMap(item => {
     const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)
     return workspace.routines.map(routine => ({ item, workspace, routine, day: Number(Object.entries(workspace.week).find(([, id]) => id === routine.id)?.[0]) }))
@@ -87,14 +104,14 @@ function AccountPlanLibrary({ user }) {
     <div className="received-workout-list">{shownWorkouts.map(workout => {
       const active = state.assignedProgram?.versionId === workout.item.version?.id && state.week[workout.day]
       return <article className="card received-workout-card" key={`${workout.item.id}:${workout.day}`}>
-        <button className="received-workout-main" onClick={() => open({ ...workout.item, title: workout.routine.name }, workout.workspace, workout.routine.id)}>
-          <span className="received-workout-copy"><strong>{workout.routine.name}</strong><small>{workout.routine.ex.length} exercícios · Prof. {workout.item.professional_name || 'Profissional'}</small></span>
+        <button className="received-workout-main" onClick={() => open(workout)}>
+          <span className="received-workout-copy"><strong>{workout.routine.name}</strong>{workout.item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}<small>{workout.routine.ex.length} exercícios · Prof. {workout.item.professional_name || 'Profissional'}</small></span>
           <Icon name="chevronRight" />
         </button>
         <Button variant={active ? 'tinted' : 'primary'} disabled={busy} feedback="persistence" onClick={event => { event.stopPropagation(); active ? removeFromDay(workout) : apply(workout.item) }} loadingLabel="Aplicando…" successLabel="Aplicado">{active ? 'Aplicado' : 'Aplicar'}</Button>
       </article>
     })}</div>
-    {professionalWorkouts.length > shownWorkouts.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Mostrar mais</Button>}
+    {professionalWorkouts.length > shownWorkouts.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais</Button>}
     {data.items.length < data.total && <Button variant="ghost" onClick={() => refresh(data.items.length)}>Carregar mais planos</Button>}
   </section>
 }

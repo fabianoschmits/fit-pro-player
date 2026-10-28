@@ -1,4 +1,4 @@
-import TrainingPlanWorkspace, { RoutineList } from '../components/training/TrainingPlanWorkspace.jsx'
+import { PlanWeek, RoutineList } from '../components/training/TrainingPlanWorkspace.jsx'
 import PlanLibrary from '../components/training/PlanLibrary.jsx'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -86,9 +86,11 @@ export default function Plan() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={usingProfessionalPlan ? removeProfessionalDay : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} routines={personalRoutines} routineTitle="Seus treinos criados" /> : <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />}
+    {mode === 'weekly' && <div className="training-plan-workspace"><PlanWeek state={S} onDay={usingProfessionalPlan ? removeProfessionalDay : dayAssignSheet} /></div>}
 
     <PlanLibrary />
+
+    <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />
 
     <section className="plan-mode-section">
       <h4 className="sec">{t('Plan style')}</h4>

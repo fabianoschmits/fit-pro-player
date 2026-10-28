@@ -9,7 +9,10 @@ for (const name of files) {
  try { await db.exec(readFileSync('supabase/migrations/'+name,'utf8').replace(/^\uFEFF/,'').replace(/create extension if not exists pgcrypto;/i,'')); console.log('APPLIED '+name) }
  catch(e) { console.error('FAILED '+name+' '+e.message); process.exit(1) }
 }
+const updatesMigration = 'supabase/migrations/202610280001_library_updates.sql'
+await db.exec(readFileSync(updatesMigration, 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/20261027120000_plan_library.sql','utf8').replace(/^\uFEFF/,'')); console.log('PASS plan library integration') } catch(e) { console.error(e.message,e.where);process.exit(1) }
+try { await db.exec(readFileSync('supabase/tests/202610280001_library_updates.sql', 'utf8')); console.log('PASS library updates and personal routines') } catch(e) { console.error(e.message,e.where);process.exit(1) }
 await db.close()
 
 

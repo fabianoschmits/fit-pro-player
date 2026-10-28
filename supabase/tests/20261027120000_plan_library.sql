@@ -28,7 +28,7 @@ select pg_temp.assert_true((select count(*)=0 from public.athlete_plan_selection
 select pg_temp.assert_true((select title='Meu ABC' from public.athlete_routines),'delivery preserves execution plan');
 select public.apply_library_plan((select id from public.athlete_plan_library where source_type='professional'));
 select pg_temp.assert_true((select count(*)=1 from public.athlete_plan_library where source_type='self'),'personal plan captured before applying');
-select pg_temp.assert_true((select prescription->>'assigned'='true' and prescription->'ex'->0->>'weight'='80' from public.athlete_routines),'execution uses selected prescription');
+select pg_temp.assert_true((select prescription->'ex'->0->>'weight'='80' from public.athlete_routines where prescription->>'assigned'='true'),'execution uses selected prescription');
 select public.start_workout_execution('27120000-0000-4000-8000-000000000020',(select assignment_id from public.athlete_plan_library where source_type='professional'),'monday');
 select pg_temp.assert_true((select prescription_snapshot->'exercises'->0->>'load'='80' from public.workout_executions),'historical snapshot captured');
 select public.apply_library_plan((select id from public.athlete_plan_library where source_type='self'));
@@ -41,7 +41,7 @@ select set_config('request.jwt.claim.sub','27120000-0000-4000-8000-000000000002'
 select pg_temp.assert_true((select title='Meu ABC' from public.athlete_routines),'updated delivery does not switch back from personal');
 select pg_temp.assert_true((select count(*)=3 from public.athlete_plan_library),'old and new versions remain available');
 select public.apply_library_plan((select l.id from public.athlete_plan_library l join public.program_assignments a on a.id=l.assignment_id join public.program_versions v on v.id=a.version_id order by v.version_number desc limit 1));
-select pg_temp.assert_true((select prescription->'ex'->0->>'weight'='90' from public.athlete_routines),'new version explicitly selected');
+select pg_temp.assert_true((select prescription->'ex'->0->>'weight'='90' from public.athlete_routines where prescription->>'assigned'='true'),'new version explicitly selected');
 select pg_temp.assert_true((select prescription_snapshot->'exercises'->0->>'load'='80' from public.workout_executions),'old snapshot unchanged');
 select pg_temp.expect_error($cmd$select public.save_athlete_plan(4,'weekly','{}','[]')$cmd$,'42501');
 select set_config('request.jwt.claim.sub','27120000-0000-4000-8000-000000000003',true);

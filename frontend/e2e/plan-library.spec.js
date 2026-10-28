@@ -11,6 +11,25 @@ const canonicalPlan = state => ({
 })
 const delivered={id:entryId,user_id:USER,title:'Hipertrofia do profissional',source_type:'professional',assignment_id:'assignment',available:true,professional_name:'Fabiano',program_id:programId,created_at:'2026-10-27',version:{id:versionId,version_number:1,weekly_plan:{monday:[{exerciseId:'0025',sets:4,reps:8,load:80,rest:90}]},workout_titles:{monday:'Treino A'}}}
 
+test('received workouts paginate and opening an updated workout clears its badge across reloads', async ({ page }) => {
+ const state=stateFixture(), days=['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
+ let seen=false
+ const updated={...delivered,version:{...delivered.version,weekly_plan:Object.fromEntries(days.map(day=>[day,delivered.version.weekly_plan.monday])),workout_titles:Object.fromEntries(days.map((day,index)=>[day,`Recebido ${index+1}`]))}}
+ await seed(page,{authenticated:true,state,rpc:{...canonicalPlan(state),athlete_plan_library_page:()=>({items:[{...updated,workout_updates:seen?{}:{monday:versionId}}],total:1,selectedId:null}),mark_library_workout_seen:args=>{expect(args).toEqual({p_plan_id:entryId,p_day:'monday',p_change_version_id:versionId});seen=true;return null}}})
+ await page.goto('/#/plan')
+ await expect(page.locator('.received-workout-card')).toHaveCount(5)
+ await page.locator('.received-workouts').getByRole('button',{name:'Ver mais',exact:true}).click()
+ await expect(page.locator('.received-workout-card')).toHaveCount(7)
+ await expect(page.locator('.workout-update-badge')).toHaveCount(1)
+ await page.locator('.received-workout-main').filter({hasText:'Recebido 2'}).click()
+ await expect(page.getByRole('dialog')).toBeVisible()
+ await expect(page.locator('.workout-update-badge')).toHaveCount(0)
+ expect(seen).toBe(true)
+ await page.reload()
+ await expect(page.locator('.received-workout-card')).toHaveCount(5)
+ await expect(page.locator('.workout-update-badge')).toHaveCount(0)
+})
+
 test('professional creates a routine, previews animation, saves privately and explicitly sends',async({page})=>{
  let draft=null,sends=0
  await seed(page,{professional:true,rpc:{professional_client_detail:[{student_user_id:STUDENT,display_name:'João',assignments:[],executions:[]}],professional_plan_drafts:()=>draft?[draft]:[],save_student_plan_draft:args=>{draft={professional_id:USER,student_id:STUDENT,program_id:programId,title:args.p_title,workspace:args.p_workspace,revision:(draft?.revision||0)+1,sent_revision:null,updated_at:new Date().toISOString()};return draft},send_student_plan:()=>{sends++;draft.sent_revision=draft.revision;return{id:'assignment'}}}})
