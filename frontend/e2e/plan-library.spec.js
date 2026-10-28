@@ -88,7 +88,7 @@ test('plan groups created and received workouts in sections of five',async({page
  await expect(page.locator('.received-workouts').getByRole('button',{name:'Aplicar',exact:true})).toBeVisible()
 })
 
-test('explicitly applies a received plan and returns to the saved personal plan',async({page})=>{
+test('explicitly applies a received plan without duplicating personal plan controls',async({page})=>{
  const state=stateFixture();state.routines[0].id=routineId;state.week={1:routineId}
  const own={id:ownId,title:'Meu ABC',source_type:'self',available:true,personal_plan:{mode:'weekly',schedule:{week:{1:routineId}},routines:[{id:routineId,title:'Meu ABC',prescription:{ex:[{id:'0025',sets:1,reps:10,weight:20}]}}]}}
  let selection=null,revision=1
@@ -100,9 +100,6 @@ test('explicitly applies a received plan and returns to the saved personal plan'
  await expect.poll(()=>selection).toBe(entryId)
  await expect(page.locator('.app-header').getByRole('heading',{name:delivered.title,exact:true})).toBeVisible()
  await expect(page.locator('.plan-day-professional')).toHaveCount(1)
- await page.getByText('Planos salvos',{exact:true}).click()
- await page.locator('.saved-plan-library').getByRole('button',{name:'Aplicar',exact:true}).click()
- await page.getByRole('dialog').getByRole('button',{name:'Aplicar plano',exact:true}).click()
- await expect.poll(()=>selection).toBe(ownId)
- await expect(page.locator('.saved-plan-library').getByText('Meu ABC',{exact:true})).toBeVisible()
+ await expect(page.getByText('Planos salvos',{exact:true})).toHaveCount(0)
+ await expect(page.getByText('Salvar uma cópia do meu plano',{exact:true})).toHaveCount(0)
 })

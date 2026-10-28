@@ -357,10 +357,7 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .received-workout-copy strong { font-size:15px; }.received-workout-copy small { color:var(--label-2); font-size:12px; }
 .received-workout-card>.btn { flex:none; width:auto; min-height:40px; }.plan-show-more { width:100%; margin-top:8px; }
 .plan-library-empty { display:flex; align-items:center; gap:12px; padding:16px; }.plan-library-empty>.icn { font-size:20px; color:var(--label-2); }
-.plan-library-empty strong { font-size:14px; }.plan-library-empty p,.saved-plan-library>p { margin:4px 0 0; color:var(--label-2); font-size:12px; line-height:1.4; }
-.saved-plan-library { display:grid; gap:10px; }.saved-plan-library summary { cursor:pointer; font-weight:650; }
-.saved-plan-row { padding-top:10px; border-top:var(--hair) solid var(--sep-op); gap:10px; }.saved-plan-row>span { display:grid; gap:3px; min-width:0; }.saved-plan-row small { color:var(--label-2); font-size:12px; }
-.saved-plan-create { display:grid; gap:8px; padding-top:10px; border-top:var(--hair) solid var(--sep-op); }
+.plan-library-empty strong { font-size:14px; }.plan-library-empty p { margin:4px 0 0; color:var(--label-2); font-size:12px; line-height:1.4; }
 .training-plan-workspace [hidden], .routine-builder [hidden], .plan-view [hidden] { display:none !important; }
 .routine-exercise-list > div > .item { flex-wrap:wrap; padding:0; }
 .routine-item-tools { margin-left:auto; }

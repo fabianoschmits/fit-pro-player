@@ -7,7 +7,7 @@ import { getBrowserSupabaseClient } from '../../lib/supabase-client.js'
 import { weeklyPlanToWorkspace } from '../../lib/training-workspace.js'
 import { parsePlan } from '../../lib/training-dto.js'
 import { applyDomainState } from '../../lib/domain-state.js'
-import { Button, TextField } from '../ui.jsx'
+import { Button } from '../ui.jsx'
 import { confirmSheet } from '../../sheets.jsx'
 import { useUI } from '../../store/useUI.js'
 import Icon from '../Icon.jsx'
@@ -31,7 +31,7 @@ function AccountPlanLibrary({ user }) {
   const state = useStore(s => s.S)
   const update = useStore(s => s.update)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [name, setName] = useState('Meu plano'), [busy, setBusy] = useState(false), [visible, setVisible] = useState(PAGE_SIZE)
+  const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [busy, setBusy] = useState(false), [visible, setVisible] = useState(PAGE_SIZE)
   const generation = useRef(0)
   const refresh = useCallback(async (offset = 0) => {
     const request = ++generation.current
@@ -71,7 +71,6 @@ function AccountPlanLibrary({ user }) {
     const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)
     return workspace.routines.map(routine => ({ item, workspace, routine, day: Number(Object.entries(workspace.week).find(([, id]) => id === routine.id)?.[0]) }))
   }), [data.items])
-  const personalPlans = data.items.filter(item => item.source_type === 'self')
   const shownWorkouts = professionalWorkouts.slice(0, visible)
   const removeFromDay = workout => confirmSheet({
     title: 'Retirar treino deste dia?',
@@ -97,9 +96,5 @@ function AccountPlanLibrary({ user }) {
     })}</div>
     {professionalWorkouts.length > shownWorkouts.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Mostrar mais</Button>}
     {data.items.length < data.total && <Button variant="ghost" onClick={() => refresh(data.items.length)}>Carregar mais planos</Button>}
-    <details className="card saved-plan-library"><summary>Planos salvos</summary><p>Use uma cópia anterior sem perder seus treinos criados.</p>{personalPlans.map(item => {
-      const active = state.activeLibraryId === item.id
-      return <div className="row between saved-plan-row" key={item.id}><span><strong>{item.title}</strong><small>{active ? 'Aplicado' : 'Plano salvo'}</small></span>{!active && item.available && <Button size="sm" disabled={busy} onClick={() => apply(item)}>Aplicar</Button>}</div>
-    })}{!state.assignedProgram && <div className="saved-plan-create"><TextField aria-label="Nome do plano" maxLength={160} value={name} onChange={event => setName(event.target.value)} /><Button disabled={busy || !name.trim()} onAction={() => mutate(() => repo.savePersonalPlan(name.trim()))}>Salvar uma cópia</Button></div>}</details>
   </section>
 }
