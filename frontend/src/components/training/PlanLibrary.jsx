@@ -45,6 +45,7 @@ function AccountPlanLibrary({ user }) {
   if (!user?.id) return null
   const open = item => { setPreview(item.source_type === 'professional' ? weeklyPlanToWorkspace(item.version.weekly_plan, item.version.workout_titles) : { routines: item.personal_plan.routines.map(r => ({ ...r.prescription, id: r.id, name: r.title })), week: item.personal_plan.schedule.week || {} }) }
   return <section className="plan-library">
+    <div className="plan-library-head"><h3>Biblioteca de planos</h3><p>Escolha qual plano você quer usar sem perder os demais.</p></div>
     <div className="card"><small>Plano ativo</small><h2>{state.activeLibraryTitle || 'Meu plano'}</h2><p>{state.assignedProgram ? `Prof. ${data.items.find(item => item.id === state.activeLibraryId)?.professional_name || 'Profissional'}` : 'Criado por mim'}</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {preview ? <div className="card"><Button onClick={() => setPreview(null)}>Fechar visualização</Button><TrainingPlanPreview state={preview} /></div> : null}

@@ -46,6 +46,8 @@ for(const theme of ['dark','light']) for(const width of [320,390,430]) test(`rec
  const state=stateFixture();state.theme=theme
  await seed(page,{authenticated:true,state,rpc:{...canonicalPlan(state),athlete_plan_library_page:{items:[delivered],total:1,selectedId:null}}})
  await page.goto('/#/plan')
+ await expect(page.locator('.app-header').getByRole('heading',{name:'Seu plano semanal',exact:true})).toBeVisible()
+ await expect(page.locator('.plan-mode-section').getByRole('heading',{name:'Biblioteca de planos',exact:true})).toBeVisible()
  await expect(page.getByRole('heading',{name:'Planos dos profissionais'})).toBeVisible()
  await expect(page.locator('.plan-library').getByText('Meu plano',{exact:true})).toBeVisible()
  await page.getByRole('button',{name:'Visualizar',exact:true}).click()
@@ -68,6 +70,7 @@ test('explicitly applies a received plan and returns to the saved personal plan'
  await expect(page.getByRole('dialog')).toContainText('Seu plano atual continuará salvo')
  await page.getByRole('dialog').getByRole('button',{name:'Aplicar plano',exact:true}).click()
  await expect.poll(()=>selection).toBe(entryId)
+ await expect(page.locator('.app-header').getByRole('heading',{name:delivered.title,exact:true})).toBeVisible()
  await expect(page.locator('.plan-library').getByRole('heading',{name:delivered.title,level:2})).toBeVisible()
  await page.locator('.plan-library article').filter({has:page.getByRole('heading',{name:'Meu ABC',exact:true})}).getByRole('button',{name:'Aplicar',exact:true}).click()
  await page.getByRole('dialog').getByRole('button',{name:'Aplicar plano',exact:true}).click()

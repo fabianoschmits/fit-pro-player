@@ -46,6 +46,13 @@ export default function Plan() {
   const planProgress = planSetupProgress(S)
   const recentWorkouts = [...S.workouts].reverse().slice(0, 5)
   const mode = S.planMode === 'daily' ? 'daily' : 'weekly'
+  const usingProfessionalPlan = Boolean(S.assignedProgram)
+  const headerTitle = usingProfessionalPlan
+    ? (S.activeLibraryTitle || 'Plano profissional')
+    : mode === 'weekly' ? 'Seu plano semanal' : 'Seu plano diário'
+  const headerSubtitle = usingProfessionalPlan
+    ? 'Plano profissional ativo'
+    : mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')
 
   const switchMode = nextMode => {
     if (nextMode === mode) return
@@ -64,18 +71,17 @@ export default function Plan() {
     })
   }
 
-  const routineList = <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={S.assignedProgram ? undefined : addRoutine} />
+  const routineList = <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} />
 
   return <div className="plan-view page-scenery">
     <AppHeader
-      title={t('Plan')}
-      subtitle={mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')}
+      title={headerTitle}
+      subtitle={headerSubtitle}
     />
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    <PlanLibrary />
-    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={S.assignedProgram ? undefined : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={S.assignedProgram ? undefined : addRoutine} /> : <div className="cols plan-cols daily-plan-cols">
+    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={usingProfessionalPlan ? undefined : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} /> : <div className="cols plan-cols daily-plan-cols">
       <section>
         <div className="row between plan-section-head">
           <h4 className="sec">{t("Today's workout")}</h4>
@@ -98,15 +104,16 @@ export default function Plan() {
       {routineList}
     </div>}
 
-    <section className="plan-mode-section" hidden={Boolean(S.assignedProgram)}>
+    <section className="plan-mode-section">
       <h4 className="sec">{t('Plan style')}</h4>
       <div className="plan-mode-card">
-        <div><strong>{t('Change plan mode')}</strong><small>{t('Your profile, routines and history are kept in both modes.')}</small></div>
-        <div className="plan-mode-options">
-          <button className={mode === 'weekly' ? 'on' : ''} aria-pressed={mode === 'weekly'} onClick={() => switchMode('weekly')}><Icon name="calendar" /><span>{t('Weekly plan')}</span>{mode === 'weekly' && <Icon name="check" />}</button>
-          <button className={mode === 'daily' ? 'on' : ''} aria-pressed={mode === 'daily'} onClick={() => switchMode('daily')}><Icon name="dumbbell" /><span>{t('Daily plan')}</span>{mode === 'daily' && <Icon name="check" />}</button>
-        </div>
+        {usingProfessionalPlan ? <div className="plan-professional-mode"><strong>Plano profissional ativo</strong><small>A prescrição é protegida. Escolha outro plano na sua biblioteca para alterar o que você executa.</small></div> : <><div><strong>{t('Change plan mode')}</strong><small>{t('Your profile, routines and history are kept in both modes.')}</small></div>
+          <div className="plan-mode-options">
+            <button className={mode === 'weekly' ? 'on' : ''} aria-pressed={mode === 'weekly'} onClick={() => switchMode('weekly')}><Icon name="calendar" /><span>{t('Weekly plan')}</span>{mode === 'weekly' && <Icon name="check" />}</button>
+            <button className={mode === 'daily' ? 'on' : ''} aria-pressed={mode === 'daily'} onClick={() => switchMode('daily')}><Icon name="dumbbell" /><span>{t('Daily plan')}</span>{mode === 'daily' && <Icon name="check" />}</button>
+          </div></>}
       </div>
+      <PlanLibrary />
     </section>
   </div>
 }
