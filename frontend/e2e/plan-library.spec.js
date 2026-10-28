@@ -49,6 +49,7 @@ for(const theme of ['dark','light']) for(const width of [320,390,430]) test(`rec
  await expect(page.locator('.app-header').getByRole('heading',{name:'Seu plano semanal',exact:true})).toBeVisible()
  await expect(page.locator('.plan-mode-section').getByRole('heading',{name:'Biblioteca de planos',exact:true})).toBeVisible()
  await expect(page.getByText('Treinos anteriores',{exact:true})).toHaveCount(0)
+ await expect(page.getByText('Treino de hoje',{exact:true})).toHaveCount(0)
  await expect(page.getByRole('heading',{name:'Planos dos profissionais'})).toBeVisible()
  await expect(page.locator('.plan-library').getByText('Meu plano',{exact:true})).toBeVisible()
  await page.getByRole('button',{name:'Visualizar',exact:true}).click()
@@ -61,6 +62,17 @@ for(const theme of ['dark','light']) for(const width of [320,390,430]) test(`rec
  await page.screenshot({path:testInfo.outputPath(`library-${width}-${theme}.png`),fullPage:true})
  const local=await page.evaluate(user=>JSON.parse(localStorage.getItem(`fpp_account_cache_v1:${user}`)).state,USER)
  expect(local.assignedProgram).toBeNull();expect(local.routines[0].name).toBe('Treino de teste')
+})
+
+test('daily plan manages routines without asking for today\'s workout',async({page})=>{
+ const state=stateFixture()
+ await seed(page,{authenticated:true,state,rpc:{...canonicalPlan(state),athlete_plan_library_page:{items:[],total:0,selectedId:null}}})
+ await page.goto('/#/plan')
+ await page.getByRole('button',{name:'Plano diário',exact:true}).click()
+ await expect(page.locator('.app-header').getByRole('heading',{name:'Seu plano diário',exact:true})).toBeVisible()
+ await expect(page.locator('.plan-routine-list')).toHaveCount(1)
+ await expect(page.getByText('Treino de hoje',{exact:true})).toHaveCount(0)
+ await expect(page.locator('.daily-plan-today')).toHaveCount(0)
 })
 
 test('explicitly applies a received plan and returns to the saved personal plan',async({page})=>{

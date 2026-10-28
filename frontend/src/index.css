@@ -908,12 +908,6 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .profile-hero-progress>span{
   display:block;width:100%;height:100%;background:var(--acc);transform:scaleX(0);transform-origin:left center;
 }
-.daily-plan-today{width:100%;min-height:108px;display:flex;align-items:center;gap:14px;text-align:left;padding:17px;transition:transform var(--fast),background var(--fast)}
-.daily-plan-today:active{transform:scale(.985);background:var(--surface-2)}
-.daily-plan-icon{width:48px;height:48px;display:grid;place-items:center;flex:none;border-radius:8px;background:var(--surface-2);color:var(--label-2);font-size:22px}
-.daily-plan-today.has-routine .daily-plan-icon{background:transparent;border:0;border-radius:0;box-shadow:none;color:var(--acc)}
-.daily-plan-today .grow{min-width:0;display:flex;flex-direction:column;gap:3px}.daily-plan-today small,.daily-plan-today i{color:var(--label-2);font-size:12px;font-style:normal}.daily-plan-today strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:18px;letter-spacing:-.02em}
-.daily-plan-help{margin-top:-5px}.daily-plan-empty{min-height:96px;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--label-2);text-align:center}.daily-plan-empty .icn{font-size:20px}.daily-plan-empty strong{font-size:13px;font-weight:500}
 .plan-mode-section{margin-top:24px;padding-top:18px;border-top:var(--hair) solid var(--sep-op)}.plan-mode-section>.sec{margin:0 4px 8px}.plan-mode-card{padding:0 2px}.plan-mode-card>div:first-child{display:flex;flex-direction:column;gap:3px}.plan-mode-card>div:first-child strong{font-size:15px}.plan-mode-card>div:first-child small{color:var(--label-2);font-size:12px;line-height:1.4}
 .plan-mode-options{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.plan-mode-options button{min-height:44px;display:flex;align-items:center;justify-content:center;gap:7px;padding:8px;border-radius:8px;background:var(--surface-2);color:var(--label-2);font-size:13px;border:var(--hair) solid transparent;transition:transform var(--fast),background var(--fast),color var(--fast),box-shadow var(--fast)}
 .plan-mode-options button:active{transform:scale(.96)}.plan-mode-options button.on{background:var(--acc);color:var(--on-acc);font-weight:650;box-shadow:0 5px 12px color-mix(in srgb,var(--acc) 24%,transparent)}.plan-mode-options .icn{font-size:15px}.plan-mode-options button .icn:last-child{font-size:12px}

@@ -3,15 +3,13 @@ import PlanLibrary from '../components/training/PlanLibrary.jsx'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
-import { routineId, exCount, fmtDate, todayISO } from '../lib/format.js'
+import { routineId, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { effectiveRoutine, effectiveRoutineId } from '../lib/history.js'
-import { ensureStarterRoutines, routineName } from '../lib/starter.js'
+import { effectiveRoutineId } from '../lib/history.js'
+import { ensureStarterRoutines } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
-import { dayAssignSheet, dayOverrideSheet } from '../sheets.jsx'
+import { dayAssignSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
-import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
-import { Button } from '../components/ui.jsx'
 import { DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 import PlanWizard from '../components/PlanWizard.jsx'
@@ -40,7 +38,6 @@ export default function Plan() {
   }
 
   const today = todayISO()
-  const todayRoutine = effectiveRoutine(S, today)
   const scheduledDays = WEEK_DAYS.filter(day => S.week[day] && S.routines.some(r => r.id === S.week[day])).length
   const planProgress = planSetupProgress(S)
   const mode = S.planMode === 'daily' ? 'daily' : 'weekly'
@@ -50,7 +47,7 @@ export default function Plan() {
     : mode === 'weekly' ? 'Seu plano semanal' : 'Seu plano diário'
   const headerSubtitle = usingProfessionalPlan
     ? 'Plano profissional ativo'
-    : mode === 'daily' ? t('Choose your workout day by day') : t('Your weekly routine')
+    : mode === 'daily' ? 'Organize seus treinos para começar quando quiser.' : t('Your weekly routine')
 
   const switchMode = nextMode => {
     if (nextMode === mode) return
@@ -79,22 +76,7 @@ export default function Plan() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={usingProfessionalPlan ? undefined : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} /> : <div className="cols plan-cols daily-plan-cols">
-      <section>
-        <div className="row between plan-section-head">
-          <h4 className="sec">{t("Today's workout")}</h4>
-          <span className="plan-section-value">{fmtDate(today, true)}</span>
-        </div>
-        <button className={'card daily-plan-today' + (todayRoutine ? ' has-routine' : '')} onClick={() => dayOverrideSheet(today)}>
-          <span className="daily-plan-icon">{todayRoutine ? <RoutineMuscleThumb routine={todayRoutine} body={S.body} /> : <Icon name="plus" />}</span>
-          <span className="grow"><small>{t('Your choice for today')}</small><strong>{todayRoutine ? routineName(todayRoutine) : t("Choose today's workout")}</strong>{todayRoutine && <i>{exCount(todayRoutine.ex.length)}</i>}</span>
-          <Icon name="chevronRight" className="chev" />
-        </button>
-        <p className="sect-f daily-plan-help">{t('Pick a workout each day. Weekly assignments stay saved in case you switch back.')}</p>
-
-      </section>
-      {routineList}
-    </div>}
+    {mode === 'weekly' ? <TrainingPlanWorkspace state={S} onDay={usingProfessionalPlan ? undefined : dayAssignSheet} onOpen={id => nav('/plan/r/' + id)} onAdd={usingProfessionalPlan ? undefined : addRoutine} /> : routineList}
 
     <section className="plan-mode-section">
       <h4 className="sec">{t('Plan style')}</h4>
