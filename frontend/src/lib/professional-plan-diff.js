@@ -26,7 +26,7 @@ export function compareProfessionalPlanVersions(previousVersion, nextVersion) {
     const previousOrder = previous.map(item => item.exerciseId)
     const nextOrder = next.map(item => item.exerciseId)
     const reordered = !added.length && !removed.length && previousOrder.join('|') !== nextOrder.join('|')
-    const titleChanged = previousTitle !== nextTitle
+    const titleChanged = previous.length > 0 && next.length > 0 && previousTitle !== nextTitle
     if (type === 'changed' && !titleChanged && !added.length && !removed.length && !changed.length && !reordered) return null
     return { day, type, previousTitle, nextTitle, titleChanged, exercises: { added, removed, changed, reordered } }
   }).filter(Boolean)

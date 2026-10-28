@@ -41,8 +41,10 @@ const displayValue = (field, value) => {
 const fieldLabel = fieldNames => ({ ...fieldNames, duration: 'Duração', distance: 'Distância', speed: 'Velocidade', mode: 'Formato', sec: 'Duração', min: 'Duração', unit: 'Unidade', effort: 'Esforço', sg: 'Superset' })
 function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
   const update = item.plan_update
-  const diff = compareProfessionalPlanVersions(update?.previous_version, update?.next_version || item.version)
-  const day = diff.days.find(entry => entry.day === DAYS[workout.day])
+  const dayKey = DAYS[workout.day]
+  const previousVersion = item.workout_update_bases?.[dayKey]?.version || update?.previous_version
+  const diff = compareProfessionalPlanVersions(previousVersion, update?.next_version || item.version)
+  const day = diff.days.find(entry => entry.day === dayKey)
   const title = workout.routine?.name || day?.previousTitle || day?.nextTitle || 'Descanso'
   return <section className="plan-library-preview-sheet plan-update-sheet">
     <div className="row between sheet-title-row"><h2>{update?.is_first ? 'Novo plano do seu profissional' : 'Treino atualizado'}</h2><Button size="sm" variant="tinted" onClick={close}>Fechar</Button></div>
@@ -151,7 +153,14 @@ function AccountPlanLibrary({ user, onUpdates }) {
     const currentByDay = new Map(workspace.routines.map(routine => [Number(Object.entries(workspace.week).find(([, id]) => id === routine.id)?.[0]), routine]))
     const previousByDay = new Map(previous.routines.map(routine => [Number(Object.entries(previous.week).find(([, id]) => id === routine.id)?.[0]), routine]))
     const pendingDays = Object.keys(item.workout_updates || {}).map(day => DAYS.indexOf(day))
-    return [...new Set([...currentByDay.keys(), ...pendingDays])].map(day => ({ item, workspace, routine: currentByDay.get(day) || previousByDay.get(day), day }))
+    pendingDays.forEach(day => {
+      const base = item.workout_update_bases?.[DAYS[day]]?.version
+      if (!base) return
+      const baseWorkspace = weeklyPlanToWorkspace(base.weekly_plan, base.workout_titles)
+      const baseRoutine = baseWorkspace.routines.find(routine => routine.id === baseWorkspace.week[day])
+      if (baseRoutine) previousByDay.set(day, baseRoutine)
+    })
+    return [...new Set([...currentByDay.keys(), ...pendingDays])].map(day => ({ item, workspace, routine: currentByDay.get(day) || previousByDay.get(day), day, removed: !currentByDay.has(day) && pendingDays.includes(day) }))
   }), [data.items])
   useEffect(() => {
     onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => open(workout)])))
@@ -176,7 +185,7 @@ function AccountPlanLibrary({ user, onUpdates }) {
           <span className="received-workout-copy"><strong>{workout.routine.name}</strong>{workout.item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}<small>{workout.routine.ex.length} exercícios · Prof. {workout.item.professional_name || 'Profissional'}</small></span>
           <Icon name="chevronRight" />
         </button>
-        <Button variant={active ? 'tinted' : 'primary'} disabled={busy} feedback="persistence" onClick={event => { event.stopPropagation(); active ? removeFromDay(workout) : apply(workout.item) }} loadingLabel="Aplicando…" successLabel="Aplicado">{active ? 'Aplicado' : 'Aplicar'}</Button>
+        {!workout.removed && <Button variant={active ? 'tinted' : 'primary'} disabled={busy} feedback="persistence" onClick={event => { event.stopPropagation(); active ? removeFromDay(workout) : apply(workout.item) }} loadingLabel="Aplicando…" successLabel="Aplicado">{active ? 'Aplicado' : 'Aplicar'}</Button>}
       </article>
     })}</div>
     {professionalWorkouts.length > shownWorkouts.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais</Button>}
