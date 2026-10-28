@@ -1,0 +1,14 @@
+begin;
+create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$begin if value is distinct from true then raise exception 'assertion failed: %',message; end if; end $$;
+insert into auth.users(id) values('28000300-0000-4000-8000-000000000001'),('28000300-0000-4000-8000-000000000002');
+insert into public.user_roles(user_id,role) values('28000300-0000-4000-8000-000000000001','professional') on conflict do nothing;
+insert into public.professional_student_relationships(professional_user_id,student_user_id,status) values('28000300-0000-4000-8000-000000000001','28000300-0000-4000-8000-000000000002','active');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','28000300-0000-4000-8000-000000000001',true);
+select public.save_student_plan_draft('28000300-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"m","name":"Segunda","ex":[{"id":"0025","sets":3,"reps":10,"weight":20}]},{"id":"f","name":"Sexta","ex":[{"id":"0025","sets":3,"reps":10,"weight":20}]}],"week":{"1":"m","5":"f"}}',0);
+select public.send_student_plan('28000300-0000-4000-8000-000000000002',1);
+select set_config('request.jwt.claim.sub','28000300-0000-4000-8000-000000000002',true);
+select pg_temp.assert_true((select i->'workout_updates' ? 'monday' and i->'workout_updates' ? 'friday' from jsonb_array_elements(public.athlete_plan_library_page()->'items') i where i->>'source_type'='professional'),'first plan keeps each day unread');
+select public.mark_professional_plan_update_day_seen((select l.id from public.athlete_plan_library l where l.source_type='professional'),(select version_id from public.program_assignments where student_user_id=auth.uid()),'monday');
+select pg_temp.assert_true((select not(i->'workout_updates' ? 'monday') and i->'workout_updates' ? 'friday' from jsonb_array_elements(public.athlete_plan_library_page()->'items') i where i->>'source_type'='professional'),'opening monday keeps friday pending');
+rollback;
