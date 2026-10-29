@@ -209,3 +209,26 @@ describe('professional management repository', () => {
     await expect(repository.studentProfessionalDetail('pro-1')).rejects.toEqual(denied)
   })
 })
+  it('reads invite rows with personal-code flags and persists personal-code edits through the RPC', async () => {
+    const rows = [{ id: 'personal', code: 'ANASOUZA', status: 'pending', is_personal: true, is_custom: false }]
+    const query = {
+      select: vi.fn(() => query),
+      order: vi.fn(() => query),
+      limit: vi.fn(() => query),
+      then: resolve => resolve({ data: rows, error: null }),
+    }
+    const from = vi.fn(() => query)
+    const rpc = vi.fn().mockResolvedValue({ data: { ...rows[0], code: 'ANAFIT', is_custom: true }, error: null })
+    const repo = createProfessionalWorkflowRepository({ client: { from, rpc } })
+
+    expect(await repo.invites()).toEqual(rows)
+    expect(await repo.savePersonalInviteCode('Ana Fit')).toMatchObject({ code: 'ANAFIT', is_personal: true, is_custom: true })
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('save_professional_personal_invite', { p_code: 'Ana Fit' })
+  })
+
+  it('maps personal-code conflicts to a stable repository error', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: { code: 'P0001', message: 'code_taken' } })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    await expect(repo.savePersonalInviteCode('ANA')).rejects.toThrow('professional-invite-code-taken')
+  })
+

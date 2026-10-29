@@ -13,3 +13,13 @@ test('professional profile editing is an authenticated fixed-search-path RPC', (
   assert.match(migration, /p_user_id is distinct from caller/i)
   assert.match(migration, /professional capability required/i)
 })
+
+test('personal invite codes are unique, personal, and backed by edit and repeated acceptance RPCs', () => {
+  assert.match(migration, /is_personal boolean not null default false/i)
+  assert.match(migration, /is_custom boolean not null default false/i)
+  assert.match(migration, /save_professional_personal_invite/i)
+  assert.match(migration, /ensure_professional_personal_invite/i)
+  assert.match(migration, /pg_advisory_xact_lock/i)
+  assert.match(migration, /if not invite\.is_personal then[\s\S]*?update public\.professional_invites set status = 'active'/i)
+  assert.match(migration, /and not is_personal[\s\S]*?revoke/i)
+})

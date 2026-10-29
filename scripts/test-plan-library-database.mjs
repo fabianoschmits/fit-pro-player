@@ -27,6 +27,11 @@ try { await db.exec(readFileSync('supabase/tests/202610280007_professional_plan_
 await db.exec(readFileSync('supabase/migrations/202610280008_professional_student_legacy_profile.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610280008_professional_student_legacy_profile.sql', 'utf8')) } catch(e) { console.error(e.message); process.exit(1) }
 console.log('PASS legacy student profile compatibility')
+await db.exec(`
+insert into auth.users(id) values ('10290299-0000-0000-0000-000000000001');
+insert into public.user_roles(user_id,role) values ('10290299-0000-0000-0000-000000000001','professional');
+insert into public.professional_profiles(user_id,professional_name) values ('10290299-0000-0000-0000-000000000001','Legacy Pro');
+`)
 await db.exec(readFileSync('supabase/migrations/202610290003_professional_profile_invites_and_model_delete.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610290003_professional_profile_invites_model_delete.sql', 'utf8')); console.log('PASS professional profile save contract') } catch(e) { console.error(e.message,e.where,e.query); process.exit(1) }
 await db.exec(readFileSync('supabase/migrations/202610290001_exercise_sprite_requirement.sql', 'utf8'))
@@ -45,3 +50,4 @@ insert into public.professional_student_notes(professional_id,student_id,body,up
 await db.exec(readFileSync('supabase/migrations/202610290002_professional_workspace_history_notes.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610290002_professional_workspace_history_notes.sql', 'utf8')); console.log('PASS professional model plans and private student notes') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 await db.close()
+

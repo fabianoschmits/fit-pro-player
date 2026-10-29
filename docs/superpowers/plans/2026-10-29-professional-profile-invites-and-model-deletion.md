@@ -77,22 +77,22 @@
 - Add an internal code-normalization/allocation helper used by the profile save/provisioning and personal-code edit RPCs.
 - Add repository method `savePersonalInviteCode(code)` and include `is_personal`/`is_custom` in `invites()` DTO rows.
 
-- [ ] **Step 1: Add failing tests for generation, edits, acceptance, and compatibility**
+- [x] **Step 1: Add failing tests for generation, edits, acceptance, and compatibility**
   - SQL tests for backfilling existing professionals, new provisioning, first+last normalization, numeric collision suffix, custom edit, taken-code rejection, and code stability after profile rename.
   - SQL tests for repeat acceptance of a personal code by separate students; generated code remains one-use and revocation rejects personal rows.
   - Repository tests for the code-edit RPC arguments and personal DTO flags.
-- [ ] **Step 2: Run new tests and verify expected failures**
+- [x] **Step 2: Run new tests and verify expected failures**
   - Run: `node --test scripts/check-professional-profile-invites-model-delete-migration.test.mjs`
   - Run focused database harness.
   - Expected: missing personal-code marker, allocation and acceptance behavior.
-- [ ] **Step 3: Implement migration and repository contracts**
+- [x] **Step 3: Implement migration and repository contracts**
   - Add personal markers/index, normalized name-based allocation and backfill, and transactional profile-name synchronization until `is_custom` is true.
   - Update provisioning, profile-save, and generated-invite creation paths to share collision-safe global allocation; retry random generated codes on unique conflicts.
   - Update preview/accept RPCs so personal invite status is never consumed; exclude personal rows from revoke RPC.
   - Map stable `code_taken` error and preserve personal custom code after profile name edits.
-- [ ] **Step 4: Run focused checks**
+- [x] **Step 4: Run focused checks**
   - Run repository/profile Vitest, static migration tests, `npm run test:plan-library:database`, and `npm run check:supabase`.
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ### Task 3: Show personal and generated codes on the invitations page
 

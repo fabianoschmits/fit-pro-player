@@ -128,8 +128,15 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   }
   const relationships = userId => read('professional_student_relationships', q => q.select('*').or(`professional_user_id.eq.${userId},student_user_id.eq.${userId}`).order('created_at', { ascending: false }).limit(500))
   const professionalRole = userId => read('user_roles', q => q.select('role').eq('user_id', userId)).then(rows => rows.some(row => row.role === 'professional'))
-  const invites = () => read('professional_invites', q => q.select('id,kind,code,status,created_at,accepted_at').order('created_at', { ascending: false }).limit(500))
+  const invites = () => read('professional_invites', q => q.select('id,kind,code,status,created_at,accepted_at,is_personal,is_custom').order('created_at', { ascending: false }).limit(500))
   const createInvite = kind => rpc('create_professional_invite', { p_kind: kind || 'code' })
+  const savePersonalInviteCode = async code => {
+    try { return await rpc('save_professional_personal_invite', { p_code: code }) }
+    catch (cause) {
+      if (cause?.code === 'P0001' || cause?.message === 'code_taken') throw new Error('professional-invite-code-taken')
+      throw cause
+    }
+  }
   const previewInvite = code => rpc('preview_professional_invite', { p_code: code })
   const acceptInvite = code => rpc('accept_professional_invite', { p_code: code })
   const revokeRelationship = id => rpc('revoke_professional_relationship', { p_relationship_id: id })
@@ -180,5 +187,5 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const studentPlanDraft = studentId => read('professional_plan_drafts', q => q.select('*').eq('student_id', studentId).limit(1)).then(rows => rows[0] || null)
   const savePlanDraft = (studentId, title, workspace, revision) => rpc('save_student_plan_draft', { p_student_id: studentId, p_title: title, p_workspace: workspace, p_expected_revision: revision })
   const sendPlan = (studentId, revision) => rpc('send_student_plan', { p_student_id: studentId, p_expected_revision: revision })
-  return Object.freeze({ program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, studentNotes, addStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  return Object.freeze({ program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, savePersonalInviteCode, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, studentNotes, addStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }
