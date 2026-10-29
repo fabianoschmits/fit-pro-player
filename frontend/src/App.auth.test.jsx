@@ -26,7 +26,7 @@ vi.mock('./store/useStore.js', () => ({
     isGuest: () => false,
     }
     return selector ? selector(state) : state
-  }, { getState: () => ({ enterApp: mocks.enterApp }) }),
+  }, { getState: () => ({ S: { active: null }, enterApp: mocks.enterApp }) }),
   }));
 
 import App from './App.jsx';
@@ -35,6 +35,7 @@ import { useUI } from './store/useUI.js';
 let dom;
 let root;
 let container;
+const originalMutationObserver = globalThis.MutationObserver;
 
 beforeEach(() => {
   dom = new Window({ url: 'https://app.example/#/home' });
@@ -43,6 +44,7 @@ beforeEach(() => {
   globalThis.history = dom.history;
   globalThis.location = dom.location;
   globalThis.sessionStorage = dom.sessionStorage;
+  globalThis.MutationObserver = dom.MutationObserver;
   globalThis.IS_REACT_ACT_ENVIRONMENT = true;
   container = document.createElement('div');
   document.body.append(container);
@@ -58,6 +60,7 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   dom.close();
+  globalThis.MutationObserver = originalMutationObserver;
 });
 
 describe('App Auth boot coordination', () => {
