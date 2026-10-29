@@ -128,7 +128,14 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   }
   const relationships = userId => read('professional_student_relationships', q => q.select('*').or(`professional_user_id.eq.${userId},student_user_id.eq.${userId}`).order('created_at', { ascending: false }).limit(500))
   const professionalRole = userId => read('user_roles', q => q.select('role').eq('user_id', userId)).then(rows => rows.some(row => row.role === 'professional'))
-  const invites = () => read('professional_invites', q => q.select('id,kind,code,status,created_at,accepted_at,is_personal,is_custom').order('created_at', { ascending: false }).limit(500))
+  const invites = async () => {
+    const columns = 'id,kind,code,status,created_at,accepted_at,is_personal,is_custom'
+    const [personal, generated] = await Promise.all([
+      read('professional_invites', q => q.select(columns).eq('is_personal', true).limit(1)),
+      read('professional_invites', q => q.select(columns).eq('is_personal', false).order('created_at', { ascending: false }).limit(500)),
+    ])
+    return [...personal, ...generated]
+  }
   const createInvite = kind => rpc('create_professional_invite', { p_kind: kind || 'code' })
   const savePersonalInviteCode = async code => {
     try { return await rpc('save_professional_personal_invite', { p_code: code }) }

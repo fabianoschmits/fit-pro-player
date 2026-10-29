@@ -33,6 +33,8 @@ insert into public.user_roles(user_id,role) values ('10290299-0000-0000-0000-000
 insert into public.professional_profiles(user_id,professional_name) values ('10290299-0000-0000-0000-000000000001','Legacy Pro');
 `)
 await db.exec(readFileSync('supabase/migrations/202610290003_professional_profile_invites_and_model_delete.sql', 'utf8'))
+const legacyInvite = await db.query(`select code from public.professional_invites where professional_user_id='10290299-0000-0000-0000-000000000001' and is_personal`)
+if (legacyInvite.rows[0]?.code !== 'LEGACYPRO') throw new Error('legacy professional personal invite was not backfilled')
 try { await db.exec(readFileSync('supabase/tests/202610290003_professional_profile_invites_model_delete.sql', 'utf8')); console.log('PASS professional profile save contract') } catch(e) { console.error(e.message,e.where,e.query); process.exit(1) }
 await db.exec(readFileSync('supabase/migrations/202610290001_exercise_sprite_requirement.sql', 'utf8'))
 for (const name of readdirSync('supabase/migrations').filter(name => name.endsWith('_exercise_sprite_catalogue.sql')).sort()) {

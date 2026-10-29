@@ -27,6 +27,11 @@ export async function seed(page,{professional=false,authenticated=professional,s
     else if(name==='user_roles')data=professional?[{role:'professional'}]:[]
     else if(name==='save_own_account_snapshot')data=[{status:'APPLIED',revision:2,updated_at:new Date().toISOString()}]
     else if(Object.hasOwn(rpc,name))data=typeof rpc[name]==='function'?rpc[name](JSON.parse(route.request().postData()||'{}')):rpc[name]
+    if(name==='professional_invites'&&Array.isArray(data)){
+      const personalFilter=url.searchParams.get('is_personal')
+      if(personalFilter==='eq.true')data=data.filter(invite=>invite.is_personal)
+      else if(personalFilter==='eq.false')data=data.filter(invite=>!invite.is_personal)
+    }
     const error = data?.__error
     if(error){data=error.body;await route.fulfill({status:error.status||400,contentType:'application/json',body:JSON.stringify(data)})}
     else await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)})

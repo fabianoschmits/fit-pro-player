@@ -221,19 +221,30 @@ describe('professional management repository', () => {
     await expect(repository.studentProfessionalDetail('pro-1')).rejects.toEqual(denied)
   })
 })
-  it('reads invite rows with personal-code flags and persists personal-code edits through the RPC', async () => {
+  it('keeps the personal invite separate from the capped generated-invite history and persists edits through the RPC', async () => {
     const rows = [{ id: 'personal', code: 'ANASOUZA', status: 'pending', is_personal: true, is_custom: false }]
-    const query = {
-      select: vi.fn(() => query),
-      order: vi.fn(() => query),
-      limit: vi.fn(() => query),
-      then: resolve => resolve({ data: rows, error: null }),
-    }
-    const from = vi.fn(() => query)
+    const generated = Array.from({ length: 500 }, (_, index) => ({ id: `generated-${index}`, code: `CODE${index}`, status: 'pending', is_personal: false }))
+    const filters = []
+    let readIndex = 0
+    const from = vi.fn(() => {
+      const index = readIndex++
+      let filter
+      const query = {
+        select: vi.fn(() => query),
+        eq: vi.fn((_, value) => { filter = value; return query }),
+        order: vi.fn(() => query),
+        limit: vi.fn(() => { filters.push(filter); return query }),
+        then: resolve => resolve({ data: index === 0 ? rows : generated, error: null }),
+      }
+      return query
+    })
     const rpc = vi.fn().mockResolvedValue({ data: { ...rows[0], code: 'ANAFIT', is_custom: true }, error: null })
     const repo = createProfessionalWorkflowRepository({ client: { from, rpc } })
 
-    expect(await repo.invites()).toEqual(rows)
+    const inviteRows = await repo.invites()
+    expect(inviteRows).toHaveLength(501)
+    expect(inviteRows[0]).toEqual(rows[0])
+    expect(filters).toEqual([true, false])
     expect(await repo.savePersonalInviteCode('Ana Fit')).toMatchObject({ code: 'ANAFIT', is_personal: true, is_custom: true })
     expect(rpc).toHaveBeenCalledExactlyOnceWith('save_professional_personal_invite', { p_code: 'Ana Fit' })
   })

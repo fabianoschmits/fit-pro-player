@@ -154,4 +154,4 @@
 - [x] Check every spec criterion, migration grants/search paths, generated-invite regressions, invite acceptance, and retained model history.
 - [x] Run focused Vitest, `npm run check:supabase`, `npm run test:plan-library:database`, targeted/full management E2E, and `npm run build`.
 - [x] Record unavailable checks and unrelated baseline failures accurately.
-- [ ] Request a fresh-context code review and fix any important findings; commit any review fixes.
+- [x] Request a fresh-context code review and fix any important findings; commit any review fixes.

@@ -42,7 +42,8 @@ insert into auth.users(id) values
  ('10290310-0000-0000-0000-000000000001'),('10290310-0000-0000-0000-000000000002'),
  ('10290310-0000-0000-0000-000000000003'),('10290310-0000-0000-0000-000000000004'),
  ('10290310-0000-0000-0000-000000000005'),('10290310-0000-0000-0000-000000000006'),
- ('10290310-0000-0000-0000-000000000007'),('10290310-0000-0000-0000-000000000008');
+ ('10290310-0000-0000-0000-000000000007'),('10290310-0000-0000-0000-000000000008'),
+ ('10290310-0000-0000-0000-000000000009');
 insert into public.user_roles(user_id,role) values
  ('10290310-0000-0000-0000-000000000001','professional'),('10290310-0000-0000-0000-000000000002','professional'),
  ('10290310-0000-0000-0000-000000000003','professional'),('10290310-0000-0000-0000-000000000004','professional');
@@ -53,7 +54,6 @@ insert into public.professional_profiles(user_id,professional_name) values
  ('10290310-0000-0000-0000-000000000002','Ana de Souza'),
  ('10290310-0000-0000-0000-000000000003','Ágata Lima'),
  ('10290310-0000-0000-0000-000000000004','João Silva');
-select pg_temp.assert_true((select code='LEGACYPRO' from public.professional_invites where professional_user_id='10290299-0000-0000-0000-000000000001' and is_personal),'existing profile receives backfilled code');
 select pg_temp.assert_true((select code='ANASOUZA' and is_personal and not is_custom from public.professional_invites where professional_user_id='10290310-0000-0000-0000-000000000001' and is_personal),'new profile receives first and last normalized code');
 select pg_temp.assert_true((select code='ANASOUZA2' from public.professional_invites where professional_user_id='10290310-0000-0000-0000-000000000002' and is_personal),'automatic collision uses numeric suffix');
 select pg_temp.assert_true((select code='AGATALIMA' from public.professional_invites where professional_user_id='10290310-0000-0000-0000-000000000003' and is_personal),'Portuguese accents normalize to ASCII');
@@ -67,6 +67,21 @@ set local role authenticated;
 set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000001';
 select pg_temp.assert_true((public.save_professional_personal_invite('Código Especial')).code='CODIGOESPECIAL','custom code normalizes accents and separators');
 select pg_temp.expect_error($q$select public.save_professional_personal_invite('ANA SOUZA2')$q$,'P0001');
+create temp table created_generated_invite as select * from public.create_professional_invite('code');
+select pg_temp.assert_true((select token_hash<>'' from created_generated_invite),'generated invite RPC returns a token without optional extensions');
+select pg_temp.assert_true((select exists(select 1 from public.professional_invites persisted join created_generated_invite returned on persisted.id=returned.id and persisted.token_hash=returned.token_hash)),'generated invite RPC persists its returned token');
+set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000009';
+select public.accept_professional_invite((select code from created_generated_invite));
+reset role;
+select pg_temp.assert_true((select status='active' and accepted_by='10290310-0000-0000-0000-000000000009' from public.professional_invites where id=(select id from created_generated_invite)),'generated invite can be accepted by the returned code');
+set local role authenticated;
+set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000001';
+create temp table created_revocable_invite as select * from public.create_professional_invite('code');
+select public.revoke_professional_invite((select id from created_revocable_invite));
+reset role;
+select pg_temp.assert_true((select status='revoked' from public.professional_invites where id=(select id from created_revocable_invite)),'generated invite can be revoked by its owner');
+set local role authenticated;
+set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000001';
 select pg_temp.assert_true((public.save_professional_profile(auth.uid(),'Ana Souza Nova',null,'{}',null,null,null)).professional_name='Ana Souza Nova','profile rename saves through the RPC');
 select pg_temp.assert_true((select code='CODIGOESPECIAL' and is_custom from public.professional_invites where professional_user_id=auth.uid() and is_personal),'custom code stays stable after profile rename');
 set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000005';
@@ -78,6 +93,13 @@ set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000006';
 select pg_temp.assert_true((public.accept_professional_invite('CODIGOESPECIAL')).student_user_id=auth.uid(),'second student accepts same reusable code');
 set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000005';
 select pg_temp.assert_true((public.accept_professional_invite('CODIGOESPECIAL')).student_user_id=auth.uid(),'same student can restore their relationship');
+reset role;
+set local role authenticated;
+set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000001';
+select public.save_professional_profile(auth.uid(),'Maria Silva',null,'{}',null,null,null);
+set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000002';
+select public.save_professional_profile(auth.uid(),'Ana de Souza','Bio atualizada','{}',null,null,null);
+select pg_temp.assert_true((select code='ANASOUZA2' from public.professional_invites where professional_user_id=auth.uid() and is_personal),'unrelated profile saves do not recalculate a collision suffix');
 reset role;
 insert into public.professional_invites(professional_user_id,kind,code,token_hash) values
  ('10290310-0000-0000-0000-000000000001','code','ONCEONLY','individual-invite-hash');

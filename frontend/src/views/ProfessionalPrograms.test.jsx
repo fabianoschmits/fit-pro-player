@@ -38,3 +38,13 @@ it('confirms deletion and offers archive when history makes deletion unsafe',asy
  await act(async()=>mocks.pendingConfirm.onConfirm())
  expect(mocks.repo.updateProgram).toHaveBeenCalledWith('p',{title:'Iniciante',description:'',archived:true})
 })
+it('does not offer to archive a model that is already archived',async()=>{
+ mocks.repo.program.mockResolvedValueOnce({id:'p',title:'Iniciante',description:'',archived:true})
+ await render('/professional/templates/p')
+ await act(async()=>container.querySelector('summary').click())
+ await act(async()=>[...container.querySelectorAll('button')].find(button=>button.textContent.includes('Excluir modelo')).click())
+ mocks.repo.deleteProgram.mockRejectedValueOnce(new Error('professional-program-in-use'))
+ await act(async()=>mocks.pendingConfirm.onConfirm())
+ expect(container.querySelector('[role="alert"]')?.textContent).toContain('já está arquivado')
+ expect(container.querySelector('[role="alert"] button')).toBeNull()
+})

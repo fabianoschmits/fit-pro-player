@@ -159,6 +159,9 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
+  if tg_op = 'UPDATE' and old.professional_name is not distinct from new.professional_name then
+    return new;
+  end if;
   perform public.ensure_professional_personal_invite(new.user_id, new.professional_name);
   return new;
 end;
@@ -232,7 +235,7 @@ begin
     invite_code := upper(substr(md5(gen_random_uuid()::text || clock_timestamp()::text), 1, 10));
     begin
       insert into public.professional_invites(professional_user_id, kind, code, token_hash)
-      values (caller, p_kind, invite_code, encode(digest(raw_token, 'sha256'), 'hex')) returning * into result;
+      values (caller, p_kind, invite_code, raw_token) returning * into result;
       exit;
     exception when unique_violation then
       attempts := attempts + 1;
