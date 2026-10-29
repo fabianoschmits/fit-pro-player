@@ -19,10 +19,11 @@ export const EXDB = SOURCE_EXERCISES
     (POPULARITY_RANK.get(b.id) ?? Number.MAX_SAFE_INTEGER))
 export const PENDING_EXERCISE_COUNT = SOURCE_EXERCISES.length - EXDB.length
 
-// Professionals can prescribe the complete exercise catalogue. The active EXDB remains
-// intentionally smaller for the animated workout catalogue, while this export keeps
-// prescription independent from animation coverage.
-export const PROFESSIONAL_EXERCISES = SOURCE_EXERCISES
+// Both roles use the same validated catalogue. Source-only rows remain historical data.
+export const PROFESSIONAL_EXERCISES = EXDB
+export const isAvailableExercise = id => ACTIVE_IDS.has(String(id || ''))
+export const isPendingExercise = id => Boolean(EXIDX[id] && !EXIDX[id].custom && !isAvailableExercise(id))
+export const UNAVAILABLE_EXERCISE_MESSAGE = 'This workout contains exercises without animations. Replace them with exercises from the catalogue.'
 
 // The generated dataset already supplies secondary muscles for most exercises. Keep the
 // handful of conservative catalogue additions that are useful to the muscle map here so a

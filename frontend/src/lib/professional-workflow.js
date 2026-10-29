@@ -1,3 +1,5 @@
+import { validateAvailableWeeklyPlan } from './professional-program.js'
+
 /** @typedef {{title:string,description:string,objective:string,weeklyPlan:Object,workoutTitles:Object<string,string>}} WeekDraft */
 /** @typedef {{id:string,professionalUserId:string,title:string,description:?string,objective:?string,archived:boolean,createdAt:?string,updatedAt:?string}} ProgramMetadata */
 /** @typedef {{id:string,programId:string,versionNumber:number,weeklyPlan:Object,workoutTitles:Object<string,string>,publishedAt:?string,createdAt:?string}} ProgramVersion */
@@ -104,6 +106,10 @@ const toStudentProfessionalDetail = value => value ? ({
 
 export function createProfessionalWorkflowRepository({ client } = {}) {
   const rpc = async (name, args) => {
+    if (['publish_program_version', 'publish_program_version_with_titles'].includes(name)) {
+      const validation = validateAvailableWeeklyPlan(args.p_weekly_plan)
+      if (!validation.ok) throw new Error(validation.error)
+    }
     if (!client?.rpc) throw new Error('supabase-unavailable')
     const { data, error } = await client.rpc(name, args)
     if (error) throw error

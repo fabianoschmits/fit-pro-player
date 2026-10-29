@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { nextScheduledWorkouts, normalizeWeeklyPlan, summarizeWeeklyPlan, validateWeeklyPlan } from './professional-program.js'
+import { nextScheduledWorkouts, normalizeWeeklyPlan, summarizeWeeklyPlan, validateWeeklyPlan, validateAvailableWeeklyPlan } from './professional-program.js'
+import { EXDB } from './exercises-data.js'
+import { EXERCISE_SPRITE_EXERCISE_IDS } from './exercise-guide-assets.js'
 
 describe('professional program contracts', () => {
+  it('rejects pending and unknown exercises for new prescriptions, while reading legacy records', () => {
+    const pending = EXDB.find(ex => !EXERCISE_SPRITE_EXERCISE_IDS.includes(ex.id)).id
+    for (const id of [pending, 'unknown']) {
+      const plan = { monday: [{ exerciseId: id, sets: 3, reps: 10 }] }
+      expect(validateAvailableWeeklyPlan(plan)).toMatchObject({ ok: false, error: 'weekly-plan-exercise-unavailable' })
+      expect(normalizeWeeklyPlan(plan).monday[0].exerciseId).toBe(id)
+    }
+    expect(validateAvailableWeeklyPlan({ monday: [{ exerciseId: '0025', sets: 3, reps: 10 }] }).ok).toBe(true)
+  })
   it('normalizes a weekly plan and drops invalid exercises', () => {
     const plan = normalizeWeeklyPlan({ monday: [{ exerciseId: '1254', sets: 3, reps: 8, load: 40, rest: 90 }, { exerciseId: '' }], FUNDAY: [{ exerciseId: '1' }] })
     expect(plan).toEqual({ monday: [{ exerciseId: '1254', sets: 3, reps: 8, load: 40, rest: 90 }] })

@@ -20,19 +20,19 @@ insert into public.programs(id,professional_user_id,title) values
  ('20000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000001','First'),
  ('20000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000002','Other');
 insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values
- ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',1,'{"monday":[{"exerciseId":"squat","sets":3,"reps":10}]}',now()),
- ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002',1,'{"monday":[{"exerciseId":"squat","sets":3,"reps":10}]}',now());
+ ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',1,'{"monday":[{"exerciseId":"0043","sets":3,"reps":10}]}',now()),
+ ('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000002',1,'{"monday":[{"exerciseId":"0043","sets":3,"reps":10}]}',now());
 set local role authenticated;
 set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
 -- Old policy accepted another owner's program and unrelated version via direct INSERT.
 select pg_temp.expect_error($q$insert into public.program_assignments(program_id,version_id,professional_user_id,student_user_id) values ('20000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000001',auth.uid(),'00000000-0000-0000-0000-000000000003')$q$,'42501');
 select pg_temp.expect_error($q$update public.programs set title='bypass'$q$,'42501');
 select pg_temp.expect_error($q$insert into public.program_versions(program_id,version_number) values ('20000000-0000-0000-0000-000000000001',2)$q$,'42501');
-select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":0,"reps":10}]}')$q$,'22023');
-select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":3,"reps":10,"rest":-1}]}')$q$,'22023');
-select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":3,"reps":10,"rpe":11}]}')$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":0,"reps":10}]}')$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":3,"reps":10,"rest":-1}]}')$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":3,"reps":10,"rpe":11}]}')$q$,'22023');
 select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[]}')$q$,'22023');
-select pg_temp.assert_true((public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":2,"reps":8,"mode":"cardio","min":25,"speed":6.5,"unit":"lb","rest":0,"notes":"Leve","effort":"rpe","rpe":6,"sg":"a"}]}')).weekly_plan->'monday'->0->>'min'='25','timed cardio prescription is preserved');
+select pg_temp.assert_true((public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":2,"reps":8,"mode":"cardio","min":25,"speed":6.5,"unit":"lb","rest":0,"notes":"Leve","effort":"rpe","rpe":6,"sg":"a"}]}')).weekly_plan->'monday'->0->>'min'='25','timed cardio prescription is preserved');
 select pg_temp.expect_error($q$select public.assign_program_version('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003')$q$,'42501');
 select pg_temp.expect_error($q$select public.assign_program_version('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000004')$q$,'42501');
 select public.assign_program_version('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003');
@@ -73,7 +73,7 @@ select pg_temp.assert_true((select count(*)=0 from public.professional_client_de
 select pg_temp.expect_error($q$select public.assign_program_version('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003')$q$,'42501');
 select public.create_program(' New program ','Description');
 select public.update_program('20000000-0000-0000-0000-000000000001','Archived','Description',true);
-select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":3,"reps":10}]}')$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version('20000000-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":3,"reps":10}]}')$q$,'22023');
 select pg_temp.expect_error($q$select public.update_program('20000000-0000-0000-0000-000000000002','Foreign',null,false)$q$,'42501');
 select pg_temp.expect_error($q$select public.save_own_account_snapshot(0,1,jsonb_build_object('oversized',repeat('x',2097153)))$q$,'22023');
 select pg_temp.assert_true((select status='APPLIED' from public.save_own_account_snapshot(0,1,'{}')),'first snapshot applies');
@@ -102,7 +102,7 @@ select pg_temp.assert_true(not exists(select 1 from auth.users where id='0000000
 select pg_temp.assert_true(not exists(select 1 from public.programs where professional_user_id='00000000-0000-0000-0000-000000000001'),'permanent professional deletion removes owned programs');
 select pg_temp.assert_true((select count(*)=152 from public.workout_executions where student_user_id='00000000-0000-0000-0000-000000000003'),'professional deletion preserves student execution history');
 select pg_temp.assert_true((select count(*)=152 from public.workout_executions where assignment_id is null and version_id is null),'preserved student history is detached from deleted owner');
-select pg_temp.assert_true((select bool_and(prescription_snapshot->>'programTitle' in ('First','Archived') and prescription_snapshot->>'versionNumber'='1' and prescription_snapshot->'exercises'->0->>'exerciseId'='squat') from public.workout_executions),'preserved student history includes real prescription');
+select pg_temp.assert_true((select bool_and(prescription_snapshot->>'programTitle' in ('First','Archived') and prescription_snapshot->>'versionNumber'='1' and prescription_snapshot->'exercises'->0->>'exerciseId'='0043') from public.workout_executions),'preserved student history includes real prescription');
 select pg_temp.assert_true((select prescription_snapshot->>'programTitle'='First' from public.workout_executions where id='40000000-0000-0000-0000-000000000001'),'new execution snapshot preserves original program title');
 select pg_temp.assert_true(not exists(select 1 from public.workout_executions where status='in_progress'),'professional deletion closes in-progress sessions');
 select pg_temp.assert_true((select payload='{"sets":3}'::jsonb and status='completed' from public.workout_executions where id='40000000-0000-0000-0000-000000000001'),'professional deletion preserves performed payload and completed status');

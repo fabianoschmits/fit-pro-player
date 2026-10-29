@@ -2,6 +2,15 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProfessionalWorkflowRepository } from './professional-workflow.js'
 
 describe('professional management repository', () => {
+  it('blocks pending exercises in every publication entry point before calling the server', async () => {
+    const rpc = vi.fn()
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    const weeklyPlan = { monday: [{ exerciseId: '0001', sets: 3, reps: 10 }] }
+    await expect(repo.publishVersion('p', weeklyPlan)).rejects.toThrow('weekly-plan-exercise-unavailable')
+    await expect(repo.publishProgramVersion('p', weeklyPlan)).rejects.toThrow('weekly-plan-exercise-unavailable')
+    await expect(repo.publishProgramDraft({ programId: 'p', weeklyPlan })).rejects.toThrow('weekly-plan-exercise-unavailable')
+    expect(rpc).not.toHaveBeenCalled()
+  })
   it('rejects missing authoritative totals rather than inventing a zero count', async () => {
     const repo = createProfessionalWorkflowRepository({ client: { rpc: async () => ({ data: { items: [], offset: 0, has_more: false }, error: null }) } })
     await expect(repo.studentPage()).rejects.toThrow('invalid-page')
@@ -39,7 +48,7 @@ describe('professional management repository', () => {
   })
 
   it('publishes a named draft without rewriting prescription arrays', async () => {
-    const weeklyPlan = Object.freeze({ monday: Object.freeze([{ exerciseId: 'x', sets: 3, reps: 8, rest: 60, notes: 'Controlado' }]) })
+    const weeklyPlan = Object.freeze({ monday: Object.freeze([{ exerciseId: '0025', sets: 3, reps: 8, rest: 60, notes: 'Controlado' }]) })
     const rpc = vi.fn().mockResolvedValue({ data: { id: 'v', program_id: 'p', version_number: 2, weekly_plan: weeklyPlan, workout_titles: { monday: 'Força A' }, published_at: '2026-10-09' }, error: null })
     const repo = createProfessionalWorkflowRepository({ client: { rpc } })
     expect(await repo.publishProgramDraft({ programId: 'p', weeklyPlan, workoutTitles: { monday: 'Força A' } })).toMatchObject({ id: 'v', programId: 'p', versionNumber: 2, weeklyPlan, workoutTitles: { monday: 'Força A' }, publishedAt: '2026-10-09' })
@@ -91,7 +100,7 @@ describe('professional management repository', () => {
   it('publishes and assigns only through explicit RPC arguments', async () => {
     const rpc = vi.fn(async (name, args) => ({ data: { id: name, ...args }, error: null }))
     const repository = createProfessionalWorkflowRepository({ client: { rpc } })
-    const plan = { monday: [{ exerciseId: '1254', sets: 3, reps: 8 }] }
+    const plan = { monday: [{ exerciseId: '0025', sets: 3, reps: 8 }] }
 
     await repository.publishProgramVersion('program-1', plan)
     await repository.assignProgramVersion({ programId: 'program-1', versionId: 'version-1', studentUserId: 'student-1' })

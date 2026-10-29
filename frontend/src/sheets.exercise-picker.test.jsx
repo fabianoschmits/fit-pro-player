@@ -37,6 +37,15 @@ afterEach(() => {
 })
 
 describe('exercise picker preview', () => {
+  it('restricts professional selections to the animated catalogue even when custom exercises exist', () => {
+    useStore.getState().S.customEx.push({ id: 'custom-pending', n: 'Custom pending', custom: true, bp: 'chest' })
+    exercisePicker(vi.fn(), { catalogOnly: true })
+    const sheet = useUI.getState().sheets[0]
+    act(() => root.render(sheet.render(vi.fn())))
+    expect(container.textContent).not.toContain('Custom pending')
+    expect(container.querySelector('.exercise-picker-list > button.item')).toBeNull()
+    expect(container.querySelector('.picker-item-main')).not.toBeNull()
+  })
   it('previews the exercise before adding it', () => {
     const onPick = vi.fn()
     exercisePicker(onPick, { quickAdd: true })

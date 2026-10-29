@@ -5,13 +5,13 @@ insert into public.user_roles(user_id,role) values('28000200-0000-4000-8000-0000
 insert into public.professional_student_relationships(professional_user_id,student_user_id,status) values('28000200-0000-4000-8000-000000000001','28000200-0000-4000-8000-000000000002','active');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','28000200-0000-4000-8000-000000000001',true);
-select public.save_student_plan_draft('28000200-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A","ex":[{"id":"squat","sets":3,"reps":10,"weight":20}]}],"week":{"1":"a"}}',0);
+select public.save_student_plan_draft('28000200-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A","ex":[{"id":"0043","sets":3,"reps":10,"weight":20}]}],"week":{"1":"a"}}',0);
 select public.send_student_plan('28000200-0000-4000-8000-000000000002',1);
 select set_config('request.jwt.claim.sub','28000200-0000-4000-8000-000000000002',true);
 select pg_temp.assert_true((select count(*)=1 from public.athlete_plan_selection),'first professional plan is active automatically');
 select pg_temp.assert_true((select prescription->>'programVersionId' is not null from public.athlete_routines where prescription->>'assigned'='true'),'active routine references published version');
 select set_config('request.jwt.claim.sub','28000200-0000-4000-8000-000000000001',true);
-select public.save_student_plan_draft('28000200-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A","ex":[{"id":"squat","sets":4,"reps":8,"weight":20}]}],"week":{"1":"a"}}',1);
+select public.save_student_plan_draft('28000200-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A","ex":[{"id":"0043","sets":4,"reps":8,"weight":20}]}],"week":{"1":"a"}}',1);
 select public.send_student_plan('28000200-0000-4000-8000-000000000002',2);
 select set_config('request.jwt.claim.sub','28000200-0000-4000-8000-000000000002',true);
 select pg_temp.assert_true((select schedule->'assignedProgram'->>'versionNumber'='2' from public.athlete_schedules where user_id=auth.uid()),'new version becomes active automatically');

@@ -5,7 +5,7 @@ insert into public.user_roles(user_id,role) values('28120000-0000-4000-8000-0000
 insert into public.professional_student_relationships(professional_user_id,student_user_id,status) values('28120000-0000-4000-8000-000000000001','28120000-0000-4000-8000-000000000002','active');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','28120000-0000-4000-8000-000000000001',true);
-select public.save_student_plan_draft('28120000-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A","ex":[{"id":"squat","sets":3,"reps":10,"weight":20}]},{"id":"b","name":"B","ex":[{"id":"squat","sets":4,"reps":10,"weight":30}]}],"week":{"1":"a","3":"b"}}',0);
+select public.save_student_plan_draft('28120000-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A","ex":[{"id":"0043","sets":3,"reps":10,"weight":20}]},{"id":"b","name":"B","ex":[{"id":"0043","sets":4,"reps":10,"weight":30}]}],"week":{"1":"a","3":"b"}}',0);
 select public.send_student_plan('28120000-0000-4000-8000-000000000002',1);
 select set_config('request.jwt.claim.sub','28120000-0000-4000-8000-000000000002',true);
 select pg_temp.assert_true(public.athlete_plan_library_page()->'items'->0->'workout_updates'='{}','first delivery has no update badge');
@@ -24,7 +24,7 @@ do $$begin
  exception when insufficient_privilege then null; end;
 end $$;
 select set_config('request.jwt.claim.sub','28120000-0000-4000-8000-000000000001',true);
-select public.save_student_plan_draft('28120000-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A atualizado","ex":[{"id":"squat","sets":3,"reps":10,"weight":25}]},{"id":"b","name":"B","ex":[{"id":"squat","sets":4,"reps":10,"weight":30}]}],"week":{"1":"a","3":"b"}}',1);
+select public.save_student_plan_draft('28120000-0000-4000-8000-000000000002','Plano','{"routines":[{"id":"a","name":"A atualizado","ex":[{"id":"0043","sets":3,"reps":10,"weight":25}]},{"id":"b","name":"B","ex":[{"id":"0043","sets":4,"reps":10,"weight":30}]}],"week":{"1":"a","3":"b"}}',1);
 select public.send_student_plan('28120000-0000-4000-8000-000000000002',2);
 select set_config('request.jwt.claim.sub','28120000-0000-4000-8000-000000000002',true);
 select pg_temp.assert_true((select count(*)=2 from jsonb_array_elements(public.athlete_plan_library_page()->'items')),'one professional plan plus personal snapshot, no duplicate versions');

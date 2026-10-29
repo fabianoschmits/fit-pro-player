@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { exOr, exerciseName } from '../lib/exercises.js'
+import { exOr, exerciseName, isAvailableExercise, isPendingExercise } from '../lib/exercises.js'
 import { DAYN, DAYS, uid, routineId, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { planSetupProgress, smartDefaultConfig } from '../lib/ux.js'
@@ -43,11 +43,14 @@ const MUSCLE_ANCHORS = {
   tibialis: { front: { x: 42, y: 86 }, back: { x: 58, y: 86 } },
 }
 
-export function RoutineTemplatePicker({ currentId, close }) {
-  const S = useStore(s => s.S)
-  const update = useStore(s => s.update)
+export function RoutineTemplatePicker({ currentId, close, state, onUpdate, catalogOnly = false }) {
+  const stored = useStore(s => s.S)
+  const storeUpdate = useStore(s => s.update)
+  const S = state || stored
+  const update = onUpdate || storeUpdate
   const suggested = starterRoutines(S)
-  const existing = S.routines.filter(routine => routine.id !== currentId && !routine.starterKey && !routine.planGenerated)
+  const existing = S.routines.filter(routine => routine.id !== currentId && !routine.assigned && !routine.starterKey && !routine.planGenerated
+    && (routine.ex || []).every(ex => catalogOnly ? isAvailableExercise(ex.id) : !isPendingExercise(ex.id)))
 
   const choose = source => {
     update(state => {
@@ -55,7 +58,7 @@ export function RoutineTemplatePicker({ currentId, close }) {
       if (!target) return
       target.name = routineName(source)
       target.emoji = source.emoji || DEFAULT_GLYPH
-      target.ex = (source.ex || []).map(entry => ({ ...entry }))
+      target.ex = (source.ex || []).map(entry => ({ ...entry, ...(catalogOnly && source.starterKey ? { weight: 0 } : {}) }))
       delete target.starterKey
       delete target.planGenerated
       delete target.personalizedKey
@@ -132,7 +135,7 @@ export function RoutineEditor({ state, onUpdate, routineId: suppliedId, basePath
     const cfg = smartDefaultConfig(ex.id, S)
     edit(list => { list.push({ id: ex.id, ...cfg }) })
     useUI.getState().toast(t('"{0}" added — tap to adjust', exerciseName(ex)))
-  }, { routineId: id, quickAdd: true })
+  }, { routineId: id, quickAdd: true, catalogOnly: mode === 'professional' })
   const duplicateRoutine = () => {
     const copy = {
       ...r,
@@ -163,7 +166,7 @@ export function RoutineEditor({ state, onUpdate, routineId: suppliedId, basePath
       return true
     },
   })
-  const openTemplatePicker = () => useUI.getState().openSheet(close => <RoutineTemplatePicker currentId={id} close={close} />)
+  const openTemplatePicker = () => useUI.getState().openSheet(close => <RoutineTemplatePicker currentId={id} close={close} state={S} onUpdate={update} catalogOnly={mode === 'professional'} />)
 
   const units = supersetUnits(r.ex)
   const unitFirst = new Set(units.filter(u => u.length > 1).map(u => u[0]))
@@ -215,7 +218,7 @@ export function RoutineEditor({ state, onUpdate, routineId: suppliedId, basePath
       <Button variant="tinted" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
       <Button variant="plain" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
     </div>
-    {!readOnly && mode === 'athlete' && !r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Start with a suggested or existing workout')}</Button>}
+    {!readOnly && !r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Start with a suggested or existing workout')}</Button>}
 
     <div className="card routine-week-card">
       <div className="row between routine-card-title">

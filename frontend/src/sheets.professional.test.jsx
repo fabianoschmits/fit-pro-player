@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DEF, useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
-import { beginWorkout, startFlow } from './sheets.jsx'
+import { beginWorkout, startFlow, repeatWorkout } from './sheets.jsx'
 const mocks = vi.hoisted(() => ({ nav: vi.fn() }))
 vi.mock('./lib/nav.js', () => ({ nav: mocks.nav }))
 vi.mock('./lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
@@ -28,6 +28,17 @@ afterEach(() => {
   vi.useRealTimers()
 })
 describe('central assigned routine start', () => {
+  it('blocks old pending prescriptions and repetition from history without erasing them', () => {
+    const state = useStore.getState().S
+    state.routines[0].ex[0].id = '2330'
+    expect(startFlow('assigned')).toBe(false)
+    expect(beginWorkout('assigned', null)).toBe(false)
+    expect(repeatWorkout({ entries: [{ id: '2330' }] })).toBe(false)
+    expect(useStore.getState().S.active).toBeNull()
+    expect(useStore.getState().S.routines[0].ex[0].id).toBe('2330')
+    expect(useStore.getState().S.pendingProfessionalEvents).toHaveLength(0)
+    expect(useUI.getState().toastMsg).toBeTruthy()
+  })
   for (const launch of [() => startFlow('assigned'), () => beginWorkout('assigned', null)]) {
     it('registers an assigned execution from every central entry while preserving the prescription', () => {
       launch()

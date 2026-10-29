@@ -6,9 +6,9 @@ insert into public.user_roles(user_id,role) values('27120000-0000-4000-8000-0000
 insert into public.professional_student_relationships(professional_user_id,student_user_id,status) values('27120000-0000-4000-8000-000000000001','27120000-0000-4000-8000-000000000002','active');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','27120000-0000-4000-8000-000000000002',true);
-select public.save_athlete_plan(0,'weekly','{"week":{"1":"27120000-0000-4000-8000-000000000010"},"dayPlan":{}}','[{"id":"27120000-0000-4000-8000-000000000010","title":"Meu ABC","prescription":{"ex":[{"id":"squat","sets":3,"reps":10,"weight":20}]}}]');
+select public.save_athlete_plan(0,'weekly','{"week":{"1":"27120000-0000-4000-8000-000000000010"},"dayPlan":{}}','[{"id":"27120000-0000-4000-8000-000000000010","title":"Meu ABC","prescription":{"ex":[{"id":"0043","sets":3,"reps":10,"weight":20}]}}]');
 select set_config('request.jwt.claim.sub','27120000-0000-4000-8000-000000000001',true);
-select public.save_student_plan_draft('27120000-0000-4000-8000-000000000002','Hipertrofia','{"routines":[{"id":"r","name":"Treino A","ex":[{"id":"squat","sets":4,"reps":8,"weight":80,"rest":90,"rir":2,"notes":"Controle"}]}],"week":{"1":"r"},"dayPlan":{},"planMode":"weekly"}',0);
+select public.save_student_plan_draft('27120000-0000-4000-8000-000000000002','Hipertrofia','{"routines":[{"id":"r","name":"Treino A","ex":[{"id":"0043","sets":4,"reps":8,"weight":80,"rest":90,"rir":2,"notes":"Controle"}]}],"week":{"1":"r"},"dayPlan":{},"planMode":"weekly"}',0);
 select pg_temp.assert_true((select count(*)=1 from public.professional_plan_drafts),'draft persisted');
 select set_config('request.jwt.claim.sub','27120000-0000-4000-8000-000000000002',true);
 select pg_temp.assert_true((select count(*)=0 from public.professional_plan_drafts),'student cannot read private draft');
@@ -35,7 +35,7 @@ select public.apply_library_plan((select id from public.athlete_plan_library whe
 select pg_temp.assert_true((select title='Meu ABC' from public.athlete_routines),'personal plan restored');
 select pg_temp.assert_true((select count(*)=2 from public.athlete_plan_library),'both plans retained');
 select set_config('request.jwt.claim.sub','27120000-0000-4000-8000-000000000001',true);
-select public.save_student_plan_draft('27120000-0000-4000-8000-000000000002','Hipertrofia','{"routines":[{"id":"r","name":"Treino A","ex":[{"id":"squat","sets":4,"reps":8,"weight":90}]}],"week":{"1":"r"},"dayPlan":{},"planMode":"weekly"}',1);
+select public.save_student_plan_draft('27120000-0000-4000-8000-000000000002','Hipertrofia','{"routines":[{"id":"r","name":"Treino A","ex":[{"id":"0043","sets":4,"reps":8,"weight":90}]}],"week":{"1":"r"},"dayPlan":{},"planMode":"weekly"}',1);
 select public.send_student_plan('27120000-0000-4000-8000-000000000002',2);
 select set_config('request.jwt.claim.sub','27120000-0000-4000-8000-000000000002',true);
 select pg_temp.assert_true((select title='Meu ABC' from public.athlete_routines),'updated delivery does not switch back from personal');

@@ -1243,5 +1243,6 @@ export default {
   "This workout could not be sent. Your changes remain on this device.": "Bu antrenman gönderilemedi. Değişikliklerin bu cihazda kalır.",
   "Workout waiting to send. It will retry when the connection returns.": "Antrenman gönderilmeyi bekliyor. Bağlantı geri geldiğinde tekrar denenecek.",
   "Saving workout…": "Antrenman kaydediliyor…",
-  "Continue here": "Burada devam et"
+  "Continue here": "Burada devam et",
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Bu antrenmanda animasyonu olmayan egzersizler var. Bunları katalogdaki egzersizlerle değiştirin."
 }

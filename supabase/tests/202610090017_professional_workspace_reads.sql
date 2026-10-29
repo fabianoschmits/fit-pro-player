@@ -22,7 +22,7 @@ insert into public.programs(id,professional_user_id,title,objective,archived,upd
  ('09001720-0000-0000-0000-000000000003','09001700-0000-0000-0000-000000000001','Archived',null,true,'2026-10-03'),
  ('09001720-0000-0000-0000-000000000004','09001700-0000-0000-0000-000000000002','Other owner',null,false,'2026-10-04');
 insert into public.program_versions(id,program_id,version_number,weekly_plan,workout_titles,published_at) values
- ('09001730-0000-0000-0000-000000000001','09001720-0000-0000-0000-000000000001',1,'{"thursday":[{"exerciseId":"x","sets":3,"reps":8}],"friday":[{"exerciseId":"y","sets":2,"reps":10}]}','{"thursday":"Local Thursday"}','2026-10-08');
+ ('09001730-0000-0000-0000-000000000001','09001720-0000-0000-0000-000000000001',1,'{"thursday":[{"exerciseId":"0025","sets":3,"reps":8}],"friday":[{"exerciseId":"0043","sets":2,"reps":10}]}','{"thursday":"Local Thursday"}','2026-10-08');
 insert into public.program_assignments(id,program_id,version_id,professional_user_id,student_user_id,status,created_at)
 select md5('workspace-assignment-' || n)::uuid,'09001720-0000-0000-0000-000000000001','09001730-0000-0000-0000-000000000001','09001700-0000-0000-0000-000000000001',md5('workspace-student-' || n)::uuid,'active',now() from generate_series(1,240) n;
 insert into public.program_assignments(id,program_id,version_id,professional_user_id,student_user_id,status,created_at,revoked_at) values
@@ -56,7 +56,7 @@ select pg_temp.assert_true((public.professional_programs_page('',false,0,20)->>'
 select pg_temp.assert_true((public.professional_executions_page(null,'In use','completed','2026-10-09 00:00+00','2026-10-09 02:00+00',0,20)->>'total')::int=1,'search and inclusive-from exclusive-to filters');
 reset role;
 insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values
- ('09001730-0000-0000-0000-000000000000','09001720-0000-0000-0000-000000000001',2,'{"thursday":[{"exerciseId":"x","sets":3,"reps":8}]}','2026-10-08');
+ ('09001730-0000-0000-0000-000000000000','09001720-0000-0000-0000-000000000001',2,'{"thursday":[{"exerciseId":"0025","sets":3,"reps":8}]}','2026-10-08');
 update public.program_assignments set status='revoked',revoked_at=now() where id=md5('workspace-assignment-3')::uuid;
 update public.program_assignments set created_at=now()-interval '9 days' where id=md5('workspace-assignment-4')::uuid;
 insert into public.workout_executions(assignment_id,version_id,student_user_id,day_key,status,started_at) values

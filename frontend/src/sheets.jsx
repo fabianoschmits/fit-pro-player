@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
-import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText } from './lib/exercises.js'
+import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText, isAvailableExercise, isPendingExercise, UNAVAILABLE_EXERCISE_MESSAGE } from './lib/exercises.js'
 import { fmtDate, fmtHistoryDate, fmtNum, fmtTrainingVolume, fmtDur, durPart, todayISO, isoOf, uid, routineId, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase, workoutDuration } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps, suggestedWeightFor } from './lib/history.js'
 import { shouldWeighBeforeWorkout, hasWeighedToday } from './lib/ux.js'
@@ -748,7 +748,7 @@ function ExercisePickerPreview({ exercise, selected, quickAdd, onChoose, onConfi
   </div>
 }
 
-function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = false, title, excludeIds = [] }) {
+function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = false, title, excludeIds = [], catalogOnly = false }) {
   const st = useStore(s => s.S)
   const usage = usageMap(st)
   const selectedIds = new Set((st.routines.find(r => r.id === routineId)?.ex || []).map(e => e.id))
@@ -758,7 +758,7 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
   const [shown, setShown] = useState(50)
   const [previewId, setPreviewId] = useState(null)
   const ql = q.toLowerCase().trim()
-  const all = allExercises(st)
+  const all = catalogOnly ? EXDB : allExercises(st)
   let base = all.filter(e =>
     (bp === '★' ? usage[e.id] : (!bp || e.bp === bp)) &&
     (!ql || exerciseSearchText(e).includes(ql)))
@@ -793,7 +793,7 @@ function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = fals
       {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(50); setPreviewId(null) }}>{sentenceCase(t(x))}</button>)}
     </div>}
     <div className="list exercise-picker-list">
-      {bp !== '★' && <button type="button" className="item" onClick={() => {
+      {!catalogOnly && bp !== '★' && <button type="button" className="item" onClick={() => {
         if (closeOnPick) close()
         customExSheet(null, ex => onPick(ex), q.trim())
       }}>
@@ -1334,6 +1334,8 @@ export function startFlow(routineId, professionalExecutionId = null) {
     return false
   }
   const st = S()
+  const routine = st.routines.find(r => r.id === routineId)
+  if (blocksPendingExercises(routine?.ex, routine?.assigned)) return false
   if (shouldWeighBeforeWorkout(st)) {
     bwSheet({ required: true, onDone: bw => beginWorkout(routineId, bw, professionalExecutionId) })
   } else {
@@ -1349,6 +1351,7 @@ export function repeatLastWorkout() {
 }
 export function repeatWorkout(workout) {
   if (!workout) return false
+  if (blocksPendingExercises(workout.entries)) return false
   if (useStore.getState().hasPendingSessionCompletion?.()) {
     void useStore.getState().flushSessionRecovery()
     return false
@@ -1382,7 +1385,13 @@ export function repeatWorkout(workout) {
   } else begin()
   return true
 }
+function blocksPendingExercises(entries = [], assigned = false) {
+  if (!entries.some(entry => assigned ? !isAvailableExercise(entry.id) : isPendingExercise(entry.id))) return false
+  useUI.getState().toast(t(UNAVAILABLE_EXERCISE_MESSAGE))
+  return true
+}
 function beginWorkoutFromHistory(workout, bw) {
+  if (blocksPendingExercises(workout.entries)) return false
   const st = S()
   const entries = (workout.entries || []).map(entry => {
     const historicalSets = resetHistoricalSets(entry.sets || [])
@@ -1411,6 +1420,7 @@ export function beginWorkout(routineId, bw, professionalExecutionId = null) {
   }
   const st = S()
   const r = routineId ? st.routines.find(x => x.id === routineId) : null
+  if (blocksPendingExercises(r?.ex, r?.assigned)) return false
   // The prescription is applied as the session is built, so you walk up to the bar with the
   // right weight already on the screen instead of being told about it afterwards. `plan` is
   // kept on the entry purely so the workout can explain the number it chose.

@@ -5,11 +5,24 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import ProfessionalProgramEditor from './ProfessionalProgramEditor.jsx'
 import { useStore, DEF } from '../store/useStore.js'
+import { RoutineTemplatePicker } from '../views/RoutineEdit.jsx'
 vi.mock('./Media.jsx', () => ({ default: () => <div data-animation>Animation</div>, Thumb: () => <span /> }))
 let root, container
 beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT=true; useStore.setState({S:structuredClone(DEF)}); container=document.createElement('div');document.body.append(container);root=createRoot(container) })
 afterEach(async()=>{await act(async()=>root.unmount());container.remove()})
-const render=async(props={})=>act(async()=>root.render(<MemoryRouter><ProfessionalProgramEditor initialMetadata={{title:'Força'}} initialPlan={{monday:[{exerciseId:'0001',sets:4,reps:8,load:80,rest:90,rir:2,notes:'Controle'}]}} {...props}/></MemoryRouter>))
+const render=async(props={})=>act(async()=>root.render(<MemoryRouter><ProfessionalProgramEditor initialMetadata={{title:'Força'}} initialPlan={{monday:[{exerciseId:'0025',sets:4,reps:8,load:80,rest:90,rir:2,notes:'Controle'}]}} {...props}/></MemoryRouter>))
+it('loads the shared sprite-backed suggestions into the professional workspace rather than the personal store', async () => {
+ const state = { ...structuredClone(DEF), routines: [{ id: 'pro', name: 'A', ex: [] }, { id: 'old', name: 'Pending template', ex: [{ id: '2330' }] }] }
+ const personal = structuredClone(useStore.getState().S)
+ const close = vi.fn()
+ await act(async () => root.render(<MemoryRouter><RoutineTemplatePicker currentId="pro" state={state} onUpdate={fn => fn(state)} catalogOnly close={close}/></MemoryRouter>))
+ expect(container.textContent).not.toContain('Pending template')
+ await act(async () => container.querySelector('.routine-template-option').click())
+ expect(state.routines[0].ex.length).toBeGreaterThan(0)
+ expect(state.routines[0].ex.every(entry => entry.weight === 0)).toBe(true)
+ expect(useStore.getState().S).toEqual(personal)
+ expect(close).toHaveBeenCalled()
+})
 it('uses the shared routine editor with collapsed exercise animation and professional options',async()=>{
  await render();await act(async()=>container.querySelector('.plan-routine-list button').click())
  expect(container.querySelector('.routine-builder')).not.toBeNull()

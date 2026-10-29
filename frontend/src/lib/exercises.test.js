@@ -4,6 +4,7 @@ import {
   EXDB,
   EXIDX,
   PENDING_EXERCISE_COUNT,
+  PROFESSIONAL_EXERCISES,
 } from './exercises.js'
 import {
   EXERCISE_SPRITE_BY_EXERCISE_ID,
@@ -13,6 +14,9 @@ import {
 } from './exercise-guide-assets.js'
 
 describe('active exercise catalogue', () => {
+  it('shares exactly the same sprite-backed catalogue with professionals', () => {
+    expect(PROFESSIONAL_EXERCISES).toBe(EXDB)
+  })
   it('offers only exercises with a validated local animation', () => {
     expect(EXDB.map(exercise => exercise.id)).toHaveLength(EXERCISE_SPRITE_EXERCISE_IDS.length)
     expect(EXDB.every(hasExerciseGuideAsset)).toBe(true)

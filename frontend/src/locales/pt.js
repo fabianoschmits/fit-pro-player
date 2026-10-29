@@ -1387,5 +1387,6 @@ export default {
   "This workout could not be sent. Your changes remain on this device.": "Não foi possível enviar este treino. Suas alterações continuam neste dispositivo.",
   "Workout waiting to send. It will retry when the connection returns.": "Treino aguardando envio. Uma nova tentativa será feita quando a conexão voltar.",
   "Saving workout…": "Salvando treino…",
-  "Continue here": "Continuar aqui"
+  "Continue here": "Continuar aqui",
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Este treino contém exercícios sem animação. Substitua-os por exercícios do catálogo."
 }

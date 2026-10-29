@@ -1243,5 +1243,6 @@ export default {
   "This workout could not be sent. Your changes remain on this device.": "无法发送此训练。你的更改仍保留在此设备上。",
   "Workout waiting to send. It will retry when the connection returns.": "训练正在等待发送。连接恢复后将自动重试。",
   "Saving workout…": "正在保存训练…",
-  "Continue here": "在此继续"
+  "Continue here": "在此继续",
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "此训练包含没有动画的动作。请将其替换为目录中的动作。"
 }

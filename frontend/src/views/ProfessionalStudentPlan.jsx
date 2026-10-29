@@ -5,7 +5,9 @@ import { useStore } from '../store/useStore.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import { weeklyPlanToWorkspace, workspaceToWeeklyPlan } from '../lib/training-workspace.js'
-import { validateWeeklyPlan } from '../lib/professional-program.js'
+import { validateAvailableWeeklyPlan as validateWeeklyPlan } from '../lib/professional-program.js'
+import { UNAVAILABLE_EXERCISE_MESSAGE } from '../lib/exercises.js'
+import { t } from '../lib/i18n.js'
 import { RoutineEditor } from './RoutineEdit.jsx'
 import TrainingPlanWorkspace from '../components/training/TrainingPlanWorkspace.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
@@ -32,7 +34,8 @@ function StudentPlan({ studentId, routineId }) {
    finally { pending.current = false; if (alive.current) setBusy(false) }
  }
  const send = () => {
-   if (!validateWeeklyPlan(workspaceToWeeklyPlan(state).weeklyPlan).ok) { setError('Adicione exercícios e organize os dias antes de enviar.'); return }
+   const validation = validateWeeklyPlan(workspaceToWeeklyPlan(state).weeklyPlan)
+   if (!validation.ok) { setError(validation.error === 'weekly-plan-exercise-unavailable' ? t(UNAVAILABLE_EXERCISE_MESSAGE) : 'Adicione exercícios e organize os dias antes de enviar.'); return }
    confirmSheet({ title: draft?.sent_revision ? `Atualizar plano enviado para ${student?.displayName || 'aluno'}?` : `Enviar plano para ${student?.displayName || 'aluno'}?`, message: `${state.routines.length} treinos · ${Object.keys(state.week).length} dias na semana. A nova versão será aplicada automaticamente nas próximas execuções e o aluno verá o que mudou.`, confirmText: draft?.sent_revision ? 'Enviar atualização' : 'Enviar plano', onConfirm: async () => {
      try { const saved = dirty || !draft ? await save() : draft; setBusy(true); await repo.sendPlan(studentId, saved.revision); if (alive.current) setDraft({ ...saved, sent_revision: saved.revision }); return true }
      catch { if (alive.current) setError('Não foi possível enviar o plano. Tente novamente.'); return false }

@@ -1243,5 +1243,6 @@ export default {
   "This workout could not be sent. Your changes remain on this device.": "이 운동을 전송하지 못했습니다. 변경 사항은 이 기기에 남아 있습니다.",
   "Workout waiting to send. It will retry when the connection returns.": "운동이 전송 대기 중입니다. 연결이 복구되면 다시 시도합니다.",
   "Saving workout…": "운동 저장 중…",
-  "Continue here": "여기서 계속"
+  "Continue here": "여기서 계속",
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "이 운동에는 애니메이션이 없는 동작이 포함되어 있습니다. 카탈로그에 있는 동작으로 교체하세요."
 }

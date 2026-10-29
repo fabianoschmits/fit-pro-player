@@ -1260,5 +1260,6 @@ export default {
   "This workout could not be sent. Your changes remain on this device.": "Dieses Training konnte nicht übertragen werden. Deine Änderungen bleiben auf diesem Gerät.",
   "Workout waiting to send. It will retry when the connection returns.": "Das Training wartet auf die Übertragung. Sobald die Verbindung wieder da ist, wird es erneut versucht.",
   "Saving workout…": "Training wird gespeichert…",
-  "Continue here": "Hier fortsetzen"
+  "Continue here": "Hier fortsetzen",
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Dieses Training enthält Übungen ohne Animationen. Ersetze sie durch Übungen aus dem Katalog."
 }

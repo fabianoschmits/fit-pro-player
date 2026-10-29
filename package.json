@@ -16,6 +16,8 @@
     "build:vercel": "npm --prefix frontend run build:vercel",
     "audit": "npm audit --prefix frontend --audit-level=high",
     "check:database": "node scripts/run-database-tests.mjs",
+    "sync:exercise-catalogue": "node scripts/sync-exercise-sprite-catalogue.mjs",
+    "check:exercise-catalogue": "node scripts/sync-exercise-sprite-catalogue.mjs --check",
     "test:e2e": "npm --prefix frontend run test:e2e",
     "test:plan-library:database": "node scripts/test-plan-library-database.mjs"
   },

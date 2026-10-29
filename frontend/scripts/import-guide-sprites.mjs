@@ -7,6 +7,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync,
 import { createRequire } from 'node:module'
 import { basename, dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { execFileSync } from 'node:child_process'
 import { EXERCISE_SPRITE_BY_EXERCISE_ID } from '../src/lib/exercise-guide-assets.js'
 
 const require = createRequire(import.meta.url)
@@ -171,6 +172,9 @@ if (existsSync(SPRITES)) {
 const pngSlugs = Object.keys(frameCounts).sort()
 writeFileSync(slugsPath, JSON.stringify(pngSlugs, null, 2) + '\n', 'utf8')
 writeFileSync(countsPath, JSON.stringify(Object.fromEntries(pngSlugs.map(s => [s, frameCounts[s]])), null, 2) + '\n', 'utf8')
+// A fresh process reads the newly written manifest, keeping both roles and the
+// server's prescription guard in sync when new artwork becomes available.
+execFileSync(process.execPath, [join(ROOT, '..', 'scripts', 'sync-exercise-sprite-catalogue.mjs')], { stdio: 'inherit' })
 
 console.log(`Imported ${imported.length} exercises (${imported.reduce((n, r) => n + r.frames, 0)} PNG frames)`)
 imported.forEach(r => console.log(`  ${r.slug} ← ${r.folder} [${r.id}] (${r.frames} frames)`))

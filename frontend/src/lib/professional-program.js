@@ -1,3 +1,5 @@
+import { isAvailableExercise } from './exercises.js'
+
 export const DAYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
 
 const LIMITS = Object.freeze({ sets: 50, reps: 500, load: 10000, weight: 10000, rest: 3600, notes: 500, sec: 86400, min: 1440, speed: 100, rir: 10, rpe: 10 })
@@ -50,6 +52,16 @@ export function validateWeeklyPlan(plan = {}) {
   }
   const value = normalizeWeeklyPlan(plan)
   return Object.keys(value).length ? { ok: true, value } : { ok: false, error: 'weekly-plan-empty' }
+}
+
+// Read/normalize old prescriptions losslessly; only new publications require active artwork.
+export function validateAvailableWeeklyPlan(plan = {}) {
+  const result = validateWeeklyPlan(plan)
+  if (!result.ok) return result
+  if (Object.values(result.value).flat().some(entry => !isAvailableExercise(entry.exerciseId))) {
+    return { ok: false, error: 'weekly-plan-exercise-unavailable' }
+  }
+  return result
 }
 
 export function summarizeWeeklyPlan(plan = {}) {

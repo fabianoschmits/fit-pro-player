@@ -116,7 +116,7 @@ insert into public.professional_student_relationships(id,professional_user_id,st
 select pg_temp.assert_true((select count(*)=1 from public.notification_events where kind='relationship_accepted' and owner_id='00000000-0000-0000-0000-000000000002'),'accepted relationship notifies counterpart');
 select pg_temp.assert_true((select count(*)=0 from public.notification_events where kind='relationship_accepted' and owner_id='00000000-0000-0000-0000-000000000003'),'actor receives no own relationship push');
 insert into public.programs(id,professional_user_id,title) values ('20000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003','Private');
-insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',1,'{"monday":[{"exerciseId":"x","sets":3,"reps":10}]}',now()),('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001',2,'{"monday":[{"exerciseId":"x","sets":4,"reps":10}]}',now());
+insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values ('30000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',1,'{"monday":[{"exerciseId":"0025","sets":3,"reps":10}]}',now()),('30000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001',2,'{"monday":[{"exerciseId":"0025","sets":4,"reps":10}]}',now());
 set local role authenticated;
 select public.assign_program_version('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002');
 select public.assign_program_version('20000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000002');

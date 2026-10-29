@@ -20,8 +20,8 @@ insert into public.programs(id,professional_user_id,title,description,archived) 
  ('09001620-0000-0000-0000-000000000002','09001600-0000-0000-0000-000000000002','Other',null,false),
  ('09001620-0000-0000-0000-000000000003','09001600-0000-0000-0000-000000000001','No version',null,true);
 insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values
- ('09001630-0000-0000-0000-000000000001','09001620-0000-0000-0000-000000000001',1,'{"monday":[{"exerciseId":"x","sets":3,"reps":8,"rest":90,"unit":"lb","notes":"Original","mode":"time","sec":45,"rir":2,"sg":"pair"}]}',now()),
- ('09001630-0000-0000-0000-000000000002','09001620-0000-0000-0000-000000000002',1,'{"monday":[{"exerciseId":"y","sets":2,"reps":10}]}',now());
+ ('09001630-0000-0000-0000-000000000001','09001620-0000-0000-0000-000000000001',1,'{"monday":[{"exerciseId":"0025","sets":3,"reps":8,"rest":90,"unit":"lb","notes":"Original","mode":"time","sec":45,"rir":2,"sg":"pair"}]}',now()),
+ ('09001630-0000-0000-0000-000000000002','09001620-0000-0000-0000-000000000002',1,'{"monday":[{"exerciseId":"0043","sets":2,"reps":10}]}',now());
 create temporary table originals as select to_jsonb(v) as version from public.program_versions v where id='09001630-0000-0000-0000-000000000001';
 grant select on originals to authenticated;
 set local role authenticated;
@@ -46,10 +46,10 @@ grant select on old_history to authenticated;
 set local role authenticated;
 set local request.jwt.claim.sub='09001600-0000-0000-0000-000000000001';
 select pg_temp.assert_true((public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001',(select version->'weekly_plan' from originals),jsonb_build_object('monday',repeat('n',80)))).workout_titles->>'monday'=repeat('n',80),'metadata_limits accepts 80-character workout name');
-select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":3,"reps":8}]}',jsonb_build_object('monday',repeat('n',81)))$q$,'22023');
-select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":0,"reps":8}]}','{}')$q$,'22023');
-select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":3,"reps":8}]}','{"monday":12}')$q$,'22023');
-select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"x","sets":3,"reps":8}]}','{"unknown":"A"}')$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":3,"reps":8}]}',jsonb_build_object('monday',repeat('n',81)))$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":0,"reps":8}]}','{}')$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":3,"reps":8}]}','{"monday":12}')$q$,'22023');
+select pg_temp.expect_error($q$select public.publish_program_version_with_titles('09001620-0000-0000-0000-000000000001','{"monday":[{"exerciseId":"0025","sets":3,"reps":8}]}','{"unknown":"A"}')$q$,'22023');
 select pg_temp.assert_true((select to_jsonb(v)=(select version from originals) from public.program_versions v where id='09001630-0000-0000-0000-000000000001'),'publishes_titles_without_mutating_old_versions');
 select pg_temp.assert_true((select count(*)=2 from public.program_versions where program_id='09001620-0000-0000-0000-000000000001'),'failed publications leave no version');
 select pg_temp.assert_true((select weekly_plan=(select version->'weekly_plan' from originals) from public.program_versions where program_id='09001620-0000-0000-0000-000000000001' and version_number=2),'new publication preserves all prescription fields');
