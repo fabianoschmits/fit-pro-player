@@ -45,6 +45,19 @@ body:has(.management-layout,.management-routine-editor) #tabbar { display:none; 
 .management-student-identity > div { min-width:0; }
 .management-student-identity h2 { color:var(--label); font-size:19px; margin-bottom:5px; overflow-wrap:anywhere; }
 .management-student-identity p { font-size:12px; color:var(--label-2); margin:0; }
+.management-layout .professional-student-identity { display:grid; gap:14px; padding:16px; }
+.professional-student-heading { display:flex; align-items:center; gap:12px; min-width:0; }
+.professional-student-heading > div { min-width:0; }
+.professional-student-heading h2 { margin:0 0 3px; font-size:18px; color:var(--label); overflow-wrap:anywhere; }
+.professional-student-heading p { margin:0; color:var(--label-2); font-size:12px; }
+.professional-student-identity .professional-student-facts { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0; }
+.professional-student-identity .professional-student-facts > div { min-width:0; }
+.professional-student-identity .professional-student-facts > div + div { border-left:1px solid var(--sep-op); padding-left:10px; }
+.professional-student-identity .professional-student-facts dt { color:var(--label-2); opacity:1; font-size:11px; }
+.professional-student-identity .professional-student-facts dd { font-size:15px; line-height:1.35; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.professional-student-expand { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:44px; padding:8px 0 0; border:0; border-top:1px solid var(--sep-op); background:transparent; color:var(--acc); font:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+.professional-student-expand span { font-size:20px; font-weight:400; }
+.professional-student-expand:focus-visible { outline:2px solid var(--acc); outline-offset:3px; border-radius:4px; }
 .management-layout .management-status { width:fit-content; padding:3px 8px; border-radius:20px; font-size:11px; line-height:1.4; }
 .management-layout .management-status[data-tone="success"] { color:var(--acc); background:var(--acc-soft); border-color:transparent; }
 .management-layout .management-status[data-tone="warning"] { color:var(--orange); background:color-mix(in srgb,var(--orange) 10%,var(--surface)); border-color:transparent; }

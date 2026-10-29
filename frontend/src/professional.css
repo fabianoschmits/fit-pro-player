@@ -365,4 +365,9 @@ body:has(.app-status-global) #app{padding-bottom:170px}
  .management-student-record { flex-wrap:wrap; }
 }
 
-.professional-student-identity{width:100%;text-align:left;color:inherit;font:inherit;cursor:pointer}.professional-student-identity:focus-visible{outline:2px solid var(--acc);outline-offset:3px}.professional-student-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:16px;margin:16px 0}.professional-student-facts dt{font-size:12px;opacity:.7}.professional-student-facts dd{margin:4px 0 0;font-weight:600}.professional-student-details table{width:100%;border-collapse:collapse;text-align:left}.professional-student-details th,.professional-student-details td{padding:10px 0;border-bottom:1px solid var(--separator)}.professional-student-details h3{margin-top:24px}
+.professional-student-facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:16px;margin:16px 0}.professional-student-facts dt{font-size:12px;opacity:.7}.professional-student-facts dd{margin:4px 0 0;font-weight:600}.professional-student-details table{width:100%;border-collapse:collapse;text-align:left}.professional-student-details th,.professional-student-details td{padding:10px 0;border-bottom:1px solid var(--separator)}.professional-student-details h3{margin-top:24px}
+.professional-student-details-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.professional-student-details-heading h2 { min-width:0; margin:0; font-size:22px; line-height:1.25; overflow-wrap:anywhere; }
+.professional-student-details-heading > button { flex-shrink:0; }
+.professional-student-details > .professional-student-facts { grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 16px; }
+.professional-student-details .professional-student-facts dd { overflow-wrap:anywhere; }

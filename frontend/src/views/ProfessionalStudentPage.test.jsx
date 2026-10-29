@@ -18,6 +18,8 @@ it('shows current body data and opens the full profile with dated history',async
  await render()
  expect(container.textContent).toContain('1,70 m')
  expect(container.textContent).toContain('68,5 kg')
+ expect(container.querySelector('.professional-student-identity').tagName).toBe('SECTION')
+ expect(container.querySelector('button[aria-label="Ver perfil completo de Ana"]').textContent).toContain('Expandir')
  await act(async()=>container.querySelector('button[aria-label="Ver perfil completo de Ana"]').click())
  const sheet=useUI.getState().sheets.at(-1)
  expect(sheet).toBeDefined()

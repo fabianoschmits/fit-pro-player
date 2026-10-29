@@ -24,4 +24,7 @@ await db.exec(readFileSync('supabase/migrations/202610280006_professional_studen
 try { await db.exec(readFileSync('supabase/tests/202610280006_professional_student_profile.sql', 'utf8')); console.log('PASS professional student profile and access control') } catch(e) { console.error(e.message,e.where);process.exit(1) }
 await db.exec(readFileSync('supabase/migrations/202610280007_professional_plan_day_pending_bases.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610280007_professional_plan_day_pending_bases.sql', 'utf8')); console.log('PASS professional plan day pending bases') } catch(e) { console.error(e.message,e.where);process.exit(1) }
+await db.exec(readFileSync('supabase/migrations/202610280008_professional_student_legacy_profile.sql', 'utf8'))
+try { await db.exec(readFileSync('supabase/tests/202610280008_professional_student_legacy_profile.sql', 'utf8')) } catch(e) { console.error(e.message); process.exit(1) }
+console.log('PASS legacy student profile compatibility')
 await db.close()

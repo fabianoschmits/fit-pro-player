@@ -19,15 +19,19 @@ export default function ProfessionalStudentIdentity({data}) {
  const allFields = [...fields,['Nascimento',date(profile.birthDate)],['Sexo',{male:'Masculino',female:'Feminino'}[profile.sex] || missing],['Objetivo',goals[profile.goal] || missing],['Experiência',levels[profile.experience] || missing],['Aluno desde',date(data.relationshipCreatedAt)]]
  const details = entries => <dl className="professional-student-facts">{entries.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
  const open = () => useUI.getState().openSheet(close=><section className="professional-student-details">
-  <div className="row between sheet-title-row"><h2>Perfil de {data.displayName}</h2><Button onClick={close}>Fechar</Button></div>
+  <div className="professional-student-details-heading"><h2>Perfil de {data.displayName}</h2><Button size="sm" variant="tinted" onClick={close}>Fechar</Button></div>
   {details(allFields)}
   <h3>Histórico de peso</h3>
   {weights.length ? <table><thead><tr><th>Data</th><th>Peso</th></tr></thead><tbody>{weights.map(row=><tr key={row.id}><td>{date(row.measured_on)}</td><td>{weightText(Number(row.weight_kg))} kg</td></tr>)}</tbody></table> : <p>Nenhum peso registrado.</p>}
   <h3>Medidas corporais</h3>
   {data.measurements?.length ? data.measurements.map(row=><section key={row.id}><h4>{date(row.measured_on)}</h4>{details(Object.entries(row.measurements_cm || {}).map(([part,value])=>[BODY_MEASUREMENT_BY_ID[part]?.label || part,`${weightText(Number(value))} cm`]))}{row.note && <p>{row.note}</p>}</section>) : <p>Nenhuma medida registrada.</p>}
  </section>)
- return <button type="button" className="card management-student-identity professional-student-identity" aria-label={`Ver perfil completo de ${data.displayName}`} aria-haspopup="dialog" onClick={open}>
-  <ManagementAvatar name={data.displayName} avatarRef={data.avatarRef} userId={data.studentUserId}/>
-  <div><h2>{data.displayName}</h2><p>Aluno desde {professionalDate(data.relationshipCreatedAt)}</p>{details(fields)}<span>Ver perfil completo ›</span></div>
- </button>
+ return <section className="card professional-student-identity" aria-label={`Resumo de ${data.displayName}`}>
+  <div className="professional-student-heading">
+   <ManagementAvatar name={data.displayName} avatarRef={data.avatarRef} userId={data.studentUserId}/>
+   <div><h2>{data.displayName}</h2><p>Aluno desde {professionalDate(data.relationshipCreatedAt)}</p></div>
+  </div>
+  {details(fields)}
+  <button type="button" className="professional-student-expand" aria-label={`Ver perfil completo de ${data.displayName}`} aria-haspopup="dialog" onClick={open}>Expandir<span aria-hidden="true">＋</span></button>
+ </section>
 }
