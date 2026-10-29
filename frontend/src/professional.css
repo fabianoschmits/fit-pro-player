@@ -283,6 +283,24 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .management-layout .professional-program-steps li{font-size:11px}
 .management-layout .professional-program-steps li>span{width:20px;height:20px;font-size:11px}
 .management-layout .professional-session-detail{gap:14px}
+.management-layout .management-template-icon .plan-routine-body-thumb{width:100%;height:100%;display:block}
+.management-layout .professional-execution-history{display:grid;gap:10px}
+.management-layout .professional-execution-history>h2{margin:0 0 2px}
+.management-layout .professional-execution-card{min-width:0;border:1px solid var(--sep);border-radius:12px;background:var(--surface-2);overflow:hidden}
+.management-layout .professional-execution-card>summary{display:grid;gap:5px;padding:12px;cursor:pointer;list-style:none}
+.management-layout .professional-execution-card>summary::-webkit-details-marker{display:none}
+.management-layout .professional-execution-card>summary:focus-visible{outline:2px solid var(--acc);outline-offset:-2px}
+.management-layout .professional-execution-card[open]>summary{border-bottom:1px solid var(--sep)}
+.professional-execution-card-date{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--label-2);font-size:12px;line-height:1.35}
+.professional-execution-status{flex:none;border-radius:999px;padding:3px 8px;background:var(--acc-soft);color:var(--acc);font-size:11px;font-weight:600}
+.professional-execution-status.is-abandoned{background:color-mix(in srgb,var(--red) 12%,var(--surface));color:var(--red)}
+.professional-execution-card>summary>strong{font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.professional-execution-card-exercises{font-size:12px;line-height:1.45;color:var(--label-2);overflow-wrap:anywhere}
+.professional-execution-card>.professional-session-detail{padding:0 12px 12px}
+.professional-private-note-list{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.professional-private-note{display:grid;gap:5px;padding:10px 12px;border:1px solid var(--sep);border-radius:11px;background:var(--surface)}
+.professional-private-note p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.professional-private-note time{color:var(--label-2);font-size:11px}
 @media(min-width:700px){
  .management-person-strip>.management-status{margin-left:0}
  .management-profile-details,.management-person-facts,.management-dashboard-columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}

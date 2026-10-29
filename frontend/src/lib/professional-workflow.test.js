@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createProfessionalWorkflowRepository } from './professional-workflow.js'
+import { createProfessionalWorkflowRepository, programMuscleRoutine } from './professional-workflow.js'
 
 describe('professional management repository', () => {
+  it('maps the latest published weekly plan into program summaries for muscle previews', async () => {
+    const weeklyPlan = { monday: [{ exerciseId: '0025', sets: 3, reps: 8 }] }
+    const repo = createProfessionalWorkflowRepository({ client: { rpc: async () => ({ data: { items: [{ id: 'p', title: 'Base', weekly_plan: weeklyPlan }], total: 1, offset: 0, has_more: false }, error: null }) } })
+    const page = await repo.programPage()
+    expect(page).toMatchObject({ items: [{ id: 'p', weeklyPlan }] })
+    expect(programMuscleRoutine(page.items[0]).ex).toEqual([{ id: '0025', sets: 3 }])
+    expect(programMuscleRoutine({ weeklyPlan: {} }).ex).toEqual([])
+  })
   it('blocks pending exercises in every publication entry point before calling the server', async () => {
     const rpc = vi.fn()
     const repo = createProfessionalWorkflowRepository({ client: { rpc } })
@@ -73,6 +81,22 @@ describe('professional management repository', () => {
     expect(rpc).toHaveBeenNthCalledWith(2, 'save_professional_student_note', { p_student_id: 'student', p_body: 'Preservar espaço\n' })
     await expect(repo.studentNote('student')).rejects.toEqual({ code: '42501' })
     await expect(repo.saveStudentNote({ studentId: 'student', body: 'Denied' })).rejects.toEqual({ code: '42501' })
+  })
+  it('lists private student notes and appends a dated note through protected RPCs', async () => {
+    const created = { id: 'note-2', body: 'Nova nota', created_at: '2026-10-28T12:34:00Z' }
+    const rpc = vi.fn().mockResolvedValueOnce({ data: [{ id: 'note-1', body: 'Legada', created_at: '2026-10-20T12:30:00Z' }], error: null }).mockResolvedValueOnce({ data: created, error: null })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    await expect(repo.studentNotes('student')).resolves.toEqual([{ id: 'note-1', body: 'Legada', createdAt: '2026-10-20T12:30:00Z' }])
+    await expect(repo.addStudentNote({ studentId: 'student', body: 'Nova nota' })).resolves.toEqual({ id: 'note-2', body: 'Nova nota', createdAt: '2026-10-28T12:34:00Z' })
+    expect(rpc).toHaveBeenNthCalledWith(1, 'list_professional_student_notes', { p_student_id: 'student' })
+    expect(rpc).toHaveBeenNthCalledWith(2, 'add_professional_student_note', { p_student_id: 'student', p_body: 'Nova nota' })
+  })
+  it('rejects invalid private note responses and propagates denied list and append access', async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({ data: [{ body: 'missing id' }], error: null }).mockResolvedValueOnce({ data: null, error: { code: '42501' } }).mockResolvedValueOnce({ data: null, error: { code: '42501' } })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+    await expect(repo.studentNotes('student')).rejects.toThrow('invalid-private-note')
+    await expect(repo.studentNotes('student')).rejects.toEqual({ code: '42501' })
+    await expect(repo.addStudentNote({ studentId: 'student', body: 'Denied' })).rejects.toEqual({ code: '42501' })
   })
 
   it('propagates versioned names and objective into received material DTOs', async () => {

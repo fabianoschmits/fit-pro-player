@@ -120,8 +120,8 @@ body:has(.management-layout,.management-routine-editor) #tabbar { display:none; 
 .management-layout .plan-routine-list { border:0; background:transparent; display:grid; gap:10px; overflow:visible; }
 .management-layout .plan-routine-list .item { background:var(--surface); border:1px solid var(--sep-op); border-radius:14px; min-height:92px; padding:12px; }
 .management-layout .plan-routine-list .lrow-i { width:46px; height:62px; background:none; }
-.management-layout .management-plan-status { border-left:3px solid var(--acc); font-size:13px; }
-.management-layout .management-plan-status[data-pending="true"] { border-left-color:var(--orange); }
+.management-layout .card.management-plan-status { padding:9px 11px; border:1px solid var(--sep); border-radius:11px; font-size:12px; }
+.management-layout .card.management-plan-status[data-pending="true"] { border-color:var(--red); }
 .management-layout .management-plan-actions { position:sticky; bottom:calc(80px + var(--sab)); z-index:4; padding:12px; border:1px solid var(--sep); border-radius:14px; background:var(--surface); display:flex; flex-wrap:wrap; gap:8px; }
 .management-plan-actions > .btn { flex:1; }
 .exercise-sprite-thumb { display:block; overflow:hidden; }

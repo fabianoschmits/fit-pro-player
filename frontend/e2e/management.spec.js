@@ -177,6 +177,25 @@ test('professional plan setup keeps the week grid usable on narrow phones', asyn
   }
 })
 
+test('unsent professional plan shows a compact red-outline warning', async ({page}) => {
+  await seed(page,{professional:true,rpc:{...rpc,professional_plan_drafts:[{
+    student_id:STUDENT,title:'Plano de treino',revision:2,sent_revision:1,updated_at:'2026-10-28T12:00:00Z',
+    workspace:{routines:[{id:'routine-a',name:'Treino A',emoji:'dumbbell',ex:[{id:'0025',sets:3,reps:10,weight:25,rest:90}]}],week:{0:'routine-a'},dayPlan:{},planMode:'weekly',onboardingDone:true},
+  }]}})
+  await page.goto(`/#/professional/students/${STUDENT}/plan`)
+  const warning=page.locator('.management-plan-status[data-pending="true"]')
+  await expect(warning).toContainText('Alterações não enviadas')
+  const style=await warning.evaluate(element=>({
+    borders:['Top','Right','Bottom','Left'].map(side=>getComputedStyle(element)[`border${side}Color`]),
+    fontSize:getComputedStyle(element).fontSize,
+    padding:getComputedStyle(element).padding,
+  }))
+  expect(style.borders.every(color=>color===style.borders[0])).toBe(true)
+  expect(style.borders[0]).not.toBe('rgba(0, 0, 0, 0)')
+  expect(parseFloat(style.fontSize)).toBeLessThanOrEqual(12)
+  expect(parseFloat(style.padding)).toBeLessThanOrEqual(10)
+})
+
 test('legacy program creation redirects to the shared template editor', async ({page}) => {
  let created=null
  await seed(page,{professional:true,rpc:{programs:()=>created?[created]:[],program_versions:[],create_program:args=>{created={...program,title:args.p_title};return created}}})
@@ -187,6 +206,53 @@ test('legacy program creation redirects to the shared template editor', async ({
  await expect(page.locator('.training-plan-workspace').first()).toBeVisible()
  await page.reload();await expect(page.locator('.training-plan-workspace').first()).toBeVisible()
  await page.getByRole('button',{name:'Cancelar',exact:true}).click();await expect(page).toHaveURL(/professional\/templates$/)
+})
+
+test('professional model card shows the muscle preview from its latest published plan', async ({page}) => {
+ const model={...program,workout_count:1,weekly_plan:plan}
+ await seed(page,{professional:true,rpc:{professional_programs_page:{items:[model],total:1,offset:0,has_more:false}}})
+ await page.goto('/#/professional/templates')
+ await expect(page.getByRole('link',{name:/Força e condicionamento/})).toBeVisible()
+ await expect(page.locator('.management-template-icon .plan-routine-body-thumb')).toHaveCount(1)
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
+})
+
+test('professional model without a published workout keeps a neutral icon', async ({page}) => {
+ const model={...program,workout_count:0,weekly_plan:{}}
+ await seed(page,{professional:true,rpc:{professional_programs_page:{items:[model],total:1,offset:0,has_more:false}}})
+ await page.goto('/#/professional/templates')
+ await expect(page.locator('.management-template-icon .plan-routine-body-thumb')).toHaveCount(0)
+ await expect(page.locator('.management-template-icon svg')).toHaveCount(1)
+})
+
+test('student profile loads workout history on entry and expands actual sets and total duration', async ({page}) => {
+ const execution={id:'execution-a',student_user_id:STUDENT,day_key:'monday',status:'completed',started_at:'2026-10-28T10:00:00Z',completed_at:'2026-10-28T10:30:00Z',program_title:'Força',prescription_snapshot:{workoutTitle:'Treino A',exercises:[{exerciseId:'0025',sets:3,reps:8}]},payload:{entries:[{id:'0025',sets:[{done:true,w:20,r:8}]}]}}
+ await seed(page,{professional:true,rpc:{professional_executions_page:{items:[execution],total:1,offset:0,has_more:false}}})
+ await page.goto(`/#/professional/students/${STUDENT}?section=history`)
+ const card=page.locator('.professional-execution-card')
+ await expect(card).toBeVisible()
+ await expect(card).toContainText('Supino com barra')
+ await expect(page.getByRole('button',{name:'Histórico',exact:true})).toHaveCount(0)
+ await card.locator('summary').click()
+ await expect(card).toContainText('Realizado')
+ await expect(card).toContainText('20 kg × 8')
+ await expect(card).toContainText('Duração realizada (min): 30')
+})
+
+test('professional notes append privately with a visible date and time', async ({page}) => {
+ let notes=[{id:'legacy-note',body:'Registro privado anterior',created_at:'2026-10-20T12:30:00Z'}]
+ await seed(page,{professional:true,rpc:{list_professional_student_notes:()=>notes,add_professional_student_note:args=>{const note={id:`note-${notes.length+1}`,body:args.p_body,created_at:'2026-10-28T12:34:00Z'};notes=[note,...notes];return note}}})
+ await page.goto(`/#/professional/students/${STUDENT}?section=notes`)
+ await expect(page.getByText('Registro privado anterior',{exact:true})).toBeVisible()
+ const composer=page.getByRole('textbox',{name:'Nova anotação privada'})
+ await composer.fill('Orientar progressão de carga')
+ await page.getByRole('button',{name:'Enviar anotação privada',exact:true}).click()
+ await expect(page.getByText('Orientar progressão de carga',{exact:true})).toBeVisible()
+ await expect(page.getByText('Registro privado anterior',{exact:true})).toBeVisible()
+ await expect(composer).toHaveValue('')
+ await expect(page.locator('.professional-private-note')).toHaveCount(2)
+ const dateTime=new Date('2026-10-28T12:34:00Z').toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})
+ await expect(page.locator('.professional-private-note').first()).toContainText(dateTime)
 })
 
 test('material selection stays independent and historical inspection preserves the current plan', async ({page}) => {

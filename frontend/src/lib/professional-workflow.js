@@ -1,4 +1,4 @@
-import { validateAvailableWeeklyPlan } from './professional-program.js'
+import { normalizeWeeklyPlan, validateAvailableWeeklyPlan } from './professional-program.js'
 
 /** @typedef {{title:string,description:string,objective:string,weeklyPlan:Object,workoutTitles:Object<string,string>}} WeekDraft */
 /** @typedef {{id:string,professionalUserId:string,title:string,description:?string,objective:?string,archived:boolean,createdAt:?string,updatedAt:?string}} ProgramMetadata */
@@ -11,7 +11,8 @@ import { validateAvailableWeeklyPlan } from './professional-program.js'
 /** @typedef {{activeStudents:number,attentionStudents:number,todayWorkouts:number,activePrograms:number,pendingInvites:number,today:Object[],recentActivity:Object[]}} DashboardSummary */
 const toCurrentProgram = value => value ? ({ id: value.id, title: value.title, assignmentId: value.assignment_id, versionId: value.version_id, versionNumber: value.version_number, assignedAt: value.assigned_at }) : null
 const toStudentSummary = value => ({ ...toClientSummary(value), currentProgram: toCurrentProgram(value.current_program), lastActivityAt: value.last_activity_at || null, attentionReasons: value.attention_reasons || [] })
-const toProgramSummary = value => ({ id: value.id, title: value.title, description: value.description || null, objective: value.objective || null, archived: Boolean(value.archived), workoutCount: Number(value.workout_count), studentCount: Number(value.student_count), lastChangedAt: value.last_changed_at || null })
+const toProgramSummary = value => ({ id: value.id, title: value.title, description: value.description || null, objective: value.objective || null, weeklyPlan: value.weekly_plan || {}, archived: Boolean(value.archived), workoutCount: Number(value.workout_count), studentCount: Number(value.student_count), lastChangedAt: value.last_changed_at || null })
+export const programMuscleRoutine = program => ({ id: program?.id || 'program-preview', ex: Object.values(normalizeWeeklyPlan(program?.weeklyPlan || {})).flat().map(entry => ({ id: entry.exerciseId, sets: entry.sets })) })
 const toExecution = value => ({ id: value.id, assignmentId: value.assignment_id || null, versionId: value.version_id || null, studentUserId: value.student_user_id, displayName: value.display_name || 'Aluno', avatarRef: value.avatar_ref || null, dayKey: value.day_key, status: value.status, startedAt: value.started_at, completedAt: value.completed_at || null, programTitle: value.program_title || null, versionNumber: value.version_number || null, prescriptionSnapshot: value.prescription_snapshot || {}, payload: value.payload || {} })
 const toPage = (value, map) => {
   if (!value || !Array.isArray(value.items) || !Number.isSafeInteger(value.total) || value.total < 0 || !Number.isSafeInteger(value.offset) || value.offset < 0 || typeof value.has_more !== 'boolean') throw new Error('invalid-page')
@@ -30,6 +31,10 @@ const toVersion = value => value ? ({
 }) : null
 
 const toNote = value => ({ body: value?.body || '', updatedAt: value?.updated_at || null })
+const toStudentNoteEntry = value => {
+  if (!value || typeof value.id !== 'string' || !value.id || typeof value.body !== 'string' || value.body.length > 2000 || typeof value.created_at !== 'string' || !Number.isFinite(Date.parse(value.created_at))) throw new Error('invalid-private-note')
+  return { id: value.id, body: value.body, createdAt: value.created_at }
+}
 
 const toProfile = value => value ? ({
   userId: value.professional_user_id,
@@ -141,6 +146,11 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const duplicateProgram = ({ programId, versionId = null, title }) => rpc('duplicate_professional_program', { p_program_id: programId, p_version_id: versionId, p_title: title.trim() }).then(value => ({ program: toProgram(value?.program), version: toVersion(value?.version) }))
   const studentNote = studentId => rpc('professional_student_note', { p_student_id: studentId }).then(toNote)
   const saveStudentNote = ({ studentId, body }) => rpc('save_professional_student_note', { p_student_id: studentId, p_body: body }).then(toNote)
+  const studentNotes = studentId => rpc('list_professional_student_notes', { p_student_id: studentId }).then(value => {
+    if (!Array.isArray(value)) throw new Error('invalid-private-note-list')
+    return value.map(toStudentNoteEntry)
+  })
+  const addStudentNote = ({ studentId, body }) => rpc('add_professional_student_note', { p_student_id: studentId, p_body: body }).then(toStudentNoteEntry)
   const dashboardSummary = ({ localDate, timeZone }) => rpc('professional_dashboard_summary', { p_local_date: localDate, p_timezone: timeZone }).then(value => ({ activeStudents: Number(value.active_students), attentionStudents: Number(value.attention_students), todayWorkouts: Number(value.today_workouts), activePrograms: Number(value.active_programs), pendingInvites: Number(value.pending_invites), today: (value.today || []).map(item => ({ ...toStudentSummary(item), dayKey: item.day_key, workoutTitle: item.workout_title, status: item.status, executionId: item.execution_id || null })), recentActivity: (value.recent_activity || []).map(toExecution) }))
   const studentPage = ({ search = '', status = 'all', offset = 0, limit = 30 } = {}) => rpc('professional_students_page', { p_search: search.trim(), p_status: status, p_offset: offset, p_limit: limit }).then(value => toPage(value, toStudentSummary))
   const programPage = ({ search = '', archived = null, offset = 0, limit = 20 } = {}) => rpc('professional_programs_page', { p_search: search.trim(), p_archived: archived, p_offset: offset, p_limit: limit }).then(value => toPage(value, toProgramSummary))
@@ -170,5 +180,5 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const studentPlanDraft = studentId => read('professional_plan_drafts', q => q.select('*').eq('student_id', studentId).limit(1)).then(rows => rows[0] || null)
   const savePlanDraft = (studentId, title, workspace, revision) => rpc('save_student_plan_draft', { p_student_id: studentId, p_title: title, p_workspace: workspace, p_expected_revision: revision })
   const sendPlan = (studentId, revision) => rpc('send_student_plan', { p_student_id: studentId, p_expected_revision: revision })
-  return Object.freeze({ program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  return Object.freeze({ program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, studentNotes, addStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }

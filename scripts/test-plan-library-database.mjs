@@ -32,4 +32,14 @@ for (const name of readdirSync('supabase/migrations').filter(name => name.endsWi
  await db.exec(readFileSync('supabase/migrations/' + name, 'utf8'))
 }
 try { await db.exec(readFileSync('supabase/tests/202610290001_exercise_sprite_requirement.sql', 'utf8')); console.log('PASS sprite-only professional prescriptions and legacy activation guards') } catch(e) { console.error(e.message,e.where); process.exit(1) }
+await db.exec(`
+insert into auth.users(id) values ('10290100-0000-0000-0000-000000000001'),('10290100-0000-0000-0000-000000000002');
+insert into public.user_roles(user_id,role) values ('10290100-0000-0000-0000-000000000001','professional');
+insert into public.professional_student_relationships(id,professional_user_id,student_user_id,status)
+ values ('10290110-0000-0000-0000-000000000001','10290100-0000-0000-0000-000000000001','10290100-0000-0000-0000-000000000002','active');
+insert into public.professional_student_notes(professional_id,student_id,body,updated_at)
+ values ('10290100-0000-0000-0000-000000000001','10290100-0000-0000-0000-000000000002','Nota antiga','2026-10-20 12:30:00+00');
+`)
+await db.exec(readFileSync('supabase/migrations/202610290002_professional_workspace_history_notes.sql', 'utf8'))
+try { await db.exec(readFileSync('supabase/tests/202610290002_professional_workspace_history_notes.sql', 'utf8')); console.log('PASS professional model plans and private student notes') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 await db.close()
