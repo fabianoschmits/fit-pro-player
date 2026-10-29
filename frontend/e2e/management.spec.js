@@ -122,6 +122,61 @@ test('a direct invitation alias selects and reveals Add in the mobile management
   expect(bounds.right).toBeLessThanOrEqual(bounds.navRight + 1)
 })
 
+test('professional dashboard quick actions use readable columns on narrow screens', async ({page}) => {
+  for (const width of [320,360,390,430]) {
+    await page.setViewportSize({width,height:800})
+    await seed(page,{professional:true,rpc})
+    await page.goto('/#/professional')
+    const columns = await page.locator('.management-quick-actions').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)
+    expect(columns,`${width}px quick action columns`).toBe(2)
+  }
+})
+
+test('deep-linked management sections keep the selected tab in view', async ({page}) => {
+  await seed(page,{professional:true,rpc})
+  for (const width of [320,360,390,430]) {
+    await page.setViewportSize({width,height:800})
+    for (const route of [`/professional/students/${STUDENT}?section=relationship`,`/student/professionals/${PRO}?section=relationship`]) {
+      await page.goto(`/#${route}`)
+      const selected = page.locator('.management-section-nav [aria-current="page"]')
+      await expect(selected).toBeVisible()
+      const bounds = await selected.evaluate(link => {
+        const selectedBounds = link.getBoundingClientRect(), navBounds = link.closest('nav').getBoundingClientRect()
+        return {left:selectedBounds.left,right:selectedBounds.right,navLeft:navBounds.left,navRight:navBounds.right}
+      })
+      expect(bounds.left,`${width}px ${route}`).toBeGreaterThanOrEqual(bounds.navLeft - 1)
+      expect(bounds.right,`${width}px ${route}`).toBeLessThanOrEqual(bounds.navRight + 1)
+    }
+  }
+})
+
+test('professional plan setup keeps the week grid usable on narrow phones', async ({page},testInfo) => {
+  await seed(page,{professional:true,rpc:{...rpc,professional_plan_drafts:[{
+    student_id:STUDENT,title:'Plano de treino',revision:1,sent_revision:1,updated_at:'2026-10-28T12:00:00Z',
+    workspace:{routines:[{id:'routine-a',name:'Treino A',emoji:'dumbbell',ex:[{id:'0025',sets:3,reps:10,weight:25,rest:90}]}],week:{0:'routine-a'},dayPlan:{},planMode:'weekly',onboardingDone:true},
+  }]}})
+  for (const width of [320,360,390,430]) {
+    await page.setViewportSize({width,height:860})
+    await page.goto(`/#/professional/students/${STUDENT}/plan`)
+    const grid = page.locator('.plan-week-grid')
+    await expect(grid).toBeVisible()
+    const days = grid.locator('.plan-day')
+    await expect(days).toHaveCount(7)
+    const boxes = await days.evaluateAll(elements => elements.map(element => element.getBoundingClientRect()))
+    expect(boxes[0].left,`${width}px week start`).toBeGreaterThanOrEqual(0)
+    expect(boxes.at(-1).right,`${width}px week end`).toBeLessThanOrEqual(width + 1)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+    if (width === 320 || width === 430) await page.screenshot({path:testInfo.outputPath(`professional-plan-setup-${width}.png`),fullPage:true})
+    await page.locator('.management-plan-actions').getByRole('button',{name:'Enviar atualização',exact:true}).click()
+    const confirmation = page.getByRole('dialog')
+    await expect(confirmation).toBeVisible()
+    const dialogBounds = await confirmation.boundingBox()
+    expect(dialogBounds.x,`${width}px confirmation left`).toBeGreaterThanOrEqual(0)
+    expect(dialogBounds.x+dialogBounds.width,`${width}px confirmation right`).toBeLessThanOrEqual(width+1)
+    await confirmation.getByRole('button',{name:'Cancelar',exact:true}).click()
+  }
+})
+
 test('legacy program creation redirects to the shared template editor', async ({page}) => {
  let created=null
  await seed(page,{professional:true,rpc:{programs:()=>created?[created]:[],program_versions:[],create_program:args=>{created={...program,title:args.p_title};return created}}})
@@ -173,14 +228,14 @@ test('empty and failed management reads retain navigation, retry and keyboard fo
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2)).toBe(false)
 })
 
-for (const width of [320,360,390,1280,1440]) for (const theme of ['light','dark']) test(`management visual matrix ${width}px ${theme}`, async ({page},testInfo) => {
+for (const width of [320,360,390,430,1280,1440]) for (const theme of ['light','dark']) test(`management visual matrix ${width}px ${theme}`, async ({page},testInfo) => {
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Matrix sizes are explicit; run once per size/theme.')
   test.setTimeout(90000)
   await page.setViewportSize({width,height:1000}); await page.emulateMedia({reducedMotion:'reduce'})
   const state = stateFixture(); state.theme = theme
   const errors = []; page.on('pageerror',error => errors.push(error.message))
   await seed(page,{professional:true,state,rpc})
-  const routes = ['/professional','/professional/profile','/professional/profile/edit','/professional/students',`/professional/students/${STUDENT}`,`/professional/students/${STUDENT}?section=training`,'/professional/invites','/professional/invites?section=create','/professional/invites?section=result&code=A1B2C3D4E5','/professional/programs','/professional/programs/new',`/professional/programs/${PROGRAM}`,`/professional/programs/${PROGRAM}/edit`,'/student/professionals','/student/professionals/add?code=A1B2C3D4E5',`/student/professionals/${PRO}`,`/student/professionals/${PRO}?section=training`,`/student/professionals/${PRO}?section=history`,`/student/professionals/${PRO}?section=relationship`,'/student/professionals/materials']
+  const routes = ['/professional','/professional/profile','/professional/profile/edit','/professional/students',`/professional/students/${STUDENT}`,`/professional/students/${STUDENT}?section=training`,`/professional/students/${STUDENT}/plan`,'/professional/invites','/professional/invites?section=create','/professional/invites?section=result&code=A1B2C3D4E5','/professional/programs','/professional/programs/new',`/professional/programs/${PROGRAM}`,`/professional/programs/${PROGRAM}/edit`,'/student/professionals','/student/professionals/add?code=A1B2C3D4E5',`/student/professionals/${PRO}`,`/student/professionals/${PRO}?section=training`,`/student/professionals/${PRO}?section=history`,`/student/professionals/${PRO}?section=relationship`,'/student/professionals/materials']
   for (const [index,route] of routes.entries()) {
     await page.goto(`/#${route}`)
     await expect(page.locator('.management-layout')).toBeVisible()

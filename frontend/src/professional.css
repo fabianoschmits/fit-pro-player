@@ -314,7 +314,6 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 }
 @media(max-width:360px){
  .management-return span{max-width:84px;line-height:1.3}
- .management-layout .management-header .app-header-action{flex-basis:100%;padding-left:0}
  .management-summary-facts>div,.management-facts>div{grid-template-columns:minmax(90px,.7fr) minmax(0,1.3fr)}
 }
 

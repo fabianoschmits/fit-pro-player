@@ -12,6 +12,7 @@ import { FppSkeleton } from '../components/FppFeedback.jsx'
 import { useFppAction } from '../components/useFppAction.js'
 import { Button } from '../components/ui.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
+import useManagementNavVisibility from '../components/useManagementNavVisibility.js'
 import { ManagementPanel, ManagementEmpty, ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
 import { ProfessionalPrescription, ProfessionalSessionDetail, professionalDayLabel } from '../components/ProfessionalPrescription.jsx'
 import useStudentManagementRequest from '../components/useStudentManagementRequest.js'
@@ -36,6 +37,7 @@ function DetailWorkspace({ professionalId }) {
     return detail?.professional?.professionalId === professionalId ? detail : null
   }, [repo, professionalId])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar este profissional.')
+  const sectionNavRef = useManagementNavVisibility(data)
   const section = SECTIONS.some(([value]) => value === params.get('section')) ? params.get('section') : 'summary'
   const sectionUrl = value => { const next = new URLSearchParams(params); next.set('section', value); return `?${next}` }
   const revoke = async () => {
@@ -71,7 +73,7 @@ function DetailWorkspace({ professionalId }) {
   return <ManagementLayout audience="student" className="student-professional-detail" title={t('Perfil profissional')} subtitle={t('Acompanhamento profissional')} backTo="/student/professionals">
     {actionError && <p role="alert" className="management-error">{actionError}</p>}
     <div className="management-person-strip"><ManagementAvatar name={person.professionalName} avatarRef={person.avatarRef} userId={person.professionalId} /><div><strong>{person.professionalName}</strong>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}</div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus></div>
-    <nav className="management-section-nav" aria-label={t('Detalhe do profissional')}>{SECTIONS.map(([value, label]) => <Link key={value} to={sectionUrl(value)} aria-current={section === value ? 'page' : undefined}>{t(label)}</Link>)}</nav>
+    <nav ref={sectionNavRef} className="management-section-nav" aria-label={t('Detalhe do profissional')}>{SECTIONS.map(([value, label]) => <Link key={value} to={sectionUrl(value)} aria-current={section === value ? 'page' : undefined}>{t(label)}</Link>)}</nav>
     {section === 'summary' && <div className="management-person-facts"><ManagementPanel title={t('Apresentação')}><p>{person.bio || t('O profissional ainda não adicionou uma apresentação.')}</p>{person.specialties?.length > 0 && <><h3>{t('Especialidades')}</h3><p>{person.specialties.join(' · ')}</p></>}{person.cityRegion && <><h3>{t('Localização')}</h3><p>{person.cityRegion}</p></>}</ManagementPanel><ManagementPanel title={t('Registro profissional')}>{person.registrationType || person.registrationNumber ? <p>{[person.registrationType, person.registrationNumber].filter(Boolean).join(' ')}</p> : <p className="muted">{t('Registro não informado.')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(person.verificationStatus))}</p><Link className="management-button" to={sectionUrl('training')}>{t('Ver treino recebido')}</Link></ManagementPanel></div>}
     {section === 'training' && <ManagementPanel title={t('Treino recebido')} description={t('Até 100 materiais recentes deste profissional.')}>
       {materialId && <Link className="management-button" to="?section=training">{t('Ver todos os materiais deste profissional')}</Link>}

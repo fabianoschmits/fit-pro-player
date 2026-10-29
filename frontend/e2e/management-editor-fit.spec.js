@@ -2,9 +2,9 @@ import { test, expect } from '@playwright/test'
 import { seed, USER } from './fixtures.test.js'
 const id='33333333-3333-4333-8333-333333333333'
 const plan={monday:[{exerciseId:'0025',sets:3,reps:10,load:25,rest:90}]}
-for(const width of [320,390,430]) test(`shared template editor and picker fit ${width}px`,async({page},testInfo)=>{
+for(const width of [320,360,390,430]) test(`shared template editor and picker fit ${width}px`,async({page},testInfo)=>{
  test.skip(testInfo.project.name!=='desktop-chromium','Explicit viewport matrix')
- await page.setViewportSize({width,height:900})
+ await page.setViewportSize({width,height:780})
  let saved=null
  await seed(page,{professional:true,rpc:{programs:[{id,professional_user_id:USER,title:'Força e condicionamento com progressão individual',archived:false}],program_versions:[{id:'version',program_id:id,version_number:1,weekly_plan:plan}],update_program_metadata:args=>({id,title:args.p_title}),publish_program_version_with_titles:args=>{saved=args;return{id:'next',program_id:id,version_number:2,weekly_plan:args.p_weekly_plan}}}})
  await page.goto(`/#/professional/programs/${id}/edit`)
@@ -17,6 +17,11 @@ for(const width of [320,390,430]) test(`shared template editor and picker fit ${
  await dialog.getByRole('searchbox').fill('supino com barra')
  await dialog.locator('.picker-item-main').first().click()
  await expect(dialog.locator('[data-exercise-animation="0025"]')).toBeVisible()
+ const dialogBounds=await dialog.boundingBox()
+ expect(dialogBounds.x).toBeGreaterThanOrEqual(0)
+ expect(dialogBounds.x+dialogBounds.width).toBeLessThanOrEqual(width+1)
+ expect(dialogBounds.y+dialogBounds.height).toBeLessThanOrEqual(781)
+ await expect(dialog.getByRole('button',{name:'Pronto',exact:true})).toBeInViewport()
  await page.screenshot({path:testInfo.outputPath(`exercise-picker-${width}.png`),fullPage:true})
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
  await dialog.getByRole('button',{name:'Pronto',exact:true}).click()

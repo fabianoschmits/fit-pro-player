@@ -13,7 +13,7 @@ test('student summary stays compact on mobile and expands the full body history'
   const card = page.getByRole('region',{name:'Resumo de Teste'})
   await expect(card).toContainText('1,76 m')
   await expect(card).toContainText('85 kg')
-  for (const width of [390,320]) {
+  for (const width of [390,360,320,430]) {
     await page.setViewportSize({width,height:844})
     const box = await card.boundingBox()
     expect(box.height).toBeLessThan(240)
@@ -30,6 +30,16 @@ test('student summary stays compact on mobile and expands the full body history'
   await expect(dialog).toContainText('85 kg')
   await expect(dialog).toContainText('95 cm')
   await page.screenshot({path:testInfo.outputPath('expanded-student.png')})
+  for (const width of [320,360,390,430]) {
+    await page.setViewportSize({width,height:844})
+    await expect.poll(async () => {
+      const bounds = await dialog.boundingBox()
+      const viewport = await page.evaluate(() => ({ width:innerWidth,height:innerHeight }))
+      return bounds && bounds.x >= 0 && bounds.x+bounds.width <= viewport.width+1 && bounds.y+bounds.height <= viewport.height+1
+    },{message:`profile sheet fits the viewport at ${width}px`}).toBe(true)
+    await dialog.evaluate(element=>{element.scrollTop=element.scrollHeight})
+    await expect(dialog.getByRole('button',{name:'Fechar',exact:true})).toBeVisible()
+  }
   await dialog.getByRole('button',{name:'Fechar',exact:true}).click()
   await expect(dialog).toHaveCount(0)
   await expect(card.getByRole('button')).toBeFocused()
