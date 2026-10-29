@@ -297,3 +297,37 @@ grant execute on function public.create_professional_invite(public.invite_kind) 
 grant execute on function public.accept_professional_invite(text) to authenticated;
 grant execute on function public.revoke_professional_invite(uuid) to authenticated;
 
+create or replace function public.delete_professional_program(p_program_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare owned_program public.programs;
+begin
+  if auth.uid() is null or not exists (
+    select 1 from public.user_roles where user_id=auth.uid() and role='professional'
+  ) then
+    raise exception 'professional capability required' using errcode='42501';
+  end if;
+
+  select * into owned_program from public.programs
+  where id=p_program_id and professional_user_id=auth.uid()
+  for update;
+  if not found then raise exception 'program ownership required' using errcode='42501'; end if;
+
+  if exists(select 1 from public.program_assignments where program_id=owned_program.id) then
+    raise exception 'program_in_use' using errcode='P0001';
+  end if;
+
+  begin
+    delete from public.programs where id=owned_program.id;
+  exception when foreign_key_violation then
+    raise exception 'program_in_use' using errcode='P0001';
+  end;
+end;
+$$;
+
+revoke all on function public.delete_professional_program(uuid) from public, anon;
+grant execute on function public.delete_professional_program(uuid) to authenticated;
+

@@ -5,7 +5,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom'
 import { Window } from 'happy-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'pro-1' } }, repo: { invites: vi.fn().mockResolvedValue([{ id: 'i1', code: 'AB12CD34', kind: 'code', status: 'pending', created_at: '2026-09-24T10:00:00Z' }]), createInvite: vi.fn().mockResolvedValue({ id: 'i2', code: 'ZX98YU76' }), revokeInvite: vi.fn().mockResolvedValue({}), revokeRelationship: vi.fn(), }, client: null }))
+const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'pro-1' } }, repo: { invites: vi.fn().mockResolvedValue([{ id: 'i1', code: 'AB12CD34', kind: 'code', status: 'pending', created_at: '2026-09-24T10:00:00Z' }]), createInvite: vi.fn().mockResolvedValue({ id: 'i2', code: 'ZX98YU76' }), revokeInvite: vi.fn().mockResolvedValue({}), savePersonalInviteCode: vi.fn().mockResolvedValue({ code: 'CODIGOATUALIZADO', is_personal: true, is_custom: true }), revokeRelationship: vi.fn(), }, client: null }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => mocks.client }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
@@ -93,6 +93,74 @@ describe('professional invites page', () => {
     await act(async () => finishOld({ id: 'old', code: 'OLD1234567' }))
     expect(container.textContent).not.toContain('OLD1234567')
     expect(container.textContent).toContain('Gerar convite')
+  })
+
+  it('keeps the reusable personal code separate and supports edit, cancel and save', async () => {
+    mocks.repo.invites.mockResolvedValueOnce([
+      { id: 'personal', code: 'ANASOUZA', kind: 'code', status: 'pending', is_personal: true, is_custom: false, created_at: '2026-10-01T10:00:00Z' },
+      { id: 'generated', code: 'INDIVIDUAL1', kind: 'code', status: 'pending', is_personal: false, is_custom: false, created_at: '2026-10-02T10:00:00Z' },
+    ])
+    const view = <MemoryRouter initialEntries={['/professional/invites']}><ProfessionalInvites /></MemoryRouter>
+    await act(async () => root.render(view))
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+
+    expect(container.textContent).toContain('Código pessoal')
+    expect(container.textContent).toContain('ANASOUZA')
+    expect(container.querySelector('.management-personal-invite-panel').textContent).not.toContain('Pendente')
+    expect(container.textContent).toContain('INDIVIDUAL1')
+    const edit = [...container.querySelectorAll('button')].find(button => button.textContent === 'Editar código')
+    await act(async () => edit.click())
+    const input = container.querySelector('input[aria-label="Código pessoal"]')
+    const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
+    setter.call(input, '  Código Novo ')
+    await act(async () => input.dispatchEvent(new dom.window.Event('input', { bubbles: true })))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Cancelar').click())
+    expect(mocks.repo.savePersonalInviteCode).not.toHaveBeenCalled()
+
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Editar código').click())
+    const secondInput = container.querySelector('input[aria-label="Código pessoal"]')
+    setter.call(secondInput, 'Codigo Atualizado')
+    await act(async () => secondInput.dispatchEvent(new dom.window.Event('input', { bubbles: true })))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Salvar código').click())
+    expect(mocks.repo.savePersonalInviteCode).toHaveBeenCalledExactlyOnceWith('Codigo Atualizado')
+    expect(container.textContent).toContain('CODIGOATUALIZADO')
+  })
+
+  it('shows generated invite history by status and only lets pending generated invites be revoked', async () => {
+    mocks.repo.invites.mockResolvedValueOnce([
+      { id: 'personal', code: 'ANASOUZA', kind: 'code', status: 'pending', is_personal: true, is_custom: false },
+      { id: 'pending', code: 'PENDING01', kind: 'code', status: 'pending', is_personal: false },
+      { id: 'accepted', code: 'ACCEPTED1', kind: 'code', status: 'active', is_personal: false, accepted_at: '2026-10-03T10:00:00Z' },
+      { id: 'revoked', code: 'REVOKED01', kind: 'code', status: 'revoked', is_personal: false },
+    ])
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/invites']}><ProfessionalInvites /></MemoryRouter>))
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+
+    expect(container.textContent).toContain('Pendentes (1)')
+    expect(container.textContent).toContain('PENDING01')
+    expect(container.textContent).toContain('ACCEPTED1')
+    expect(container.textContent).toContain('Ativo')
+    expect(container.textContent).toContain('REVOKED01')
+    expect(container.textContent).toContain('Revogado')
+    expect([...container.querySelectorAll('button')].filter(button => button.textContent === 'Revogar')).toHaveLength(1)
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Revogar').click())
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Confirmar').click())
+    expect(mocks.repo.revokeInvite).toHaveBeenCalledExactlyOnceWith('pending')
+  })
+
+  it('keeps the current personal code when the requested code is already taken', async () => {
+    mocks.repo.invites.mockResolvedValueOnce([{ id: 'personal', code: 'ANASOUZA', status: 'pending', is_personal: true, is_custom: false }])
+    mocks.repo.savePersonalInviteCode.mockRejectedValueOnce(new Error('professional-invite-code-taken'))
+    await act(async () => root.render(<MemoryRouter initialEntries={['/professional/invites']}><ProfessionalInvites /></MemoryRouter>))
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Editar código').click())
+    const input = container.querySelector('input[aria-label="Código pessoal"]')
+    const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, 'value').set
+    setter.call(input, 'ANASOUZA')
+    await act(async () => input.dispatchEvent(new dom.window.Event('input', { bubbles: true })))
+    await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Salvar código').click())
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('já está em uso')
+    expect(container.textContent).toContain('ANASOUZA')
   })
   it('keeps pending invites separate and presents one creation flow', async () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/professional/invites']}><ProfessionalInvites /></MemoryRouter>))

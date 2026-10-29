@@ -151,6 +151,13 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const updateProgramMetadata = ({ programId, title, description = '', objective = '' }) => rpc('update_program_metadata', { p_program_id: programId, p_title: title.trim(), p_description: description.trim() || null, p_objective: objective.trim() || null }).then(toProgram)
   const publishProgramDraft = ({ programId, weeklyPlan, workoutTitles = {} }) => rpc('publish_program_version_with_titles', { p_program_id: programId, p_weekly_plan: weeklyPlan, p_workout_titles: workoutTitles }).then(toVersion)
   const duplicateProgram = ({ programId, versionId = null, title }) => rpc('duplicate_professional_program', { p_program_id: programId, p_version_id: versionId, p_title: title.trim() }).then(value => ({ program: toProgram(value?.program), version: toVersion(value?.version) }))
+  const deleteProgram = async programId => {
+    try { await rpc('delete_professional_program', { p_program_id: programId }) }
+    catch (cause) {
+      if (cause?.code === 'P0001' || cause?.message === 'program_in_use') throw new Error('professional-program-in-use')
+      throw cause
+    }
+  }
   const studentNote = studentId => rpc('professional_student_note', { p_student_id: studentId }).then(toNote)
   const saveStudentNote = ({ studentId, body }) => rpc('save_professional_student_note', { p_student_id: studentId, p_body: body }).then(toNote)
   const studentNotes = studentId => rpc('list_professional_student_notes', { p_student_id: studentId }).then(value => {
@@ -187,5 +194,5 @@ export function createProfessionalWorkflowRepository({ client } = {}) {
   const studentPlanDraft = studentId => read('professional_plan_drafts', q => q.select('*').eq('student_id', studentId).limit(1)).then(rows => rows[0] || null)
   const savePlanDraft = (studentId, title, workspace, revision) => rpc('save_student_plan_draft', { p_student_id: studentId, p_title: title, p_workspace: workspace, p_expected_revision: revision })
   const sendPlan = (studentId, revision) => rpc('send_student_plan', { p_student_id: studentId, p_expected_revision: revision })
-  return Object.freeze({ program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, savePersonalInviteCode, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, studentNote, saveStudentNote, studentNotes, addStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  return Object.freeze({ program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, savePersonalInviteCode, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, deleteProgram, studentNote, saveStudentNote, studentNotes, addStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }

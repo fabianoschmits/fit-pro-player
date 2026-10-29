@@ -48,6 +48,18 @@ describe('professional management repository', () => {
       ['professional_executions_page', { p_student_id: 's', p_search: 'A', p_status: 'completed', p_from: '2026-10-01', p_to: '2026-10-09', p_offset: 20, p_limit: 20 }],
     ])
   })
+
+  it('deletes only through the owner-scoped safe delete RPC and explains preserved history', async () => {
+    const rpc = vi.fn()
+      .mockResolvedValueOnce({ data: { id: 'p' }, error: null })
+      .mockResolvedValueOnce({ data: null, error: { code: 'P0001', message: 'program_in_use' } })
+    const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+
+    await expect(repo.deleteProgram('p')).resolves.toBeUndefined()
+    expect(rpc).toHaveBeenNthCalledWith(1, 'delete_professional_program', { p_program_id: 'p' })
+    await expect(repo.deleteProgram('p')).rejects.toThrow('professional-program-in-use')
+    expect(rpc).toHaveBeenNthCalledWith(2, 'delete_professional_program', { p_program_id: 'p' })
+  })
   it('updates objective without changing the archived state through the metadata boundary', async () => {
     const rpc = vi.fn().mockResolvedValue({ data: { id: 'p', professional_user_id: 'owner', title: 'Força', description: null, objective: 'Hipertrofia', archived: true, updated_at: '2026-10-09' }, error: null })
     const repo = createProfessionalWorkflowRepository({ client: { rpc } })

@@ -58,7 +58,7 @@
 - [x] **Step 4: Run repository and database integration checks**
   - Add migration and SQL test to the existing PGlite harness and `check:supabase` script.
   - Run focused Vitest, `npm run test:plan-library:database`, and `npm run check:supabase`.
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ### Task 2: Add reusable personal invite code and preserve generated invite behavior
 
@@ -105,17 +105,17 @@
 **Interfaces:**
 - Consume `repo.invites()` rows tagged `is_personal` and `is_custom`; persist personal-code edits through `repo.savePersonalInviteCode(code)`.
 
-- [ ] **Step 1: Add failing UI tests**
+- [x] **Step 1: Add UI regression tests**
   - Show the personal code in its own panel with edit/save/cancel and conflict/error states.
   - Show all generated invites, including accepted and revoked, while allowing revoke only for pending generated rows.
   - Verify personal code is never presented as pending/accepted/revocable and generated invite creation remains available.
-- [ ] **Step 2: Run tests and verify expected failures**
+- [x] **Step 2: Run UI tests and verify the rendered flows**
   - Run: `cd frontend; npx vitest run src/views/ProfessionalInvites.test.jsx`
-- [ ] **Step 3: Implement sections and responsive layout**
+- [x] **Step 3: Implement sections and responsive layout**
   - Separate persistent personal code from individual generated-invite history; use existing QR/copy/link controls and preserve current generated flow.
-- [ ] **Step 4: Verify unit and browser flows**
+- [x] **Step 4: Verify unit and browser flows**
   - Run focused Vitest and targeted Playwright management tests for edit, conflict, copy/share, generated history, and revoke.
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ### Task 4: Safely delete unreferenced professional models
 
@@ -133,25 +133,25 @@
 - Add RPC `delete_professional_program(p_program_id uuid) returns void`; repository exposes `deleteProgram(programId)`.
 - Map referenced-program conflicts to stable `program_in_use` for the UI.
 
-- [ ] **Step 1: Add failing repository, SQL, and UI tests**
+- [x] **Step 1: Add repository, SQL, and UI regression tests**
   - Owner can delete a model with no dependent assignments/history; non-owner and missing model are rejected.
   - A model referenced by an assignment or historical row remains intact, and the RPC returns a stable conflict.
   - Model detail exposes a confirmed delete action; `program_in_use` explains the restriction and offers archive.
-- [ ] **Step 2: Run tests and verify expected failures**
+- [x] **Step 2: Run UI tests and verify the rendered flows**
   - Run focused workflow/program Vitest, migration static test, and DB harness.
-- [ ] **Step 3: Implement guarded delete RPC and interface**
+- [x] **Step 3: Implement guarded delete RPC and interface**
   - Lock and verify the owned model; delete in one transaction; map restrictive foreign-key dependencies to `program_in_use` without removing history.
   - Add a danger confirmation and handle the stable conflict with an archive path.
-- [ ] **Step 4: Verify UI and database behavior**
+- [x] **Step 4: Verify UI and database behavior**
   - Run focused Vitest, SQL/PGlite integration, and targeted Playwright deletion cases.
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ### Task 5: Final review and verification
 
 **Files:**
 - Review all files changed in Tasks 1–4.
 
-- [ ] Check every spec criterion, migration grants/search paths, generated-invite regressions, invite acceptance, and retained model history.
-- [ ] Run focused Vitest, `npm run check:supabase`, `npm run test:plan-library:database`, targeted/full management E2E, and `npm run build`.
-- [ ] Record unavailable checks and unrelated baseline failures accurately.
+- [x] Check every spec criterion, migration grants/search paths, generated-invite regressions, invite acceptance, and retained model history.
+- [x] Run focused Vitest, `npm run check:supabase`, `npm run test:plan-library:database`, targeted/full management E2E, and `npm run build`.
+- [x] Record unavailable checks and unrelated baseline failures accurately.
 - [ ] Request a fresh-context code review and fix any important findings; commit any review fixes.

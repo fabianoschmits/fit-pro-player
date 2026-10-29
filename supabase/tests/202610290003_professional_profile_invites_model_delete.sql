@@ -97,9 +97,29 @@ set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000008';
 select pg_temp.expect_error($q$select public.save_professional_personal_invite('SEM PAPEL')$q$,'42501');
 select pg_temp.assert_true((public.provision_professional_profile('Nova Lima')).professional_name='Nova Lima','professional provisioning remains functional');
 select pg_temp.assert_true((select code='NOVALIMA' and is_personal from public.professional_invites where professional_user_id=auth.uid() and is_personal),'newly provisioned profiles receive a personal code');
+reset role;
+insert into public.programs(id,professional_user_id,title) values
+ ('10290310-0000-0000-0000-000000000101','10290310-0000-0000-0000-000000000001','Unused model'),
+ ('10290310-0000-0000-0000-000000000102','10290310-0000-0000-0000-000000000001','Assigned model');
+insert into public.program_versions(id,program_id,version_number,weekly_plan) values
+ ('10290310-0000-0000-0000-000000000201','10290310-0000-0000-0000-000000000102',1,'{}');
+update public.program_versions set published_at=now() where id='10290310-0000-0000-0000-000000000201';
+insert into public.professional_student_relationships(professional_user_id,student_user_id,status) values
+ ('10290310-0000-0000-0000-000000000001','10290310-0000-0000-0000-000000000008','active');
+insert into public.program_assignments(id,program_id,version_id,professional_user_id,student_user_id) values
+ ('10290310-0000-0000-0000-000000000301','10290310-0000-0000-0000-000000000102','10290310-0000-0000-0000-000000000201','10290310-0000-0000-0000-000000000001','10290310-0000-0000-0000-000000000008');
+set local role authenticated;
+set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000001';
+select public.delete_professional_program('10290310-0000-0000-0000-000000000101');
+select pg_temp.assert_true(not exists(select 1 from public.programs where id='10290310-0000-0000-0000-000000000101'),'unused model can be permanently deleted');
+select pg_temp.expect_error($q$select public.delete_professional_program('10290310-0000-0000-0000-000000000099')$q$,'42501');
+select pg_temp.expect_error($q$select public.delete_professional_program('10290310-0000-0000-0000-000000000102')$q$,'P0001');
+select pg_temp.assert_true(exists(select 1 from public.programs where id='10290310-0000-0000-0000-000000000102'),'assigned model and its history are preserved');
+set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000002';
+select pg_temp.expect_error($q$select public.delete_professional_program('10290310-0000-0000-0000-000000000102')$q$,'42501');
 rollback;
 select '1..1';
-select 'ok 1 - personal invite backfill, normalization, collisions, custom stability, reuse and individual invite compatibility';
+select 'ok 1 - professional profiles, reusable invites, safe model deletion and history preservation';
 
 
 

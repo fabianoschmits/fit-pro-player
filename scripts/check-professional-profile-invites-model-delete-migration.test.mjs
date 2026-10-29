@@ -23,3 +23,13 @@ test('personal invite codes are unique, personal, and backed by edit and repeate
   assert.match(migration, /if not invite\.is_personal then[\s\S]*?update public\.professional_invites set status = 'active'/i)
   assert.match(migration, /and not is_personal[\s\S]*?revoke/i)
 })
+
+test('professional model deletion is owner-scoped and keeps referenced history', () => {
+  assert.match(migration, /create or replace function public\.delete_professional_program\(p_program_id uuid\)/i)
+  assert.match(migration, /security definer\s+set search_path = public, pg_temp[\s\S]*?delete from public\.programs/i)
+  assert.match(migration, /professional capability required[\s\S]*?program ownership required/i)
+  assert.match(migration, /for update[\s\S]*?from public\.program_assignments where program_id=owned_program\.id/i)
+  assert.match(migration, /raise exception 'program_in_use' using errcode='P0001'/i)
+  assert.match(migration, /exception when foreign_key_violation[\s\S]*?raise exception 'program_in_use'/i)
+  assert.match(migration, /grant execute on function public\.delete_professional_program\(uuid\) to authenticated/i)
+})

@@ -21,7 +21,9 @@ const rpc = {
   professional_client_summaries:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', program_id:PROGRAM, program_title:program.title }],
   professional_client_detail:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', assignments:[], executions:[] }],
   professional_student_relationships:[{ id:'relationship', professional_user_id:USER, student_user_id:STUDENT, status:'active', created_at:'2026-10-01T12:00:00Z' }],
-  professional_invites:[{ id:'invite', code:'A1B2C3D4E5', status:'pending', created_at:'2026-10-04T12:00:00Z' }],
+  professional_invites:[{ id:'personal-invite', code:'ANASOUZA', status:'pending', kind:'code', is_personal:true, is_custom:false, created_at:'2026-10-01T12:00:00Z' },{ id:'invite', code:'A1B2C3D4E5', status:'pending', kind:'code', is_personal:false, is_custom:false, created_at:'2026-10-04T12:00:00Z' },{ id:'accepted-invite', code:'ACCEPTED1', status:'active', kind:'code', is_personal:false, is_custom:false, created_at:'2026-10-03T12:00:00Z', accepted_at:'2026-10-03T13:00:00Z' },{ id:'revoked-invite', code:'REVOKED1', status:'revoked', kind:'code', is_personal:false, is_custom:false, created_at:'2026-10-02T12:00:00Z' }],
+  save_professional_personal_invite:args=>({id:'personal-invite',code:'CODIGOFIT',status:'pending',kind:'code',is_personal:true,is_custom:true,created_at:'2026-10-01T12:00:00Z'}),
+  revoke_professional_invite:args=>({id:args.p_invite_id,status:'revoked'}),
   programs:[program], program_versions:[version],
   student_professional_cards:professionals,
   student_professional_detail:args => { const person = professionals.find(item => item.professional_user_id === args.p_professional_user_id); return person ? [{ professional:person, relationship:{ id:person.relationship_id, status:'active', linked_at:person.linked_at }, materials:[person === professionals[0] ? material : { ...material, assignment_id:'old-assignment', title:'Corrida histórica', status:'revoked' }], executions:[] }] : [] },
@@ -196,6 +198,37 @@ test('unsent professional plan shows a compact red-outline warning', async ({pag
   expect(parseFloat(style.padding)).toBeLessThanOrEqual(10)
 })
 
+
+test('professional invitations separate reusable code and preserve generated invite history', async ({page}) => {
+  await page.context().grantPermissions(['clipboard-read','clipboard-write'])
+  await seed(page,{professional:true,rpc})
+  await page.goto('/#/professional/invites')
+  const personal = page.locator('.management-personal-invite-panel')
+  await expect(personal).toContainText('ANASOUZA')
+  await expect(personal).toContainText('Reutilizável')
+  await expect(personal).not.toContainText('Pendente')
+  await expect(page.getByText('ACCEPTED1')).toBeVisible()
+  await expect(page.getByText('REVOKED1')).toBeVisible()
+  await expect(page.getByRole('button',{name:'Revogar',exact:true})).toHaveCount(1)
+  for (const width of [320,360,390,430]) {
+    await page.setViewportSize({width,height:800})
+    await expect(personal).toBeVisible()
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
+  }
+
+  await personal.getByRole('button',{name:'Editar código',exact:true}).click()
+  await personal.getByRole('textbox',{name:'Código pessoal',exact:true}).fill('Código Fit')
+  await personal.getByRole('button',{name:'Salvar código',exact:true}).click()
+  await expect(personal).toContainText('CODIGOFIT')
+  await expect(personal).toContainText('Código personalizado')
+  await personal.getByRole('button',{name:'Copiar código',exact:true}).click()
+  await expect(page.locator('.management-notice')).toContainText('Código copiado.')
+
+  await page.getByRole('button',{name:'Revogar',exact:true}).click()
+  await expect(page.getByText('Revogar este convite?')).toBeVisible()
+  await page.getByRole('button',{name:'Confirmar',exact:true}).click()
+  await expect(page.getByText('Convite revogado.',{exact:true})).toBeVisible()
+})
 test('legacy program creation redirects to the shared template editor', async ({page}) => {
  let created=null
  await seed(page,{professional:true,rpc:{programs:()=>created?[created]:[],program_versions:[],create_program:args=>{created={...program,title:args.p_title};return created}}})
@@ -223,6 +256,34 @@ test('professional model without a published workout keeps a neutral icon', asyn
  await page.goto('/#/professional/templates')
  await expect(page.locator('.management-template-icon .plan-routine-body-thumb')).toHaveCount(0)
  await expect(page.locator('.management-template-icon svg')).toHaveCount(1)
+})
+
+test('professional can delete an unused model from its detail after confirmation', async ({page}) => {
+ const calls=[]
+ await seed(page,{professional:true,rpc:{...rpc,programs:[{...program,archived:true}],delete_professional_program:args=>{calls.push(args);return null}}})
+ await page.goto(`/#/professional/templates/${PROGRAM}`)
+ await page.getByText('Histórico e opções do modelo',{exact:true}).click()
+ await page.getByRole('button',{name:'Excluir modelo',exact:true}).click()
+ await expect(page.getByText('Excluir modelo permanentemente?',{exact:true})).toBeVisible()
+ await page.getByRole('button',{name:'Excluir modelo',exact:true}).last().click()
+ await expect.poll(()=>calls).toEqual([{p_program_id:PROGRAM}])
+ await expect(page).toHaveURL(/#\/professional\/templates$/)
+})
+
+test('professional is directed to archive an assigned model when safe deletion is blocked', async ({page}) => {
+ await page.emulateMedia({reducedMotion:'reduce'})
+ const calls=[]
+ await seed(page,{professional:true,rpc:{...rpc,programs:[program],delete_professional_program:args=>{calls.push(args);return {__error:{status:400,body:{code:'P0001',message:'program_in_use'}}}},update_program:args=>{calls.push(args);return program}}})
+ await page.goto(`/#/professional/templates/${PROGRAM}`)
+ await page.getByText('Histórico e opções do modelo',{exact:true}).click()
+ await page.getByRole('button',{name:'Excluir modelo',exact:true}).click()
+ await page.getByRole('button',{name:'Excluir modelo',exact:true}).last().click()
+ await expect(page.getByRole('alert')).toContainText('precisa ser arquivado')
+ await page.getByRole('alert').getByRole('button',{name:'Arquivar modelo',exact:true}).click()
+ await page.getByRole('button',{name:'Arquivar',exact:true}).last().click()
+ await expect(page).toHaveURL(/#\/professional\/templates$/)
+ expect(calls[0]).toEqual({p_program_id:PROGRAM})
+ expect(calls[1]).toMatchObject({p_program_id:PROGRAM,p_archived:true})
 })
 
 test('student profile loads workout history on entry and expands actual sets and total duration', async ({page}) => {
