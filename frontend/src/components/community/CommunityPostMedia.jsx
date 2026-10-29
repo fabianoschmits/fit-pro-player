@@ -67,7 +67,7 @@ function ImageRequest({ path, url, client, caption, onStatus, attempt }) {
       setSrc(nextUrl)
     } catch { publish('error') }
   }
-  return src ? <img ref={imageRef} className="community-post-image" src={src} alt={caption || 'Foto de treino'} decoding="async" data-orientation={orientation || undefined} onLoad={loaded} onError={failed} /> : <div className="community-post-image" />
+  return src ? <img ref={imageRef} className="community-post-image" src={src} alt={caption || 'Foto de treino'} decoding="async" draggable={false} onContextMenu={event => event.preventDefault()} onDragStart={event => event.preventDefault()} data-orientation={orientation || undefined} onLoad={loaded} onError={failed} /> : <div className="community-post-image" />
 }
 
 export function CommunityImage({ post, client, onStatus, attempt = 0 }) {
@@ -83,14 +83,35 @@ export function CommunityPostSkeleton() {
   </article>
 }
 
-export default function CommunityPostMedia({ post, client, children }) {
+export default function CommunityPostMedia({ post, client, children, onLike }) {
   const { url } = sourceOf(post, client)
   const [state, setState] = useState({ url, status: 'loading' })
   const [attempt, setAttempt] = useState(0)
   const status = state.url === url ? state.status : 'loading'
   const ready = status === 'ready'
+  const gesture = useRef({ start:null, last:null, likedAt:0 })
+  useEffect(() => { gesture.current = { start:null, last:null, likedAt:0 } }, [url])
+  const cancelTap = () => { gesture.current.start=null; gesture.current.last=null }
+  const pointerDown = event => {
+    if (event.pointerType === 'mouse') return
+    if (!ready || !event.isPrimary || event.target.tagName !== 'IMG') { cancelTap(); return }
+    gesture.current.start={x:event.clientX,y:event.clientY,time:Date.now(),id:event.pointerId}
+  }
+  const pointerMove = event => {
+    const start=gesture.current.start
+    if (start && Math.hypot(event.clientX-start.x,event.clientY-start.y)>12) cancelTap()
+  }
+  const pointerUp = event => {
+    const {start,last}=gesture.current, now=Date.now()
+    if (!start || start.id!==event.pointerId) return
+    gesture.current.start=null
+    if (now-start.time>300 || Math.hypot(event.clientX-start.x,event.clientY-start.y)>12) { cancelTap(); return }
+    if (last && now-last.time<300 && Math.hypot(event.clientX-last.x,event.clientY-last.y)<24) {
+      gesture.current.last=null; gesture.current.likedAt=now; onLike?.()
+    } else gesture.current.last={x:event.clientX,y:event.clientY,time:now}
+  }
   const retry = () => { setState({ url, status: 'loading' }); setAttempt(value => value + 1) }
-  const media = <div className={`community-media-slot${ready ? ' is-ready' : ''}${status === 'error' ? ' is-error' : ''}`} aria-busy={status === 'loading'}>
+  const media = <div className={`community-media-slot${ready ? ' is-ready' : ''}${status === 'error' ? ' is-error' : ''}`} aria-busy={status === 'loading'} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={cancelTap} onDoubleClick={event => { if (ready && event.target.tagName === 'IMG' && Date.now()-gesture.current.likedAt>500) onLike?.() }}>
     <CommunityImage post={post} client={client} attempt={attempt} onStatus={value => setState({ url, status: value })} />
     {!ready && <div className="community-media-placeholder">{status === 'error' ? <div className="community-media-error" role="status"><p>Não foi possível carregar esta foto.</p><button type="button" onClick={retry}>Tentar novamente</button></div> : <><CommunityPostSkeleton /><span className="community-media-loading-label" role="status">Carregando foto…</span></>}</div>}
   </div>

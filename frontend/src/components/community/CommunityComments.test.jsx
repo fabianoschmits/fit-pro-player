@@ -38,6 +38,42 @@ const byText = text => [...container.querySelectorAll('button')].find(button => 
 const row = id => container.querySelector(`[data-community-comment-id="${id}"]`)
 const click = async target => { await act(async () => target.click()) }
 
+it('shows ten comments per page and resets pagination when reopened', async () => {
+  await mount({ comments: Array.from({length:23},(_,i)=>comment(`page-${i}`,`Comentário ${i}`)) })
+  expect(container.querySelectorAll('[data-community-comment-id]')).toHaveLength(10)
+  await click(byText('Carregar mais comentários'))
+  expect(container.querySelectorAll('[data-community-comment-id]')).toHaveLength(20)
+  await click(byText('Carregar mais comentários'))
+  expect(container.querySelectorAll('[data-community-comment-id]')).toHaveLength(23)
+  expect(byText('Carregar mais comentários')).toBeUndefined()
+  await click(container.querySelector('[aria-label="Fechar comentários"]')); await click(container.querySelector('[data-reopen]'))
+  expect(container.querySelectorAll('[data-community-comment-id]')).toHaveLength(10)
+})
+
+it('locks the background and restores its previous position and styles on close', async () => {
+  vi.spyOn(window,'scrollY','get').mockReturnValue(420)
+  const scroll=vi.spyOn(window,'scrollTo').mockImplementation(()=>{})
+  document.body.style.overflow='auto'
+  await mount()
+  expect(document.body.style.position).toBe('fixed')
+  expect(document.body.style.top).toBe('-420px')
+  await click(container.querySelector('[aria-label="Fechar comentários"]'))
+  expect(document.body.style.position).toBe('')
+  expect(document.body.style.overflow).toBe('auto')
+  expect(scroll).toHaveBeenLastCalledWith(0,420)
+  document.body.style.overflow=''
+})
+
+it('paginates replies and keeps a newly submitted comment visible', async () => {
+  await mount({ comments:[...Array.from({length:12},(_,i)=>comment(`root-${i}`,`Raiz ${i}`)),...Array.from({length:15},(_,i)=>comment(`reply-${i}`,`Resposta ${i}`,otherIdentity,'root-0'))] })
+  await click(byText('Ver 15 respostas'))
+  expect(container.querySelectorAll('.community-comment-thread--nested')).toHaveLength(10)
+  await click(byText('Carregar mais respostas'))
+  expect(container.querySelectorAll('.community-comment-thread--nested')).toHaveLength(15)
+  await type('Meu novo comentário'); await act(async()=>submit())
+  expect(row('saved')?.textContent).toContain('Meu novo comentário')
+})
+
 it('does not send an opposite like while the first request is pending across reopening', async () => {
   const request = deferred(), client = mockClient(() => request.promise)
   await mount({ comments: [comment('liked', 'Treino')], client })

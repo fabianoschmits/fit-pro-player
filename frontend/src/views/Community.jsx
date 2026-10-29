@@ -1,3 +1,4 @@
+import { pageScrollY } from '../lib/page-scroll-lock.js'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -87,7 +88,7 @@ function CommunitySession() {
     }).catch(() => { if (!cancelled) { setViewedProfileState('unavailable'); setError('Não foi possível carregar este perfil.') } })
     const position = store.snapshot(scope).scrollY
     const frame = requestAnimationFrame(() => window.scrollTo(0, position))
-    const onScroll = () => { store.saveScroll(scope, window.scrollY); setShowFeedTop(window.scrollY > 280) }
+    const onScroll = () => { store.saveScroll(scope, pageScrollY()); setShowFeedTop(pageScrollY() > 280) }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => { cancelled = true; cancelAnimationFrame(frame); window.removeEventListener('scroll', onScroll) }
   }, [client, userId, scope, viewedUserId, store])
@@ -154,8 +155,8 @@ function CommunitySession() {
     if (!recipient || recipient === userId) return
     try { await client.from('community_notifications').insert({ recipient_id: recipient, actor_id: userId, type, post_id: postId, comment_id: commentId }) } catch { /* Do not undo a saved interaction if notification delivery fails. */ }
   }
-  const toggleLike = async post => {
-    if (pendingLikes.current.has(post.id)) return
+  const toggleLike = async (post, likeOnly = false) => {
+    if (pendingLikes.current.has(post.id) || (likeOnly && post.likes?.some(like => like.user_id === userId))) return
     pendingLikes.current.add(post.id); setError('')
     const likes = post.likes || [], liked = likes.some(like => like.user_id === userId)
     mutatePost(post.id, current => ({ ...current, likes: [...(current.likes || []).filter(like => like.user_id !== userId), ...(!liked ? [{ user_id: userId, user: ownIdentity }] : [])] }))
@@ -234,7 +235,7 @@ function CommunitySession() {
     } catch (failure) { setError(failure.message) }
   }
   const openEdit = post => { setEditingPost(post); setFile(null); setCaption(post.caption || ''); setCommentsDisabled(post.comments_disabled); setCropConfirmed(true); setError(''); setComposerOpen(true); setActiveMenuId(null) }
-  const openUser = id => { if (id) { store.saveScroll(scope, window.scrollY); setCommentsId(null); navigate(id === userId ? '/community/profile' : `/community/user/${id}`) } }
+  const openUser = id => { if (id) { store.saveScroll(scope, pageScrollY()); setCommentsId(null); navigate(id === userId ? '/community/profile' : `/community/user/${id}`) } }
   const markRead = async () => {
     setNotificationsOpen(true)
     const ids = notifications.filter(item => !item.read_at).map(item => item.id)
@@ -251,14 +252,14 @@ function CommunitySession() {
     {showFeedTop && <button className="community-feed-top" aria-label="Voltar ao topo e atualizar o feed" onClick={() => { store.saveScroll(scope, 0); window.scrollTo({ top: 0, behavior: 'smooth' }); void store.load(scope, true) }}>↑</button>}
     <header className="community-topbar"><div><p className="community-kicker">FIT PRO PLAYER</p><h1>Comunidade</h1><p className="community-intro">Treinos, conquistas e conversas que mantêm o ritmo.</p></div><div className="community-topbar-actions"><input ref={fileInput} className="community-file-input" type="file" accept="image/*" onChange={chooseFile} /><button className="community-primary-action community-topbar-publish" onClick={() => fileInput.current?.click()}><Icon name="camera" /><span>Nova postagem</span></button><MessageButton client={client} userId={userId} /><button className="community-notifications" aria-label="Notificações" onClick={markRead}><Icon name="bell" />{notifications.some(item => !item.read_at) && <b>Novas notificações</b>}</button><div className="community-profile-tools"><button className="community-profile-button" aria-label="Meu perfil" onClick={() => openUser(userId)}><Avatar profile={ownIdentity} /></button></div></div></header>
     <div className="community-layout"><main className="community-feed" aria-label="Feed da comunidade">
-      {viewedUserId && <section className="community-profile-heading">{viewedProfileState === 'unavailable' ? <><strong>Este perfil não está disponível.</strong><button className="community-profile-back" onClick={() => navigate('/community')}>Voltar para a comunidade</button></> : <><Avatar profile={viewedUserId === userId ? ownIdentity : viewedProfile} size="sm" /><div><p>{viewedUserId === userId ? 'Seu perfil' : 'Perfil'}</p><strong>{viewedUserId === userId ? ownIdentity.display_name : viewedProfile?.display_name || 'Carregando perfil…'}</strong></div>{viewedUserId !== userId && <button className="dm-profile-message" aria-label="Enviar mensagem" onClick={() => navigate(`/community/messages/${viewedUserId}`)}><Icon name="message" /></button>}<button className="community-profile-back" onClick={() => navigate('/community')}><Icon name="chevronLeft" /> Voltar</button></>}</section>}
+      {viewedUserId && <section className="community-profile-heading">{viewedProfileState === 'unavailable' ? <><strong>Este perfil não está disponível.</strong><button className="community-profile-back" onClick={() => navigate('/community')}>Voltar para a comunidade</button></> : <><Avatar profile={viewedUserId === userId ? ownIdentity : viewedProfile} size="sm" /><div><p>{viewedUserId === userId ? 'Seu perfil' : 'Perfil'}</p><strong>{viewedUserId === userId ? ownIdentity.display_name : viewedProfile?.display_name || 'Carregando perfil…'}</strong></div><span className="community-profile-actions"><button className="community-profile-back" onClick={() => navigate('/community')}><Icon name="chevronLeft" /> Voltar</button>{viewedUserId !== userId && <button className="dm-profile-message" aria-label="Enviar mensagem" onClick={() => navigate(`/community/messages/${viewedUserId}`)}><Icon name="message" /></button>}</span></>}</section>}
       {!viewedUserId && <button type="button" data-community-composer className="community-composer-invite" onClick={() => fileInput.current?.click()}><Avatar profile={ownIdentity} /><span><strong>Compartilhe seu treino</strong><small>Uma foto, conquista ou momento da sua jornada.</small></span><Icon name="camera" /></button>}
       <div className="community-feed-heading"><h2>{viewedUserId ? 'Postagens' : 'Feed'}</h2><span data-community-feed-context>Recentes</span></div>
       {(error || page.error) && <div className="community-error" role="alert">{error || page.error}{page.error && <button onClick={() => store.load(scope, true)}>Tentar novamente</button>}</div>}
       {pendingPost && <div className="community-post-uploading" role="status"><img src={preview || undefined} alt="" /><div><strong>Publicando sua foto…</strong><span /></div></div>}
       {!page.initialized && !page.error && !posts.length && <div className="community-skeleton-list"><CommunityPostSkeleton /><CommunityPostSkeleton /></div>}
       {page.initialized && !page.loading && !posts.length && !page.error && <div className="community-empty">{viewedUserId ? 'Este usuário ainda não publicou fotos.' : 'Ainda não há postagens. Compartilhe seu primeiro treino!'}</div>}
-      {posts.map(post => <CommunityPostMedia key={post.id} post={post} client={client}>{image => <article className={`community-post${highlightedPostId === post.id ? ' is-report-target' : ''}`} data-post-id={post.id}>
+      {posts.map(post => <CommunityPostMedia key={post.id} post={post} client={client} onLike={() => toggleLike(post, true)}>{image => <article className={`community-post${highlightedPostId === post.id ? ' is-report-target' : ''}`} data-post-id={post.id}>
       <header className="community-post-head"><button className="community-author-link" onClick={() => openUser(post.author_id)} aria-label={`Abrir perfil de ${post.author.display_name}`}><Avatar profile={post.author} /><span><strong>{post.author.display_name}</strong><small>{fmtDate(post.created_at)}</small></span></button><div className={`community-post-menu${activeMenuId === post.id ? ' is-open' : ''}`}><button className="community-more" aria-label="Mais opções" aria-expanded={activeMenuId === post.id} onClick={() => setActiveMenuId(activeMenuId === post.id ? null : post.id)}>•••</button><div className="community-post-menu-actions">{post.author_id === userId ? <><button onClick={() => openEdit(post)}>Editar</button><button onClick={() => removePost(post)}>Excluir</button></> : <button onClick={event => { const returnFocus = event.currentTarget.closest('.community-post-menu')?.querySelector('.community-more'); setActiveMenuId(null); setReportTarget({ targetKind: 'post', postId: post.id, commentId: null, authorId: post.author_id, authorName: post.author.display_name, avatarRef: post.author.avatar_ref, returnFocus }) }}>Denunciar</button>}</div></div></header>
       {image}
       <div className="community-post-body"><div className="community-actions"><span className="community-like-action"><button aria-label="Curtir postagem" aria-pressed={post.likes.some(like => like.user_id === userId)} className={post.likes.some(like => like.user_id === userId) ? 'is-liked' : ''} onClick={() => toggleLike(post)}><Icon name="heart" /> {post.likes.length}</button>{likeAnimations.filter(item => item.postId === post.id).map(item => <span className="community-like-float" key={item.id} aria-hidden="true"><Icon name="heart" /></span>)}</span><span className="community-comment-action">{blockedNoticeId === post.id && <span className="community-blocked-notice" role="status">Os comentários estão bloqueados.</span>}<button className={post.comments_disabled ? 'community-comment-button is-blocked' : ''} aria-label="Abrir comentários" onClick={() => { if (!post.comments_disabled) setCommentsId(post.id); else { clearTimeout(noticeTimer.current); setBlockedNoticeId(post.id); noticeTimer.current = setTimeout(() => setBlockedNoticeId(null), 2200) } }}><Icon name="message" /> {post.comments.length}</button></span></div>

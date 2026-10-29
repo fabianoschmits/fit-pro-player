@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Icon from '../Icon.jsx'
 import { useDialogFocus } from '../../lib/dialog-focus.js'
+import { usePageScrollLock } from '../../lib/page-scroll-lock.js'
+
+const PAGE_SIZE = 10
 
 // Requests outlive an open sheet. Keep the guard for the authenticated client
 // so reopening cannot send an opposite operation before the first one settles.
@@ -25,8 +28,12 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
   const [body, setBody] = useState(''), [replyTo, setReplyTo] = useState(null), [editing, setEditing] = useState(null)
   const [menu, setMenu] = useState(null), [highlight, setHighlight] = useState(null), [expanded, setExpanded] = useState(() => new Set())
   const [error, setError] = useState(''), [sending, setSending] = useState(false)
+  const [visibleCount,setVisibleCount] = useState(PAGE_SIZE), [replyCounts,setReplyCounts] = useState({})
+  const [submittedIds,setSubmittedIds] = useState(() => new Set())
+  const roots = comments.filter(item => !item.parent_comment_id)
   const input = useRef(null), dialog = useRef(null), pending = useRef(pendingComments(client, userId)), sendingRef = useRef(false), timer = useRef(null)
   useDialogFocus(dialog, { onClose, locked: sending, titleId: 'community-comments-title' })
+  usePageScrollLock()
   const change = updater => onCommentsChange(post.id, updater)
   useEffect(() => () => clearTimeout(timer.current), [])
   useEffect(() => {
@@ -41,9 +48,20 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
     const target = comments.find(comment => comment.id === highlightCommentId)
     if (!target) return
     setHighlight(target.id)
+    // A direct link must reveal the target even when it belongs to a later page.
+    let ancestor=target
+    const visited=new Set(), counts={}
+    while (ancestor?.parent_comment_id && !visited.has(ancestor.id)) {
+      visited.add(ancestor.id)
+      const siblings=comments.filter(item=>item.parent_comment_id===ancestor.parent_comment_id)
+      counts[ancestor.parent_comment_id]=Math.ceil((siblings.findIndex(item=>item.id===ancestor.id)+1)/PAGE_SIZE)*PAGE_SIZE
+      ancestor=comments.find(item=>item.id===ancestor.parent_comment_id)
+    }
+    if (ancestor) setVisibleCount(count=>Math.max(count,Math.ceil((roots.findIndex(item=>item.id===ancestor.id)+1)/PAGE_SIZE)*PAGE_SIZE))
+    setReplyCounts(previous=>({...previous,...counts}))
     setExpanded(previous => {
       const next = new Set(previous); let parent = target.parent_comment_id
-      while (parent) { next.add(parent); parent = comments.find(comment => comment.id === parent)?.parent_comment_id }
+      while (parent && !next.has(parent)) { next.add(parent); parent = comments.find(comment => comment.id === parent)?.parent_comment_id }
       return next
     })
     requestAnimationFrame(() => document.querySelector(`[data-community-comment-id="${target.id}"]`)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }))
@@ -102,10 +120,12 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
         setEditing(null)
       } else {
         optimisticId = `local-${crypto.randomUUID()}`
+        setSubmittedIds(ids=>new Set(ids).add(optimisticId))
         const optimistic = { id: optimisticId, post_id: post.id, author_id: userId, author: ownIdentity, body: text, parent_comment_id: replyTo?.id || null, created_at: new Date().toISOString(), likes: [], pending: true }
         change(items => [...items, optimistic])
         const result = await onSubmit(post, text, replyTo?.id || null)
         if (result?.error || !result?.comment) throw result?.error || Error('Não foi possível enviar o comentário.')
+        setSubmittedIds(ids=>new Set(ids).add(result.comment.id))
         change(items => [...items.filter(item => item.id !== optimisticId && item.id !== result.comment.id), result.comment])
       }
       setBody(''); setReplyTo(null)
@@ -127,12 +147,16 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
         </div><small>{comment.pending ? 'Enviando…' : fmtDate(comment.created_at)}</small><p>{comment.body}</p><div className="community-comment-actions"><button disabled={comment.pending} aria-label={liked ? 'Remover curtida do comentário' : 'Curtir comentário'} aria-pressed={liked} className={liked ? 'is-liked' : ''} onClick={() => toggleLike(comment)}><Icon name="heart" /> {comment.likes?.length || 0}</button><button disabled={sending || comment.pending || post.comments_disabled} onClick={() => selectReply(comment)}>Responder</button></div></div>
       </div>
       {replies.length > 0 && <button className="community-reply-toggle" onClick={() => setExpanded(previous => { const result = new Set(previous); result.has(comment.id) ? result.delete(comment.id) : result.add(comment.id); return result })}>{expanded.has(comment.id) ? 'Ocultar' : 'Ver'} {replies.length} resposta{replies.length === 1 ? '' : 's'}</button>}
-      {expanded.has(comment.id) && replies.map(reply => renderThread(reply, next))}
+      {expanded.has(comment.id) && <>{replies.filter((reply,index)=>index<(replyCounts[comment.id] || PAGE_SIZE) || submittedIds.has(reply.id)).map(reply => renderThread(reply, next))}
+      {replies.length>(replyCounts[comment.id] || PAGE_SIZE) && <button className="community-comments-more" onClick={()=>setReplyCounts(counts=>({...counts,[comment.id]:(counts[comment.id] || PAGE_SIZE)+PAGE_SIZE}))}>Carregar mais respostas</button>}</>}
     </div>
   }
   return <div className="community-overlay" onMouseDown={event => event.target === event.currentTarget && onClose()}><motion.div ref={dialog} role="dialog" aria-modal="true" aria-label="Comentários" className="community-sheet community-comments-sheet" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}>
     <div className="community-sheet-handle" /><div className="community-sheet-title"><h2 id="community-comments-title">Comentários</h2><button aria-label="Fechar comentários" onClick={onClose}><Icon name="xmark" /></button></div>
-    <div className="community-comments-scroll">{comments.filter(item => !item.parent_comment_id).map(item => renderThread(item))}</div>
+    <div className="community-comments-scroll">{roots.filter((item,index)=>index<visibleCount || submittedIds.has(item.id)).map(item => renderThread(item))}
+      {roots.length>visibleCount && <button className="community-comments-more" onClick={()=>setVisibleCount(count=>count+PAGE_SIZE)}>Carregar mais comentários</button>}
+      {!comments.length && <p className="community-comments-empty">Ainda não há comentários.</p>}
+    </div>
     {replyTo && <div className="community-replying">Respondendo a <strong>{replyTo.author?.display_name}</strong><button disabled={sending} onClick={() => { if (!sendingRef.current) setReplyTo(null) }}>Cancelar</button></div>}
     {editing && <div className="community-replying">Editando seu comentário<button disabled={sending} onClick={() => { if (sendingRef.current) return; setEditing(null); setBody('') }}>Cancelar</button></div>}
     {error && <div className="community-error" role="alert">{error}</div>}
