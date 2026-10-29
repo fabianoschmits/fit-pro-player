@@ -12,9 +12,9 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 const render = (children, route = '/professional/profile/edit') => act(async () => root.render(<MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>))
 
 describe('management workspace', () => {
-  it('lets students and professionals return to the app without losing the contextual back destination', async () => {
-    await render(<ManagementLayout title="Editar perfil" backTo="/professional/profile">Conteúdo</ManagementLayout>)
-    expect(container.querySelector('a[aria-label="Voltar ao aplicativo"]')?.getAttribute('href')).toBe('/more')
+  it.each(['professional', 'student'])('returns %s to Home without losing the contextual back destination', async audience => {
+    await render(<ManagementLayout audience={audience} title="Editar perfil" backTo="/professional/profile">Conteúdo</ManagementLayout>)
+    expect(container.querySelector('a[aria-label="Voltar ao aplicativo"]')?.getAttribute('href')).toBe('/home')
     expect(container.querySelector('main h1')?.textContent).toBe('Editar perfil')
     expect(container.querySelector('button[aria-label="Voltar"]')).not.toBeNull()
   })

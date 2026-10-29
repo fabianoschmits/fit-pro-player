@@ -24,7 +24,7 @@ export default function ManagementLayout({ title, subtitle, backTo, action, audi
   return <div className={`management-layout ${className}`.trim()}>
     <header className="management-topbar">
       <Link className="management-brand" to={home}><span className="management-brand-mark"><Icon name={audience === 'student' ? 'personCircle' : 'clipboard'} /></span><span>{t(audience === 'student' ? 'Meus profissionais' : 'Área profissional')}<small>Fit Pro Player</small></span></Link>
-      <Link className="management-return" to="/more" aria-label={t('Back to app')}><Icon name="chevronLeft" /><span>{t('Back to app')}</span></Link>
+      <Link className="management-return" to="/home" aria-label={t('Back to app')}><Icon name="chevronLeft" /><span>{t('Back to app')}</span></Link>
     </header>
     <div className={`management-workspace${navigation ? '' : ' management-workspace-solo'}`}>
       {navigation && <aside className="management-sidebar">{navigation}</aside>}

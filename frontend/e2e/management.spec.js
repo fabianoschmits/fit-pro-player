@@ -53,7 +53,15 @@ test('a narrow workspace displays professionals and links to the plan library', 
  await expect(page.getByRole('link',{name:'Planos recebidos · Abrir biblioteca'})).toBeVisible()
  await expect(page.locator('.management-person-link')).toHaveCount(2)
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2)).toBe(true)
- await page.getByRole('link',{name:'Voltar ao aplicativo',exact:true}).click();await expect(page).toHaveURL(/#\/account$/)
+ await page.getByRole('link',{name:'Voltar ao aplicativo',exact:true}).click();await expect(page).toHaveURL(/#\/home$/)
+})
+
+test('leaving the professional workspace returns to Home', async ({page}) => {
+ await seed(page,{professional:true,rpc})
+ await page.goto('/#/professional')
+ await page.getByRole('link',{name:'Voltar ao aplicativo',exact:true}).click()
+ await expect(page).toHaveURL(/#\/home$/)
+ await expect(page.locator('.management-layout')).toHaveCount(0)
 })
 
 test('browser Back recovers a workspace after a failed page import', async ({page}) => {
