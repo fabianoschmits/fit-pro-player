@@ -20,10 +20,9 @@ export function normalizeProfessionalProfile(input = {}) {
   }
 }
 
-function rowFromProfile(profile, userId) {
+function rowFromProfile(profile) {
   const normalized = normalizeProfessionalProfile(profile)
   return {
-    user_id: userId,
     professional_name: normalized.professionalName,
     bio: normalized.bio,
     specialties: normalized.specialties,
@@ -32,6 +31,11 @@ function rowFromProfile(profile, userId) {
     registration_number: normalized.registrationNumber,
   }
 }
+
+const profileSaveError = code => code === '42501' ? 'professional-profile-forbidden'
+  : code === '22023' ? 'professional-profile-invalid'
+    : code === 'P0002' ? 'professional-profile-not-found'
+      : 'professional-profile-save-failed'
 
 export function createProfessionalProfileRepository({ client } = {}) {
   const requireClient = () => {
@@ -53,10 +57,10 @@ export function createProfessionalProfileRepository({ client } = {}) {
     return (response.data || []).some(item => item.role === 'professional')
   }
   const save = async (userId, profile) => {
-    const row = rowFromProfile(profile, userId)
+    const row = rowFromProfile(profile)
     if (!row.professional_name) throw new Error('professional-name-required')
-    const response = await requireClient().from('professional_profiles').upsert(row, { onConflict: 'user_id' }).select('*').single()
-    if (response?.error) throw new Error(response.error.code === '42501' ? 'professional-profile-forbidden' : 'professional-profile-save-failed')
+    const response = await requireRpc().rpc('save_professional_profile', { p_user_id: userId, ...Object.fromEntries(Object.entries(row).map(([key, value]) => [`p_${key}`, value])) })
+    if (response?.error) throw new Error(profileSaveError(response.error.code))
     return normalizeProfessionalProfile(response.data)
   }
   const provision = async (userId, profile) => {

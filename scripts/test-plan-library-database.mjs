@@ -27,6 +27,8 @@ try { await db.exec(readFileSync('supabase/tests/202610280007_professional_plan_
 await db.exec(readFileSync('supabase/migrations/202610280008_professional_student_legacy_profile.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610280008_professional_student_legacy_profile.sql', 'utf8')) } catch(e) { console.error(e.message); process.exit(1) }
 console.log('PASS legacy student profile compatibility')
+await db.exec(readFileSync('supabase/migrations/202610290003_professional_profile_invites_and_model_delete.sql', 'utf8'))
+try { await db.exec(readFileSync('supabase/tests/202610290003_professional_profile_invites_model_delete.sql', 'utf8')); console.log('PASS professional profile save contract') } catch(e) { console.error(e.message,e.where,e.query); process.exit(1) }
 await db.exec(readFileSync('supabase/migrations/202610290001_exercise_sprite_requirement.sql', 'utf8'))
 for (const name of readdirSync('supabase/migrations').filter(name => name.endsWith('_exercise_sprite_catalogue.sql')).sort()) {
  await db.exec(readFileSync('supabase/migrations/' + name, 'utf8'))

@@ -10,18 +10,34 @@ describe('professional profile repository', () => {
     expect(profile.verificationStatus).toBe('verified')
   })
 
-  it('reads capability and saves only editable fields through the table boundary', async () => {
-    const calls = []
-    const client = { from: vi.fn(table => {
-      calls.push(table)
-      if (table === 'user_roles') return { select: () => ({ eq: async () => ({ data: [{ role: 'professional' }], error: null }) }) }
-      return { upsert: (row, options) => ({ select: () => ({ single: async () => ({ data: { ...row, verification_status: 'unverified' }, error: null }) }) }) }
-    }) }
-    const repository = createProfessionalProfileRepository({ client })
-    expect(await repository.role('user')).toBe(true)
-    const saved = await repository.save('user', { professionalName: 'Ana', verificationStatus: 'verified' })
-    expect(saved.verificationStatus).toBe('unverified')
-    expect(calls).toEqual(['user_roles', 'professional_profiles'])
+  it('saves normalized editable profile fields through the protected RPC only', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { user_id: 'user', professional_name: 'Ana', bio: 'Sobre', specialties: ['força'], verification_status: 'verified' }, error: null })
+    const from = vi.fn(() => { throw new Error('profile editing must not write tables') })
+    const repository = createProfessionalProfileRepository({ client: { rpc, from } })
+
+    const saved = await repository.save('user', { professionalName: ' Ana ', bio: ' Sobre ', specialties: [' Força '], verificationStatus: 'unverified' })
+
+    expect(rpc).toHaveBeenCalledWith('save_professional_profile', {
+      p_user_id: 'user',
+      p_professional_name: 'Ana',
+      p_bio: 'Sobre',
+      p_specialties: ['força'],
+      p_city_region: null,
+      p_registration_type: null,
+      p_registration_number: null,
+    })
+    expect(from).not.toHaveBeenCalled()
+    expect(saved.verificationStatus).toBe('verified')
+  })
+
+  it('maps protected RPC authorization, validation, and missing-profile errors', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: { code: '42501' } })
+    const repository = createProfessionalProfileRepository({ client: { rpc } })
+    await expect(repository.save('user', { professionalName: 'Ana' })).rejects.toThrow('professional-profile-forbidden')
+    rpc.mockResolvedValueOnce({ error: { code: '22023' } })
+    await expect(repository.save('user', { professionalName: 'Ana' })).rejects.toThrow('professional-profile-invalid')
+    rpc.mockResolvedValueOnce({ error: { code: 'P0002' } })
+    await expect(repository.save('user', { professionalName: 'Ana' })).rejects.toThrow('professional-profile-not-found')
   })
 
   it('provisions a professional account through the protected RPC', async () => {

@@ -43,19 +43,19 @@
 - Add RPC `save_professional_profile(p_user_id uuid, p_professional_name text, p_bio text, p_specialties text[], p_city_region text, p_registration_type text, p_registration_number text) returns public.professional_profiles`.
 - Repository `save(userId, profile)` passes `p_user_id` only so the RPC can assert that the authenticated caller matches; the update targets `auth.uid()` and never selects another profile.
 
-- [ ] **Step 1: Add failing repository and SQL contract tests**
+- [x] **Step 1: Add failing repository and SQL contract tests**
   - Assert the repository calls `save_professional_profile` with normalized fields and maps its returned row.
   - Assert table writes are not used for editing.
   - SQL test: authenticated owner can update editable profile fields; verification status, user ID, and creation time remain unchanged; missing role, other owner, missing profile, invalid name, and invalid specialties are rejected.
-- [ ] **Step 2: Run the tests and verify the expected failures**
+- [x] **Step 2: Run the tests and verify the expected failures**
   - Run: `cd frontend; npx vitest run src/lib/professional-profile.test.js`
   - Run: `node --test scripts/check-professional-profile-invites-model-delete-migration.test.mjs`
   - Expected: repository still calls table `upsert` and migration/RPC contract is absent.
-- [ ] **Step 3: Implement the protected update contract**
+- [x] **Step 3: Implement the protected update contract**
   - Implement the RPC with fixed `search_path`, authenticated role check, input validation, owner-only update, and stable SQLSTATE/messages.
   - Revoke direct `INSERT` and `UPDATE` table grants from `authenticated`, retaining owner `SELECT`; keep provisioning and privileged admin writes on their protected server paths.
   - Switch repository editing to RPC and retain `42501`/validation/not-found distinctions for UI mapping.
-- [ ] **Step 4: Run repository and database integration checks**
+- [x] **Step 4: Run repository and database integration checks**
   - Add migration and SQL test to the existing PGlite harness and `check:supabase` script.
   - Run focused Vitest, `npm run test:plan-library:database`, and `npm run check:supabase`.
 - [ ] **Step 5: Commit**

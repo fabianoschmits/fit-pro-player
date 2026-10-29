@@ -80,7 +80,9 @@ function ProfileWorkspace({ auth }) {
       setSaveState('error')
       setError(cause.message === 'professional-name-required' ? t('Informe seu nome profissional.')
         : cause.message === 'professional-profile-forbidden' ? t('Sua conta não tem acesso à edição profissional.')
-          : provisioning ? t('Não foi possível criar o perfil profissional. Verifique sua conexão.') : t('Não foi possível salvar agora. Verifique sua conexão.'))
+          : cause.message === 'professional-profile-invalid' ? t('Confira os dados informados e tente novamente.')
+            : cause.message === 'professional-profile-not-found' ? t('Seu perfil profissional não foi encontrado. Atualize a página e tente novamente.')
+              : provisioning ? t('Não foi possível criar o perfil profissional. Verifique sua conexão.') : t('Não foi possível salvar agora. Verifique sua conexão.'))
       return false
     } finally { savingRef.current = false; if (active.current) setSaving(false) }
   }

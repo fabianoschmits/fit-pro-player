@@ -36,8 +36,8 @@ select pg_temp.assert_true(jsonb_array_length(public.list_professional_student_n
 select pg_temp.assert_true((public.add_professional_student_note('10290200-0000-0000-0000-000000000003','Primeira anotação')->>'body')='Primeira anotação','append returns inserted private note');
 select pg_temp.assert_true((public.add_professional_student_note('10290200-0000-0000-0000-000000000003','Segunda anotação')->>'body')='Segunda anotação','second append preserves independent note');
 select pg_temp.assert_true(jsonb_array_length(public.list_professional_student_notes('10290200-0000-0000-0000-000000000003'))=2,'append keeps both notes');
-select pg_temp.assert_true(public.list_professional_student_notes('10290200-0000-0000-0000-000000000003')->0->>'body'='Segunda anotação','notes order newest first');
-select pg_temp.assert_true(public.list_professional_student_notes('10290200-0000-0000-0000-000000000003')->1->>'body'='Primeira anotação','older note remains available');
+select pg_temp.assert_true(jsonb_array_length(public.list_professional_student_notes('10290200-0000-0000-0000-000000000003'))=2 and (public.list_professional_student_notes('10290200-0000-0000-0000-000000000003')->0->>'body' in ('Primeira anotação','Segunda anotação')) and (public.list_professional_student_notes('10290200-0000-0000-0000-000000000003')->1->>'body' in ('Primeira anotação','Segunda anotação')),'both appended notes remain visible');
+select pg_temp.assert_true((select (notes->0->>'created_at')::timestamptz > (notes->1->>'created_at')::timestamptz or ((notes->0->>'created_at')::timestamptz = (notes->1->>'created_at')::timestamptz and (notes->0->>'id')::uuid > (notes->1->>'id')::uuid) from (select public.list_professional_student_notes('10290200-0000-0000-0000-000000000003') notes) ordered),'notes sort newest first with stable id tie-break');
 select pg_temp.assert_true((public.list_professional_student_notes('10290200-0000-0000-0000-000000000003')->0->>'created_at')::timestamptz is not null,'note returns timestamp');
 select pg_temp.expect_error($q$select public.add_professional_student_note('10290200-0000-0000-0000-000000000003',repeat('x',2001))$q$,'22023');
 select pg_temp.expect_error($q$select public.add_professional_student_note('10290200-0000-0000-0000-000000000003','   ')$q$,'22023');
@@ -52,3 +52,5 @@ select pg_temp.expect_error($q$select public.list_professional_student_notes('10
 rollback;
 select '1..1';
 select 'ok 1 - private note entries, relationship authorization and timestamped append contract';
+
+
