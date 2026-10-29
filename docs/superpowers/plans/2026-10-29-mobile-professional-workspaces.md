@@ -111,5 +111,5 @@
 - [x] Review every covered route/subroute and relevant overlay at 320, 360, 390, and 430 px using available visual inspection tooling.
 - [x] Fix any clipped, overlapping, unreachable, or horizontally overflowing content found during review.
 - [x] Run the repository's applicable non-test build/check command and record its result (`npm run build`: passed; sprite catalogue matches all 156 exercises).
-- [ ] Review the final diff and commit the implementation.
-- [ ] Push the completed commits to `master` and `main`, verifying both refs point to the intended commit.
+- [x] Review the final diff and commit the implementation (`2265870`).
+- [x] Push the completed commits to `master` and `main`; both remote refs resolve to `2265870`.
