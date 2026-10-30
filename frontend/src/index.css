@@ -13,7 +13,7 @@
   --surface-2: #2c2c2e;   /* pressed + nested fill */
   --surface-3: #3a3a3c;   /* controls (segmented track, switch off) */
   --surface-border: rgba(255,255,255,.06);
-  --field-fill: var(--surface-2);
+  --field-fill: color-mix(in srgb,var(--surface-2) 78%,transparent);
 
   /* text */
   --label:     #ffffff;
@@ -282,10 +282,11 @@ h4.sec{
 
 /* ----------------------------------------------------------------- card -- */
 .card{
-  background:var(--surface);border-radius:var(--r-card);
+  background:color-mix(in srgb,var(--surface) 82%,transparent);border-radius:var(--r-card);
   padding:14px;margin-bottom:12px;
   border:var(--hair) solid var(--surface-border);
   box-shadow:var(--card-shadow);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
 }
 .card .big{font-size:29px;font-weight:650;letter-spacing:0;line-height:1.1}
 .stats-body-progress-link{width:100%;display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:center;gap:11px;text-align:left;transition:transform var(--fast) var(--ease)}
@@ -364,8 +365,9 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;
   min-height:44px;padding:10px 14px;border-radius:var(--r);font-size:15px;font-weight:620;
-  letter-spacing:0;background:var(--surface-2);color:var(--label);
+  letter-spacing:0;background:color-mix(in srgb,var(--surface-2) 80%,transparent);color:var(--label);
   transition:transform var(--fast) var(--ease),background var(--fast),opacity var(--fast);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
 }
 .btn .icn{font-size:19px}
 .btn:active{transform:scale(.975)}
