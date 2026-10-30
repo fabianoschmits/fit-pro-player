@@ -35,7 +35,7 @@ function ProfessionalsOverview() {
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const load = useCallback(async () => ({ professionals: await repo.studentProfessionals(), overview: {} }), [repo])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar seus profissionais.')
-  return <ManagementLayout audience="student" className="student-professionals-page" title={t('Meus profissionais')} subtitle={t('Pessoas que acompanham seu treino')} backTo="/more" action={<Link className="management-button management-button-primary" to="/student/professionals/add">{t('Adicionar profissional')}</Link>}>
+  return <ManagementLayout audience="student" className="student-professionals-page" title={t('Meus profissionais')} subtitle={t('Pessoas que acompanham seu treino')} action={<Link className="management-button management-button-primary" to="/student/professionals/add">{t('Adicionar profissional')}</Link>}>
     {error && <p role="alert" className="management-error">{error} <Button onClick={refresh}>{t('Tentar novamente')}</Button></p>}
     {busy ? <FppSkeleton label={t('Carregando…')} /> : data && <>
       <Link className="management-shortcut" to="/plan">Planos recebidos · Abrir biblioteca</Link>

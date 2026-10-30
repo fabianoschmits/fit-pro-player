@@ -58,7 +58,7 @@ it('keeps current identity on own post, own likes and comments while visiting an
   await click(container.querySelector('[aria-label="Curtir postagem"]'))
   expect(container.querySelector('.community-liker-summary').textContent).toContain('Alice curtiu')
   expect(container.querySelector('.community-liker-summary img').src).toContain('avatar-80')
-  await click(container.querySelector('[aria-label="Abrir comentários"]')); await type('.community-comment-form input','Comentário meu')
+  await click(container.querySelector('[aria-label="Abrir comentários"]')); await type('.community-comment-form textarea, .community-comment-form input','Comentário meu')
   await click(container.querySelector('[aria-label="Enviar comentário"]'))
   expect(container.querySelector('.community-comment-row').textContent).toContain('Alice')
   expect(container.querySelector('.community-comment-row img').src).toContain('avatar-80')

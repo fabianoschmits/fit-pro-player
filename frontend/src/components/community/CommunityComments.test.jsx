@@ -85,7 +85,12 @@ it('does not send an opposite like while the first request is pending across reo
   await act(async () => request.resolve({ error: null }))
 })
 async function type(value) {
-  await act(async () => { const field = container.querySelector('input'); Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(field, value); field.dispatchEvent(new Event('input', { bubbles: true })) })
+  await act(async () => {
+    const field = container.querySelector('textarea, input');
+    const proto = field.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+    Object.getOwnPropertyDescriptor(proto, 'value').set.call(field, value);
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  })
 }
 function submit() { container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) }
 
@@ -110,7 +115,7 @@ it('prevents duplicate sends, rolls back an unsuccessful comment and retains the
   expect(sends).toBe(1)
   await act(async () => request.resolve({ error: new Error('Sem conexão') }))
   expect(currentPost.comments).toHaveLength(0)
-  expect(container.querySelector('input').value).toBe('Texto para tentar novamente')
+  expect(container.querySelector('textarea, input').value).toBe('Texto para tentar novamente')
   expect(container.querySelector('[role="alert"]').textContent).toContain('Sem conexão')
 })
 
@@ -120,10 +125,10 @@ it('updates edits in shared state and preserves an unsuccessful edit for retry',
   await click(row('mine').querySelector('[aria-label="Opções do comentário"]')); await click(byText('Editar')); await type('Texto atualizado')
   await act(async () => submit())
   expect(currentPost.comments[0].body).toBe('Texto antigo')
-  expect(container.querySelector('input').value).toBe('Texto atualizado')
+  expect(container.querySelector('textarea, input').value).toBe('Texto atualizado')
   fail = false; await act(async () => submit())
   expect(currentPost.comments[0].body).toBe('Texto atualizado')
-  expect(container.querySelector('input').value).toBe('')
+  expect(container.querySelector('textarea, input').value).toBe('')
 })
 
 it('removes all descendant replies from the count when deleting their parent', async () => {
@@ -150,7 +155,7 @@ it('starts replies collapsed on each open and supports replying to a reply with 
   await click(byText('Ver 1 resposta'))
   const replyButton = [...row('child').querySelectorAll('button')].find(button => button.textContent === 'Responder')
   act(() => replyButton.click())
-  expect(document.activeElement).toBe(container.querySelector('input'))
+  expect(document.activeElement).toBe(container.querySelector('textarea, input'))
   await type('Minha resposta'); await act(async () => submit())
   expect(sentParent).toBe('child')
   expect(row('nested').textContent).toContain('Minha resposta')
@@ -199,11 +204,11 @@ it('keeps the composer context stable while a comment is being sent', async () =
   await click([...row('other').querySelectorAll('button')].find(button => button.textContent === 'Responder'))
   await click(row('mine').querySelector('[aria-label="Opções do comentário"]'))
   if (byText('Editar')) await click(byText('Editar'))
-  expect(container.querySelector('input').value).toBe('Enviando meu comentário')
+  expect(container.querySelector('textarea, input').value).toBe('Enviando meu comentário')
   expect(container.querySelector('.community-replying')).toBeNull()
   await act(async () => request.resolve({ comment: comment('saved', 'Enviando meu comentário', ownIdentity) }))
   expect(currentPost.comments.find(item => item.id === 'mine').body).toBe('Comentário anterior')
-  expect(container.querySelector('input').value).toBe('')
+  expect(container.querySelector('textarea, input').value).toBe('')
 })
 
 it('does not cancel the edit context while its save is pending', async () => {
@@ -212,9 +217,9 @@ it('does not cancel the edit context while its save is pending', async () => {
   await click(row('mine').querySelector('[aria-label="Opções do comentário"]')); await click(byText('Editar')); await type('Editando o comentário'); act(submit)
   await click(byText('Cancelar'))
   expect(container.querySelector('.community-replying')?.textContent).toContain('Editando')
-  expect(container.querySelector('input').value).toBe('Editando o comentário')
+  expect(container.querySelector('textarea, input').value).toBe('Editando o comentário')
   await act(async () => request.resolve({ error: { message: 'Não foi salvo' } }))
-  expect(container.querySelector('input').value).toBe('Editando o comentário')
+  expect(container.querySelector('textarea, input').value).toBe('Editando o comentário')
 })
 
 it('clears an edit target when deleting its ancestor removes the reply too', async () => {
