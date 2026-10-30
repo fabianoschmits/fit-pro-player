@@ -43,14 +43,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin: 0 0 8px;
+  margin: 12px 0 6px;
   color: var(--label-2);
   font-size: 12px;
   line-height: 1.4;
   font-variant-numeric: tabular-nums;
 }
 .workout-player-page .wp-series-status strong { color: var(--label); font-weight: 600; }
-.workout-player-page .wp-series-track { display: flex; gap: 6px; margin: 0 0 16px; }
+.workout-player-page .wp-series-track { display: flex; gap: 6px; margin: 0 0 10px; }
 .workout-player-page .wp-series-segment {
   display: block;
   flex: 1;

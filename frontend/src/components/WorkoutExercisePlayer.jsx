@@ -16,7 +16,7 @@ import { Elapsed } from '../views/Workout.jsx'
 import MetricInfoButton from './MetricInfoButton.jsx'
 
 export default function WorkoutExercisePlayer({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onStartTimed,
-  onAddSet, onPrevious, onNext, previousDisabled, nextDisabled, exerciseDots }) {
+  onAddSet, onPrevious, onNext, previousDisabled, nextDisabled, exerciseDots, queueDetails }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
   const timer = useUI(s => s.timer)
@@ -122,10 +122,6 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
   const plan = entry.plan
 
   return <section className={'wp-exercise-player' + (locked ? ' is-locked' : '') + (allDone ? ' is-complete' : '')} data-exidx={entryIdx}>
-    <div className="wp-series-status"><span>{t('Sets')}</span><strong>{completedCount}/{entry.sets.length}</strong></div>
-    <div className="wp-series-track" role="progressbar" aria-label={t('Sets')} aria-valuemin={0} aria-valuemax={entry.sets.length} aria-valuenow={completedCount}>
-      {entry.sets.map((s, i) => <span key={i} className={'wp-series-segment' + (s.done ? ' is-done' : i === currentIndex ? ' is-current' : '') + (isWarmupRow(s) ? ' is-warmup' : '')} />)}
-    </div>
     <div className="wp-media-card">
       <div className="wp-card-clock" aria-label={t('Elapsed')}><Icon name="clock" /><span><Elapsed active={S.active} /></span></div>
       <div className="wp-exercise-header">
@@ -163,6 +159,11 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
       <strong><Icon name={resting ? 'moon' : executing ? 'flame' : 'play'} />{resting ? t('Resting') : executing ? t('Performing set') : t('Start set')}</strong>
       <span>{resting ? t('When rest ends, tap play to start the next set.') : executing ? t('Tap the highlighted check field when you finish this set.') : t('Tap play to start this set.')}</span>
     </div>}
+    <div className="wp-series-status"><span>{t('Sets')}</span><strong>{completedCount}/{entry.sets.length}</strong></div>
+    <div className="wp-series-track" role="progressbar" aria-label={t('Sets')} aria-valuemin={0} aria-valuemax={entry.sets.length} aria-valuenow={completedCount}>
+      {entry.sets.map((s, i) => <span key={i} className={'wp-series-segment' + (s.done ? ' is-done' : i === currentIndex ? ' is-current' : '') + (isWarmupRow(s) ? ' is-warmup' : '')} />)}
+    </div>
+    {queueDetails}
     {/* A timed superset may already show its next member while the previous member owns rest. */}
     <WorkSetOverlay entryIdx={working?.phase === 'rest' ? working.entryIdx : entryIdx} />
     {allDone && <Button intent="quick" className="ex-done-banner" icon="check" trailingIcon={setsOpen ? 'minimize' : 'expand'}

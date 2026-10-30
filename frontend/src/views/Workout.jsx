@@ -482,24 +482,6 @@ function ActiveWorkout() {
         <div className="wp-session-clock"><Elapsed active={A} /></div>
         <button className="iconbtn" aria-label={t('Discard')} onClick={() => confirmSheet({ title: t('Discard workout?'), message: t('The sets you logged in this session will be lost.'), confirmText: t('Discard'), danger: true, onConfirm: () => { abandonWorkout(); nav('/home') } })}><Icon name="xmark" /></button>
       </div>
-      {A.entries.length > 0 && <details className="wp-queue-details"><summary>{t('Exercises')}<span>{cur + 1}/{A.entries.length}</span><Icon name="chevronDown" /></summary><div className="workout-exercise-rail" aria-label={t('Exercises')}>
-        {units.map((indices, index) => {
-          const entries = indices.map(entryIndex => A.entries[entryIndex])
-          const unitDone = entries.every(entry => entry.sets.length > 0 && entry.sets.every(set => set.done))
-          const unitSets = entries.reduce((count, entry) => count + entry.sets.length, 0)
-          const unitSetsDone = entries.reduce((count, entry) => count + entry.sets.filter(set => set.done).length, 0)
-          const label = entries.map(entry => exerciseName(exOr(entry.id))).join(' + ')
-          const targetIndex = indices.find(entryIndex => A.entries[entryIndex].sets.some(set => !set.done)) ?? indices[0]
-          return <button type="button" key={indices.join('-')} className={'workout-exercise-tab' + (index === unitIdx ? ' is-active' : '') + (unitDone ? ' is-done' : '')}
-            disabled={navigationLocked} aria-current={index === unitIdx ? 'step' : undefined}
-            onClick={() => navigateExercise(targetIndex)}>
-            <span>{unitDone ? <Icon name="check" /> : index + 1}</span>
-            <b>{label}</b>
-            <small>{unitSetsDone}/{unitSets}</small>
-          </button>
-        })}
-        <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>
-      </div></details>}
     </div>
 
     {A.entries.length ? <>
@@ -513,7 +495,25 @@ function ActiveWorkout() {
           onAddSet={() => addSet(cur)}
           onPrevious={() => navigateExercise(cur - 1)} onNext={() => navigateExercise(cur + 1)} previousDisabled={navigationLocked || cur === 0} nextDisabled={navigationLocked || cur === A.entries.length - 1}
           exerciseDots={<div className="wp-exercise-dots" aria-label={t('Exercises')}>{A.entries.map((entry, idx) => <button type="button" key={idx} className={'wp-exercise-dot' + (entry.sets.length && entry.sets.every(set => set.done) ? ' is-done' : '')}
-            aria-label={`${idx + 1}. ${exerciseName(exOr(entry.id))}`} aria-current={idx === cur ? 'step' : undefined} disabled={navigationLocked} onClick={() => navigateExercise(idx)} />)}</div>} />
+            aria-label={`${idx + 1}. ${exerciseName(exOr(entry.id))}`} aria-current={idx === cur ? 'step' : undefined} disabled={navigationLocked} onClick={() => navigateExercise(idx)} />)}</div>}
+          queueDetails={A.entries.length > 0 && <details className="wp-queue-details"><summary>{t('Exercises')}<span>{cur + 1}/{A.entries.length}</span><Icon name="chevronDown" /></summary><div className="workout-exercise-rail" aria-label={t('Exercises')}>
+            {units.map((indices, index) => {
+              const entries = indices.map(entryIndex => A.entries[entryIndex])
+              const unitDone = entries.every(entry => entry.sets.length > 0 && entry.sets.every(set => set.done))
+              const unitSets = entries.reduce((count, entry) => count + entry.sets.length, 0)
+              const unitSetsDone = entries.reduce((count, entry) => count + entry.sets.filter(set => set.done).length, 0)
+              const label = entries.map(entry => exerciseName(exOr(entry.id))).join(' + ')
+              const targetIndex = indices.find(entryIndex => A.entries[entryIndex].sets.some(set => !set.done)) ?? indices[0]
+              return <button type="button" key={indices.join('-')} className={'workout-exercise-tab' + (index === unitIdx ? ' is-active' : '') + (unitDone ? ' is-done' : '')}
+                disabled={navigationLocked} aria-current={index === unitIdx ? 'step' : undefined}
+                onClick={() => navigateExercise(targetIndex)}>
+                <span>{unitDone ? <Icon name="check" /> : index + 1}</span>
+                <b>{label}</b>
+                <small>{unitSetsDone}/{unitSets}</small>
+              </button>
+            })}
+            <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>
+          </div></details>} />
       </div>
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 
