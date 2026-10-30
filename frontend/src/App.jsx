@@ -13,6 +13,7 @@ import { initBackButton } from './lib/back.js'
 import { useWakeLock } from './lib/wakelock.js'
 import Icon from './components/Icon.jsx'
 import TabBar from './components/TabBar.jsx'
+import { preloadPageScenery } from './lib/page-scenery-cache.js'
 import PageTransition from './components/PageTransition.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Modals from './components/Modals.jsx'
@@ -453,7 +454,7 @@ function Shell() {
     recoveryShown.current = true
     openAuthSheet('reset_password')
   }, [auth.recovery])
-  useEffect(() => { applyPrefs(S.theme, S.accent) }, [S.theme, S.accent])
+  useEffect(() => { applyPrefs(S.theme, S.accent); void preloadPageScenery(S.theme) }, [S.theme, S.accent])
   useEffect(() => { setLang(S.lang || DEFAULT_LANG) }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || DEFAULT_LANG) === 'pt' ? 'pt-BR' : (S.lang || DEFAULT_LANG) }, [langV, S.lang])
   // every tab/route change starts at the top of the page

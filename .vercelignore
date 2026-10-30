@@ -13,7 +13,11 @@ mcp/
 web/
 /assets/
 docs/
-supabase/
+# The build checks the latest sprite catalogue snapshot against the frontend manifest.
+supabase/*
+!supabase/migrations/
+supabase/migrations/*
+!supabase/migrations/*_exercise_sprite_catalogue.sql
 .superpowers/
 .worktrees/
 .agents/

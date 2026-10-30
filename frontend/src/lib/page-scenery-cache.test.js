@@ -18,7 +18,7 @@ describe('preloadPageScenery', () => {
 
     await preloadPageScenery('dark')
 
-    expect(requested).toHaveLength(4)
+    expect(requested).toHaveLength(11)
     expect(requested.every(url => url.includes('dark'))).toBe(true)
   })
 
@@ -39,6 +39,6 @@ describe('preloadPageScenery', () => {
 
     await preloadPageScenery('light')
 
-    expect(decoded).toBe(4)
+    expect(decoded).toBe(11)
   })
 })
