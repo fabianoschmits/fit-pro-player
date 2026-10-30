@@ -411,7 +411,7 @@ export default function Stats() {
   if (showE1) exOpts.push({ value: 'e1rm', label: t('Est. 1RM') })
   if (showEff) exOpts.push({ value: 'effort', label: t('Effort') })
 
-  return <div className="stats-view">
+  return <div className="stats-view page-scenery">
     <AppHeader title="Evolução" subtitle={t('Progress & history')} className="stats-titlebar"
       action={<button className="iconbtn" aria-label={t('History')} onClick={() => nav('/progress/history')}><Icon name="history" /></button>} />
     <section className="stats-overview" aria-label={t('Stats')}>

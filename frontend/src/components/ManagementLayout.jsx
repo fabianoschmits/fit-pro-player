@@ -18,10 +18,22 @@ function StudentWorkspaceNav() {
   </nav>
 }
 
+function getSceneryClass(pathname) {
+  if (pathname.startsWith('/professional/invites') || pathname.startsWith('/invite/')) return 'invites-scenery page-scenery'
+  if (pathname.startsWith('/professional/students')) return 'students-scenery page-scenery'
+  if (pathname.startsWith('/professional/templates') || pathname.startsWith('/professional/programs')) return 'templates-scenery page-scenery'
+  if (pathname.startsWith('/professional/profile') || pathname === '/professional-profile') return 'professional-profile-scenery page-scenery'
+  if (pathname.startsWith('/student/professionals/materials')) return 'library-view page-scenery'
+  if (pathname.startsWith('/student/professionals')) return 'student-professionals-scenery page-scenery'
+  return ''
+}
+
 export default function ManagementLayout({ title, subtitle, backTo, action, audience = 'professional', children, className = '', nav }) {
+  const { pathname } = useLocation()
+  const sceneryClass = getSceneryClass(pathname)
   const navigation = nav === undefined ? (audience === 'student' ? <StudentWorkspaceNav /> : <ProfessionalWorkspaceNav />) : nav
   const home = audience === 'student' ? '/student/professionals' : '/professional'
-  return <div className={`management-layout ${className}`.trim()}>
+  return <div className={`management-layout ${sceneryClass} ${className}`.trim()}>
     <header className="management-topbar">
       <Link className="management-brand" to={home}><span className="management-brand-mark"><Icon name={audience === 'student' ? 'personCircle' : 'clipboard'} /></span><span>{t(audience === 'student' ? 'Meus profissionais' : 'Área profissional')}<small>Fit Pro Player</small></span></Link>
       <Link className="management-return" to="/home" aria-label={t('Back to app')}><Icon name="chevronLeft" /><span>{t('Back to app')}</span></Link>

@@ -201,6 +201,20 @@ body.resting #app{padding-bottom:calc(172px + var(--primary-menu-height) + var(-
 :root[data-theme="light"] .plan-view{--page-scenery:url('./assets/page-backgrounds/plan-light.png')}
 :root[data-theme="light"] :is(.workout-start-view,.workout-player-page){--page-scenery:url('./assets/page-backgrounds/workout-light.png')}
 :root[data-theme="light"] :is(.library-view,.history-view){--page-scenery:url('./assets/page-backgrounds/library-light.png')}
+.community-view,.dm-inbox{--page-scenery:url('./assets/page-backgrounds/community-dark.png')}
+.stats-view,.body-progress-view{--page-scenery:url('./assets/page-backgrounds/stats-dark.png')}
+.invites-scenery{--page-scenery:url('./assets/page-backgrounds/invites-dark.png')}
+.students-scenery{--page-scenery:url('./assets/page-backgrounds/students-dark.png')}
+.student-professionals-scenery{--page-scenery:url('./assets/page-backgrounds/student-professionals-dark.png')}
+.templates-scenery{--page-scenery:url('./assets/page-backgrounds/templates-dark.png')}
+.professional-profile-scenery{--page-scenery:url('./assets/page-backgrounds/professional-profile-dark.png')}
+:root[data-theme="light"] :is(.community-view,.dm-inbox){--page-scenery:url('./assets/page-backgrounds/community-light.png')}
+:root[data-theme="light"] :is(.stats-view,.body-progress-view){--page-scenery:url('./assets/page-backgrounds/stats-light.png')}
+:root[data-theme="light"] .invites-scenery{--page-scenery:url('./assets/page-backgrounds/invites-light.png')}
+:root[data-theme="light"] .students-scenery{--page-scenery:url('./assets/page-backgrounds/students-light.png')}
+:root[data-theme="light"] .student-professionals-scenery{--page-scenery:url('./assets/page-backgrounds/student-professionals-light.png')}
+:root[data-theme="light"] .templates-scenery{--page-scenery:url('./assets/page-backgrounds/templates-light.png')}
+:root[data-theme="light"] .professional-profile-scenery{--page-scenery:url('./assets/page-backgrounds/professional-profile-light.png')}
 .home-route-scenery{position:relative;isolation:isolate}
 .home-route-scenery::before{content:'';position:absolute;z-index:-1;top:calc(-1 * (var(--sat) + 20px));left:50%;width:min(100vw,560px);height:452px;transform:translateX(-50%);pointer-events:none;background-image:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 32%,transparent),transparent 48%),linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-dark.png');background-position:center top,center top,center -48px;background-repeat:no-repeat;background-size:100% auto,100% auto,cover;opacity:.8}
 :root[data-theme="light"] .home-route-scenery::before{background-image:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 32%,transparent),transparent 48%),linear-gradient(to bottom,transparent 35%,var(--bg) 94%),url('./assets/page-backgrounds/home-light.png')}
@@ -209,6 +223,9 @@ body.resting #app{padding-bottom:calc(172px + var(--primary-menu-height) + var(-
 .workout-start-view::before{height:278px;background-position:center 8%;opacity:.82}
 .workout-player-page::before{height:272px;background-position:center 10%;opacity:.38}
 :is(.library-view,.history-view)::before{height:280px;background-position:center 8%;opacity:.8}
+:is(.community-view,.dm-inbox)::before{height:310px;background-position:center 6%;opacity:.84}
+:is(.stats-view,.body-progress-view)::before{height:290px;background-position:center 6%;opacity:.84}
+:is(.invites-scenery,.students-scenery,.student-professionals-scenery,.templates-scenery,.professional-profile-scenery)::before{height:300px;background-position:center 6%;opacity:.84}
 
 /* large title */
 .hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:6px 0 15px}
@@ -2190,7 +2207,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   #app{max-width:1080px;padding-top:calc(32px + var(--sat))}
   /* Main content uses the same wide desktop canvas as Plan. The active
      workout remains deliberately compact so its set controls stay reachable. */
-  .home-view,.library-view,.history-view,.workout-start-view{max-width:1080px}
+  .home-view,.library-view,.history-view,.workout-start-view,.stats-view,.body-progress-view{max-width:1080px}
   .home-route-scenery::before,.page-scenery::before{width:min(100vw,1080px)}
   .home-route-scenery::before{height:500px;background-position:center top}
   .page-scenery::before{height:420px;background-position:center top}

@@ -745,7 +745,7 @@ export default function BodyProgress() {
     setMode('history')
   }
 
-  return <main className="body-progress-view">
+  return <main className="body-progress-view page-scenery">
     <header className="bp-header">
       <button className="iconbtn" type="button" onClick={() => navigate(-1)} aria-label={t('Back')}><Icon name="chevronLeft" /></button>
       <div><h1>Evolução corporal</h1><p>Circunferências semanais, forma corporal e progresso em um só lugar.</p></div>
