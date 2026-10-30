@@ -51,6 +51,16 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
   }
   useStore.subscribe(() => { if (updatePending && canReloadForUpdate(useStore.getState().S)) requestSafeReload() })
   window.addEventListener('fitproplayer:reload-safety-changed', () => { if (updatePending) requestSafeReload() })
+  window.addEventListener('fitproplayer:apply-update', () => {
+    if (reloadedForUpdate) return
+    if (waitingRegistration?.waiting) {
+      waitingRegistration.waiting.postMessage({ type: 'SKIP_WAITING' })
+      waitingRegistration = null
+      return
+    }
+    reloadedForUpdate = true
+    window.location.reload()
+  })
   const assetSignatureOf = doc => [...doc.querySelectorAll('script[type="module"][src],link[rel="stylesheet"][href]')]
     .map(el => el.getAttribute('src') || el.getAttribute('href'))
     .filter(Boolean)

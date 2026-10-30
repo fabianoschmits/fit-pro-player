@@ -337,7 +337,9 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 
 
 /* ── legacy compat ───────────────────────────────── */
+.app-status-controls{margin-left:auto;display:inline-flex;align-items:center;gap:8px}
 .app-status-dismiss{margin-left:auto;border:0;background:transparent;color:inherit;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px}
+.app-status-controls .app-status-dismiss{margin-left:0}
 .workout-save-status{padding:7px 14px 8px;border-top:1px solid var(--sep);color:var(--label-2);font-size:12px;text-align:center}.workout-save-status[data-state="saved"]{color:var(--acc)}.workout-save-status[data-state="failed"],.workout-save-status[data-state="auth-required"],.workout-save-status[data-state="takeover-required"]{color:var(--red)}
 .management-success{margin:0;padding:12px 16px;background:var(--acc-soft);color:var(--label)}
 .management-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}

@@ -1092,6 +1092,7 @@ export default {
   "Could not sync. Your device copy is preserved.": "Não foi possível sincronizar. A cópia deste dispositivo foi preservada.",
   "{0} professional updates waiting to sync.": "{0} atualizações profissionais aguardando sincronização.",
   "App update ready. It will be applied after your workout.": "Atualização do aplicativo pronta. Ela será aplicada após seu treino.",
+  "Update": "Atualizar",
   "Diagnostics stay on this device and contain only error categories and timing measurements.": "Os diagnósticos permanecem neste dispositivo e contêm apenas categorias de erros e medições de tempo.",
   "Export diagnostics": "Exportar diagnóstico",
   "Clear diagnostics": "Limpar diagnóstico",

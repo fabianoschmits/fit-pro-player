@@ -878,7 +878,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 
 /* --------------------------------------------------- profile hero -- */
 .profile-hero{
-  position:relative;width:100%;min-height:156px;margin:12px 0 6px;padding:24px 20px 20px 158px;
+  position:relative;width:100%;min-height:156px;margin:32px 0 6px;padding:24px 20px 20px 158px;
   z-index:30;isolation:isolate;display:block;overflow:visible;background:transparent;text-align:left;
 }
 .profile-hero::after{
@@ -996,7 +996,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   .routine-week-card .plan-week-grid{gap:4px}
   .routine-week-card .plan-day{min-height:64px}
   .routine-name{font-size:18px}
-  .profile-hero{min-height:142px;margin-top:10px;padding:20px 8px 18px 126px}
+  .profile-hero{min-height:142px;margin-top:28px;padding:20px 8px 18px 126px}
   .profile-hero::after{left:126px;right:4px}
   .profile-hero-avatar{left:0;width:126px;height:150px}
   .profile-hero-name{font-size:clamp(20px,5.7vw,25px)}
@@ -2159,7 +2159,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .history-list .workout-row+.workout-row{border-top:var(--hair) solid var(--sep-op)}
 
 @media (max-width:360px){
-  .profile-hero{min-height:134px;padding:18px 4px 16px 112px}
+  .profile-hero{min-height:134px;margin-top:26px;padding:18px 4px 16px 112px}
   .profile-hero::after{left:112px;right:2px}
   .profile-hero-avatar{left:-4px;width:112px;height:138px}
   .profile-hero-content{gap:7px}
@@ -2181,7 +2181,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 
 @media (max-width:340px){
   .wizard-step h1{font-size:27px}
-  .profile-hero{min-height:124px;margin-top:8px;padding:16px 2px 14px 96px}
+  .profile-hero{min-height:124px;margin-top:24px;padding:16px 2px 14px 96px}
   .profile-hero::after{left:96px;right:0}
   .profile-hero-avatar{left:-5px;width:96px;height:124px}
   .profile-hero-content{gap:6px}

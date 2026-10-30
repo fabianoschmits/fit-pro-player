@@ -84,4 +84,20 @@ describe('AppStatus session recovery', () => {
     await act(async () => container.querySelector('.app-status-action').click())
     expect(mocks.replaceRemote).toHaveBeenCalledOnce()
   })
+
+  it('renders update banner with Update and close buttons and triggers apply-update event', async () => {
+    let applyTriggered = false
+    const onApply = () => { applyTriggered = true }
+    window.addEventListener('fitproplayer:apply-update', onApply)
+    await act(async () => root.render(<AppStatus />))
+    await act(async () => window.dispatchEvent(new Event('fitproplayer:update-available')))
+    expect(container.textContent).toContain('Atualização do aplicativo pronta')
+    const updateBtn = container.querySelector('.app-status-action')
+    expect(updateBtn?.textContent).toContain('Atualizar')
+    const closeBtn = container.querySelector('.app-status-dismiss')
+    expect(closeBtn).toBeTruthy()
+    await act(async () => updateBtn.click())
+    expect(applyTriggered).toBe(true)
+    window.removeEventListener('fitproplayer:apply-update', onApply)
+  })
 })

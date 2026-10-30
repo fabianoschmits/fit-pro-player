@@ -42,6 +42,7 @@ export default function AppStatus() {
 
   const takeOverSession = () => useStore.getState().takeOverSessionRecovery()
   const replaceRemoteSession = () => useStore.getState().replaceRemoteActiveSession()
+  const applyUpdate = () => window.dispatchEvent(new Event('fitproplayer:apply-update'))
 
   if (!state) return null
   const text = ['session-takeover', 'session-remote-active'].includes(state) ? t('This workout is open on another device.')
@@ -53,6 +54,9 @@ export default function AppStatus() {
     {!state?.startsWith('session-') && <a href="#/settings">{t('Settings')}</a>}
     {state === 'session-takeover' && <Button size="sm" feedback="persistence" className="app-status-action" onAction={takeOverSession}>{t('Continue here')}</Button>}
     {state === 'session-remote-active' && <Button size="sm" feedback="persistence" className="app-status-action" onAction={replaceRemoteSession}>{t('Discard the running workout')}</Button>}
-    {state === 'update' && <button type="button" className="app-status-dismiss" aria-label={t('Close')} onClick={() => setUpdateDismissed(true)}>×</button>}
+    {state === 'update' && <div className="app-status-controls">
+      <Button size="sm" feedback="quick" className="app-status-action" onAction={applyUpdate}>{t('Update')}</Button>
+      <button type="button" className="app-status-dismiss" aria-label={t('Close')} onClick={() => setUpdateDismissed(true)}>×</button>
+    </div>}
   </aside>
 }
