@@ -2325,9 +2325,12 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .danger-confirm{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:8px;border-top:var(--hair) solid var(--sep)}
 .invite-preview-card{display:flex;flex-direction:column;gap:8px}
 .invite-preview-card h2{margin:0}
-.landing-invite-banner{position:fixed;z-index:10;top:calc(10px + var(--sat));left:50%;transform:translateX(-50%);width:min(92vw,560px);display:flex;align-items:center;gap:10px;padding:12px 14px;border:var(--hair) solid var(--sep);border-radius:var(--r-md);background:var(--surface);box-shadow:var(--shadow-2)}
+.landing-invite-banner{width:100%;display:flex;flex-direction:column;gap:10px;padding:14px 16px;border:1px solid var(--acc-line);border-radius:var(--r-lg);background:color-mix(in srgb,var(--acc) 10%,var(--surface));box-shadow:var(--shadow-1);text-align:center}
+.landing-invite-banner strong{font-size:15px;color:var(--label-1)}
 .landing-invite-banner span{flex:1;color:var(--label-2);font-size:13px}
-@media (max-width:600px){.landing-invite-banner{align-items:flex-start;flex-wrap:wrap}.landing-invite-banner span{flex-basis:100%}.landing-invite-banner .btn{width:100%}}
+.landing-invite-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.landing-invite-actions .btn{flex:1;min-width:120px}
+@media (max-width:600px){.landing-invite-actions .btn{width:100%}}
 .professional-dashboard .seg button{white-space:nowrap}
 .dashboard-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .dashboard-stats .card{display:flex;flex-direction:column;gap:4px;min-height:72px}

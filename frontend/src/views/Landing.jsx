@@ -467,13 +467,6 @@ export default function Landing({ invitePath = false }) {
     <main className="landing-page">
       <div className="landing-atmosphere" aria-hidden="true" />
 
-      {invitePath && (
-        <div className="landing-invite-banner" role="status">
-          <strong>Você recebeu um convite profissional.</strong>
-          <span>Crie sua conta ou entre para aceitar o vínculo.</span>
-          <Button variant="primary" onClick={() => openAuthSheet('sign_up')}>Criar conta e ver convite</Button>
-        </div>
-      )}
 
       <header className="landing-nav-shell">
         <div className="landing-nav">
@@ -502,6 +495,16 @@ export default function Landing({ invitePath = false }) {
             <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
             <h1>Seu treino, no bolso.</h1>
             <p>Plano do dia, execução e evolução — como no app.</p>
+            {invitePath && (
+              <div className="landing-invite-banner" role="status">
+                <strong>Você recebeu um convite profissional.</strong>
+                <span>Crie sua conta ou entre para aceitar o vínculo.</span>
+                <div className="landing-invite-actions">
+                  <Button variant="primary" onClick={() => openAuthSheet('sign_up')}>Criar conta</Button>
+                  <Button variant="secondary" onClick={() => openAuthSheet('entry')}>Já tenho conta</Button>
+                </div>
+              </div>
+            )}
             <div className="landing-actions">
               <Button variant="primary" disabled={entryUnavailable} onClick={primaryAction}>
                 {primaryLabel}
