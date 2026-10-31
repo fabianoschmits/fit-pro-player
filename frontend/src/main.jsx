@@ -73,6 +73,8 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
     requestSafeReload()
   })
 
+  // Request persistent storage so exercise sprites survive quota pressure.
+  navigator.storage?.persist?.()
   navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(registration => {
     const activateWaiting = () => {
       if (canReloadForUpdate(useStore.getState().S)) registration.waiting?.postMessage({ type: 'SKIP_WAITING' })
@@ -114,6 +116,15 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
       const preload = () => preloadCoreRoutes().catch(() => {})
       if ('requestIdleCallback' in window) window.requestIdleCallback(preload, { timeout: 5000 })
       else window.setTimeout(preload, 1500)
+      // Preload exercise sprites for the user's current plan in background.
+      if (navigator.onLine !== false) {
+        window.setTimeout(() => {
+          import('./lib/exercise-preloader.js').then(({ preloadExerciseSpritesByIds, getPlanExerciseIds }) => {
+            const ids = getPlanExerciseIds(useStore.getState().S.routines)
+            preloadExerciseSpritesByIds(ids).catch(() => {})
+          }).catch(() => {})
+        }, 3000)
+      }
     }).catch(() => {})
     window.addEventListener('beforeunload', () => {
       window.clearInterval(updateInterval)

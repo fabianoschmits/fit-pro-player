@@ -1,32 +1,55 @@
-/* Fit Pro Player service worker — runtime caching (works with Vite's hashed asset names).
-   Media (img/gif) cache-first; everything else network-first with offline fallback.
-   Bump CACHE when shipping large asset replacements so activate drops stale entries. */
-const CACHE = 'fit-pro-player-rt-v33'
-const MEDIA_LIMIT = 256
-async function remember(request, response, media = false) {
-  const cache = await caches.open(CACHE)
-  await cache.put(request, response)
-  if (media) {
-    const keys = (await cache.keys()).filter(key => /\.(webp|png|jpg|jpeg|avif)$/.test(new URL(key.url).pathname))
-    for (const key of keys.slice(0, Math.max(0, keys.length - MEDIA_LIMIT))) await cache.delete(key)
-  }
-}
+/* Fit Pro Player service worker — multi-cache offline strategy with workbox precache injection.
+   Shell assets are precached at install time; exercise sprites go to a dedicated never-evicted
+   cache; runtime JS/CSS/fonts and static images use separate stale-while-network caches. */
 
-// Existing sessions decide when an update may activate. First installation needs no skip.
-self.addEventListener('install', () => {})
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => {
-    // Keep one previous shell until the new worker has populated its runtime cache. If an
-    // update activates just as the connection drops, caches.match can still serve the old
-    // index and its hashed assets instead of leaving the installed PWA blank.
-    const runtime = keys.filter(k => k.startsWith('fit-pro-player-rt-'))
-    const version = key => Number(key.match(/-v(\d+)$/)?.[1] || 0)
-    const previous = runtime.filter(k => k !== CACHE).sort((a, b) => version(b) - version(a))[0]
-    const keep = new Set([CACHE, previous].filter(Boolean))
-    return Promise.all(runtime.filter(k => !keep.has(k)).map(k => caches.delete(k)))
-      .then(() => self.clients.claim())
-  }))
+const SHELL_CACHE = 'fpp-shell-v1'
+const RUNTIME_CACHE = 'fpp-runtime-v1'
+const EXERCISE_CACHE = 'fpp-exercise-media-v1'
+const STATIC_MEDIA_CACHE = 'fpp-static-media-v1'
+
+const SHELL_PRECACHE = self.__WB_MANIFEST || []
+
+// Build a Set of shell URLs for fast lookup
+const SHELL_URL_SET = new Set(SHELL_PRECACHE.map(entry => typeof entry === 'string' ? entry : entry.url))
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(SHELL_CACHE).then(cache => {
+      const urls = SHELL_PRECACHE.map(entry => typeof entry === 'string' ? entry : entry.url)
+      return cache.addAll(urls)
+    })
+  )
+  // Auto-activate only on first install (no existing controller)
+  if (!self.registration?.active) self.skipWaiting()
 })
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(keys => {
+      const currentCaches = new Set([SHELL_CACHE, RUNTIME_CACHE, EXERCISE_CACHE, STATIC_MEDIA_CACHE])
+      // Also keep one previous shell and one previous runtime during transition
+      const version = key => Number(key.match(/-v(\d+)$/)?.[1] || 0)
+      const shells = keys.filter(k => k.startsWith('fpp-shell-') || k.startsWith('fit-pro-player-rt-'))
+      const oldShell = shells.filter(k => k !== SHELL_CACHE).sort((a, b) => version(b) - version(a))[0]
+      if (oldShell) currentCaches.add(oldShell)
+      const runtimes = keys.filter(k => k.startsWith('fpp-runtime-'))
+      const oldRuntime = runtimes.filter(k => k !== RUNTIME_CACHE).sort((a, b) => version(b) - version(a))[0]
+      if (oldRuntime) currentCaches.add(oldRuntime)
+      return Promise.all(
+        keys
+          .filter(k => !currentCaches.has(k) && (k.startsWith('fpp-') || k.startsWith('fit-pro-player-')))
+          .map(k => caches.delete(k))
+      )
+    }).then(() => self.clients.claim())
+  )
+  // Request persistent storage for exercise sprites
+  try {
+    if (typeof self !== 'undefined' && self.navigator?.storage?.persist) {
+      self.navigator.storage.persist().catch?.(() => {})
+    }
+  } catch {}
+})
+
 self.addEventListener('message', e => {
   if (e.data?.type === 'SKIP_WAITING') self.skipWaiting()
   if (!sameOriginMessage(e)) return
@@ -176,37 +199,129 @@ self.addEventListener('notificationclick', event => {
   }))
 })
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url)
-  if (e.request.method !== 'GET') return
-  const sameOrigin = url.origin === location.origin
-  if (!sameOrigin) return
-  // A previous runtime cache must never hide a newly published favicon or lion.
-  // Revalidate aliases as well: installed apps can still request older URLs.
-  const isBrand = url.pathname.startsWith('/icons/') || url.pathname === '/manifest.json'
-    || /^\/(?:favicon[^/]*\.(?:ico|png)|apple-touch-icon[^/]*\.png|icon-[^/]*\.png|brand-logo\.png)$/.test(url.pathname)
-  if (isBrand) {
-    e.respondWith(fetch(new Request(e.request, { cache: 'no-cache' })).then(res => {
-      if (res.ok) e.waitUntil(remember(e.request, res.clone()))
-      return res
-    }).catch(() => caches.match(e.request, { ignoreVary: true }).then(hit => hit || Response.error())))
+async function exerciseCacheFirst(request) {
+  const url = new URL(request.url)
+  const cache = await caches.open(EXERCISE_CACHE)
+  const hit = await cache.match(url.href, { ignoreVary: true, ignoreSearch: true })
+    || await cache.match(request, { ignoreVary: true })
+    || await caches.match(url.href, { ignoreVary: true })
+  if (hit) return hit
+  try {
+    const res = await fetch(request)
+    if (res.ok || res.type === 'opaque') {
+      await cache.put(url.href, res.clone())
+      await cache.put(request, res.clone())
+    }
+    return res
+  } catch {
+    const fallback = await cache.match(url.href, { ignoreVary: true, ignoreSearch: true })
+      || await cache.match(request, { ignoreVary: true })
+      || await caches.match(url.href, { ignoreVary: true })
+    return fallback || Response.error()
+  }
+}
+
+async function staticMediaCacheFirst(request) {
+  const hit = await caches.match(request, { ignoreVary: true })
+  if (hit) return hit
+  try {
+    const res = await fetch(request)
+    if (res.ok || res.type === 'opaque') {
+      const cache = await caches.open(STATIC_MEDIA_CACHE)
+      await cache.put(request, res.clone())
+    }
+    return res
+  } catch {
+    return Response.error()
+  }
+}
+
+async function shellCacheFirst(request) {
+  const hit = await caches.match(request, { ignoreVary: true, cacheName: SHELL_CACHE })
+  if (hit) return hit
+  try {
+    const res = await fetch(request)
+    if (res.ok) {
+      const cache = await caches.open(RUNTIME_CACHE)
+      await cache.put(request, res.clone())
+    }
+    return res
+  } catch {
+    return caches.match(request, { ignoreVary: true }).then(h => h || Response.error())
+  }
+}
+
+async function navigateFetch(request) {
+  try {
+    const res = await fetch(new Request(request, { cache: 'no-store' }))
+    if (res.ok) return res
+  } catch { /* offline */ }
+  // Serve index.html from shell cache for SPA navigation
+  const shellHit = await caches.open(SHELL_CACHE).then(c => c.match('index.html'))
+    .catch(() => null)
+  if (shellHit) return shellHit
+  return caches.match(request, { ignoreVary: true }).then(h => h || Response.error())
+}
+
+async function runtimeFetch(request) {
+  try {
+    const res = await fetch(request)
+    if (res.ok) {
+      const cache = await caches.open(RUNTIME_CACHE)
+      await cache.put(request, res.clone())
+    }
+    return res
+  } catch {
+    return caches.match(request, { ignoreVary: true }).then(h => h || Response.error())
+  }
+}
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return
+  let url
+  try { url = new URL(event.request.url) } catch { return }
+  if (url.origin !== location.origin) return
+
+  // Exercise frames and frame loader chunks → cache-first, no eviction
+  if (/\/assets\/(frame-[^/]+\.(webp|png)|frames-[^/]+\.js)$/.test(url.pathname)) {
+    event.respondWith(exerciseCacheFirst(event.request))
     return
   }
-  const isMedia = url.pathname.includes('/img/') || url.pathname.includes('/gif/') || /\.(webp|png|jpg|jpeg|avif)$/.test(url.pathname)
-  if (isMedia) {
-    e.respondWith(caches.open(CACHE).then(c => caches.match(e.request, { ignoreVary: true }).then(hit =>
-      hit || fetch(e.request).then(res => {
-        if (res.ok || res.type === 'opaque') e.waitUntil(remember(e.request, res.clone(), true))
+
+  // Brand assets (icons, manifest) → network-first + fallback (existing behavior)
+  const isBrand = url.pathname.startsWith('/icons/')
+    || url.pathname === '/manifest.json'
+    || /^\/(favicon[^/]*\.(ico|png)|apple-touch-icon[^/]*\.png|icon-[^/]*\.png|brand-logo\.png)$/.test(url.pathname)
+  if (isBrand) {
+    event.respondWith(
+      fetch(new Request(event.request, { cache: 'no-cache' })).then(res => {
+        if (res.ok) caches.open(STATIC_MEDIA_CACHE).then(c => c.put(event.request, res.clone()))
         return res
-      })
-    )))
-  } else {
-    const req = e.request.mode === 'navigate' || e.request.destination === 'document'
-      ? new Request(e.request, { cache: 'no-store' })
-      : e.request
-    e.respondWith(fetch(req).then(res => {
-      if (res.ok) e.waitUntil(remember(e.request, res.clone()))
-      return res
-    }).catch(() => caches.match(e.request, { ignoreVary: true }).then(async hit => hit || (e.request.mode === 'navigate' ? await caches.match('index.html') : null) || Response.error())))
+      }).catch(() => caches.match(event.request, { ignoreVary: true }).then(hit => hit || Response.error()))
+    )
+    return
   }
+
+  // Static images (backgrounds, avatars) → cache-first in STATIC_MEDIA_CACHE
+  const isStaticImage = /\.(webp|png|jpg|jpeg|avif|gif|svg)$/.test(url.pathname)
+    && !url.pathname.includes('/assets/frame-')
+  if (isStaticImage) {
+    event.respondWith(staticMediaCacheFirst(event.request))
+    return
+  }
+
+  // HTML navigation → try network (no-store), fallback to shell cache index.html
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(navigateFetch(event.request))
+    return
+  }
+
+  // Shell precached JS/CSS → cache-first from SHELL_CACHE
+  if (SHELL_URL_SET.has(url.pathname) || SHELL_URL_SET.has(url.href)) {
+    event.respondWith(shellCacheFirst(event.request))
+    return
+  }
+
+  // Other JS/CSS/fonts → runtime cache with network fallback
+  event.respondWith(runtimeFetch(event.request))
 })

@@ -167,7 +167,19 @@ export function AuthProvider({ children, client: injectedClient, location: injec
       try {
         const { data: result, error } = await client.auth.getSession();
         if (disposed || bootstrapRevision !== revision.current) return;
-        if (error) throw error;
+        if (error) {
+          // A network error during bootstrap must not sign out a user who has a valid local session.
+          // Supabase reads from localStorage first, so if the access token is still fresh the call
+          // succeeds without the network.  When it fails (expired token + offline), result?.session
+          // may still hold the stored session object — use it as a best-effort fallback so the app
+          // can boot with local data instead of showing an anonymous/error state.
+          const mapped = toAuthError(error, 'bootstrap');
+          if (mapped === 'network_unavailable' || !navigator.onLine) {
+            applySession('INITIAL_SESSION', result?.session ?? null);
+            return;
+          }
+          throw error;
+        }
         applySession('INITIAL_SESSION', result?.session);
       } catch (error) {
         if (!disposed && bootstrapRevision === revision.current) applyError(error, 'bootstrap');

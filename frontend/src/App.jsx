@@ -455,6 +455,13 @@ function Shell() {
     openAuthSheet('reset_password')
   }, [auth.recovery])
   useEffect(() => { applyPrefs(S.theme, S.accent); void preloadPageScenery(S.theme) }, [S.theme, S.accent])
+  useEffect(() => {
+    if (!ready || navigator.onLine === false) return
+    import('./lib/exercise-preloader.js').then(({ preloadExerciseSpritesByIds, getPlanExerciseIds }) => {
+      const ids = getPlanExerciseIds(S.routines)
+      preloadExerciseSpritesByIds(ids).catch(() => {})
+    }).catch(() => {})
+  }, [S.routines, ready])
   useEffect(() => { setLang(S.lang || DEFAULT_LANG) }, [S.lang])
   useEffect(() => { document.documentElement.lang = (S.lang || DEFAULT_LANG) === 'pt' ? 'pt-BR' : (S.lang || DEFAULT_LANG) }, [langV, S.lang])
   // every tab/route change starts at the top of the page

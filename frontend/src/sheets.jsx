@@ -1414,6 +1414,14 @@ function beginWorkoutFromHistory(workout, bw) {
   nav('/workout')
 }
 export function beginWorkout(routineId, bw, professionalExecutionId = null) {
+  if (routineId && navigator.onLine !== false) {
+    import('./lib/exercise-preloader.js').then(({ preloadExerciseSpritesByIds }) => {
+      const routine = S().routines?.find(x => x.id === routineId)
+      if (routine?.ex) {
+        preloadExerciseSpritesByIds(routine.ex.map(e => e.id).filter(Boolean)).catch(() => {})
+      }
+    }).catch(() => {})
+  }
   if (useStore.getState().hasPendingSessionCompletion?.()) {
     void useStore.getState().flushSessionRecovery()
     return false
