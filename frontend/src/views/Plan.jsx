@@ -1,3 +1,4 @@
+import { hasAssignedProgram } from '../lib/assigned-program.js'
 import { PlanWeek, RoutineList } from '../components/training/TrainingPlanWorkspace.jsx'
 import PlanLibrary from '../components/training/PlanLibrary.jsx'
 import { useCallback, useState } from 'react'
@@ -43,7 +44,7 @@ export default function Plan() {
   const scheduledDays = WEEK_DAYS.filter(day => S.week[day] && S.routines.some(r => r.id === S.week[day])).length
   const planProgress = planSetupProgress(S)
   const mode = S.planMode === 'daily' ? 'daily' : 'weekly'
-  const usingProfessionalPlan = Boolean(S.assignedProgram)
+  const usingProfessionalPlan = hasAssignedProgram(S)
   const headerTitle = usingProfessionalPlan
     ? (S.activeLibraryTitle || 'Plano profissional')
     : mode === 'weekly' ? 'Seu plano semanal' : 'Seu plano diário'

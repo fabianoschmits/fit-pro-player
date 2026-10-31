@@ -38,7 +38,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
     })
     if (domain === 'plan') {
       const input = {
-        mode: state.planMode, schedule: { week: state.week, dayPlan: state.dayPlan, ...(state.activeLibraryId ? { libraryId: state.activeLibraryId, libraryTitle: state.activeLibraryTitle } : {}) },
+        mode: state.planMode, schedule: { week: state.week, dayPlan: state.dayPlan, ...(state.assignedProgram ? { assignedProgram: state.assignedProgram } : {}), ...(state.activeLibraryId ? { libraryId: state.activeLibraryId, libraryTitle: state.activeLibraryTitle } : {}) },
         routines: state.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
       }
       try { return await repository.savePlan({ ...input, expectedRevision: Math.max(planRevision, state.planServerRevision || 0) }) }
@@ -47,7 +47,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
         const fresh = await repository.loadPlan()
         if ((fresh.schedule?.values?.libraryId || null) !== (state.activeLibraryId || null)) throw error
         planRevision = fresh.schedule?.revision || 0
-        return repository.savePlan({ ...input, expectedRevision: Math.max(planRevision, state.planServerRevision || 0) })
+        return repository.savePlan({ ...input, expectedRevision: planRevision })
       }
     }
     const input = { displayUnit: state.displayUnit, values: preferenceValues(state) }
@@ -114,6 +114,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
               continue
             } catch (recoveryError) { failures.set(domain, recoveryError?.kind || 'request-failed'); break }
           }
+          console.error('Account domain synchronization failed', domain, error)
           failures.set(domain, error?.kind || 'request-failed')
           if (error?.retryable && isOnline() && !retryTimers.has(domain)) {
             const attempts = retryAttempts.get(domain) || 0

@@ -186,3 +186,14 @@ it('recovers local personal changes into the library when another device selecte
  expect(h.repository.saveDetachedPlan).toHaveBeenCalledWith(expect.objectContaining({state:expect.objectContaining({activeLibraryId:'old'})}))
  expect(h.state().activeLibraryId).toBe('new');expect(h.state()._pendingSync.plan).toBe(false)
 })
+
+it('preserves professional assignment metadata when synchronizing personal edits', async () => {
+  const h = harness()
+  const assignment = { assignmentId: 'assignment', versionId: 'version' }
+  h.setState({ ...initial(), assignedProgram: assignment, activeLibraryId: 'library', _pendingSync: { plan: true } })
+  h.repository.savePlan.mockImplementation(async input => ({ routines: [], schedule: { revision: 2, mode: input.mode, values: input.schedule } }))
+  await h.sync.start()
+  expect(h.repository.savePlan.mock.calls[0][0].schedule.assignedProgram).toEqual(assignment)
+  expect(h.state().assignedProgram).toEqual(assignment)
+  expect(h.state()._pendingSync.plan).toBe(false)
+})

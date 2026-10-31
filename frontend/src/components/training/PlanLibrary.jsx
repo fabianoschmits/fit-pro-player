@@ -14,6 +14,7 @@ import { useUI } from '../../store/useUI.js'
 import Icon from '../Icon.jsx'
 import { compareProfessionalPlanVersions } from '../../lib/professional-plan-diff.js'
 import { useNavigate } from 'react-router-dom'
+import { hasAssignedProgram } from '../../lib/assigned-program.js'
 import { exerciseName, exOr } from '../../lib/exercises.js'
 
 const PAGE_SIZE = 5
@@ -89,7 +90,18 @@ function AccountPlanLibrary({ user, onUpdates }) {
       await action(token)
       if (store.isScopeCurrent(token)) { await refresh(); return true }
       return false
-    } catch { if (store.isScopeCurrent(token)) setError('Não foi possível salvar. Verifique a conexão e tente novamente.'); return false }
+    } catch (error) {
+      console.error('Plan library operation failed', error)
+      const message = error.message === 'pending-plan'
+        ? 'Existem altera\u00e7\u00f5es dos seus treinos aguardando sincroniza\u00e7\u00e3o. Tente sincronizar novamente antes de aplicar.'
+        : error.code === '42501'
+          ? 'Este plano n\u00e3o est\u00e1 mais dispon\u00edvel. Atualize os treinos recebidos.'
+          : error.code === '40001' || error.kind === 'revision-conflict'
+            ? 'Seus treinos foram alterados em outra sess\u00e3o. Sincronize e tente novamente.'
+            : 'N\u00e3o foi poss\u00edvel aplicar o plano. Tente novamente; se persistir, contate o suporte.'
+      if (store.isScopeCurrent(token)) setError(message)
+      return false
+    }
     finally { if (store.isScopeCurrent(token)) setBusy(false) }
   }
 
@@ -175,11 +187,11 @@ function AccountPlanLibrary({ user, onUpdates }) {
 
   if (!user?.id) return null
   return <section className="plan-library received-workouts">
-    <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Seu plano profissional ativo é atualizado automaticamente. Abra um treino para ver os detalhes.</p></div>
+    <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Abra um treino para ver os detalhes. Confirme Aplicar plano para usar o plano na sua semana.</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {!shownWorkouts.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
     <div className="received-workout-list">{shownWorkouts.map(workout => {
-      const active = state.assignedProgram?.versionId === workout.item.version?.id && state.week[workout.day]
+      const active = hasAssignedProgram(state) && state.activeLibraryId === workout.item.id && state.assignedProgram.versionId === workout.item.version?.id && state.week[workout.day]
       return <article className="card received-workout-card" key={`${workout.item.id}:${workout.day}`}>
         <button className="received-workout-main" onClick={() => open(workout)}>
           <span className="received-workout-copy"><strong>{workout.routine.name}</strong>{workout.item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}<small>{workout.routine.ex.length} exercícios · Prof. {workout.item.professional_name || 'Profissional'}</small></span>

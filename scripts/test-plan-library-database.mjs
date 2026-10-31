@@ -51,5 +51,7 @@ insert into public.professional_student_notes(professional_id,student_id,body,up
 `)
 await db.exec(readFileSync('supabase/migrations/202610290002_professional_workspace_history_notes.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610290002_professional_workspace_history_notes.sql', 'utf8')); console.log('PASS professional model plans and private student notes') } catch(e) { console.error(e.message,e.where); process.exit(1) }
+await db.exec(readFileSync('supabase/migrations/202610310001_explicit_library_plan_application.sql', 'utf8'))
+try { await db.exec(readFileSync('supabase/tests/202610310001_explicit_library_plan_application.sql', 'utf8')); console.log('PASS explicit professional plan application') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 await db.close()
 
