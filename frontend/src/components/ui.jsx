@@ -26,7 +26,7 @@ import { t } from '../lib/i18n.js'
 // 0). Keeps a local string draft while focused so partial input like "33," survives.
 // `nullable` is for fields where "nothing entered" and 0 mean different things (RIR: a
 // logged 0 is a set taken to failure). Those clear back to null instead of snapping to 0.
-export function NumberField({ value, onChange, decimal = true, nullable = false, className = '', ...rest }) {
+export function NumberField({ value = undefined, onChange = undefined, decimal = true, nullable = false, className = '', ...rest }) {
   const [draft, setDraft] = useState(null)
   const committed = useRef(null)
   // null and undefined are the same "empty" here — a nullable field's key is dropped once cleared.
@@ -55,7 +55,7 @@ export function NumberField({ value, onChange, decimal = true, nullable = false,
 }
 
 // forwardRef so callers can focus it or read its value imperatively
-export const TextField = forwardRef(function TextField({ className = '', ...rest }, ref) {
+export const TextField = forwardRef(/** @param {import('react').InputHTMLAttributes<HTMLInputElement>} props @param {import('react').ForwardedRef<HTMLInputElement>} ref */ function TextField({ className = '', ...rest }, ref) {
   return <input ref={ref} className={'field ' + className} {...rest} />
 })
 
@@ -63,7 +63,7 @@ export function TextArea({ className = '', ...rest }) {
   return <textarea className={'field area ' + className} {...rest} />
 }
 
-export function SearchField({ value, onChange, onClear, ...rest }) {
+export function SearchField({ value = undefined, onChange = undefined, onClear = undefined, ...rest }) {
   return (
     <div className="searchf">
       <Icon name="magnifier" className="lead" />
@@ -79,7 +79,7 @@ export function SearchField({ value, onChange, onClear, ...rest }) {
 
 /* ============================ switch ============================ */
 
-export function Switch({ checked, onChange, disabled, ariaLabel, ...rest }) {
+export function Switch({ checked, onChange = undefined, disabled = undefined, ariaLabel = undefined, ...rest }) {
   return (
     <button
       type="button"
@@ -101,7 +101,7 @@ export function Switch({ checked, onChange, disabled, ariaLabel, ...rest }) {
 /* ============================ segmented ============================ */
 
 // options: [{ value, label, icon? }]  — the selected pill slides between cells.
-export function Segmented({ options, value, onChange, className = '' }) {
+export function Segmented({ options, value = undefined, onChange = undefined, className = '' }) {
   const i = Math.max(0, options.findIndex(o => o.value === value))
   return (
     <div className={'seg ' + className} style={{ '--n': options.length, '--i': i }}>
@@ -124,7 +124,7 @@ export function Segmented({ options, value, onChange, className = '' }) {
 
 /* ============================ stepper ============================ */
 
-export function Stepper({ value, step = 1, onChange, decimal = true, className = '', label, unit, ariaLabel }) {
+export function Stepper({ value = undefined, step = 1, onChange = undefined, decimal = true, className = '', label = undefined, unit = undefined, ariaLabel = undefined }) {
   const name = ariaLabel || label || t('Value')
   const set = v => onChange(Math.max(0, Math.round((v || 0) * 100) / 100))
   const inner = (
@@ -146,7 +146,7 @@ export function Stepper({ value, step = 1, onChange, decimal = true, className =
 // Pointer-driven so the fill, track and thumb are all ours — no ::-webkit-*
 // pseudo-elements, which is the only way the control looks identical on every
 // platform and can pick up the accent colour.
-export function Slider({ value, min = 0, max = 100, step = 1, onChange, className = '', ariaLabel, ...rest }) {
+export function Slider({ value = undefined, min = 0, max = 100, step = 1, onChange = undefined, className = '', ariaLabel = undefined, ...rest }) {
   const ref = useRef(null)
   const [drag, setDrag] = useState(false)
   const [trackWidth, setTrackWidth] = useState(0)
@@ -225,7 +225,7 @@ export function Slider({ value, min = 0, max = 100, step = 1, onChange, classNam
 
 /* ============================ checkbox ============================ */
 
-export function Check({ checked, onChange, className = '', size, playMode = false, disabled = false, ariaLabel, ariaDescribedBy, uncheckedIcon }) {
+export function Check({ checked, onChange = undefined, className = '', size = undefined, playMode = false, disabled = false, ariaLabel = undefined, ariaDescribedBy = undefined, uncheckedIcon = undefined }) {
   return (
     <button
       type="button"
@@ -250,7 +250,7 @@ export function Check({ checked, onChange, className = '', size, playMode = fals
 // The inset-grouped list is the app's main structural primitive: a titled
 // section holding rows separated by hairlines that stop short of the leading
 // edge, so the icon column reads as a continuous rail.
-export function Section({ title, footer, children, className = '', collapsible = false, defaultOpen = true }) {
+export function Section({ title, footer = undefined, children = undefined, className = '', collapsible = false, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   const [rendered, setRendered] = useState(defaultOpen)
   const [expanded, setExpanded] = useState(defaultOpen)
@@ -284,10 +284,10 @@ export function Section({ title, footer, children, className = '', collapsible =
   )
 }
 
-export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none', onClick, danger, children, className = '', activation = 'animated', disabled = false, ...rest }) {
+export function Row({ icon = undefined, iconTint = undefined, title, subtitle = undefined, value = undefined, accessory = 'none', onClick = undefined, danger = undefined, children = undefined, className = '', activation = 'animated', disabled = false, ...rest }) {
   const titleId = useId()
   const trigger = useFppActivation({ onActivate: onClick, disabled: disabled || !onClick, activation })
-  const controls = Children.map(children, child => isValidElement(child) && [Switch, Slider, Stepper].includes(child.type)
+  const controls = Children.map(children, child => isValidElement(child) && (child.type === Switch || child.type === Slider || child.type === Stepper)
     ? cloneElement(child, { ariaLabel: child.props.ariaLabel || (typeof title === 'string' ? title : undefined), ...(!child.props.ariaLabel && typeof title !== 'string' ? { 'aria-labelledby': titleId } : {}) }) : child)
   const Tag = onClick ? 'button' : 'div'
   return (
@@ -311,7 +311,7 @@ export function Row({ icon, iconTint, title, subtitle, value, accessory = 'none'
 // theme entirely — on dark mode it flashes a white sheet — and can't show more
 // than a bare label per option. This opens our own sheet with a checkmark on the
 // current value, which is also how iOS itself handles a long option list.
-export function SelectRow({ icon, iconTint, title, value, options, onChange, sheetTitle }) {
+export function SelectRow({ icon = undefined, iconTint = undefined, title, value = undefined, options, onChange = undefined, sheetTitle = undefined }) {
   const cur = options.find(o => o.value === value)
   const open = () => {
     const { openSheet } = require_ui()

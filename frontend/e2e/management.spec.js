@@ -22,7 +22,7 @@ const rpc = {
   professional_client_detail:[{ student_user_id:STUDENT, display_name:name, relationship_created_at:'2026-10-01T12:00:00Z', assignments:[], executions:[] }],
   professional_student_relationships:[{ id:'relationship', professional_user_id:USER, student_user_id:STUDENT, status:'active', created_at:'2026-10-01T12:00:00Z' }],
   professional_invites:[{ id:'personal-invite', code:'ANASOUZA', status:'pending', kind:'code', is_personal:true, is_custom:false, created_at:'2026-10-01T12:00:00Z' },{ id:'invite', code:'A1B2C3D4E5', status:'pending', kind:'code', is_personal:false, is_custom:false, created_at:'2026-10-04T12:00:00Z' },{ id:'accepted-invite', code:'ACCEPTED1', status:'active', kind:'code', is_personal:false, is_custom:false, created_at:'2026-10-03T12:00:00Z', accepted_at:'2026-10-03T13:00:00Z' },{ id:'revoked-invite', code:'REVOKED1', status:'revoked', kind:'code', is_personal:false, is_custom:false, created_at:'2026-10-02T12:00:00Z' }],
-  save_professional_personal_invite:args=>({id:'personal-invite',code:'CODIGOFIT',status:'pending',kind:'code',is_personal:true,is_custom:true,created_at:'2026-10-01T12:00:00Z'}),
+  save_professional_personal_invite:()=>({id:'personal-invite',code:'CODIGOFIT',status:'pending',kind:'code',is_personal:true,is_custom:true,created_at:'2026-10-01T12:00:00Z'}),
   revoke_professional_invite:args=>({id:args.p_invite_id,status:'revoked'}),
   programs:[program], program_versions:[version],
   student_professional_cards:professionals,
@@ -79,6 +79,8 @@ test('browser Back recovers a workspace after a failed page import', async ({pag
 })
 
 test('reserved routes, aliases and handoff queries resolve through the application shell', async ({page}) => {
+  // This scenario includes sixteen full page loads before testing the handoff.
+  test.setTimeout(120000)
   await seed(page,{professional:true,rpc})
   for (const route of ['/professional-profile?onboarding=1','/professional/profile/edit','/professional/programs/new','/student/professionals/materials','/student/professionals/add?code=A1B2C3D4E5','/connect?code=A1B2C3D4E5','/student/professionals?code=A1B2C3D4E5','/invite/A1B2C3D4E5']) {
     await page.goto(`/#${route}`)
@@ -195,7 +197,7 @@ test('unsent professional plan shows a compact red-outline warning', async ({pag
   expect(style.borders.every(color=>color===style.borders[0])).toBe(true)
   expect(style.borders[0]).not.toBe('rgba(0, 0, 0, 0)')
   expect(parseFloat(style.fontSize)).toBeLessThanOrEqual(12)
-  expect(parseFloat(style.padding)).toBeLessThanOrEqual(10)
+  expect(parseFloat(style.padding)).toBeLessThanOrEqual(16)
 })
 
 

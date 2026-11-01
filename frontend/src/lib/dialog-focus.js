@@ -24,7 +24,7 @@ function isolate(element) {
   })
 }
 
-export function useDialogFocus(ref, { active = true, onClose, locked = false, titleId, layerRef } = {}) {
+export function useDialogFocus(ref, { active = true, onClose = undefined, locked = false, titleId = undefined, layerRef = undefined } = {}) {
   const closeRef = useRef(onClose); closeRef.current = onClose
   const lockedRef = useRef(locked); lockedRef.current = locked
   useLayoutEffect(() => {

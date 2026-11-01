@@ -4,6 +4,7 @@ import { t } from './i18n-core.js'
 import { suggestedWeightFor } from './history.js'
 import { isAvailableExercise, isBodyweightEq } from './exercises.js'
 
+/** @type {Array<[string,string,Array<[string,number,number,number?]>]>} */
 const PREVIOUS_SPEC = [
   ['Chest Day', 'chest', [['0025', 4, 8], ['0047', 3, 10], ['0289', 3, 10], ['0308', 3, 12], ['0251', 3, 10], ['0314', 3, 10]]],
   ['Back Day', 'back', [['0652', 4, 10], ['0027', 4, 8], ['0198', 3, 10], ['0861', 3, 10], ['0293', 3, 10], ['0238', 3, 12]]],
@@ -17,6 +18,7 @@ const PREVIOUS_SPEC = [
 // Focused session options, not a seven-day schedule. Compounds precede accessories;
 // each list deliberately covers different movement roles with moderate session volume.
 // Tuple: exercise id, sets, reps, rest in seconds.
+/** @type {Array<[string,string,Array<[string,number,number,number?]>]>} */
 const SPEC = [
   ['Chest Day', 'chest', [['0025', 3, 8, 120], ['0314', 3, 10, 120], ['0227', 3, 12, 75], ['0493', 2, 12, 90]]],
   ['Back Day', 'back', [['0017', 3, 8, 120], ['0027', 3, 8, 120], ['0861', 3, 10, 90], ['0238', 2, 12, 75], ['0489', 2, 12, 90]]],

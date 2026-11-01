@@ -15,7 +15,7 @@ import Icon from '../components/Icon.jsx'
 import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
 import { Button } from '../components/ui.jsx'
 import { nextPrescription, applyPrescription } from '../lib/progression.js'
-import { glyphOf, DEFAULT_GLYPH } from '../lib/glyphs.js'
+import {  DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import { isWarmupRow } from '../lib/workout-model.js'
 import { applyPreviousSetValues, replaceSessionExercise } from '../lib/workout-session.js'
@@ -100,20 +100,20 @@ export function Elapsed({ active }) {
     const tick = () => {
       const now = Date.now()
       let extra = 0
-      if (manualSet?.startedAt) extra = now - manualSet.startedAt
-      else if (timer?.startedAt) extra = Math.min(timer.total * 1000, now - timer.startedAt)
-      else if (work?.phase === 'work' && work.startedAt) extra = Math.min(work.total * 1000, now - work.startedAt)
-      else if (work?.phase === 'rest' && work.restStartedAt) extra = Math.min(work.restTotal * 1000, now - work.restStartedAt)
-      const s = Math.max(0, Math.floor(((active.durationMs || 0) + extra) / 1000))
+      if (manualSet?.startedAt) extra = now - manualSet?.startedAt
+      else if (timer?.startedAt) extra = Math.min(timer?.total * 1000, now - timer?.startedAt)
+      else if (work?.phase === 'work' && work?.startedAt) extra = Math.min(work?.total * 1000, now - work?.startedAt)
+      else if (work?.phase === 'rest' && work?.restStartedAt) extra = Math.min(work?.restTotal * 1000, now - work?.restStartedAt)
+      const s = Math.max(0, Math.floor(((active?.durationMs || 0) + extra) / 1000))
       setT(Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'))
     }
     tick(); const iv = setInterval(tick, 1000); return () => clearInterval(iv)
-  }, [active.durationMs, manualSet?.startedAt, timer?.startedAt, work?.startedAt, work?.restStartedAt])
+  }, [active?.durationMs, manualSet?.startedAt, timer?.startedAt, work?.startedAt, work?.restStartedAt, timer?.total, work?.phase, work?.total, work?.restTotal])
   return <span>{t}</span>
 }
 
 /* Optional edits stay together below the exercise, away from execution controls. */
-function ExerciseAdjustments({ entryIdx, locked, onAddSet, onRemoveSet, onAddWarmup, onRemoveSetAt, onUseLast, onReplace, onPairPrev, onPairNext }) {
+function ExerciseAdjustments({ entryIdx, locked, onAddSet = undefined, onRemoveSet, onAddWarmup, onRemoveSetAt, onUseLast, onReplace, onPairPrev, onPairNext }) {
   const S = useStore(s => s.S)
   const entry = S.active?.entries[entryIdx]
   if (!entry) return null
@@ -195,7 +195,7 @@ function ActiveWorkout() {
   }
   const startWorkout = () => {
     update(s => {
-      if (s.active && !s.active.start) { s.active.start = Date.now(); s.active.durationMs = Math.max(0, Number(s.active.durationMs) || 0) }
+      if (s.active && !s.active.start) { s.active.start = Date.now(); s.active.durationMs = Math.max(0, Number(s.active?.durationMs) || 0) }
     })
     queueActive()
   }
@@ -208,7 +208,7 @@ function ActiveWorkout() {
   // shifted exercise inherits its predecessor's mark and its real progress reads as a re-check.
   useEffect(() => {
     progressHighWater.current = A.entries.map(e => e.sets.filter(s => s.done).length)
-  }, [A.entries.length])
+  }, [A.entries, A.entries.length])
   useEffect(() => {
     if (!isSuperset) return
     const el = exRefs.current[cur]
@@ -279,7 +279,7 @@ function ActiveWorkout() {
   const onPairPrev = !isSuperset && cur > 0 ? () => pairAt(cur - 1, cur) : null
   const onPairNext = !isSuperset && cur < A.entries.length - 1 ? () => pairAt(cur, cur + 1) : null
 
-  const useLastValues = idx => {
+  const applyLastValues = idx => {
     const current = useStore.getState().S.active?.entries?.[idx]
     if (!current) return
     const previous = lastEntryFor(useStore.getState().S, current.id)
@@ -525,7 +525,7 @@ function ActiveWorkout() {
           {num > 0 && <div className="workout-tool-divider" />}
           <ExerciseAdjustments entryIdx={idx} locked={adjustmentsLocked}
             onAddSet={() => addSet(idx)} onRemoveSet={() => removeSet(idx)} onAddWarmup={() => addWarmup(idx)} onRemoveSetAt={i => removeSetAt(idx, i)}
-            onUseLast={() => useLastValues(idx)} onReplace={() => replaceExercise(idx)} onPairPrev={onPairPrev} onPairNext={onPairNext} />
+            onUseLast={() => applyLastValues(idx)} onReplace={() => replaceExercise(idx)} onPairPrev={onPairPrev} onPairNext={onPairNext} />
         </div>)}
         <div className="workout-tool-divider" />
         <div className="workout-tool-actions">

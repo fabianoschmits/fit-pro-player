@@ -4,7 +4,7 @@ import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 
 // Monthly activity heatmap, shaded by time trained per day.
-export default function Heatmap({ S, onDay }) {
+export default function Heatmap({ S, onDay = undefined }) {
   const [monthOffset, setMonthOffset] = useState(0)
   const { agg, thresholds } = useMemo(() => {
     const byDay = {}

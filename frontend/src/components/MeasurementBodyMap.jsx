@@ -143,8 +143,8 @@ export function measurementShapeScales(values = {}, baselineValues = {}, body = 
 }
 
 export default function MeasurementBodyMap({
-  body = 'male', view = 'front', selected, latestValues = {}, weekValues = {}, shapeValues,
-  baselineValues = {}, fallbackScales = {}, directValues, instant = false, onSelect,
+  body = 'male', view = 'front', selected = undefined, latestValues = {}, weekValues = {}, shapeValues,
+  baselineValues = {}, fallbackScales = {}, directValues = undefined, instant = false, onSelect,
 }) {
   // Geometry may use a weight-based visual fallback, but labels, rings and ARIA
   // must only expose circumferences that the user actually recorded.

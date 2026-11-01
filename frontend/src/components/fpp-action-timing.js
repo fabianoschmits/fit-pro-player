@@ -17,7 +17,7 @@ export function shouldAnimateFppAction(event) {
   )
 }
 
-export function waitForFppConfirmation(event, { signal } = {}) {
+export function waitForFppConfirmation(event, { signal = undefined } = {}) {
   if (signal?.aborted) return Promise.resolve(false)
   if (!shouldAnimateFppAction(event)) return Promise.resolve(true)
   return new Promise(resolve => {

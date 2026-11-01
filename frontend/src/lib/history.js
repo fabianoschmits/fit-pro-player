@@ -1,5 +1,5 @@
 // Pure helpers over the state object S (ported 1:1 from the vanilla app).
-import { todayISO, isoOf, weekKey, fmtNum } from './format.js'
+import {  isoOf, weekKey, fmtNum } from './format.js'
 import { toDisplayMass } from './mass.js'
 import { isCardio, isBodyweightEq, EXIDX } from './exercises.js'
 import { phaseForSet, modeForSet, modeForEntry, isWarmupRow, normalizeMode } from './workout-model.js'

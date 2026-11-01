@@ -4,7 +4,7 @@ import Icon from './Icon.jsx'
 
 const COLUMNS = 4
 
-export default function AvatarPicker({ value, onChange, t, orientation = 'grid', disabled = false }) {
+export default function AvatarPicker({ value = undefined, onChange = undefined, t, orientation = 'grid', disabled = false }) {
   const gridRef = useRef(null)
   const selectedRef = useRef(null)
   const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false })

@@ -15,7 +15,7 @@ export function installDiagnostics() {
   const rejection=()=>recordDiagnostic('unhandled-rejection')
   window.addEventListener('error',error,true);window.addEventListener('unhandledrejection',rejection)
   const nav=performance.getEntriesByType?.('navigation')?.[0]
-  if(nav)recordDiagnostic('navigation',{duration:nav.duration,transferSize:nav.transferSize})
+  if(nav)recordDiagnostic('navigation',{duration:nav.duration,transferSize:'transferSize' in nav ? Number(nav.transferSize) : 0})
   let observer
   try { observer=new PerformanceObserver(list=>list.getEntries().forEach(entry=>recordDiagnostic('long-task',{duration:entry.duration})));observer.observe({type:'longtask',buffered:true}) } catch { /* unsupported on some WebViews */ }
   return ()=>{window.removeEventListener('error',error,true);window.removeEventListener('unhandledrejection',rejection);observer?.disconnect()}

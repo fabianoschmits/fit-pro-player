@@ -9,7 +9,7 @@ const safeRoute = href => {
 // Native tokens, installation proof and receipts are never part of exported app state.
 export function createNativePushAdapter({ loadPlugin = async () => (await import('@capacitor/push-notifications')).PushNotifications,
   loadApp = async () => (await import('@capacitor/app')).App, storage = globalThis.localStorage,
-  crypto = globalThis.crypto, expectedOwnerId = null, notify = () => {}, navigate = () => {}, onToken = () => {}, onVisibility = () => {}, now = Date.now } = {}) {
+  crypto = globalThis.crypto, expectedOwnerId = null, notify = _kind => {}, navigate = _href => {}, onToken = _token => {}, onVisibility = _visible => {}, now = Date.now } = {}) {
   const tokenKey='fpp_native_push_token_v1', proofKey='fpp_native_push_proof_v1', contextKey='fpp_native_push_context_v1'
   let plugin, setup, disposed=false, pending=null, active=true, cachedToken=null, context=null, seen=[], proof
   const handles=[]

@@ -1,3 +1,4 @@
+import { projectSessionRecovery } from './persisted-state.js'
 import { MASS_UNIT } from './mass.js'
 
 export const SESSION_RECOVERY_SCHEMA_VERSION = 1
@@ -48,7 +49,7 @@ function parseDraft(raw, accountId) {
     || !Array.isArray(raw.pendingOperations)
     || !raw.pendingOperations.every(validOperation)
     || !Number.isFinite(raw.updatedAt)) return null
-  return copy(raw)
+  return projectSessionRecovery(raw)
 }
 
 export function readSessionRecoveryDraft({ accountId, storage = globalThis.localStorage }) {
@@ -99,7 +100,7 @@ function serverSession(session) {
   }
 }
 
-export function createSessionRecovery({ repository, accountId, storage = globalThis.localStorage, now = Date.now, isOnline = () => globalThis.navigator?.onLine !== false, onStatus = () => {} }) {
+export function createSessionRecovery({ repository, accountId, storage = globalThis.localStorage, now = Date.now, isOnline = () => globalThis.navigator?.onLine !== false, onStatus = _status => {} }) {
   if (!repository || !isText(accountId) || !storage) throw new TypeError('invalid-session-recovery-scope')
   const key = sessionRecoveryKey(accountId)
   let current = readSessionRecoveryDraft({ accountId, storage })
@@ -115,7 +116,7 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
     return value
   }
   const persist = draft => {
-    const next = { ...copy(draft), schemaVersion: SESSION_RECOVERY_SCHEMA_VERSION, accountId, updatedAt: Number(now()) }
+    const next = projectSessionRecovery({ ...copy(draft), schemaVersion: SESSION_RECOVERY_SCHEMA_VERSION, accountId, updatedAt: Number(now()) })
     storage.setItem(key, JSON.stringify(next))
     current = next
     return copy(next)

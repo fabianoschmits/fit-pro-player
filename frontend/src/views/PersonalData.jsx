@@ -17,12 +17,12 @@ async function confirmPersonalSave() {
   if (useStore.getState().persistence?.state === 'error') throw new Error(localSaveError())
   return true
 }
-function PersonalSaveButton({ onSave, onError }) {
+function PersonalSaveButton({ onSave = undefined, onError }) {
   return <Button feedback="persistence" appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={() => onError(localSaveError())}
     loadingLabel={t('Saving…')} successLabel={t('Saved')} errorLabel={t('Save')}>{t('Save')}</Button>
 }
 
-function EditableField({ name, label, value, summary = value, onChange, children, inputProps = {}, onSaved }) {
+function EditableField({ name, label = undefined, value = undefined, summary = value, onChange = undefined, children = undefined, inputProps = {}, onSaved = undefined }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value ?? '')
   const [error, setError] = useState('')
@@ -35,7 +35,7 @@ function EditableField({ name, label, value, summary = value, onChange, children
   </section>
 }
 
-function MeasuresField({ height, weight, onSave }) {
+function MeasuresField({ height, weight, onSave = undefined }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState({ height, weight })
   const [error, setError] = useState('')

@@ -95,7 +95,7 @@ test('execution guidance waits for play before each set and progresses after sto
   if (testInfo.project.name.includes('mobile')) await page.setViewportSize({width:320,height:720})
   const state = stateFixture()
   const longExerciseName = 'Extensão unilateral de tríceps com halter acima da cabeça em pé, com controle do movimento e amplitude completa para cada lado'
-  state.customEx = [{id:'custom-long-name',name:longExerciseName,n:longExerciseName,bp:'upper arms',tg:'triceps',eq:'dumbbell',sm:[]}]
+  state.customEx = [{id:'custom-long-name',name:longExerciseName,n:longExerciseName,bp:'upper arms',tg:'triceps',eq:'dumbbell',sm:[],custom:true}]
   state.routines[0].ex[0] = {id:'custom-long-name',sets:2,reps:10,weight:20}
   await seed(page, {state})
   await page.goto('/#/home')
@@ -226,40 +226,28 @@ test('timed sets keep stop accessible and wait for play after rest expires', asy
   await expect(page.locator('.work-set-overlay__backdrop')).toHaveCount(0)
 })
 
-test('student accepts invite, receives program and sends recorded workout events',async({page})=>{
-  const programId='33333333-3333-4333-8333-333333333333',versionId='44444444-4444-4444-8444-444444444444',assignmentId='55555555-5555-4555-8555-555555555555'
-  const plan=Object.fromEntries(['sunday','monday','tuesday','wednesday','thursday','friday','saturday'].map(day=>[day,[{exerciseId:'0025',sets:1,reps:10,load:20,rest:15}]]))
-  const version={id:versionId,program_id:programId,version_number:1,weekly_plan:plan,published_at:'2026-10-02T12:00:00Z'}
-  let accepted=false;const events=[]
-  const professionalId='77777777-7777-4777-8777-777777777777'
-  await seed(page,{authenticated:true,rpc:{
-    preview_professional_invite:[{professional_name:'Treinador de teste',bio:'Força e consistência',verification_status:'unverified',specialties:[]}],
-    accept_professional_invite:()=>{accepted=true;return{id:'66666666-6666-4666-8666-666666666666'}},
-    professional_student_relationships:()=>accepted?[{id:'66666666-6666-4666-8666-666666666666',status:'active',created_at:'2026-10-02T12:00:00Z'}]:[],
-    student_professional_summaries:()=>accepted?[{professional_user_id:professionalId,professional_name:'Treinador de teste',relationship_id:'66666666-6666-4666-8666-666666666666',linked_at:'2026-10-02T12:00:00Z',active_program_title:'Programa recebido'}]:[],
-    program_assignments:()=>accepted?[{id:assignmentId,student_user_id:USER,professional_user_id:professionalId,program_id:programId,version_id:versionId,status:'active',created_at:'2026-10-02T12:00:00Z'}]:[],
-    program_versions:[version],
-    student_program_overview:()=>accepted?{assignment:{id:assignmentId},program:{title:'Programa recebido'},professional:{id:professionalId,name:'Treinador de teste'},version:{id:versionId,weeklyPlan:plan,versionNumber:1},executions:[]}:{},
-    start_workout_execution:args=>{events.push({type:'start',args});return{id:args.p_execution_id,status:'in_progress'}},
-    complete_workout_execution:args=>{events.push({type:'complete',args});return{id:args.p_execution_id,status:'completed'}},
-  }})
-  await page.goto('/#/invite/A1B2C3D4E5')
-  await expect(page.getByText('Treinador de teste',{exact:true})).toBeVisible()
-  await page.getByRole('button',{name:'Vincular a este profissional',exact:true}).click()
-  await expect(page.getByText('Programa recebido',{exact:true}).first()).toBeVisible()
-  await page.getByRole('button',{name:'Iniciar',exact:true}).first().click()
-  await expect(page.locator('.workout-session-title')).toBeVisible()
-  await page.locator('.active-workout').getByRole('button',{name:'Começar treino',exact:true}).click()
-  await page.locator('.set-start-action').click()
-  await page.getByRole('button',{name:'Concluir série 1',exact:true}).click()
-  const dialog=page.getByRole('dialog').last();await expect(dialog).toBeVisible()
-  if(await dialog.getByRole('button',{name:'Salvar',exact:true}).count()) await dialog.getByRole('button',{name:'Salvar',exact:true}).click()
-  await page.getByRole('button',{name:'Terminar treino',exact:true}).click()
-  await expect.poll(()=>events.some(event=>event.type==='complete')).toBe(true)
-  const start=events.find(event=>event.type==='start'),complete=events.find(event=>event.type==='complete')
-  expect(start.args.p_assignment_id).toBe(assignmentId)
-  expect(complete.args.p_execution_id).toBe(start.args.p_execution_id)
-  expect(complete.args.p_payload.entries[0].sets[0]).toMatchObject({done:true,w:20,r:10})
+test('student receives a professional plan and applies it only after explicit confirmation',async({page})=>{
+ const deliveryId='55555555-5555-4555-8555-555555555555',versionId='44444444-4444-4444-8444-444444444444'
+ let accepted=false,applied=false
+ const weeklyPlan={monday:[{exerciseId:'0025',sets:1,reps:10,load:20,rest:15}]}
+ await seed(page,{authenticated:true,rpc:{
+  preview_professional_invite:[{professional_name:'Treinador de teste',bio:'Força',verification_status:'unverified',specialties:[]}],
+  accept_professional_invite:()=>{accepted=true;return{id:'66666666-6666-4666-8666-666666666666'}},
+  athlete_plan_library_page:()=>({items:accepted?[{id:deliveryId,source_type:'professional',professional_name:'Treinador de teste',version:{id:versionId,weekly_plan:weeklyPlan,workout_titles:{monday:'Plano recebido'}}}]:[],total:accepted?1:0}),
+  apply_library_plan:()=>{applied=true;return {routines:[],schedule:{user_id:USER,revision:3,mode:'weekly',schedule:{week:{},libraryId:deliveryId,assignedProgram:{versionId}},updated_at:'2026-11-01T12:00:00Z'}}},
+ }})
+ await page.goto('/#/invite/A1B2C3D4E5')
+ await page.getByRole('button',{name:'Vincular a este profissional',exact:true}).click()
+ await expect(page).toHaveURL(/student\/professionals/)
+ await page.goto('/#/plan')
+ await expect(page.getByText('Plano recebido',{exact:true}).first()).toBeVisible()
+ expect(await page.evaluate(()=>JSON.parse(localStorage.getItem(`fpp_account_cache_v1:11111111-1111-4111-8111-111111111111`)).state.routines[0].name)).toBe('Treino de teste')
+ expect(applied).toBe(false)
+ await page.getByRole('button',{name:'Aplicar',exact:true}).first().click()
+ expect(applied).toBe(false)
+ await page.getByRole('dialog').getByRole('button',{name:'Aplicar plano',exact:true}).click()
+ await expect.poll(()=>applied).toBe(true)
+ await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('fpp_account_cache_v1:11111111-1111-4111-8111-111111111111')).state.activeLibraryId)).toBe(deliveryId)
 })
 
 test('guest can start, discard, reload and keep the planned routine',async({page},testInfo)=>{
@@ -288,34 +276,27 @@ test('completed workout is persisted and remains in history after reload',async(
   await expect(dialog).toBeVisible()
   if(await dialog.getByRole('button',{name:'Salvar',exact:true}).count()) await dialog.getByRole('button',{name:'Salvar',exact:true}).click()
   await page.getByRole('button',{name:'Terminar treino',exact:true}).click()
+  await page.getByRole('dialog').last().getByRole('button',{name:'Terminar treino',exact:true}).click()
   await expect.poll(async()=>page.evaluate(()=>JSON.parse(localStorage.getItem('gym_state_v1')).workouts.length)).toBe(1)
   await page.reload();await page.goto('/#/history')
   await expect(page.getByText('Treino de teste',{exact:true}).first()).toBeVisible()
   expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('gym_state_v1')).workouts[0].entries[0].sets[0].done)).toBe(true)
 })
 
-test('professional editor keeps a recoverable draft and publishes an explicit prescription',async({page},testInfo)=>{
-  if(testInfo.project.name.includes('mobile')) await page.setViewportSize({width:320,height:720})
-  const program={id:'33333333-3333-4333-8333-333333333333',professional_user_id:'11111111-1111-4111-8111-111111111111',title:'Programa de teste',description:'Força',archived:false}
-  let published
-  await seed(page,{professional:true,rpc:{programs:[program],program_versions:[],publish_program_version:args=>{published=args;return{id:'44444444-4444-4444-8444-444444444444',version_number:1}}}})
-  await page.goto('/#/professional/programs')
-  await page.getByRole('link',{name:/Programa de teste/}).click()
-  await page.getByRole('link',{name:'Editar programa',exact:true}).click()
-  await page.getByRole('button',{name:'Adicionar exercício',exact:true}).click()
-  await page.getByRole('dialog').getByRole('searchbox',{name:'Pesquisar exercício'}).fill('supino')
-  await page.getByRole('dialog').getByRole('button',{name:'Adicionar',exact:true}).first().click()
-  await page.keyboard.press('Escape')
-  await expect(page.locator('.professional-prescription-editor > .program-fields')).toBeVisible()
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+2)).toBe(false)
-  await page.screenshot({path:testInfo.outputPath('professional-editor.png'),fullPage:true})
-  await page.reload();await expect(page).toHaveURL(new RegExp(`professional/programs/${program.id}/edit`))
-  await expect(page.getByText('Rascunho recuperado.',{exact:true})).toBeVisible()
-  await expect(page.locator('.professional-prescription-editor > .program-fields')).toBeVisible()
-  await page.getByRole('button',{name:'Publicar nova versão',exact:true}).click()
-  await expect(page.getByText('Nova versão publicada.',{exact:true})).toBeVisible()
-  expect(published.p_program_id).toBe(program.id)
-  expect(published.p_weekly_plan.monday[0]).toMatchObject({sets:3,reps:8,load:0,rest:90})
+test('professional template reloads its saved prescription and publishes explicitly',async({page})=>{
+ const program={id:'33333333-3333-4333-8333-333333333333',title:'Programa de teste',description:'Força',archived:false}
+ const weeklyPlan={monday:[{exerciseId:'0025',sets:3,reps:8,load:0,rest:90}]}
+ let published
+ await seed(page,{professional:true,rpc:{programs:[program],professional_programs_page:{items:[{...program,weekly_plan:weeklyPlan,workout_count:1,student_count:0}],total:1,offset:0,has_more:false},program_versions:[{id:'44444444-4444-4444-8444-444444444444',weekly_plan:weeklyPlan,workout_titles:{monday:'Treino A'}}],update_program_metadata:program,publish_program_version_with_titles:args=>{published=args;return{id:'44444444-4444-4444-8444-444444444445',version_number:2,weekly_plan:args.p_weekly_plan}}}})
+ await page.goto('/#/professional/programs')
+ await page.getByRole('link',{name:/Programa de teste/}).click()
+ await expect(page.getByRole('button',{name:'Salvar modelo',exact:true})).toBeVisible()
+ await page.reload()
+ await expect(page.getByRole('button',{name:'Salvar modelo',exact:true})).toBeVisible()
+ expect(published).toBeUndefined()
+ await page.getByRole('button',{name:'Salvar modelo',exact:true}).click()
+ await expect.poll(()=>published?.p_program_id).toBe(program.id)
+ expect(published.p_weekly_plan.monday[0]).toMatchObject({sets:3,reps:8,load:0,rest:90})
 })
 
 test('settings distinguishes local cleanup, names switches and exports a usable backup',async({page})=>{
@@ -351,10 +332,10 @@ test('offline changes stay local without automatic save notices',async({page,con
 })
 
 test('professional dashboard explains attention reasons and supports student navigation',async({page})=>{
-  await seed(page,{professional:true,rpc:{professional_client_summaries:[{student_user_id:'22222222-2222-4222-8222-222222222222',display_name:'Aluno de teste',active_assignment_id:null,last_execution_at:null}],professional_client_detail:[{student_user_id:'22222222-2222-4222-8222-222222222222',display_name:'Aluno de teste',assignments:[],executions:[]}]}})
+  await seed(page,{professional:true,rpc:{professional_dashboard_summary:{active_students:1,attention_students:1,today_workouts:0,today:[],recent_activity:[]},professional_students_page:{items:[{student_user_id:'22222222-2222-4222-8222-222222222222',display_name:'Aluno de teste',active_assignment_id:null,last_execution_at:null}],total:1,offset:0,has_more:false},professional_client_detail:[{student_user_id:'22222222-2222-4222-8222-222222222222',display_name:'Aluno de teste',assignments:[],executions:[]}]}})
   await page.goto('/#/professional')
   await expect(page.getByText('Aluno de teste',{exact:true}).first()).toBeVisible()
-  await expect(page.getByText(/Sem programa|sem programa/).first()).toBeVisible()
+  await expect(page.getByText(/Sem plano|sem plano/).first()).toBeVisible()
   await page.getByText('Aluno de teste',{exact:true}).first().click()
   await expect(page).toHaveURL(/professional\/students\//)
 })

@@ -274,7 +274,7 @@ function fatigueValue(events, now) {
  *
  * @param {Array<object>} workouts Workout history with `start`/`d` and entry set arrays.
  * @param {number} now Current time in milliseconds; injected to keep this function deterministic.
- * @param {{unit?: string}} options Reserved profile-level options; unit is supplied at the UI boundary.
+ * @param {{unit?: string, bodyweightKg?: number}} opts Reserved profile-level options; unit is supplied at the UI boundary.
  * @returns {Record<string, number>} Fatigue values keyed by every drawable muscle slug.
  */
 export function fatigueOf(workouts, now, opts = {}) {
@@ -298,7 +298,7 @@ export function fatigueOf(workouts, now, opts = {}) {
  * @param {number} now Current time in milliseconds; injected to keep this function deterministic.
  * @returns {Record<string, number>} Retained-strength values keyed by every drawable muscle slug.
  */
-export function strengthOf(workouts, now, opts = {}) {
+export function strengthOf(workouts, now) {
   const current = Number(now)
   const latest = Object.fromEntries(MUSCLES.map(slug => [slug, -Infinity]))
   for (const workout of workouts || []) {
@@ -358,8 +358,8 @@ export function fatiguedMuscles(workouts, now, opts = {}) {
  * @example
  * const targets = detrainedMuscles(workouts, now)
  */
-export function detrainedMuscles(workouts, now, opts = {}) {
-  return Object.entries(strengthOf(workouts, now, opts))
+export function detrainedMuscles(workouts, now, _opts = {}) {
+  return Object.entries(strengthOf(workouts, now))
     .filter(([, value]) => value < 1)
     .map(([slug]) => slug)
 }

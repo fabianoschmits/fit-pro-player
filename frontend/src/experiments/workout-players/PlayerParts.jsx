@@ -25,7 +25,7 @@ export function PhaseReadout({ model, className = '' }) {
   return <div className={`wpl-readout ${className}`}><p className="wpl-readout__title">{model.phaseTitle}</p><div className="wpl-readout__number"><strong className="wpl-readout__value">{model.displayValue}</strong><span className="wpl-readout__unit">{model.displayUnit}</span></div><p className="wpl-readout__hint">{model.phaseHint}</p></div>
 }
 
-function Stepper({ field, label, speech, value, unit, step = 1, min, max, actions }) {
+function Stepper({ field, label = undefined, speech, value = undefined, unit = undefined, step = 1, min, max, actions }) {
   return <div className="wpl-stepper"><span className="wpl-stepper__label">{label}</span><div className="wpl-stepper__controls"><button type="button" aria-label={`Diminuir ${speech}`} disabled={value <= min} onClick={() => actions.adjust(field, -step)}><Icon name="minus" /></button><output data-player-load={field === 'load' ? '' : undefined} aria-label={label}>{value}<small>{unit}</small></output><button type="button" aria-label={`Aumentar ${speech}`} disabled={value >= max} onClick={() => actions.adjust(field, step)}><Icon name="plus" /></button></div></div>
 }
 

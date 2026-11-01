@@ -15,7 +15,7 @@ import { useStore } from '../store/useStore.js'
 import { confirmSheet } from '../sheets.jsx'
 import { useEffect, useMemo, useState } from 'react'
 
-function MenuRow({ icon, tint, title, subtitle, onClick, danger = false }) {
+function MenuRow({ icon = undefined, tint, title, subtitle = undefined, onClick = undefined, danger = false }) {
   return <Row icon={icon} iconTint={tint} title={title} subtitle={subtitle} accessory="chevron" danger={danger} onClick={onClick} />
 }
 

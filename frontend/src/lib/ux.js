@@ -20,7 +20,7 @@ export function smartDefaultConfig(exId, S) {
   const best = bestWeightFor(S, exId)
   const saved = (S.exWeights[exId] || {}).w
   const w = best || saved || 0
-  if (w > 0 && !cfg.bodyweight) cfg.weight = w
+  if (w > 0 && !('bodyweight' in cfg && cfg.bodyweight)) Object.assign(cfg, {weight:w})
   return cfg
 }
 

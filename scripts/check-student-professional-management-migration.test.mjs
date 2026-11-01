@@ -62,7 +62,7 @@ test('disposable database proves student professional identity, material and exe
     assert.equal(result.status, 0, `${name}: ${result.stderr || result.stdout || result.error || `exit ${result.status}`}${detail}`)
     return result.stdout
   }
-  run('initdb', ['-D', data, '-U', 'postgres', '-A', 'trust', '--encoding=UTF8', '--no-locale'])
+  run('initdb', ['-D', data, '-U', 'postgres', '-A', 'trust', '--encoding=UTF8', '--locale-provider=builtin', '--builtin-locale=C.UTF-8'])
   fs.appendFileSync(path.join(data, 'postgresql.conf'), "\nunix_socket_directories = ''\n")
   run('pg_ctl', ['-D', data, '-l', serverLog, '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start'])
   const sql = input => run('psql', ['-X', '-h', '127.0.0.1', '-p', String(port), '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-At'], input)
@@ -71,6 +71,7 @@ test('disposable database proves student professional identity, material and exe
       create schema auth; create table auth.users(id uuid primary key, raw_user_meta_data jsonb default '{}');
       create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
       grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;`)
+    sql(fs.readFileSync(path.join(root, 'scripts/local-database-bootstrap.sql'), 'utf8'))
     for (const file of fs.readdirSync(path.join(root, 'supabase/migrations')).filter(file => file.endsWith('.sql')).sort()) {
       sql(fs.readFileSync(path.join(root, 'supabase/migrations', file), 'utf8'))
     }

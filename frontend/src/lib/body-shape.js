@@ -82,7 +82,7 @@ function kilograms(weight, unit) {
  * Return the clamped BMI used by the visual fallback, or null for an unusable
  * adult profile. Height remains canonical centimetres regardless of weight unit.
  */
-export function bodyShapeBmi({ heightCm, weight, unit = 'kg' } = {}) {
+export function bodyShapeBmi({ heightCm = undefined, weight = undefined, unit = 'kg' } = {}) {
   const height = Number(heightCm)
   const weightKg = kilograms(weight, unit)
   if (!Number.isFinite(height) || height < 100 || height > 250 || weightKg == null) return null
@@ -107,7 +107,7 @@ function regionalScale(config, bmi) {
  * Dimensionless scaleX values for the ten body regions. The result is neutral
  * when height, weight, or unit cannot produce a trustworthy BMI.
  */
-export function bodyShapeRegionalScales({ sex = 'male', heightCm, weight, unit = 'kg' } = {}) {
+export function bodyShapeRegionalScales({ sex = 'male', heightCm = undefined, weight = undefined, unit = 'kg' } = {}) {
   const bmi = bodyShapeBmi({ heightCm, weight, unit })
   if (bmi == null) return neutralRegions()
   const profile = PROFILE[String(sex).toLowerCase()] || PROFILE.male

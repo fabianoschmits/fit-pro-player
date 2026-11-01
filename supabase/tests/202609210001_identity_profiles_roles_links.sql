@@ -156,8 +156,8 @@ select is(
 );
 select is(
   (select count(*)::integer from public.profiles where id = '00000000-0000-0000-0000-000000000001'),
-  0,
-  'a user cannot read another profile'
+  1,
+  'community exposes only public identity columns of other profiles'
 );
 select lives_ok(
   $$update public.profiles set display_name = 'Updated Student' where id = '00000000-0000-0000-0000-000000000002'$$,
@@ -168,6 +168,7 @@ select is(
   'Updated Student',
   'the permitted profile update is persisted'
 );
+reset role;
 select ok(
   (select profile.updated_at > before_update.updated_at
    from public.profiles profile
@@ -175,6 +176,7 @@ select ok(
    where profile.id = '00000000-0000-0000-0000-000000000002'),
   'an allowed profile update receives a server-controlled updated_at'
 );
+set local role authenticated;
 select throws_ok(
   $$update public.profiles set id = '00000000-0000-0000-0000-000000000001' where id = '00000000-0000-0000-0000-000000000002'$$,
   '42501',
@@ -191,12 +193,14 @@ select lives_ok(
   $$update public.profiles set updated_at = '2000-01-01T00:00:00Z' where id = '00000000-0000-0000-0000-000000000002'$$,
   'a client cannot control the profile update timestamp'
 );
+reset role;
 select ok(
   (select updated_at <> '2000-01-01T00:00:00Z'::timestamptz
    from public.profiles
    where id = '00000000-0000-0000-0000-000000000002'),
   'the profile update timestamp is overwritten server-side'
 );
+set local role authenticated;
 
 select is(
   (select count(*)::integer from public.user_roles where user_id = '00000000-0000-0000-0000-000000000002'),
@@ -284,8 +288,8 @@ select set_config('request.jwt.claims', jsonb_build_object(
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 select is(
   (select count(*)::integer from public.profiles where id = '00000000-0000-0000-0000-000000000002'),
-  0,
-  'professional users still cannot read another profile'
+  1,
+  'professional users can read public community identity'
 );
 select is(
   (select count(*)::integer from public.legacy_identity_links where supabase_user_id = '00000000-0000-0000-0000-000000000002'),
@@ -301,8 +305,8 @@ select set_config('request.jwt.claims', jsonb_build_object(
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
 select is(
   (select count(*)::integer from public.profiles where id = '00000000-0000-0000-0000-000000000001'),
-  0,
-  'a client-supplied admin claim does not bypass profile ownership'
+  1,
+  'public community identity is visible independently of a client-supplied admin claim'
 );
 
 select finish();

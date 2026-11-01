@@ -38,7 +38,7 @@ select pg_temp.expect_error($q$select public.update_program_metadata('09001620-0
 select pg_temp.expect_error($q$select public.update_program_metadata('09001620-0000-0000-0000-000000000001','Original',repeat('d',4001),null)$q$,'22023');
 select public.assign_program_version('09001620-0000-0000-0000-000000000001','09001630-0000-0000-0000-000000000001','09001600-0000-0000-0000-000000000003');
 set local request.jwt.claim.sub='09001600-0000-0000-0000-000000000003';
-select public.start_workout_execution('09001640-0000-0000-0000-000000000001',(select id from public.program_assignments where status='active'),'monday');
+select public.start_workout_execution('09001640-0000-0000-0000-000000000001',(select a.id from public.program_assignments a join public.program_versions v on v.id=a.version_id where a.status='active' order by v.version_number desc limit 1),'monday');
 select pg_temp.assert_true((select prescription_snapshot->>'workoutTitle'='monday' from public.workout_executions where id='09001640-0000-0000-0000-000000000001'),'legacy execution title falls back to day');
 reset role;
 create temporary table old_history as select to_jsonb(e) as execution from public.workout_executions e where id='09001640-0000-0000-0000-000000000001';
@@ -73,9 +73,13 @@ select pg_temp.expect_error($q$select public.save_professional_student_note('090
 set local request.jwt.claim.sub='09001600-0000-0000-0000-000000000003';
 select pg_temp.expect_error($q$select public.professional_student_note(auth.uid())$q$,'42501');
 select pg_temp.expect_error($q$select public.save_professional_student_note(auth.uid(),'student')$q$,'42501');
-select pg_temp.assert_true(public.student_program_overview()->'version'->'workout_titles'->>'monday'=repeat('n',80),'overview propagates names');
-select pg_temp.assert_true((select material->'workout_titles'->>'monday'=repeat('n',80) from public.student_professional_detail('09001600-0000-0000-0000-000000000001') d cross join lateral jsonb_array_elements(d.materials) material where material->>'status'='active' and material->>'program_id'='09001620-0000-0000-0000-000000000001'),'received material propagates names for the intended active assignment');
-select public.start_workout_execution('09001640-0000-0000-0000-000000000002',(select id from public.program_assignments where status='active'),'monday');
+reset role;
+update public.program_assignments set created_at=created_at-interval '1 day' where version_id='09001630-0000-0000-0000-000000000001';
+set local role authenticated;
+select public.apply_library_plan((select l.id from public.athlete_plan_library l join public.program_assignments a on a.id=l.assignment_id join public.program_versions v on v.id=a.version_id where a.program_id='09001620-0000-0000-0000-000000000001' order by v.version_number desc limit 1));
+select pg_temp.assert_true(public.student_program_overview()->'version'->'workout_titles'->>'monday'=repeat('n',80),'overview propagates names after explicit application');
+select pg_temp.assert_true((select material->'workout_titles'->>'monday'=repeat('n',80) from public.student_professional_detail('09001600-0000-0000-0000-000000000001') d cross join lateral jsonb_array_elements(d.materials) material where material->>'status'='active' and material->>'program_id'='09001620-0000-0000-0000-000000000001' and material->>'version_number'='2'),'received material propagates names for the intended active assignment');
+select public.start_workout_execution('09001640-0000-0000-0000-000000000002',(select a.id from public.program_assignments a join public.program_versions v on v.id=a.version_id where a.status='active' order by v.version_number desc limit 1),'monday');
 select pg_temp.assert_true((select prescription_snapshot->>'workoutTitle'=repeat('n',80) and prescription_snapshot->'exercises'=(select version->'weekly_plan'->'monday' from originals) from public.workout_executions where id='09001640-0000-0000-0000-000000000002'),'new execution captures immutable version title and prescription');
 select pg_temp.assert_true((select to_jsonb(e)=(select execution from old_history) from public.workout_executions e where id='09001640-0000-0000-0000-000000000001'),'new publication never rewrites old execution');
 select public.revoke_professional_relationship('09001610-0000-0000-0000-000000000001');

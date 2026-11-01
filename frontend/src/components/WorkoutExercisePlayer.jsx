@@ -15,12 +15,14 @@ import { Button, Check, NumberField } from './ui.jsx'
 import { Elapsed } from '../views/Workout.jsx'
 import MetricInfoButton from './MetricInfoButton.jsx'
 
-export default function WorkoutExercisePlayer({ entryIdx, compact, locked = false, onStartWorkout, onToggle, onField, onStartTimed,
-  onAddSet, onPrevious, onNext, previousDisabled, nextDisabled, exerciseDots, queueDetails }) {
+export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, locked = false, onStartWorkout = undefined, onToggle = undefined, onField = undefined, onStartTimed = undefined,
+  onAddSet = undefined, onPrevious = undefined, onNext = undefined, previousDisabled = undefined, nextDisabled = undefined, exerciseDots = undefined, queueDetails = undefined }) {
   const S = useStore(s => s.S)
   const working = useUI(s => s.work)
   const timer = useUI(s => s.timer)
   const manualSet = useUI(s => s.manualSet)
+  const [floats, setFloats] = useState([])
+  const nextFloatId = useRef(1)
   const [setsOpen, setSetsOpen] = useState(false)
   const previouslyDone = useRef(false)
   const entry = S.active?.entries[entryIdx]
@@ -73,8 +75,6 @@ export default function WorkoutExercisePlayer({ entryIdx, compact, locked = fals
       : col.f === 'r'
         ? 'Quantidade de vezes que você executa o movimento nesta série.'
         : ''
-  const [floats, setFloats] = useState([])
-  const nextFloatId = useRef(1)
 
   const bump = (s, i, col, direction) => {
     const value = col.eff ? stepEffort(col.eff, s[col.f], direction)

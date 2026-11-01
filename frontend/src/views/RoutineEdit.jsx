@@ -6,9 +6,9 @@ import { exOr, exerciseName, isAvailableExercise, isPendingExercise } from '../l
 import { DAYN, DAYS, uid, routineId, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import { planSetupProgress, smartDefaultConfig } from '../lib/ux.js'
-import { supersetUnits, cleanupSg, exLine } from '../lib/history.js'
+import { supersetUnits, cleanupSg } from '../lib/history.js'
 import ExerciseCard from '../components/training/ExerciseCard.jsx'
-import { Thumb } from '../components/Media.jsx'
+
 import { exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import RoutineMuscleThumb from '../components/RoutineMuscleThumb.jsx'
@@ -43,7 +43,7 @@ const MUSCLE_ANCHORS = {
   tibialis: { front: { x: 42, y: 86 }, back: { x: 58, y: 86 } },
 }
 
-export function RoutineTemplatePicker({ currentId, close, state, onUpdate, catalogOnly = false }) {
+export function RoutineTemplatePicker({ currentId, close, state = undefined, onUpdate, catalogOnly = false }) {
   const stored = useStore(s => s.S)
   const storeUpdate = useStore(s => s.update)
   const S = state || stored
@@ -89,7 +89,7 @@ export function RoutineTemplatePicker({ currentId, close, state, onUpdate, catal
 
 export default function RoutineEdit() { return <RoutineEditor /> }
 
-export function RoutineEditor({ state, onUpdate, routineId: suppliedId, basePath = '/plan', onSave, onBack, onOpen, readOnly = false, mode = 'athlete' } = {}) {
+export function RoutineEditor({ state = undefined, onUpdate = undefined, routineId: suppliedId = undefined, basePath = '/plan', onSave = undefined, onBack = undefined, onOpen = undefined, readOnly = false, mode = 'athlete' } = {}) {
   const nav = useNavigate()
   const { id: routeId } = useParams()
   const id = suppliedId || routeId
@@ -103,7 +103,7 @@ export function RoutineEditor({ state, onUpdate, routineId: suppliedId, basePath
   const [saveError, setSaveError] = useState('')
   const muscleMapRef = useRef(null)
   const r = S.routines.find(x => x.id === id)
-  useEffect(() => { if (!r) { if (onBack) onBack(); else nav(basePath) } }, [!!r])
+  useEffect(() => { if (!r) { if (onBack) onBack(); else nav(basePath) } }, [basePath, nav, onBack, r])
   useEffect(() => {
     if (!selectedMuscle) return undefined
     const clear = event => {

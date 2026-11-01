@@ -46,3 +46,10 @@ describe('account cache envelope', () => {
     expect(serializeStateOnly({ access_token: 'x', password: 'x', workouts: [] })).not.toMatch(/access_token|password/i)
   })
 })
+
+it('drops unrecognized containers even with innocent names and nested credentials', () => {
+ const result = JSON.parse(serializeStateOnly({ routines: [{id:'r',name:'A',ex:[],innocent:{value:'credential'}}], workouts: [], innocent:{value:'credential'}, profile:{name:'Ana',extra:'credential'}, week:{1:'r',authorization:'credential'} }))
+ expect(JSON.stringify(result)).not.toContain('credential')
+ expect(result.routines[0].name).toBe('A')
+ expect(result.profile.name).toBe('Ana')
+})

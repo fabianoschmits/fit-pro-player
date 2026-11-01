@@ -713,9 +713,16 @@
     padding: 8px 6px;
     gap: 8px;
   }
-  .console-message-link {
-    gap: 8px !important;
+  /* Keep the subject readable while selection and quick actions share narrow rows. */
+  .console-message-item { flex-wrap: wrap; }
+  .console-message-item > a.console-message-link {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    flex-basis: calc(100% - 32px);
+    gap: 8px;
   }
+  .console-message-link > .console-message-badges { grid-column: 2; justify-self: start; }
+  .console-message-item > .console-message-actions { margin-left: auto; }
   .console-quick-action-btn {
     width: 36px;
     height: 36px;

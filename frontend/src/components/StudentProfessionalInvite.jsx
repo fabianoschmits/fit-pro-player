@@ -13,7 +13,7 @@ import useStudentManagementRequest from './useStudentManagementRequest.js'
 import { studentVerificationLabel } from './StudentProfessionalVerification.jsx'
 import { FppSkeleton } from './FppFeedback.jsx'
 
-export default function StudentProfessionalInvite({ inviteCode }) {
+export default function StudentProfessionalInvite({ inviteCode = undefined }) {
   const auth = useAuth(); const [params] = useSearchParams()
   const initialCode = normalizeInviteCode(inviteCode ?? params.get('code'))
   return <InviteWorkspace key={`${auth.status}:${auth.user?.id}:${initialCode}`} initialCode={initialCode} />

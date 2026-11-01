@@ -82,7 +82,7 @@ export default function PrivacyConsentModal() {
   </div>
 }
 
-function ConsentOption({ label, description, checked, disabled, onChange }) {
+function ConsentOption({ label = undefined, description = undefined, checked, disabled = undefined, onChange = undefined }) {
   return <label className="privacy-consent-option"><span><strong>{label}</strong><small>{description}</small></span><input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange?.(event.target.checked)} /></label>
 }
 

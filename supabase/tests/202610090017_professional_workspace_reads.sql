@@ -44,8 +44,22 @@ select pg_temp.assert_true(jsonb_array_length(public.professional_executions_pag
 select pg_temp.assert_true((public.professional_executions_page(null,'','all',null,null,9999,20)->>'total')::int=602 and not (public.professional_executions_page(null,'','all',null,null,9999,20)->>'has_more')::boolean,'empty offset preserves global total');
 select pg_temp.assert_true((select count(distinct item->>'student_user_id')=240 from generate_series(0,2) n cross join lateral jsonb_array_elements(public.professional_students_page('','all',n*100,100)->'items') item),'student date/UUID order has no omission or duplicates');
 select pg_temp.assert_true((select count(distinct item->>'id')=602 from generate_series(0,6) n cross join lateral jsonb_array_elements(public.professional_executions_page(null,'','all',null,null,n*100,100)->'items') item),'execution date/UUID ties paginate deterministically');
-select pg_temp.assert_true((public.professional_students_page('Student 001','all',0,30)->'items'->0->'attention_reasons')='[]'::jsonb,'attention_uses_current_assignment: old abandoned/inactive history ignored');
+select pg_temp.assert_true((public.professional_students_page('Student 001','all',0,30)->'items'->0->'attention_reasons')='["without_program"]'::jsonb,'attention_uses_current_assignment: ' || (public.professional_students_page('Student 001','all',0,30)->'items'->0->'attention_reasons')::text);
 select pg_temp.assert_true((public.professional_students_page('Student 001','all',0,30)->'items'->0->'last_activity_at')='null'::jsonb,'current assignment has no fabricated activity');
+-- Student confirmation is required before availability becomes a calendar plan.
+reset role;
+insert into public.athlete_plan_library(user_id,source_type,title,assignment_id)
+ select distinct on(a.student_user_id) a.student_user_id,'professional','Confirmed fixture',a.id
+ from public.program_assignments a join public.program_versions v on v.id=a.version_id
+ where a.status='active' order by a.student_user_id,v.version_number desc on conflict(assignment_id) do nothing;
+do $$ declare selected record; begin
+ for selected in select * from public.athlete_plan_library where title='Confirmed fixture' loop
+  perform set_config('request.jwt.claim.sub',selected.user_id::text,true);
+  perform public.apply_library_plan(selected.id);
+ end loop;
+end $$;
+set local role authenticated;
+set local request.jwt.claim.sub='09001700-0000-0000-0000-000000000001';
 select pg_temp.assert_true((public.professional_dashboard_summary('2026-10-08','America/Sao_Paulo')->>'today_workouts')::int=240,'timezone_midnight_agenda: Thursday schedule has exact global count');
 select pg_temp.assert_true((select item->>'status'='completed' and item->>'workout_title'='Local Thursday' from jsonb_array_elements(public.professional_dashboard_summary('2026-10-08','America/Sao_Paulo')->'today') item where item->>'student_user_id'=md5('workspace-student-2')::uuid::text),'timezone_midnight_agenda: 01:00 UTC execution belongs to prior local day');
 select pg_temp.assert_true((select item->>'status'='scheduled' from jsonb_array_elements(public.professional_dashboard_summary('2026-10-08','UTC')->'today') item where item->>'student_user_id'=md5('workspace-student-2')::uuid::text),'UTC boundary differs from local day');

@@ -27,7 +27,7 @@ function nextPlannedWorkout(S, from) {
   return null
 }
 
-function SessionMetrics({ workout, unit }) {
+function SessionMetrics({ workout, unit = undefined }) {
   return <div className="home-now-metrics">
     <span><small>{t('Duration')}</small><b>{fmtDur(Math.max(0, (workout.end || workout.start) - workout.start))}</b></span>
     <span><small>{t('Sets')}</small><b>{setsDone(workout)}</b></span>
@@ -91,6 +91,7 @@ export default function Home() {
   const weightStart = bwPoints[0]
   const weightTrend = weightStart && bw ? bw.w - S.bodyweight.slice(-90)[0].w : null
   const chartHeight = weightExpanded ? 228 : 104
+  /** @type {import('framer-motion').Transition} */
   const weightTransition = { type: 'spring', duration: 0.42, bounce: 0 }
 
   const active = S.active

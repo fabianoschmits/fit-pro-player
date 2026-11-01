@@ -15,22 +15,24 @@ begin
   ticket_id := public.community_report_content('post', post_id, null, 'spam', null);
   duplicate_ticket_id := public.community_report_content('post', post_id, null, 'spam', null);
   if ticket_id <> duplicate_ticket_id then raise exception 'Duplicate report created another ticket'; end if;
+  reset role;
   if not exists (select 1 from public.support_tickets t join public.support_categories c on c.id=t.category_id where t.id=ticket_id and t.user_id=reporter and c.slug='community_report') then raise exception 'Report ticket was not created'; end if;
+  set local role authenticated;
 
-  ticket_id := public.community_report_content('comment', post_id, reply_id, 'other', 'Contexto adicional necessário');
+  ticket_id := public.community_report_content('comment', post_id, reply_id, 'other', 'Contexto adicional necessário para avaliar esta denúncia');
   begin
     perform public.community_report_content('comment', post_id, reply_id, 'other', null);
     raise exception 'Other reason allowed without description';
-  exception when raise_exception then if sqlerrm <> 'Explique o motivo da denúncia' then raise; end if; end;
+  exception when sqlstate '22023' then if sqlerrm <> 'Explique o motivo da denúncia' then raise; end if; end;
   begin
     perform public.community_report_content('comment', gen_random_uuid(), reply_id, 'spam', null);
     raise exception 'Mismatched post accepted';
-  exception when raise_exception then if sqlerrm <> 'Conteúdo indisponível' then raise; end if; end;
+  exception when sqlstate '22023' then if sqlerrm <> 'Conteúdo indisponível' then raise; end if; end;
   perform set_config('request.jwt.claim.sub', author::text, true);
   begin
     perform public.community_report_content('post', post_id, null, 'spam', null);
     raise exception 'Self report allowed';
-  exception when raise_exception then if sqlerrm <> 'Você não pode denunciar seu próprio conteúdo' then raise; end if; end;
+  exception when sqlstate '22023' then if sqlerrm <> 'Você não pode denunciar seu próprio conteúdo' then raise; end if; end;
   perform set_config('request.jwt.claim.sub', outsider::text, true);
   begin
     perform public.ops_support_ticket_detail(ticket_id);

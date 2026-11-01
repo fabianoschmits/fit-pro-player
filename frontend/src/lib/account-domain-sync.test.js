@@ -197,3 +197,96 @@ it('preserves professional assignment metadata when synchronizing personal edits
   expect(h.state().assignedProgram).toEqual(assignment)
   expect(h.state()._pendingSync.plan).toBe(false)
 })
+
+function planPair() {
+ let revision = 1
+ let remote = { schedule:{revision,mode:'weekly',values:{week:{},dayPlan:{}}}, routines:[{id:'a',title:'A',prescription:{ex:[]}},{id:'b',title:'B',prescription:{ex:[]}}] }
+ const repository = {
+  loadPlan:vi.fn(async () => structuredClone(remote)),
+  savePlan:vi.fn(async input => {
+   if(input.expectedRevision !== revision) throw Object.assign(new Error('revision'),{kind:'revision-conflict',retryable:true})
+   remote={schedule:{revision:++revision,mode:input.mode,values:input.schedule},routines:input.routines}
+   return structuredClone(remote)
+  }),
+ }
+ const device = () => {
+  let state = {...initial(),bodyweight:[],_pendingSync:{}}
+  let online = true
+  const sync = createAccountDomainSync({repository,getState:()=>state,replaceState:next=>{state=next},isCurrent:()=>true,isOnline:()=>online})
+  sync.acceptRemote('plan',structuredClone(remote))
+  return {sync,state:()=>state,edit:(index,name)=>{state={...state,routines:state.routines.map((r,i)=>i===index?{...r,name}:r),_pendingSync:{plan:true}}},online:value=>{online=value}}
+ }
+ return {device,repository,remote:()=>remote}
+}
+it('preserves edits from two devices to different workouts through one conflict retry',async()=>{
+ const h=planPair(),a=h.device(),b=h.device()
+ a.edit(0,'AA');b.edit(1,'BB')
+ await a.sync.start();await b.sync.start()
+ expect(h.remote().routines.map(r=>r.title)).toEqual(['AA','BB'])
+ expect(h.repository.loadPlan).toHaveBeenCalledTimes(1)
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(3)
+ expect(b.state()._pendingSync.plan).toBe(false)
+})
+it('preserves both versions on incompatible edits, including remote refresh while pending',async()=>{
+ const h=planPair(),a=h.device(),b=h.device()
+ a.edit(0,'AA');b.edit(0,'BB');await a.sync.start()
+ b.sync.acceptRemote('plan',structuredClone(h.remote()))
+ await b.sync.start()
+ expect(h.remote().routines[0].title).toBe('AA')
+ expect(b.state().routines[0].name).toBe('BB')
+ expect(b.state()._syncConflicts.plan.remote.routines[0].title).toBe('AA')
+ expect(b.sync.status().error).toBe('sync-conflict')
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(2)
+})
+it('reconnects offline edits without discarding another device changes',async()=>{
+ const h=planPair(),a=h.device(),b=h.device()
+ b.online(false);b.edit(1,'BB');await b.sync.start()
+ a.edit(0,'AA');await a.sync.start()
+ b.online(true);await b.sync.retry()
+ expect(h.remote().routines.map(r=>r.title)).toEqual(['AA','BB'])
+})
+it('stops after the single revision retry when a third writer wins again',async()=>{
+ const h=planPair(),a=h.device(),b=h.device()
+ a.edit(0,'AA');await a.sync.start();b.edit(1,'BB')
+ h.repository.savePlan.mockRejectedValue(Object.assign(new Error('busy'),{kind:'revision-conflict',retryable:true}))
+ await b.sync.start()
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(3)
+ expect(b.sync.status().error).toBe('sync-conflict')
+ expect(b.state()._pendingSync.plan).toBe(true)
+})
+
+it('retains merged remote changes when local edits occur during the retry response',async()=>{
+ const h=planPair(),a=h.device(),b=h.device()
+ a.edit(0,'AA');await a.sync.start();b.edit(1,'BB')
+ const original=h.repository.savePlan.getMockImplementation(), pending=deferred()
+ h.repository.savePlan.mockImplementationOnce(original).mockImplementationOnce(async input=>{await pending.promise;return original(input)})
+ const saving=b.sync.start()
+ for(let i=0;i<20 && h.repository.savePlan.mock.calls.length<3;i++)await Promise.resolve()
+ b.edit(1,'BBB');pending.resolve();await saving
+ expect(h.remote().routines.map(r=>r.title)).toEqual(['AA','BBB'])
+ expect(b.state().routines.map(r=>r.name)).toEqual(['AA','BBB'])
+})
+it('limits automatic transient retries and preserves the pending journal',async()=>{
+ vi.useFakeTimers()
+ try {
+  const saveBody=vi.fn(async()=>{throw Object.assign(new Error('offline'),{kind:'request-failed',retryable:true})})
+  const h=harness({saveBody});await h.sync.start();await vi.runAllTimersAsync()
+  expect(saveBody).toHaveBeenCalledTimes(6);expect(h.state()._pendingSync.body).toBe(true)
+  h.sync.dispose()
+ }finally{vi.useRealTimers()}
+})
+
+it('holds incompatible conflicts across unrelated changes and reloads until explicitly retried',async()=>{
+ const h=planPair(),a=h.device(),b=h.device()
+ a.edit(0,'AA');b.edit(0,'BB');await a.sync.start();await b.sync.start()
+ const saves=h.repository.savePlan.mock.calls.length,reads=h.repository.loadPlan.mock.calls.length
+ b.edit(1,'Unrelated');await b.sync.changed()
+ const restored=createAccountDomainSync({repository:h.repository,getState:b.state,replaceState:()=>{},isOnline:()=>true,isCurrent:()=>true})
+ await restored.start()
+ expect(restored.status().error).toBe('sync-conflict')
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(saves)
+ expect(h.repository.loadPlan).toHaveBeenCalledTimes(reads)
+ b.edit(0,'AA');await b.sync.retry()
+ expect(h.remote().routines.map(row=>row.title)).toEqual(['AA','Unrelated'])
+ expect(b.state()._syncConflicts?.plan).toBeUndefined()
+})

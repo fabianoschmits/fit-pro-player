@@ -4,10 +4,10 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, smOf, exerciseName, exerciseSearchText, isAvailableExercise, isPendingExercise, UNAVAILABLE_EXERCISE_MESSAGE } from './lib/exercises.js'
-import { fmtDate, fmtHistoryDate, fmtNum, fmtTrainingVolume, fmtDur, durPart, todayISO, isoOf, uid, routineId, exCount, DAYN, MONTHS_LONG, ACCENTS, sentenceCase, workoutDuration } from './lib/format.js'
+import { fmtDate, fmtHistoryDate, fmtNum, fmtTrainingVolume, fmtDur, durPart, todayISO, isoOf, uid, routineId, exCount, DAYN, MONTHS_LONG, sentenceCase, workoutDuration } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, isBw, isPerSide, sideReps, suggestedWeightFor } from './lib/history.js'
 import { shouldWeighBeforeWorkout, hasWeighedToday } from './lib/ux.js'
-import { beep, vibrate } from './lib/sound.js'
+import { beep } from './lib/sound.js'
 import { t, instrFor, getLang, INSTR_LANGS } from './lib/i18n.js'
 import { nav } from './lib/nav.js'
 import { ensureStarterRoutines, routineName } from './lib/starter.js'
@@ -115,7 +115,7 @@ function useLocalSheetSave(sheetId) {
 }
 
 /* ============================ custom confirm dialog ============================ */
-function ConfirmDialog({ title, message, confirmText, cancelText, danger, onConfirm, close, sheetId }) {
+function ConfirmDialog({ title, message, confirmText, cancelText, danger = undefined, onConfirm, close, sheetId }) {
   const inFlight = useRef(false)
   const retryPersistence = useRef(false)
   const mounted = useRef(true)
@@ -208,7 +208,7 @@ export function loadStarterPlan() {
 // below an everyday squat.
 const W_LO = 1
 const wHi = unit => (unit === 'lb' ? 660 : 300)
-function WeightInput({ value, setValue, unit }) {
+function WeightInput({ value = undefined, setValue, unit = undefined }) {
   const W_HI = wHi(unit)
   const clamp = x => Math.max(W_LO, Math.min(W_HI, Math.round((x || 0) * 10) / 10))
   const shown = toDisplayMass(value, unit) ?? 0
@@ -230,14 +230,14 @@ function WeightInput({ value, setValue, unit }) {
   </>
 }
 
-function MassStepper({ value, onChange, unit, step, ...props }) {
+function MassStepper({ value = undefined, onChange = undefined, unit = undefined, step = undefined, ...props }) {
   const displayValue = toDisplayMass(value || 0, unit) || 0
   const displayStep = step ?? (unit === 'lb' ? 5 : 2.5)
   return <Stepper {...props} value={displayValue} step={displayStep} onChange={next => onChange(fromDisplayMass(next, unit))} />
 }
 
 /* ============================ body weight ============================ */
-function BwSheet({ required, onDone, close, date, sheetId }) {
+function BwSheet({ required = undefined, onDone = undefined, close, date = undefined, sheetId }) {
   const st = useStore(s => s.S)
   const action = useLocalSheetSave(sheetId)
   const unit = st.displayUnit || 'kg'
@@ -249,7 +249,7 @@ function BwSheet({ required, onDone, close, date, sheetId }) {
     const next = st.bodyweight.find(b => b.d === selectedDate)
     const fallback = next || lastBW(st)
     setV(fallback ? fallback.w : (st.targetW || 70))
-  }, [selectedDate, st.bodyweight, st.targetW])
+  }, [selectedDate, st, st.bodyweight, st.targetW])
   const shiftDate = days => setSelectedDate(current => {
     const next = new Date(current + 'T12:00:00')
     next.setDate(next.getDate() + days)
@@ -332,12 +332,12 @@ function ImportSummary({ parsed, close }) {
   const fresh = (isBW ? parsed.bodyweight.length : parsed.workouts.length) - have
 
   const doImport = () => {
-    let res
+    let res = { added: 0 }
     update(s => { res = mergeImport(s, parsed) })
     close()
     toast(isBW
-      ? t('{0} weigh-ins imported', res.added)
-      : t('{0} workouts imported', res.added))
+      ? t('{0} weigh-ins imported', res?.added)
+      : t('{0} workouts imported', res?.added))
   }
 
   return <>
@@ -645,7 +645,7 @@ export const addToRoutineSheet = ex => ui().openSheet(close => <AddToRoutine ex=
 /* ============================ custom exercises (issue #11) ============================ */
 // Name + body part is all it takes — the exercise then behaves like any built-in one
 // (planning, logging, PRs, stats), just without an animation.
-function CustomExForm({ existing, prefill, onDone, close, sheetId }) {
+function CustomExForm({ existing, prefill, onDone = undefined, close, sheetId }) {
   const action = useLocalSheetSave(sheetId)
   const [n, setN] = useState(existing ? existing.n : (prefill || ''))
   const [bp, setBp] = useState(existing ? existing.bp : '')
@@ -723,7 +723,7 @@ function usageMap(st) {
   return u
 }
 
-function ExercisePickerPreview({ exercise, selected, quickAdd, onChoose, onConfigure }) {
+function ExercisePickerPreview({ exercise, selected = undefined, quickAdd = undefined, onChoose, onConfigure }) {
   const root = useRef(null)
   useEffect(() => {
     const reveal = () => {
@@ -748,7 +748,7 @@ function ExercisePickerPreview({ exercise, selected, quickAdd, onChoose, onConfi
   </div>
 }
 
-function ExercisePicker({ onPick, close, routineId, quickAdd, closeOnPick = false, title, excludeIds = [], catalogOnly = false }) {
+function ExercisePicker({ onPick, close, routineId = undefined, quickAdd = undefined, closeOnPick = false, title = undefined, excludeIds = [], catalogOnly = false }) {
   const st = useStore(s => s.S)
   const usage = usageMap(st)
   const selectedIds = new Set((st.routines.find(r => r.id === routineId)?.ex || []).map(e => e.id))
@@ -834,7 +834,7 @@ export const exercisePicker = (onPick, opts = {}) => ui().openSheet(close => <Ex
 // Progression settings for one exercise (issue #17). Shown inside the config sheet because
 // "how does this lift go up" belongs next to sets and reps, not in a separate screen. Left
 // on "follow the routine" it inherits, so most people never touch it.
-function ProgressionFields({ ex, mode, c, setC, routine, unit }) {
+function ProgressionFields({ ex, mode, c, setC, routine, unit = undefined }) {
   const options = POLICIES_FOR[mode] || ['off']
   if (options.length < 2) return null
   const inherited = policyFor({ id: ex.id }, routine, mode)
@@ -857,7 +857,7 @@ function ProgressionFields({ ex, mode, c, setC, routine, unit }) {
   </>
 }
 
-function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, saveLabel, sheetId }) {
+function ExConfig({ ex, existing, onSave = undefined, onDelete, close, routine, initial, saveLabel, sheetId }) {
   const st = useStore(s => s.S)
   const displayUnit = st.displayUnit || 'kg'
   const action = useLocalSheetSave(sheetId)
@@ -902,9 +902,9 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine, initial, sav
       const typed = Math.max(1, Math.round(c.reps) || 10)
       const reps = perSide ? Math.ceil(typed / 2) * 2 : typed
       const out = { sets, mode: 'reps', reps, weight: Math.max(0, c.weight || 0), ...flags, ...(perSide ? { side: true } : {}), ...prog }
-      if (policyFor({ ...c, id: ex.id }, routine, 'reps') === 'double') out.repsMin = Math.min(reps, Math.max(1, Math.round(c.repsMin) || Math.max(1, reps - 2)))
+      if (policyFor({ ...c, id: ex.id }, routine, 'reps') === 'double') Object.assign(out, {repsMin: Math.min(reps, Math.max(1, Math.round(c.repsMin) || Math.max(1, reps - 2)))})
       // A ceiling below the working reps would tell you to add a set on day one.
-      if (bw && !(out.weight > 0) && c.repsMax > 0) out.repsMax = Math.max(reps, Math.round(c.repsMax))
+      if (bw && !(out.weight > 0) && c.repsMax > 0) Object.assign(out, {repsMax: Math.max(reps, Math.round(c.repsMax))})
       onSave(out)
     }
   }, close)
@@ -1076,7 +1076,7 @@ function PlanTools({ close }) {
     }
     rd.onerror = () => { setError(t('Could not read that file')); finishRead() }
     rd.onabort = finishRead
-    try { rd.readAsText(f) } catch { rd.onerror() }
+    try { rd.readAsText(f) } catch { rd.onerror?.(undefined) }
   }
 
   return <>
@@ -1190,9 +1190,9 @@ function DayAssign({ day, close }) {
 }
 export const dayAssignSheet = day => ui().openSheet(close => <DayAssign day={day} close={close} />)
 
-export const workoutShareSheet = w => ui().openSheet(close => <WorkoutShareModal w={w} onClose={close} />, { className: 'share-sheet-modal' })
+export const workoutShareSheet = w => ui().openSheet(() => <WorkoutShareModal w={w} />, { className: 'share-sheet-modal' })
 
-function WorkoutSetLabel({ label }) {
+function WorkoutSetLabel({ label = undefined }) {
   const rir = label.match(/^(.*?)( \(RIR [^)]+\))$/)
   if (!rir) return label
   return <>{rir[1]}<MetricInfoButton className="workout-set-rir" label={rir[2]} description="Repetições em reserva: quantas você ainda conseguiria fazer antes da falha." /></>
@@ -1307,7 +1307,7 @@ function Calendar({ start, close }) {
 export const calendarSheet = start => ui().openSheet(close => <Calendar start={start} close={close} />)
 
 /* shared small workout row (used in lists) */
-export function WorkoutRow({ w, onClick }) {
+export function WorkoutRow({ w, onClick = undefined }) {
   const st = useStore(s => s.S)
   return <div className="workout-row-shell">
     <button type="button" className={'item workout-row' + (w.prs?.length ? ' has-pr' : '')} onClick={onClick}>
@@ -1478,7 +1478,7 @@ function TopWeight({ entryIdx, close, sheetId }) {
   const maxSet = entry ? Math.max(0, ...entry.sets.filter(s => s.done && !isWarmupRow(s)).map(s => s.w || 0)) : 0
   const prevBest = entry ? Math.max((st.exWeights[entry.id] || {}).w || 0, bestWeightFor(st, entry.id)) : 0
   const [v, setV] = useState(entry ? (Math.max(maxSet, prevBest) || entry.target.weight || 0) : 0)
-  useEffect(() => { if (!entry) close() }, [!entry])
+  useEffect(() => { if (!entry) close() }, [close, entry])
 
   const units = supersetUnits(A ? A.entries : [])
   const unit = entry ? unitOf(units, entryIdx) : []
@@ -1619,7 +1619,7 @@ function doFinishWorkout(note) {
     note,
     snapshotFor: e => EXIDX[e.id]?.custom ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
   })
-  w.vol = workoutVolume(w)
+  Object.assign(w, {vol: workoutVolume(w) })
   void useStore.getState().completeSessionRecovery({
     workout: w,
     endedEarly,

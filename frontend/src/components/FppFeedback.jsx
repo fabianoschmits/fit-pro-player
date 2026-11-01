@@ -10,7 +10,7 @@ export function FppStatusAnimation({ state = 'idle', className = '' }) {
   return <span className={`fpp-status-animation ${className}`} data-state={state} aria-hidden="true"><Icon name={icon} /></span>
 }
 
-export function FppProgress({ value, max = 100, label = t('Loading…'), indeterminate = value == null, className = '', ...rest }) {
+export function FppProgress({ value = undefined, max = 100, label = t('Loading…'), indeterminate = value == null, className = '', ...rest }) {
   const limit = Number.isFinite(max) && max > 0 ? max : 100
   const current = Math.min(limit, Math.max(0, Number(value) || 0))
   return <div {...rest} className={`fpp-progress ${className}`} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={indeterminate ? undefined : current} data-indeterminate={indeterminate || undefined}>
@@ -25,7 +25,7 @@ export function FppSkeleton({ label = t('Loading…'), rows = 3, className = '',
   </div>
 }
 
-export function FppActionFeedback({ state = 'idle', children, className = '', ...rest }) {
+export function FppActionFeedback({ state = 'idle', children = undefined, className = '', ...rest }) {
   return <div {...rest} className={`fpp-action-feedback ${className}`} data-state={state} role="status" aria-live="polite" aria-atomic="true" aria-busy={isFppBusy(state) || undefined}>
     <FppStatusAnimation state={state} />{children && <span>{children}</span>}
   </div>

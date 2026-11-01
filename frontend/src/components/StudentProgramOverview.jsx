@@ -7,6 +7,7 @@ import { t } from '../lib/i18n.js'
 import { professionalDayLabel, ProfessionalPrescription } from './ProfessionalPrescription.jsx'
 import { Button, Section } from './ui.jsx'
 
+/** @param {{overview?: {version?: {weeklyPlan?: object, versionNumber?: number, publishedAt?: string}, program?: {title?: string, description?: string}, professional?: {name?: string}, executions?: Array<{id: string,day_key: string,status: string,started_at: string}>}, onStart?: Function, managementCompact?: boolean, trainingTo?: string}} props */
 export default function StudentProgramOverview({ overview = {}, onStart, managementCompact = false, trainingTo }) {
   const [limit, setLimit] = useState(20)
   const plan = overview.version?.weeklyPlan || {}

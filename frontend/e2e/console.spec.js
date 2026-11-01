@@ -47,7 +47,7 @@ test('the platform workspace exposes messages, navigates from notifications and 
   await expect(page.getByText('Resposta enviada ao usuário.', { exact: true })).toBeVisible()
   await page.screenshot({ path: testInfo.outputPath('console-conversation.png'), fullPage: true })
   await page.getByRole('link', { name: 'Caixa de entrada', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Mensagens dos usuários', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Mensagens', level: 1 })).toBeVisible()
 })
 
 test('the test laboratory groups experiments and returns each one to its hub', async ({ page }, testInfo) => {
@@ -109,9 +109,20 @@ test('the central pages fit small and large viewports and the FAQ has a separate
       await expect(page.locator('.console-main')).not.toContainText('Verificando acesso…')
       const clipped = await page.locator('.console-main').evaluate(main => {
         const bounds = main.getBoundingClientRect()
-        return [...main.querySelectorAll('input,select,textarea,button')].filter(el => { const rect = el.getBoundingClientRect(); return rect.width > 0 && (rect.left < bounds.left - 1 || rect.right > bounds.right + 1) }).map(el => el.getAttribute('aria-label') || el.tagName)
+        return [...main.querySelectorAll('input,select,textarea,button')].filter(el => {
+          const rect=el.getBoundingClientRect()
+          // Status tabs and metric carousels intentionally scroll inside the page.
+          for(let parent=el.parentElement;parent&&parent!==main;parent=parent.parentElement){
+            if(['auto','scroll'].includes(getComputedStyle(parent).overflowX)&&parent.scrollWidth>parent.clientWidth){
+              const box=parent.getBoundingClientRect()
+              if(box.left>=bounds.left-1&&box.right<=bounds.right+1)return false
+            }
+          }
+          return rect.width>0&&(rect.left<bounds.left-1||rect.right>bounds.right+1)
+        }).map(el=>el.getAttribute('aria-label')||el.tagName)
       })
       expect(clipped, route).toEqual([])
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
       if (route.endsWith('faq-1')) await expect(page.getByRole('textbox', { name: 'Resposta', exact: true })).toHaveValue('Abra Plano e escolha uma rotina.')
       if (route === '/console/support') {
         await expect(page.locator('.console-message-copy').first()).toBeVisible()

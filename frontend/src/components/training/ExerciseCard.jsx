@@ -6,7 +6,7 @@ import { exLine } from '../../lib/history.js'
 import { t } from '../../lib/i18n.js'
 import Icon from '../Icon.jsx'
 import { Button, NumberField, TextArea } from '../ui.jsx'
-export default function ExerciseCard({ entry, unit = 'kg', onEdit, onChange, children }) {
+export default function ExerciseCard({ entry, unit = 'kg', onEdit = undefined, onChange = undefined, children = undefined }) {
   const [expanded, setExpanded] = useState(false)
   const id = useId(), ex = exOr(entry.id)
   return <article className="card training-exercise-card">

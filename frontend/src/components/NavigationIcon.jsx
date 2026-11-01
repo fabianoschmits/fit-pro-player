@@ -45,7 +45,7 @@ function StatsArtwork() {
 
 // Only meaningful changes replay the SVG artwork. The button and SVG stay
 // mounted, preserving focus, navigation timing and the menu's fixed geometry.
-export default function NavigationIcon({ name, resume = false, active = false, visible = true, activation = 0, entryKey }) {
+export default function NavigationIcon({ name, resume = false, active = false, visible = true, activation = 0, entryKey = undefined }) {
   const [sequence, setSequence] = useState(0)
   const previous = useRef({ name, resume, active, visible, activation, entryKey })
   const clickedEntry = useRef(null)

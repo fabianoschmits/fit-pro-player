@@ -109,7 +109,7 @@ const toStudentProfessionalDetail = value => value ? ({
   executions: value.executions || [],
 }) : null
 
-export function createProfessionalWorkflowRepository({ client } = {}) {
+export function createProfessionalWorkflowRepository({ client = undefined } = {}) {
   const rpc = async (name, args) => {
     if (['publish_program_version', 'publish_program_version_with_titles'].includes(name)) {
       const validation = validateAvailableWeeklyPlan(args.p_weekly_plan)

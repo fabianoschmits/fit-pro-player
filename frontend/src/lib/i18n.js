@@ -14,8 +14,8 @@ export { LANGS, DEFAULT_LANG, INSTR_LANGS, DATE_LOCALES, getLang, dateLocale, t,
 // pt-BR is already bundled by i18n-core so the default first paint never flashes English.
 // Excluding it from this glob avoids a redundant dynamic-import edge and its build warning;
 // every non-default locale and every instruction catalogue remains lazy-loaded.
-const localePacks = import.meta.glob(['../locales/*.js', '!../locales/pt.js'])
-const instrPacks = import.meta.glob('../instr/*.js')
+const localePacks = import.meta.glob( ['../locales/*.js', '!../locales/pt.js'], { import: 'default' })
+const instrPacks = import.meta.glob('../instr/*.js', { import: 'default' })
 
 // React subscription bookkeeping — kept here, not in core, so core has zero React coupling.
 const subs = new Set()
@@ -26,8 +26,8 @@ export async function setLang(l) {
   if (l === getLang() && getVersion() > 0) return
   let dict = {}, instr = null
   try {
-    dict = l === 'en' ? {} : l === DEFAULT_LANG ? null : (await localePacks['../locales/' + l + '.js']()).default
-    instr = l === 'en' || !INSTR_LANGS.includes(l) ? null : (await instrPacks['../instr/' + l + '.js']()).default
+    dict = l === 'en' ? {} : l === DEFAULT_LANG ? null : await localePacks['../locales/' + l + '.js']()
+    instr = l === 'en' || !INSTR_LANGS.includes(l) ? null : await instrPacks['../instr/' + l + '.js']()
   } catch (e) { dict = {}; instr = null }
   _setLangState(l, dict, instr)
   notify()

@@ -2,7 +2,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
   resolveNavigationContext,
-  NAVIGATION_CONTEXT_STORAGE_KEY,
 } from './navigation-contexts.js'
 
 describe('navigation-contexts resolver', () => {

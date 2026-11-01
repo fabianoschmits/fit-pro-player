@@ -134,7 +134,7 @@ test('keeps social feed actions available while post photos load and preserves i
   await expect(theirs.locator('.community-liker-summary img')).toHaveAttribute('src',/avatar-80/)
   await theirs.getByLabel('Abrir comentários').click()
   const dialog=page.getByRole('dialog',{name:'Comentários'})
-  await dialog.locator('input').fill('Comentário QA')
+  await dialog.getByRole('textbox').fill('Comentário QA')
   await dialog.getByLabel('Enviar comentário').click()
   await expect(dialog.locator('.community-comment-row')).toContainText('Pessoa Teste')
   await expect(dialog.locator('.community-comment-row img')).toHaveAttribute('src',/avatar-80/)

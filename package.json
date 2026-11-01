@@ -19,10 +19,17 @@
     "sync:exercise-catalogue": "node scripts/sync-exercise-sprite-catalogue.mjs",
     "check:exercise-catalogue": "node scripts/sync-exercise-sprite-catalogue.mjs --check",
     "test:e2e": "npm --prefix frontend run test:e2e",
-    "test:plan-library:database": "node scripts/test-plan-library-database.mjs"
+    "test:plan-library:database": "node scripts/test-plan-library-database.mjs",
+    "lint": "npm --prefix frontend run lint",
+    "typecheck": "npm --prefix frontend run typecheck",
+    "check:i18n": "npm --prefix frontend run check:i18n",
+    "check:database:clean": "node scripts/run-clean-database-tests.mjs",
+    "test:e2e:pwa": "npm --prefix frontend run test:e2e:pwa",
+    "build:mobile:web": "npm --prefix frontend run build:mobile:web"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.12",
+    "supabase": "2.122.0",
     "web-push": "^3.6.7"
   }
 }

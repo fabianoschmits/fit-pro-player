@@ -13,13 +13,13 @@ select has_check('public', 'professional_profiles', 'professional profile name i
 select has_check('public', 'professional_profiles', 'professional specialties are bounded');
 select ok((select relrowsecurity from pg_class where oid = 'public.professional_profiles'::regclass), 'professional profiles has RLS enabled');
 select ok(has_table_privilege('authenticated', 'public.professional_profiles', 'SELECT'), 'authenticated can select through RLS');
-select ok(has_table_privilege('authenticated', 'public.professional_profiles', 'INSERT'), 'authenticated has insert grant for RLS');
-select ok(has_table_privilege('authenticated', 'public.professional_profiles', 'UPDATE'), 'authenticated has update grant for RLS');
+select ok(not has_table_privilege('authenticated', 'public.professional_profiles', 'INSERT'), 'profile creation is RPC-only');
+select ok(not has_table_privilege('authenticated', 'public.professional_profiles', 'UPDATE'), 'profile editing is RPC-only');
 select ok(not has_table_privilege('authenticated', 'public.professional_profiles', 'DELETE'), 'authenticated cannot delete profiles');
 select policy_cmd_is('public', 'professional_profiles', 'professional_profiles_select_own', 'SELECT', 'owner select policy exists');
 select policy_cmd_is('public', 'professional_profiles', 'professional_profiles_insert_professional', 'INSERT', 'professional insert policy exists');
 select policy_cmd_is('public', 'professional_profiles', 'professional_profiles_update_professional', 'UPDATE', 'professional update policy exists');
-select is((select count(*)::integer from pg_policies where schemaname = 'public' and tablename = 'professional_profiles'), 3, 'no public enumeration or delete policy exists');
+select is((select count(*)::integer from pg_policies where schemaname = 'public' and tablename = 'professional_profiles' and permissive = 'PERMISSIVE'), 3, 'no public enumeration or delete policy exists');
 
 select finish();
 rollback;

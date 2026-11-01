@@ -32,7 +32,7 @@ for (const [name, userAgent] of [['iPhone Chrome', iphoneChrome], ['iPhone Home 
       expect(await page.locator('.sheet.auth-fullscreen').evaluate(el => el.getBoundingClientRect().bottom)).toBeLessThanOrEqual(844)
     })
 
-    test('installed routes, profile bubble and sticky workout keep top clearance', async ({ page }, testInfo) => {
+    test('installed routes, profile bubble and workout keep top clearance', async ({ page }, testInfo) => {
       await installed(page)
       await seed(page)
       for (const path of ['/home', '/plan', '/stats', '/more', '/settings', '/privacy', '/support', '/body-progress']) {
@@ -51,8 +51,10 @@ for (const [name, userAgent] of [['iPhone Chrome', iphoneChrome], ['iPhone Home 
       const title = page.locator('.workout-session-title')
       await expect(title).toBeVisible()
       expect((await title.boundingBox()).y).toBeGreaterThanOrEqual(62)
+      const initialTop=(await title.boundingBox()).y
       await page.evaluate(() => window.scrollTo(0, 300))
-      await expect.poll(async () => (await title.boundingBox()).y).toBeGreaterThanOrEqual(62)
+      // The current session header is in normal document flow, not sticky.
+      await expect.poll(async () => (await title.boundingBox()).y).toBeLessThan(initialTop)
       expect(await page.locator('#tabbar').evaluate(el => el.getBoundingClientRect().bottom)).toBe(844)
       await page.setViewportSize({ width: 844, height: 390 })
       await expect.poll(() => page.locator('#app').evaluate(el => parseFloat(getComputedStyle(el).paddingTop))).toBeLessThan(44)

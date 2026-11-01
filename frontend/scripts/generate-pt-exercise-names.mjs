@@ -258,7 +258,7 @@ const phrases = {
   'tricep pushdown': 'extensão de tríceps na polia',
   'turkish get up': 'levantamento turco',
   'battling ropes': 'cordas navais',
-  'dead bug': 'dead bug',
+
   'medicine ball': 'com bola medicinal',
   'three point stance': 'base de três pontos',
   'chest pass': 'passe de peito',
@@ -352,7 +352,7 @@ const words = {
   curl: 'rosca', curls: 'roscas', press: 'desenvolvimento', presses: 'desenvolvimentos',
   arm: 'braço', arms: 'braços', seated: 'sentado', standing: 'em pé', lying: 'deitado',
   raise: 'elevação', raises: 'elevações', leg: 'perna', legs: 'pernas', grip: 'pegada',
-  row: 'remada', ball: 'bola', reverse: 'invertido', incline: 'inclinado', decline: 'declinado',
+  row: 'remada',  reverse: 'invertido', incline: 'inclinado', decline: 'declinado',
   squat: 'agachamento', squats: 'agachamentos', extension: 'extensão', push: 'empurrada',
   pull: 'puxada', band: 'faixa elástica', exercise: 'exercício', stretch: 'alongamento',
   calf: 'panturrilha', calves: 'panturrilhas', triceps: 'tríceps', tricep: 'tríceps',

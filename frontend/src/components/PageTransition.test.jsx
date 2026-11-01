@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import React, { act, useState } from 'react'
+import  { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'

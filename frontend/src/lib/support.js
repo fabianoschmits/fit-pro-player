@@ -3,7 +3,7 @@ const mapFaq = row => row ? ({ articleId: row.article_id, categoryId: row.catego
 const mapReportContext = row => row ? ({ targetKind: row.target_kind, postId: row.post_id, commentId: row.comment_id || null, reportedUserId: row.reported_user_id, reason: row.reason, description: row.description || null, contentExcerpt: row.content_excerpt, imagePath: row.image_path || null, verificationLink: row.verification_link }) : null
 const mapTicket = row => row ? ({ ticketId: row.ticket_id, userId: row.user_id || null, email: row.email || '', displayName: row.display_name || '', subject: row.subject || '', categorySlug: row.category_slug || '', categoryLabel: row.category_label || '', status: row.status || 'pending', priority: row.priority || 'normal', assignedAdminId: row.assigned_admin_id || null, lastMessageAt: row.last_message_at || null, firstResponseAt: row.first_response_at || null, createdAt: row.created_at || null, messages: row.messages || [], events: row.events || [], reportContext: mapReportContext(row.report_context) }) : null
 
-export function createSupportRepository({ client } = {}) {
+export function createSupportRepository({ client = undefined } = {}) {
   const rpc = async (name, args = {}) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
     const { data, error } = await client.rpc(name, args)

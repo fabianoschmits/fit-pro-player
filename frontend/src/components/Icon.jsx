@@ -140,7 +140,7 @@ export const ICON_NAMES = Object.keys(P)
  * <Icon name="flame" />           — inherits font-size via `1em` sizing
  * <Icon name="flame" size={28} /> — explicit pixel size
  */
-export default function Icon({ name, size, className = '', style, ...rest }) {
+export default function Icon({ name, size = undefined, className = '', style = undefined, ...rest }) {
   const d = P[name]
   if (!d) return null
   const s = size ? { width: size, height: size } : null

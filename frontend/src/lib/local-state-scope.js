@@ -1,8 +1,11 @@
+/** @typedef {Readonly<{kind:'anonymous'|'account',userId:string|null}>} LocalScope */
+/** @type {LocalScope} */
 export const ANONYMOUS_SCOPE = Object.freeze({ kind: 'anonymous', userId: null })
 export const ACCOUNT_CACHE_SCHEMA_VERSION = 1
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
+/** @returns {LocalScope} */
 export function resolveLocalScope(userId) {
   if (userId == null || userId === '') return ANONYMOUS_SCOPE
   if (typeof userId !== 'string' || !UUID.test(userId.trim())) throw new Error('Invalid Supabase user id')

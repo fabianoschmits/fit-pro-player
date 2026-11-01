@@ -96,7 +96,7 @@ export function validateBackup(data) {
   if (data.week && !Object.entries(data.week).every(([key, value]) => /^[0-6]$/.test(key) && (value == null || identifier(value)))) throw new Error('backup contains an invalid weekly plan')
   if (data.dayPlan && !Object.entries(data.dayPlan).every(([key, value]) => validDate(key) && (value == null || identifier(value)))) throw new Error('backup contains an invalid daily plan')
   if (data.profile?.name != null && (typeof data.profile.name !== 'string' || data.profile.name.length > 200)) throw new Error('backup contains an invalid profile')
-  if (data.customEx && !data.customEx.every(item => identifier(item.id) && typeof item.name === 'string' && item.name.length <= 200)) throw new Error('backup contains an invalid custom exercise')
+  if (data.customEx && !data.customEx.every(item => identifier(item.id) && typeof (item.name ?? item.n) === 'string' && (item.name ?? item.n).length <= 200)) throw new Error('backup contains an invalid custom exercise')
   if (data.pendingProfessionalEvents != null && (!Array.isArray(data.pendingProfessionalEvents) || data.pendingProfessionalEvents.length > 2000 || !data.pendingProfessionalEvents.every(isObject))) throw new Error('backup contains an invalid event queue')
   return data
 }

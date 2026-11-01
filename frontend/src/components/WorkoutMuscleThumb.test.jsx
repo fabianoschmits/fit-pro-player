@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import React from 'react'
+import 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { expect, it, vi } from 'vitest'
 

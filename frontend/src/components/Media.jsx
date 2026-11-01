@@ -13,7 +13,7 @@ const MUSCLES_EXIT_MS = 140
 // Opening an exercise is an explicit request to see the movement, so playback starts on
 // mount even when the OS asks to reduce motion (common on Windows). The leftover desktop
 // click that opens the sheet is ignored so it cannot pause the animation immediately.
-export default function Media({ ex, id, compact, minimizable }) {
+export default function Media({ ex, id = undefined, compact = undefined, minimizable = undefined }) {
   const mediaSize = useStore(s => s.S.mediaSize)
   const update = useStore(s => s.update)
   const mini = minimizable && mediaSize === 'mini'

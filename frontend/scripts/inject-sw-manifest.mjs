@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 /**
  * Post-build step: inject Workbox precache manifest into dist/sw.js.
  * Run after `vite build` to produce a versioned, offline-capable service worker.
@@ -43,3 +45,11 @@ const result = await injectManifest({
 })
 
 console.log(`[PWA] Precache manifest injected: ${result.count} entries, ~${(result.size / 1024 / 1024).toFixed(2)} MB`)
+
+const swPath = join(root, 'dist', 'sw.js')
+let sw = readFileSync(swPath, 'utf8')
+const catalogue = readdirSync(join(root, 'dist', 'assets')).filter(name => /^(frame-.*\.(webp|png)|frames-.*\.js)$/.test(name)).map(name => '/assets/' + name)
+const buildId = createHash('sha256').update(sw).digest('hex').slice(0, 16)
+sw = sw.replace('__BUILD_ID__', buildId).replace('/* exercise-catalogue */ []', JSON.stringify(catalogue))
+if (sw.includes('self.__WB_MANIFEST') || sw.includes('__BUILD_ID__')) throw new Error('Uninjected service worker')
+writeFileSync(swPath, sw)

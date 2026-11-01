@@ -38,7 +38,7 @@ vi.mock('../components/LineChart.jsx', () => ({ default: () => React.createEleme
 vi.mock('../components/Heatmap.jsx', () => ({ default: () => React.createElement('div') }))
 vi.mock('../components/Icon.jsx', () => ({ default: props => React.createElement('span', props) }))
 vi.mock('../components/BodyMap.jsx', () => ({
-  default: props => {
+  default: function MockBodyMap(props) {
     mocks.maps.push(props)
     React.useEffect(() => {
       mocks.mapMounts += 1

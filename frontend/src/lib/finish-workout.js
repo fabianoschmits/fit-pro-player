@@ -6,7 +6,7 @@ export function normalizeWorkoutNote(value) {
   return note && note.length <= 500 ? note : null
 }
 
-export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snapshotFor, endedEarly = false, note } = {}) {
+export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snapshotFor = undefined, endedEarly = false, note = undefined } = {}) {
   const start = active?.start || end
   const normalizedNote = normalizeWorkoutNote(note)
   const entries = (active?.entries || []).map(entry => {

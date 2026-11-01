@@ -61,7 +61,7 @@ select pg_temp.expect_error($q$select public.start_workout_execution('40000000-0
 set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
 select public.assign_program_version('20000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003');
 set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
-select pg_temp.assert_true((select count(*)=1 from public.program_assignments where status='active'),'replacement is global across professionals');
+select pg_temp.assert_true((select count(*)=2 from public.program_assignments where status='active'),'deliveries from different professionals remain available until student selection');
 select public.revoke_professional_relationship('10000000-0000-0000-0000-000000000001');
 select public.revoke_professional_relationship('10000000-0000-0000-0000-000000000002');
 select pg_temp.assert_true(public.student_program_overview()='{}'::jsonb,'revocation clears active overview');
@@ -95,7 +95,7 @@ set local role authenticated;
 set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
 select pg_temp.assert_true(jsonb_array_length(public.student_program_overview()->'executions')=100,'student overview bounds recent history');
 set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
-select pg_temp.assert_true((select jsonb_array_length(executions)=100 from public.professional_client_detail('00000000-0000-0000-0000-000000000003')),'professional detail bounds recent history');
+select pg_temp.assert_true((select jsonb_array_length(executions)=(select count(*) from public.workout_executions) from public.professional_client_detail('00000000-0000-0000-0000-000000000003')),'professional detail includes complete student history');
 select public.delete_my_account();
 reset role;
 select pg_temp.assert_true(not exists(select 1 from auth.users where id='00000000-0000-0000-0000-000000000001'),'permanent professional deletion removes auth identity');

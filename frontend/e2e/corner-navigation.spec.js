@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 import { seed, openMainNavigation } from './fixtures.test.js'
 
 const height = 720
-const pivotWidth = 56
+const pivotWidth = 28
 const nav = page => page.locator('.corner-nav')
 const toggle = page => page.locator('.corner-nav-toggle')
 const main = page => page.locator('.corner-nav-main')
@@ -11,6 +11,7 @@ async function load(page, width, reducedMotion = 'reduce') {
   await page.setViewportSize({ width, height })
   await page.emulateMedia({ reducedMotion })
   await seed(page)
+  await page.addInitScript(()=>{if(!sessionStorage.getItem('navigation-fixture')){sessionStorage.setItem('navigation-fixture','1');localStorage.setItem('fpp_navigation_layout_v1',JSON.stringify({open:false,position:null}))}})
   await page.goto('/#/home')
   await expect(toggle(page)).toBeVisible()
 }
@@ -42,6 +43,14 @@ async function expectPosition(page, position) {
 }
 
 async function dragBy(page, dx, dy) {
+  if (!(await nav(page).getAttribute('class')).match(/is-free|is-move-ready/)) {
+    const wasOpen=await toggle(page).getAttribute('aria-expanded')==='true'
+    await openMainNavigation(page)
+    await page.locator('.corner-nav-more-trigger').click()
+    await page.getByRole('menuitem',{name:/Mover menu livremente/}).click()
+    await expect(nav(page)).toHaveClass(/is-move-ready/)
+    if(!wasOpen){await toggle(page).click();await settle(page)}
+  }
   const box = await toggle(page).boundingBox()
   const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
   await page.mouse.move(start.x, start.y)
@@ -50,28 +59,30 @@ async function dragBy(page, dx, dy) {
   await page.mouse.up()
 }
 
-async function expectUpwardMore(page, { activateFirst = false } = {}) {
+async function expectReachableMore(page, { activateFirst = false } = {}) {
   const trigger = page.locator('.corner-nav-more-trigger')
   const triggerBox = await trigger.boundingBox()
   const toggleBox = await toggle(page).boundingBox()
-  expect(triggerBox.width).toBeCloseTo(42, 0)
-  expect(triggerBox.height).toBeCloseTo(24, 0)
-  expect(toggleBox.y - triggerBox.y - triggerBox.height).toBeCloseTo(6, 0)
+  const desktopDock=page.viewportSize().width>=768 && !(await nav(page).getAttribute('class')).includes('is-free')
+  expect(triggerBox.width).toBeCloseTo(desktopDock?44:42, 0)
+  expect(triggerBox.height).toBeCloseTo(desktopDock?26:24, 0)
+  const down=(await nav(page).getAttribute('class')).includes('opens-down')
+  expect(down ? triggerBox.y-toggleBox.y-toggleBox.height : toggleBox.y-triggerBox.y-triggerBox.height).toBeCloseTo(desktopDock?8:6, 0)
   const radii = await trigger.evaluate(element => {
     const style = getComputedStyle(element)
     return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomLeftRadius, style.borderBottomRightRadius].map(parseFloat)
   })
-  expect(radii.every(radius => radius >= triggerBox.height / 2)).toBe(true)
+  expect(radii).toEqual([12,12,12,12])
   // Inspect the rendered chevron in screen coordinates, including any SVG rotation.
-  expect(await trigger.locator('path').evaluate(path => {
+  expect(await trigger.locator('path').evaluate((path,down) => {
     const length = path.getTotalLength()
     const matrix = path.getScreenCTM()
     const points = [0, length / 2, length].map(distance => {
       const point = path.getPointAtLength(distance)
       return new DOMPoint(point.x, point.y).matrixTransform(matrix)
     })
-    return points[1].y < Math.min(points[0].y, points[2].y)
-  })).toBe(true)
+    return down ? points[1].y > Math.max(points[0].y,points[2].y) : points[1].y < Math.min(points[0].y, points[2].y)
+  },down)).toBe(true)
   await trigger.click()
   const panel = page.locator('.corner-nav-more')
   await expect(panel).toHaveClass(/is-visible/)
@@ -82,7 +93,9 @@ async function expectUpwardMore(page, { activateFirst = false } = {}) {
   expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1)
   expect(panelBox.height).toBeGreaterThanOrEqual(88)
   expect(panelBox.y).toBeGreaterThanOrEqual(7)
-  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(triggerBox.y + 1)
+  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height - 7)
+  if(down)expect(panelBox.y).toBeGreaterThanOrEqual(triggerBox.y+triggerBox.height-1)
+  else expect(panelBox.y+panelBox.height).toBeLessThanOrEqual(triggerBox.y+1)
   const firstItem = panel.getByRole('menuitem').first()
   await expect(firstItem).toBeFocused()
   const itemBox = await firstItem.boundingBox()
@@ -101,7 +114,7 @@ async function expectUpwardMore(page, { activateFirst = false } = {}) {
 }
 
 for (const width of [320, 390, 600]) {
-  test(`mobile ${width}px starts compact and unfolds across the bottom with aligned icons`, async ({ page }) => {
+  test(`mobile ${width}px restores a compact saved layout and unfolds across the bottom with aligned icons`, async ({ page }) => {
     await load(page, width)
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false')
     await expect(main(page)).toHaveAttribute('aria-hidden', 'true')
@@ -123,7 +136,7 @@ for (const width of [320, 390, 600]) {
     expect(opened.y + opened.height).toBeCloseTo(height, 0)
     await expect(main(page)).toHaveAttribute('aria-hidden', 'false')
     expect(await main(page).evaluate(element => element.inert)).toBe(false)
-    await expect(main(page).getByRole('button')).toHaveCount(4)
+    await expect(main(page).getByRole('button')).toHaveCount(5)
     const shape = await nav(page).evaluate(element => {
       const surfaces = [...element.querySelectorAll('.corner-nav-shell, .corner-nav-toggle, .corner-nav-main')].map(surface => getComputedStyle(surface))
       const material = getComputedStyle(element.querySelector('.corner-nav-main'))
@@ -146,10 +159,10 @@ for (const width of [320, 390, 600]) {
     expect(shape.materialAlpha).toBeGreaterThan(0)
     expect(shape.materialAlpha).toBeLessThan(0.4)
     expect(shape.backdropFilter).toMatch(/blur\(/)
-    expect(shape.centers).toHaveLength(5)
+    expect(shape.centers).toHaveLength(6)
     expect(Math.max(...shape.centers) - Math.min(...shape.centers)).toBeLessThanOrEqual(1)
     expect(shape.overflow).toBe(false)
-    await expectUpwardMore(page)
+    await expectReachableMore(page)
     await toggle(page).click()
     await settle(page)
     expect((await nav(page).boundingBox()).width).toBeCloseTo(pivotWidth, 0)
@@ -163,12 +176,12 @@ test('desktop navigation floats above the bottom when closed and open', async ({
     if (open) await openMainNavigation(page)
     await settle(page)
     const box = await page.locator('.corner-nav-shell').boundingBox()
-    expect(box.height).toBeCloseTo(52, 0)
+    expect(box.height).toBeCloseTo(60, 0)
     expect(box.x).toBeGreaterThanOrEqual(16)
     expect(height - box.y - box.height).toBeGreaterThanOrEqual(16)
     expect(box.width).toBeLessThan(1280 - 32)
   }
-  await expectUpwardMore(page)
+  await expectReachableMore(page)
 })
 
 for (const theme of ['light', 'dark']) {
@@ -219,11 +232,11 @@ test('small pointer movement keeps the mobile bar docked', async ({ page }) => {
 test('dragging detaches without a jump and preserves the chosen position across menu and route changes', async ({ page }) => {
   await load(page, 390)
   const before = await toggle(page).boundingBox()
-  await dragBy(page, 8, -8)
+  await dragBy(page, 8, -80)
   await expect(nav(page)).toHaveClass(/is-free/)
   await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false')
-  await expectPosition(page, { x: before.x + 8, y: before.y - 8 })
-  // Leave enough space above for the always-upward options panel.
+  await expectPosition(page, { x: before.x + 8, y: before.y - 80 })
+  // Place the pivot where the options panel has room in either direction.
   const current = await toggle(page).boundingBox()
   await dragBy(page, 16 - current.x, 280 - current.y)
   const chosen = await toggle(page).boundingBox()
@@ -231,7 +244,7 @@ test('dragging detaches without a jump and preserves the chosen position across 
   await openMainNavigation(page)
   await settle(page)
   await expectPosition(page, chosen)
-  await expectUpwardMore(page)
+  await expectReachableMore(page)
   await page.locator('[data-tab-key="plan"]').click()
   await expect(page).toHaveURL(/#\/plan$/)
   await expectPosition(page, chosen)
@@ -243,7 +256,7 @@ test('dragging detaches without a jump and preserves the chosen position across 
   await expectPosition(page, chosen)
 })
 
-test('a pivot moved toward the right stays anchored and keeps upward options usable near the top', async ({ page }) => {
+test('a pivot moved toward the right stays anchored and keeps options usable near the top', async ({ page }) => {
   await load(page, 390)
   const initial = await toggle(page).boundingBox()
   await dragBy(page, 200 - initial.x, 280 - initial.y)
@@ -256,7 +269,7 @@ test('a pivot moved toward the right stays anchored and keeps upward options usa
   await settle(page)
   await expectPosition(page, chosen)
   expect((await nav(page).boundingBox()).width).toBeCloseTo(pivotWidth, 0)
-  await expectUpwardMore(page, { activateFirst: true })
+  await expectReachableMore(page, { activateFirst: true })
   await expectPosition(page, chosen)
   await toggle(page).click()
   await settle(page)
@@ -272,7 +285,7 @@ test('a pivot moved toward the right stays anchored and keeps upward options usa
   expect(constrained.x).toBeCloseTo(chosen.x, 0)
   expect(constrained.y).toBeGreaterThanOrEqual(0)
   expect(constrained.y).toBeLessThan(chosen.y)
-  await expectUpwardMore(page, { activateFirst: true })
+  await expectReachableMore(page, { activateFirst: true })
   await expectPosition(page, constrained)
 })
 
@@ -288,7 +301,7 @@ test('resizing a moved desktop menu constrains only its compact pivot', async ({
   await openMainNavigation(page)
   await settle(page)
   await expectPosition(page, fitted)
-  await expectUpwardMore(page, { activateFirst: true })
+  await expectReachableMore(page, { activateFirst: true })
   await page.setViewportSize({ width: 1280, height })
   await settle(page)
   await expectPosition(page, fitted)
@@ -307,7 +320,7 @@ test('reload restores an open docked bar while always closing its extra options'
   expect(await main(page).evaluate(element => element.inert)).toBe(false)
   await expect(nav(page)).not.toHaveClass(/is-free/)
   await expectMoreClosed(page)
-  await expectUpwardMore(page)
+  await expectReachableMore(page)
 })
 
 for (const open of [false, true]) {
@@ -326,7 +339,7 @@ for (const open of [false, true]) {
     await expect(main(page)).toHaveAttribute('aria-hidden', String(!open))
     await expectPosition(page, chosen)
     await expectMoreClosed(page)
-    if (open) await expectUpwardMore(page)
+    if (open) await expectReachableMore(page)
   })
 }
 
@@ -382,11 +395,11 @@ test('the mounted main menu folds in both directions and respects reduced motion
     return [...style.transitionDuration.split(','), ...style.animationDuration.split(',')].map(parseFloat)
   }))
   expect(durations.every(duration => duration <= 0.01)).toBe(true)
-  await expect(main(page).getByRole('button')).toHaveCount(4)
+  await expect(main(page).getByRole('button')).toHaveCount(5)
 })
 
 test.describe('navigation icons', () => {
-  const icons = page => nav(page).locator('svg.icn.nav-icon')
+  const icons = page => nav(page).locator('.pivot-layer--current svg.icn.nav-icon, .dock-slot-layer--current svg.icn.nav-icon')
   const tab = (page, key) => page.locator(`[data-tab-key="${key}"]`)
 
   async function recordAnimations(page) {
@@ -428,7 +441,7 @@ test.describe('navigation icons', () => {
 
   test('pointer activation and active-tab re-click finish, and history entry updates the pivot', async ({ page }) => {
     await load(page, 390, 'no-preference')
-    await expect(icons(page)).toHaveCount(5)
+    await expect(icons(page)).toHaveCount(4)
     await expectIdle(page)
     await openMainNavigation(page)
     await settle(page)
@@ -437,7 +450,7 @@ test.describe('navigation icons', () => {
     await tab(page, 'plan').click()
     await expect(page).toHaveURL(/#\/plan$/)
     await expect(tab(page, 'plan')).toHaveAttribute('aria-current', 'page')
-    await expect(toggle(page).locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'plan')
+    await expect(toggle(page).locator('.pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'plan')
     await expectFiniteAnimations(page, 0, 'plan')
     const planEvents = await page.evaluate(() => window.navigationIconAnimations
       .filter(animation => animation.icon === 'plan' && !animation.pivot))
@@ -448,7 +461,7 @@ test.describe('navigation icons', () => {
     await page.goBack()
     await expect(page).toHaveURL(/#\/home$/)
     await expect(tab(page, 'home')).toHaveAttribute('aria-current', 'page')
-    await expect(toggle(page).locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'home')
+    await expect(toggle(page).locator('.pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'home')
     await expectFiniteAnimations(page, beforeBack, 'home')
     expect(await page.evaluate(from => window.navigationIconAnimations.slice(from).some(animation => animation.pivot && animation.icon === 'home'), beforeBack)).toBe(true)
 
@@ -504,7 +517,7 @@ test.describe('navigation icons', () => {
     // The pivot briefly keeps the departing icon while the current one enters.
     await settle(page)
     for (const control of [start, toggle(page)]) {
-      await expect(control.locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
+      await expect(control.locator('.dock-slot-layer--current .nav-icon, .pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
       await expect(control.locator('.nav-icon__dumbbell')).toHaveCount(1)
       await expect(control.locator('.nav-icon__play')).toHaveCount(1)
     }
@@ -519,17 +532,17 @@ test.describe('navigation icons', () => {
     await load(page, 390, 'reduce')
     await openMainNavigation(page)
     await settle(page)
-    await expect(icons(page)).toHaveCount(5)
+    await expect(icons(page)).toHaveCount(4)
     await recordAnimations(page)
     await tab(page, 'start').click()
     await expect(page).toHaveURL(/#\/workout$/)
     await expect(tab(page, 'start')).toContainText('Retomar')
-    await expect(toggle(page).locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
+    await expect(toggle(page).locator('.pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
     await settle(page)
 
-    const artwork = await icons(page).evaluateAll(elements => elements.map(element => ({
+    const artwork = await nav(page).locator('.pivot-layer--current svg.icn, .dock-slot-layer--current svg.icn').evaluateAll(elements => elements.map(element => ({
       animations: element.getAnimations({ subtree: true }).length,
-      shapes: [...element.querySelectorAll('.nav-icon__dumbbell, .nav-icon__play')].map(shape => ({
+      shapes: [...element.querySelectorAll('.nav-icon__dumbbell, .nav-icon__play, .morph-group:not(.morph-from)')].map(shape => ({
         opacity: Number(getComputedStyle(shape).opacity),
         visibility: getComputedStyle(shape).visibility,
         width: shape.getBBox().width,
@@ -547,7 +560,7 @@ test.describe('navigation icons', () => {
     await load(page, 390, 'reduce')
     await openMainNavigation(page)
     await settle(page)
-    await expect(icons(page)).toHaveCount(5)
+    await expect(icons(page)).toHaveCount(4)
     for (const theme of ['light', 'dark']) {
       await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
       const appearance = await icons(page).evaluateAll(elements => elements.map(element => {

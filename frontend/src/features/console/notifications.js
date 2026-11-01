@@ -1,4 +1,4 @@
-export function createConsoleNotificationRepository({ client } = {}) {
+export function createConsoleNotificationRepository({ client = undefined } = {}) {
   const rpc = async (name, args) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
     const { data, error } = await client.rpc(name, args)

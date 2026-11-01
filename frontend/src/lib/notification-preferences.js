@@ -17,7 +17,7 @@ const booleanKeys = ['rest', 'timedSet', 'workoutReminder', 'professional', 'wei
 export function normalizeNotificationPreferences(raw, legacyReminder) {
   const source = object(raw)
   const defaults = DEFAULT_NOTIFICATION_PREFERENCES
-  const next = { ...defaults }
+  const next = { ...defaults, workoutReminder: Boolean(defaults.workoutReminder), trainingTime: String(defaults.trainingTime) }
   for (const key of booleanKeys) next[key] = typeof source[key] === 'boolean' ? source[key] : defaults[key]
   next.trainingTime = validTime(source.trainingTime) ? source.trainingTime : defaults.trainingTime
   next.leadMinutes = leads.has(source.leadMinutes) ? source.leadMinutes : defaults.leadMinutes

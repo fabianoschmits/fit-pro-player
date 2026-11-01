@@ -1,7 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-export default function MetricInfoButton({ label, description, className = '', disabled = false }) {
+export default function MetricInfoButton({ label = undefined, description = undefined, className = '', disabled = false }) {
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState(null)
   const id = useId()

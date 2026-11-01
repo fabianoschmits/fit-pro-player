@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { createMessageRepository } from '../../lib/direct-messages.js'
 import Icon from '../Icon.jsx'
 
-export default function MessageButton({ client, userId }) {
+export default function MessageButton({ client, userId = undefined }) {
   const navigate = useNavigate(), repo = useMemo(() => createMessageRepository(client), [client])
   const [count, setCount] = useState(0)
   useEffect(() => {

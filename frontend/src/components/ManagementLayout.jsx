@@ -28,7 +28,7 @@ function getSceneryClass(pathname) {
   return ''
 }
 
-export default function ManagementLayout({ title, subtitle, backTo, action, audience = 'professional', children, className = '', nav }) {
+export default function ManagementLayout({ title, subtitle = undefined, backTo = undefined, action = undefined, audience = 'professional', children = undefined, className = '', nav = undefined }) {
   const { pathname } = useLocation()
   const sceneryClass = getSceneryClass(pathname)
   const navigation = nav === undefined ? (audience === 'student' ? <StudentWorkspaceNav /> : <ProfessionalWorkspaceNav />) : nav

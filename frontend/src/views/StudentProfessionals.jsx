@@ -7,13 +7,12 @@ import { createProfessionalWorkflowRepository } from '../lib/professional-workfl
 import { t } from '../lib/i18n.js'
 import { FppSkeleton } from '../components/FppFeedback.jsx'
 import { professionalDate } from '../lib/professional-ux.js'
-import { assignedPlanToState, clearAssignedProgramFromState } from '../lib/assigned-program.js'
-import { useStore } from '../store/useStore.js'
-import { startFlow } from '../sheets.jsx'
+
+
 import { Button } from '../components/ui.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementPanel, ManagementEmpty, ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
-import StudentProgramOverview from '../components/StudentProgramOverview.jsx'
+import '../components/StudentProgramOverview.jsx'
 import StudentProfessionalInvite from '../components/StudentProfessionalInvite.jsx'
 import useStudentManagementRequest from '../components/useStudentManagementRequest.js'
 
@@ -30,8 +29,8 @@ export default function StudentProfessionals() {
 }
 
 function ProfessionalsOverview() {
-  const auth = useAuth(); const userId = auth.user?.id
-  const ready = useStore(state => state.ready)
+
+
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const load = useCallback(async () => ({ professionals: await repo.studentProfessionals(), overview: {} }), [repo])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar seus profissionais.')

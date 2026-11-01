@@ -1,5 +1,6 @@
 // Browser capability decides whether we can show a prompt. UA detection is only
 // a convenience for selecting manual instructions, never an installation gate.
+/** @param {Partial<Navigator>} nav */
 export function detectInstallTarget(nav = globalThis.navigator || {}) {
   const ua = nav.userAgent || ''
   const ios = /iPhone|iPad|iPod/.test(ua) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1)

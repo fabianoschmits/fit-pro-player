@@ -12,6 +12,8 @@
 import { ANONYMOUS_SCOPE, nativePathForScope } from './local-state-scope.js'
 import { serializeStateOnly } from './account-cache.js'
 import { validateBackup } from './backup-state.js'
+import { migrateLocalState } from './local-state-migrations.js'
+import { projectPersistedState } from './persisted-state.js'
 
 export const MOBILE = import.meta.env.VITE_MOBILE === '1'
 const nativeWrites = new Map()
@@ -29,10 +31,14 @@ export async function nativeLoad(scope = ANONYMOUS_SCOPE) {
     await (nativeWrites.get(nativePathForScope(scope)) || Promise.resolve())
     const { Filesystem, Directory, Encoding } = await import('@capacitor/filesystem')
     const r = await Filesystem.readFile({ path: nativePathForScope(scope), directory: Directory.Data, encoding: Encoding.UTF8 })
-    const state = validateBackup(JSON.parse(r.data))
+    const state = migrateLocalState(JSON.parse(typeof r.data === 'string' ? r.data : await r.data.text()))
+    state.routines ??= []; state.workouts ??= []
+    validateBackup(state)
     if (scope.kind === 'account') state.pendingProfessionalEvents = (state.pendingProfessionalEvents || []).filter(event => event.accountId === scope.userId)
     else state.pendingProfessionalEvents = []
-    return state
+    const clean = projectPersistedState(state)
+    await nativeSave(scope, clean)
+    return clean
   } catch (e) { return null }   // first launch, or unreadable — localStorage copy takes over
 }
 

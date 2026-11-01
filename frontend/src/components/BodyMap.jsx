@@ -67,7 +67,7 @@ export function shapeScaleForPath(shapeScales, slug, index, count, viewName) {
   return Number.isFinite(scale) ? Math.min(1.4, Math.max(.72, scale)) : 1
 }
 
-export function BodyMapView({ view, viewName, levels, onMuscle, selected, selectedSide, decorative, shapeScales, shapeInstant, captureSafe, region }) {
+export function BodyMapView({ view, viewName, levels, onMuscle = undefined, selected = undefined, selectedSide = undefined, decorative, shapeScales = undefined, shapeInstant, captureSafe, region = undefined }) {
   const selectedMuscles = new Set(Array.isArray(selected) ? selected : selected ? [selected] : [])
   const pathIsSelected = (slug, index, count) => selectedMuscles.has(slug)
     && (!SIDE_AWARE_SLUGS.has(slug) || pathMatchesSelectedSide(index, count, selectedSide, viewName))
@@ -76,6 +76,7 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
     event.preventDefault()
     onMuscle(slug, viewName)
   }
+  /** @returns {import('react').SVGProps<SVGPathElement>} */
   const pathA11y = (slug, index) => onMuscle && index === 0 ? {
     role: 'button', tabIndex: 0, 'aria-label': t(MUSCLE_NAME[slug]),
     'aria-pressed': selectedMuscles.has(slug),
@@ -131,8 +132,8 @@ export function BodyMapView({ view, viewName, levels, onMuscle, selected, select
  * to keep their semantic bands stable); omitting it preserves the balance behavior.
  */
 export default function BodyMap({
-  load = {}, thresholds, body = 'male', onMuscle, selected, selectedSide, className = '',
-  view = 'both', decorative = false, shapeScales, shapeInstant = false, captureSafe = false,
+  load = {}, thresholds = undefined, body = 'male', onMuscle = undefined, selected = undefined, selectedSide = undefined, className = '',
+  view = 'both', decorative = false, shapeScales = undefined, shapeInstant = false, captureSafe = false,
   region = 'full',
 }) {
   const { paths, failed, retry } = useBodyPaths()

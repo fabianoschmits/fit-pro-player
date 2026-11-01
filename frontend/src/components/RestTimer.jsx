@@ -22,7 +22,7 @@ export default function RestTimer() {
   useEffect(() => {
     document.body.classList.toggle('resting', !!on)
     return () => document.body.classList.remove('resting')
-  }, [!!on])
+  }, [on])
   if (!on) return null
   let upcoming = null
   if (active?.entries?.length) {

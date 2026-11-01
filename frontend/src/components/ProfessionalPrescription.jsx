@@ -7,9 +7,8 @@ import { professionalExecutionDurationMs } from '../lib/professional-execution-d
 const dayNames = { sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça', wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado' }
 export const professionalDayLabel = day => t(dayNames[day] || day || '—')
 const nameOf = id => exerciseName(EXIDX[id] || { id, n: id })
-const dose = entry => entry.mode === 'cardio' ? `${entry.min ?? '—'} min / ${entry.speed ?? '—'} km/h` : entry.mode === 'time' ? `${entry.sec ?? '—'} s` : `${entry.reps ?? '—'} ${t('Reps')}`
 
-export function ProfessionalPrescription({ plan = {}, entries, unit = 'kg' }) {
+export function ProfessionalPrescription({ plan = {}, entries = undefined, unit = 'kg' }) {
   const days = entries ? { session: entries } : normalizeWeeklyPlan(plan)
   return <div className="professional-prescription">{Object.entries(days).map(([day, items]) => <div key={day}>
     {day !== 'session' && <h4>{professionalDayLabel(day)}</h4>}

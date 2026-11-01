@@ -9,7 +9,7 @@ import useConsoleResource from './useConsoleResource.js'
 import { fmtDateTime, CxButton, Loading } from './ConsoleUI.jsx'
 import { useFppAction } from '../../components/useFppAction.js'
 
-export default function ConsoleNotifications({ userId, allowed }) {
+export default function ConsoleNotifications({ userId = undefined, allowed }) {
   const repo = useMemo(() => createConsoleNotificationRepository({ client: getBrowserSupabaseClient() }), [])
   const [open, setOpen] = useState(false)
   const [page, setPage] = useState(0)

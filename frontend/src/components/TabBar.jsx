@@ -5,7 +5,7 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 import { effectiveRoutine } from '../lib/history.js'
 import { todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { startTabShortLabel } from '../lib/ux.js'
+
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalWorkflowRepository } from '../lib/professional-workflow.js'
 import { createConsoleRepository } from '../lib/console.js'
@@ -23,7 +23,7 @@ const PIVOT_WIDTH = 28
 const menuHeightForWidth = width => width < 768 ? 68 : 52
 const MAX_ARM_WIDTH = 320
 
-function NavItemIcon({ item, resume, active, visible, activation, entryKey }) {
+function NavItemIcon({ item, resume, active, visible, activation, entryKey = undefined }) {
   if (item.k === 'home' || item.k === 'plan' || item.k === 'start' || item.k === 'workout' || item.k === 'stats') {
     const iconName = item.k === 'workout' ? 'start' : item.k
     return <NavigationIcon name={iconName} resume={resume} active={active} visible={visible} activation={activation} entryKey={entryKey} />
@@ -31,7 +31,7 @@ function NavItemIcon({ item, resume, active, visible, activation, entryKey }) {
   return <Icon name={item.icon} />
 }
 
-function DockSlotButton({ item, active, state, visible, entryKey, onSelect }) {
+function DockSlotButton({ item, active, state = undefined, visible, entryKey = undefined, onSelect }) {
   const trigger = useFppActivation({ onActivate: onSelect })
   const [activation, setActivation] = useState(0)
 
@@ -110,7 +110,7 @@ function DockSlotButton({ item, active, state, visible, entryKey, onSelect }) {
   </button>
 }
 
-function PivotTransition({ currentItem, state, iconActivation }) {
+function PivotTransition({ currentItem, state = undefined, iconActivation }) {
   const currentVisualId = getVisualId(currentItem, state)
 
   const [transition, setTransition] = useState({
@@ -216,7 +216,7 @@ export default function TabBar({ onStart }) {
 
   // Only the bottom bar's layout survives an app restart; More stays transient.
   useEffect(() => {
-    try { window.localStorage.setItem(NAVIGATION_LAYOUT_KEY, JSON.stringify({ open, position })) } catch {}
+    try { window.localStorage.setItem(NAVIGATION_LAYOUT_KEY, JSON.stringify({ open, position })) } catch { /* optional browser operation may be unavailable */ }
   }, [open, position])
 
   useEffect(() => {
@@ -327,6 +327,7 @@ export default function TabBar({ onStart }) {
     setMoreOpen(false)
     toggleRef.current?.focus()
   }
+  /** @type {Array<[string,Array<{icon:string,title:string,sub?:string,to?:string,action?:Function,dragToggle?:boolean}>]>} */
   const groups = [
     ['Geral', [
       { icon: 'person', title: 'Dados pessoais', sub: 'Seus dados e informações', to: '/personal-data' },
@@ -338,10 +339,10 @@ export default function TabBar({ onStart }) {
       { icon: 'history', title: t('History'), sub: t('All your past workouts'), to: '/history' },
       { icon: 'chartLine', title: 'Evolução corporal', sub: 'Medidas semanais e evolução do corpo', to: '/body-progress' },
     ]],
-    ...((account || professional) ? [['Profissional', [
+    ...((account || professional) ? [/** @type {[string,Array<{icon:string,title:string,sub?:string,to?:string,action?:Function,dragToggle?:boolean}>]} */ (['Profissional', [
       ...(account ? [{ icon: 'personCircle', title: 'Meus profissionais', sub: 'Programas e prescrições', to: '/student/professionals' }] : []),
       { icon: 'clipboard', title: professional ? 'Área profissional' : 'Tornar-se profissional', sub: professional ? 'Alunos, convites e programas' : t('Create your profile to coach students'), to: professional ? '/professional' : '/professional/profile' },
-    ]]] : []),
+    ]])] : []),
     ['Sobre', [
       { icon: 'info', title: 'Ajuda e suporte', sub: 'Dúvidas, críticas e sugestões', to: '/support' },
       { icon: 'info', title: 'Sobre o Fit Pro Player', sub: 'Informações do aplicativo', to: '/privacy' },

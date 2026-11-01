@@ -23,7 +23,7 @@ describe('state migration for first-run profiles', () => {
     expect(hasData(state)).toBe(false)
   })
 
-  it('resets legacy mass data that has no canonical schema marker', () => {
+  it('preserves legacy mass data that has no canonical schema marker', () => {
     const state = normalizeState({
       unit: 'lb', body: 'female', routines: [], week: {}, dayPlan: {}, customEx: [],
       bodyweight: [{ d: '2026-08-01', w: 68, t: 1 }],
@@ -34,9 +34,9 @@ describe('state migration for first-run profiles', () => {
     expect(state.stateSchemaVersion).toBe(2)
     expect(state.massUnit).toBe('kg')
     expect(state.displayUnit).toBe('lb')
-    expect(state.bodyweight).toEqual([])
-    expect(state.workouts).toEqual([])
-    expect(state.exWeights).toEqual({})
+    expect(state.bodyweight[0].w).toBe(68)
+    expect(state.workouts[0].id).toBe('w1')
+    expect(state.exWeights).toEqual({ '0025': 60 })
   })
 
   it('keeps canonical kg values unchanged when the display preference changes', () => {

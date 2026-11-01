@@ -23,7 +23,7 @@ A inspeção foi de código, rotas e documentação. Não representa auditoria v
 - Correções de histórico vazio, altura com vírgula e inclusão de exercício foram consolidadas e verificadas na Etapa 0.
 - Kg/lb e concorrência entre abas foram especificados, mas ainda não implementados. As quinze mensagens adicionais de localização foram concluídas na Etapa 0.
 
-O contrato de integridade foi esclarecido: `displayUnit` é a preferência de exibição, `massUnit: 'kg'` identifica a representação canônica e `stateSchemaVersion` identifica o formato persistido. Nunca reconverter um estado canônico só porque a exibição está em lb. Como os dados atuais são de teste, estados legados sem esses marcadores podem ser reiniciados em vez de sofrer conversão heurística.
+O contrato de integridade foi esclarecido: `displayUnit` é a preferência de exibição, `massUnit: 'kg'` identifica a representação canônica e `stateSchemaVersion` identifica o formato persistido. Nunca reconverter um estado canônico só porque a exibição está em lb. A atualização de 2026-11-01 substitui o reset legado por migrations progressivas: campos conhecidos e valores numéricos são preservados. No formato anterior, `unit` alterava apenas o rótulo; a migration o renomeia para `displayUnit`, sem reconverter números por uma unidade de exibição potencialmente ambígua.
 
 ## 3. Decisão sobre offline
 

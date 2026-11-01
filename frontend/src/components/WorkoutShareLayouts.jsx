@@ -15,7 +15,7 @@ export function selectShareExerciseFrame(frames) {
   return Array.isArray(frames) && frames.length > 1 ? frames[Math.min(3, frames.length - 1)] : null
 }
 
-function ExerciseHighlight({ row, unit }) {
+function ExerciseHighlight({ row, unit = undefined }) {
   const [asset, setAsset] = useState(null)
   const slug = exerciseGuideAsset(row)?.slug
   useEffect(() => {

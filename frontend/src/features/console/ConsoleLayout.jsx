@@ -14,7 +14,7 @@ const navigation = [
   { to: '/console/laboratory', label: 'Laboratório de testes', description: 'Páginas experimentais e testes de interface', icon: 'sparkles', group: 'Testes' },
 ]
 
-export default function ConsoleShell({ children, back, backLabel = 'Voltar', userId, allowed = false }) {
+export default function ConsoleShell({ children = undefined, back = undefined, backLabel = 'Voltar', userId = undefined, allowed = false }) {
   const { pathname } = useLocation()
   const navRef = useManagementNavVisibility()
   return <div className="cx-shell console-workspace">

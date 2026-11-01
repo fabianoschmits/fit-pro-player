@@ -46,3 +46,12 @@ describe('Capacitor cache isolation', () => {
     expect(writeFile).toHaveBeenCalledWith(expect.objectContaining({ path: 'fitproplayer-state.json' }))
   })
 })
+
+it('migrates and scrubs a native offline cache before returning and rewriting it',async()=>{
+ readFile.mockReset();writeFile.mockReset().mockResolvedValue({})
+ readFile.mockResolvedValue({data:JSON.stringify({stateSchemaVersion:1,unit:'lb',routines:[],workouts:[],customEx:[{id:'custom-1',n:'Meu exercício',desc:'Instruções'}],active:{id:'w',entries:[]},session:{access_token:'secret'}})})
+ const restored=await nativeLoad(resolveLocalScope(null))
+ expect(restored).toMatchObject({stateSchemaVersion:2,displayUnit:'lb',active:{id:'w'},customEx:[{desc:'Instruções'}]})
+ expect(restored.session).toBeUndefined()
+ expect(JSON.parse(writeFile.mock.calls.at(-1)[0].data)).toEqual(restored)
+})

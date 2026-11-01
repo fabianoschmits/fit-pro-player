@@ -13,7 +13,7 @@ const W = 340   // viewBox width; the svg stretches to its container, height com
 // opts: { h, unit, color, axes, goal, invert }
 //   invert flips the y axis, for a scale that counts down as it gets harder (RIR). Without it
 //   a curve of reps-in-reserve reads upside down, with the hardest sets at the floor.
-export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit, selectedDate = null, label, animateGeometry = false }) {
+export default function LineChart({ points, h = 150, unit = '', color = 'var(--acc)', axes = true, goal = null, invert = false, onPointEdit = undefined, selectedDate = null, label = undefined, animateGeometry = false }) {
   const svgRef = useRef(null)
   const wrapRef = useRef(null)
   const tipRef = useRef(null)
@@ -44,6 +44,7 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
   const GraphLine = animateGeometry ? motion.line : 'line'
   const GraphCircle = animateGeometry ? motion.circle : 'circle'
   const GraphText = animateGeometry ? motion.text : 'text'
+  /** @type {import('framer-motion').Transition} */
   const geometryTransition = { duration: 0.34, ease: [0.2, 0.8, 0.2, 1] }
   const geometry = values => animateGeometry ? { initial: false, animate: values, transition: geometryTransition } : {}
   const P = { l: axes ? 34 : 8, r: 12, t: 10, b: axes ? 22 : 8 }
@@ -90,7 +91,7 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
       const x = X(tk.t)
       gridlines.push(<g key={'x' + i}>
         <GraphLine x1={x} y1={P.t} x2={x} y2={H - P.b} stroke="var(--sep-op)" strokeWidth="1" strokeDasharray="2 4" {...geometry({ x1: x, x2: x, y2: H - P.b })} />
-        <GraphText x={x} y={H - 7} textAnchor={tk.anchor || 'middle'} fontSize="9.5" fill="var(--label-2)" {...geometry({ x, y: H - 7 })}>{tk.txt}</GraphText>
+        <GraphText x={x} y={H - 7} textAnchor={tk.anchor === 'start' || tk.anchor === 'end' ? tk.anchor : 'middle'} fontSize="9.5" fill="var(--label-2)" {...geometry({ x, y: H - 7 })}>{tk.txt}</GraphText>
       </g>)
     })
   }

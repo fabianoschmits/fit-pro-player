@@ -17,7 +17,7 @@ export default function ProfessionalStudentPlan() {
  const { studentId, routineId } = useParams(), { user } = useAuth()
  return <StudentPlan key={`${user?.id}:${studentId}`} studentId={studentId} routineId={routineId} />
 }
-function StudentPlan({ studentId, routineId }) {
+function StudentPlan({ studentId, routineId = undefined }) {
  const nav = useNavigate(), prefs = useStore(s => s.S)
  const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
  const [loading, setLoading] = useState(true)

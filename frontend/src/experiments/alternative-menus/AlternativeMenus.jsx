@@ -40,7 +40,7 @@ function GlassRefraction() {
   </svg>
 }
 
-function MenuDemo({ theme, index, open, onToggle, onClose, backdrop }) {
+function MenuDemo({ theme, index, open, onToggle = undefined, onClose, backdrop }) {
   const toggle = useRef(null)
   const [selection, setSelection] = useState({ id: null, count: 0, keyboard: false })
   const [keyboardToggle, setKeyboardToggle] = useState(false)

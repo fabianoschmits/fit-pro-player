@@ -6,14 +6,14 @@ import Icon from '../Icon.jsx'
 import { Button } from '../ui.jsx'
 import { useState } from 'react'
 const WEEK = [1, 2, 3, 4, 5, 6, 0]
-export function PlanWeek({ state, onDay, updates = {} }) {
+export function PlanWeek({ state = undefined, onDay = undefined, updates = {} }) {
   return <section><h4 className="sec">{t('Week schedule')}</h4><div className="plan-week-card"><div className="plan-week-grid">
     {WEEK.map(day => { const routine = state.routines.find(r => r.id === state.week[day]); return <button key={day} className={'plan-day' + (routine ? ' on' : '') + (routine?.assigned ? ' professional' : '')} disabled={!onDay} aria-label={`${t(DAYN[day])}: ${routine ? routineName(routine) : t('Rest')}`} onClick={() => onDay?.(day)}>
       <span className="plan-day-label">{t(DAYS[day])}</span>{routine?.assigned && <span className="plan-day-professional"><Icon name="shield" /><span>Prof.</span></span>}{updates[day] && <span className="tag acc workout-update-badge">Atualizado</span>}<span className="plan-day-icon">{routine ? <RoutineMuscleThumb routine={routine} body={state.body} /> : <Icon name="moon" />}</span><span className="plan-day-name">{routine ? routineName(routine) : t('Rest')}</span>
     </button> })}
   </div></div></section>
 }
-export function RoutineList({ state, onOpen, onAdd, routines = state.routines, title = t('Routines'), className = '', pageSize = 5 }) {
+export function RoutineList({ state = undefined, onOpen = undefined, onAdd = undefined, routines = state.routines, title = t('Routines'), className = '', pageSize = 5 }) {
   const [visible, setVisible] = useState(pageSize)
   const shown = routines.slice(0, visible)
   return <section className={className}><div className="row between plan-section-head"><h4 className="sec">{title}</h4>{onAdd && <Button size="sm" variant="tinted" icon="plus" onClick={onAdd}>{t('New')}</Button>}</div>
@@ -21,6 +21,6 @@ export function RoutineList({ state, onOpen, onAdd, routines = state.routines, t
     {routines.length > shown.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + pageSize)}>Mostrar mais</Button>}
   </section>
 }
-export default function TrainingPlanWorkspace({ state, onDay, onOpen, onAdd, routines, routineTitle, children }) {
+export default function TrainingPlanWorkspace({ state = undefined, onDay = undefined, onOpen = undefined, onAdd = undefined, routines = undefined, routineTitle = undefined, children = undefined }) {
  return <div className="training-plan-workspace"><div className="cols plan-cols"><PlanWeek state={state} onDay={onDay} /><RoutineList state={state} onOpen={onOpen} onAdd={onAdd} routines={routines} title={routineTitle} className="created-workouts" /></div>{children}</div>
 }

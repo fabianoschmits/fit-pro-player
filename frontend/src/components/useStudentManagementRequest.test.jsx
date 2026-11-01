@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import React, { act, useCallback } from 'react'
+import  { act, useCallback } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, expect, it, vi } from 'vitest'
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ status: 'authenticated', user: { id: 's1' } }) }))

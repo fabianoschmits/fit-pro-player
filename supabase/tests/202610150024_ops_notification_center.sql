@@ -1,5 +1,13 @@
 -- Run against the linked QA project inside a transaction; never retain read markers.
 begin;
+insert into auth.users(id) values('61103000-0000-4000-8000-000000000001'),('61103000-0000-4000-8000-000000000002');
+insert into public.user_roles(user_id,role) values('61103000-0000-4000-8000-000000000001','admin'),('61103000-0000-4000-8000-000000000001','professional');
+insert into public.professional_student_relationships(professional_user_id,student_user_id,status) values('61103000-0000-4000-8000-000000000001','61103000-0000-4000-8000-000000000002','active');
+insert into public.programs(id,professional_user_id,title) values('61103010-0000-4000-8000-000000000001','61103000-0000-4000-8000-000000000001','Fixture');
+insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values('61103020-0000-4000-8000-000000000001','61103010-0000-4000-8000-000000000001',1,'{"monday":[{"exerciseId":"0043","sets":1,"reps":1}]}',now());
+insert into public.program_assignments(id,program_id,version_id,professional_user_id,student_user_id) values('61103030-0000-4000-8000-000000000001','61103010-0000-4000-8000-000000000001','61103020-0000-4000-8000-000000000001','61103000-0000-4000-8000-000000000001','61103000-0000-4000-8000-000000000002');
+insert into public.workout_executions(assignment_id,version_id,student_user_id,day_key) values('61103030-0000-4000-8000-000000000001','61103020-0000-4000-8000-000000000001','61103000-0000-4000-8000-000000000002','monday');
+
 do $$
 declare admin_id uuid; user_id uuid; first_id text; feed jsonb; before_reads bigint;
 begin

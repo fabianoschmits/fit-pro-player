@@ -48,7 +48,7 @@ insert into public.user_roles(user_id,role) values
  ('10290310-0000-0000-0000-000000000001','professional'),('10290310-0000-0000-0000-000000000002','professional'),
  ('10290310-0000-0000-0000-000000000003','professional'),('10290310-0000-0000-0000-000000000004','professional');
 insert into public.professional_invites(professional_user_id,kind,code,token_hash) values
- ('10290310-0000-0000-0000-000000000004','code','JOAOSILVA','manual-generated-reservation');
+ ('10290310-0000-0000-0000-000000000009','code','JOAOSILVA','manual-generated-reservation');
 insert into public.professional_profiles(user_id,professional_name) values
  ('10290310-0000-0000-0000-000000000001','Ana de Souza'),
  ('10290310-0000-0000-0000-000000000002','Ana de Souza'),
@@ -62,7 +62,7 @@ set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000003';
 select public.save_professional_profile(auth.uid(),'Bia Carvalho',null,'{}',null,null,null);
 select pg_temp.assert_true((select code='BIACARVALHO' and not is_custom from public.professional_invites where professional_user_id=auth.uid() and is_personal),'automatic code follows profile name changes');
 reset role;
-select pg_temp.assert_true((select code='JOAOSILVA2' from public.professional_invites where professional_user_id='10290310-0000-0000-0000-000000000004' and is_personal),'personal code avoids preexisting generated codes');
+select pg_temp.assert_true((select code='JOAOSILVA2' from public.professional_invites where professional_user_id='10290310-0000-0000-0000-000000000004' and is_personal),'personal code avoids preexisting generated codes: '||(select code from public.professional_invites where professional_user_id='10290310-0000-0000-0000-000000000004' and is_personal));
 set local role authenticated;
 set local request.jwt.claim.sub='10290310-0000-0000-0000-000000000001';
 select pg_temp.assert_true((public.save_professional_personal_invite('Código Especial')).code='CODIGOESPECIAL','custom code normalizes accents and separators');

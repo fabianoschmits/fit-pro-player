@@ -1,7 +1,7 @@
 import InviteQrCode from '../components/InviteQrCode.jsx'
 import Link from '../components/ManagementLink.jsx'
 import { t } from '../lib/i18n.js'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
@@ -24,7 +24,7 @@ export default function ProfessionalInvites() {
   return <InvitesWorkspace key={auth.user?.id || 'anonymous'} userId={auth.user?.id} />
 }
 
-function InvitesWorkspace({ userId }) {
+function InvitesWorkspace({ userId = undefined }) {
   const [params, setParams] = useSearchParams()
   const creating = params.get('section') === 'create'
   const selectedCode = params.get('code')
@@ -38,12 +38,14 @@ function InvitesWorkspace({ userId }) {
   const [saving, setSaving] = useState(false)
   const [savingPersonal, setSavingPersonal] = useState(false)
   const [editingPersonal, setEditingPersonal] = useState(false)
+  const editingPersonalRef = useRef(editingPersonal)
+  editingPersonalRef.current = editingPersonal
   const [personalDraft, setPersonalDraft] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [confirmId, setConfirmId] = useState('')
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     setBusy(true)
     setError('')
     try {
@@ -51,20 +53,20 @@ function InvitesWorkspace({ userId }) {
       if (mounted.current) {
         setInvites(rows)
         const personal = rows.find(item => item.is_personal)
-        if (!editingPersonal && personal) setPersonalDraft(personal.code)
+        if (!editingPersonalRef.current && personal) setPersonalDraft(personal.code)
       }
     } catch {
       if (mounted.current) setError(t('Não foi possível carregar os convites.'))
     } finally {
       if (mounted.current) setBusy(false)
     }
-  }
+  }, [repo])
 
   useEffect(() => {
     mounted.current = true
     if (userId) refresh()
     return () => { mounted.current = false }
-  }, [userId])
+  }, [refresh, userId])
 
   const create = async () => {
     if (savingRef.current) return false

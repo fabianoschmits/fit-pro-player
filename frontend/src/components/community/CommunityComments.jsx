@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Icon from '../Icon.jsx'
 import { useDialogFocus } from '../../lib/dialog-focus.js'
@@ -23,14 +23,14 @@ export function commentDescendants(comments, id) {
   return ids
 }
 
-export default function CommunityComments({ post, client, userId, ownIdentity, onClose, onSubmit, onCommentsChange, onOpenUser, onReport, highlightCommentId = null, AvatarComponent: Avatar }) {
-  const comments = post.comments || []
+export default function CommunityComments({ post, client, userId = undefined, ownIdentity, onClose, onSubmit, onCommentsChange, onOpenUser, onReport, highlightCommentId = null, AvatarComponent: Avatar }) {
+  const comments = useMemo(() => post.comments || [], [post.comments])
   const [body, setBody] = useState(''), [replyTo, setReplyTo] = useState(null), [editing, setEditing] = useState(null)
   const [menu, setMenu] = useState(null), [highlight, setHighlight] = useState(null), [expanded, setExpanded] = useState(() => new Set())
   const [error, setError] = useState(''), [sending, setSending] = useState(false)
   const [visibleCount,setVisibleCount] = useState(PAGE_SIZE), [replyCounts,setReplyCounts] = useState({})
   const [submittedIds,setSubmittedIds] = useState(() => new Set())
-  const roots = comments.filter(item => !item.parent_comment_id)
+  const roots = useMemo(() => comments.filter(item => !item.parent_comment_id), [comments])
   const input = useRef(null), dialog = useRef(null), pending = useRef(pendingComments(client, userId)), sendingRef = useRef(false), timer = useRef(null)
   useDialogFocus(dialog, { onClose, locked: sending, titleId: 'community-comments-title' })
   usePageScrollLock()
@@ -65,7 +65,7 @@ export default function CommunityComments({ post, client, userId, ownIdentity, o
       return next
     })
     requestAnimationFrame(() => document.querySelector(`[data-community-comment-id="${target.id}"]`)?.scrollIntoView?.({ behavior: 'smooth', block: 'center' }))
-  }, [comments, highlightCommentId])
+  }, [comments, highlightCommentId, roots])
   useEffect(() => {
     if (!menu) return
     const close = event => { if (!event.target.closest?.('.community-comment-menu')) setMenu(null) }

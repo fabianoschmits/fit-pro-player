@@ -36,6 +36,7 @@ const MODES = [
 ]
 
 const CHECKIN_HISTORY_PAGE_SIZE = 6
+/** @type {import('framer-motion').Variants} */
 const CHECKIN_DETAILS_MOTION = {
   hidden: instant => instant ? { opacity: 1, y: 0, filter: 'blur(0px)' } : { opacity: 0, y: -6, filter: 'blur(2px)' },
   visible: instant => ({ opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: instant ? 0 : 0.18, ease: [0.2, 0.8, 0.2, 1] } }),
@@ -174,7 +175,7 @@ function interpolateShapeTimeline(snapshots, timestamp) {
   }
 }
 
-function ProgressRing({ value }) {
+function ProgressRing({ value = undefined }) {
   const radius = 25
   const circumference = Math.PI * 2 * radius
   return <svg className="bp-progress-ring" viewBox="0 0 64 64" aria-hidden="true">
@@ -183,7 +184,7 @@ function ProgressRing({ value }) {
   </svg>
 }
 
-function PartSelector({ selected, latestValues, weekValues, onSelect, compact = false }) {
+function PartSelector({ selected = undefined, latestValues, weekValues, onSelect, compact = false }) {
   return <div className={`bp-part-selector${compact ? ' compact' : ''}`} role="group" aria-label="Circunferências do corpo">
     {BODY_MEASUREMENT_PARTS.map(part => {
       const measured = weekValues[part.id] != null
@@ -215,7 +216,7 @@ function PartSelectionPrompt({ history = false }) {
   </div>
 }
 
-function BodyHistoryScrubber({ snapshots, value, onChange, onScrubbingChange, weight, unit = 'kg' }) {
+function BodyHistoryScrubber({ snapshots, value = undefined, onChange = undefined, onScrubbingChange, weight, unit = 'kg' }) {
   const railRef = useRef(null)
   const [railWidth, setRailWidth] = useState(0)
   const times = snapshots.map(item => timestampOf(item.date))
@@ -294,12 +295,12 @@ function BodyHistoryScrubber({ snapshots, value, onChange, onScrubbingChange, we
   </div>
 }
 
-function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, view, setView }) {
+function CheckinView({ S, checkins, selected = undefined, setSelected, period, setPeriod, view, setView }) {
   const update = useStore(state => state.update)
   const reducedMotion = useReducedMotion()
   const today = todayISO()
   const currentCheckin = currentBodyMeasurementCheckin(checkins, today)
-  const weekValues = currentCheckin?.values || {}
+  const weekValues = useMemo(() => currentCheckin?.values || {}, [currentCheckin?.values])
   const latestValues = latestBodyMeasurements(checkins)
   const baselineValues = firstMeasurementValues(checkins)
   const datedWeights = normalizedBodyweight(S.bodyweight)
@@ -318,7 +319,8 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   const [goalError, setGoalError] = useState('')
   const goal = S.bodyMeasurementGoals?.[selected] ?? null
 
-  useEffect(() => setDraft(weekValues[selected] ?? null), [selected, currentCheckin?.week, weekValues[selected]])
+  const selectedValue = weekValues[selected] ?? null
+  useEffect(() => setDraft(selectedValue), [selected, currentCheckin?.week, selectedValue])
   useEffect(() => setGoalDraft(goal), [selected, goal])
   useEffect(() => { setSaveError(''); setGoalError('') }, [selected])
 
@@ -425,11 +427,9 @@ function CheckinView({ S, checkins, selected, setSelected, period, setPeriod, vi
   </div>
 }
 
-function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, view, setView, focusRequest }) {
+function EvolutionView({ S, checkins, selected = undefined, setSelected, period, setPeriod, view, setView, focusRequest }) {
   const update = useStore(state => state.update)
-  const snapshots = useMemo(() => bodyShapeTimeline(S, checkins), [
-    S.body, S.bodyweight, S.profile?.heightCm, S.profile?.sex, S.profile?.startWeight, checkins,
-  ])
+  const snapshots = useMemo(() => bodyShapeTimeline(S, checkins), [S, checkins])
   const firstTime = snapshots.length ? timestampOf(snapshots[0].date) : null
   const lastTime = snapshots.length ? timestampOf(snapshots.at(-1).date) : null
   const initialTime = lastTime == null || focusRequest?.timestamp == null
@@ -481,7 +481,7 @@ function EvolutionView({ S, checkins, selected, setSelected, period, setPeriod, 
   })
 
   return <div className="bp-evolution-layout">
-    <section id="bp-evolution-map" className="card bp-evolution-map-card" aria-labelledby="bp-evolution-map-title" tabIndex="-1">
+    <section id="bp-evolution-map" className="card bp-evolution-map-card" aria-labelledby="bp-evolution-map-title" tabIndex={-1}>
       <div className="bp-card-head">
         <div><span className="bp-eyebrow">Forma corporal relativa</span><h2 id="bp-evolution-map-title">Evolução no tempo</h2></div>
         <Segmented className="seg-inline" value={view} onChange={setView} options={[{ value: 'front', label: 'Frente' }, { value: 'back', label: 'Costas' }]} />

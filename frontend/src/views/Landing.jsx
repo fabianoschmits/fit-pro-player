@@ -86,7 +86,7 @@ function useReducedMotion() {
   return reduced
 }
 
-function PhoneFrame({ label, children, tall }) {
+function PhoneFrame({ label = undefined, children = undefined, tall = undefined }) {
   return (
     <div className={'landing-phone' + (tall ? ' is-tall' : '')} aria-label={label}>
       <div className="landing-phone-bezel">

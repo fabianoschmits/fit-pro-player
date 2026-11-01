@@ -16,7 +16,7 @@ const LAB_TABS = [
   { id: 'recovery', label: 'Recuperação', hint: 'Toast, falha de leitura e nova tentativa' },
 ]
 
-function Sample({ name, action, animation, children, className = '', dataSample }) {
+function Sample({ name, action = undefined, animation, children = undefined, className = '', dataSample = undefined }) {
   return <article className={`motion-showcase-sample ${className}`.trim()} data-sample={dataSample}>
     <div className="motion-showcase-label"><strong>{name}</strong><code>{action}</code><span>{animation}</span></div>
     {children}

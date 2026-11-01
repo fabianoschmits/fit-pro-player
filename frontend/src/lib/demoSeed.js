@@ -77,7 +77,7 @@ export function buildDemoState() {
   for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
     const day = new Date(d)
     const iso = isoOf(day)
-    const weekIdx = Math.floor((day - start) / (7 * 86400000))
+    const weekIdx = Math.floor((day.getTime() - start.getTime()) / (7 * 86400000))
     const p = Math.min(1, weekIdx / WEEKS)
 
     // weigh-ins: Monday and Thursday mornings

@@ -7,7 +7,9 @@ const media = process.env.MEDIA_TARGET || 'http://127.0.0.1:8888'
 
 export default defineConfig({
   plugins: [inlineAppleTouchIcon(), react()],
-  optimizeDeps: { include: ['qrcode'] },
+  // Browser and unit-test optimizers must not invalidate each other's dependency URLs.
+  cacheDir: process.env.VITEST ? 'node_modules/.vite-unit' : `node_modules/.vite-browser-${process.env.FPP_E2E_PORT || 'app'}`,
+  optimizeDeps: { include: ['qrcode'], holdUntilCrawlEnd: false },
   test: { exclude: [...configDefaults.exclude, 'e2e/**'] },
   base: './',
   server: {

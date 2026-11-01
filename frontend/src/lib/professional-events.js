@@ -9,7 +9,7 @@ export function enqueueProfessionalEvent(state, event) {
   state.pendingProfessionalEvents = [...events, { ...event, id, occurredAt: event.occurredAt || new Date().toISOString(), payload: structuredClone(event.payload || {}) }]
 }
 
-export function flushProfessionalEvents({ client, store, userId } = {}) {
+export function flushProfessionalEvents({ client = undefined, store = undefined, userId = undefined } = {}) {
   if (!client?.rpc || !store?.getState || !userId) return Promise.resolve({ pending: 0 })
   const scope = store.getState().getActiveLocalScope?.()
   if (scope?.userId !== userId) return Promise.resolve({ skipped: true })

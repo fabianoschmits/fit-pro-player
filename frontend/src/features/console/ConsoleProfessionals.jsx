@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { VERIFICATION_LABELS, verificationTone } from '../../lib/console.js'
@@ -22,20 +22,20 @@ export function ConsoleProfessionals() {
   const owner = useRef(identity)
   owner.current = identity
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const id = identity; setBusy(true)
     try {
       const next = await repo.listProfessionals({ query, status: status || null, limit })
       if (owner.current === id) { setRows(next); setError('') }
     } catch { if (owner.current === id) setError('Não foi possível carregar os profissionais.') }
     finally { if (owner.current === id) setBusy(false) }
-  }
+  }, [identity, repo, query, status, limit])
 
   useEffect(() => {
     owner.current = identity
     if (userId && allowed) refresh()
     return () => { owner.current = null }
-  }, [userId, allowed, query, status, limit])
+  }, [userId, allowed, query, status, limit, identity, refresh])
 
   const operation = useFppAction({ onAction: async ({ targetId, nextStatus }) => {
     setActing(`${targetId}:${nextStatus}`); setError('')

@@ -6,7 +6,10 @@ async function startPlayer(page) {
   await expect(page.getByText('Treino de teste', { exact: true }).first()).toBeVisible()
   await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
-  await page.getByRole('button', { name: 'Começar treino', exact: true }).click()
+  await expect(page).toHaveURL(/#\/workout$/)
+  await expect(page.locator('.workout-session-title')).toBeVisible()
+  await page.locator('.active-workout').getByRole('button', { name: 'Começar treino', exact: true }).click()
+  await expect(page.locator('.set-start-action')).toBeVisible()
 }
 
 test('execution signal animates only while performing and remains static with reduced motion', async ({ page }, testInfo) => {
@@ -27,9 +30,6 @@ test('execution signal animates only while performing and remains static with re
   await page.emulateMedia({ reducedMotion: 'reduce' })
   expect(await signal.evaluate(el => getComputedStyle(el).animationName)).toBe('none')
   await expect(page.locator('.wp-main-action')).toHaveAccessibleName('Concluir série 1')
-  await page.locator('.wp-cancel-set').click()
-  await expect(signal).toHaveCount(0)
-  await page.locator('.wp-main-action').click()
   await page.locator('.wp-main-action.is-executing').click()
   await expect(signal).toHaveCount(0)
   await expect(page.locator('#timer')).toBeVisible()

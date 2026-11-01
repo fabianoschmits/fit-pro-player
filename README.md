@@ -70,3 +70,14 @@ scripts/      ferramentas internas do projeto
 O produto utiliza uma linguagem visual própria, baseada em superfícies escuras e claras, destaque em tons de teal, silhuetas anatômicas e visualização direta dos músculos trabalhados.
 
 Código, identidade visual, animações e materiais do Fit Pro Player são proprietários. Todos os direitos reservados.
+
+### Ambiente reproduzível e validação local
+
+A branch canônica é `main`. Documentos históricos que citam `master` descrevem publicações antigas; novos workflows e deploys usam `main`.
+Use Node **22.17.0** (`.nvmrc`) e Supabase CLI **2.122.0** (`npm ci` instala a versão fixada; execute com `npx supabase`). O GitHub Actions usa as mesmas versões.
+
+Após `npm ci` e `npm ci --prefix frontend`, execute `npm run lint`, `npm run typecheck`, `npm test`, `npm run check:i18n`, `npm run test:notifications`, `npm run check:supabase`, `npm run test:plan-library:database`, `npm run build`, `npm run build:vercel`, `npm run build:mobile:web`, `npm run test:e2e` e `npm run test:e2e:pwa`.
+
+Com Docker disponível: `npx supabase start`, `npx supabase db reset`, `npm run check:database`. Sem Docker, `PG_BIN` deve apontar para um PostgreSQL 17 completo com pgTAP; `npm run check:database:clean` cria um cluster descartável, aplica **todas** as migrations em ordem e executa os testes SQL do schema final. Isso não substitui a verificação da integração Auth/Storage/PostgREST do stack Supabase.
+
+Os testes em `supabase/tests/historical/` rodam apenas nos checkpoints correspondentes através de `test:plan-library:database`. Eles documentam migrations antigas; a regra final exige confirmação explícita do aluno e é verificada pelos testes SQL atuais.

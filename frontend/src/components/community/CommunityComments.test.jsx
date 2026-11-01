@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import React, { act, useState } from 'react'
+import  { act, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import CommunityComments from './CommunityComments.jsx'

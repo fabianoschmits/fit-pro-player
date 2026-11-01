@@ -18,7 +18,7 @@ const messageWorker = (registration, message) => new Promise(resolve => {
 })
 
 // Browser-only device metadata never enters backups or an account snapshot.
-export function createNotificationCoordinator({ client, userId, getState, notify = () => {}, onStatus = () => {}, environment = browserEnvironment() }) {
+export function createNotificationCoordinator({ client, userId, getState, notify = _kind => {}, onStatus = _status => {}, environment = browserEnvironment() }) {
   const env = environment
   const key = `fpp_push_device_v1:${userId || 'anonymous'}`
   let saved = null
@@ -28,6 +28,7 @@ export function createNotificationCoordinator({ client, userId, getState, notify
   let status = { ...INITIAL_STATUS, native: !!env.nativePush, permission: env.Notification?.permission || 'default',
     supported: !!(env.nativePush || env.Notification && env.navigator?.serviceWorker?.getRegistration) }
   let lastFingerprint = saved?.fingerprint || null
+  /** @type {Promise<unknown>} */
   let mutationQueue = Promise.resolve()
   const mutate = operation => { const result = mutationQueue.then(operation); mutationQueue = result.catch(() => {}); return result }
   const seenEvents = new Set()

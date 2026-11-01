@@ -37,7 +37,7 @@ const profileSaveError = code => code === '42501' ? 'professional-profile-forbid
     : code === 'P0002' ? 'professional-profile-not-found'
       : 'professional-profile-save-failed'
 
-export function createProfessionalProfileRepository({ client } = {}) {
+export function createProfessionalProfileRepository({ client = undefined } = {}) {
   const requireClient = () => {
     if (!client?.from) throw new Error('supabase-unavailable')
     return client

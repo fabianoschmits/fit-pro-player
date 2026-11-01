@@ -1,0 +1,10 @@
+create role authenticator; create schema extensions;
+alter table auth.users add column email varchar(255),add column encrypted_password text,add column email_confirmed_at timestamptz,add column raw_app_meta_data jsonb default '{}',add column created_at timestamptz default now(),add column updated_at timestamptz default now(),add column is_anonymous boolean default false,add column last_sign_in_at timestamptz;
+create schema storage;
+create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,owner uuid);
+alter table storage.objects enable row level security;
+create function storage.foldername(text) returns text[] language sql immutable as $$select string_to_array($1,'/')$$;
+grant usage on schema storage to authenticated,anon,service_role;
+grant select,insert,update,delete on storage.objects to authenticated;
+create publication supabase_realtime;

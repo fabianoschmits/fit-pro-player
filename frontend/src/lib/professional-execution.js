@@ -1,4 +1,4 @@
-export function createProfessionalExecutionRepository({ client } = {}) {
+export function createProfessionalExecutionRepository({ client = undefined } = {}) {
   const rpc = async (name, args) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
     const response = await client.rpc(name, args)

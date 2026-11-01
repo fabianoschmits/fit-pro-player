@@ -104,7 +104,7 @@ export default function SupportTicket() {
     current.current = ticketId
     setTicket(null); setBody(''); setVisibleCount(10)
     void load()
-    return () => { current.current = null; request.current++ }
+    return () => { current.current = null; request.current += 1 }
   }, [load, ticketId])
 
   useEffect(() => {

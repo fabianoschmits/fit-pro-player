@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import React, { act } from 'react'
+import  { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 
@@ -37,7 +37,6 @@ const oldAssignment = { id: 'old-active', version_id: 'old-version', program_id:
 const replacement = { ...oldAssignment, id: 'replacement', version_id: 'replacement-version', professional_user_id: 'p2' }
 const version = id => ({ id, weekly_plan: { monday: [{ exerciseId: 'squat', sets: 3, reps: 10 }] }, version_number: 1 })
 const person = id => ({ professionalId: id, professionalName: id === 'p1' ? 'Ana Silva' : 'Bruno Reis' })
-const overview = (assignment, title) => ({ assignment: { id: assignment.id }, program: { title }, professional: { id: assignment.professional_user_id, name: person(assignment.professional_user_id).professionalName }, version: { id: assignment.version_id, weeklyPlan: version(assignment.version_id).weekly_plan } })
 const detail = { professional: person('p1'), relationship: { id: 'relationship-p1', status: 'active', linkedAt: '2026-10-01' }, materials: [{ assignmentId: 'old-active', status: 'active', title: 'Old program', weeklyPlan: {} }], executions: [] }
 const deferred = () => { let resolve; const promise = new Promise(done => { resolve = done }); return { promise, resolve } }
 let root, container, linked

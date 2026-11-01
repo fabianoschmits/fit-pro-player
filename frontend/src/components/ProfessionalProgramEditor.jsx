@@ -7,7 +7,8 @@ import { validateAvailableWeeklyPlan as validateWeeklyPlan } from '../lib/profes
 import { UNAVAILABLE_EXERCISE_MESSAGE } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
 import { Button, TextField, TextArea } from './ui.jsx'
-export default function ProfessionalProgramEditor({ initialPlan = {}, initialMetadata = {}, onPublish, onPublished, onSaveMetadata, onCancel }) {
+/** @param {{initialPlan?: object, initialMetadata?: {title?:string, description?:string, workoutTitles?:object}, onCancel?: (...args: any[])=>any, onPublish?: Function, onSaveMetadata?: (...args: any[])=>any, onPublished?: (...args: any[])=>any}} props */
+export default function ProfessionalProgramEditor({ initialPlan = {}, initialMetadata = {}, onPublish, onPublished = undefined, onSaveMetadata = undefined, onCancel = undefined }) {
  const prefs = useStore(s => s.S)
  const [state, setState] = useState(() => weeklyPlanToWorkspace(initialPlan, initialMetadata.workoutTitles)), [routineId, setRoutineId] = useState(null), [metadata, setMetadata] = useState(initialMetadata), [error, setError] = useState('')
  const update = fn => setState(old => { const next = structuredClone(old); fn(next); return next })

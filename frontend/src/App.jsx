@@ -1,3 +1,4 @@
+import { createTabSync } from './lib/tab-sync.js'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
@@ -28,11 +29,11 @@ import Landing from './views/Landing.jsx'
 import PrivacyPages from './views/PrivacyPages.jsx'
 import PrivacySettings from './views/PrivacySettings.jsx'
 import PrivacyConsentModal from './components/PrivacyConsentModal.jsx'
-import { createProfessionalWorkflowRepository } from './lib/professional-workflow.js'
+
 import { createTrainingRepository } from './lib/training-repository.js'
 import { attachDomainFocusRefresh, createDomainRefresh } from './lib/domain-refresh.js'
 import { createAccountDomainSync } from './lib/account-domain-sync.js'
-import { assignedPlanToState, clearAssignedProgramFromState } from './lib/assigned-program.js'
+
 import { flushProfessionalEvents } from './lib/professional-events.js'
 import { startNotificationCoordinator, syncNotificationPreferences, syncNotificationVisibility, reconnectNotifications, refreshNotificationReadiness, hasBackgroundNotifications, useNotificationStatus } from './lib/notification-client.js'
 import { createForegroundNotificationScheduler } from './lib/foreground-notification-scheduler.js'
@@ -158,7 +159,7 @@ function applyPrefs(theme, accent) {
   de.dataset.theme = theme === 'light' ? 'light' : 'dark'
   de.dataset.accent = ACCENTS[accent] ? accent : 'lime'
   const meta = document.querySelector('meta[name="theme-color"]')
-  if (meta) meta.content = de.dataset.theme === 'light' ? '#eef2f6' : '#000000'
+  if (meta) meta.setAttribute('content', de.dataset.theme === 'light' ? '#eef2f6' : '#000000')
 }
 
 function RouteFallback() {
@@ -252,8 +253,8 @@ export function ProfileHeader({ S, preview }) {
           className="profile-hero-progress"
           role="progressbar"
           aria-label={t('Weight goal')}
-          aria-valuemin="0"
-          aria-valuemax="100"
+          aria-valuemin={0}
+          aria-valuemax={100}
           aria-valuenow={goalProgressPercent == null ? undefined : goalProgressPercent}
           aria-valuetext={goalProgressPercent == null ? '--' : `${goalProgressPercent}%`}
         >
@@ -316,6 +317,7 @@ function Shell() {
     const token = useStore.getState().getScopeToken?.()
     const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
     const repository = createTrainingRepository({ client, accountId })
+    let tabSync = null
     const sync = createAccountDomainSync({
       repository,
       getState: () => useStore.getState().S,
@@ -323,6 +325,7 @@ function Shell() {
       isCurrent: () => current(accountId),
       isOnline: () => navigator.onLine !== false,
       onStatus: status => { if (current(accountId)) useStore.getState().setAccountSyncStatus(status) },
+      onCommitted: (domain, revision) => tabSync?.publish(domain, revision),
     })
     useStore.getState().configureAccountSync(() => sync.retry())
     const refresh = createDomainRefresh({
@@ -331,6 +334,7 @@ function Shell() {
       isCurrent: current,
       apply: (domain, data) => sync.acceptRemote(domain, data),
     })
+    if (typeof BroadcastChannel !== 'undefined') tabSync = createTabSync({accountId,refresh:domain=>refresh.refresh(domain),getRevision:domain=>sync.revision(domain)})
     const unsubscribe = useStore.subscribe((state, previous) => {
       if (state.S !== previous.S && current(accountId)) void sync.changed()
     })
@@ -350,6 +354,7 @@ function Shell() {
     window.addEventListener('online', reconnect)
     window.addEventListener('focus', retry)
     return () => {
+      tabSync?.dispose()
       sync.dispose()
       unsubscribe()
       detach()

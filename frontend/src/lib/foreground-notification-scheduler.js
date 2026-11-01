@@ -1,6 +1,7 @@
 import { nextForegroundReminders } from './foreground-reminders.js'
 
 // No network polling: the next calendar event drives one browser timeout.
+/** @param {{scope:string,getState:()=>any,backgroundEnabled:()=>boolean,notify:(kind:string)=>void,environment?: {document?: Pick<Document,'hidden'|'visibilityState'>,localStorage?: Storage,Date:DateConstructor,setTimeout:typeof setTimeout,clearTimeout:typeof clearTimeout}}} options */
 export function createForegroundNotificationScheduler({ scope, getState, backgroundEnabled, notify, environment = globalThis }) {
   let timer = null, disposed = false
   const key = `fpp_local_notification_ids_v1:${scope}`

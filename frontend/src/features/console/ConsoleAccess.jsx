@@ -19,7 +19,7 @@ export function useConsoleAccess() {
   return { userId, repo, allowed: !userId ? false : access.userId === userId ? access.allowed : null }
 }
 
-export function AccessGate({ allowed, children }) {
+export function AccessGate({ allowed, children = undefined }) {
   if (allowed === null) return <ConsoleShell><div className="cx-page-body"><Loading label="Verificando acesso…" /></div></ConsoleShell>
   if (!allowed) return <ConsoleShell><div className="cx-page-body"><Empty title="Sem acesso" sub="Esta área está disponível apenas para a equipe autorizada." /></div></ConsoleShell>
   return children

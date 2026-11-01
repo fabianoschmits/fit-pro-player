@@ -7,7 +7,7 @@ export function nextStateTimestamp(previous, now = Date.now()) {
 
 export function createStatePushQueue({
   getState, isEnabled, send, markDirty, markClean,
-  shouldRetry = () => false,
+  shouldRetry = _error => false,
   retryDelays = [],
   wait = ms => new Promise(resolve => window.setTimeout(resolve, ms)),
 }) {

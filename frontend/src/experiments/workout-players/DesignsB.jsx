@@ -30,8 +30,8 @@ function Haltere({ model, actions }) {
         </div>
         <div className="wpl-haltere-grip">
           <div className="wpl-haltere-setline">Série {setNumber(model)} de {model.exercise.sets}</div>
-          <PhaseReadout model={model} actions={actions} />
-          <SetMarkers model={model} actions={actions} />
+          <PhaseReadout model={model} />
+          <SetMarkers model={model} />
         </div>
         <div className="wpl-haltere-weight wpl-haltere-weight-bottom">
           <MetricControls model={model} actions={actions} />
@@ -58,10 +58,10 @@ function Sprint({ model, actions }) {
         <div className="wpl-sprint-track-lines" aria-hidden="true"><i /><i /><i /></div>
         <ExerciseDemo model={model} />
         <div className="wpl-sprint-position"><span>Série</span><b>{setNumber(model)}</b><span>de {model.exercise.sets}</span></div>
-        <PhaseReadout model={model} actions={actions} />
+        <PhaseReadout model={model} />
       </div>
       <div className="wpl-sprint-control">
-        <SetMarkers model={model} actions={actions} />
+        <SetMarkers model={model} />
         <MetricControls model={model} actions={actions} />
         <MainAction model={model} actions={actions} />
         <ExerciseNav model={model} actions={actions} />
@@ -84,8 +84,8 @@ function Foco({ model, actions }) {
       <div className="wpl-foco-stone">
         <ExerciseDemo model={model} />
         <span className="wpl-foco-series">Série {setNumber(model)} de {model.exercise.sets}</span>
-        <PhaseReadout model={model} actions={actions} />
-        <SetMarkers model={model} actions={actions} />
+        <PhaseReadout model={model} />
+        <SetMarkers model={model} />
       </div>
       <MetricControls model={model} actions={actions} />
       <MainAction model={model} actions={actions} />
@@ -110,8 +110,8 @@ function Cabine({ model, actions }) {
         <div className="wpl-cabine-screen">
           <div className="wpl-cabine-status"><span>{model.phaseLabel}</span><span>S{setNumber(model)} / {model.exercise.sets}</span></div>
           <ExerciseDemo model={model} />
-          <PhaseReadout model={model} actions={actions} />
-          <SetMarkers model={model} actions={actions} />
+          <PhaseReadout model={model} />
+          <SetMarkers model={model} />
         </div>
         <div className="wpl-cabine-scale" aria-hidden="true"><i /><i /><i /><i /><i /></div>
       </div>
@@ -139,10 +139,10 @@ function Placar({ model, actions }) {
         </div>
         <ExerciseDemo model={model} />
         <div className="wpl-placar-score">
-          <PhaseReadout model={model} actions={actions} />
+          <PhaseReadout model={model} />
           <div className="wpl-placar-series"><span>Série</span><b>{String(setNumber(model)).padStart(2, '0')}</b><span>de {String(model.exercise.sets).padStart(2, '0')}</span></div>
         </div>
-        <div className="wpl-placar-rounds"><span>Seu avanço</span><SetMarkers model={model} actions={actions} /></div>
+        <div className="wpl-placar-rounds"><span>Seu avanço</span><SetMarkers model={model} /></div>
       </div>
       <MetricControls model={model} actions={actions} />
       <MainAction model={model} actions={actions} />

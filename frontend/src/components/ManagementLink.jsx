@@ -3,7 +3,7 @@ import { useFppActivation } from './useFppActivation.js'
 
 // Keep native link semantics (including opening a new tab), with the app's
 // existing activation feedback for ordinary in-app navigation.
-export default function ManagementLink({ to, replace, state, target, relative, onClick, className = '', children, ...rest }) {
+export default function ManagementLink({ to, replace = undefined, state = undefined, target = undefined, relative = undefined, onClick = undefined, className = '', children = undefined, ...rest }) {
   const navigate = useLinkClickHandler(to, { replace, state, target, relative })
   const trigger = useFppActivation({ onActivate: navigate })
   return <Link {...rest} to={to} replace={replace} state={state} target={target} relative={relative}

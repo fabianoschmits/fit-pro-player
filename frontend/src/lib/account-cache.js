@@ -1,13 +1,9 @@
-import { ACCOUNT_CACHE_SCHEMA_VERSION, ANONYMOUS_SCOPE, storageKeyForScope } from './local-state-scope.js'
+import { migrateLocalState } from './local-state-migrations.js'
+import { projectPersistedState } from './persisted-state.js'
+import { ACCOUNT_CACHE_SCHEMA_VERSION, storageKeyForScope } from './local-state-scope.js'
 import { MAX_BACKUP_BYTES, validateBackup } from './backup-state.js'
 
-const FORBIDDEN = new Set(['password', 'access_token', 'refresh_token', 'session', 'cookie', 'service_key', 'secret_key'])
-
-function stateOnly(value) {
-  if (Array.isArray(value)) return value.map(stateOnly)
-  if (!value || typeof value !== 'object') return value
-  return Object.fromEntries(Object.entries(value).filter(([key]) => !FORBIDDEN.has(key.toLowerCase())).map(([key, child]) => [key, stateOnly(child)]))
-}
+const stateOnly = value => projectPersistedState(value) || {}
 
 export function serializeStateOnly(state) {
   return JSON.stringify(stateOnly(state))
@@ -18,22 +14,38 @@ export function emptyStateForScope(_scope, defaultState) {
 }
 
 export function readScopedState(scope, storage, defaultState) {
-  let raw
-  try { raw = storage.getItem(storageKeyForScope(scope)) } catch { return { status: 'error', state: emptyStateForScope(scope, defaultState) } }
+  const key = storageKeyForScope(scope)
+  let raw, state
+  try { raw = storage.getItem(key) } catch { return { status: 'error', state: emptyStateForScope(scope, defaultState) } }
   if (!raw) return { status: 'missing', state: emptyStateForScope(scope, defaultState) }
   try {
-    const parsed = JSON.parse(raw)
     if (raw.length > MAX_BACKUP_BYTES) throw new Error('invalid cache size')
-    if (scope.kind === 'anonymous') { validateBackup(parsed); parsed.pendingProfessionalEvents = []; return { status: 'valid', state: parsed } }
-    if (parsed?.ownerId !== scope.userId || parsed?.schemaVersion !== ACCOUNT_CACHE_SCHEMA_VERSION || !parsed.state || typeof parsed.state !== 'object') {
+    const parsed = JSON.parse(raw)
+    if (scope.kind === 'account' && (parsed?.ownerId !== scope.userId || parsed?.schemaVersion !== ACCOUNT_CACHE_SCHEMA_VERSION)) {
+      storage.removeItem(key)
       return { status: 'invalid', state: emptyStateForScope(scope, defaultState) }
     }
-    validateBackup(parsed.state)
-    parsed.state.pendingProfessionalEvents = (parsed.state.pendingProfessionalEvents || []).filter(event => event.accountId === scope.userId)
-    return { status: 'valid', state: parsed.state }
+    const source = scope.kind === 'account' ? parsed.state : parsed
+    if (!source || typeof source !== 'object' || Array.isArray(source)) throw new Error('invalid cache state')
+    state = migrateLocalState(source)
+    state.routines ??= []
+    state.workouts ??= []
+    validateBackup(state)
+    state = stateOnly(state)
+    state.pendingProfessionalEvents = scope.kind === 'anonymous' ? [] : (state.pendingProfessionalEvents || []).filter(event => event.accountId === scope.userId)
   } catch {
+    try {
+      const parsed = JSON.parse(raw)
+      const safe = stateOnly(scope.kind === 'account' ? parsed?.state : parsed)
+      storage.setItem(key + ':recovery', JSON.stringify(safe))
+      storage.removeItem(key)
+    } catch { /* malformed JSON cannot be copied without risking embedded credentials */ }
     return { status: 'invalid', state: emptyStateForScope(scope, defaultState) }
   }
+  const clean = scope.kind === 'anonymous' ? state : { ownerId: scope.userId, schemaVersion: ACCOUNT_CACHE_SCHEMA_VERSION, state }
+  try { storage.setItem(key, JSON.stringify(clean)) }
+  catch { return { status: 'error', state } }
+  return { status: 'valid', state }
 }
 
 export function writeScopedState(scope, state, storage) {

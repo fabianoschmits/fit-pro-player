@@ -41,7 +41,6 @@ export default function Plan() {
   }
 
   const today = todayISO()
-  const scheduledDays = WEEK_DAYS.filter(day => S.week[day] && S.routines.some(r => r.id === S.week[day])).length
   const planProgress = planSetupProgress(S)
   const mode = S.planMode === 'daily' ? 'daily' : 'weekly'
   const usingProfessionalPlan = hasAssignedProgram(S)

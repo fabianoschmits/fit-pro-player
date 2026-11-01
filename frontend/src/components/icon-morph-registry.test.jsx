@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getVisualId, findIconMorph, ICON_MORPH_REGISTRY } from './icon-morph-registry.jsx'
+import { getVisualId, findIconMorph } from './icon-morph-registry.jsx'
 
 describe('icon-morph-registry', () => {
   it('correctly maps visual IDs for static items', () => {

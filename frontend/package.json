@@ -19,7 +19,9 @@
     "build:mobile:web": "node ../scripts/sync-exercise-sprite-catalogue.mjs --check && vite build --mode=mobile",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:pwa": "vite build --mode=pwa-test && node scripts/inject-sw-manifest.mjs && playwright test --config=playwright.pwa.config.js"
+    "test:e2e:pwa": "vite build --mode=pwa-test && node scripts/inject-sw-manifest.mjs && playwright test --config=playwright.pwa.config.js",
+    "lint": "eslint .",
+    "typecheck": "tsc -p jsconfig.json"
   },
   "license": "UNLICENSED",
   "dependencies": {
@@ -42,10 +44,22 @@
     "@capacitor/android": "7.6.9",
     "@capacitor/cli": "7.6.9",
     "@capacitor/ios": "7.6.9",
+    "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.63.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^9.39.5",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-promise": "^7.3.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0",
     "happy-dom": "^21.0.4",
     "linkedom": "^0.18.13",
+    "typescript": "^5.9.3",
     "vite": "^8.3.5",
     "vitest": "^4.1.12",
     "workbox-build": "^7.4.1"

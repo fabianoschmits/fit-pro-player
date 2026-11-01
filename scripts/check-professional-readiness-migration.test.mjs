@@ -27,7 +27,7 @@ test('authenticated professional database boundaries and concurrent mutation ret
     assert.equal(result.status, 0, `${name}: ${result.stderr || result.stdout || result.error || `exit ${result.status}`}${serverDetail}`)
     return result.stdout
   }
-  run('initdb', ['-D', data, '-U', 'postgres', '-A', 'trust', '--encoding=UTF8', '--no-locale'])
+  run('initdb', ['-D', data, '-U', 'postgres', '-A', 'trust', '--encoding=UTF8', '--locale-provider=builtin', '--builtin-locale=C.UTF-8'])
   // All clients use TCP; avoid the system socket directory owned by postgres on Linux.
   fs.appendFileSync(path.join(data, 'postgresql.conf'), "\nunix_socket_directories = ''\n")
   run('pg_ctl', ['-D', data, '-l', serverLog, '-o', `-h 127.0.0.1 -p ${port}`, '-w', 'start'])
@@ -48,6 +48,7 @@ test('authenticated professional database boundaries and concurrent mutation ret
       create schema auth; create table auth.users(id uuid primary key, raw_user_meta_data jsonb default '{}');
       create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
       grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;`)
+    sql(fs.readFileSync(path.join(root, 'scripts/local-database-bootstrap.sql'), 'utf8'))
     for (const file of fs.readdirSync(path.join(root, 'supabase/migrations')).sort()) {
       if (process.env.READINESS_BASELINE === '1' && file.startsWith('202610020014')) continue
       sql(fs.readFileSync(path.join(root, 'supabase/migrations', file), 'utf8'))
@@ -66,14 +67,15 @@ test('authenticated professional database boundaries and concurrent mutation ret
       ('10000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000007');
       insert into public.programs(id,professional_user_id,title) values ('20000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000005','Five'),('20000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000006','Six');`)
     const asUser = (user, command) => `begin; set local role authenticated; set local request.jwt.claim.sub='${user}'; ${command}; select pg_sleep(0.1); commit;`
-    const publish = `select public.publish_program_version('20000000-0000-0000-0000-000000000005','{"monday":[{"exerciseId":"x","sets":3,"reps":10}]}')`
+    const publish = `select public.publish_program_version('20000000-0000-0000-0000-000000000005','{"monday":[{"exerciseId":"0043","sets":3,"reps":10}]}')`
     await Promise.all([asyncSql(asUser('00000000-0000-0000-0000-000000000005', publish)), asyncSql(asUser('00000000-0000-0000-0000-000000000005', publish))])
     assert.equal(sql(`select string_agg(version_number::text,',' order by version_number) from public.program_versions where program_id='20000000-0000-0000-0000-000000000005';`).trim(), '1,2')
-    sql(asUser('00000000-0000-0000-0000-000000000006', `select public.publish_program_version('20000000-0000-0000-0000-000000000006','{"monday":[{"exerciseId":"x","sets":3,"reps":10}]}')`))
+    sql(asUser('00000000-0000-0000-0000-000000000006', `select public.publish_program_version('20000000-0000-0000-0000-000000000006','{"monday":[{"exerciseId":"0043","sets":3,"reps":10}]}')`))
     const assign = digit => asUser(`00000000-0000-0000-0000-00000000000${digit}`, `select public.assign_program_version('20000000-0000-0000-0000-00000000000${digit}',(select id from public.program_versions where program_id='20000000-0000-0000-0000-00000000000${digit}' and version_number=1),'00000000-0000-0000-0000-000000000007')`)
     await Promise.all([asyncSql(assign(5)), asyncSql(assign(6))])
-    assert.equal(sql(`select count(*) from public.program_assignments where student_user_id='00000000-0000-0000-0000-000000000007' and status='active';`).trim(), '1')
-    const start = asUser('00000000-0000-0000-0000-000000000007', `select public.start_workout_execution('40000000-0000-0000-0000-000000000007',(select id from public.program_assignments where status='active'),'monday')`)
+    assert.equal(sql(`select count(*) from public.program_assignments where student_user_id='00000000-0000-0000-0000-000000000007' and status='active';`).trim(), '2')
+    sql(asUser('00000000-0000-0000-0000-000000000007', `select public.apply_library_plan((select id from public.athlete_plan_library where user_id=auth.uid() and assignment_id=(select id from public.program_assignments where professional_user_id='00000000-0000-0000-0000-000000000005' and status='active')))`))
+    const start = asUser('00000000-0000-0000-0000-000000000007', `select public.start_workout_execution('40000000-0000-0000-0000-000000000007',(select id from public.program_assignments where professional_user_id='00000000-0000-0000-0000-000000000005' and status='active'),'monday')`)
     await Promise.all([asyncSql(start), asyncSql(start)])
     assert.equal(sql(`select count(*) from public.workout_executions;`).trim(), '1')
     const terminals = await Promise.allSettled([

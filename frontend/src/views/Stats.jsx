@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { lastBW, streakWeeks, setLabel, modeOf, effortOf, metricModeForEntry, metricRowsForEntry, bestWeightForEntry, workoutVolume } from '../lib/history.js'
-import { fmtNum, fmtDate, fmtVol, todayISO, weekKey, sentenceCase } from '../lib/format.js'
+import { fmtNum, fmtDate, todayISO, weekKey, sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
-import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, WorkoutRow, bwDeltaColor } from '../sheets.jsx'
+import { bwSheet, goalSheet, calendarSheet, workoutDetailSheet, bwDeltaColor } from '../sheets.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Heatmap from '../components/Heatmap.jsx'
 import Icon from '../components/Icon.jsx'
 import BodyMap, { BodyMapLegend } from '../components/BodyMap.jsx'
-import { loadOfWorkouts, rankOf, MUSCLE_NAME, musclesOf } from '../lib/muscles.js'
+import { loadOfWorkouts, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
 import { fatigueOf, strengthOf, STRENGTH_FLOOR } from '../lib/recovery.js'
 import { strengthExerciseRowsForMuscle } from '../lib/strength-exercises.js'
 import { fatigueStateOf } from '../lib/recovery-view.js'
@@ -22,26 +22,11 @@ import {
 import { Button, Segmented, SelectRow } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import TipOnce from '../components/TipOnce.jsx'
-import { isWarmupRow } from '../lib/workout-model.js'
 import { toDisplayMass } from '../lib/mass.js'
 
 // Which muscles the training in a window actually hit — and, the point of the card,
 // which ones it keeps missing. Shading is relative within the window (lib/muscles.js).
-function latestMuscleTraining(workouts) {
-  const latest = {}
-  for (const workout of workouts || []) {
-    const timestamp = Number(workout?.start || new Date(workout?.d).getTime())
-    if (!Number.isFinite(timestamp)) continue
-    for (const entry of workout.entries || []) {
-      if (!(entry.sets || []).some(set => set?.done === true && !isWarmupRow(set))) continue
-      const exercise = EXIDX[entry.id] || entry.exercise || entry
-      for (const slug of Object.keys(musclesOf(exercise))) {
-        if (latest[slug] == null || timestamp > latest[slug]) latest[slug] = timestamp
-      }
-    }
-  }
-  return latest
-}
+
 
 export const FATIGUE_LEVELS = [
   { at: 0, level: 0 },
@@ -115,14 +100,9 @@ function MuscleBalance({ S }) {
     return last.w
   }, [S.bodyweight])
   const fatigue = useMemo(() => fatigueOf(workouts, now, { bodyweightKg, unit: 'kg' }), [workouts, now, bodyweightKg])
-  const strength = useMemo(() => strengthOf(workouts, now, { bodyweightKg, unit: 'kg' }), [workouts, now, bodyweightKg])
+  const strength = useMemo(() => strengthOf(workouts, now), [workouts, now])
   const muscleExercises = useMemo(() => (sel ? strengthExerciseRowsForMuscle(S, now, sel) : []), [S, now, sel])
-  const lastTrained = useMemo(() => latestMuscleTraining(workouts), [workouts])
-  const strengthHint = slug => {
-    if (lastTrained[slug] == null) return t('not trained')
-    const weeks = weeksSinceTraining(now, lastTrained[slug])
-    return t('Weeks since training: {0}', weeks)
-  }
+
   const toggleSel = m => setSel(s => (s === m ? null : m))
   const inWin = S.workouts.filter(w =>
     win === 0 ? true
@@ -307,7 +287,7 @@ export default function Stats() {
   const [exMetric, setExMetric] = useState('top')
   const workouts = S.workouts
   const displayUnit = S.displayUnit || 'kg'
-  const displayMass = value => toDisplayMass(value, displayUnit)
+  const displayMass = useCallback(value => toDisplayMass(value, displayUnit), [displayUnit])
 
   const bwPts = useMemo(() => {
     let raw = S.bodyweight
@@ -316,7 +296,7 @@ export default function Stats() {
       raw = raw.filter(b => new Date(b.d).getTime() >= cutoff)
     }
     return raw.map(b => ({ t: new Date(b.d).getTime(), y: displayMass(b.w), d: b.d }))
-  }, [S.bodyweight, range, displayUnit])
+  }, [S.bodyweight, range, displayMass])
 
   const volPts = useMemo(() => {
     return [...workouts].reverse().map(w => ({
@@ -324,7 +304,7 @@ export default function Stats() {
       y: displayMass(workoutVolume(w)),
       d: w.d
     }))
-  }, [workouts, displayUnit])
+  }, [workouts, displayMass])
 
   const totalVolume = useMemo(() => workouts.reduce((sum, w) => sum + workoutVolume(w), 0), [workouts])
   const now = Date.now()

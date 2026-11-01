@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/AuthProvider.jsx'
+
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createSupportRepository } from '../lib/support.js'
 import { Button, Section, TextArea, TextField } from '../components/ui.jsx'
@@ -22,7 +22,7 @@ export function validateSupportForm({ category, subject, body }) {
 const repoFor = () => createSupportRepository({ client: getBrowserSupabaseClient() })
 
 export default function Support() {
-  const nav = useNavigate()
+
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
   const [faq, setFaq] = useState([])
@@ -46,7 +46,7 @@ export default function Support() {
 
 export function SupportComposer() {
   const nav = useNavigate(); const repo = useMemo(repoFor, [])
-  const [form, setForm] = useState({ category: '', subject: '', body: '' }); const [errors, setErrors] = useState({}); const [success, setSuccess] = useState(false)
+  const [form, setForm] = useState({ category: '', subject: '', body: '' }); const [errors, setErrors] = useState(/** @type {Record<string,string>} */ ({})); const [success, setSuccess] = useState(false)
   const action = useFppAction({
     onAction: () => {
       const next = validateSupportForm(form); setErrors(next)

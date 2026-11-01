@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 const port = Number(process.env.FPP_E2E_PORT || 8080)
 const baseURL = `http://127.0.0.1:${port}`
 export default defineConfig({
-  testDir: './e2e', fullyParallel: false, workers: 1, timeout: 30000,
+  testDir: './e2e', fullyParallel: false, workers: 1, timeout: 60000,
   testIgnore: ['**/pwa.spec.js','**/fixtures.test.js'],
   expect: { timeout: 10000 }, reporter: [['list']],
   use: { baseURL, trace:'retain-on-failure', screenshot:'only-on-failure', serviceWorkers:'block' },

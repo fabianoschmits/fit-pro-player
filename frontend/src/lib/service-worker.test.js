@@ -6,11 +6,12 @@ import { describe, expect, it, vi } from 'vitest'
 function createFetchWorker(path, cachedBody, networkFetch) {
   const origin = 'https://fit.example'
   const request = new Request(new URL(path, origin))
-  const previousEntries = new Map([[request.url, new Response(cachedBody)]])
+  const previousEntries = new Map(cachedBody === null ? [] : [[request.url, new Response(cachedBody)]])
   const runtimeEntries = new Map()
   const listeners = {}
   const keyFor = value => typeof value === 'string' ? new URL(value, origin).href : value.url
   const cache = {
+    match: async key => (runtimeEntries.get(keyFor(key)) || previousEntries.get(keyFor(key)))?.clone(),
     put: async (key, response) => { runtimeEntries.set(keyFor(key), response) },
     keys: async () => [...runtimeEntries.keys()].map(url => new Request(url)),
     delete: async key => runtimeEntries.delete(keyFor(key)),
@@ -29,7 +30,7 @@ function createFetchWorker(path, cachedBody, networkFetch) {
   }
   vm.runInNewContext(readFileSync(new URL('../../public/sw.js', import.meta.url), 'utf8'), context)
 
-  return async () => {
+  const run = async () => {
     let response
     const pending = []
     listeners.fetch({
@@ -41,6 +42,7 @@ function createFetchWorker(path, cachedBody, networkFetch) {
     await Promise.all(pending)
     return result
   }
+  return Object.assign(run, { cache, runtimeEntries, context })
 }
 
 describe('PWA update safety', () => {
@@ -97,7 +99,7 @@ describe('PWA update safety', () => {
       caches: {
         keys: vi.fn().mockResolvedValue(['other-product', 'fit-pro-player-rt-v8', 'fit-pro-player-rt-v10']),
         delete: vi.fn(async key => { deleted.push(key); return true }),
-        open: vi.fn(),
+        open: vi.fn(async () => ({ keys: async () => [], delete: async () => true })),
         match: vi.fn(),
       },
       self: {
@@ -125,4 +127,27 @@ describe('PWA update safety', () => {
     // Ignoring it is what makes the first upgrade to this fix safe as well.
     expect(workerSource).not.toContain("e.data?.type === 'CLEAR_RUNTIME_CACHE'")
   })
+})
+
+it('bounds runtime entries and retains recently accessed resources without another download',async()=>{
+ const network=vi.fn(async()=>new Response('fresh'))
+ const run=createFetchWorker('/assets/current.js',null,network)
+ for(let i=0;i<180;i++)run.runtimeEntries.set(`https://fit.example/assets/old-${i}.js`,new Response('old'))
+ expect(await (await run()).text()).toBe('fresh')
+ expect(run.runtimeEntries.size).toBeLessThanOrEqual(160)
+ expect(await (await run()).text()).toBe('fresh')
+ expect(network).toHaveBeenCalledTimes(1)
+})
+it('returns usable network content and retries a cache write after quota pressure',async()=>{
+ const run=createFetchWorker('/assets/current.js',null,vi.fn(async()=>new Response('fresh')))
+ const put=run.cache.put
+ run.cache.put=vi.fn().mockRejectedValueOnce(Object.assign(new Error('quota'),{name:'QuotaExceededError'})).mockImplementation(put)
+ expect(await (await run()).text()).toBe('fresh')
+ expect(run.cache.put).toHaveBeenCalledTimes(2)
+})
+it('does not cache same-origin authenticated API paths',async()=>{
+ const fetch=vi.fn(async()=>new Response('private'))
+ const run=createFetchWorker('/rest/v1/private.js',null,fetch)
+ expect(await run()).toBeUndefined()
+ expect(run.runtimeEntries.size).toBe(0)
 })

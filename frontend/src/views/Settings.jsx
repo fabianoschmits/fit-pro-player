@@ -13,7 +13,7 @@ import { loadStarterPlan, confirmSheet, importFromApp } from '../sheets.jsx'
 import { MAX_BACKUP_BYTES, validateBackup } from '../lib/backup-state.js'
 import TipOnce from '../components/TipOnce.jsx'
 import Icon from '../components/Icon.jsx'
-import { Button, Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
+import {  Section, Row, SelectRow, Switch, Segmented } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
 import DiagnosticsControls from '../components/DiagnosticsControls.jsx'
@@ -72,7 +72,7 @@ export default function Settings() {
       setImportState('idle')
       if (!useStore.getState().isScopeCurrent(token)) return
       try {
-        const data = validateBackup(JSON.parse(rd.result))
+        const data = validateBackup(JSON.parse(String(rd.result ?? '')))
         confirmSheet({ title: t('Import backup?'), message: t('This replaces all current data with the backup file.'), confirmText: t('Import'), danger: true, onConfirm: () => {
           if (!useStore.getState().isScopeCurrent(token)) return false
           const saved = replaceState(data, true)
@@ -83,7 +83,7 @@ export default function Settings() {
     }
     rd.onerror = () => { setImportState('error'); setImportError(t('Could not read that file')) }
     rd.onabort = () => setImportState('idle')
-    try { rd.readAsText(f) } catch { rd.onerror() }
+    try { rd.readAsText(f) } catch { rd.onerror?.(undefined) }
   }
 
   return <div className="narrow settings-page">
@@ -279,7 +279,7 @@ const EFFORT_ROWS = [
 const EFFORT_TYPICAL = 2
 
 function effortHelpSheet() {
-  useUI.getState().openSheet(close => <>
+  useUI.getState().openSheet(() => <>
     <h3>{t('Effort per set')}</h3>
     <div className="muted small" style={{ lineHeight: 1.5 }}>
       {t('How hard a set was, logged next to weight and reps. Two scales for the same judgement, counted from opposite ends.')}

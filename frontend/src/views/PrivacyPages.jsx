@@ -3,7 +3,7 @@ import { getPrivacyConfig, isPrivacyConfigComplete, PRIVACY_DOCUMENT_VERSION } f
 
 const links = <p className="privacy-page-links"><Link to="/privacy">Aviso de Privacidade</Link><Link to="/terms">Termos de Uso</Link><Link to="/data-rights">Direitos dos titulares</Link></p>
 
-function Shell({ title, children }) {
+function Shell({ title, children = undefined }) {
   const config = getPrivacyConfig()
   return <main className="privacy-page narrow">
     <header className="privacy-page-header"><a href="#/" aria-label="Voltar para o início">←</a><div><span>FIT PRO PLAYER</span><small>Documento v{PRIVACY_DOCUMENT_VERSION}</small></div></header>

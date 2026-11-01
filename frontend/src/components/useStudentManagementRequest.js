@@ -14,7 +14,7 @@ export default function useStudentManagementRequest(load, failure) {
     const current = () => alive.current && generation.current === request
     setBusy(true); setError(''); setData(null)
     try { const value = await withTimeout(load(current), 10000); if (current()) setData(value) }
-    catch (cause) { if (current()) { generation.current++; setError(t(cause?.message === 'request-timeout' ? 'A conexão demorou mais que o esperado.' : failure)); setBusy(false) } }
+    catch (cause) { if (current()) { generation.current += 1; setError(t(cause?.message === 'request-timeout' ? 'A conexão demorou mais que o esperado.' : failure)); setBusy(false) } }
     finally { if (current()) setBusy(false) }
   }, [auth.user?.id, auth.status, load, failure])
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function useStudentManagementRequest(load, failure) {
     if (auth.status === 'initializing') timer = window.setTimeout(() => { setBusy(false); setError(t('Não foi possível confirmar sua sessão. Tente novamente.')) }, 12000)
     else if (!auth.user?.id) { setBusy(false); setError(t('Entre na sua conta para acessar seus profissionais.')) }
     else void refresh()
-    return () => { alive.current = false; generation.current++; window.clearTimeout(timer) }
+    return () => { alive.current = false; generation.current += 1; window.clearTimeout(timer) }
   }, [auth.status, auth.user?.id, refresh])
   return { data, busy, error, refresh }
 }

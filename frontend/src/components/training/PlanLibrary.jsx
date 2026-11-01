@@ -19,7 +19,7 @@ import { exerciseName, exOr } from '../../lib/exercises.js'
 
 const PAGE_SIZE = 5
 
-function PlanPreviewSheet({ item, state, routineId, close }) {
+function PlanPreviewSheet({ item, state = undefined, routineId = undefined, close }) {
   return <section className="plan-library-preview-sheet">
     <div className="row between sheet-title-row"><h2>{item.title}</h2><Button size="sm" variant="tinted" onClick={close}>Fechar</Button></div>
     <p>{item.professional_name ? `Prof. ${item.professional_name}` : 'Criado por mim'}</p>
@@ -61,12 +61,12 @@ function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
   </section>
 }
 
-export default function PlanLibrary({ onUpdates }) {
+export default function PlanLibrary({ onUpdates = undefined }) {
   const { user } = useAuth()
   return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates} />
 }
 
-function AccountPlanLibrary({ user, onUpdates }) {
+function AccountPlanLibrary({ user, onUpdates = undefined }) {
   const nav = useNavigate()
   const state = useStore(s => s.S)
   const update = useStore(s => s.update)
@@ -78,7 +78,7 @@ function AccountPlanLibrary({ user, onUpdates }) {
     try { const result = await repo.planLibrary(offset); if (request === generation.current) { setData(old => ({ ...result, items: offset ? [...old.items, ...result.items] : result.items })); setError('') } }
     catch { if (request === generation.current) setError('Não foi possível carregar seus planos.') }
   }, [repo])
-  useEffect(() => { if (user?.id) refresh(); return () => { generation.current++ } }, [user?.id, refresh])
+  useEffect(() => { if (user?.id) refresh(); return () => { generation.current += 1 } }, [user?.id, refresh])
 
   const mutate = async action => {
     const store = useStore.getState(), token = store.getScopeToken()
@@ -134,7 +134,7 @@ function AccountPlanLibrary({ user, onUpdates }) {
     } catch { if (request === generation.current) setError('Não foi possível marcar a atualização como vista. Tente novamente.') }
   }
   const open = async workout => {
-    const { item, workspace, routine, day } = workout
+    const { item, day } = workout
     if (item.workout_updates?.[DAYS[day]] && item.plan_update) {
       useUI.getState().openSheet(close => <PlanUpdateSheet item={item} workout={workout} close={close} acknowledge={() => acknowledge(item, DAYS[day])} onView={() => { const activeRoutineId = useStore.getState().S.week[day]; if (activeRoutineId) nav(`/plan/r/${activeRoutineId}`); else openPreview(workout) }} />, { className: 'plan-preview-sheet-shell' })
       return
@@ -174,8 +174,10 @@ function AccountPlanLibrary({ user, onUpdates }) {
     })
     return [...new Set([...currentByDay.keys(), ...pendingDays])].map(day => ({ item, workspace, routine: currentByDay.get(day) || previousByDay.get(day), day, removed: !currentByDay.has(day) && pendingDays.includes(day) }))
   }), [data.items])
+  const openRef = useRef(open)
+  openRef.current = open
   useEffect(() => {
-    onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => open(workout)])))
+    onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => openRef.current(workout)])))
   }, [professionalWorkouts, onUpdates])
   const shownWorkouts = professionalWorkouts.slice(0, visible)
   const removeFromDay = workout => confirmSheet({

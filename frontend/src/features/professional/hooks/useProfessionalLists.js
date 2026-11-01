@@ -67,7 +67,7 @@ export function useProfessionalLists({ accountId, resourceKey, loadPage, initial
     } finally {
       if (inFlight.current?.request === request) inFlight.current = null
     }
-  }, [accountId, context, filterKey, limit])
+  }, [accountId, context, filters, limit])
 
   useEffect(() => {
     mounted.current = true

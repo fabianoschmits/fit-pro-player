@@ -8,7 +8,7 @@ import { Button } from './ui.jsx'
  * The shell owns primary navigation; this component only gives a screen a
  * predictable title, optional supporting text, and one contextual action.
  */
-export function AppHeader({ title, subtitle, backTo, action, identity, className = '' }) {
+export function AppHeader({ title, subtitle = undefined, backTo = undefined, action = undefined, identity = undefined, className = '' }) {
   const navigate = useNavigate()
   return (
     <header className={`app-header ${className}`.trim()}>

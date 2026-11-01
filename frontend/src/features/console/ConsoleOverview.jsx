@@ -8,7 +8,7 @@ import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
 import useConsoleResource from './useConsoleResource.js'
 import { Alert, SectionBody, Loading, MetricCard, SectionTitle } from './ConsoleUI.jsx'
 
-function WorkspaceLink({ to, icon, title, description, count }) {
+function WorkspaceLink({ to, icon = undefined, title, description = undefined, count = undefined }) {
   return <Link className="console-workspace-link" to={to}><span className="console-link-icon"><Icon name={icon} /></span><span><strong>{title}</strong><small>{description}</small></span>{count != null && <span className="console-link-count">{count}</span>}<Icon name="chevronRight" /></Link>
 }
 

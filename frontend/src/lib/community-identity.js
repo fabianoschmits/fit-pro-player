@@ -5,7 +5,7 @@ export const COMMUNITY_PROFILE_FIELDS = 'id,display_name,avatar_ref'
 
 const text = value => typeof value === 'string' ? value.trim() : ''
 
-export function resolveCommunityIdentity({ userId, publicProfile, localProfile, authUser }) {
+export function resolveCommunityIdentity({ userId, publicProfile, localProfile = undefined, authUser = undefined }) {
   const saved = publicProfile?.id === userId ? publicProfile : null
   const own = authUser?.id === userId
   // The blank bootstrap profile contains a default avatar, not a user choice.

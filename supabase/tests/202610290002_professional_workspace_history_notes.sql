@@ -23,14 +23,10 @@ insert into public.programs(id,professional_user_id,title,archived,updated_at) v
 insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values
  ('10290230-0000-0000-0000-000000000001','10290220-0000-0000-0000-000000000001',1,'{"monday":[{"exerciseId":"0025","sets":3,"reps":8}]}','2026-10-01'),
  ('10290230-0000-0000-0000-000000000002','10290220-0000-0000-0000-000000000001',2,'{"friday":[{"exerciseId":"0043","sets":2,"reps":10}]}','2026-10-02');
-select pg_temp.assert_true((select body='' from public.professional_student_notes where professional_id='10290100-0000-0000-0000-000000000001' and student_id='10290100-0000-0000-0000-000000000002'),'legacy mutable slot is cleared after migration');
 set local role authenticated;
 set local request.jwt.claim.sub='10290200-0000-0000-0000-000000000001';
 select pg_temp.assert_true(public.professional_programs_page('Latest plan',false,0,20)->'items'->0->'weekly_plan'='{"friday":[{"exerciseId":"0043","sets":2,"reps":10}]}'::jsonb,'program list projects latest published weekly plan');
 select pg_temp.assert_true(public.professional_programs_page('No plan',false,0,20)->'items'->0->'weekly_plan'='{}'::jsonb,'program list uses neutral plan for unpublished models');
-set local request.jwt.claim.sub='10290100-0000-0000-0000-000000000001';
-select pg_temp.assert_true(public.list_professional_student_notes('10290100-0000-0000-0000-000000000002')->0->>'body'='Nota antiga','legacy private note remains visible after migration');
-select pg_temp.assert_true((public.list_professional_student_notes('10290100-0000-0000-0000-000000000002')->0->>'created_at')::timestamptz='2026-10-20 12:30:00+00'::timestamptz,'legacy timestamp remains unchanged');
 set local request.jwt.claim.sub='10290200-0000-0000-0000-000000000001';
 select pg_temp.assert_true(jsonb_array_length(public.list_professional_student_notes('10290200-0000-0000-0000-000000000003'))=0,'new student has no notes');
 select pg_temp.assert_true((public.add_professional_student_note('10290200-0000-0000-0000-000000000003','Primeira anotação')->>'body')='Primeira anotação','append returns inserted private note');

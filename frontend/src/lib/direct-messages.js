@@ -6,6 +6,10 @@ export function createMessageRepository(client) {
     return data
   }
   return {
+    block: peer => rpc('community_block_user', { p_peer: peer }),
+    unblock: peer => rpc('community_unblock_user', { p_peer: peer }),
+    hasBlock: peer => rpc('community_has_block', { p_peer: peer }),
+    blocks: () => rpc('community_list_blocks'),
     inbox: (offset = 0, query = '') => rpc('community_message_inbox', { p_offset: offset, p_query: query }),
     history: (peer, before = null) => rpc('community_message_history', { p_peer: peer, p_before: before }),
     unread: () => rpc('community_message_unread_count'),

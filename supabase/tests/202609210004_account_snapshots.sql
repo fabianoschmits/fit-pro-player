@@ -42,7 +42,7 @@ select ok(
 select policy_cmd_is('public', 'account_snapshots', 'account_snapshots_select_own', 'SELECT', 'own snapshot select policy exists');
 select policy_roles_are('public', 'account_snapshots', 'account_snapshots_select_own', ARRAY['authenticated'], 'snapshot select is authenticated-only');
 select is(
-  (select count(*)::integer from pg_policies where schemaname = 'public' and tablename = 'account_snapshots'),
+  (select count(*)::integer from pg_policies where schemaname = 'public' and tablename = 'account_snapshots' and permissive = 'PERMISSIVE'),
   1,
   'snapshot table has no write policies'
 );
@@ -51,7 +51,7 @@ select ok(
   'snapshot table has RLS enabled'
 );
 select is(
-  (select string_agg(tgname, ',' order by tgname) from pg_trigger where tgrelid = 'public.account_snapshots'::regclass and not tgisinternal),
+  (select string_agg(tgname, ',' order by tgname) from pg_trigger where tgrelid = 'public.account_snapshots'::regclass and not tgisinternal and tgname <> 'enforce_active_account'),
   'community_identity_snapshot',
   'only the public identity sync trigger exists; snapshot timestamps remain controlled by the CAS operation'
 );

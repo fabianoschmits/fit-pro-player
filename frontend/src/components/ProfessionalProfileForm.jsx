@@ -2,7 +2,7 @@ import { useId, useRef, useState } from 'react'
 import { t } from '../lib/i18n.js'
 import { Button, TextArea, TextField } from './ui.jsx'
 
-export default function ProfessionalProfileForm({ profile, onSave, onCancel, saving, state = 'idle', provisioning = false }) {
+export default function ProfessionalProfileForm({ profile, onSave = undefined, onCancel = undefined, saving, state = 'idle', provisioning = false }) {
   const id = useId()
   const nameRef = useRef(null)
   const [draft, setDraft] = useState(() => ({ ...profile, specialties: (profile.specialties || []).join(', ') }))

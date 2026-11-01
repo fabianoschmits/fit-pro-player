@@ -1,3 +1,4 @@
+import { BlockedUsers } from '../components/community/UserBlockActions.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -20,7 +21,7 @@ function Avatar({ profile, className = '' }) {
 }
 const formatTime = value => new Date(value).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-function ActionMenu({ label, open, onToggle, children, className = '' }) {
+function ActionMenu({ label = undefined, open, onToggle = undefined, children = undefined, className = '' }) {
   const root = useRef(null)
   useEffect(() => {
     if (!open) return
@@ -53,12 +54,12 @@ export default function CommunityMessages() {
   return peerId ? <Conversation key={`${user.id}:${peerId}`} peerId={peerId} userId={user.id} client={client} repo={repo} /> : <Inbox key={user.id} userId={user.id} repo={repo} />
 }
 
-function Inbox({ repo, userId }) {
+function Inbox({ repo, userId = undefined }) {
   const navigate = useNavigate()
   const [rows, setRows] = useState([]), [query, setQuery] = useState(''), [search, setSearch] = useState('')
   const [error, setError] = useState(''), [loading, setLoading] = useState(true), [pages, setPages] = useState(1), [more, setMore] = useState(false), [menuPeer, setMenuPeer] = useState(null)
   const version = useRef(0), mounted = useRef(true)
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; version.current++ } }, [])
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; version.current += 1 } }, [])
   useEffect(() => { const timer = setTimeout(() => { setSearch(query); setPages(1) }, 250); return () => clearTimeout(timer) }, [query])
   const refresh = useCallback(async () => {
     const request = ++version.current
@@ -73,13 +74,15 @@ function Inbox({ repo, userId }) {
   const actOnConversation = async (row, action) => {
     setMenuPeer(null)
     try {
+      if (action === 'block') { await repo.block(row.peer_id); setError('Usu�rio bloqueado. O hist�rico foi preservado.'); return }
+      if (action === 'unblock') { await repo.unblock(row.peer_id); setError('Usu�rio desbloqueado.'); return }
       if (action === 'unread') await repo.markUnread(row.peer_id)
       else await repo.hideConversation(row.peer_id)
       await refresh()
     } catch { setError('Não foi possível atualizar a conversa. Tente novamente.') }
   }
   return <div className="dm-inbox page-scenery"><AppHeader title="Conversas" backTo="/community" />
-    <label className="dm-search"><Icon name="search" /><input aria-label="Pesquisar conversas" placeholder="Pesquisar conversas" value={query} onChange={event => setQuery(event.target.value)} /></label>
+    <BlockedUsers repo={repo} /><label className="dm-search"><Icon name="search" /><input aria-label="Pesquisar conversas" placeholder="Pesquisar conversas" value={query} onChange={event => setQuery(event.target.value)} /></label>
     {error && <p className="support-error" role="alert">{error} <button onClick={refresh}>Tentar novamente</button></p>}
     {loading && <p role="status">Carregando conversas…</p>}
     {!loading && !error && !rows.length && <div className="dm-empty"><Icon name="message" /><h2>{search ? 'Nenhuma conversa encontrada' : 'Suas conversas começam aqui'}</h2><p>Abra o perfil de alguém na comunidade e toque no ícone de mensagem.</p><button onClick={() => navigate('/community')}>Ir para a comunidade</button></div>}
@@ -88,7 +91,7 @@ function Inbox({ repo, userId }) {
   </div>
 }
 
-function Conversation({ repo, client, userId, peerId }) {
+function Conversation({ repo, client, userId = undefined, peerId }) {
   const navigate = useNavigate()
   const [profile, setProfile] = useState(null), [profileError, setProfileError] = useState(''), [messages, setMessages] = useState([]), [body, setBody] = useState(''), [editing, setEditing] = useState(null)
   const [error, setError] = useState(''), [loading, setLoading] = useState(true), [sending, setSending] = useState(false), [older, setOlder] = useState(false), [loadingOlder, setLoadingOlder] = useState(false), [menu, setMenu] = useState(null), [removing, setRemoving] = useState(() => new Set())
@@ -165,6 +168,8 @@ function Conversation({ repo, client, userId, peerId }) {
   const actOnConversation = async action => {
     setMenu(null)
     try {
+      if (action === 'block') { await repo.block(peerId); setError('Usu�rio bloqueado. O hist�rico foi preservado.'); return }
+      if (action === 'unblock') { await repo.unblock(peerId); setError('Usu�rio desbloqueado.'); return }
       if (action === 'unread') { await repo.markUnread(peerId); navigate('/community/messages'); return }
       if (action === 'hide') { await repo.hideConversation(peerId); navigate('/community/messages'); return }
       navigate(`/community/user/${peerId}`)
@@ -188,7 +193,7 @@ function Conversation({ repo, client, userId, peerId }) {
   }
   const beginEdit = message => { setMenu(null); nonce.current = null; setEditing(message); setBody(message.body) }
   const cancelEdit = () => { setEditing(null); setBody(''); nonce.current = null }
-  return <div className="chat-page dm-conversation"><div className="chat-header"><AppHeader title={profile?.display_name || 'Conversa'} subtitle="Mensagem privada" backTo="/community/messages" identity={<Avatar profile={profile} className="dm-header-avatar" />} action={<ActionMenu label="Ações da conversa" open={menu === 'conversation'} onToggle={() => setMenu(menu === 'conversation' ? null : 'conversation')} className="dm-conversation-menu"><button role="menuitem" onClick={() => void actOnConversation('profile')}>Ver perfil</button><button role="menuitem" onClick={() => void actOnConversation('unread')}>Marcar como não lida</button><button role="menuitem" className="dm-danger" onClick={() => void actOnConversation('hide')}>Apagar conversa</button></ActionMenu>} /></div>
+  return <div className="chat-page dm-conversation"><div className="chat-header"><AppHeader title={profile?.display_name || 'Conversa'} subtitle="Mensagem privada" backTo="/community/messages" identity={<Avatar profile={profile} className="dm-header-avatar" />} action={<ActionMenu label="Ações da conversa" open={menu === 'conversation'} onToggle={() => setMenu(menu === 'conversation' ? null : 'conversation')} className="dm-conversation-menu"><button role="menuitem" onClick={() => void actOnConversation('profile')}>Ver perfil</button><button role="menuitem" onClick={() => void actOnConversation('block')}>Bloquear</button><button role="menuitem" onClick={() => void actOnConversation('unblock')}>Desbloquear</button><button role="menuitem" onClick={() => void actOnConversation('unread')}>Marcar como não lida</button><button role="menuitem" className="dm-danger" onClick={() => void actOnConversation('hide')}>Apagar conversa</button></ActionMenu>} /></div>
     <div className="chat-thread" ref={thread} aria-label="Conversa" aria-live="polite" onScroll={() => { const el = thread.current; atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80 }}>
       {!validPeer && <p role="alert">Este destinatário não está disponível.</p>}
       {loading && <p role="status">Carregando conversa…</p>}

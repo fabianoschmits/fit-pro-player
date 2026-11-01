@@ -1,12 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { toPng } from 'html-to-image'
 import { t } from '../lib/i18n.js'
-import { EXIDX, exerciseName } from '../lib/exercises.js'
-import { fmtDate, fmtTrainingVolume, fmtDur, workoutDuration } from '../lib/format.js'
 import { useStore } from '../store/useStore.js'
-import { loadOfWorkouts } from '../lib/muscles.js'
-import BodyMap from './BodyMap.jsx'
-import Icon from './Icon.jsx'
+
+import './BodyMap.jsx'
+import './Icon.jsx'
 import { Button } from './ui.jsx'
 import '../workout-themes.css'
 import '../workout-share-layouts.css'
@@ -15,117 +13,7 @@ import { shareWorkoutImage } from '../lib/workout-share.js'
 import { FppActionFeedback } from './FppFeedback.jsx'
 
 // The Dashboard layout is the default "gamer card" layout
-function LayoutDashboard({ w, st, innerRef, themeId }) {
-  const dur = workoutDuration(w)
-  const setsCount = w.entries.reduce((acc, e) => acc + (e.sets ? e.sets.length : 0), 0)
-  const load = loadOfWorkouts([w])
 
-  return (
-    <div ref={innerRef} className={`workout-story-canvas ${themeId}`}>
-      {/* Backgrounds and glows */}
-      <div className="wsc-bg" />
-      <div className="wsc-grid-pattern" />
-      <div className="wsc-glow wsc-glow-top" />
-      <div className="wsc-glow wsc-glow-bottom" />
-
-      {/* BodyMap — background */}
-      <div className="wsc-bodymap-wrap">
-        <BodyMap
-          load={load}
-          body={st.body || 'male'}
-          view="front"
-          decorative
-          className="wsc-bodymap"
-        />
-      </div>
-
-      <div className="wsc-content-wrapper">
-        {/* Header: Logo and Date */}
-        <div className="wsc-header">
-          <div className="wsc-logo-box">
-            <img src="/brand-logo.png" alt="Fit Pro Player" />
-          </div>
-          <div className="wsc-date-badge">
-            <Icon name="calendar" />
-            <span>{fmtDate(w.d, true)}</span>
-          </div>
-        </div>
-
-        {/* Title */}
-        <div className="wsc-title-container">
-          <div className="wsc-title-subtitle">STATUS DO JOGADOR</div>
-          <h2 className="wsc-title">TREINO CONCLUÍDO</h2>
-          <div className="wsc-duration-badge">
-            <Icon name="clock" /> {fmtDur(dur)}
-          </div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="wsc-stats-grid">
-          <div className="wsc-stat-box">
-            <div className="wsc-stat-icon"><Icon name="list" /></div>
-            <div className="wsc-stat-info">
-              <span className="wsc-stat-val">{w.entries.length}</span>
-              <span className="wsc-stat-label">{t('Exercícios')}</span>
-            </div>
-          </div>
-          <div className="wsc-stat-box">
-            <div className="wsc-stat-icon"><Icon name="repeat" /></div>
-            <div className="wsc-stat-info">
-              <span className="wsc-stat-val">{setsCount}</span>
-              <span className="wsc-stat-label">{t('Séries')}</span>
-            </div>
-          </div>
-          {w.vol > 0 && (
-            <div className="wsc-stat-box">
-              <div className="wsc-stat-icon"><Icon name="dumbbell" /></div>
-              <div className="wsc-stat-info">
-                <span className="wsc-stat-val">{fmtTrainingVolume(w.vol, st.displayUnit || 'kg').replace(/^Volume: /, '')}</span>
-                <span className="wsc-stat-label">{t('Volume')}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Exercises Card */}
-        <div className="wsc-exercises-card" data-few={w.entries.length < 5 ? 'true' : 'false'}>
-          <div className="wsc-exercises-header">
-            <div className="wsc-eh-line" />
-            <span>DESEMPENHO</span>
-            <div className="wsc-eh-line" />
-          </div>
-          <div className="wsc-exercises-list">
-            {w.entries.slice(0, 8).map((e, idx) => {
-              const exData = EXIDX[e.id]
-              const name = exData ? exerciseName(exData) : e.id
-              const totalSets = e.sets ? e.sets.length : 0
-              const maxReps = e.sets && e.sets.length
-                ? Math.max(...e.sets.filter(s => s.r).map(s => s.r || 0))
-                : 0
-              return (
-                <div key={idx} className="wsc-ex-row">
-                  <div className="wsc-ex-icon"><Icon name="check" /></div>
-                  <span className="wsc-ex-name">{name}</span>
-                  <span className="wsc-ex-sets">{totalSets}×{maxReps > 0 ? maxReps : '-'}</span>
-                </div>
-              )
-            })}
-            {w.entries.length > 8 && (
-              <div className="wsc-ex-extra">+ {w.entries.length - 8} {t('exercícios')}</div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="wsc-footer">
-          <div className="wsc-footer-line" />
-          <span>FITPPLAYER.COM.BR</span>
-          <div className="wsc-footer-line" />
-        </div>
-      </div>
-    </div>
-  )
-}
 
 function WorkoutStoryPreview({ w, st, innerRef, themeId, layoutId }) {
   return <ShareCardLayout w={w} st={st} innerRef={innerRef} themeId={themeId} layoutId={layoutId} />
@@ -189,7 +77,7 @@ export async function composeShareImageWithLogo(cardDataUrl, logo, card, {
 }
 
 // ── Main modal component ───────────────────────────────────────────────────
-export function WorkoutShareModal({ w, onClose }) {
+export function WorkoutShareModal({ w }) {
   const st = useStore(s => s.S)
   const [generating, setGenerating] = useState(false)
   const [phase, setPhase] = useState('generating')

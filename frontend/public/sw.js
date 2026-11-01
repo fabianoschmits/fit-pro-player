@@ -1,16 +1,47 @@
 /* Fit Pro Player service worker — multi-cache offline strategy with workbox precache injection.
-   Shell assets are precached at install time; exercise sprites go to a dedicated never-evicted
+   Shell assets are precached at install time; exercise sprites go to a dedicated bounded
    cache; runtime JS/CSS/fonts and static images use separate stale-while-network caches. */
 
-const SHELL_CACHE = 'fpp-shell-v1'
+const SHELL_CACHE = 'fpp-shell-__BUILD_ID__'
 const RUNTIME_CACHE = 'fpp-runtime-v1'
 const EXERCISE_CACHE = 'fpp-exercise-media-v1'
 const STATIC_MEDIA_CACHE = 'fpp-static-media-v1'
 
+const EXERCISE_CATALOGUE = /* exercise-catalogue */ []
 const SHELL_PRECACHE = self.__WB_MANIFEST || []
 
 // Build a Set of shell URLs for fast lookup
 const SHELL_URL_SET = new Set(SHELL_PRECACHE.map(entry => typeof entry === 'string' ? entry : entry.url))
+
+const CACHE_LIMITS = { [RUNTIME_CACHE]: 160, [STATIC_MEDIA_CACHE]: 120, [EXERCISE_CACHE]: 600 }
+const cacheWrites = new Map()
+async function prune(cache, limit) {
+ const keys = await cache.keys()
+ await Promise.all(keys.slice(0, Math.max(0, keys.length - limit)).map(key => cache.delete(key)))
+}
+// Serialize writes per cache. Cache insertion order supplies durable LRU ordering.
+function boundedPut(name, request, response) {
+ const task = (cacheWrites.get(name) || Promise.resolve()).then(async () => {
+  const cache = await caches.open(name)
+  try {
+   await cache.delete(request)
+   await cache.put(request, response.clone())
+   await prune(cache, CACHE_LIMITS[name])
+  } catch (error) {
+   if (error?.name !== 'QuotaExceededError') return
+   await prune(cache, Math.max(0, Math.floor(CACHE_LIMITS[name] / 2)))
+   try { await cache.put(request, response.clone()) } catch { /* network response remains usable */ }
+  }
+ }).catch(() => {})
+ cacheWrites.set(name, task)
+ return task
+}
+async function cached(name, request, options = {}) {
+ const cache = await caches.open(name)
+ const hit = await cache.match(request, options)
+ if (hit) await boundedPut(name, request, hit.clone())
+ return hit
+}
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -30,7 +61,7 @@ self.addEventListener('activate', event => {
       // Also keep one previous shell and one previous runtime during transition
       const version = key => Number(key.match(/-v(\d+)$/)?.[1] || 0)
       const shells = keys.filter(k => k.startsWith('fpp-shell-') || k.startsWith('fit-pro-player-rt-'))
-      const oldShell = shells.filter(k => k !== SHELL_CACHE).sort((a, b) => version(b) - version(a))[0]
+      const oldShell = shells.filter(k => k !== SHELL_CACHE).at(-1)
       if (oldShell) currentCaches.add(oldShell)
       const runtimes = keys.filter(k => k.startsWith('fpp-runtime-'))
       const oldRuntime = runtimes.filter(k => k !== RUNTIME_CACHE).sort((a, b) => version(b) - version(a))[0]
@@ -40,6 +71,14 @@ self.addEventListener('activate', event => {
           .filter(k => !currentCaches.has(k) && (k.startsWith('fpp-') || k.startsWith('fit-pro-player-')))
           .map(k => caches.delete(k))
       )
+    }).then(async () => {
+      for (const [name, limit] of Object.entries(CACHE_LIMITS)) await prune(await caches.open(name), limit)
+      // Only discard exercise assets absent from the complete build catalogue.
+      if (EXERCISE_CATALOGUE.length) {
+        const valid = new Set(EXERCISE_CATALOGUE.map(path => new URL(path, location.origin).pathname))
+        const cache = await caches.open(EXERCISE_CACHE)
+        for (const key of await cache.keys()) if (!valid.has(new URL(key.url).pathname)) await cache.delete(key)
+      }
     }).then(() => self.clients.claim())
   )
   // Request persistent storage for exercise sprites
@@ -47,7 +86,7 @@ self.addEventListener('activate', event => {
     if (typeof self !== 'undefined' && self.navigator?.storage?.persist) {
       self.navigator.storage.persist().catch?.(() => {})
     }
-  } catch {}
+  } catch { /* optional browser operation may be unavailable */ }
 })
 
 self.addEventListener('message', e => {
@@ -202,15 +241,14 @@ self.addEventListener('notificationclick', event => {
 async function exerciseCacheFirst(request) {
   const url = new URL(request.url)
   const cache = await caches.open(EXERCISE_CACHE)
-  const hit = await cache.match(url.href, { ignoreVary: true, ignoreSearch: true })
+  const hit = await cached(EXERCISE_CACHE, url.href, { ignoreVary: true, ignoreSearch: true })
     || await cache.match(request, { ignoreVary: true })
     || await caches.match(url.href, { ignoreVary: true })
   if (hit) return hit
   try {
     const res = await fetch(request)
     if (res.ok || res.type === 'opaque') {
-      await cache.put(url.href, res.clone())
-      await cache.put(request, res.clone())
+      await boundedPut(EXERCISE_CACHE, url.href, res.clone())
     }
     return res
   } catch {
@@ -222,13 +260,12 @@ async function exerciseCacheFirst(request) {
 }
 
 async function staticMediaCacheFirst(request) {
-  const hit = await caches.match(request, { ignoreVary: true })
+  const hit = await cached(STATIC_MEDIA_CACHE, request, { ignoreVary: true })
   if (hit) return hit
   try {
     const res = await fetch(request)
     if (res.ok || res.type === 'opaque') {
-      const cache = await caches.open(STATIC_MEDIA_CACHE)
-      await cache.put(request, res.clone())
+      await boundedPut(STATIC_MEDIA_CACHE, request, res.clone())
     }
     return res
   } catch {
@@ -242,8 +279,7 @@ async function shellCacheFirst(request) {
   try {
     const res = await fetch(request)
     if (res.ok) {
-      const cache = await caches.open(RUNTIME_CACHE)
-      await cache.put(request, res.clone())
+      await boundedPut(RUNTIME_CACHE, request, res.clone())
     }
     return res
   } catch {
@@ -264,11 +300,12 @@ async function navigateFetch(request) {
 }
 
 async function runtimeFetch(request) {
+  const hit = await cached(RUNTIME_CACHE, request, { ignoreVary: true })
+  if (hit) return hit
   try {
     const res = await fetch(request)
     if (res.ok) {
-      const cache = await caches.open(RUNTIME_CACHE)
-      await cache.put(request, res.clone())
+      await boundedPut(RUNTIME_CACHE, request, res.clone())
     }
     return res
   } catch {
@@ -280,9 +317,9 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return
   let url
   try { url = new URL(event.request.url) } catch { return }
-  if (url.origin !== location.origin) return
+  if (url.origin !== location.origin || event.request.headers.has('authorization') || /\/(auth|rest|storage|functions)\/v1\//.test(url.pathname)) return
 
-  // Exercise frames and frame loader chunks → cache-first, no eviction
+  // Exercise frames and frame loader chunks → cache-first, bounded LRU
   if (/\/assets\/(frame-[^/]+\.(webp|png)|frames-[^/]+\.js)$/.test(url.pathname)) {
     event.respondWith(exerciseCacheFirst(event.request))
     return
@@ -295,7 +332,7 @@ self.addEventListener('fetch', event => {
   if (isBrand) {
     event.respondWith(
       fetch(new Request(event.request, { cache: 'no-cache' })).then(res => {
-        if (res.ok) caches.open(STATIC_MEDIA_CACHE).then(c => c.put(event.request, res.clone()))
+        if (res.ok) event.waitUntil(boundedPut(STATIC_MEDIA_CACHE, event.request, res.clone()))
         return res
       }).catch(() => caches.match(event.request, { ignoreVary: true }).then(hit => hit || Response.error()))
     )
@@ -323,5 +360,5 @@ self.addEventListener('fetch', event => {
   }
 
   // Other JS/CSS/fonts → runtime cache with network fallback
-  event.respondWith(runtimeFetch(event.request))
+  if (/\.(js|css|woff2?|ttf|otf)$/.test(url.pathname)) event.respondWith(runtimeFetch(event.request))
 })

@@ -9,7 +9,7 @@ import { exerciseGuideAsset } from '../lib/exercise-guide-assets.js'
 import { sentenceCase } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 
-export default function ProfessionalExercisePicker({ exercises: sourceExercises, selectedIds, exerciseCount, dayLabel, onAdd, onClose }) {
+export default function ProfessionalExercisePicker({ exercises: sourceExercises, selectedIds, exerciseCount, dayLabel, onAdd = undefined, onClose }) {
   const exercises = useMemo(() => sourceExercises.filter(ex => isAvailableExercise(ex.id)), [sourceExercises])
   const [query, setQuery] = useState('')
   const [muscle, setMuscle] = useState('')

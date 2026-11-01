@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import React, { act } from 'react'
+import  { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MemoryRouter, useNavigate } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ client: null, user: { id: 'alice' }, profile: { name: 'Alice', avatarId: 'avatar-80' }, crop: vi.fn() }))
@@ -24,7 +24,7 @@ import Community from './Community.jsx'
 const alice = { id: 'alice', display_name: 'Alice saved', avatar_ref: 'avatar-27' }
 const bob = { id: 'bob', display_name: 'Bruno', avatar_ref: 'avatar-05' }
 const makePost = (id, author) => ({ id, author_id: author.id, author, image_path: `${author.id}/${id}.jpg`, caption: id, created_at: '2026-10-23T12:00:00Z', comments: [], likes: [] })
-let root, container, writes, rows, notificationRows, failure, missingProfile, missingOwnProfile, navigate
+let root, container, writes, rows, notificationRows, failure, missingProfile, missingOwnProfile
 function client() {
   return { rpc: vi.fn(async () => ({ data: 'ticket-1', error: null })), storage: { from: () => ({ upload: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) }) }, from(table) {
     const query = { table, filters: [], operation: 'select', select(fields) { if (fields?.includes('avatar_id')) throw Error('Invalid public column'); return this }, eq(key,value) { this.filters.push([key,value]); return this }, order() { return this }, limit() { return this }, or() { return this }, in() { return this }, is() { return this }, maybeSingle() { this.singleResult = true; return this }, single() { this.singleResult = true; return this }, match(value) { this.filters.push(...Object.entries(value)); return this }, insert(value) { this.operation = 'insert'; this.value = value; return this }, update(value) { this.operation = 'update'; this.value = value; return this }, delete() { this.operation = 'delete'; return this }, then(resolve,reject) {
@@ -46,7 +46,7 @@ function client() {
 }
 beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.user = { id: 'alice' }; mocks.profile = { name: 'Alice', avatarId: 'avatar-80' }; writes = []; rows = [makePost('mine',alice),makePost('theirs',bob)]; notificationRows = []; failure = ''; missingProfile = false; missingOwnProfile = false; mocks.client = client(); mocks.crop.mockReset(); window.scrollTo = vi.fn(); window.requestAnimationFrame = callback => { callback(); return 1 }; window.cancelAnimationFrame = vi.fn(); container = document.createElement('div'); document.body.append(container); root = createRoot(container) })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
-async function mount(path='/community') { function Page() { navigate = useNavigate(); return <Community /> }; await act(async () => root.render(<MemoryRouter initialEntries={[path]}><Page /></MemoryRouter>)) }
+async function mount(path='/community') { function Page() { return <Community /> }; await act(async () => root.render(<MemoryRouter initialEntries={[path]}><Page /></MemoryRouter>)) }
 const click = async button => act(async () => button.click())
 const textButton = text => [...container.querySelectorAll('button')].find(button => button.textContent.trim() === text)
 async function type(selector,value) { const element = container.querySelector(selector); await act(async () => { Object.getOwnPropertyDescriptor(element.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,'value').set.call(element,value); element.dispatchEvent(new Event('input',{bubbles:true})) }) }

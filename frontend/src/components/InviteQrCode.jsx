@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import QRCode from 'qrcode'
 
 // Generate locally: invitation URLs never leave the browser for image generation.
-export default function InviteQrCode({ value }) {
+export default function InviteQrCode({ value = undefined }) {
   const qr = useMemo(() => {
     try { return QRCode.create(value, { errorCorrectionLevel: 'M' }).modules }
     catch { return null }

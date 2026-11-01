@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test'
+import {readFile,writeFile,unlink} from 'node:fs/promises'
 import { seed, stateFixture, openMainNavigation } from './fixtures.test.js'
+
+const upgradeWorkerFile=new URL('../dist/sw-upgrade-test.js',import.meta.url)
+test.afterEach(async()=>{await unlink(upgradeWorkerFile).catch(()=>{})})
 
 async function waitForSWController(page) {
   await page.evaluate(async () => {
@@ -165,4 +169,37 @@ test.describe('PWA Offline', () => {
     await expect(page.locator('#root')).not.toBeEmpty({ timeout: 15000 })
     await expect(page).toHaveTitle(/Fit Pro Player/i)
   })
+})
+
+
+test('activation removes obsolete caches and catalogue sprites while preserving offline boot',async({page,context})=>{
+ const source=await readFile(new URL('../dist/sw.js',import.meta.url),'utf8')
+ expect(source).toMatch(/const SHELL_CACHE = 'fpp-shell-[^']+'/)
+ await writeFile(upgradeWorkerFile,source.replace(/(const SHELL_CACHE = ')([^']+)(')/,'$1$2-upgrade-test$3'))
+ await seed(page)
+ await page.goto('/#/home')
+ await waitForSWController(page)
+ await waitForPrecache(page)
+ await page.evaluate(async()=>{
+  for(const name of ['fpp-shell-obsolete-a','fpp-shell-obsolete-b','fpp-runtime-obsolete-a','fpp-runtime-obsolete-b']){
+   const cache=await caches.open(name);await cache.put('/obsolete.js',new Response('old'))
+  }
+  const cache=await caches.open('fpp-exercise-media-v1')
+  await cache.put('/assets/removed-exercise-frame.webp',new Response('old'))
+  // Install genuinely different worker bytes with a new shell version.
+  const registration=await navigator.serviceWorker.register('/sw-upgrade-test.js')
+  await registration.update()
+  const waiting=registration.waiting || registration.installing
+  if(waiting)waiting.postMessage({type:'SKIP_WAITING'})
+ })
+ await page.waitForFunction(async()=>{
+  const keys=await caches.keys()
+  const cache=await caches.open('fpp-exercise-media-v1')
+  return keys.some(key=>key.startsWith('fpp-shell-')&&key.endsWith('-upgrade-test')) && !keys.includes('fpp-runtime-obsolete-b') && !(await cache.match('/assets/removed-exercise-frame.webp'))
+ },null,{timeout:30000})
+ await context.setOffline(true)
+ await page.reload({waitUntil:'domcontentloaded'})
+ await expect(page.locator('#root')).not.toBeEmpty()
+ await page.goto('/#/plan')
+ await expect(page.locator('#root')).not.toBeEmpty()
 })

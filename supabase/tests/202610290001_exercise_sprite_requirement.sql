@@ -40,6 +40,7 @@ select pg_temp.expect_unavailable($q$select public.send_student_plan('29000100-0
 select public.save_student_plan_draft('29000100-0000-4000-8000-000000000002','Corrigido','{"routines":[{"id":"a","name":"A","ex":[{"id":"0025","sets":3,"reps":10,"weight":0}]}],"week":{"1":"a"}}',1);
 select public.send_student_plan('29000100-0000-4000-8000-000000000002',2);
 select set_config('request.jwt.claim.sub','29000100-0000-4000-8000-000000000002',true);
+select public.apply_library_plan((public.athlete_plan_library_page()->'items'->0->>'id')::uuid);
 select pg_temp.assert_true((select prescription->'ex'->0->>'id'='0025' from public.athlete_routines where user_id=auth.uid()),'available exercise reaches student');
 select set_config('request.jwt.claim.sub','29000100-0000-4000-8000-000000000003',true);
 select pg_temp.expect_unavailable($q$select public.apply_library_plan('29000100-0000-4000-8000-000000000013')$q$);

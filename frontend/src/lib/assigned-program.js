@@ -27,12 +27,12 @@ export function assignedPlanToState(state, version, assignment) {
       assignedDayKey: dayKey,
       assignmentId: assignment?.id || null,
       programVersionId: version.id,
-      ex: (Array.isArray(entries) ? entries : entries.exercises || []).map(item => ({
+      ex: entries.map(item => ({
         ...item,
-        id: String(item.exerciseId || item.id || ''),
+        id: String(item.exerciseId || ''),
         sets: Math.max(1, Number(item.sets) || 1),
         reps: Math.max(1, Number(item.reps) || 10),
-        weight: Math.max(0, Number(item.load ?? item.weight) || 0),
+        weight: Math.max(0, Number(item.load) || 0),
         ...(item.mode ? { mode: item.mode } : {}),
         ...(item.rest != null ? { rest: Number(item.rest) || 0 } : {}),
         ...(item.notes ? { notes: String(item.notes).slice(0, 500) } : {}),

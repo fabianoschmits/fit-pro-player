@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { VERIFICATION_LABELS, verificationTone } from '../../lib/console.js'
@@ -18,20 +18,20 @@ export function ConsoleUsers() {
   const owner = useRef(userId)
   owner.current = userId
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const id = userId; setBusy(true)
     try {
       const next = await repo.listUsers({ query, accountKind: kind || null, limit })
       if (owner.current === id) { setRows(next); setError('') }
     } catch { if (owner.current === id) setError('Não foi possível carregar os usuários.') }
     finally { if (owner.current === id) setBusy(false) }
-  }
+  }, [userId, repo, query, kind, limit])
 
   useEffect(() => {
     owner.current = userId
     if (userId && allowed) refresh()
     return () => { owner.current = null }
-  }, [userId, allowed, query, kind, limit])
+  }, [userId, allowed, query, kind, limit, refresh])
 
   const filters = [['', 'Todos'], ['account', 'Com conta'], ['local', 'Só local']]
 

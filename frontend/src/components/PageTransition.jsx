@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)'
 
-export default function PageTransition({ children }) {
+export default function PageTransition({ children = undefined }) {
   const { pathname } = useLocation()
   const [reduced, setReduced] = useState(() => window.matchMedia?.(REDUCED_MOTION).matches ?? false)
   const surface = useRef(null)

@@ -9,7 +9,7 @@ import { useFppAction } from '../useFppAction.js'
 
 const reasons = [['spam', 'Spam ou atividade suspeita'], ['harassment', 'Assédio ou discurso de ódio'], ['inappropriate', 'Conteúdo impróprio'], ['misinformation', 'Informação enganosa'], ['other', 'Outro motivo']]
 
-export default function CommunityReportDialog({ client, target, onClose }) {
+export default function CommunityReportDialog({ client, target = undefined, onClose }) {
   const dialog = useRef(null), repository = useMemo(() => createSupportRepository({ client }), [client])
   const [reason, setReason] = useState(''), [description, setDescription] = useState(''), [error, setError] = useState(''), [success, setSuccess] = useState(false)
   const action = useFppAction({

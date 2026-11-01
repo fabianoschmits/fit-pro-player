@@ -20,14 +20,14 @@ test('received workouts paginate and opening an updated workout clears its badge
  await expect(page.locator('.received-workout-card')).toHaveCount(5)
  await page.locator('.received-workouts').getByRole('button',{name:'Ver mais',exact:true}).click()
  await expect(page.locator('.received-workout-card')).toHaveCount(7)
- await expect(page.locator('.workout-update-badge')).toHaveCount(1)
+ await expect(page.locator('.received-workouts .workout-update-badge')).toHaveCount(1)
  await page.locator('.received-workout-main').filter({hasText:'Recebido 2'}).click()
  await expect(page.getByRole('dialog')).toBeVisible()
- await expect(page.locator('.workout-update-badge')).toHaveCount(0)
+ await expect(page.locator('.received-workouts .workout-update-badge')).toHaveCount(0)
  expect(seen).toBe(true)
  await page.reload()
  await expect(page.locator('.received-workout-card')).toHaveCount(5)
- await expect(page.locator('.workout-update-badge')).toHaveCount(0)
+ await expect(page.locator('.received-workouts .workout-update-badge')).toHaveCount(0)
 })
 
 test('professional creates a routine, previews animation, saves privately and explicitly sends',async({page})=>{

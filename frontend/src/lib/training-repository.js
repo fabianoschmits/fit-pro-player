@@ -3,12 +3,11 @@ import {
   parseBodyData,
   parseCompletedWorkoutRecords,
   parsePreferences,
-  parseWorkoutHistory,
   parseWorkoutSession,
 } from './training-dto.js'
 
 export class TrainingRepositoryError extends Error {
-  constructor(kind, { code = null, retryable = false, cause } = {}) {
+  constructor(kind, { code = null, retryable = false, cause = undefined } = {}) {
     super(kind, cause ? { cause } : undefined)
     this.name = 'TrainingRepositoryError'
     this.kind = kind

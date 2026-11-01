@@ -8,7 +8,7 @@ import { useStore } from '../store/useStore.js';
 import { Button } from './ui.jsx';
 import Icon from './Icon.jsx';
 import { PRIVACY_DOCUMENT_VERSION } from '../lib/privacy-config.js'
-import { clearSignUpRateLimit, getSignUpRateLimitState, recordSignUpAttempt, signUpRateLimitConfig } from '../auth/rate-limit.js'
+import { clearSignUpRateLimit, getSignUpRateLimitState, recordSignUpAttempt } from '../auth/rate-limit.js'
 import { waitForFppConfirmation } from './fpp-action-timing.js'
 
 const ERROR_COPY = {
@@ -45,7 +45,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmation, setShowConfirmation] = useState(false)
-  const [rateLimitRevision, setRateLimitRevision] = useState(0)
+  const [, setRateLimitRevision] = useState(0)
   const alertRef = useRef(null);
   const submitLock = useRef(false);
   const mounted = useRef(true);
@@ -199,7 +199,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
         <img src="/brand-logo.svg" alt="Fit Pro Player" className="auth-brand-logo" />
       </div>
     </>}
-    <p id="auth-error" ref={alertRef} role="alert" tabIndex="-1">{error}</p>
+    <p id="auth-error" ref={alertRef} role="alert" tabIndex={-1}>{error}</p>
     {notice && <p role="status">{notice}</p>}
     <Button variant="primary" type="submit" state={busy ? 'loading' : submitState} loadingLabel={t('Loading…')} successLabel={t('Done')}>{t(submitLabel)}</Button>
     {mode === 'sign_in' && <button type="button" className="link" onClick={() => showMode('forgot_password')}>{t('Forgot password?')}</button>}

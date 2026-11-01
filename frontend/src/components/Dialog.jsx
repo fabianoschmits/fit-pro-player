@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useDialogFocus } from '../lib/dialog-focus.js'
 import { t } from '../lib/i18n.js'
 
-export default function Dialog({ title, onClose, children, className = '', locked = false }) {
+export default function Dialog({ title, onClose, children = undefined, className = '', locked = false }) {
   const ref = useRef(null), titleId = useId(), closeRef = useRef(onClose), lockedRef = useRef(locked)
   const layerRef = useRef(null)
   closeRef.current = onClose

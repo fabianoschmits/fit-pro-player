@@ -9,7 +9,7 @@ export async function openMainNavigation(page) {
   await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 }
 export function stateFixture(){
-  return {stateSchemaVersion:2,massUnit:'kg',displayUnit:'kg',restSec:90,sound:false,keepAwake:false,lang:'pt',theme:'dark',accent:'lime',body:'male',targetW:null,
+  return {pwaInstallPrompt:{dismissForever:true},stateSchemaVersion:2,massUnit:'kg',displayUnit:'kg',restSec:90,sound:false,keepAwake:false,lang:'pt',theme:'dark',accent:'lime',body:'male',targetW:null,
     profile:{name:'Pessoa Teste',avatarId:'avatar-27',birthDate:'1995-01-01',sex:'male',heightCm:175,startWeight:75,goal:'build_muscle',experience:'intermediate',completedAt:'2026-10-02T12:00:00Z'},
     planMode:'weekly',bodyweight:[],bodyMeasurements:[],bodyMeasurementGoals:{},
     routines:[{id:'e2e-routine',name:'Treino de teste',emoji:'dumbbell',ex:[{id:'0025',sets:1,reps:10,weight:20}]}],
@@ -20,8 +20,20 @@ export async function seed(page,{professional=false,authenticated=professional,s
   const user={id:USER,email:'browser-test@example.invalid',email_confirmed_at:'2026-10-01T12:00:00Z',app_metadata:{provider:'email'},user_metadata:{}}
   await page.route('https://fitpp-test.supabase.co/**',async route=>{
     const url=new URL(route.request().url()), name=url.pathname.split('/').at(-1)
+    /** @type {any} */
     let data=[]
     if(url.pathname.includes('/auth/v1/user'))data=user
+    else if(name==='athlete_routines' && !Object.hasOwn(rpc,name))data=state.routines.map(({id,name,...prescription},position)=>({id,user_id:USER,title:name,prescription,position,revision:1,created_at:'2026-11-01T12:00:00Z',updated_at:'2026-11-01T12:00:00Z'}))
+    else if(name==='athlete_schedules' && !Object.hasOwn(rpc,name))data=[{user_id:USER,revision:1,mode:state.planMode,schedule:{week:state.week,dayPlan:state.dayPlan},updated_at:'2026-11-01T12:00:00Z'}]
+    else if(name==='account_preferences' && !Object.hasOwn(rpc,name))data=[{user_id:USER,revision:1,display_unit:state.displayUnit,mass_unit:'kg',state_schema_version:2,preferences:{lang:state.lang,profile:state.profile,pwaInstallPrompt:state.pwaInstallPrompt},updated_at:'2026-11-01T12:00:00Z'}]
+    else if(name==='save_athlete_plan' && !Object.hasOwn(rpc,name)){
+      const args=route.request().postDataJSON(),revision=args.p_expected_revision+1
+      state.routines=args.p_routines.map(({id,title,prescription})=>({...prescription,id,name:title}));state.week=args.p_schedule.week;state.dayPlan=args.p_schedule.dayPlan;state.planMode=args.p_mode
+      data={routines:args.p_routines.map((row,position)=>({...row,user_id:USER,position,revision,created_at:'2026-11-01T12:00:00Z',updated_at:'2026-11-01T12:00:00Z'})),schedule:{user_id:USER,revision,mode:args.p_mode,schedule:args.p_schedule,updated_at:'2026-11-01T12:00:00Z'}}
+    }
+    else if(name==='save_account_preferences' && !Object.hasOwn(rpc,name)){
+      const args=route.request().postDataJSON();data={user_id:USER,revision:args.p_expected_revision+1,display_unit:args.p_display_unit,mass_unit:'kg',state_schema_version:2,preferences:args.p_preferences,updated_at:'2026-11-01T12:00:00Z'}
+    }
     else if(name==='account_snapshots')data={user_id:USER,revision:1,state_schema_version:1,payload:state,updated_at:'2026-10-02T12:00:00Z'}
     else if(name==='is_current_user_suspended' && !Object.hasOwn(rpc,name))data=false
     else if(name==='user_roles')data=professional?[{role:'professional'}]:[]

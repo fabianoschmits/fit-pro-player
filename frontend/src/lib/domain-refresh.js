@@ -7,7 +7,7 @@ const LOADERS = Object.freeze({
 
 const emptyStatus = () => Object.fromEntries(Object.keys(LOADERS).map(domain => [domain, { state: 'idle', error: null }]))
 
-export function attachDomainFocusRefresh({ target = globalThis.window, refresh, domains = ['preferences', 'plan', 'history', 'body'] } = {}) {
+export function attachDomainFocusRefresh({ target = globalThis.window, refresh = undefined, domains = ['preferences', 'plan', 'history', 'body'] } = {}) {
   if (!target?.addEventListener || typeof refresh !== 'function') return () => {}
   const onFocus = () => { domains.forEach(domain => { void refresh(domain) }) }
   target.addEventListener('focus', onFocus)
@@ -19,7 +19,7 @@ export function attachDomainFocusRefresh({ target = globalThis.window, refresh, 
  * projection; this boundary owns scope freshness and keeps existing UI data
  * intact when one domain cannot be refreshed.
  */
-export function createDomainRefresh({ accountId, repository, apply, isCurrent = () => true, onStatus = () => {} } = {}) {
+export function createDomainRefresh({ accountId = undefined, repository = undefined, apply = undefined, isCurrent = _accountId => true, onStatus = _status => {} } = {}) {
   if (typeof accountId !== 'string' || !accountId || !repository || typeof apply !== 'function') {
     throw new TypeError('invalid-domain-refresh-scope')
   }

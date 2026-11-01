@@ -117,17 +117,22 @@ function Sheet({ sheet, exiting }) {
     }
   }
 
+  const dragHandlers = useRef({ onTouchMove, onMouseUp })
+  dragHandlers.current = { onTouchMove, onMouseUp }
+
   // non-passive touchmove so preventDefault works (bottom sheets only; centered dialogs have no ref)
   useEffect(() => {
     const el = ref.current
     if (!el || sheet.kind === 'center') return
-    el.addEventListener('touchmove', onTouchMove, { passive: false })
-    window.addEventListener('mouseup', onMouseUp)
+    const touchMove = event => dragHandlers.current.onTouchMove(event)
+    const mouseUp = () => dragHandlers.current.onMouseUp()
+    el.addEventListener('touchmove', touchMove, { passive: false })
+    window.addEventListener('mouseup', mouseUp)
     return () => {
-      el.removeEventListener('touchmove', onTouchMove)
-      window.removeEventListener('mouseup', onMouseUp)
+      el.removeEventListener('touchmove', touchMove)
+      window.removeEventListener('mouseup', mouseUp)
     }
-  }, [])
+  }, [sheet.kind])
 
   useEffect(() => {
     if (!exiting) ref.current?.focus?.({ preventScroll: true })
@@ -138,7 +143,7 @@ function Sheet({ sheet, exiting }) {
     return (
       <div ref={layerRef} className={'modal-layer' + (exiting ? ' is-closing' : '')}>
         <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
-        <div className="center" ref={ref} role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>{sheet.render(close, { id: sheet.id, exiting })}</div>
+        <div className="center" ref={ref} role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex={-1} onKeyDown={onKeyDown}>{sheet.render(close, { id: sheet.id, exiting })}</div>
       </div>
     )
   }
@@ -147,7 +152,7 @@ function Sheet({ sheet, exiting }) {
       <div className="mback" onClick={() => { if (!sheet.locked) close() }} />
       <div className={'sheet ' + (sheet.className || '')} ref={ref} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}
-        role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex="-1" onKeyDown={onKeyDown}>
+        role="dialog" aria-modal="true" aria-label={sheet.title || undefined} tabIndex={-1} onKeyDown={onKeyDown}>
         <div className="grab" />
         {sheet.render(close, { id: sheet.id, exiting })}
       </div>
@@ -228,7 +233,7 @@ export default function Modals() {
       b.position = b.top = b.left = b.right = b.width = ''
       window.scrollTo(0, y)
     }
-  }, [sheets.length > 0])
+  }, [sheets.length])
 
   if (!renderedSheets.length) return null
   return (

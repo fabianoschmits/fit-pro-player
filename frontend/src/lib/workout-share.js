@@ -1,4 +1,4 @@
-export async function dataUrlToPngFile(dataUrl, filename = `treino-fpp-${Date.now()}.png`, fetchImpl = globalThis.fetch) {
+export async function dataUrlToPngFile(dataUrl, filename = `treino-fpp-${Date.now()}.png`) {
   if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image/png')) {
     throw new Error('invalid-image')
   }
@@ -19,15 +19,14 @@ export async function shareWorkoutImage(dataUrl, {
   title = 'Meu treino no Fit Pro Player',
   dialogTitle = 'Compartilhar treino',
   fileName = `treino-fpp-${Date.now()}.png`,
-  capacitor,
-  filesystem,
-  directory,
-  share,
+  capacitor = undefined,
+  filesystem = undefined,
+  directory = undefined,
+  share = undefined,
   navigatorObject = globalThis.navigator,
-  fetchImpl = globalThis.fetch,
   documentObject = globalThis.document,
 } = {}) {
-  const file = await dataUrlToPngFile(dataUrl, fileName, fetchImpl)
+  const file = await dataUrlToPngFile(dataUrl, fileName)
 
   if (capacitor?.isNativePlatform?.()) {
     const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1)

@@ -1,0 +1,41 @@
+begin;
+create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$begin if value is distinct from true then raise exception 'assertion failed: %',message; end if; end $$;
+create function pg_temp.inactive(command text) returns void language plpgsql as $$
+begin
+ begin execute command; exception when insufficient_privilege then
+  if sqlerrm='account-inactive' then return; end if; raise;
+ end;
+ raise exception 'suspension bypass: %',command;
+end $$;
+insert into auth.users(id) values('61101000-0000-4000-8000-000000000001'),('61101000-0000-4000-8000-000000000002'),('61101000-0000-4000-8000-000000000003');
+insert into public.user_roles(user_id,role) values('61101000-0000-4000-8000-000000000003','admin');
+set local role authenticated;
+set local request.jwt.claim.sub='61101000-0000-4000-8000-000000000001';
+select public.assert_account_active();
+select public.save_account_preferences(0,'kg','{"sound":true}');
+select public.community_send_message('61101000-0000-4000-8000-000000000002','hello',gen_random_uuid());
+reset role;
+update public.profiles set suspended_at=now() where id='61101000-0000-4000-8000-000000000001';
+set local role authenticated;
+select pg_temp.inactive($q$select public.assert_account_active()$q$);
+select pg_temp.inactive($q$select public.save_account_preferences(1,'kg','{}')$q$);
+select pg_temp.inactive($q$select public.save_athlete_plan(0,'weekly','{}','[]')$q$);
+select pg_temp.inactive($q$select public.community_send_message('61101000-0000-4000-8000-000000000002','blocked',gen_random_uuid())$q$);
+select pg_temp.inactive($q$select public.community_read_messages('61101000-0000-4000-8000-000000000002',1)$q$);
+select pg_temp.inactive($q$select public.athlete_plan_library_page()$q$);
+select pg_temp.inactive($q$select public.student_program_overview()$q$);
+select pg_temp.inactive($q$insert into public.community_posts(author_id,image_path,caption) values(auth.uid(),'test.webp','test')$q$);
+select pg_temp.inactive($q$insert into storage.objects(bucket_id,name) values('community-posts',auth.uid()::text||'/test.webp')$q$);
+select pg_temp.assert_true((select count(*)=0 from public.account_preferences),'RLS hides suspended private reads');
+set local request.jwt.claim.sub='61101000-0000-4000-8000-000000000003';
+select public.assert_account_active();
+select pg_temp.assert_true(public.ops_require_admin()=auth.uid(),'administrator still operates');
+set local role service_role;
+set local request.jwt.claim.sub='';
+select public.assert_account_active();
+reset role;
+update public.profiles set suspended_at=null where id='61101000-0000-4000-8000-000000000001';
+set local role authenticated;
+set local request.jwt.claim.sub='61101000-0000-4000-8000-000000000001';
+select public.save_account_preferences(1,'lb','{}');
+rollback;

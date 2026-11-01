@@ -32,3 +32,9 @@ describe('private messages', () => {
     ])
   })
 })
+
+it('routes block, unblock, own status and own list through protected RPCs',async()=>{
+ const rpc=vi.fn(async()=>({data:true})),repo=createMessageRepository({rpc})
+ await repo.block('peer');await repo.unblock('peer');await repo.hasBlock('peer');await repo.blocks()
+ expect(rpc.mock.calls).toEqual([['community_block_user',{p_peer:'peer'}],['community_unblock_user',{p_peer:'peer'}],['community_has_block',{p_peer:'peer'}],['community_list_blocks',{}]])
+})

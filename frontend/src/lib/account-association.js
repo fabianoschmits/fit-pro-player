@@ -23,7 +23,7 @@ export function hasRelevantLocalState(state) {
     || value.customEx?.length || value.routines?.some(routine => !routine?.starter))
 }
 
-export function classifyAssociation({ anonymousState, accountState, remoteSnapshot, accountRevision = 0 } = {}) {
+export function classifyAssociation({ anonymousState = undefined, accountState = undefined, remoteSnapshot = undefined, accountRevision = 0 } = {}) {
   const anonymous = hasRelevantLocalState(anonymousState)
   const account = hasRelevantLocalState(accountState)
   const cloud = Boolean(remoteSnapshot)
@@ -37,11 +37,11 @@ export function classifyAssociation({ anonymousState, accountState, remoteSnapsh
   return { case: ASSOCIATION_CASE.CONFLICT, requiresDecision: true }
 }
 
-export function canAutoAdoptAnonymous({ anonymousState, accountState, remoteSnapshot } = {}) {
+export function canAutoAdoptAnonymous({ anonymousState = undefined, accountState = undefined, remoteSnapshot = undefined } = {}) {
   return classifyAssociation({ anonymousState, accountState, remoteSnapshot }).case === ASSOCIATION_CASE.ANONYMOUS_ONLY
 }
 
-export function applyAssociationChoice(choice, { anonymousState, accountState, remoteSnapshot } = {}) {
+export function applyAssociationChoice(choice, { anonymousState = undefined, accountState = undefined, remoteSnapshot = undefined } = {}) {
   if (choice === ASSOCIATION_CHOICE.CANCEL || choice === ASSOCIATION_CHOICE.KEEP_SEPARATE) {
     return { kind: 'keep-separate', state: accountState, upload: false }
   }

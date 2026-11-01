@@ -8,7 +8,7 @@ export const isFppBusy = state => BUSY_STATES.has(state)
 
 // The operation owns its lifetime. Timers affect presentation only and can never
 // release an outstanding write. The ref closes the gap before React re-renders.
-export function useFppAction({ onAction, onSuccess, onError, state: controlledState, disabled = false } = {}) {
+export function useFppAction({ onAction = undefined, onSuccess = undefined, onError = undefined, state: controlledState = undefined, disabled = false } = {}) {
   const [managedState, setManagedState] = useState('idle')
   const [visualBusy, setVisualBusy] = useState(false)
   const [confirming, setConfirming] = useState(false)

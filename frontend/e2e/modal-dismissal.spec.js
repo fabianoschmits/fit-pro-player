@@ -27,7 +27,7 @@ test('workout history stays open for inside clicks and closes on its backdrop', 
   await page.locator('.mback').click({ position: { x: 8, y: 8 }, timeout: 3000 })
 
   await expect(page.locator('#modal-root')).toHaveCount(0)
-  await expect(page).toHaveURL(/#\/history$/)
+  await expect(page).toHaveURL(/#\/progress\/history$/)
   await expect(page.locator('.history-list .workout-row')).toBeFocused()
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).workouts.length)).toBe(1)
 })
@@ -154,24 +154,25 @@ test('outside clicks dismiss only the top confirmation without deleting the work
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).workouts.length)).toBe(1)
   await page.locator('.mback').click({ position: { x: 8, y: 8 } })
   await expect(page.locator('#modal-root')).toHaveCount(0)
-  await expect(page).toHaveURL(/#\/history$/)
+  await expect(page).toHaveURL(/#\/progress\/history$/)
 })
 
 test('professional exercise dialog closes on its backdrop and restores the editor', async ({ page }) => {
   const program = { id: '33333333-3333-4333-8333-333333333333', professional_user_id: USER, title: 'Programa de teste', description: '', archived: false }
   await seed(page, { professional: true, rpc: { programs: [program], program_versions: [] } })
-  await page.goto(`/#/professional/programs/${program.id}/edit`)
+  await page.goto(`/#/professional/templates/${program.id}`)
+  await page.getByRole('button',{name:'Nova',exact:true}).click()
   const trigger = page.getByRole('button', { name: 'Adicionar exercício', exact: true })
   await trigger.click()
-  await page.getByRole('dialog').getByRole('searchbox', { name: 'Pesquisar exercício' }).fill('supino')
+  await page.getByRole('dialog').getByRole('searchbox', { name: /Pesquisar/ }).fill('supino')
   await expect(page.getByRole('dialog')).toBeVisible()
 
-  await page.locator('.dialog-backdrop').click({ position: { x: 8, y: 8 }, timeout: 3000 })
+  await page.locator('.mback').last().click({ position: { x: 8, y: 8 }, timeout: 3000 })
 
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await expect(trigger).toBeEnabled()
-  await expect(page.locator('.professional-program-editor')).toBeVisible()
-  await expect(page).toHaveURL(new RegExp(`professional/programs/${program.id}/edit$`))
+  await expect(page.getByRole('button',{name:'Pronto',exact:true})).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`professional/templates/${program.id}$`))
   await trigger.click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.keyboard.press('Escape')

@@ -33,7 +33,7 @@ import { isWarmupRow } from './workout-model.js'
 export function parseCSV(text) {
   const rows = []
   let row = [], field = '', quoted = false
-  const s = String(text).replace(/^﻿/, '')
+  const s = String(text).replace(/^\uFEFF/, '')
   for (let i = 0; i < s.length; i++) {
     const c = s[i]
     if (quoted) {
@@ -109,6 +109,7 @@ export function detectSource(header) {
 // "Snatch (Barbell)", FitNotes "Lat Pulldown (Pulley)" — while the dataset writes
 // "barbell snatch". Strip the parentheses, expand the shorthand, then compare as a
 // sorted bag of words so word order stops mattering.
+/** @type {Array<[RegExp,string]>} */
 const SYN = [
   [/\bbb\b/g, 'barbell'], [/\bdb\b/g, 'dumbbell'], [/\bkb\b/g, 'kettlebell'],
   [/\bohp\b/g, 'overhead press'], [/\bbw\b/g, 'body weight'], [/\bbodyweight\b/g, 'body weight'],
@@ -379,8 +380,8 @@ export function parseWorkoutCSV(text) {
     if (!isCardio) {
       const rir = effortNum(cell(r, 'rir'), true)
       const rpe = rir == null ? effortNum(cell(r, 'rpe'), false) : null
-      if (rir != null) { set.rir = rir; rirSets++ }
-      else if (rpe != null) { set.rpe = rpe; rpeSets++ }
+      if (rir != null) { Object.assign(set,{rir}); rirSets++ }
+      else if (rpe != null) { Object.assign(set,{rpe}); rpeSets++ }
     }
 
     let day = byDate.get(when.d)
@@ -501,12 +502,12 @@ export function parseBodyweight(text) {
 }
 
 /** Sniff the file and parse it as whatever it is. */
-export function parseImport(text, opts) {
+export function parseImport(text, _opts = undefined) {
   const s = String(text)
-  if (s.includes('HKQuantityTypeIdentifier') || /^\s*</.test(s)) return parseBodyweight(s, opts)
-  const asWorkouts = parseWorkoutCSV(s, opts)
+  if (s.includes('HKQuantityTypeIdentifier') || /^\s*</.test(s)) return parseBodyweight(s)
+  const asWorkouts = parseWorkoutCSV(s)
   if (!asWorkouts.error) return asWorkouts
-  const asWeights = parseBodyweight(s, opts)
+  const asWeights = parseBodyweight(s)
   return asWeights.error ? asWorkouts : asWeights
 }
 

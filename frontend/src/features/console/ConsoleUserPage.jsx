@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { VERIFICATION_LABELS, verificationTone } from '../../lib/console.js'
 import LineChart from '../../components/LineChart.jsx'
@@ -32,7 +32,7 @@ export function ConsoleUserPage() {
   const owner = useRef(identity)
   owner.current = identity
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const id = identity; setBusy(true)
     try {
       const [next, nextT] = await Promise.all([repo.userDetail(targetId), repo.userTraining(targetId)])
@@ -47,13 +47,13 @@ export function ConsoleUserPage() {
       }
     } catch { if (owner.current === id) setError('Não foi possível carregar o usuário.') }
     finally { if (owner.current === id) setBusy(false) }
-  }
+  }, [identity, repo, targetId])
 
   useEffect(() => {
     owner.current = identity
     if (userId && allowed && targetId) refresh()
     return () => { owner.current = null }
-  }, [userId, allowed, targetId, navigationKey])
+  }, [userId, allowed, targetId, navigationKey, identity, refresh])
 
   const operation = useFppAction({ onAction: async ({ key, perform, success }) => {
     setActing(key); setMessage(''); setError('')

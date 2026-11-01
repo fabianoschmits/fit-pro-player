@@ -143,7 +143,7 @@ export default function ConsoleSystem() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="2" className="console-empty-cell">Nenhuma conexão registrada</td>
+                              <td colSpan={2} className="console-empty-cell">Nenhuma conexão registrada</td>
                             </tr>
                           )}
                         </tbody>
@@ -175,7 +175,7 @@ export default function ConsoleSystem() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="4" className="console-empty-cell">Nenhuma estatística disponível</td>
+                              <td colSpan={4} className="console-empty-cell">Nenhuma estatística disponível</td>
                             </tr>
                           )}
                         </tbody>
@@ -223,7 +223,7 @@ export default function ConsoleSystem() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="5" className="console-empty-cell">Nenhuma query lenta ou travada no momento</td>
+                              <td colSpan={5} className="console-empty-cell">Nenhuma query lenta ou travada no momento</td>
                             </tr>
                           )}
                         </tbody>
@@ -264,7 +264,7 @@ export default function ConsoleSystem() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="4" className="console-empty-cell">Nenhum cronjob cadastrado atualmente</td>
+                              <td colSpan={4} className="console-empty-cell">Nenhum cronjob cadastrado atualmente</td>
                             </tr>
                           )}
                         </tbody>
@@ -302,7 +302,7 @@ export default function ConsoleSystem() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="5" className="console-empty-cell">Nenhum histórico recente</td>
+                              <td colSpan={5} className="console-empty-cell">Nenhum histórico recente</td>
                             </tr>
                           )}
                         </tbody>
@@ -335,7 +335,7 @@ export default function ConsoleSystem() {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="2" className="console-empty-cell">Nenhuma tabela listada</td>
+                              <td colSpan={2} className="console-empty-cell">Nenhuma tabela listada</td>
                             </tr>
                           )}
                         </tbody>
@@ -399,7 +399,7 @@ export default function ConsoleSystem() {
                             })
                           ) : (
                             <tr>
-                              <td colSpan="5" className="console-empty-cell">Nenhum log de erro registrado</td>
+                              <td colSpan={5} className="console-empty-cell">Nenhum log de erro registrado</td>
                             </tr>
                           )}
                         </tbody>

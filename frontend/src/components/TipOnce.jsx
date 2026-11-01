@@ -3,7 +3,7 @@ import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 
 /** One-time tip banner — dismissed state lives in S.seenTips. */
-export default function TipOnce({ id, children }) {
+export default function TipOnce({ id = undefined, children = undefined }) {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   if (S.seenTips?.[id]) return null

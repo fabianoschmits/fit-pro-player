@@ -4,7 +4,7 @@ import { dateFromParts, dateParts, daysInMonth, defaultBirthDate } from '../lib/
 
 const ITEM_HEIGHT = 44
 
-function WheelColumn({ label, items, value, onChange, reducedMotion, disabled }) {
+function WheelColumn({ label = undefined, items, value = undefined, onChange = undefined, reducedMotion, disabled = undefined }) {
   const ref = useRef(null)
   const timer = useRef(null)
 
@@ -58,7 +58,7 @@ function WheelColumn({ label, items, value, onChange, reducedMotion, disabled })
   </div>
 }
 
-export default function DateWheelPicker({ value, onChange, max = '', reducedMotion = false, disabled = false }) {
+export default function DateWheelPicker({ value = undefined, onChange = undefined, max = '', reducedMotion = false, disabled = false }) {
   const maxDate = max || new Date().toISOString().slice(0, 10)
   const selected = dateParts(value, defaultBirthDate())
   const maxParts = dateParts(maxDate, maxDate)

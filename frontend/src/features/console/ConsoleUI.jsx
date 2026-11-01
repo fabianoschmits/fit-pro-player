@@ -2,7 +2,9 @@ import { motion } from 'framer-motion'
 import { Button } from '../../components/ui.jsx'
 import { FppSkeleton } from '../../components/FppFeedback.jsx'
 /* ── motion presets ──────────────────────────────────────── */
+/** @type {[number, number, number, number]} */
 export const EASE = [0.32, 0.72, 0, 1]
+/** @type {import('framer-motion').Transition} */
 export const SPRING = { type: 'spring', stiffness: 380, damping: 36 }
 export const FADE = { duration: 0.22, ease: EASE }
 
@@ -72,13 +74,13 @@ export function Avatar({ name, size = 44 }) {
 /* ── chip ────────────────────────────────────────────────── */
 const TONE_CLASS = { ok: 'ok', success: 'ok', warn: 'warn', warning: 'warn', err: 'err', error: 'err', neutral: '' }
 
-export function Chip({ children, tone }) {
+export function Chip({ children = undefined, tone = undefined }) {
   const cls = TONE_CLASS[tone] || ''
   return <span className={`cx-chip${cls ? ` cx-chip--${cls}` : ''}`}>{children}</span>
 }
 
 /* ── kv pair ─────────────────────────────────────────────── */
-export function Kv({ label, value }) {
+export function Kv({ label = undefined, value = undefined }) {
   return (
     <div className="cx-kv">
       <dt className="cx-kv-label">{label}</dt>
@@ -88,7 +90,7 @@ export function Kv({ label, value }) {
 }
 
 /* ── metric card ─────────────────────────────────────────── */
-export function MetricCard({ label, value, sub, accent, action, children }) {
+export function MetricCard({ label = undefined, value = undefined, sub = undefined, accent = undefined, action = undefined, children = undefined }) {
   return (
     <motion.div className={`cx-metric-card${accent ? ' cx-metric-card--accent' : ''}`}
       whileTap={{ scale: 0.985 }} transition={SPRING}>
@@ -106,7 +108,7 @@ export function MetricCard({ label, value, sub, accent, action, children }) {
 }
 
 /* ── section title ───────────────────────────────────────── */
-export function SectionTitle({ children, action }) {
+export function SectionTitle({ children = undefined, action = undefined }) {
   return (
     <div className="cx-section-title">
       <h2>{children}</h2>
@@ -116,12 +118,12 @@ export function SectionTitle({ children, action }) {
 }
 
 /* ── surface card ────────────────────────────────────────── */
-export function SectionBody({ children, className = '' }) {
+export function SectionBody({ children = undefined, className = '' }) {
   return <div className={`console-section-body ${className}`.trim()}>{children}</div>
 }
 
 /* ── inline alert ─────────────────────────────────────────── */
-export function Alert({ children, onRetry }) {
+export function Alert({ children = undefined, onRetry = undefined }) {
   return (
     <div className="cx-alert" role="alert">
       <span>{children}</span>
@@ -131,7 +133,7 @@ export function Alert({ children, onRetry }) {
 }
 
 /* ── empty state ─────────────────────────────────────────── */
-export function Empty({ title, sub }) {
+export function Empty({ title, sub = undefined }) {
   return (
     <div className="cx-empty">
       <div className="cx-empty-icon">—</div>

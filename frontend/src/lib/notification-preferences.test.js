@@ -45,10 +45,10 @@ describe('notification preferences', () => {
     }
   })
 
-  it('resets legacy notification state that predates the canonical schema', () => {
+  it('migrates legacy notification state without dropping opted-in reminders', () => {
     expect(normalizeState({ routines: [], workouts: [] }).notifications).toEqual(normalize())
     expect(normalizeState({ reminder: { on: true, time: '08:00' } }).notifications)
-      .toEqual(normalize())
+      .toMatchObject({ workoutReminder: true, trainingTime: '10:00' })
   })
 })
 

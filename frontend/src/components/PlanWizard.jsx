@@ -19,12 +19,12 @@ import AvatarPicker from './AvatarPicker.jsx'
 import Icon from './Icon.jsx'
 import RoutineMuscleThumb from './RoutineMuscleThumb.jsx'
 import { Button, Segmented, TextField } from './ui.jsx'
-import { glyphOf } from '../lib/glyphs.js'
+
 import { fromDisplayMass, toDisplayMass } from '../lib/mass.js'
 
 const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 0]
 const DEFAULT_DAYS = [1, 3, 5]
-function Choice({ selected, icon, title, copy, onClick }) {
+function Choice({ selected = undefined, icon = undefined, title, copy = undefined, onClick = undefined }) {
   return <button type="button" className={'wizard-choice' + (selected ? ' on' : '')} aria-pressed={selected} onClick={onClick}>
     <span className="wizard-choice-icon"><Icon name={icon} /></span>
     <span className="wizard-choice-copy"><strong>{title}</strong>{copy && <small>{copy}</small>}</span>
@@ -32,7 +32,7 @@ function Choice({ selected, icon, title, copy, onClick }) {
   </button>
 }
 
-export default function PlanWizard({ editing = false, onCancel, onDone }) {
+export default function PlanWizard({ editing = false, onCancel = undefined, onDone = undefined }) {
   const auth = useAuth()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
@@ -213,6 +213,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
     onDone?.()
   }
 
+  /** @type {import('framer-motion').HTMLMotionProps<'div'>} */
   const slide = reduceMotion ? {} : {
     initial: { opacity: 0, x: direction * 24 },
     animate: { opacity: 1, x: 0 },
@@ -321,7 +322,7 @@ export default function PlanWizard({ editing = false, onCancel, onDone }) {
           onClick={() => step === 0 ? onCancel?.() : go(step - 1)}
           aria-label={editing && step === 0 ? t('Cancel') : t('Back')}
         ><Icon name={editing && step === 0 ? 'xmark' : 'chevronLeft'} /></button>
-        <div className="wizard-progress" role="progressbar" aria-valuemin="1" aria-valuemax={total} aria-valuenow={step + 1}><i style={{ width: `${((step + 1) / total) * 100}%` }} /></div>
+        <div className="wizard-progress" role="progressbar" aria-valuemin={1} aria-valuemax={total} aria-valuenow={step + 1}><i style={{ width: `${((step + 1) / total) * 100}%` }} /></div>
         <span>{step + 1}/{total}</span>
       </div>
       <div className="wizard-stage" id="wizard-title">

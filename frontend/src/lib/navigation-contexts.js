@@ -11,7 +11,7 @@ export function persistNavigationContext(contextId) {
   if (contextId === 'training' || contextId === 'progress') {
     try {
       window.sessionStorage.setItem(NAVIGATION_CONTEXT_STORAGE_KEY, contextId)
-    } catch {}
+    } catch { /* optional browser operation may be unavailable */ }
   }
 }
 
@@ -43,12 +43,10 @@ function withResumeAction(items, activeKey, hasActiveWorkout) {
 /**
  * Resolves which navigation context, items, and active item key apply.
  */
+/** @param {{pathname?:string,search?:string,navigationState?:unknown,workoutState?:unknown,hasActiveWorkout?:boolean}} options */
 export function resolveNavigationContext({
   pathname = '',
   search = '',
-  navigationState = null,
-  previousContext = null,
-  workoutState = null,
   hasActiveWorkout = false,
 }) {
   const normPath = pathname.replace(/\/+$/, '') || '/'

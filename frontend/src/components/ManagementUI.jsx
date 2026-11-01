@@ -4,7 +4,7 @@ import AvatarImage from './AvatarImage.jsx'
 import { isAvatarId } from '../lib/avatars.js'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 
-export function ManagementPanel({ title, description, action, children, className = '' }) {
+export function ManagementPanel({ title = undefined, description = undefined, action = undefined, children = undefined, className = '' }) {
   const id = useId()
   return <section className={`management-panel ${className}`.trim()} aria-labelledby={title ? id : undefined}>
     {(title || description || action) && <div className="management-panel-heading">
@@ -15,7 +15,7 @@ export function ManagementPanel({ title, description, action, children, classNam
   </section>
 }
 
-export function ManagementEmpty({ icon, title, description, action }) {
+export function ManagementEmpty({ icon = undefined, title, description = undefined, action = undefined }) {
   return <div className="management-empty">
     {icon && <span className="management-empty-icon" aria-hidden="true">{typeof icon === 'string' ? <Icon name={icon} /> : icon}</span>}
     <h2>{title}</h2>
@@ -24,11 +24,11 @@ export function ManagementEmpty({ icon, title, description, action }) {
   </div>
 }
 
-export function ManagementStatus({ children, tone = 'neutral' }) {
+export function ManagementStatus({ children = undefined, tone = 'neutral' }) {
   return <span className="management-status" data-tone={tone}>{children}</span>
 }
 
-export function ManagementAvatar({ name, avatarRef, userId }) {
+export function ManagementAvatar({ name, avatarRef, userId = undefined }) {
   const [identity, setIdentity] = useState(null)
   useEffect(() => {
     let alive = true

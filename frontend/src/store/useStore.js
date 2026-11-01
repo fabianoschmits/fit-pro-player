@@ -1,3 +1,4 @@
+import { migrateLocalState } from '../lib/local-state-migrations.js'
 import { create } from 'zustand'
 import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED, STANDALONE } from '../lib/demo.js'
@@ -6,7 +7,7 @@ import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from
 import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
 import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from '../lib/body-measurements.js'
 import { nextStateTimestamp } from '../lib/sync-state.js'
-import { ANONYMOUS_SCOPE, resolveLocalScope } from '../lib/local-state-scope.js'
+import { ANONYMOUS_SCOPE, resolveLocalScope, storageKeyForScope } from '../lib/local-state-scope.js'
 import { readScopedState, writeScopedState } from '../lib/account-cache.js'
 import { recordDiagnostic } from '../lib/diagnostics.js'
 import { DEFAULT_NOTIFICATION_PREFERENCES, normalizeNotificationPreferences } from '../lib/notification-preferences.js'
@@ -50,11 +51,7 @@ function hasCompleteProfile(profile) {
 }
 
 export function normalizeState(source) {
-  const raw = object(source)
-  if (raw.stateSchemaVersion !== STATE_SCHEMA_VERSION || raw.massUnit !== MASS_UNIT) {
-    const displayUnit = raw.displayUnit === 'lb' || raw.unit === 'lb' ? 'lb' : 'kg'
-    return normalizeState({ ...clone(DEF), displayUnit })
-  }
+  const raw = migrateLocalState(source)
   const state = Object.assign(clone(DEF), raw)
   state.displayUnit = state.displayUnit === 'lb' ? 'lb' : 'kg'
   state.massUnit = MASS_UNIT
@@ -109,7 +106,6 @@ export const useStore = create((set, get) => {
   let sessionRecoveryAccountId = null
   let releaseSessionRecoveryAuth = null
   let accountSyncRetry = null
-  let nativePending = Promise.resolve(true)
   const disposeSessionRecovery = () => {
     releaseSessionRecoveryAuth?.()
     releaseSessionRecoveryAuth = null
@@ -128,7 +124,6 @@ export const useStore = create((set, get) => {
       if (generation === scopeGeneration && scope === activeScope && (ok === false || get().persistence.state !== 'error' || get().persistence.error === 'native-write-failed')) persistenceResult(ok !== false, 'native-write-failed')
       return ok !== false
     })
-    nativePending = pending
     return pending
   }
 
@@ -307,6 +302,7 @@ export const useStore = create((set, get) => {
       clearTimeout(saveTm); saveTm = null
       const local = readScopedState(scope, localStorage, DEF)
       const restored = normalizeState(local.state)
+      if (local.status === 'valid') writeScopedState(scope, restored, localStorage)
       const pendingSync = ['plan', 'body', 'preferences'].filter(domain => restored._pendingSync?.[domain]).length
       set({ S: restored, ready: false, persistence: { state: local.status === 'invalid' || local.status === 'error' ? 'error' : 'saved', error: local.status === 'invalid' ? 'invalid-local-cache' : local.status === 'error' ? 'local-read-failed' : null }, accountSync: { state: pendingSync ? 'queued' : 'saved', pending: pendingSync, error: null }, sessionRecovery: { state: 'idle', pending: 0, error: null } })
       if (MOBILE) {
@@ -364,13 +360,15 @@ export const useStore = create((set, get) => {
       empty._ts = nextStateTimestamp(currentScope ? get().S._ts : 0)
       const ok = writeScopedState(scope, empty, localStorage)
       if (!ok) { persistenceResult(false); return false }
+      localStorage.removeItem(storageKeyForScope(scope) + ':recovery')
+      if (scope.userId) localStorage.removeItem('fpp_active_session_v1:' + scope.userId)
       localStorage.removeItem(appEntryKey(scope))
       if (scope.kind === 'anonymous') localStorage.removeItem('gym_guest')
       if (scope === activeScope || (scope.kind === activeScope.kind && scope.userId === activeScope.userId)) {
         set({ S: empty })
         persistenceResult(ok)
       }
-      if (MOBILE) nativePending = nativeClear(scope, empty).then(result => { if (currentScope) persistenceResult(result !== false, 'native-clear-failed'); return result })
+      if (MOBILE) void nativeClear(scope, empty).then(result => { if (currentScope) persistenceResult(result !== false, 'native-clear-failed'); return result })
       return ok
     },
 

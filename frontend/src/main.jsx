@@ -114,7 +114,7 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
     navigator.serviceWorker.ready.then(() => {
       checkForUpdate()
       const preload = () => preloadCoreRoutes().catch(() => {})
-      if ('requestIdleCallback' in window) window.requestIdleCallback(preload, { timeout: 5000 })
+      if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(preload, { timeout: 5000 })
       else window.setTimeout(preload, 1500)
       // Preload exercise sprites for the user's current plan in background.
       if (navigator.onLine !== false) {

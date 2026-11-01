@@ -1,3 +1,4 @@
+import { useStore } from '../store/useStore.js'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js';
@@ -63,7 +64,7 @@ export function useAuth() {
   return auth;
 }
 
-export function AuthProvider({ children, client: injectedClient, location: injectedLocation }) {
+export function AuthProvider({ children = undefined, client: injectedClient = undefined, location: injectedLocation = undefined }) {
   const client = injectedClient === undefined ? getBrowserSupabaseClient() : injectedClient;
   const configured = Boolean(client);
   const location = injectedLocation || window.location;
@@ -77,6 +78,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
   }));
   const revision = useRef(0);
   const fingerprint = useRef(null);
+  const previousAccount = useRef(null);
   const professionalProvisioning = useRef(new Set());
 
   useEffect(() => {
@@ -114,6 +116,8 @@ export function AuthProvider({ children, client: injectedClient, location: injec
     };
     const applySession = (event, session, { recovery = false } = {}) => {
       const user = publicUser(session?.user);
+      if (previousAccount.current && previousAccount.current !== user?.id) useStore.getState().clearLocalScope(previousAccount.current);
+      previousAccount.current = user?.id || null;
       const nextRecovery = recovery || event === 'PASSWORD_RECOVERY' ? 'required' : undefined;
       const nextFingerprint = `${event}:${user?.id || ''}:${nextRecovery || ''}`;
       if (fingerprint.current === nextFingerprint) return;
@@ -307,6 +311,7 @@ export function AuthProvider({ children, client: injectedClient, location: injec
         await disableBackgroundNotifications();
         const result = await execute('signing_out', () => client.auth.signOut());
         if (result.kind === 'success') {
+          if (state.user?.id) useStore.getState().clearLocalScope(state.user.id);
           useUI.getState().closeAll();
           setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
         }

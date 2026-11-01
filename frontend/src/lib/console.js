@@ -46,7 +46,7 @@ const toProfessional = row => row ? ({
   suspendedAt: row.suspended_at || null,
 }) : null
 
-export function createConsoleRepository({ client } = {}) {
+export function createConsoleRepository({ client = undefined } = {}) {
   const rpc = async (name, args = {}) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
     const { data, error } = await client.rpc(name, args)

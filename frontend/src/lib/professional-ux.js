@@ -9,6 +9,7 @@ export function inviteLink(origin, code) {
   return `${String(origin || '').replace(/\/$/, '')}/#/invite/${encodeURIComponent(normalized)}`
 }
 
+/** @param {Array<object>} students @param {string} query @param {string} filter */
 export function filterStudents(students = [], query = '', filter = FILTERS.ALL) {
   const search = String(query || '').trim().toLocaleLowerCase()
   return students.filter(student => {

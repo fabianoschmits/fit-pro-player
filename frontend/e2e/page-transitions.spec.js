@@ -69,7 +69,7 @@ test('a cold lazy page fades only after its destination content is ready', async
   })
   try {
     await enter(page)
-    await page.evaluate(() => { location.hash = '/body-progress' })
+    await page.evaluate(() => { location.hash = '/progress/body' })
     await expect.poll(() => requested).toBe(true)
     // Hold the real module longer than the entire entrance animation.
     await page.waitForTimeout(250)

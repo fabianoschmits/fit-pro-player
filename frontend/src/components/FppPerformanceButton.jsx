@@ -11,13 +11,13 @@ import { t } from '../lib/i18n.js'
 function labelText(value) {
   return Children.toArray(value).map(child => {
     if (typeof child === 'string' || typeof child === 'number') return String(child)
-    return isValidElement(child) && !child.props['aria-hidden'] ? labelText(child.props.children) : ''
+    return isValidElement(/** @type {import('react').ReactElement<{children?: import('react').ReactNode}>} */ (child)) && !child.props['aria-hidden'] ? labelText(/** @type {import('react').ReactElement<{children?: import('react').ReactNode}>} */ (child).props.children) : ''
   }).join('')
 }
 
-export const FppPerformanceButton = forwardRef(function FppPerformanceButton({
-  variant = 'plain', appearance = 'default', size, icon, trailingIcon, children, className = '', type = 'button',
-  onAction, onClick, onSuccess, onError, state, intent = 'primary', loadingLabel,
+export const FppPerformanceButton = forwardRef(/** @param {import('./ui-types').FppButtonProps} props @param {import('react').ForwardedRef<HTMLButtonElement>} ref */ function FppPerformanceButton({
+  variant = 'plain', appearance = 'default', size = undefined, icon = undefined, trailingIcon = undefined, children = undefined, className = '', type = 'button',
+  onAction, onClick = undefined, onSuccess, onError, state = undefined, intent = 'primary', loadingLabel,
   successLabel, errorLabel, progress, feedback, disabled = false, activation = 'animated', onKeyDown, onPointerDown, ...rest
 }, ref) {
   const [input, setInput] = useState('pointer')

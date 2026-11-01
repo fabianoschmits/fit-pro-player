@@ -6,7 +6,7 @@ export default function AvatarImage({ avatarId, alt = '', loading = 'eager', cla
       className={`profile-avatar-image ${className}`.trim()}
       src={avatarSrc(avatarId)}
       alt={alt}
-      loading={loading}
+      loading={loading === 'eager' ? 'eager' : 'lazy'}
       decoding="async"
       draggable="false"
     />
