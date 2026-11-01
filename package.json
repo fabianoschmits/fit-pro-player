@@ -28,7 +28,7 @@
     "build:mobile:web": "npm --prefix frontend run build:mobile:web"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.12",
+    "@electric-sql/pglite": "0.5.13",
     "supabase": "2.122.0",
     "web-push": "^3.6.7"
   }
