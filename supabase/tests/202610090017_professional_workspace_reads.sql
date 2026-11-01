@@ -48,12 +48,14 @@ select pg_temp.assert_true((public.professional_students_page('Student 001','all
 select pg_temp.assert_true((public.professional_students_page('Student 001','all',0,30)->'items'->0->'last_activity_at')='null'::jsonb,'current assignment has no fabricated activity');
 -- Student confirmation is required before availability becomes a calendar plan.
 reset role;
-insert into public.athlete_plan_library(user_id,source_type,title,assignment_id)
- select distinct on(a.student_user_id) a.student_user_id,'professional','Confirmed fixture',a.id
- from public.program_assignments a join public.program_versions v on v.id=a.version_id
- where a.status='active' order by a.student_user_id,v.version_number desc on conflict(assignment_id) do nothing;
+-- Deliveries already exist through library_delivery; select those rows directly.
 do $$ declare selected record; begin
- for selected in select * from public.athlete_plan_library where title='Confirmed fixture' loop
+ for selected in
+  select l.id,l.user_id from public.athlete_plan_library l
+  join public.program_assignments a on a.id=l.assignment_id
+  where a.professional_user_id='09001700-0000-0000-0000-000000000001'
+    and a.status='active'
+ loop
   perform set_config('request.jwt.claim.sub',selected.user_id::text,true);
   perform public.apply_library_plan(selected.id);
  end loop;
@@ -69,6 +71,10 @@ select pg_temp.assert_true((public.professional_programs_page('In use',false,0,2
 select pg_temp.assert_true((public.professional_programs_page('',false,0,20)->>'total')::int=2 and (public.professional_programs_page('',true,0,20)->>'total')::int=1,'archived filter');
 select pg_temp.assert_true((public.professional_executions_page(null,'In use','completed','2026-10-09 00:00+00','2026-10-09 02:00+00',0,20)->>'total')::int=1,'search and inclusive-from exclusive-to filters');
 reset role;
+-- The fixed October execution above tests timezone boundaries. For the separate
+-- inactivity scenario below, this student must have recent activity on any run date.
+update public.workout_executions set started_at=now()-interval '1 hour',completed_at=now()
+ where id='09001750-0000-0000-0000-000000000001';
 insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values
  ('09001730-0000-0000-0000-000000000000','09001720-0000-0000-0000-000000000001',2,'{"thursday":[{"exerciseId":"0025","sets":3,"reps":8}]}','2026-10-08');
 update public.program_assignments set status='revoked',revoked_at=now() where id=md5('workspace-assignment-3')::uuid;
