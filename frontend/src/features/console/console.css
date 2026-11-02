@@ -799,3 +799,6 @@
   color: #ef4444;
   border-color: rgba(239, 68, 68, 0.3);
 }
+/* Community moderation follows the existing console surfaces and fields. */
+.cx-community-message { white-space: pre-wrap; overflow-wrap: anywhere; }
+.cx-community-history { border-top: 1px solid var(--border, #ddd); padding-top: 12px; margin-top: 12px; }

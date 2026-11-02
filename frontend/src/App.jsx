@@ -1,3 +1,4 @@
+import { CommunityAccessProvider, CommunityAccessGate } from './community-access/CommunityAccess.jsx'
 import { createTabSync } from './lib/tab-sync.js'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -100,6 +101,7 @@ const StudentProfessionals = lazy(loadStudentProfessionals)
 const StudentConnect = lazy(() => loadStudentProfessionals().then(module => ({ default: module.StudentConnect })))
 const StudentProfessionalDetail = lazy(loadStudentProfessionalDetail)
 const StudentProfessionalMaterials = lazy(loadStudentProfessionalMaterials)
+const ConsoleCommunity = lazy(() => loadConsole().then(module => ({ default: module.ConsoleCommunity })))
 const ConsoleHome = lazy(loadConsole)
 const ConsoleLaboratory = lazy(() => loadConsole().then(module => ({ default: module.ConsoleLaboratory })))
 const ConsoleUsers = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUsers })))
@@ -531,11 +533,11 @@ function Shell() {
                 <Route path="/student/professionals/materials" element={<StudentProfessionalMaterials />} />
                 <Route path="/student/professionals/:professionalId" element={<StudentProfessionalDetail />} />
                 <Route path="/library" element={<Library />} />
-                <Route path="/community" element={<Community />} />
-                <Route path="/community/messages" element={<CommunityMessages />} />
-                <Route path="/community/messages/:peerId" element={<CommunityMessages />} />
-                <Route path="/community/profile" element={<Community />} />
-                <Route path="/community/user/:userId" element={<Community />} />
+                <Route path="/community" element={<CommunityAccessGate><Community /></CommunityAccessGate>} />
+                <Route path="/community/messages" element={<CommunityAccessGate><CommunityMessages /></CommunityAccessGate>} />
+                <Route path="/community/messages/:peerId" element={<CommunityAccessGate><CommunityMessages /></CommunityAccessGate>} />
+                <Route path="/community/profile" element={<CommunityAccessGate><Community /></CommunityAccessGate>} />
+                <Route path="/community/user/:userId" element={<CommunityAccessGate><Community /></CommunityAccessGate>} />
                 <Route path="/account" element={<More />} />
                 <Route path="/more" element={<CanonicalRedirect to="/account" />} />
                 <Route path="/support" element={<Support />} />
@@ -546,6 +548,7 @@ function Shell() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/motion-feedback" element={<MotionFeedback />} />
                 <Route path="/console" element={<ConsoleHome />} />
+                <Route path="/console/community" element={<ConsoleCommunity />} />
                 <Route path="/console/system" element={<ConsoleSystem />} />
                 <Route path="/console/laboratory" element={<ConsoleLaboratory />} />
                 <Route path="/console/laboratory/menus" element={<AlternativeMenus />} />
@@ -579,5 +582,5 @@ export default function App() {
     initBackButton().then(fn => { if (gone) fn(); else stop = fn })
     return () => { gone = true; stop?.() }
   }, [])
-  return <HashRouter><Shell /></HashRouter>
+  return <HashRouter><CommunityAccessProvider><Shell /></CommunityAccessProvider></HashRouter>
 }

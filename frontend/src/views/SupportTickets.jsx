@@ -1,3 +1,4 @@
+import { CommunityImage } from '../components/community/CommunityPostMedia.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
@@ -67,7 +68,7 @@ export default function SupportTickets() {
               key={ticket.ticketId}
               to={`/support/tickets/${ticket.ticketId}`}
             >
-              <div className="ticket-chat-avatar">{ticket.reportContext?.imagePath ? <img src={getBrowserSupabaseClient().storage.from('community-posts').getPublicUrl(ticket.reportContext.imagePath).data.publicUrl} alt="" /> : isAvatarId(profile?.avatarId) ? <img src={avatarSrc(profile.avatarId)} alt="" /> : <span>{(ticket.subject || 'S')[0].toUpperCase()}</span>}</div>
+              <div className="ticket-chat-avatar">{ticket.reportContext?.imagePath ? <CommunityImage post={{image_path:ticket.reportContext.imagePath,caption:"Miniatura da publicação denunciada"}} client={getBrowserSupabaseClient()} /> : isAvatarId(profile?.avatarId) ? <img src={avatarSrc(profile.avatarId)} alt="" /> : <span>{(ticket.subject || 'S')[0].toUpperCase()}</span>}</div>
               <div className="ticket-chat-body">
                 <div className="ticket-chat-top">
                   <strong className="ticket-chat-subject">{ticket.subject}</strong>

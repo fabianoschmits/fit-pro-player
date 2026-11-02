@@ -11,6 +11,7 @@ import { avatarSrc, isAvatarId } from '../../lib/avatars.js'
 import { useFppAction } from '../../components/useFppAction.js'
 import { fppActionInput } from '../../components/fpp-action-timing.js'
 import { supportStatusLabel, supportPriorityLabel, ticketTone } from './support-model.js'
+import CommunityModerationPanel from './CommunityModerationPanel.jsx'
 
 const MAX_CHARS = 3000
 const reportVerificationPath = context => {
@@ -37,7 +38,8 @@ export default function ConsoleConversation() {
     const ticket = await repo.adminTicketDetail(ticketId)
     if (!ticket?.ticketId) throw new Error('ticket-not-found')
     const person = await accounts.userDetail(ticket.userId).catch(() => null)
-    return { ticket, person }
+    const reportedPerson = ticket.reportContext?.reportedUserId ? await accounts.userDetail(ticket.reportContext.reportedUserId).catch(() => null) : null
+    return { ticket, person, reportedPerson }
   } })
   const ticket = data?.ticket
 
@@ -235,6 +237,7 @@ export default function ConsoleConversation() {
         </div>
 
         <aside className="console-conversation-sidebar">
+          {ticket.reportContext?.reportedUserId && <section><SectionTitle>Moderação da Comunidade</SectionTitle><SectionBody><p>Usuário denunciado: {data.reportedPerson?.displayName || ticket.reportContext.reportedUserId}</p><CommunityModerationPanel key={`${identity}:${ticket.reportContext.reportedUserId}`} targetUserId={ticket.reportContext.reportedUserId} sourceTicketId={ticketId} initialReason={ticket.reportContext.reason} /></SectionBody></section>}
           <section><SectionTitle>Quem enviou</SectionTitle><SectionBody><div className="console-panel-content"><strong>{data.person?.displayName || 'Usuário'}</strong><p>{data.person?.email || ticket.email || 'Conta sem e-mail'}</p><Link className="console-text-link" to={`/console/users/${ticket.userId}`}>Ver perfil do usuário</Link></div></SectionBody></section>
           <section><SectionTitle>Organização</SectionTitle><SectionBody><div className="console-panel-content console-field-stack">
             <label className="cx-label">Status<select className="cx-field" value={ticket.status} disabled={operation.locked} aria-busy={acting === 'status' && operation.busy || undefined} onChange={e => update(e, 'status', { status: e.target.value })}>{Object.entries(supportStatusLabel).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>

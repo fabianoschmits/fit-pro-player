@@ -15,11 +15,12 @@ export function communityStoragePath(value) {
 const sourceOf = (post, client) => {
   const path = communityStoragePath(post.image_path)
   if (/^(https?:|blob:|data:)/.test(path)) return { path, url: path }
-  return { path, url: path && client ? client.storage.from(BUCKET).getPublicUrl(path).data?.publicUrl || '' : '' }
+  return { path, url: path && client ? `private:${path}` : '' }
 }
 
 function ImageRequest({ path, url, client, caption, onStatus = undefined, attempt }) {
-  const [src, setSrc] = useState(url)
+  const privateObject=url.startsWith('private:')
+  const [src, setSrc] = useState(privateObject?'':url)
   const [orientation, setOrientation] = useState(decodedImages.get(url) || '')
   const imageRef = useRef(null)
   const fallbackRef = useRef(false)
@@ -30,8 +31,22 @@ function ImageRequest({ path, url, client, caption, onStatus = undefined, attemp
   const publish = useCallback(status => { if (activeRef.current) statusRef.current?.(status) }, [])
   useEffect(() => {
     activeRef.current = true
-    return () => { activeRef.current = false; if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current) }
-  }, [])
+    // Authenticated download evaluates Storage RLS on every request. No reusable
+    // public/signed URL or persistent private image cache is exposed.
+    let cancelled=false
+    if(privateObject){
+      fallbackRef.current=true
+      publish('loading')
+      void client.storage.from(BUCKET).download(path).then(result=>{
+        if(cancelled)return
+        if(result.error || !result.data){publish('error');return}
+        const nextUrl=URL.createObjectURL(result.data)
+        objectUrlRef.current=nextUrl
+        setSrc(nextUrl)
+      }).catch(()=>{if(!cancelled)publish('error')})
+    }
+    return () => { cancelled=true;activeRef.current = false; if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current) }
+  }, [client,path,privateObject,publish])
   const loaded = useCallback(async event => {
     const image = event.currentTarget
     const loadedSrc = image.src

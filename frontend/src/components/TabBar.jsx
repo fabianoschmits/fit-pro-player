@@ -1,3 +1,4 @@
+import { useCommunityAccess } from '../community-access/CommunityAccess.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -194,6 +195,7 @@ function readNavigationLayout() {
 
 export default function TabBar({ onStart }) {
   const nav = useNavigate(), loc = useLocation()
+  const {blocked:communityBlocked,checking:communityChecking}=useCommunityAccess()
   const S = useStore(s => s.S), isGuest = useStore(s => s.isGuest()), auth = useAuth()
   const account = auth.status === 'authenticated' ? auth.user : null
   const [layout, setLayout] = useState(readNavigationLayout)
@@ -352,7 +354,7 @@ export default function TabBar({ onStart }) {
     ]],
   ]
   const resolved = resolveNavigationContext({
-    pathname: loc.pathname,
+    pathname: (communityBlocked || communityChecking) && loc.pathname.startsWith('/community') ? '/home' : loc.pathname,
     search: loc.search,
     navigationState: loc.state,
     workoutState: S.active,
@@ -361,7 +363,7 @@ export default function TabBar({ onStart }) {
   const navItems = resolved.items
   const currentKey = resolved.activeKey
   const extraNav = resolved.contextId === 'home'
-    ? { icon: 'heart', label: 'Comunidade', to: '/community' }
+    ? (communityBlocked||communityChecking?{icon:'person',label:'Conta',to:'/account'}:{ icon: 'heart', label: 'Comunidade', to: '/community' })
     : resolved.contextId === 'training'
       ? { icon: 'dumbbell', label: t('Start workout'), to: '/workout' }
       : resolved.contextId === 'workout'

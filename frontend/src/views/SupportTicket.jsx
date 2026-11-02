@@ -1,3 +1,4 @@
+import { CommunityImage } from '../components/community/CommunityPostMedia.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
@@ -235,7 +236,7 @@ export default function SupportTicket() {
 
         {busy && !ticket && <FppSkeleton label="Carregando conversa…" />}
         {error && <p role="alert" className="support-error chat-error">{error}</p>}
-        {ticket?.reportContext && <div className="chat-bubble-row chat-bubble-row--user is-first"><Link className="chat-report-preview" to={reportPath(ticket.reportContext)}>{ticket.reportContext.imagePath && !ticket.reportContext.commentId ? <img src={getBrowserSupabaseClient().storage.from('community-posts').getPublicUrl(ticket.reportContext.imagePath).data.publicUrl} alt="Miniatura da publicação denunciada" /> : <p>{ticket.reportContext.contentExcerpt || 'Comentário denunciado'}</p>}<span>{ticket.reportContext.commentId ? 'Comentário denunciado — ver destacado' : 'Publicação denunciada — ver conteúdo'} <Icon name="chevronRight" /></span></Link></div>}
+        {ticket?.reportContext && <div className="chat-bubble-row chat-bubble-row--user is-first"><Link className="chat-report-preview" to={reportPath(ticket.reportContext)}>{ticket.reportContext.imagePath && !ticket.reportContext.commentId ? <CommunityImage post={{image_path:ticket.reportContext.imagePath,caption:"Miniatura da publicação denunciada"}} client={getBrowserSupabaseClient()} /> : <p>{ticket.reportContext.contentExcerpt || 'Comentário denunciado'}</p>}<span>{ticket.reportContext.commentId ? 'Comentário denunciado — ver destacado' : 'Publicação denunciada — ver conteúdo'} <Icon name="chevronRight" /></span></Link></div>}
 
         {visibleMessages.map((msg, i) => {
           const isUser  = msg.author_kind === 'user'

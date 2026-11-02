@@ -7,6 +7,7 @@ import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
 import { Avatar, Chip, SectionBody, Kv, Loading, Empty, Alert, fmtDate, weekSchedule, workoutVolumePoints, bodyweightPoints, CxButton } from './ConsoleUI.jsx'
 import { useFppAction } from '../../components/useFppAction.js'
 import { fppActionInput } from '../../components/fpp-action-timing.js'
+import CommunityModerationPanel from './CommunityModerationPanel.jsx'
 
 export function ConsoleUserPage() {
   const { userId: targetId } = useParams()
@@ -225,6 +226,7 @@ export function ConsoleUserPage() {
               </SectionBody>}
 
               {/* ── ações da conta ── */}
+              {section === 'account' && <SectionBody><CommunityModerationPanel key={`${identity}:community`} targetUserId={targetId} collapsible canRestrict={!isAdmin} /></SectionBody>}
               {section === 'account' && <SectionBody>
                 <div className="cx-section-label">Ações</div>
                 <div className="cx-action-list">
