@@ -168,3 +168,23 @@ it('preserves personal routines, history, weights and measurements after success
   expect(useStore.getState().S).toMatchObject({ routines: [expect.objectContaining({ assigned: true }), personal], workouts: history, exWeights: weights, bodyMeasurements: measurements, bodyweight, onboardingDone: true })
   expect(button('Aplicado')).toBeDefined()
 })
+
+it.each(['detail', 'materials'])('keeps Applied visible on %s without waiting for another material read', async page => {
+  await render(page)
+  let finishRefresh
+  const detail = await mocks.repo.studentProfessionalDetail.mock.results[0].value
+  mocks.repo.studentProfessionalDetail.mockImplementation(() => new Promise(resolve => { finishRefresh = resolve }))
+  await click('Aceitar'); await click('Aplicar plano')
+  try {
+    expect(button('Aplicado')).toBeDefined()
+    expect(useUI.getState().sheets).toHaveLength(0)
+    expect(mocks.repo.studentProfessionalDetail).toHaveBeenCalledTimes(1)
+  } finally {
+    if (finishRefresh) await act(async () => finishRefresh(detail))
+  }
+})
+
+it('exposes acceptance on the professional detail before expanding plan details', async () => {
+  await render('detail')
+  expect(button('Aceitar').closest('details:not([open])')).toBeNull()
+})
