@@ -107,6 +107,8 @@ test('the central pages fit small and large viewports and the FAQ has a separate
       await page.goto('/#' + route)
       await expect(page.locator('.console-main')).toBeVisible()
       await expect(page.locator('.console-main')).not.toContainText('Verificando acesso…')
+      // Exercise fallback font metrics consistently on Windows and Linux runners.
+      await page.addStyleTag({ content: '.console-workspace { font-family: Arial, sans-serif; }' })
       const clipped = await page.locator('.console-main').evaluate(main => {
         const bounds = main.getBoundingClientRect()
         return [...main.querySelectorAll('input,select,textarea,button')].filter(el => {
