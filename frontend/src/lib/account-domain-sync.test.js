@@ -177,14 +177,18 @@ it('does not resurrect a deleted workout from a stale in-flight history read', a
   h.sync.acceptRemote('history', [{ workout: { id: 'session-1', d: '2026-10-19', entries: [] } }])
   expect(h.state().workouts).toEqual([])
 })
-it('recovers local personal changes into the library when another device selected a different plan',async()=>{
- const h=harness();h.setState({...h.state(),activeLibraryId:'old',_pendingSync:{plan:true}})
+it('keeps personal edits pending with a durable conflict when another device selects a different plan',async()=>{
+ const h=harness();h.setState({...h.state(),bodyweight:[],activeLibraryId:'old',routines:[{id:'personal',name:'Unsent personal edit',ex:[]}],_pendingSync:{plan:true}})
  h.repository.savePlan.mockRejectedValue({kind:'selection-conflict'})
  h.repository.saveDetachedPlan=vi.fn().mockResolvedValue('backup')
  h.repository.loadPlan=vi.fn().mockResolvedValue({routines:[],schedule:{revision:5,mode:'weekly',values:{libraryId:'new'}}})
  await h.sync.start()
- expect(h.repository.saveDetachedPlan).toHaveBeenCalledWith(expect.objectContaining({state:expect.objectContaining({activeLibraryId:'old'})}))
- expect(h.state().activeLibraryId).toBe('new');expect(h.state()._pendingSync.plan).toBe(false)
+ expect(h.state()).toMatchObject({activeLibraryId:'old',routines:[{name:'Unsent personal edit'}],_pendingSync:{plan:true},_syncConflicts:{plan:{local:{routines:[{title:'Unsent personal edit'}]},remote:{schedule:{libraryId:'new'}}}}})
+ expect(h.statuses.at(-1)).toMatchObject({state:'error',error:'sync-conflict'})
+ h.sync.acceptRemote('plan',await h.repository.loadPlan())
+ expect(h.state().routines[0].name).toBe('Unsent personal edit')
+ expect(h.state()._pendingSync.plan).toBe(true)
+ expect(h.repository.saveDetachedPlan).not.toHaveBeenCalled()
 })
 
 it('preserves professional assignment metadata when synchronizing personal edits', async () => {
@@ -327,6 +331,44 @@ it('merges independent offline body additions from two devices with revision CAS
   expect(b.state().bodyServerRevision).toBe(3)
   expect(b.state()._pendingSync.body).toBe(false)
   expect(b.state()._syncBases.body.weights).toEqual(h.remote().weights)
+})
+
+it('retains the selection conflict and current edits when loading the other selection fails', async () => {
+ const h=harness();h.setState({...h.state(),bodyweight:[],activeLibraryId:'old',routines:[{id:'personal',name:'Offline edit',ex:[]}],_pendingSync:{plan:true}})
+ h.repository.savePlan.mockRejectedValue({kind:'selection-conflict'})
+ h.repository.loadPlan=vi.fn().mockRejectedValue(new Error('offline'))
+ await h.sync.start()
+ expect(h.state()).toMatchObject({activeLibraryId:'old',routines:[{name:'Offline edit'}],_pendingSync:{plan:true},_syncConflicts:{plan:{remote:null,local:{routines:[{title:'Offline edit'}]}}}})
+ expect(h.statuses.at(-1)).toMatchObject({state:'error',error:'sync-conflict'})
+})
+
+it('does not replace another account while a selection conflict read is in flight', async () => {
+ const response=deferred();let current=true
+ let state={...initial(),bodyweight:[],activeLibraryId:'old',routines:[{id:'personal',name:'First edit',ex:[]}],_pendingSync:{plan:true}}
+ const repository={savePlan:vi.fn().mockRejectedValue({kind:'selection-conflict'}),loadPlan:vi.fn(()=>response.promise)}
+ const sync=createAccountDomainSync({repository,getState:()=>state,replaceState:next=>{state=next},isCurrent:()=>current,isOnline:()=>true})
+ const flush=sync.start()
+ await vi.waitFor(()=>expect(repository.loadPlan).toHaveBeenCalledTimes(1))
+ expect(repository.loadPlan).toHaveBeenCalledTimes(1)
+ current=false
+ state={...initial(),routines:[{id:'other',name:'Other account',ex:[]}],_pendingSync:{}}
+ const other=state
+ response.resolve({routines:[],schedule:{revision:5,mode:'weekly',values:{libraryId:'new'}}})
+ await flush
+ expect(state).toBe(other)
+})
+
+it('keeps an edit made during a selection conflict read in both the live journal and conflict evidence', async () => {
+ const h=harness(),response=deferred()
+ h.setState({...h.state(),bodyweight:[],activeLibraryId:'old',routines:[{id:'personal',name:'First edit',ex:[]}],_pendingSync:{plan:true}})
+ h.repository.savePlan.mockRejectedValue({kind:'selection-conflict'})
+ h.repository.loadPlan=vi.fn(()=>response.promise)
+ const flush=h.sync.start()
+ await vi.waitFor(()=>expect(h.repository.loadPlan).toHaveBeenCalledTimes(1))
+ h.setState({...h.state(),routines:[{id:'personal',name:'Newer edit',ex:[]}]})
+ response.resolve({routines:[],schedule:{revision:5,mode:'weekly',values:{libraryId:'new'}}})
+ await flush
+ expect(h.state()).toMatchObject({activeLibraryId:'old',routines:[{name:'Newer edit'}],_pendingSync:{plan:true},_syncConflicts:{plan:{local:{routines:[{title:'Newer edit'}]}}}})
 })
 
 it('keeps incompatible same-ID body edits durable without overwriting either device', async () => {

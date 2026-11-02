@@ -4,6 +4,8 @@ import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { DEF, useStore, normalizeState } from '../../store/useStore.js'
+import { createAccountDomainSync } from '../../lib/account-domain-sync.js'
+import { parsePlan } from '../../lib/training-dto.js'
 import { useUI } from '../../store/useUI.js'
 import ProfessionalPlanApplyButton from './ProfessionalPlanApplyButton.jsx'
 import StudentProfessionalDetail from '../../views/StudentProfessionalDetail.jsx'
@@ -294,4 +296,33 @@ it('rejects an account change between saving the personal library ID and applyin
   expect(mocks.repo.applyLibraryPlan).not.toHaveBeenCalled()
   expect(useStore.getState().S).toBe(before)
   expect(container.querySelector('[role="alert"]').textContent).toContain('conta mudou')
+})
+
+it('never applies over a pending personal edit when real synchronization discovers another selected plan', async () => {
+  const edited = { ...personalRoutine, name: 'Minha edição pendente' }
+  useStore.setState({ S: { ...useStore.getState().S, routines: [edited], _pendingSync: { plan: true } } })
+  const remote = response('remote-version', 'remote-library')
+  remote.routines.push({ ...personalResponse().routines[0], title: 'Versão antiga no banco', revision: 3, position: 1 })
+  const syncRepo = {
+    savePlan: vi.fn().mockRejectedValue({ kind: 'selection-conflict' }),
+    loadPlan: vi.fn().mockResolvedValue(parsePlan(remote, userId)),
+    saveDetachedPlan: vi.fn().mockResolvedValue('recovery'),
+  }
+  const token = useStore.getState().getScopeToken()
+  const sync = createAccountDomainSync({ repository: syncRepo, getState: () => useStore.getState().S, replaceState: next => useStore.getState().replaceState(next, false), isCurrent: () => useStore.getState().isScopeCurrent(token), isOnline: () => true })
+  useStore.getState().configureAccountSync(() => sync.start())
+  mocks.repo.savePersonalPlan.mockResolvedValue('self-library')
+  const applied = personalResponse(); applied.schedule.revision = 4; applied.routines[0].title = 'Versão antiga no banco'
+  mocks.repo.applyLibraryPlan.mockResolvedValue(applied)
+  try {
+    await render('personal'); await click('Usar meus treinos'); await click('Aplicar meus treinos')
+    expect(syncRepo.savePlan).toHaveBeenCalled()
+    expect(useStore.getState().S.routines.find(item => item.id === 'personal').name).toBe('Minha edição pendente')
+    expect(useStore.getState().S._pendingSync.plan).toBe(true)
+    expect(useStore.getState().S._syncConflicts.plan.local.routines[0].title).toBe('Minha edição pendente')
+    expect(mocks.repo.savePersonalPlan).not.toHaveBeenCalled()
+    expect(mocks.repo.applyLibraryPlan).not.toHaveBeenCalled()
+    expect(useUI.getState().sheets).toHaveLength(1)
+    expect(container.querySelector('[role="alert"]').textContent).toContain('sincronização')
+  } finally { sync.dispose() }
 })

@@ -8,6 +8,12 @@ A falha reproduzida ocorre **depois de applyLibraryPlan/parsePlan e antes de app
 
 O teste de regressão reproduziu essa falha antes da correção. Agora a comparação usa a mesma representação normalizada que o store recebe. Contagem, IDs duplicados, rotinas assigned, nome, exercícios, carga e repetições continuam protegidos. Escopo da conta, revisão, alterações locais concorrentes e seleção esperada continuam sendo verificados antes de substituir o store. O modal fecha somente após a resposta confirmada e a atualização do store.
 
+## Conflito de seleção com edição pessoal pendente
+
+Foi reproduzida uma segunda perda de dados no caminho real de sincronização: quando outra sessão mudava a seleção, o cliente guardava o estado local em um snapshot, carregava o plano remoto e limpava a pendência. Ao aplicar esse snapshot pessoal depois, a restauração baseada nas rotinas atuais podia substituir também a única cópia da edição pendente por dados antigos do banco.
+
+A sincronização agora conserva o estado local pendente e registra o conflito em `_syncConflicts.plan`, reutilizando o diário existente. O plano remoto é carregado somente como evidência do conflito. Não há confirmação automática de sincronização nem substituição dos treinos locais. O modal bloqueia qualquer gravação de biblioteca/aplicação enquanto a pendência não estiver resolvida. Testes cobrem a sequência real sync → modal, falha de leitura, troca de conta e nova edição durante a leitura. Após essa proteção, o Vitest completo (1.612) e os 21 E2E da alternância foram reexecutados e passaram; o workflow final repete toda a matriz Quality.
+
 ## Visualização e plano ativo
 
 Conforme esclarecimento do usuário, cabeçalho e calendário **principais** continuam mostrando o plano ativo. `choice` controla apenas a área de visualização. A opção pessoal tem um preview separado de semana, modo e dayPlan, derivado da biblioteca existente no servidor e das rotinas pessoais atuais. Não existe um segundo armazenamento de planos. IDs excluídos/assigned são filtrados; descansos null/rest são mantidos. Sem snapshot, o preview usa calendário inicial vazio seguro.
@@ -24,7 +30,7 @@ A migration 007 foi aplicada no Supabase remoto; `supabase db push --linked --dr
 
 - Instalação limpa: `npm ci` e `npm ci --prefix frontend` passaram.
 - Lint e typecheck: passaram.
-- Vitest completo: **1.608 testes, 186 arquivos, todos passaram**. Uma tentativa sob carga concorrente teve timeout no teste App.auth e efeitos subsequentes no mesmo arquivo; o arquivo foi reexecutado sem alterações (13/13) e a suíte completa reexecutada com dois workers (1.608/1.608).
+- Vitest completo: **1.612 testes, 186 arquivos, todos passaram**. Uma tentativa sob carga concorrente teve timeout no teste App.auth e efeitos subsequentes no mesmo arquivo; o arquivo foi reexecutado sem alterações (13/13) e a suíte completa reexecutada com dois workers (1.612/1.612).
 - Notifications: **42/42**.
 - Biblioteca/PostgreSQL WASM: **13 suítes**.
 - `check:supabase` com runtime PostgreSQL nativo: **42/42, zero skips**.
@@ -39,7 +45,7 @@ A migration 007 foi aplicada no Supabase remoto; `supabase db push --linked --dr
 
 O `supabase db reset` local foi tentado e não conseguiu inspecionar o serviço: Docker/Supabase local indisponível. `check:database` na porta padrão 54322 também não encontrou serviço. O runner de banco limpo executou os 34 arquivos com um runtime PostgreSQL completo já disponível, sem usar o banco remoto. O reset Supabase real integra o job database do GitHub Actions; o status final e os links do CI são informados na entrega.
 
-São **2.020 execuções individuais aprovadas** somando Vitest, notifications, check:supabase nativo, TAP, E2E e PWA, além das 13 suítes da biblioteca e dos 34 arquivos SQL (sem somar novamente suas asserções).
+São **2.024 execuções individuais aprovadas** somando Vitest, notifications, check:supabase nativo, TAP, E2E e PWA, além das 13 suítes da biblioteca e dos 34 arquivos SQL (sem somar novamente suas asserções).
 
 ## Cenários cobertos
 
@@ -61,12 +67,14 @@ Produção:
 - frontend/src/components/training/PlanLibrary.jsx
 - frontend/src/components/training/ProfessionalPlanApplyButton.jsx
 - frontend/src/lib/personal-plan-preview.js
+- frontend/src/lib/account-domain-sync.js
 - supabase/migrations/202611020007_require_explicit_plan_revision.sql
 
 Testes e infraestrutura:
 - frontend/src/components/training/PlanLibrary.test.jsx
 - frontend/src/components/training/ProfessionalPlanApplyButton.test.jsx
 - frontend/src/lib/personal-plan-preview.test.js
+- frontend/src/lib/account-domain-sync.test.js
 - frontend/src/lib/plan-application-convergence.test.js
 - frontend/src/lib/professional-workflow.test.js
 - frontend/src/views/Plan.personal-routines.test.jsx

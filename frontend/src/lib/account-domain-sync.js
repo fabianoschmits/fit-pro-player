@@ -142,18 +142,20 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
         try { saved = await save(domain, state) }
         catch (error) {
           if (domain === 'plan' && error?.kind === 'selection-conflict') {
+            if (!current()) break
+            // A detached snapshot is not a writable journal: applying a personal
+            // plan uses live server routines. Keep unsent edits in the durable
+            // pending state until this selection conflict is explicitly resolved.
+            const conflict = remote => ({ base: bases.get(domain) || null,
+              local: inputFor(domain, getState()), remote, path: 'schedule.libraryId' })
+            replaceState({ ...getState(), _syncConflicts: { ...getState()._syncConflicts, plan: conflict(null) } })
+            failures.set(domain, 'sync-conflict')
             try {
-              await repository.saveDetachedPlan({ title: 'Meu plano · alterações recuperadas', state })
               const remote = await repository.loadPlan()
               if (!current()) break
-              recordRevision(domain, remote)
-              if (planFingerprint(getState()) !== sentFingerprint) continue
-              const next = applyDomainState(getState(), domain, remote)
-              next._pendingSync = { ...next._pendingSync, plan: false }
-              replaceState(next)
-              failures.delete(domain)
-              continue
-            } catch (recoveryError) { failures.set(domain, recoveryError?.kind || 'request-failed'); break }
+              replaceState({ ...getState(), _syncConflicts: { ...getState()._syncConflicts, plan: conflict(wire(domain, remote)) } })
+            } catch { /* The local journal and conflict remain durable even if the read fails. */ }
+            break
           }
           console.error('Account domain synchronization failed', domain, error)
           failures.set(domain, error?.kind || 'request-failed')
