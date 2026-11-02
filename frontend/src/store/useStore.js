@@ -1,3 +1,4 @@
+import { ensureBodyIds } from '../lib/body-sync-state.js'
 import { migrateLocalState } from '../lib/local-state-migrations.js'
 import { create } from 'zustand'
 import { registerCustom } from '../lib/exercises.js'
@@ -22,7 +23,7 @@ export const DEF = {
   restSec: 90, sound: true, keepAwake: true, lang: 'pt',
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
   profile: DEFAULT_PROFILE, planMode: 'weekly',
-  bodyweight: [], bodyMeasurements: [], bodyMeasurementGoals: {}, routines: [], week: {}, dayPlan: {}, _pendingWorkoutDeletes: [],
+  bodyServerRevision: 0, bodyweight: [], bodyMeasurements: [], bodyMeasurementGoals: {}, routines: [], week: {}, dayPlan: {}, _pendingWorkoutDeletes: [],
   exWeights: {}, workouts: [], active: null, customEx: [], mediaSize: 'mini',
   // effort: which per-set effort scale is logged — 'none' | 'rir' | 'rpe'. null, not 'none', so
   // that a profile which never chose (loaded state is overlaid on DEF, on every path: local,
@@ -60,6 +61,8 @@ export function normalizeState(source) {
   state.bodyweight = Array.isArray(state.bodyweight) ? state.bodyweight : []
   state._pendingWorkoutDeletes = Array.isArray(state._pendingWorkoutDeletes) ? state._pendingWorkoutDeletes : []
   state.bodyMeasurements = normalizeBodyMeasurementCheckins(state.bodyMeasurements)
+  Object.assign(state, ensureBodyIds(state))
+  state.bodyServerRevision = Number.isSafeInteger(state.bodyServerRevision) && state.bodyServerRevision >= 0 ? state.bodyServerRevision : 0
   state.bodyMeasurementGoals = normalizeBodyMeasurementGoals(state.bodyMeasurementGoals)
   state.routines = Array.isArray(state.routines) ? state.routines : []
   state.workouts = Array.isArray(state.workouts) ? state.workouts : []
@@ -139,6 +142,7 @@ export const useStore = create((set, get) => {
   }
 
   const persist = (S, dirty = true) => {
+    S = ensureBodyIds(S)
     const scope = activeScope
     const generation = scopeGeneration
     const previousAssignment = get().S?.assignedProgram

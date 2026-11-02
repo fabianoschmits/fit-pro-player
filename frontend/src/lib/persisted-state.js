@@ -25,8 +25,9 @@ const preferenceSchema = {...fields('displayUnit massUnit stateSchemaVersion res
  reminder:record(fields('on time tz')),bodyMeasurementGoals:dictionary(/^(chest|waist|hips|neck|shoulders|abdomen|(?:left|right)-(?:arm|forearm|thigh|calf))$/,scalar),
  seenTips:dictionary(id,scalar), pwaInstallPrompt:record(fields('dismissForever snoozeUntil'))}
 const wirePreference = record({displayUnit:scalar,values:record(preferenceSchema)})
+const wireBody = record({weights:list(record(fields('id date weightKg'))),measurements:list(record({...fields('id date note'),valuesCm:dictionary(/^(chest|waist|hips|neck|shoulders|abdomen|(?:left|right)-(?:arm|forearm|thigh|calf))$/,scalar)}))})
 const conflict = project => record({base:project,local:project,remote:project,path:scalar})
-const schema = {...preferenceSchema,...fields('planMode planServerRevision activeLibraryId activeLibraryTitle _ts unit'),
+const schema = {...preferenceSchema,...fields('planMode bodyServerRevision planServerRevision activeLibraryId activeLibraryTitle _ts unit'),
  routines:list(routine), week:dictionary(day,scalar),dayPlan:dictionary(date,scalar),
  workouts:list(workout),active:workout,exWeights:dictionary(id,value => typeof value === 'number' ? value : record(fields('w d sec min speed rir rpe'))(value)),
  bodyweight:list(record(fields('id d w t'))), bodyMeasurements:list(record({...fields('id date notes createdAt updatedAt'),values:dictionary(/^(chest|waist|hips|neck|shoulders|abdomen|(?:left|right)-(?:arm|forearm|thigh|calf))$/,value => typeof value === 'number' ? value : undefined)})),
@@ -34,7 +35,7 @@ const schema = {...preferenceSchema,...fields('planMode planServerRevision activ
  assignedProgram:assigned,_pendingSync:record(fields('plan preferences body history')),_pendingWorkoutDeletes:list(scalar),
  pendingProfessionalEvents:list(record({...fields('id accountId kind assignmentId programId versionId createdAt occurredAt type status executionId dayKey attempts lastError blocked'),payload:record({...fields('source workoutId workoutName start end massUnit durationMs'),prescription:list(prescription),entries:list(entry),workout})})),
  professionalProgramDrafts:dictionary(id,record({title:scalar,workspace:record({routines:list(routine),week:dictionary(day,scalar)}),...fields('revision sentRevision updatedAt')})),
- _syncBases:record({plan:wirePlan,preferences:wirePreference}),_syncConflicts:record({plan:conflict(wirePlan),preferences:conflict(wirePreference)}),
+ _syncBases:record({plan:wirePlan,preferences:wirePreference,body:wireBody}),_syncConflicts:record({plan:conflict(wirePlan),preferences:conflict(wirePreference),body:conflict(wireBody)}),
 }
 export const projectPersistedState = record(schema)
 

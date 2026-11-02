@@ -26,7 +26,9 @@ export function applyDomainState(state, domain, data) {
     return next
   }
   if (domain === 'body') {
-    next.bodyweight = data.weights.map(entry => ({ id: entry.id, d: entry.date, w: entry.weightKg, t: timestamp(entry.date) }))
+    if (data.revision < (state.bodyServerRevision || 0)) return state
+    next.bodyServerRevision = data.revision
+    next.bodyweight = data.weights.map(entry => ({ id: entry.id, d: entry.date, w: entry.weightKg, t: timestamp(entry.date) })).sort((a, b) => a.d.localeCompare(b.d) || a.id.localeCompare(b.id))
     next.bodyMeasurements = data.measurements.map(entry => ({ id: entry.id, date: entry.date, values: { ...entry.valuesCm }, ...(entry.note ? { notes: entry.note } : {}), createdAt: timestamp(entry.createdAt), updatedAt: timestamp(entry.updatedAt) }))
     return next
   }

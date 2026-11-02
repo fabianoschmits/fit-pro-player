@@ -6,7 +6,7 @@ export function createTabSync({accountId,refresh,getRevision,channelFactory=unde
  let disposed=false
  channel.onmessage = event => {
   const {domain,revision} = event.data || {}
-  if (!['plan','preferences'].includes(domain) || !Number.isSafeInteger(revision) || revision<1
+  if (!['plan','preferences','body'].includes(domain) || !Number.isSafeInteger(revision) || revision<1
    || revision<=Math.max(getRevision(domain),seen.get(domain)||0)) return
   seen.set(domain,revision)
   if (pending.has(domain)) return

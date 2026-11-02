@@ -80,16 +80,6 @@ export function createTrainingRepository({ client, accountId }) {
     return parseResponse(parser, result?.data, accountId)
   }
 
-  async function readAll(table, orderColumn) {
-    const pageSize = 500
-    const rows = []
-    for (let offset = 0; ; offset += pageSize) {
-      const page = await read(client.from(table).select('*').eq('user_id', accountId)
-        .order(orderColumn, { ascending: true }).range(offset, offset + pageSize - 1), value => value)
-      rows.push(...page)
-      if (page.length < pageSize) return rows
-    }
-  }
 
   return {
     onAuthRestored(resume) {
@@ -172,13 +162,8 @@ export function createTrainingRepository({ client, accountId }) {
       return read(query, parsePreferences)
     },
 
-    async loadBody() {
-      if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
-      const [weights, measurements] = await Promise.all([
-        readAll('bodyweight_entries', 'measured_on'),
-        readAll('body_measurement_checkins', 'measured_on'),
-      ])
-      return parseResponse(parseBodyData, { weights, measurements }, accountId)
+    loadBody() {
+      return rpc('load_athlete_body', {}, parseBodyData)
     },
 
     async loadHistory({ limit = 1000 } = {}) {
@@ -223,8 +208,8 @@ export function createTrainingRepository({ client, accountId }) {
       }, parsePlan)
     },
 
-    saveBody({ weights, measurements }) {
-      return rpc('save_athlete_body', { p_weights: weights, p_measurements: measurements }, parseBodyData)
+    saveBody({ expectedRevision, weights, measurements }) {
+      return rpc('save_athlete_body', { p_expected_revision: expectedRevision, p_weights: weights, p_measurements: measurements }, parseBodyData)
     },
 
     deleteCompletedWorkout({ sessionId }) {

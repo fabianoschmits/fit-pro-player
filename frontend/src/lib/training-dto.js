@@ -195,8 +195,10 @@ function parseBodyMeasurementCheckin(value, accountId) {
 }
 
 export function parseBodyData(value, accountId) {
-  if (!isObject(value) || !Array.isArray(value.weights) || !Array.isArray(value.measurements)) invalid('body-data')
+  if (!isObject(value) || !Number.isSafeInteger(value.revision) || value.revision < 0
+    || !Array.isArray(value.weights) || !Array.isArray(value.measurements)) invalid('body-data')
   return {
+    revision: value.revision,
     weights: value.weights.map(item => parseBodyweightEntry(item, accountId)),
     measurements: value.measurements.map(item => parseBodyMeasurementCheckin(item, accountId)),
   }

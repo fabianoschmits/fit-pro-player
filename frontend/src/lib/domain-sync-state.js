@@ -4,7 +4,7 @@ export const bodyFingerprint = state => JSON.stringify({ weights: state.bodyweig
 
 export const preferenceValues = state => {
   const { routines, week, dayPlan, planMode, bodyweight, bodyMeasurements, workouts, active, exWeights,
-    planServerRevision, activeLibraryId, activeLibraryTitle, assignedProgram, pendingProfessionalEvents, professionalProgramDrafts, _syncBases, _syncConflicts, _ts, _pendingSync, _pendingWorkoutDeletes, ...values } = state
+    bodyServerRevision, planServerRevision, activeLibraryId, activeLibraryTitle, assignedProgram, pendingProfessionalEvents, professionalProgramDrafts, _syncBases, _syncConflicts, _ts, _pendingSync, _pendingWorkoutDeletes, ...values } = state
   return values
 }
 

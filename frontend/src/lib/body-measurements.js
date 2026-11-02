@@ -60,14 +60,15 @@ export function normalizeBodyMeasurementCheckins(source) {
     .forEach(item => {
       const week = bodyMeasurementWeekKey(item.date)
       if (!week) return
-      const previous = merged.get(week) || { id: `body-${week}`, week, date: item.date, values: {}, createdAt: Number(item.createdAt || item.updatedAt || 0) }
+      const key = item.id || `body-${week}`
+      const previous = merged.get(key) || { id: `body-${week}`, week, date: item.date, values: {}, createdAt: Number(item.createdAt || item.updatedAt || 0) }
       const values = { ...previous.values }
       Object.entries(item.values || {}).forEach(([partId, value]) => {
         const normalized = validValue(value)
         if (VALID_PARTS.has(partId) && normalized != null) values[partId] = normalized
       })
       const weight = validValue(item.weight)
-      merged.set(week, {
+      merged.set(key, {
         ...previous,
         id: String(item.id || previous.id),
         week,

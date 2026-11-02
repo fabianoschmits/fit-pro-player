@@ -1,11 +1,11 @@
+import { bodyInput, bodyWire } from './body-sync-state.js'
 import { mergeChanges } from './three-way-merge.js'
 import { applyDomainState } from './domain-state.js'
 import { bodyFingerprint, planFingerprint, preferenceFingerprint, preferenceValues } from './domain-sync-state.js'
 
 const DOMAINS = ['plan', 'body', 'preferences', 'history']
 const fingerprints = { plan: planFingerprint, body: bodyFingerprint, preferences: preferenceFingerprint }
-const validId = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || '')
-const idOf = value => validId(value) ? value : crypto.randomUUID()
+
 
 /** Sends account changes immediately when connected. Local state is the durable pending journal. */
 export function createAccountDomainSync({ repository, getState, replaceState, isCurrent, isOnline, onStatus = _status => {}, onCommitted = (_domain, _revision) => {} }) {
@@ -13,6 +13,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   let disposed = false
   let planRevision = 0
   let preferenceRevision = 0
+  let bodyRevision = getState().bodyServerRevision || 0
   const bases = new Map(Object.entries(getState()._syncBases || {}))
   const failures = new Map(Object.keys(getState()._syncConflicts || {}).filter(domain => getState()._pendingSync?.[domain]).map(domain => [domain, 'sync-conflict']))
   const inFlight = new Map()
@@ -33,6 +34,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   const publish = () => onStatus(status())
 
   function inputFor(domain, state) {
+    if (domain === 'body') return bodyInput(state)
     if (domain === 'preferences') return { displayUnit: state.displayUnit, values: preferenceValues(state) }
     return {
       mode: state.planMode, schedule: { week: state.week, dayPlan: state.dayPlan, ...(state.assignedProgram ? { assignedProgram: state.assignedProgram } : {}), ...(state.activeLibraryId ? { libraryId: state.activeLibraryId, libraryTitle: state.activeLibraryTitle } : {}) },
@@ -42,10 +44,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
 
   async function save(domain, state) {
     if (domain === 'history') return repository.deleteCompletedWorkout({ sessionId: state._pendingWorkoutDeletes[0] })
-    if (domain === 'body') return repository.saveBody({
-      weights: state.bodyweight.map(entry => ({ id: idOf(entry.id), date: entry.d, weightKg: entry.w })),
-      measurements: state.bodyMeasurements.map(entry => ({ id: idOf(entry.id), date: entry.date, valuesCm: entry.values || {}, note: entry.notes || '' })),
-    })
+    if (domain === 'body') return saveWithMerge(domain, inputFor(domain, state), bodyRevision)
     if (domain === 'plan') {
       const input = inputFor(domain, state)
       return saveWithMerge(domain, input, Math.max(planRevision, state.planServerRevision || 0))
@@ -55,6 +54,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   }
 
   function wire(domain, data) {
+    if (domain === 'body') return bodyWire(data)
     if (domain === 'preferences') return { displayUnit: data.displayUnit, values: data.values || {} }
     return { mode: data.schedule?.mode || 'weekly', schedule: data.schedule?.values || {},
       routines: data.routines.map(({ id, title, prescription }) => ({ id, title, prescription })) }
@@ -63,11 +63,12 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   async function saveWithMerge(domain, input, revision) {
     const send = (value, expectedRevision) => domain === 'plan'
       ? repository.savePlan({ ...value, expectedRevision })
+      : domain === 'body' ? repository.saveBody({ ...value, expectedRevision })
       : repository.savePreferences({ ...value, expectedRevision })
     try { return await send(input, revision) }
     catch (error) {
       if (error?.kind !== 'revision-conflict') throw error
-      const fresh = await (domain === 'plan' ? repository.loadPlan() : repository.loadPreferences())
+      const fresh = await (domain === 'plan' ? repository.loadPlan() : domain === 'body' ? repository.loadBody() : repository.loadPreferences())
       const remote = wire(domain, fresh)
       let merged
       try {
@@ -94,12 +95,14 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   function recordRevision(domain, data) {
     if (domain === 'plan') planRevision = Math.max(planRevision, data.schedule?.revision || 0, getState().planServerRevision || 0)
     if (domain === 'preferences') preferenceRevision = data.revision || 0
+    if (domain === 'body') bodyRevision = Math.max(bodyRevision, data.revision || 0)
   }
 
   function acceptRemote(domain, data) {
     if (!current()) return
+    if (domain === 'body' && data.revision < bodyRevision) return
     const initial = firstRead.delete(domain)
-    if ((domain === 'plan' || domain === 'preferences') && isPending(domain)) return
+    if ((domain === 'plan' || domain === 'preferences' || domain === 'body') && isPending(domain)) return
     recordRevision(domain, data)
     if (domain === 'history') {
       const removed = new Set([...(getState()._pendingWorkoutDeletes || []), ...deletedWorkouts])
@@ -107,7 +110,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
       return
     }
     if (isPending(domain)) return
-    if (domain === 'plan' || domain === 'preferences') {
+    if (domain === 'plan' || domain === 'preferences' || domain === 'body') {
       bases.set(domain, wire(domain, data))
       replaceState({ ...getState(), _syncBases: Object.fromEntries(bases) })
     }
@@ -167,7 +170,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
         }
         if (!current()) break
         recordRevision(domain, saved)
-        if (domain === 'plan' || domain === 'preferences') {
+        if (domain === 'plan' || domain === 'preferences' || domain === 'body') {
           onCommitted(domain, domain === 'plan' ? saved.schedule?.revision || 0 : saved.revision)
           bases.set(domain, wire(domain, saved))
           replaceState({ ...getState(), _syncBases: Object.fromEntries(bases) })
@@ -186,7 +189,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
           continue
         }
         if (fingerprints[domain](getState()) !== sentFingerprint) {
-          if (domain === 'plan' || domain === 'preferences') {
+          if (domain === 'plan' || domain === 'preferences' || domain === 'body') {
             const base = inputFor(domain, state), local = inputFor(domain, getState()), remote = wire(domain, saved)
             try {
               const merged = mergeChanges(base, local, remote)
@@ -222,5 +225,5 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   function retry() { failures.clear(); return changed() }
   function dispose() { disposed = true; retryTimers.forEach(timer => clearTimeout(timer)); retryTimers.clear() }
 
-  return { acceptRemote, changed, start, retry, dispose, status, revision: domain => domain === 'plan' ? planRevision : preferenceRevision }
+  return { acceptRemote, changed, start, retry, dispose, status, revision: domain => domain === 'plan' ? planRevision : domain === 'body' ? bodyRevision : preferenceRevision }
 }
