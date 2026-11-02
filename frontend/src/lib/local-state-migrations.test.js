@@ -62,3 +62,19 @@ it('keeps progression prescriptions, routine rules and completion operation sema
  expect(projectPersistedState({routines:[{id:'r',prog:'double',ex:[]}],active:{id:'w',entries}})).toMatchObject({routines:[{prog:'double'}],active:{entries:[{plan}]}})
  expect(projectSessionRecovery({pendingOperations:[{payload:{entries,endedEarly:true,workoutId:'w'}}]}).pendingOperations[0].payload).toEqual({entries,endedEarly:true,workoutId:'w'})
 })
+
+it('round-trips stable legacy body IDs, merge bases and unresolved conflicts through account storage', () => {
+ const local=storage()
+ const wire={weights:[{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',date:'2026-10-20',weightKg:72}],measurements:[{id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',date:'2026-10-20',valuesCm:{chest:100},note:'morning'}]}
+ const state=migrateLocalState({routines:[],workouts:[],bodyweight:[{d:'2026-10-20',w:72}],bodyMeasurements:[{date:'2026-10-20',values:{chest:100}}],bodyServerRevision:7,_pendingSync:{body:true},_syncBases:{body:wire},_syncConflicts:{body:{base:wire,local:wire,remote:{...wire,weights:[]},path:'weights'}}})
+ writeScopedState({kind:'account',userId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'},state,local)
+ const restored=readScopedState({kind:'account',userId:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'},local,{}).state
+ expect(restored.bodyweight[0].id).toMatch(/^[0-9a-f-]{36}$/i)
+ expect(restored.bodyMeasurements[0].id).toMatch(/^[0-9a-f-]{36}$/i)
+ expect(restored.bodyServerRevision).toBe(7)
+ expect(restored._pendingSync.body).toBe(true)
+ expect(restored._syncBases.body).toEqual(wire)
+ expect(restored._syncConflicts.body).toEqual(state._syncConflicts.body)
+ expect(migrateLocalState(restored).bodyweight[0].id).toBe(restored.bodyweight[0].id)
+ expect(migrateLocalState(restored).bodyMeasurements[0].id).toBe(restored.bodyMeasurements[0].id)
+})

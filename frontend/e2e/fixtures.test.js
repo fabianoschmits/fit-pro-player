@@ -16,29 +16,33 @@ export function stateFixture(){
     week:Object.fromEntries(Array.from({length:7},(_,day)=>[day,'e2e-routine'])),dayPlan:{},exWeights:{},workouts:[],active:null,customEx:[],mediaSize:'mini',
     reminder:{on:false,time:'08:00',tz:null},effort:null,assignedProgram:null,weighBeforeWorkout:false,onboardingDone:true,simpleMode:true,seenTips:{},pendingProfessionalEvents:[],professionalProgramDrafts:{},_ts:1}
 }
-export async function seed(page,{professional=false,authenticated=professional,state=stateFixture(),rpc={}}={}){
-  const user={id:USER,email:'browser-test@example.invalid',email_confirmed_at:'2026-10-01T12:00:00Z',app_metadata:{provider:'email'},user_metadata:{}}
+export async function seed(page,{professional=false,authenticated=professional,userId=USER,roles=null,state=stateFixture(),rpc={}}={}){
+  const user={id:userId,email:'browser-test@example.invalid',email_confirmed_at:'2026-10-01T12:00:00Z',app_metadata:{provider:'email'},user_metadata:{}}
   await page.route('https://fitpp-test.supabase.co/**',async route=>{
     const url=new URL(route.request().url()), name=url.pathname.split('/').at(-1)
     /** @type {any} */
     let data=[]
     if(url.pathname.includes('/auth/v1/user'))data=user
-    else if(name==='athlete_routines' && !Object.hasOwn(rpc,name))data=state.routines.map(({id,name,...prescription},position)=>({id,user_id:USER,title:name,prescription,position,revision:1,created_at:'2026-11-01T12:00:00Z',updated_at:'2026-11-01T12:00:00Z'}))
-    else if(name==='athlete_schedules' && !Object.hasOwn(rpc,name))data=[{user_id:USER,revision:1,mode:state.planMode,schedule:{week:state.week,dayPlan:state.dayPlan},updated_at:'2026-11-01T12:00:00Z'}]
-    else if(name==='account_preferences' && !Object.hasOwn(rpc,name))data=[{user_id:USER,revision:1,display_unit:state.displayUnit,mass_unit:'kg',state_schema_version:2,preferences:{lang:state.lang,profile:state.profile,pwaInstallPrompt:state.pwaInstallPrompt},updated_at:'2026-11-01T12:00:00Z'}]
+    else if(name==='athlete_routines' && !Object.hasOwn(rpc,name))data=state.routines.map(({id,name,...prescription},position)=>({id,user_id:userId,title:name,prescription,position,revision:1,created_at:'2026-11-01T12:00:00Z',updated_at:'2026-11-01T12:00:00Z'}))
+    else if(name==='athlete_schedules' && !Object.hasOwn(rpc,name))data=[{user_id:userId,revision:1,mode:state.planMode,schedule:{week:state.week,dayPlan:state.dayPlan},updated_at:'2026-11-01T12:00:00Z'}]
+    else if(name==='account_preferences' && !Object.hasOwn(rpc,name))data=[{user_id:userId,revision:1,display_unit:state.displayUnit,mass_unit:'kg',state_schema_version:2,preferences:{lang:state.lang,profile:state.profile,pwaInstallPrompt:state.pwaInstallPrompt},updated_at:'2026-11-01T12:00:00Z'}]
     else if(name==='save_athlete_plan' && !Object.hasOwn(rpc,name)){
       const args=route.request().postDataJSON(),revision=args.p_expected_revision+1
       state.routines=args.p_routines.map(({id,title,prescription})=>({...prescription,id,name:title}));state.week=args.p_schedule.week;state.dayPlan=args.p_schedule.dayPlan;state.planMode=args.p_mode
-      data={routines:args.p_routines.map((row,position)=>({...row,user_id:USER,position,revision,created_at:'2026-11-01T12:00:00Z',updated_at:'2026-11-01T12:00:00Z'})),schedule:{user_id:USER,revision,mode:args.p_mode,schedule:args.p_schedule,updated_at:'2026-11-01T12:00:00Z'}}
+      data={routines:args.p_routines.map((row,position)=>({...row,user_id:userId,position,revision,created_at:'2026-11-01T12:00:00Z',updated_at:'2026-11-01T12:00:00Z'})),schedule:{user_id:userId,revision,mode:args.p_mode,schedule:args.p_schedule,updated_at:'2026-11-01T12:00:00Z'}}
     }
     else if(name==='save_account_preferences' && !Object.hasOwn(rpc,name)){
-      const args=route.request().postDataJSON();data={user_id:USER,revision:args.p_expected_revision+1,display_unit:args.p_display_unit,mass_unit:'kg',state_schema_version:2,preferences:args.p_preferences,updated_at:'2026-11-01T12:00:00Z'}
+      const args=route.request().postDataJSON();data={user_id:userId,revision:args.p_expected_revision+1,display_unit:args.p_display_unit,mass_unit:'kg',state_schema_version:2,preferences:args.p_preferences,updated_at:'2026-11-01T12:00:00Z'}
     }
-    else if(name==='account_snapshots')data={user_id:USER,revision:1,state_schema_version:1,payload:state,updated_at:'2026-10-02T12:00:00Z'}
+    else if(name==='account_snapshots')data={user_id:userId,revision:1,state_schema_version:1,payload:state,updated_at:'2026-10-02T12:00:00Z'}
     else if(name==='is_current_user_suspended' && !Object.hasOwn(rpc,name))data=false
-    else if(name==='user_roles')data=professional?[{role:'professional'}]:[]
+    else if(name==='community_access_status' && !Object.hasOwn(rpc,name))data={active:null}
+    else if(name==='community_has_block' && !Object.hasOwn(rpc,name))data=false
+    else if(name==='community_acknowledge_restriction' && !Object.hasOwn(rpc,name))data=true
+    else if(name==='ops_community_restriction_status' && !Object.hasOwn(rpc,name))data={active:null,history:[]}
+    else if(name==='user_roles')data=(roles || (professional?['professional']:[])).map(role=>({role}))
     else if(name==='save_own_account_snapshot')data=[{status:'APPLIED',revision:2,updated_at:new Date().toISOString()}]
-    else if(Object.hasOwn(rpc,name))data=typeof rpc[name]==='function'?rpc[name](JSON.parse(route.request().postData()||'{}')):rpc[name]
+    else if(Object.hasOwn(rpc,name))data=typeof rpc[name]==='function'?await rpc[name](JSON.parse(route.request().postData()||'{}'),{userId,user,request:route.request()}):rpc[name]
     if(name==='professional_invites'&&Array.isArray(data)){
       const personalFilter=url.searchParams.get('is_personal')
       if(personalFilter==='eq.true')data=data.filter(invite=>invite.is_personal)

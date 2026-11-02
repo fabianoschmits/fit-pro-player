@@ -1,0 +1,15 @@
+begin;
+create function pg_temp.assert_true(ok boolean,message text) returns void language plpgsql as $$begin if not coalesce(ok,false) then raise exception '%',message; end if; end$$;
+create table storage.guard_metadata_probe(id uuid);
+alter table storage.guard_metadata_probe enable row level security;
+grant select,insert,update,delete on storage.guard_metadata_probe to authenticated;
+select pg_temp.assert_true(not exists(select 1 from public.account_activity_guard_gaps()),'RLS default deny metadata is unreachable');
+create policy probe_read on storage.guard_metadata_probe for select to authenticated using (true);
+select pg_temp.assert_true(exists(select 1 from public.account_activity_guard_gaps() where object_name='storage.guard_metadata_probe' and reason='authenticated reads lack an account activity policy'),'new readable storage metadata requires guard');
+create policy active_account_required on storage.guard_metadata_probe as restrictive for all to authenticated using ((select public.account_is_active())) with check ((select public.account_is_active()));
+select pg_temp.assert_true(not exists(select 1 from public.account_activity_guard_gaps()),'guarded metadata read passes');
+create policy probe_write on storage.guard_metadata_probe for all to authenticated using (true) with check (true);
+select pg_temp.assert_true((select count(*)=3 from public.account_activity_guard_gaps() where object_name='storage.guard_metadata_probe' and reason like '%BEFORE activity guard'),'each newly writable operation requires trigger');
+create trigger enforce_active_account before insert or update or delete on storage.guard_metadata_probe for each row execute function public.enforce_account_active();
+select pg_temp.assert_true(not exists(select 1 from public.account_activity_guard_gaps()),'fully guarded schema has zero gaps');
+rollback;

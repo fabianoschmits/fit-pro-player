@@ -87,7 +87,7 @@ it('automatically sends a pending body change after its own account token is res
     } },
     rpc: async name => {
       if (!authenticated) return { error: { code: 'PGRST301', message: 'JWT expired' }, status: 401 }
-      if (name === 'save_athlete_body') return { data: { weights: [{
+      if (name === 'save_athlete_body') return { data: { revision: 1, weights: [{
         id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: oldAssignment.student_user_id,
         measured_on: '2026-10-21', weight_kg: 76, created_at: 'created', updated_at: 'updated',
       }], measurements: [] } }

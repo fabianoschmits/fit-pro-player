@@ -48,3 +48,9 @@ it('rejects a stale refresh after a newer selected plan was applied', () => {
  const next=applyDomainState(selected,'plan',{schedule:{revision:9,mode:'weekly',values:{libraryId:'personal',week:{1:'own'}}},routines:[{id:'own',title:'Meu ABC',prescription:{ex:[]}}]})
  expect(next.activeLibraryId).toBe('personal');expect(next.assignedProgram).toBeNull();expect(next.workouts).toBe(selected.workouts)
 })
+
+it('ignores a stale body refresh and retains the committed body revision', () => {
+  const state = { bodyServerRevision: 8, bodyweight: [{ id: 'current', w: 80 }], bodyMeasurements: [] }
+  expect(applyDomainState(state, 'body', { revision: 7, weights: [], measurements: [] })).toBe(state)
+  expect(applyDomainState(state, 'body', { revision: 9, weights: [], measurements: [] })).toMatchObject({ bodyServerRevision: 9, bodyweight: [] })
+})

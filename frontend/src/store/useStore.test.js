@@ -87,8 +87,9 @@ describe('state migration for first-run profiles', () => {
       bodyMeasurementGoals: { chest: 105, unknown: 10 },
     })
 
-    expect(restored.bodyMeasurements).toHaveLength(1)
-    expect(restored.bodyMeasurements[0].values).toEqual({ chest: 101, waist: 88 })
+    expect(restored.bodyMeasurements).toHaveLength(2)
+    expect(restored.bodyMeasurements.map(row => row.values)).toEqual(expect.arrayContaining([{ chest: 101 }, { waist: 88 }]))
+    expect(new Set(restored.bodyMeasurements.map(row => row.id)).size).toBe(2)
     expect(restored.bodyMeasurementGoals).toEqual({ chest: 105 })
   })
 })

@@ -90,3 +90,11 @@ describe('body measurement check-ins', () => {
     expect(bodyMeasurementHistoryInPeriod(checkins, 'waist', 0, through)).toHaveLength(1)
   })
 })
+
+it('preserves distinct server check-ins in the same week and retains their IDs on edit', () => {
+ const rows=[{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',date:'2026-10-20',values:{chest:100}},{id:'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',date:'2026-10-21',values:{waist:88}}]
+ expect(normalizeBodyMeasurementCheckins(rows).map(row=>row.id)).toEqual(rows.map(row=>row.id))
+ const edited=upsertBodyMeasurement(rows,{date:'2026-10-20',partId:'chest',value:101,now:2})
+ expect(edited.map(row=>row.id)).toEqual(rows.map(row=>row.id))
+ expect(edited.find(row=>row.id===rows[1].id).values).toEqual({waist:88})
+})

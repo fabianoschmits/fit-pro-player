@@ -63,8 +63,7 @@ export function CommunityAccessProvider({children=undefined}) {
   const storage=event=>{if(event.key===keyFor(userId)){setSnapshot(previous=>previous.userId===userId?{...previous,marker:cachedRestriction(userId)}:previous);void refresh()}}
   window.addEventListener('online',refresh);window.addEventListener('focus',refresh);window.addEventListener('storage',storage)
   document.addEventListener('visibilitychange',visible)
-  const interval=window.setInterval(()=>{if(document.visibilityState==='visible')void refresh()},60000)
-  return ()=>{token.alive=false;if(scope.current===token)refreshRef.current=null;window.clearInterval(interval);window.removeEventListener('online',refresh);window.removeEventListener('focus',refresh);window.removeEventListener('storage',storage);document.removeEventListener('visibilitychange',visible)}
+  return ()=>{token.alive=false;if(scope.current===token)refreshRef.current=null;window.removeEventListener('online',refresh);window.removeEventListener('focus',refresh);window.removeEventListener('storage',storage);document.removeEventListener('visibilitychange',visible)}
  },[userId,repo])
  useEffect(()=>{
   if(!marker?.endsAt)return

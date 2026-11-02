@@ -290,3 +290,94 @@ it('holds incompatible conflicts across unrelated changes and reloads until expl
  expect(h.remote().routines.map(row=>row.title)).toEqual(['AA','Unrelated'])
  expect(b.state()._syncConflicts?.plan).toBeUndefined()
 })
+
+function bodyPair() {
+  let remote = { revision: 1, weights: [], measurements: [] }
+  const repository = {
+    loadBody: vi.fn(async () => structuredClone(remote)),
+    saveBody: vi.fn(async ({ expectedRevision, ...input }) => {
+      if (expectedRevision !== remote.revision) throw Object.assign(new Error('body revision'), { kind: 'revision-conflict', retryable: true })
+      remote = { ...structuredClone(input), revision: remote.revision + 1 }
+      return structuredClone(remote)
+    }),
+  }
+  const device = () => {
+    let state = { ...initial(), bodyweight: [], _pendingSync: {} }
+    let online = true
+    const sync = createAccountDomainSync({ repository, getState: () => state, replaceState: next => { state = next }, isCurrent: () => true, isOnline: () => online })
+    sync.acceptRemote('body', structuredClone(remote))
+    return { sync, state: () => state, online: value => { online = value }, edit: patch => { state = { ...state, ...patch, _pendingSync: { body: true } } } }
+  }
+  return { repository, device, remote: () => structuredClone(remote) }
+}
+const weightRow = (id, w = 72) => ({ id: `${id.repeat(8)}-${id.repeat(4)}-4${id.repeat(3)}-8${id.repeat(3)}-${id.repeat(12)}`, d: '2026-10-20', w, t: 1 })
+const measureRow = (id, values) => ({ id: weightRow(id).id, date: '2026-10-20', values, createdAt: 1, updatedAt: 1 })
+
+it('merges independent offline body additions from two devices with revision CAS', async () => {
+  const h = bodyPair(), a = h.device(), b = h.device()
+  b.online(false)
+  a.edit({ bodyweight: [weightRow('a')], bodyMeasurements: [measureRow('b', { chest: 100 })] })
+  b.edit({ bodyweight: [weightRow('c', 80)], bodyMeasurements: [measureRow('d', { waist: 88 })] })
+  await b.sync.start(); await a.sync.start()
+  expect(b.state()._pendingSync.body).toBe(true)
+  b.online(true); await b.sync.retry()
+  expect(h.remote().weights.map(row => row.id)).toEqual([weightRow('a').id, weightRow('c').id])
+  expect(h.remote().measurements.map(row => row.valuesCm)).toEqual([{ chest: 100 }, { waist: 88 }])
+  expect(h.repository.saveBody.mock.calls.map(([input]) => input.expectedRevision)).toEqual([1, 1, 2])
+  expect(b.state().bodyServerRevision).toBe(3)
+  expect(b.state()._pendingSync.body).toBe(false)
+  expect(b.state()._syncBases.body.weights).toEqual(h.remote().weights)
+})
+
+it('keeps incompatible same-ID body edits durable without overwriting either device', async () => {
+  const h = bodyPair(), seed = h.device()
+  seed.edit({ bodyweight: [weightRow('a')] }); await seed.sync.start()
+  const a = h.device(), b = h.device()
+  a.edit({ bodyweight: [weightRow('a', 73)] }); b.edit({ bodyweight: [weightRow('a', 74)] })
+  await a.sync.start(); b.sync.acceptRemote('body', h.remote()); await b.sync.start()
+  expect(h.remote().weights[0].weightKg).toBe(73)
+  expect(b.state().bodyweight[0].w).toBe(74)
+  expect(b.state()._syncConflicts.body).toMatchObject({ local: { weights: [{ weightKg: 74 }] }, remote: { weights: [{ weightKg: 73 }] } })
+  const count = h.repository.saveBody.mock.calls.length
+  const restored = createAccountDomainSync({ repository: h.repository, getState: b.state, replaceState: () => {}, isCurrent: () => true, isOnline: () => true })
+  await restored.start(); await restored.changed()
+  expect(restored.status().error).toBe('sync-conflict')
+  expect(h.repository.saveBody).toHaveBeenCalledTimes(count)
+})
+
+it('preserves stable body IDs and pending edits after a second writer wins the single retry', async () => {
+  const h = bodyPair(), a = h.device(), b = h.device()
+  a.edit({ bodyweight: [weightRow('a')] }); await a.sync.start()
+  b.edit({ bodyMeasurements: [measureRow('b', { chest: 100 })] })
+  h.repository.saveBody.mockRejectedValue(Object.assign(new Error('busy'), { kind: 'revision-conflict', retryable: true }))
+  await b.sync.start()
+  expect(h.repository.saveBody).toHaveBeenCalledTimes(3)
+  expect(h.repository.saveBody.mock.calls.slice(1).map(([input]) => input.measurements[0].id)).toEqual([weightRow('b').id, weightRow('b').id])
+  expect(b.state()._pendingSync.body).toBe(true)
+  expect(b.state()._syncConflicts.body.remote.weights[0].id).toBe(weightRow('a').id)
+})
+
+it('keeps same-ID measurement conflicts pending while preserving the committed server values', async () => {
+ const h=bodyPair(),seed=h.device()
+ seed.edit({bodyMeasurements:[measureRow('a',{chest:100})]});await seed.sync.start()
+ const a=h.device(),b=h.device()
+ a.edit({bodyMeasurements:[measureRow('a',{chest:101})]})
+ b.edit({bodyMeasurements:[measureRow('a',{chest:102})]})
+ await a.sync.start();await b.sync.start()
+ expect(h.remote().measurements[0].valuesCm.chest).toBe(101)
+ expect(b.state().bodyMeasurements[0].values.chest).toBe(102)
+ expect(b.state()._syncConflicts.body.remote.measurements[0].valuesCm.chest).toBe(101)
+ expect(b.state()._pendingSync.body).toBe(true)
+ expect(b.sync.status().error).toBe('sync-conflict')
+})
+
+it('retries a body transport failure with unchanged IDs and expected revision', async () => {
+ const h=bodyPair(),a=h.device()
+ a.edit({bodyweight:[weightRow('a')],bodyMeasurements:[measureRow('b',{waist:88})]})
+ h.repository.saveBody.mockRejectedValueOnce(Object.assign(new Error('network'),{kind:'offline',retryable:false}))
+ await a.sync.start();await a.sync.retry()
+ expect(h.repository.saveBody.mock.calls[1][0]).toEqual(h.repository.saveBody.mock.calls[0][0])
+ expect(a.state().bodyweight[0].id).toBe(weightRow('a').id)
+ expect(a.state().bodyMeasurements[0].id).toBe(weightRow('b').id)
+ expect(a.state()._pendingSync.body).toBe(false)
+})

@@ -48,15 +48,17 @@ describe('training DTOs', () => {
   it('maps body records into the view contract and rejects foreign or malformed values', async () => {
     const { parseBodyData } = await load()
     expect(parseBodyData({
+      revision: 3,
       weights: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80.25, created_at: 'a', updated_at: 'b' }],
       measurements: [{ id: 'measure-1', user_id: 'account-1', measured_on: '2026-10-19', measurements_cm: { chest: 100.5 }, note: 'after training', created_at: 'a', updated_at: 'b' }],
     }, 'account-1')).toEqual({
+      revision: 3,
       weights: [{ id: 'weight-1', accountId: 'account-1', date: '2026-10-19', weightKg: 80.25, createdAt: 'a', updatedAt: 'b' }],
       measurements: [{ id: 'measure-1', accountId: 'account-1', date: '2026-10-19', valuesCm: { chest: 100.5 }, note: 'after training', createdAt: 'a', updatedAt: 'b' }],
     })
-    expect(() => parseBodyData({ weights: [{ id: 'weight-1', user_id: 'account-2' }], measurements: [] }, 'account-1')).toThrow('invalid-bodyweight-entry')
-    expect(() => parseBodyData({ weights: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-02-31', weight_kg: 80, created_at: 'a', updated_at: 'b' }], measurements: [] }, 'account-1')).toThrow('invalid-bodyweight-entry')
-    expect(() => parseBodyData({ weights: [], measurements: [{ id: 'measure-1', user_id: 'account-1', measured_on: 'x', measurements_cm: [] }] }, 'account-1')).toThrow('invalid-body-measurement-checkin')
+    expect(() => parseBodyData({ revision: 3, weights: [{ id: 'weight-1', user_id: 'account-2' }], measurements: [] }, 'account-1')).toThrow('invalid-bodyweight-entry')
+    expect(() => parseBodyData({ revision: 3, weights: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-02-31', weight_kg: 80, created_at: 'a', updated_at: 'b' }], measurements: [] }, 'account-1')).toThrow('invalid-bodyweight-entry')
+    expect(() => parseBodyData({ revision: 3, weights: [], measurements: [{ id: 'measure-1', user_id: 'account-1', measured_on: 'x', measurements_cm: [] }] }, 'account-1')).toThrow('invalid-body-measurement-checkin')
   })
 
   it('pairs completed sessions with their immutable completion payload', async () => {
@@ -67,4 +69,9 @@ describe('training DTOs', () => {
     }, 'account-1')).toEqual([{ session: expect.objectContaining({ id: 'session-1', status: 'completed' }), workout: { id: 'session-1', entries: [] } }])
     expect(() => parseCompletedWorkoutRecords({ sessions: [row({ status: 'completed' })], operations: [{ session_id: 'session-1', user_id: 'account-2', kind: 'session_completed', payload: {} }] }, 'account-1')).toThrow('invalid-workout-operation')
   })
+})
+
+it.each([undefined, -1, 1.5, '2', NaN, Number.MAX_SAFE_INTEGER + 1])('rejects a malformed body revision %s before accepting its rows', async revision => {
+ const {parseBodyData}=await load()
+ expect(()=>parseBodyData({revision,weights:[],measurements:[]},'account-1')).toThrow('invalid-body-data')
 })

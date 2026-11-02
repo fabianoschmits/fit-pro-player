@@ -127,12 +127,13 @@ describe('training repository', () => {
       bodyweight_entries: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80, created_at: 'a', updated_at: 'b' }],
       body_measurement_checkins: [{ id: 'measure-1', user_id: 'account-1', measured_on: '2026-10-19', measurements_cm: { chest: 100 }, note: null, created_at: 'a', updated_at: 'b' }],
     }[table] || []))
-    const repo = createTrainingRepository({ client: { from, rpc: vi.fn() }, accountId: 'account-1' })
+    const rpc = vi.fn(async () => ({ data: { revision: 4, weights: [{ id: 'weight-1', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80, created_at: 'a', updated_at: 'b' }], measurements: [{ id: 'measure-1', user_id: 'account-1', measured_on: '2026-10-19', measurements_cm: { chest: 100 }, note: null, created_at: 'a', updated_at: 'b' }] }, error: null }))
+    const repo = createTrainingRepository({ client: { from, rpc }, accountId: 'account-1' })
     await expect(repo.loadPreferences()).resolves.toMatchObject({ displayUnit: 'kg', values: { lang: 'pt' } })
-    await expect(repo.loadBody()).resolves.toMatchObject({ weights: [{ weightKg: 80 }], measurements: [{ valuesCm: { chest: 100 } }] })
+    await expect(repo.loadBody()).resolves.toMatchObject({ revision: 4, weights: [{ weightKg: 80 }], measurements: [{ valuesCm: { chest: 100 } }] })
     expect(from).toHaveBeenCalledWith('account_preferences')
-    expect(from).toHaveBeenCalledWith('bodyweight_entries')
-    expect(from).toHaveBeenCalledWith('body_measurement_checkins')
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('load_athlete_body', {})
+    expect(from).not.toHaveBeenCalledWith('bodyweight_entries')
   })
 
   it('loads every body entry beyond the first thousand before a replacement save', async () => {
@@ -143,13 +144,11 @@ describe('training repository', () => {
       measured_on: new Date(Date.UTC(2023, 0, 1 + index)).toISOString().slice(0, 10),
       weight_kg: 80, created_at: 'a', updated_at: 'b',
     }))
-    const query = rows => ({
-      select: () => query(rows), eq: () => query(rows), order: () => query(rows),
-      limit: async count => ({ data: rows.slice(0, count), error: null }),
-      range: async (start, end) => ({ data: rows.slice(start, end + 1), error: null }),
-    })
-    const repo = createTrainingRepository({ client: { from: table => query(table === 'bodyweight_entries' ? weights : []), rpc: vi.fn() }, accountId: 'account-1' })
-    expect((await repo.loadBody()).weights).toHaveLength(1001)
+    const repo = createTrainingRepository({ client: { rpc: vi.fn(async () => ({ data: { revision: 5, weights, measurements: [] }, error: null })) }, accountId: 'account-1' })
+    const loaded = await repo.loadBody()
+    expect(loaded.revision).toBe(5)
+    expect(loaded.weights).toHaveLength(1001)
+    expect(loaded.weights.at(-1).id).toBe(weights.at(-1).id)
   })
 
   it('loads completion payloads alongside historical session metadata', async () => {
@@ -173,10 +172,10 @@ describe('training repository', () => {
 
   it('saves canonical body records through the authenticated body RPC', async () => {
     const { createTrainingRepository } = await load()
-    const rpc = vi.fn(async () => ({ data: { weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80, created_at: 'a', updated_at: 'b' }], measurements: [] }, error: null }))
+    const rpc = vi.fn(async () => ({ data: { revision: 6, weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', user_id: 'account-1', measured_on: '2026-10-19', weight_kg: 80, created_at: 'a', updated_at: 'b' }], measurements: [] }, error: null }))
     const repo = createTrainingRepository({ client: { rpc }, accountId: 'account-1' })
-    await expect(repo.saveBody({ weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2026-10-19', weightKg: 80 }], measurements: [] })).resolves.toMatchObject({ weights: [{ weightKg: 80 }] })
-    expect(rpc).toHaveBeenCalledWith('save_athlete_body', { p_weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2026-10-19', weightKg: 80 }], p_measurements: [] })
+    await expect(repo.saveBody({ expectedRevision: 5, weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2026-10-19', weightKg: 80 }], measurements: [] })).resolves.toMatchObject({ revision: 6, weights: [{ weightKg: 80 }] })
+    expect(rpc).toHaveBeenCalledWith('save_athlete_body', { p_expected_revision: 5, p_weights: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', date: '2026-10-19', weightKg: 80 }], p_measurements: [] })
   })
 
   it('deletes a completed workout through its owner-scoped RPC', async () => {

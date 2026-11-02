@@ -37,3 +37,15 @@ it('does not lose a newer revision arriving during a follow-up read',async()=>{
  channel.onmessage({data:{domain:'plan',revision:4}});releaseSecond();await second;await Promise.resolve();await Promise.resolve()
  expect(refresh).toHaveBeenCalledTimes(3);sync.dispose()
 })
+
+it('refreshes body commits across tabs using the body revision independently of plan', async () => {
+ const channel={postMessage:vi.fn(),close:vi.fn(),onmessage:null}, refresh=vi.fn(async()=>{})
+ const sync=createTabSync({accountId:'a',getRevision:domain=>domain==='body'?4:100,refresh,channelFactory:()=>channel})
+ channel.onmessage({data:{domain:'body',revision:5}})
+ channel.onmessage({data:{domain:'body',revision:4}})
+ await Promise.resolve();await Promise.resolve()
+ expect(refresh).toHaveBeenCalledExactlyOnceWith('body')
+ sync.publish('body',6)
+ expect(channel.postMessage).toHaveBeenCalledWith({domain:'body',revision:6})
+ sync.dispose()
+})
