@@ -7,7 +7,7 @@ import Plan from './Plan.jsx'
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }))
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useLocation: () => ({ search: '' }) }))
-vi.mock('../components/training/PlanLibrary.jsx', () => ({ default: () => <section className="received-workouts">Treinos recebidos do profissional</section> }))
+vi.mock('../components/training/PlanLibrary.jsx', () => ({ default: ({ children }) => <section className="received-workouts">Treinos recebidos do profissional{children}</section> }))
 
 let root, container
 beforeEach(() => {
@@ -31,7 +31,7 @@ it.each(['weekly', 'daily'])('allows creating a personal workout below professio
   await act(async () => root.render(<Plan />))
   const received = container.querySelector('.received-workouts')
   const personal = container.querySelector('.created-workouts')
-  expect(received.compareDocumentPosition(personal) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  expect(received.contains(personal)).toBe(true)
   const add = personal.querySelector('button')
   expect(add).not.toBeNull()
   await act(async () => add.click())

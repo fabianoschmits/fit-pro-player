@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider.jsx'
-import { useStore } from '../../store/useStore.js'
+import { useStore, normalizeState } from '../../store/useStore.js'
 import { useUI } from '../../store/useUI.js'
 import { parsePlan } from '../../lib/training-dto.js'
 import { applyDomainState } from '../../lib/domain-state.js'
@@ -67,12 +67,13 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, userI
       if (parsed.schedule?.revision !== (store.S.planServerRevision || 0) + 1) throw new Error('unexpected-plan-revision')
       if (personal) {
         const current = store.S.routines.filter(routine => !routine.assigned)
-        const restored = parsed.routines
-        if (!parsed.schedule || parsed.schedule.values.assignedProgram != null || restored.some(routine => routine.prescription.assigned) || restored.length !== current.length) throw new Error('invalid-personal-plan')
+        if (!parsed.schedule || parsed.schedule.values.assignedProgram != null || parsed.routines.some(routine => routine.prescription.assigned) || parsed.routines.length !== current.length || new Set(parsed.routines.map(routine => routine.id)).size !== current.length) throw new Error('invalid-personal-plan')
+        // Compare the representation the store actually uses. Loading legacy starter
+        // routines can add metadata without making the plan dirty or changing its prescription.
+        const restored = normalizeState({ ...store.S, ...applyDomainState(store.S, 'plan', parsed), onboardingDone: true }).routines
         for (const routine of current) {
           const match = restored.find(item => item.id === routine.id)
-          const { id: _id, name, ...prescription } = routine
-          if (!match || match.title !== name || canonical(match.prescription) !== canonical(prescription)) throw new Error('changed-personal-routine')
+          if (!match || canonical(match) !== canonical(routine)) throw new Error('changed-personal-routine')
         }
       } else validateExecutionPlan(parsed, store.S, versionId)
       // Never overwrite a plan edited or synchronized while the request was outstanding.

@@ -254,3 +254,12 @@ describe('professional management repository', () => {
     const repo = createProfessionalWorkflowRepository({ client: { rpc } })
     await expect(repo.savePersonalInviteCode('ANA')).rejects.toThrow('professional-invite-code-taken')
   })
+
+it('persists library application with the synchronized expected revision and preserves RPC conflicts', async () => {
+  const rpc = vi.fn().mockResolvedValueOnce({ data: 'self-id', error: null }).mockResolvedValueOnce({ data: { schedule: 'confirmed' }, error: null }).mockResolvedValueOnce({ data: null, error: { code: '40001', message: 'plan revision conflict' } })
+  const repo = createProfessionalWorkflowRepository({ client: { rpc } })
+  expect(await repo.savePersonalPlan('Meu plano')).toBe('self-id')
+  expect(await repo.applyLibraryPlan('self-id', 7)).toEqual({ schedule: 'confirmed' })
+  expect(rpc.mock.calls).toEqual([['save_personal_library_plan', { p_title: 'Meu plano' }], ['apply_library_plan', { p_plan_id: 'self-id', p_expected_revision: 7 }]])
+  await expect(repo.applyLibraryPlan('pro-id', 6)).rejects.toMatchObject({ code: '40001' })
+})

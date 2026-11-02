@@ -1,3 +1,5 @@
+import { PlanWeek } from './TrainingPlanWorkspace.jsx'
+import { personalPlanPreview } from '../../lib/personal-plan-preview.js'
 import TrainingPlanPreview from './TrainingPlanPreview.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider.jsx'
@@ -163,6 +165,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, children = undefined 
 
   const professionalActive = Boolean(state.assignedProgram)
   const hasProfessional = professionalActive || data.items.some(item => item.source_type === 'professional' && item.available)
+  const personalPreview = personalPlanPreview(state, data.items)
   const selectedChoice = choice || (professionalActive ? 'professional' : 'self')
   if (!user?.id || !hasProfessional) return <>{children}</>
   return <section className="plan-library received-workouts">
@@ -171,7 +174,21 @@ function AccountPlanLibrary({ user, onUpdates = undefined, children = undefined 
       <button className={selectedChoice === 'professional' ? 'on' : ''} aria-pressed={selectedChoice === 'professional'} onClick={() => setChoice('professional')}>Treino do profissional</button>
       <button className={selectedChoice === 'self' ? 'on' : ''} aria-pressed={selectedChoice === 'self'} onClick={() => setChoice('self')}>Meus treinos</button>
     </div>
-    {selectedChoice === 'self' ? <>{professionalActive ? <ProfessionalPlanApplyButton personal repo={repo} onApplied={refresh} /> : <span className="tag acc">Em uso</span>}{children}</> : <>
+    {selectedChoice === 'self' ? <>
+      <section className="personal-plan-preview" aria-label="Visualização do plano pessoal">
+        <h4>Seu plano pessoal</h4>
+        <p>{personalPreview.planMode === 'daily' ? 'Plano diário' : 'Plano semanal'}</p>
+        {professionalActive && <p>Visualização. O plano ativo só muda após confirmar a aplicação.</p>}
+        <PlanWeek state={personalPreview} />
+        {Object.keys(personalPreview.dayPlan).length > 0 && <ul>
+          {Object.entries(personalPreview.dayPlan).sort(([a], [b]) => a.localeCompare(b)).map(([date, id]) => <li key={date}>
+            <time>{date}</time>: {id === null || id === 'rest' ? 'Descanso' : personalPreview.routines.find(routine => routine.id === id)?.name}
+          </li>)}
+        </ul>}
+      </section>
+      {professionalActive ? <ProfessionalPlanApplyButton personal repo={repo} onApplied={refresh} /> : <span className="tag acc">Em uso</span>}
+      {children}
+    </> : <>
     <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Abra um treino para ver os detalhes. Confirme Aplicar plano para usar o plano na sua semana.</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {!shownWorkouts.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}

@@ -57,5 +57,9 @@ try { await db.exec(readFileSync('supabase/tests/202610290002_professional_works
 await db.exec(`create or replace function public.assert_account_active() returns void language plpgsql as $$begin if auth.uid() is null then raise exception 'authentication required' using errcode='42501'; end if; end$$;`)
 await db.exec(readFileSync('supabase/migrations/202611020004_student_material_library_id.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610310001_explicit_library_plan_application.sql', 'utf8')); console.log('PASS explicit professional plan application') } catch(e) { console.error(e.message,e.where); process.exit(1) }
+for (const name of readdirSync('supabase/migrations').filter(name => name >= '202611020005').sort()) {
+ await db.exec(readFileSync('supabase/migrations/' + name, 'utf8'))
+}
+try { await db.exec(readFileSync('supabase/tests/202611020005_personal_professional_switching.sql', 'utf8')); console.log('PASS personal/professional switching (10 alternations, live routines, calendars, revisions, authorization)') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 await db.close()
 

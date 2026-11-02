@@ -13,14 +13,17 @@ vi.mock('../../sheets.jsx', () => ({ confirmSheet: options => mocks.confirm(opti
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
 const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-const delivery = () => ({ id: 'delivery', source_type: 'professional', professional_name: 'Ana',
+const delivery = () => ({ id: 'delivery', available: true, source_type: 'professional', professional_name: 'Ana',
   workout_updates: { monday: 'changed-version' },
   version: { id: 'version', weekly_plan: Object.fromEntries(days.map(day => [day, [{ exerciseId: '0025', sets: 3, reps: 10, load: 20 }]])), workout_titles: Object.fromEntries(days.map(day => [day, day])) } })
 function Sheets() {
   const sheets = useUI(s => s.sheets)
   return sheets.map(sheet => <div key={sheet.id}>{sheet.render(() => useUI.getState().closeSheet(sheet.id))}</div>)
 }
-const render = () => root.render(<><PlanLibrary /><Sheets /></>)
+const render = async () => {
+  await act(async () => root.render(<><PlanLibrary /><Sheets /></>))
+  await act(async () => { [...container.querySelectorAll('button')].find(button => button.textContent === 'Treino do profissional')?.click() })
+}
 const appliedPlan = () => ({ routines: [{ id: 'routine', user_id: '11111111-1111-4111-8111-111111111111', title: 'Treino', position: 0, revision: 3, created_at: '2026-10-31', updated_at: '2026-10-31', prescription: { assigned: true, programVersionId: 'version', ex: [{ id: '0043' }] } }], schedule: { user_id: '11111111-1111-4111-8111-111111111111', revision: 3, mode: 'weekly', updated_at: '2026-10-31', schedule: { week: { 1: 'routine' }, libraryId: 'delivery', assignedProgram: { versionId: 'version' } } } })
 let root, container
 beforeEach(async () => {
@@ -31,12 +34,12 @@ beforeEach(async () => {
   mocks.apply.mockReset().mockResolvedValue(appliedPlan())
   useUI.setState({ sheets: [] })
   await useStore.getState().activateLocalScope('11111111-1111-4111-8111-111111111111')
-  useStore.setState({ S: structuredClone(DEF) })
+  useStore.setState({ S: { ...structuredClone(DEF), planServerRevision: 2 } })
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(() => { act(() => root.unmount()); container.remove() })
 it('shows five received workouts and reveals more on request', async () => {
-  await act(async () => render())
+  await render()
   expect(container.querySelectorAll('.received-workout-card')).toHaveLength(5)
   const more = [...container.querySelectorAll('button')].find(button => button.textContent === 'Ver mais')
   expect(more).toBeDefined()
@@ -44,7 +47,7 @@ it('shows five received workouts and reveals more on request', async () => {
   expect(container.querySelectorAll('.received-workout-card')).toHaveLength(7)
 })
 it('marks only changed workouts and acknowledges opening their details', async () => {
-  await act(async () => render())
+  await render()
   expect(container.querySelectorAll('.workout-update-badge')).toHaveLength(1)
   const updated = container.querySelector('.workout-update-badge').closest('button')
   await act(async () => updated.click())
@@ -54,22 +57,22 @@ it('marks only changed workouts and acknowledges opening their details', async (
 })
 it('keeps the badge if acknowledging the update fails', async () => {
   mocks.seen.mockRejectedValue(new Error('offline'))
-  await act(async () => render())
+  await render()
   await act(async () => container.querySelector('.workout-update-badge').closest('button').click())
   expect(container.querySelectorAll('.workout-update-badge')).toHaveLength(1)
   expect(container.querySelector('[role="alert"]')).not.toBeNull()
 })
 
-const applyButton = () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aceitar')
+const applyButton = () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Usar este plano')
 it('receives a plan without changing the active week', async () => {
   const before = useStore.getState().S
-  await act(async () => render())
+  await render()
   expect(applyButton()).toBeDefined()
   expect(useStore.getState().S).toBe(before)
 })
 it('applies only after confirmation and replaces the workspace together', async () => {
   mocks.apply.mockResolvedValue(appliedPlan())
-  await act(async () => render())
+  await render()
   await act(async () => applyButton().click())
   expect(mocks.apply).not.toHaveBeenCalled()
   await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar plano').click())
@@ -80,7 +83,7 @@ it('preserves the workspace and logs the original synchronization error', async 
   const log = vi.spyOn(console, 'error').mockImplementation(() => {})
   const retry = vi.spyOn(useStore.getState(), 'retryAccountSync').mockRejectedValue(original)
   const before = useStore.getState().S
-  await act(async () => render())
+  await render()
   await act(async () => applyButton().click())
   await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar plano').click())
   expect(useStore.getState().S).toBe(before)
@@ -94,9 +97,17 @@ it('allows application after pending personal changes finish synchronizing', asy
     useStore.setState({ S: { ...useStore.getState().S, _pendingSync: { plan: false } } })
   })
   mocks.apply.mockClear()
-  await act(async () => render())
+  await render()
   await act(async () => applyButton().click())
   await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar plano').click())
-  expect(mocks.apply).toHaveBeenCalledWith('delivery')
+  expect(mocks.apply).toHaveBeenCalledWith('delivery', 2)
   retry.mockRestore()
+})
+
+it.each([{ items: [] }, { items: [{ ...delivery(), available: false }] }])('shows no professional controls for absent or unavailable deliveries: %j', async ({ items }) => {
+  mocks.page.mockResolvedValue({ items, total: items.length })
+  await render()
+  expect(container.querySelector('.received-workouts')).toBeNull()
+  expect(container.textContent).not.toContain('Treinos recebidos')
+  expect(mocks.apply).not.toHaveBeenCalled()
 })
