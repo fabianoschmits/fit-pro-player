@@ -59,21 +59,34 @@ function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
   </section>
 }
 
-export default function PlanLibrary({ onUpdates = undefined }) {
+export default function PlanLibrary({ onUpdates = undefined, children = undefined }) {
   const { user } = useAuth()
-  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates} />
+  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates}>{children}</AccountPlanLibrary>
 }
 
-function AccountPlanLibrary({ user, onUpdates = undefined }) {
+function AccountPlanLibrary({ user, onUpdates = undefined, children = undefined }) {
   const nav = useNavigate()
   const state = useStore(s => s.S)
   const update = useStore(s => s.update)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [visible, setVisible] = useState(PAGE_SIZE)
+  const [choice, setChoice] = useState(null)
   const generation = useRef(0)
   const refresh = useCallback(async (offset = 0) => {
     const request = ++generation.current
-    try { const result = await repo.planLibrary(offset); if (request === generation.current) { setData(old => ({ ...result, items: offset ? [...old.items, ...result.items] : result.items })); setError('') } }
+    try {
+      const result = await repo.planLibrary(offset)
+      // Search every page so personal snapshots cannot hide an available professional plan.
+      while (result.items.length + offset < result.total && request === generation.current) {
+        const page = await repo.planLibrary(offset + result.items.length)
+        if (!page.items.length) break
+        result.items.push(...page.items)
+      }
+      if (request === generation.current) {
+        setData(old => ({ ...result, items: offset ? [...old.items, ...result.items] : result.items }))
+        setError('')
+      }
+    }
     catch { if (request === generation.current) setError('Não foi possível carregar seus planos.') }
   }, [repo])
   useEffect(() => { if (user?.id) refresh(); return () => { generation.current += 1 } }, [user?.id, refresh])
@@ -97,7 +110,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
   const open = async workout => {
     const { item, day } = workout
     if (item.workout_updates?.[DAYS[day]] && item.plan_update) {
-      useUI.getState().openSheet(close => <PlanUpdateSheet item={item} workout={workout} close={close} acknowledge={() => acknowledge(item, DAYS[day])} onView={() => { const activeRoutineId = useStore.getState().S.week[day]; if (activeRoutineId) nav(`/plan/r/${activeRoutineId}`); else openPreview(workout) }} />, { className: 'plan-preview-sheet-shell' })
+      useUI.getState().openSheet(close => <PlanUpdateSheet item={item} workout={workout} close={close} acknowledge={() => acknowledge(item, DAYS[day])} onView={() => { const current = useStore.getState().S; const activeRoutineId = isProfessionalPlanActive(current, item.id, item.version?.id) && current.week[day]; if (activeRoutineId) nav(`/plan/r/${activeRoutineId}`); else openPreview(workout) }} />, { className: 'plan-preview-sheet-shell' })
       return
     }
     openPreview(workout)
@@ -120,7 +133,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
       }) }))
     } catch { if (request === generation.current) setError('Não foi possível marcar a atualização como vista. Abra o treino novamente para tentar.') }
   }
-  const professionalWorkouts = useMemo(() => data.items.filter(item => item.source_type === 'professional').flatMap(item => {
+  const professionalWorkouts = useMemo(() => data.items.filter(item => item.source_type === 'professional' && (item.available || item.id === state.activeLibraryId)).flatMap(item => {
     const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)
     const previous = weeklyPlanToWorkspace(item.plan_update?.previous_version?.weekly_plan, item.plan_update?.previous_version?.workout_titles)
     const currentByDay = new Map(workspace.routines.map(routine => [Number(Object.entries(workspace.week).find(([, id]) => id === routine.id)?.[0]), routine]))
@@ -134,12 +147,12 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
       if (baseRoutine) previousByDay.set(day, baseRoutine)
     })
     return [...new Set([...currentByDay.keys(), ...pendingDays])].map(day => ({ item, workspace, routine: currentByDay.get(day) || previousByDay.get(day), day, removed: !currentByDay.has(day) && pendingDays.includes(day) }))
-  }), [data.items])
+  }), [data.items, state.activeLibraryId])
   const openRef = useRef(open)
   openRef.current = open
   useEffect(() => {
-    onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => openRef.current(workout)])))
-  }, [professionalWorkouts, onUpdates])
+    onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => isProfessionalPlanActive(state, workout.item.id, workout.item.version?.id) && workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => openRef.current(workout)])))
+  }, [professionalWorkouts, onUpdates, state])
   const shownWorkouts = professionalWorkouts.slice(0, visible)
   const removeFromDay = workout => confirmSheet({
     title: 'Retirar treino deste dia?',
@@ -148,8 +161,17 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
     onConfirm: () => { update(next => { delete next.week[workout.day] }); return true },
   })
 
-  if (!user?.id) return null
+  const professionalActive = Boolean(state.assignedProgram)
+  const hasProfessional = professionalActive || data.items.some(item => item.source_type === 'professional' && item.available)
+  const selectedChoice = choice || (professionalActive ? 'professional' : 'self')
+  if (!user?.id || !hasProfessional) return <>{children}</>
   return <section className="plan-library received-workouts">
+    <h3>Escolher plano</h3>
+    <div className="plan-mode-options" role="group" aria-label="Escolher plano">
+      <button className={selectedChoice === 'professional' ? 'on' : ''} aria-pressed={selectedChoice === 'professional'} onClick={() => setChoice('professional')}>Treino do profissional</button>
+      <button className={selectedChoice === 'self' ? 'on' : ''} aria-pressed={selectedChoice === 'self'} onClick={() => setChoice('self')}>Meus treinos</button>
+    </div>
+    {selectedChoice === 'self' ? <>{professionalActive ? <ProfessionalPlanApplyButton personal repo={repo} onApplied={refresh} /> : <span className="tag acc">Em uso</span>}{children}</> : <>
     <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Abra um treino para ver os detalhes. Confirme Aplicar plano para usar o plano na sua semana.</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {!shownWorkouts.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
@@ -166,5 +188,6 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
     })}</div>
     {professionalWorkouts.length > shownWorkouts.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais</Button>}
     {data.items.length < data.total && <Button variant="ghost" onClick={() => refresh(data.items.length)}>Carregar mais planos</Button>}
+    </>}
   </section>
 }

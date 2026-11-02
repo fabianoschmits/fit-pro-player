@@ -20,6 +20,8 @@ const applicationError = error => error.message === 'pending-plan'
         ? 'Sua conta mudou. Feche este modal e entre novamente para aplicar o plano.'
         : 'Não foi possível aplicar o plano. Tente novamente; se persistir, contate o suporte.'
 
+const canonical = value => JSON.stringify(value, (_, entry) => entry && typeof entry === 'object' && !Array.isArray(entry) ? Object.fromEntries(Object.entries(entry).sort(([a], [b]) => a.localeCompare(b))) : entry)
+
 const planSnapshot = state => JSON.stringify([state.routines, state.week, state.dayPlan, state.planMode, state.activeLibraryId, state.assignedProgram, state.planServerRevision])
 
 function validateExecutionPlan(parsed, current, versionId) {
@@ -38,7 +40,7 @@ function validateExecutionPlan(parsed, current, versionId) {
   }
 }
 
-function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, userId, repo, token, close, lock, onApplied }) {
+function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, userId, repo, token, close, lock, onApplied }) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const inFlight = useRef(false)
@@ -55,18 +57,33 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, userId, repo, t
       let store = requireScope()
       if (store.S._pendingSync?.plan) throw new Error('pending-plan')
       const before = planSnapshot(store.S)
-      const result = await repo.applyLibraryPlan(libraryPlanId)
+      const targetId = personal ? await repo.savePersonalPlan('Meu plano') : libraryPlanId
+      store = requireScope()
+      if (store.S._pendingSync?.plan || planSnapshot(store.S) !== before) throw Object.assign(new Error('revision-conflict'), { code: '40001' })
+      if (typeof targetId !== 'string' || !targetId) throw new Error('invalid-library-id')
+      const result = await repo.applyLibraryPlan(targetId, store.S.planServerRevision || 0)
       store = requireScope()
       const parsed = parsePlan(result, userId)
-      validateExecutionPlan(parsed, store.S, versionId)
+      if (parsed.schedule?.revision !== (store.S.planServerRevision || 0) + 1) throw new Error('unexpected-plan-revision')
+      if (personal) {
+        const current = store.S.routines.filter(routine => !routine.assigned)
+        const restored = parsed.routines
+        if (!parsed.schedule || parsed.schedule.values.assignedProgram != null || restored.some(routine => routine.prescription.assigned) || restored.length !== current.length) throw new Error('invalid-personal-plan')
+        for (const routine of current) {
+          const match = restored.find(item => item.id === routine.id)
+          const { id: _id, name, ...prescription } = routine
+          if (!match || match.title !== name || canonical(match.prescription) !== canonical(prescription)) throw new Error('changed-personal-routine')
+        }
+      } else validateExecutionPlan(parsed, store.S, versionId)
       // Never overwrite a plan edited or synchronized while the request was outstanding.
       if (store.S._pendingSync?.plan || planSnapshot(store.S) !== before) throw Object.assign(new Error('revision-conflict'), { code: '40001' })
       const next = applyDomainState(store.S, 'plan', parsed)
-      if (next === store.S || !isProfessionalPlanActive(next, libraryPlanId, versionId)) throw new Error('unexpected-active-plan')
+      const isActive = state => personal ? state.activeLibraryId === targetId && state.assignedProgram === null : isProfessionalPlanActive(state, targetId, versionId)
+      if (next === store.S || !isActive(next)) throw new Error('unexpected-active-plan')
       next._pendingSync = { ...next._pendingSync, plan: false }
       next.onboardingDone = true
       store.replaceState(next, false)
-      if (!isProfessionalPlanActive(useStore.getState().S, libraryPlanId, versionId)) throw new Error('unexpected-active-plan')
+      if (!isActive(useStore.getState().S)) throw new Error('unexpected-active-plan')
       close()
       // A failed list refresh must not turn a confirmed application into a retry.
       void Promise.resolve().then(() => onApplied?.()).catch(() => {})
@@ -77,16 +94,16 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, userId, repo, t
       inFlight.current = false; setPending(false); lock(false)
     }
   }
-  return <section aria-label="Aplicar plano profissional?">
-    <h3>Aplicar plano profissional?</h3>
-    <p>Os treinos recebidos serão usados no seu perfil. Seus treinos criados continuarão salvos.</p>
+  return <section aria-label={personal ? 'Usar meus treinos?' : 'Aplicar plano profissional?'}>
+    <h3>{personal ? 'Usar meus treinos?' : 'Aplicar plano profissional?'}</h3>
+    <p>{personal ? 'Seu plano profissional continuará salvo e poderá ser usado novamente. Seus treinos pessoais atuais serão preservados, com sua configuração pessoal de semana e modo.' : 'Os treinos recebidos serão usados no seu perfil. Seus treinos criados continuarão salvos.'}</p>
     {error && <p role="alert">{error}</p>}
-    <Button variant="primary" activation="immediate" disabled={pending} aria-busy={pending} onClick={apply}>{pending ? 'Aplicando…' : 'Aplicar plano'}</Button>
+    <Button variant="primary" activation="immediate" disabled={pending} aria-busy={pending} onClick={apply}>{pending ? 'Aplicando…' : personal ? 'Aplicar meus treinos' : 'Aplicar plano'}</Button>
     <Button variant="ghost" activation="immediate" disabled={pending} onClick={close}>Cancelar</Button>
   </section>
 }
 
-export default function ProfessionalPlanApplyButton({ libraryPlanId, versionId, repo, onApplied = undefined }) {
+export default function ProfessionalPlanApplyButton({ libraryPlanId = undefined, versionId = undefined, personal = false, repo, onApplied = undefined }) {
   const { user } = useAuth()
   const active = useStore(s => isProfessionalPlanActive(s.S, libraryPlanId, versionId))
   const open = () => {
@@ -94,7 +111,7 @@ export default function ProfessionalPlanApplyButton({ libraryPlanId, versionId, 
     if (ui.sheets.some(sheet => sheet.className === 'professional-plan-apply')) return
     const token = useStore.getState().getScopeToken()
     let handle
-    handle = ui.openSheet(close => <ProfessionalPlanApplyDialog libraryPlanId={libraryPlanId} versionId={versionId} userId={user?.id} repo={repo} token={token} close={close} lock={value => handle.lock(value)} onApplied={onApplied} />, { kind: 'center', className: 'professional-plan-apply' })
+    handle = ui.openSheet(close => <ProfessionalPlanApplyDialog libraryPlanId={libraryPlanId} versionId={versionId} personal={personal} userId={user?.id} repo={repo} token={token} close={close} lock={value => handle.lock(value)} onApplied={onApplied} />, { kind: 'center', className: 'professional-plan-apply' })
   }
-  return <Button variant={active ? 'tinted' : 'primary'} disabled={active || !libraryPlanId || !versionId} activation="immediate" onClick={open}>{active ? 'Aplicado' : 'Aceitar'}</Button>
+  return <Button variant={active ? 'tinted' : 'primary'} disabled={active || (!personal && (!libraryPlanId || !versionId))} activation="immediate" onClick={open}>{active ? 'Em uso' : personal ? 'Usar meus treinos' : 'Usar este plano'}</Button>
 }

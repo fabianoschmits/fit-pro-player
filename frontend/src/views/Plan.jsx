@@ -90,9 +90,9 @@ export default function Plan() {
 
     {mode === 'weekly' && <div className="training-plan-workspace"><PlanWeek state={S} updates={updatedDays} onDay={day => updatedDays[day] ? updatedDays[day]() : (usingProfessionalPlan ? removeProfessionalDay(day) : dayAssignSheet(day))} /></div>}
 
-    <PlanLibrary onUpdates={receiveUpdates} />
-
-    <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />
+    <PlanLibrary onUpdates={receiveUpdates}>
+      <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />
+    </PlanLibrary>
 
     <section className="plan-mode-section">
       <h4 className="sec">{t('Plan style')}</h4>

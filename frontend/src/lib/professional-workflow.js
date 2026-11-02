@@ -197,7 +197,7 @@ export function createProfessionalWorkflowRepository({ client = undefined } = {}
   const markLibraryWorkoutSeen = (planId, day, changeVersionId) => rpc('mark_library_workout_seen', { p_plan_id: planId, p_day: day, p_change_version_id: changeVersionId })
   const markProfessionalPlanUpdateSeen = (planId, versionId) => rpc('mark_professional_plan_update_seen', { p_plan_id: planId, p_version_id: versionId })
   const markProfessionalPlanUpdateDaySeen = (planId, versionId, day) => rpc('mark_professional_plan_update_day_seen', { p_plan_id: planId, p_version_id: versionId, p_day: day })
-  const applyLibraryPlan = id => rpc('apply_library_plan', { p_plan_id: id })
+  const applyLibraryPlan = (id, expectedRevision = undefined) => rpc('apply_library_plan', { p_plan_id: id, ...(expectedRevision === undefined ? {} : { p_expected_revision: expectedRevision }) })
   const savePersonalPlan = title => rpc('save_personal_library_plan', { p_title: title })
   const studentPlanDraft = studentId => read('professional_plan_drafts', q => q.select('*').eq('student_id', studentId).limit(1)).then(rows => rows[0] || null)
   const savePlanDraft = (studentId, title, workspace, revision) => rpc('save_student_plan_draft', { p_student_id: studentId, p_title: title, p_workspace: workspace, p_expected_revision: revision })
