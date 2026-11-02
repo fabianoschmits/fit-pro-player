@@ -234,7 +234,7 @@ test('student receives a professional plan and applies it only after explicit co
   preview_professional_invite:[{professional_name:'Treinador de teste',bio:'Força',verification_status:'unverified',specialties:[]}],
   accept_professional_invite:()=>{accepted=true;return{id:'66666666-6666-4666-8666-666666666666'}},
   athlete_plan_library_page:()=>({items:accepted?[{id:deliveryId,source_type:'professional',professional_name:'Treinador de teste',version:{id:versionId,weekly_plan:weeklyPlan,workout_titles:{monday:'Plano recebido'}}}]:[],total:accepted?1:0}),
-  apply_library_plan:()=>{applied=true;return {routines:[],schedule:{user_id:USER,revision:3,mode:'weekly',schedule:{week:{},libraryId:deliveryId,assignedProgram:{versionId}},updated_at:'2026-11-01T12:00:00Z'}}},
+  apply_library_plan:()=>{applied=true;return {routines:[...stateFixture().routines.map((routine,position)=>({id:routine.id,user_id:USER,revision:3,title:routine.name,position,prescription:routine,created_at:'2026-11-01',updated_at:'2026-11-01'})),{id:'professional-routine',user_id:USER,revision:3,title:'Plano recebido',position:1,prescription:{assigned:true,programVersionId:versionId,ex:[{id:'0025',sets:1,reps:10,weight:20}]},created_at:'2026-11-01',updated_at:'2026-11-01'}],schedule:{user_id:USER,revision:3,mode:'weekly',schedule:{week:{1:'professional-routine'},libraryId:deliveryId,assignedProgram:{versionId}},updated_at:'2026-11-01T12:00:00Z'}}},
  }})
  await page.goto('/#/invite/A1B2C3D4E5')
  await page.getByRole('button',{name:'Vincular a este profissional',exact:true}).click()
@@ -243,7 +243,7 @@ test('student receives a professional plan and applies it only after explicit co
  await expect(page.getByText('Plano recebido',{exact:true}).first()).toBeVisible()
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem(`fpp_account_cache_v1:11111111-1111-4111-8111-111111111111`)).state.routines[0].name)).toBe('Treino de teste')
  expect(applied).toBe(false)
- await page.getByRole('button',{name:'Aplicar',exact:true}).first().click()
+ await page.getByRole('button',{name:'Aceitar',exact:true}).first().click()
  expect(applied).toBe(false)
  await page.getByRole('dialog').getByRole('button',{name:'Aplicar plano',exact:true}).click()
  await expect.poll(()=>applied).toBe(true)

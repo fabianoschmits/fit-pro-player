@@ -4,29 +4,39 @@ import { createRoot } from 'react-dom/client'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { DEF, useStore } from '../../store/useStore.js'
 import PlanLibrary from './PlanLibrary.jsx'
+import { useUI } from '../../store/useUI.js'
 const mocks = vi.hoisted(() => ({ page: vi.fn(), seen: vi.fn(), open: vi.fn(), apply: vi.fn(), confirm: vi.fn() }))
-vi.mock('../../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ user: { id: 'student' } }) }))
+vi.mock('../../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ user: { id: '11111111-1111-4111-8111-111111111111' } }) }))
 vi.mock('../../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => ({ applyLibraryPlan: mocks.apply, planLibrary: mocks.page, markLibraryWorkoutSeen: mocks.seen }) }))
 vi.mock('../../sheets.jsx', () => ({ confirmSheet: options => mocks.confirm(options) }))
-vi.mock('../../store/useUI.js', () => ({ useUI: { getState: () => ({ openSheet: mocks.open }) } }))
+
 vi.mock('react-router-dom', () => ({ useNavigate: () => vi.fn() }))
 const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const delivery = () => ({ id: 'delivery', source_type: 'professional', professional_name: 'Ana',
   workout_updates: { monday: 'changed-version' },
   version: { id: 'version', weekly_plan: Object.fromEntries(days.map(day => [day, [{ exerciseId: '0025', sets: 3, reps: 10, load: 20 }]])), workout_titles: Object.fromEntries(days.map(day => [day, day])) } })
+function Sheets() {
+  const sheets = useUI(s => s.sheets)
+  return sheets.map(sheet => <div key={sheet.id}>{sheet.render(() => useUI.getState().closeSheet(sheet.id))}</div>)
+}
+const render = () => root.render(<><PlanLibrary /><Sheets /></>)
+const appliedPlan = () => ({ routines: [{ id: 'routine', user_id: '11111111-1111-4111-8111-111111111111', title: 'Treino', position: 0, revision: 3, created_at: '2026-10-31', updated_at: '2026-10-31', prescription: { assigned: true, programVersionId: 'version', ex: [{ id: '0043' }] } }], schedule: { user_id: '11111111-1111-4111-8111-111111111111', revision: 3, mode: 'weekly', updated_at: '2026-10-31', schedule: { week: { 1: 'routine' }, libraryId: 'delivery', assignedProgram: { versionId: 'version' } } } })
 let root, container
-beforeEach(() => {
+beforeEach(async () => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   mocks.page.mockReset().mockResolvedValue({ items: [delivery()], total: 1 })
   mocks.seen.mockReset().mockResolvedValue(null)
   mocks.open.mockReset()
+  mocks.apply.mockReset().mockResolvedValue(appliedPlan())
+  useUI.setState({ sheets: [] })
+  await useStore.getState().activateLocalScope('11111111-1111-4111-8111-111111111111')
   useStore.setState({ S: structuredClone(DEF) })
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(() => { act(() => root.unmount()); container.remove() })
 it('shows five received workouts and reveals more on request', async () => {
-  await act(async () => root.render(<PlanLibrary />))
+  await act(async () => render())
   expect(container.querySelectorAll('.received-workout-card')).toHaveLength(5)
   const more = [...container.querySelectorAll('button')].find(button => button.textContent === 'Ver mais')
   expect(more).toBeDefined()
@@ -34,45 +44,45 @@ it('shows five received workouts and reveals more on request', async () => {
   expect(container.querySelectorAll('.received-workout-card')).toHaveLength(7)
 })
 it('marks only changed workouts and acknowledges opening their details', async () => {
-  await act(async () => root.render(<PlanLibrary />))
+  await act(async () => render())
   expect(container.querySelectorAll('.workout-update-badge')).toHaveLength(1)
   const updated = container.querySelector('.workout-update-badge').closest('button')
   await act(async () => updated.click())
-  expect(mocks.open).toHaveBeenCalledTimes(1)
+  expect(useUI.getState().sheets).toHaveLength(1)
   expect(mocks.seen).toHaveBeenCalledWith('delivery', 'monday', 'changed-version')
   expect(container.querySelectorAll('.workout-update-badge')).toHaveLength(0)
 })
 it('keeps the badge if acknowledging the update fails', async () => {
   mocks.seen.mockRejectedValue(new Error('offline'))
-  await act(async () => root.render(<PlanLibrary />))
+  await act(async () => render())
   await act(async () => container.querySelector('.workout-update-badge').closest('button').click())
   expect(container.querySelectorAll('.workout-update-badge')).toHaveLength(1)
   expect(container.querySelector('[role="alert"]')).not.toBeNull()
 })
 
-const applyButton = () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar')
+const applyButton = () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aceitar')
 it('receives a plan without changing the active week', async () => {
   const before = useStore.getState().S
-  await act(async () => root.render(<PlanLibrary />))
+  await act(async () => render())
   expect(applyButton()).toBeDefined()
   expect(useStore.getState().S).toBe(before)
 })
 it('applies only after confirmation and replaces the workspace together', async () => {
-  mocks.apply.mockResolvedValue({ routines: [], schedule: { user_id: 'student', revision: 3, mode: 'weekly', updated_at: '2026-10-31', schedule: { week: {}, libraryId: 'delivery', assignedProgram: { versionId: 'version' } } } })
-  await act(async () => root.render(<PlanLibrary />))
+  mocks.apply.mockResolvedValue(appliedPlan())
+  await act(async () => render())
   await act(async () => applyButton().click())
   expect(mocks.apply).not.toHaveBeenCalled()
-  await act(async () => mocks.confirm.mock.calls.at(-1)[0].onConfirm())
-  expect(useStore.getState().S).toMatchObject({ activeLibraryId: 'delivery', assignedProgram: { versionId: 'version' }, week: {}, _pendingSync: { plan: false } })
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar plano').click())
+  expect(useStore.getState().S).toMatchObject({ activeLibraryId: 'delivery', assignedProgram: { versionId: 'version' }, week: { 1: 'routine' }, _pendingSync: { plan: false } })
 })
 it('preserves the workspace and logs the original synchronization error', async () => {
   const original = new Error('revision conflict')
   const log = vi.spyOn(console, 'error').mockImplementation(() => {})
   const retry = vi.spyOn(useStore.getState(), 'retryAccountSync').mockRejectedValue(original)
   const before = useStore.getState().S
-  await act(async () => root.render(<PlanLibrary />))
+  await act(async () => render())
   await act(async () => applyButton().click())
-  await act(async () => mocks.confirm.mock.calls.at(-1)[0].onConfirm())
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar plano').click())
   expect(useStore.getState().S).toBe(before)
   expect(log).toHaveBeenCalledWith('Plan library operation failed', original)
   expect(container.querySelector('[role="alert"]').textContent).not.toContain('conexão')
@@ -84,9 +94,9 @@ it('allows application after pending personal changes finish synchronizing', asy
     useStore.setState({ S: { ...useStore.getState().S, _pendingSync: { plan: false } } })
   })
   mocks.apply.mockClear()
-  await act(async () => root.render(<PlanLibrary />))
+  await act(async () => render())
   await act(async () => applyButton().click())
-  await act(async () => mocks.confirm.mock.calls.at(-1)[0].onConfirm())
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Aplicar plano').click())
   expect(mocks.apply).toHaveBeenCalledWith('delivery')
   retry.mockRestore()
 })

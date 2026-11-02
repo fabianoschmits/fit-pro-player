@@ -190,7 +190,7 @@ describe('professional management repository', () => {
     const rpc = vi.fn().mockResolvedValue({ data: [{
       professional: { professional_user_id: 'pro-1', relationship_id: 'link-1', professional_name: 'Ana', specialties: [], linked_at: '2026-10-01' },
       relationship: { id: 'link-1', status: 'active', linked_at: '2026-10-01' },
-      materials: [{ assignment_id: 'a-1', program_id: 'p-1', version_id: 'v-1', title: 'Força', description: 'Base', status: 'revoked', version_number: 2, published_at: '2026-09-30', assigned_at: '2026-10-02', weekly_plan: { monday: [] } }],
+      materials: [{ assignment_id: 'a-1', library_plan_id: 'library-1', program_id: 'p-1', version_id: 'v-1', title: 'Força', description: 'Base', status: 'revoked', version_number: 2, published_at: '2026-09-30', assigned_at: '2026-10-02', weekly_plan: { monday: [] } }],
       executions: [{ id: 'e-1', assignment_id: 'a-1', version_id: 'v-1', student_user_id: 's-1', day_key: 'monday', status: 'completed', payload: { sets: 3 }, started_at: '2026-10-02', completed_at: '2026-10-02', prescription_snapshot: {}, program_title: 'Força', version_number: 2 }],
     }], error: null })
     const repository = createProfessionalWorkflowRepository({ client: { rpc } })
@@ -198,7 +198,7 @@ describe('professional management repository', () => {
     expect(await repository.studentProfessionalDetail('pro-1')).toEqual({
       professional: { professionalId: 'pro-1', relationshipId: 'link-1', professionalName: 'Ana', bio: null, specialties: [], cityRegion: null, registrationType: null, registrationNumber: null, verificationStatus: 'unverified', linkedAt: '2026-10-01', activeProgramTitle: null, receivedCount: 0 },
       relationship: { id: 'link-1', status: 'active', linkedAt: '2026-10-01' },
-      materials: [{ assignmentId: 'a-1', programId: 'p-1', versionId: 'v-1', title: 'Força', description: 'Base', objective: null, status: 'revoked', versionNumber: 2, publishedAt: '2026-09-30', assignedAt: '2026-10-02', weeklyPlan: { monday: [] }, workoutTitles: {} }],
+      materials: [{ assignmentId: 'a-1', libraryPlanId: 'library-1', programId: 'p-1', versionId: 'v-1', title: 'Força', description: 'Base', objective: null, status: 'revoked', versionNumber: 2, publishedAt: '2026-09-30', assignedAt: '2026-10-02', weeklyPlan: { monday: [] }, workoutTitles: {} }],
       executions: [{ id: 'e-1', assignment_id: 'a-1', version_id: 'v-1', student_user_id: 's-1', day_key: 'monday', status: 'completed', payload: { sets: 3 }, started_at: '2026-10-02', completed_at: '2026-10-02', prescription_snapshot: {}, program_title: 'Força', version_number: 2 }],
     })
     expect(rpc).toHaveBeenCalledExactlyOnceWith('student_professional_detail', { p_professional_user_id: 'pro-1' })
@@ -254,4 +254,3 @@ describe('professional management repository', () => {
     const repo = createProfessionalWorkflowRepository({ client: { rpc } })
     await expect(repo.savePersonalInviteCode('ANA')).rejects.toThrow('professional-invite-code-taken')
   })
-

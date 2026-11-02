@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: '
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
-vi.mock('../store/useStore.js', () => ({ useStore: { getState: () => ({ S: {}, replaceState: mocks.replace }) } }))
+vi.mock('../store/useStore.js', () => ({ useStore: Object.assign(selector => selector({ S: mocks.state || {} }), { getState: () => ({ S: {}, replaceState: mocks.replace }) }) }))
 vi.mock('../sheets.jsx', () => ({ startFlow: mocks.start }))
 import StudentProfessionalMaterials from './StudentProfessionalMaterials.jsx'
 let root, container

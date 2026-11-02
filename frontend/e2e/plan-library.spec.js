@@ -104,19 +104,23 @@ test('plan groups created and received workouts in sections of five',async({page
  await page.getByRole('button',{name:'Mostrar mais',exact:true}).first().click()
  await expect(page.locator('.created-workouts .plan-routine-list .item')).toHaveCount(6)
  await expect(page.getByRole('heading',{name:'Treinos recebidos do profissional',exact:true})).toBeVisible()
- await expect(page.locator('.received-workouts').getByRole('button',{name:'Aplicar',exact:true})).toBeVisible()
+ await expect(page.locator('.received-workouts').getByRole('button',{name:'Aceitar',exact:true})).toBeVisible()
 })
 
 test('explicitly applies a received plan without duplicating personal plan controls',async({page})=>{
  const state=stateFixture();state.routines[0].id=routineId;state.week={1:routineId}
  const own={id:ownId,title:'Meu ABC',source_type:'self',available:true,personal_plan:{mode:'weekly',schedule:{week:{1:routineId}},routines:[{id:routineId,title:'Meu ABC',prescription:{ex:[{id:'0025',sets:1,reps:10,weight:20}]}}]}}
  let selection=null,revision=1
- const result=selected=>({schedule:{user_id:USER,revision:++revision,mode:'weekly',schedule:{week:{1:routineId},dayPlan:{},libraryId:selected,libraryTitle:selected===entryId?delivered.title:own.title,...(selected===entryId?{assignedProgram:{assignmentId:'assignment',versionId,programId}}:{})},updated_at:'2026-10-27'},routines:[{id:routineId,user_id:USER,revision:1,title:selected===entryId?'Treino A':'Meu ABC',position:0,created_at:'2026-10-27',updated_at:'2026-10-27',prescription:{ex:[{id:'0025',sets:selected===entryId?4:1,reps:8,weight:80}],...(selected===entryId?{assigned:true,assignmentId:'assignment',programVersionId:versionId,assignedDayKey:'monday'}:{})}}]})
+ const professionalRoutineId='88888888-8888-4888-8888-888888888888'
+ const result=selected=>({schedule:{user_id:USER,revision:++revision,mode:'weekly',schedule:{week:{1:selected===entryId?professionalRoutineId:routineId},dayPlan:{},libraryId:selected,libraryTitle:selected===entryId?delivered.title:own.title,...(selected===entryId?{assignedProgram:{assignmentId:'assignment',versionId,programId}}:{})},updated_at:'2026-10-27'},routines:[...canonicalPlan(state).athlete_routines,...(selected===entryId?[{id:professionalRoutineId,user_id:USER,revision:1,title:'Treino A',position:1,created_at:'2026-10-27',updated_at:'2026-10-27',prescription:{ex:[{id:'0025',sets:4,reps:8,weight:80}],assigned:true,assignmentId:'assignment',programVersionId:versionId,assignedDayKey:'monday'}}]:[])]})
  await seed(page,{authenticated:true,state,rpc:{...canonicalPlan(state),athlete_plan_library_page:()=>({items:selection?[delivered,own]:[delivered],total:selection?2:1,selectedId:selection}),apply_library_plan:args=>{selection=args.p_plan_id;return result(selection)}}})
- await page.goto('/#/plan');await page.getByRole('button',{name:'Aplicar',exact:true}).click()
- await expect(page.getByRole('dialog')).toContainText('Seus treinos criados continuam salvos')
+ await page.goto('/#/plan');await page.getByRole('button',{name:'Aceitar',exact:true}).click()
+ await expect(page.getByRole('dialog')).toContainText('Seus treinos criados continuarão salvos')
  await page.getByRole('dialog').getByRole('button',{name:'Aplicar plano',exact:true}).click()
  await expect.poll(()=>selection).toBe(entryId)
+ await expect(page.getByRole('dialog')).toHaveCount(0)
+ await expect(page.getByRole('button',{name:'Aplicado',exact:true})).toBeDisabled()
+ await expect(page.locator('.app-header').getByText('Plano profissional ativo',{exact:true})).toBeVisible()
  await expect(page.locator('.app-header').getByRole('heading',{name:delivered.title,exact:true})).toBeVisible()
  await expect(page.locator('.plan-day-professional')).toHaveCount(1)
  await expect(page.getByText('Planos salvos',{exact:true})).toHaveCount(0)

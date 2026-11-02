@@ -9,6 +9,11 @@ select public.save_student_plan_draft('28000200-0000-4000-8000-000000000002','Pl
 select public.send_student_plan('28000200-0000-4000-8000-000000000002',1);
 select set_config('request.jwt.claim.sub','28000200-0000-4000-8000-000000000002',true);
 select pg_temp.assert_true((select count(*)=0 from public.athlete_plan_selection),'received plan is not selected');
+select pg_temp.assert_true((select m->>'library_plan_id'=l.id::text and m->>'version_id'=a.version_id::text
+ from public.student_professional_detail('28000200-0000-4000-8000-000000000001') d
+ cross join lateral jsonb_array_elements(d.materials) m
+ join public.athlete_plan_library l on l.assignment_id=(m->>'assignment_id')::uuid and l.user_id=auth.uid()
+ join public.program_assignments a on a.id=l.assignment_id where m->>'status'='active'), 'material exposes exact owned library delivery and version');
 select pg_temp.assert_true((select count(*)=0 from public.athlete_routines),'delivery leaves routines untouched');
 select public.save_athlete_plan(0,'weekly','{"week":{"2":"28000200-0000-4000-8000-000000000010"},"dayPlan":{}}',
  '[{"id":"28000200-0000-4000-8000-000000000010","title":"Personal","prescription":{"ex":[]}}]');

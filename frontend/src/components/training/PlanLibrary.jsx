@@ -6,15 +6,13 @@ import { createProfessionalWorkflowRepository } from '../../lib/professional-wor
 import { getBrowserSupabaseClient } from '../../lib/supabase-client.js'
 import { weeklyPlanToWorkspace } from '../../lib/training-workspace.js'
 import { DAYS } from '../../lib/professional-program.js'
-import { parsePlan } from '../../lib/training-dto.js'
-import { applyDomainState } from '../../lib/domain-state.js'
 import { Button } from '../ui.jsx'
 import { confirmSheet } from '../../sheets.jsx'
 import { useUI } from '../../store/useUI.js'
 import Icon from '../Icon.jsx'
 import { compareProfessionalPlanVersions } from '../../lib/professional-plan-diff.js'
 import { useNavigate } from 'react-router-dom'
-import { hasAssignedProgram } from '../../lib/assigned-program.js'
+import ProfessionalPlanApplyButton, { isProfessionalPlanActive } from './ProfessionalPlanApplyButton.jsx'
 import { exerciseName, exOr } from '../../lib/exercises.js'
 
 const PAGE_SIZE = 5
@@ -71,7 +69,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
   const state = useStore(s => s.S)
   const update = useStore(s => s.update)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [busy, setBusy] = useState(false), [visible, setVisible] = useState(PAGE_SIZE)
+  const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [visible, setVisible] = useState(PAGE_SIZE)
   const generation = useRef(0)
   const refresh = useCallback(async (offset = 0) => {
     const request = ++generation.current
@@ -79,43 +77,6 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
     catch { if (request === generation.current) setError('Não foi possível carregar seus planos.') }
   }, [repo])
   useEffect(() => { if (user?.id) refresh(); return () => { generation.current += 1 } }, [user?.id, refresh])
-
-  const mutate = async action => {
-    const store = useStore.getState(), token = store.getScopeToken()
-    setBusy(true); setError('')
-    try {
-      await store.retryAccountSync()
-      if (!store.isScopeCurrent(token)) return false
-      if (useStore.getState().S._pendingSync?.plan) throw new Error('pending-plan')
-      await action(token)
-      if (store.isScopeCurrent(token)) { await refresh(); return true }
-      return false
-    } catch (error) {
-      console.error('Plan library operation failed', error)
-      const message = error.message === 'pending-plan'
-        ? 'Existem altera\u00e7\u00f5es dos seus treinos aguardando sincroniza\u00e7\u00e3o. Tente sincronizar novamente antes de aplicar.'
-        : error.code === '42501'
-          ? 'Este plano n\u00e3o est\u00e1 mais dispon\u00edvel. Atualize os treinos recebidos.'
-          : error.code === '40001' || error.kind === 'revision-conflict'
-            ? 'Seus treinos foram alterados em outra sess\u00e3o. Sincronize e tente novamente.'
-            : 'N\u00e3o foi poss\u00edvel aplicar o plano. Tente novamente; se persistir, contate o suporte.'
-      if (store.isScopeCurrent(token)) setError(message)
-      return false
-    }
-    finally { if (store.isScopeCurrent(token)) setBusy(false) }
-  }
-
-  const apply = item => confirmSheet({ title: 'Aplicar plano profissional?', message: 'Os treinos recebidos serão usados no seu perfil. Seus treinos criados continuam salvos.', confirmText: 'Aplicar plano', onConfirm: async () => {
-    return mutate(async token => {
-      const result = await repo.applyLibraryPlan(item.id)
-      const store = useStore.getState()
-      if (!store.isScopeCurrent(token)) return
-      const next = applyDomainState(store.S, 'plan', parsePlan(result, user.id))
-      next._pendingSync = { ...next._pendingSync, plan: false }
-      next.onboardingDone = true
-      store.replaceState(next, false)
-    })
-  } })
 
   const acknowledge = async (item, dayKey) => {
     const update = item.plan_update
@@ -193,13 +154,14 @@ function AccountPlanLibrary({ user, onUpdates = undefined }) {
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {!shownWorkouts.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
     <div className="received-workout-list">{shownWorkouts.map(workout => {
-      const active = hasAssignedProgram(state) && state.activeLibraryId === workout.item.id && state.assignedProgram.versionId === workout.item.version?.id && state.week[workout.day]
+      const active = isProfessionalPlanActive(state, workout.item.id, workout.item.version?.id)
       return <article className="card received-workout-card" key={`${workout.item.id}:${workout.day}`}>
         <button className="received-workout-main" onClick={() => open(workout)}>
           <span className="received-workout-copy"><strong>{workout.routine.name}</strong>{workout.item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}<small>{workout.routine.ex.length} exercícios · Prof. {workout.item.professional_name || 'Profissional'}</small></span>
           <Icon name="chevronRight" />
         </button>
-        {!workout.removed && <Button variant={active ? 'tinted' : 'primary'} disabled={busy} feedback="persistence" onClick={event => { event.stopPropagation(); active ? removeFromDay(workout) : apply(workout.item) }} loadingLabel="Aplicando…" successLabel="Aplicado">{active ? 'Aplicado' : 'Aplicar'}</Button>}
+        {!workout.removed && <ProfessionalPlanApplyButton libraryPlanId={workout.item.id} versionId={workout.item.version?.id} repo={repo} onApplied={refresh} />}
+        {active && state.week[workout.day] && <Button variant="ghost" onClick={() => removeFromDay(workout)}>Retirar deste dia</Button>}
       </article>
     })}</div>
     {professionalWorkouts.length > shownWorkouts.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais</Button>}

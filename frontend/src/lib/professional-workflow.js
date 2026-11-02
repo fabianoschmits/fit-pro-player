@@ -94,6 +94,7 @@ const toStudentProfessionalDetail = value => value ? ({
   },
   materials: (value.materials || []).map(material => ({
     assignmentId: material.assignment_id,
+    libraryPlanId: material.library_plan_id || null,
     programId: material.program_id,
     versionId: material.version_id,
     title: material.title,
