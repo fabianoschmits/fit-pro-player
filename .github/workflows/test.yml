@@ -57,6 +57,9 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y postgresql postgresql-client
       - run: supabase start
       - run: supabase db reset
+      # Only the disposable fixture connection may create Storage probe tables.
+      # Authenticated/anon grants and production permissions stay unchanged.
+      - run: PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U supabase_admin -d postgres -v ON_ERROR_STOP=1 -c 'GRANT CREATE ON SCHEMA storage TO postgres;'
       - run: node scripts/run-database-tests.mjs
       - run: PG_BIN="$(pg_config --bindir)" READINESS_REQUIRE_DB=1 node --test scripts/check-professional-readiness-migration.test.mjs
       - run: PG_BIN="$(pg_config --bindir)" NOTIFICATIONS_REQUIRE_DB=1 node --test scripts/check-notification-migration.test.mjs
