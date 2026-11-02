@@ -207,4 +207,3 @@ test('server routines without starter metadata restore after local normalization
  await expect(header(page).locator('h1')).toHaveText('Seu plano semanal')
  await expect(page.locator('.created-workouts')).toBeVisible()
 })
-

@@ -83,4 +83,3 @@ it('never shows deleted snapshot routines when current personal routines are emp
  expect(container.querySelector('.personal-plan-preview').textContent).not.toContain('Deleted snapshot')
  expect(container.querySelector('.personal-plan-preview').textContent).not.toContain('Live personal Tuesday')
 })
-

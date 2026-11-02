@@ -95,5 +95,3 @@ do $$ declare personal uuid; rev bigint; sched jsonb; begin
  perform pg_temp.assert_true((select revision=rev+1 from public.athlete_schedules where user_id=auth.uid()),'legacy one-argument wrapper resolves revision and still applies');
 end$$;
 rollback;
-
-
