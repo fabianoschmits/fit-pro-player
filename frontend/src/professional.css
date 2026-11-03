@@ -174,6 +174,10 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 @media(max-width:640px){.management-form-columns{grid-template-columns:minmax(0,1fr)}}
 .management-help{font-size:12px;line-height:1.5;color:var(--management-muted);margin:0;max-width:66ch}
 .management-field-label{margin:0;font-size:12px;font-weight:650}
+.management-accordion-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;padding:10px 14px;border:1px solid var(--sep);border-radius:10px;background:var(--surface-2);color:var(--label);font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:border-color var(--fast),background var(--fast)}
+.management-accordion-toggle:hover{border-color:var(--acc)}
+.management-accordion-toggle .management-toggle-badge{font-size:12px;font-weight:500;color:var(--management-muted);background:var(--surface);padding:2px 8px;border-radius:99px;border:1px solid var(--sep)}
+.management-scroll-panel{display:grid;gap:10px;max-height:220px;overflow-y:auto;padding:12px;border:1px solid var(--sep);border-top:none;border-radius:0 0 10px 10px;background:var(--surface);overscroll-behavior:contain}
 .management-choice-chips{display:flex;flex-wrap:wrap;gap:8px}
 .management-choice-chip{min-height:36px;padding:6px 12px;border:1px solid var(--sep);border-radius:999px;background:transparent;color:var(--label);font:inherit;font-size:12px;cursor:pointer}
 .management-choice-chip[aria-pressed="true"]{background:var(--acc-soft);border-color:var(--acc);font-weight:650}

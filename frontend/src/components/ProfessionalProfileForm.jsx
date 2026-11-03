@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { composeCityRegion, fetchBrazilianCities, fetchBrazilianStates } from '../lib/brazil-locations.js'
+import { BRAZILIAN_STATES, composeCityRegion, fetchBrazilianCities, fetchBrazilianStates } from '../lib/brazil-locations.js'
 import { t } from '../lib/i18n.js'
 import { combineProfessionalSpecialties, MAX_PROFESSIONAL_SPECIALTIES, MAX_SPECIALTY_LENGTH, PRACTICE_SPECIALTIES, splitProfessionalSpecialties } from '../lib/professional-specialties.js'
 import { Button, TextArea, TextField } from './ui.jsx'
@@ -35,15 +35,17 @@ export default function ProfessionalProfileForm({
   const nameRef = useRef(null)
   const [draft, setDraft] = useState(() => emptyDraft(profile))
   const [nameError, setNameError] = useState(false)
-  const [states, setStates] = useState([])
+  const [states, setStates] = useState(() => BRAZILIAN_STATES)
   const [cities, setCities] = useState([])
   const [locationError, setLocationError] = useState('')
+  const [practiceOpen, setPracticeOpen] = useState(false)
+  const [teachingOpen, setTeachingOpen] = useState(false)
   const selectedCount = draft.practice.length + draft.teaching.length + draft.custom.length
   const atLimit = selectedCount >= MAX_PROFESSIONAL_SPECIALTIES
 
   useEffect(() => {
     let current = true
-    fetchBrazilianStates().then(items => { if (current) { setStates(items); setLocationError('') } }).catch(() => { if (current) setLocationError(t('Não foi possível carregar estados e cidades agora.')) })
+    fetchBrazilianStates().then(items => { if (current && items?.length) { setStates(items); setLocationError('') } }).catch(() => { if (current) setLocationError(t('Não foi possível carregar estados e cidades agora.')) })
     return () => { current = false }
   }, [])
 
@@ -96,6 +98,9 @@ export default function ProfessionalProfileForm({
     </div>
   )
 
+  const selectedPracticeChips = PRACTICE_SPECIALTIES.filter(item => draft.practice.includes(item.id))
+  const selectedTeachingChips = PRACTICE_SPECIALTIES.filter(item => draft.teaching.includes(item.id))
+
   return <form className="management-profile-form" onSubmit={submit} aria-busy={saving || undefined} noValidate>
     <fieldset disabled={saving} className="management-form-group">
       <legend>{t('Apresentação')}</legend>
@@ -107,13 +112,81 @@ export default function ProfessionalProfileForm({
       <legend>{t('Atuação')}</legend>
       <div>
         <p id={`${id}-practice-label`} className="management-field-label">{t('Especialidades')}</p>
-        {chips('practice', PRACTICE_SPECIALTIES)}
+        <button
+          type="button"
+          className="management-accordion-toggle"
+          aria-expanded={practiceOpen}
+          aria-controls={`${id}-practice-panel`}
+          onClick={() => setPracticeOpen(v => !v)}
+        >
+          <span>{practiceOpen ? t('Fechar lista de especialidades') : t('Selecionar especialidades')}</span>
+          <span className="management-toggle-badge">{draft.practice.length ? `${draft.practice.length} selecionada(s)` : t('Toque para escolher')} {practiceOpen ? '▲' : '▼'}</span>
+        </button>
+        {practiceOpen && (
+          <div id={`${id}-practice-panel`} className="management-scroll-panel">
+            {chips('practice', PRACTICE_SPECIALTIES)}
+          </div>
+        )}
+        {Boolean(selectedPracticeChips.length) && (
+          <div style={{ marginTop: 8 }}>
+            <p className="management-help" style={{ marginBottom: 4 }}>{t('Especialidades selecionadas:')}</p>
+            <div className="management-choice-chips">
+              {selectedPracticeChips.map(item => (
+                <button
+                  key={`selected-practice-${item.id}`}
+                  type="button"
+                  className="management-choice-chip"
+                  aria-pressed="true"
+                  title={t('Clique para desmarcar')}
+                  onClick={() => toggle('practice', item.id)}
+                >
+                  {item.label} ✕
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
       <div>
         <p id={`${id}-teaching-label`} className="management-field-label">{t('Lecionar')}</p>
         <p className="management-help">{t('Marque também as especialidades que você leciona.')}</p>
-        {chips('teaching', PRACTICE_SPECIALTIES, `${t('Lecionar')} `)}
+        <button
+          type="button"
+          className="management-accordion-toggle"
+          aria-expanded={teachingOpen}
+          aria-controls={`${id}-teaching-panel`}
+          onClick={() => setTeachingOpen(v => !v)}
+        >
+          <span>{teachingOpen ? t('Fechar lista para lecionar') : t('Selecionar o que leciona')}</span>
+          <span className="management-toggle-badge">{draft.teaching.length ? `${draft.teaching.length} selecionada(s)` : t('Toque para escolher')} {teachingOpen ? '▲' : '▼'}</span>
+        </button>
+        {teachingOpen && (
+          <div id={`${id}-teaching-panel`} className="management-scroll-panel">
+            {chips('teaching', PRACTICE_SPECIALTIES, `${t('Lecionar')} `)}
+          </div>
+        )}
+        {Boolean(selectedTeachingChips.length) && (
+          <div style={{ marginTop: 8 }}>
+            <p className="management-help" style={{ marginBottom: 4 }}>{t('Disciplinas que você leciona:')}</p>
+            <div className="management-choice-chips">
+              {selectedTeachingChips.map(item => (
+                <button
+                  key={`selected-teaching-${item.id}`}
+                  type="button"
+                  className="management-choice-chip"
+                  aria-pressed="true"
+                  title={t('Clique para desmarcar')}
+                  onClick={() => toggle('teaching', item.id)}
+                >
+                  {t('Lecionar')} {item.label} ✕
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
       <label htmlFor={`${id}-custom`}>{t('Outra especialidade')}
         <span className="management-chip-input">
           <TextField id={`${id}-custom`} name="customSpecialty" value={draft.customDraft} onChange={event => update('customDraft', event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addCustom() } }} maxLength={MAX_SPECIALTY_LENGTH} aria-describedby={`${id}-specialties-hint`} disabled={atLimit} />
@@ -121,9 +194,10 @@ export default function ProfessionalProfileForm({
         </span>
       </label>
       {!!draft.custom.length && <ul className="management-specialties">{draft.custom.map(value => (
-        <li key={value}><button type="button" className="management-choice-chip" aria-pressed="true" onClick={() => setDraft(current => ({ ...current, custom: current.custom.filter(item => item !== value) }))}>{value}</button></li>
+        <li key={value}><button type="button" className="management-choice-chip" aria-pressed="true" title={t('Clique para remover')} onClick={() => setDraft(current => ({ ...current, custom: current.custom.filter(item => item !== value) }))}>{value} ✕</button></li>
       ))}</ul>}
       <p id={`${id}-specialties-hint`} className="management-help">{t('Escolha uma ou mais opções e, se quiser, digite especialidades extras. Até {0} no total.', MAX_PROFESSIONAL_SPECIALTIES)}</p>
+      
       <div className="management-form-columns">
         <label htmlFor={`${id}-state`}>{t('Estado')}
           <select id={`${id}-state`} className="field" name="stateUf" aria-label={t('Estado')} value={draft.stateUf} onChange={event => setDraft(current => ({ ...current, stateUf: event.target.value, cityName: '' }))}>
