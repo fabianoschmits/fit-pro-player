@@ -2,6 +2,16 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "Clique para desmarcar": "Clique para desmarcar",
+  "Clique para remover": "Clique para remover",
+  "Disciplinas que você leciona:": "Disciplinas que você leciona:",
+  "Especialidades selecionadas:": "Especialidades selecionadas:",
+  "Fechar lista de especialidades": "Fechar lista de especialidades",
+  "Fechar lista para lecionar": "Fechar lista para lecionar",
+  "Selecionar especialidades": "Selecionar especialidades",
+  "Selecionar o que leciona": "Selecionar o que leciona",
+  "Toque para escolher": "Toque para escolher",
+  "Voltar": "Voltar",
   "Confira o perfil antes de solicitar vínculo": "Confira o perfil antes de solicitar vínculo",
   "Não foi possível enviar a solicitação. O código pode ter expirado.": "Não foi possível enviar a solicitação. O código pode ter expirado.",
   "Solicitando…": "Solicitando…",
@@ -1285,7 +1295,6 @@ export default {
   "Lecionar": "Lecionar",
   "Marque também as especialidades que você leciona.": "Marque também as especialidades que você leciona.",
   "Outra especialidade": "Outra especialidade",
-  "Adicionar": "Adicionar",
   "Estado": "Estado",
   "Cidade": "Cidade",
   "Bairro": "Bairro",

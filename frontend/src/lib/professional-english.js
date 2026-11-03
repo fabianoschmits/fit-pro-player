@@ -1,5 +1,15 @@
 // English source equivalents for the Portuguese-authored professional workspace.
 export default {
+  "Clique para desmarcar": "Click to deselect",
+  "Clique para remover": "Click to remove",
+  "Disciplinas que você leciona:": "Subjects you teach:",
+  "Especialidades selecionadas:": "Selected specialties:",
+  "Fechar lista de especialidades": "Close specialty list",
+  "Fechar lista para lecionar": "Close teaching list",
+  "Selecionar especialidades": "Select specialties",
+  "Selecionar o que leciona": "Select what you teach",
+  "Toque para escolher": "Tap to choose",
+  "Voltar": "Back",
   "Confira o perfil antes de solicitar vínculo": "Review the profile before requesting a connection",
   "Não foi possível enviar a solicitação. O código pode ter expirado.": "Could not send the request. The code may have expired.",
   "Solicitando…": "Requesting…",
@@ -336,7 +346,6 @@ export default {
   "Não foi possível salvar o rascunho neste dispositivo.": "Could not save the draft on this device.",
   "Rascunho salvo neste dispositivo.": "Draft saved on this device.",
   "Selecionado": "Selected",
-  "Adicionar": "Add",
   "Publicando…": "Publishing…",
   "Publicar nova versão": "Publish new version",
   "A consulta do convite demorou mais que o esperado.": "The invitation lookup took longer than expected.",

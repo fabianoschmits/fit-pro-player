@@ -56,6 +56,13 @@ test('rejects CSP connect-src wildcards and unrelated origins', () => {
   }
 })
 
+test('allows only the exact HTTPS IBGE locality service used by professional profiles', () => {
+  assert.deepEqual(checkVercelCsp({ text: vercelFixture(`'self' ${requiredSupabaseOrigin} https://servicodados.ibge.gov.br`), requiredSupabaseOrigin }), [])
+  for (const origin of ['http://servicodados.ibge.gov.br', 'wss://servicodados.ibge.gov.br', 'https://servicodados.ibge.gov.br.evil.example', 'https://*.ibge.gov.br']) {
+    assert.match(checkVercelCsp({ text: vercelFixture(`'self' ${requiredSupabaseOrigin} ${origin}`), requiredSupabaseOrigin }).join('\n'), /connect-src/i)
+  }
+})
+
 test('rejects direct Supabase token persistence in gym state', () => {
   const violations = runCheck([
     ...requiredFiles,

@@ -91,3 +91,19 @@ Os resultados remotos, SHA entregue, URL da GitHub Actions e deployment Vercel s
 - `supabase/tests/202610290001_exercise_sprite_requirement.sql`
 - `supabase/tests/202610290003_professional_profile_invites_model_delete.sql`
 - `supabase/tests/202611030001_plan_relationship_lifecycle.sql`
+
+## Continuação sobre o main atualizado
+
+O main avançou até `82fb9d2a3500faa5536310358927c287fd3ddd5f`, mantendo a entrega anterior como ancestral. As funcionalidades novas de perfil profissional foram preservadas. A Quality desse main falhava por traduções duplicadas e por três overloads de RPC sem assertion de atividade. A validação local também identificou tipagem do signup, chaves de tradução ausentes e o validador CSP sem conhecer a consulta HTTPS ao IBGE recém-adicionada.
+
+Correções complementares:
+
+- Migration nova `20261103174500_professional_profile_activity_guards.sql`: preserva o corpo e grants das três RPCs atuais, acrescentando a assertion de atividade. Não altera migrations aplicadas.
+- Teste SQL cobre perfil suspenso nos três caminhos, preservação dos campos editados após provisionamento e a exceção administrativa de recuperação já prevista na política existente.
+- Tipagem explícita das opções de signup, sem mudança de comportamento.
+- Traduções completas nos 11 idiomas; 1.580 chaves sincronizadas e 1.324 exercícios localizados; duplicatas removidas.
+- Validador CSP reconhece somente `https://servicodados.ibge.gov.br`, usado pela consulta de cidades. Nova regressão reprova HTTP, WSS, wildcard e hostname semelhante. Os asserts existentes permanecem.
+
+Validação complementar: 1.656 testes unitários em 189 arquivos; 38 arquivos SQL e quatro grupos de concorrência; upgrade com dados populados; reset Supabase local; fluxo SQL E2E completo nos três projetos Chromium desktop/mobile e WebKit mobile; sete PWA; lint, typecheck, i18n, boundaries, notificações, TAP, fatigue, builds web/Vercel/mobile e auditoria de produção aprovados. Um timeout de preload sob concorrência foi reexecutado com dois workers, mantendo o timeout e todos os asserts.
+
+Arquivos complementares: AuthProvider.jsx, professional-english.js, os 11 arquivos de locales, check-supabase-boundaries.mjs e seu teste, a migration complementar e seu teste SQL, além deste relatório. A alteração local preexistente de uma linha em branco na migration `20261103161957_fix_provision_professional_profile.sql` foi preservada fora do commit.

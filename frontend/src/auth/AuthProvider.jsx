@@ -275,7 +275,7 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
         if (result.kind !== 'success') return result;
         return { kind: 'authenticated', data: result.data };
       },
-      signUp: async ({ email, password, displayName, accountType = 'student', privacyVersion, professionalProfile } = {}) => {
+      signUp: async (/** @type {{ email?: string, password?: string, displayName?: string, accountType?: string, privacyVersion?: string, professionalProfile?: Partial<ReturnType<typeof normalizeProfessionalProfile>> }} */ { email, password, displayName, accountType = 'student', privacyVersion, professionalProfile } = {}) => {
         const metadata = {
           display_name: displayName,
           account_type: accountType === 'professional' ? 'professional' : 'student',
