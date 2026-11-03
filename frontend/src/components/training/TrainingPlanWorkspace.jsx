@@ -8,9 +8,13 @@ import { useState } from 'react'
 const WEEK = [1, 2, 3, 4, 5, 6, 0]
 export function PlanWeek({ state = undefined, onDay = undefined, updates = {} }) {
   return <section><h4 className="sec">{t('Week schedule')}</h4><div className="plan-week-card"><div className="plan-week-grid">
-    {WEEK.map(day => { const routine = state.routines.find(r => r.id === state.week[day]); return <button key={day} className={'plan-day' + (routine ? ' on' : '') + (routine?.assigned ? ' professional' : '')} disabled={!onDay} aria-label={`${t(DAYN[day])}: ${routine ? routineName(routine) : t('Rest')}`} onClick={() => onDay?.(day)}>
-      <span className="plan-day-label">{t(DAYS[day])}</span>{routine?.assigned && <span className="plan-day-professional"><Icon name="shield" /><span>Prof.</span></span>}{updates[day] && <span className="tag acc workout-update-badge">Atualizado</span>}<span className="plan-day-icon">{routine ? <RoutineMuscleThumb routine={routine} body={state.body} /> : <Icon name="moon" />}</span><span className="plan-day-name">{routine ? routineName(routine) : t('Rest')}</span>
-    </button> })}
+    {WEEK.map(day => { const routine = state.routines.find(r => r.id === state.week[day]); return <div key={day} className="plan-day-column">
+      <span className="plan-day-marker">{routine?.assigned && <span className="plan-day-professional"><Icon name="shield" /><span>Prof.</span></span>}</span>
+      <button className={'plan-day' + (routine ? ' on' : '') + (routine?.assigned ? ' professional' : '')} disabled={!onDay} aria-label={`${t(DAYN[day])}: ${routine ? routineName(routine) : t('Rest')}`} onClick={() => onDay?.(day)}>
+        <span className="plan-day-label">{t(DAYS[day])}</span><span className="plan-day-icon">{routine ? <RoutineMuscleThumb routine={routine} body={state.body} /> : <Icon name="moon" />}</span><span className="plan-day-name">{routine ? routineName(routine) : t('Rest')}</span>
+      </button>
+      <span className="plan-day-marker plan-day-update">{updates[day] && 'Atualizado'}</span>
+    </div> })}
   </div></div></section>
 }
 export function RoutineList({ state = undefined, onOpen = undefined, onAdd = undefined, routines = state.routines, title = t('Routines'), className = '', pageSize = 5 }) {
