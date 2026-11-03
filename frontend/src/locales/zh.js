@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Confira o perfil antes de solicitar vínculo": "申请关联前请查看资料",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "无法发送申请。代码可能已过期。",
+  "Solicitando…": "正在申请…",
+  "Solicitar vínculo": "申请关联",
+
   "Abrir biblioteca para aplicar": "打开训练库以应用",
   "Aceito em {0}": "于 {0} 接受",
   "Acompanha seu nome profissional": "随您的专业名称变化",

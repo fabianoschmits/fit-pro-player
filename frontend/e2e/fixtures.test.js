@@ -40,6 +40,8 @@ export async function seed(page,{professional=false,authenticated=professional,u
     else if(name==='community_has_block' && !Object.hasOwn(rpc,name))data=false
     else if(name==='community_acknowledge_restriction' && !Object.hasOwn(rpc,name))data=true
     else if(name==='ops_community_restriction_status' && !Object.hasOwn(rpc,name))data={active:null,history:[]}
+    else if(name==='professional_link_requests_page' && !Object.hasOwn(rpc,name))data={items:[],total:0}
+    else if(name==='professional_relationship_cycles' && !Object.hasOwn(rpc,name))data=[{id:'fixture-cycle',professional_user_id:userId,student_user_id:STUDENT,status:'active',created_at:'2026-10-10T12:00:00Z'}]
     else if(name==='user_roles')data=(roles || (professional?['professional']:[])).map(role=>({role}))
     else if(name==='save_own_account_snapshot')data=[{status:'APPLIED',revision:2,updated_at:new Date().toISOString()}]
     else if(Object.hasOwn(rpc,name))data=typeof rpc[name]==='function'?await rpc[name](JSON.parse(route.request().postData()||'{}'),{userId,user,request:route.request()}):rpc[name]

@@ -87,10 +87,14 @@ select pg_temp.expect_error($q$insert into public.program_assignments(program_id
 select pg_temp.expect_error($q$insert into public.program_assignments(program_id,version_id,professional_user_id,student_user_id) values ('20000000-0000-0000-0000-000000000002','30000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003')$q$,'23514');
 update public.professional_student_relationships set status='active' where id='10000000-0000-0000-0000-000000000001';
 update public.programs set archived=false where id='20000000-0000-0000-0000-000000000001';
-update public.program_assignments set status='active' where program_id='20000000-0000-0000-0000-000000000001';
+select pg_temp.expect_error($q$update public.program_assignments set status='active' where program_id='20000000-0000-0000-0000-000000000001'$q$,'23514');
+-- Keep revoked assignments immutable; a new delivery supports the history-bound checks.
+insert into public.program_assignments(program_id,version_id,professional_user_id,student_user_id)
+select program_id,version_id,professional_user_id,student_user_id from public.program_assignments where program_id='20000000-0000-0000-0000-000000000001' limit 1;
+
 insert into public.workout_executions(assignment_id,version_id,student_user_id,day_key)
 select a.id,a.version_id,a.student_user_id,'monday' from public.program_assignments a cross join generate_series(1,150)
-where a.program_id='20000000-0000-0000-0000-000000000001';
+where a.program_id='20000000-0000-0000-0000-000000000001' and a.status='active';
 set local role authenticated;
 set local request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
 select pg_temp.assert_true(jsonb_array_length(public.student_program_overview()->'executions')=100,'student overview bounds recent history');

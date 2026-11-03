@@ -6,6 +6,7 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { DEF, useStore, normalizeState } from '../../store/useStore.js'
 import { createAccountDomainSync } from '../../lib/account-domain-sync.js'
 import { parsePlan } from '../../lib/training-dto.js'
+import { writeScopedState } from '../../lib/account-cache.js'
 import { useUI } from '../../store/useUI.js'
 import ProfessionalPlanApplyButton from './ProfessionalPlanApplyButton.jsx'
 import StudentProfessionalDetail from '../../views/StudentProfessionalDetail.jsx'
@@ -108,8 +109,11 @@ it('preserves a newer local edit made while the response was outstanding', async
   await act(async () => useStore.setState({ S: { ...useStore.getState().S, week: { 1: 'personal' }, _pendingSync: { plan: true } } }))
   const before = useStore.getState().S
   await act(async () => resolve(response()))
-  expect(useStore.getState().S).toBe(before)
-  expect(container.querySelector('[role="alert"]')).not.toBeNull()
+  expect(useStore.getState().S._syncConflicts.plan.local.schedule.week).toEqual(before.week)
+  expect(useStore.getState().S._pendingSync.plan).toBe(true)
+  expect(useStore.getState().S.assignedProgram.versionId).toBe('v2')
+  expect(useStore.getState().S.week).toEqual({ 1: 'routine' })
+  expect(useUI.getState().sheets).toHaveLength(0)
 })
 it.each(['detail', 'materials'])('accepts a new version directly on %s and immediately shows applied', async page => {
   const before = useStore.getState().S
@@ -342,4 +346,47 @@ it('acknowledges a confirmed application in the live sync engine and never lets 
   sync.acceptRemote('plan',initial)
   expect(useStore.getState().S._syncBases.plan.schedule.assignedProgram.versionId).toBe('v2')
  } finally {sync.dispose()}
+})
+
+it('closes after server success when realtime has already delivered that same revision during the roundtrip', async () => {
+ const token = useStore.getState().getScopeToken()
+ const sync = createAccountDomainSync({ repository: {}, getState: () => useStore.getState().S, replaceState: next => useStore.getState().replaceState(next, false), isCurrent: () => useStore.getState().isScopeCurrent(token), isOnline: () => true })
+ const initial = parsePlan(response('v1'), userId); initial.schedule.revision = 2
+ sync.acceptRemote('plan', initial)
+ useStore.getState().configureAccountSync(() => sync.retry(), (data, context) => sync.acceptConfirmedPlan(data, context))
+ let resolve
+ mocks.repo.applyLibraryPlan.mockImplementation(() => new Promise(done => { resolve = done }))
+ try {
+  await sync.start()
+  await render(); await click('Usar este plano'); await click('Aplicar plano')
+  await act(async () => sync.acceptRemote('plan', parsePlan(response(), userId)))
+  expect(useUI.getState().sheets).toHaveLength(1)
+  await act(async () => resolve(response()))
+  expect(mocks.repo.applyLibraryPlan).toHaveBeenCalledExactlyOnceWith('library', 2)
+  expect(useUI.getState().sheets).toHaveLength(0)
+  expect(button('Em uso')).toBeDefined()
+  expect(useStore.getState().S.week).toEqual({ 1: 'routine' })
+  sync.acceptRemote('plan', initial)
+  expect(useStore.getState().S.planServerRevision).toBe(3)
+  expect(useStore.getState().S._syncBases.plan.schedule.assignedProgram.versionId).toBe('v2')
+ } finally { sync.dispose() }
+})
+
+it('rebases an actual other-tab durable personal edit without leaving the confirmed selection behind', async () => {
+ useStore.setState({ S: normalizeState({ ...useStore.getState().S, routines: [personalRoutine], _ts: 1 }) })
+ const result = response(); result.routines.push(personalResponse().routines[0])
+ let resolve
+ mocks.repo.applyLibraryPlan.mockImplementationOnce(() => new Promise(done => { resolve = done }))
+ await render(); await click('Usar este plano'); await click('Aplicar plano')
+ const peer = structuredClone(useStore.getState().S)
+ peer.routines[0].name = 'Edição pessoal de outra aba'; peer._pendingSync = { plan: true }; peer._ts = Date.now() + 100
+ expect(writeScopedState(useStore.getState().getActiveLocalScope(), peer, localStorage)).toBe(true)
+ expect(useStore.getState().S.routines[0].name).toBe(personalRoutine.name)
+ await act(async () => resolve(result))
+ expect(useUI.getState().sheets).toHaveLength(0)
+ expect(useStore.getState().S.assignedProgram.versionId).toBe('v2')
+ expect(useStore.getState().S.week).toEqual({ 1: 'routine' })
+ expect(useStore.getState().S.routines.find(row => row.id === 'personal').name).toBe('Edição pessoal de outra aba')
+ expect(useStore.getState().S._pendingSync.plan).toBe(true)
+ expect(mocks.repo.applyLibraryPlan).toHaveBeenCalledTimes(1)
 })

@@ -1,5 +1,10 @@
 // English source equivalents for the Portuguese-authored professional workspace.
 export default {
+  "Confira o perfil antes de solicitar vínculo": "Review the profile before requesting a connection",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "Could not send the request. The code may have expired.",
+  "Solicitando…": "Requesting…",
+  "Solicitar vínculo": "Request connection",
+
   "Abrir biblioteca para aplicar": "Open library to apply",
   "Aceito em {0}": "Accepted on {0}",
   "Acompanha seu nome profissional": "Follows your professional name",

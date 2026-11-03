@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  "Confira o perfil antes de solicitar vínculo": "Confira o perfil antes de solicitar vínculo",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "Não foi possível enviar a solicitação. O código pode ter expirado.",
+  "Solicitando…": "Solicitando…",
+  "Solicitar vínculo": "Solicitar vínculo",
+
   "Abrir biblioteca para aplicar": "Abrir biblioteca para aplicar",
   "Aceito em {0}": "Aceito em {0}",
   "Acompanha seu nome profissional": "Acompanha seu nome profissional",

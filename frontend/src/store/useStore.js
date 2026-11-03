@@ -1,4 +1,4 @@
-import { applyDomainState } from '../lib/domain-state.js'
+import { confirmedPlanState } from '../lib/confirmed-plan.js'
 import { ensureBodyIds } from '../lib/body-sync-state.js'
 import { migrateLocalState } from '../lib/local-state-migrations.js'
 import { create } from 'zustand'
@@ -111,6 +111,7 @@ export const useStore = create((set, get) => {
   let releaseSessionRecoveryAuth = null
   let accountSyncRetry = null
   let accountSyncConfirmedPlan = null
+  let accountSyncBeginPlan = null
   const disposeSessionRecovery = () => {
     releaseSessionRecoveryAuth?.()
     releaseSessionRecoveryAuth = null
@@ -197,19 +198,23 @@ export const useStore = create((set, get) => {
     sessionRecovery: { state: 'idle', pending: 0, error: null },
     getActiveLocalScope: () => activeScope,
     setAccountSyncStatus(status) { set({ accountSync: status }) },
-    configureAccountSync(retry, acceptConfirmedPlan = null) { accountSyncRetry = retry; accountSyncConfirmedPlan = acceptConfirmedPlan },
-    acceptConfirmedAccountPlan(data, token) {
-      if (!isCurrent(token) || activeScope.kind !== 'account' || get().S._pendingSync?.plan) return false
-      if (accountSyncConfirmedPlan) return accountSyncConfirmedPlan(data)
-      if ((data.schedule?.revision || 0) < (get().S.planServerRevision || 0)) return false
-      const next = applyDomainState(get().S, 'plan', data)
-      next._syncBases = { ...next._syncBases, plan: { mode: data.schedule?.mode || 'weekly', schedule: data.schedule?.values || {}, routines: data.routines.map(({ id, title, prescription }) => ({ id, title, prescription })) } }
-      next._pendingSync = { ...next._pendingSync, plan: false }
-      get().replaceState(next, false)
+    configureAccountSync(retry, acceptConfirmedPlan = null, beginPlan = null) { accountSyncRetry = retry; accountSyncConfirmedPlan = acceptConfirmedPlan; accountSyncBeginPlan = beginPlan },
+    beginAccountPlanApplication(token) {
+      if (!isCurrent(token) || activeScope.kind !== 'account') throw new Error('account-scope')
+      if (get().S._pendingSync?.plan) throw new Error('pending-plan')
+      return accountSyncBeginPlan?.() || { base: structuredClone(get().S), release: () => {} }
+    },
+    acceptConfirmedAccountPlan(data, token, context = undefined) {
+      if (!isCurrent(token) || activeScope.kind !== 'account') return false
+      const saved = context?.base ? readScopedState(activeScope, localStorage, DEF) : null
+      const cached = saved?.status === 'valid' && saved.state._pendingSync?.plan && (saved.state._ts || 0) > (context.base._ts || 0) ? normalizeState(saved.state) : undefined
+      const confirmedContext = context ? { ...context, cached } : undefined
+      if (accountSyncConfirmedPlan) return accountSyncConfirmedPlan(data, confirmedContext)
+      get().replaceState(confirmedPlanState(get().S, data, context?.base, cached), false)
       return true
     },
     retryAccountSync() { return accountSyncRetry?.() || Promise.resolve() },
-    releaseAccountSync() { accountSyncRetry = null; accountSyncConfirmedPlan = null; set({ accountSync: { state: 'saved', pending: 0, error: null } }) },
+    releaseAccountSync() { accountSyncRetry = null; accountSyncConfirmedPlan = null; accountSyncBeginPlan = null; set({ accountSync: { state: 'saved', pending: 0, error: null } }) },
     getScopeToken: scopeToken,
     isScopeCurrent: isCurrent,
     // Reads share this generation across Shell and management. Every persisted assignment
@@ -252,6 +257,7 @@ export const useStore = create((set, get) => {
       disposeSessionRecovery()
       accountSyncRetry = null
       accountSyncConfirmedPlan = null
+      accountSyncBeginPlan = null
       set({ sessionRecovery: { state: 'idle', pending: 0, error: null } })
     },
     flushSessionRecovery() {

@@ -24,8 +24,8 @@ insert into public.programs(id,professional_user_id,title) values
 set local session_replication_role=replica;
 insert into public.program_versions(id,program_id,version_number,weekly_plan,published_at) values
  ('29000100-0000-4000-8000-000000000011','29000100-0000-4000-8000-000000000010',1,'{"monday":[{"exerciseId":"2330","sets":3,"reps":10,"load":0}]}',now());
-insert into public.program_assignments(id,program_id,version_id,professional_user_id,student_user_id,status) values
- ('29000100-0000-4000-8000-000000000012','29000100-0000-4000-8000-000000000010','29000100-0000-4000-8000-000000000011','29000100-0000-4000-8000-000000000001','29000100-0000-4000-8000-000000000003','active');
+insert into public.program_assignments(id,program_id,version_id,professional_user_id,student_user_id,status,relationship_id) values
+ ('29000100-0000-4000-8000-000000000012','29000100-0000-4000-8000-000000000010','29000100-0000-4000-8000-000000000011','29000100-0000-4000-8000-000000000001','29000100-0000-4000-8000-000000000003','active',(select id from public.professional_student_relationships where professional_user_id='29000100-0000-4000-8000-000000000001' and student_user_id='29000100-0000-4000-8000-000000000003' and status='active'));
 insert into public.athlete_plan_library(id,user_id,source_type,title,assignment_id) values
  ('29000100-0000-4000-8000-000000000013','29000100-0000-4000-8000-000000000003','professional','Legado','29000100-0000-4000-8000-000000000012');
 set local session_replication_role=origin;

@@ -95,6 +95,7 @@ const ProfessionalInvites = lazy(loadProfessionalInvites)
 const InviteLanding = lazy(loadInviteLanding)
 const ProfessionalStudents = lazy(loadProfessionalStudents)
 const ProfessionalStudentPage = lazy(loadProfessionalStudentPage)
+const ProfessionalLinkRequestPage = lazy(() => import('./views/ProfessionalLinkRequestPage.jsx'))
 const ProfessionalPrograms = lazy(loadProfessionalPrograms)
 const ProfessionalStudentPlan = lazy(() => import('./views/ProfessionalStudentPlan.jsx'))
 const StudentProfessionals = lazy(loadStudentProfessionals)
@@ -289,7 +290,7 @@ function Shell() {
   const queryInviteCode = inviteEntry ? new URLSearchParams(loc.search).get('code') || '' : ''
   const invitePath = loc.pathname.startsWith('/invite/') || loc.pathname === '/connect' || loc.pathname === '/student/professionals/add' || (inviteEntry && !!queryInviteCode)
   const publicPrivacyPath = ['/privacy', '/terms', '/data-rights'].includes(loc.pathname)
-  const inviteAcceptedPath = new URLSearchParams(loc.search).get('invite') === 'accepted'
+  const inviteAcceptedPath = new URLSearchParams(loc.search).get('invite') === 'accepted' || new URLSearchParams(loc.search).get('request') === 'pending'
   const inviteAuthenticated = invitePath && authenticated && ready
   const pendingInviteCode = loc.pathname.match(/^\/invite\/([^/]+)/)?.[1] || queryInviteCode
   const langV = useLang()   // re-renders the whole shell when the language (pack) changes
@@ -329,13 +330,15 @@ function Shell() {
       onStatus: status => { if (current(accountId)) useStore.getState().setAccountSyncStatus(status) },
       onCommitted: (domain, revision) => tabSync?.publish(domain, revision),
     })
-    useStore.getState().configureAccountSync(() => sync.retry(), data => sync.acceptConfirmedPlan(data))
+    useStore.getState().configureAccountSync(() => sync.retry(), (data, context) => sync.acceptConfirmedPlan(data, context), () => sync.beginPlanApplication())
     const refresh = createDomainRefresh({
       accountId,
       repository,
       isCurrent: current,
       apply: (domain, data) => sync.acceptRemote(domain, data),
     })
+    const planChannel = typeof client.channel === 'function' ? client.channel(`account-plan:${accountId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'athlete_schedules', filter: `user_id=eq.${accountId}` }, () => { if (current(accountId)) void refresh.refresh('plan') }).subscribe() : null
     if (typeof BroadcastChannel !== 'undefined') tabSync = createTabSync({accountId,refresh:domain=>refresh.refresh(domain),getRevision:domain=>sync.revision(domain)})
     const unsubscribe = useStore.subscribe((state, previous) => {
       if (state.S !== previous.S && current(accountId)) void sync.changed()
@@ -357,6 +360,7 @@ function Shell() {
     window.addEventListener('focus', retry)
     return () => {
       tabSync?.dispose()
+      if (planChannel) void client.removeChannel(planChannel)
       sync.dispose()
       unsubscribe()
       detach()
@@ -521,6 +525,7 @@ function Shell() {
                 <Route path="/professional/invites" element={<ProfessionalInvites />} />
                 <Route path="/professional/students" element={<ProfessionalStudents />} />
                 <Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} />
+                <Route path="/professional/requests/:requestId" element={<ProfessionalLinkRequestPage />} />
                 <Route path="/professional/students/:studentId/plan" element={<ProfessionalStudentPlan />} />
                 <Route path="/professional/students/:studentId/plan/r/:routineId" element={<ProfessionalStudentPlan />} />
                 <Route path="/professional/templates" element={<ProfessionalPrograms />} />

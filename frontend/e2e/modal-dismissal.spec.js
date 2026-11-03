@@ -113,6 +113,7 @@ test('shares the compact workout card with its exercise illustration as a PNG', 
   const downloaded = page.waitForEvent('download')
   await page.locator('.share-btn-action').click()
   const file = await downloaded
+  await expect(page.locator('.share-btn-action')).toContainText('Imagem salva')
   expect(file.suggestedFilename()).toMatch(/treino-fpp-.*\.png/)
   await file.saveAs(testInfo.outputPath('shared-workout.png'))
   const png = await readFile(testInfo.outputPath('shared-workout.png'))
@@ -136,7 +137,7 @@ test('shares the compact workout card with its exercise illustration as a PNG', 
     })
   }, { source: `data:image/png;base64,${png.toString('base64')}`, map: mapPreview })
   for (const count of matchingPixels) expect(count).toBeGreaterThan(20)
-  await expect(page.locator('.share-btn-action')).toContainText('Imagem salva')
+
 })
 
 test('outside clicks dismiss only the top confirmation without deleting the workout', async ({ page }) => {

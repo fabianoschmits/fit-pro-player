@@ -5,8 +5,8 @@ import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ auth: {}, client: {}, repo: {
   professionalRole: vi.fn(), assignedPrograms: vi.fn(), version: vi.fn(),
-  studentProfessionals: vi.fn(), studentOverview: vi.fn(), studentProfessionalDetail: vi.fn(),
-  revokeRelationship: vi.fn(), previewInvite: vi.fn(), acceptInvite: vi.fn(),
+  studentLinkRequests: vi.fn(), studentProfessionals: vi.fn(), studentOverview: vi.fn(), studentProfessionalDetail: vi.fn(),
+  revokeRelationship: vi.fn(), previewInvite: vi.fn(), requestLink: vi.fn(),
 } }))
 vi.mock('./auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('./lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => mocks.client }))
@@ -65,10 +65,10 @@ beforeEach(async () => {
   mocks.repo.assignedPrograms.mockImplementation(async () => linked ? [oldAssignment] : [])
   mocks.repo.version.mockImplementation(async id => version(id))
   mocks.repo.studentProfessionals.mockImplementation(async () => linked ? [person('p1')] : [])
-  mocks.repo.studentOverview.mockResolvedValue({})
+  mocks.repo.studentOverview.mockResolvedValue({}); mocks.repo.studentLinkRequests.mockResolvedValue([])
   mocks.repo.studentProfessionalDetail.mockImplementation(async () => linked ? detail : null)
   mocks.repo.previewInvite.mockResolvedValue([{ professional_name: 'Ana Silva', verification_status: 'unverified' }])
-  mocks.repo.acceptInvite.mockResolvedValue({})
+  mocks.repo.requestLink.mockResolvedValue({})
   mocks.repo.revokeRelationship.mockImplementation(async () => { linked = false })
   await seedAccount('11111111-1111-4111-8111-111111111111')
   useStore.setState({ ready: false })
@@ -191,11 +191,11 @@ it('continuously preserves a code from anonymous sign-in through explicit accept
   expect(window.location.hash).toBe('#/student/professionals/add?code=A1B2C3D4E5')
   expect(container.querySelector('#student-invite-code').value).toBe('A1B2C3D4E5')
   expect(container.textContent).toContain('Ana Silva')
-  expect(mocks.repo.acceptInvite).not.toHaveBeenCalled()
+  expect(mocks.repo.requestLink).not.toHaveBeenCalled()
   expect(useStore.getState().S.onboardingDone).toBe(false)
-  await click('Vincular a este profissional')
+  await click('Solicitar vínculo')
   expect(sessionStorage.getItem('fpp-pending-invite')).toBeNull()
-  expect(window.location.hash).toBe('#/student/professionals?invite=accepted')
+  expect(window.location.hash).toBe('#/student/professionals?request=pending')
   expect(container.querySelector('.student-professionals-page')).not.toBeNull()
   expect(useStore.getState().S.onboardingDone).toBe(false)
   await go('/home')

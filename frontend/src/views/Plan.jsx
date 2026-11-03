@@ -29,7 +29,6 @@ export default function Plan() {
   const receiveUpdates = useCallback(updates => setUpdatedDays(updates), [])
   const removeProfessionalPlan = useRef(null)
   const receiveRemoval = useCallback(handler => { removeProfessionalPlan.current = handler }, [])
-  const initialChoice = new URLSearchParams(location.search).get('library') === 'self' ? 'self' : null
 
   if (!S.onboardingDone || editingProfile) {
     const closeEditor = () => { setEditingProfile(false); nav('/plan', { replace: true }) }
@@ -83,7 +82,7 @@ export default function Plan() {
 
     {mode === 'weekly' && <div className="training-plan-workspace"><PlanWeek state={S} updates={updatedDays} onDay={day => usingProfessionalPlan ? removeProfessionalPlan.current?.() : dayAssignSheet(day)} /></div>}
 
-    <PlanLibrary onUpdates={receiveUpdates} onRemoveReady={receiveRemoval} initialChoice={initialChoice}>
+    <PlanLibrary onUpdates={receiveUpdates} onRemoveReady={receiveRemoval}>
       <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />
     </PlanLibrary>
 

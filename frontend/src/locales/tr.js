@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Confira o perfil antes de solicitar vínculo": "Bağlantı istemeden önce profili inceleyin",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "İstek gönderilemedi. Kodun süresi dolmuş olabilir.",
+  "Solicitando…": "İsteniyor…",
+  "Solicitar vínculo": "Bağlantı iste",
+
   "Abrir biblioteca para aplicar": "Uygulamak için kitaplığı aç",
   "Aceito em {0}": "{0} tarihinde kabul edildi",
   "Acompanha seu nome profissional": "Profesyonel adınızla eşleşir",

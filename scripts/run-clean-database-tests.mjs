@@ -5,6 +5,8 @@ import net from 'node:net'
 import assert from 'node:assert/strict'
 import { spawnSync, spawn } from 'node:child_process'
 import { databaseTestInput, databaseTestPassed } from './database-test-tap.mjs'
+import { testPlanRelationshipConcurrency } from './plan-relationship-concurrency.mjs'
+import { seedRelationshipUpgrade, verifyRelationshipUpgrade } from './plan-relationship-upgrade.mjs'
 const root=process.cwd()
 const bin=process.env.PG_BIN || (process.platform==='win32' ? 'C:/Program Files/PostgreSQL/17/bin' : '')
 const executable=name=>bin ? path.join(bin,name+(process.platform==='win32'?'.exe':'')) : name
@@ -32,7 +34,11 @@ const freePort=()=>new Promise(resolve=>{const server=net.createServer();server.
       create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
       grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;`)
     sql(fs.readFileSync(path.join(root, 'scripts/local-database-bootstrap.sql'), 'utf8'))
-    for (const file of fs.readdirSync(path.join(root, 'supabase/migrations')).sort()) sql(fs.readFileSync(path.join(root, 'supabase/migrations', file), 'utf8'))
+    for (const file of fs.readdirSync(path.join(root, 'supabase/migrations')).sort()) {
+      if(file==='202611030001_plan_relationship_lifecycle.sql') await seedRelationshipUpgrade(sql)
+      sql(fs.readFileSync(path.join(root, 'supabase/migrations', file), 'utf8'))
+      if(file==='202611030001_plan_relationship_lifecycle.sql') await verifyRelationshipUpgrade(sql)
+    }
     sql('create extension if not exists pgtap;')
     let failed=false
     for(const file of fs.readdirSync(path.join(root,'supabase/tests')).filter(name=>name.endsWith('.sql')).sort()) {
@@ -42,4 +48,5 @@ const freePort=()=>new Promise(resolve=>{const server=net.createServer();server.
       if(!passed){failed=true;console.error(result.stderr,result.stdout)}
     }
     if(failed)process.exitCode=1
+    await testPlanRelationshipConcurrency({ sql, asyncSql })
   } finally { run('pg_ctl',['-D',data,'-m','immediate','-w','stop']) }

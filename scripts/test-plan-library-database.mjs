@@ -2,6 +2,7 @@
 // pgcrypto provisioning is omitted because this suite does not invoke invite/crypto functions.
 import { PGlite } from '@electric-sql/pglite'
 import { readFileSync, readdirSync } from 'node:fs'
+import { seedRelationshipUpgrade, verifyRelationshipUpgrade } from './plan-relationship-upgrade.mjs'
 const db = new PGlite()
 await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}',raw_app_meta_data jsonb default '{}',created_at timestamptz default now(),updated_at timestamptz default now()); create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$; grant usage on schema public,auth to authenticated,anon,service_role; grant execute on function auth.uid() to public;`)
 const files = readdirSync('supabase/migrations').filter(name => name.startsWith('202609') || ['202610020014_professional_readiness.sql','202610040015_notifications.sql','202610050015_student_professional_management.sql','202610090016_professional_program_metadata.sql','202610090017_professional_workspace_reads.sql','202610190001_domain_training_state.sql','20261022110000_remove_redundant_advisory_locks.sql','20261022120000_handle_initial_insert_unique_violation.sql','20261027120000_plan_library.sql'].includes(name)).sort()
@@ -10,6 +11,7 @@ for (const name of files) {
  catch(e) { console.error('FAILED '+name+' '+e.message); process.exit(1) }
 }
 const updatesMigration = 'supabase/migrations/202610280001_library_updates.sql'
+await db.exec(readFileSync('supabase/migrations/20261020161748_fix_athlete_body_dates.sql', 'utf8'))
 await db.exec(readFileSync(updatesMigration, 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/20261027120000_plan_library.sql','utf8').replace(/^\uFEFF/,'')); console.log('PASS plan library integration') } catch(e) { console.error(e.message,e.where);process.exit(1) }
 try { await db.exec(readFileSync('supabase/tests/historical/202610280001_library_updates.sql', 'utf8')); console.log('PASS library updates and personal routines') } catch(e) { console.error(e.message,e.where);process.exit(1) }
@@ -35,13 +37,13 @@ insert into public.professional_profiles(user_id,professional_name) values ('102
 await db.exec(readFileSync('supabase/migrations/202610290003_professional_profile_invites_and_model_delete.sql', 'utf8'))
 const legacyInvite = await db.query(`select code from public.professional_invites where professional_user_id='10290299-0000-0000-0000-000000000001' and is_personal`)
 if (legacyInvite.rows[0]?.code !== 'LEGACYPRO') throw new Error('legacy professional personal invite was not backfilled')
-try { await db.exec(readFileSync('supabase/tests/202610290003_professional_profile_invites_model_delete.sql', 'utf8')); console.log('PASS professional profile save contract') } catch(e) { console.error(e.message,e.where,e.query); process.exit(1) }
+
 await db.exec(readFileSync('supabase/migrations/202610290001_exercise_sprite_requirement.sql', 'utf8'))
 for (const name of readdirSync('supabase/migrations').filter(name => name.endsWith('_exercise_sprite_catalogue.sql')).sort()) {
  await db.exec(readFileSync('supabase/migrations/' + name, 'utf8'))
 }
 await db.exec(readFileSync('supabase/migrations/202610310001_explicit_library_plan_application.sql', 'utf8'))
-try { await db.exec(readFileSync('supabase/tests/202610290001_exercise_sprite_requirement.sql', 'utf8')); console.log('PASS sprite-only professional prescriptions and legacy activation guards') } catch(e) { console.error(e.message,e.where); process.exit(1) }
+
 await db.exec(`
 insert into auth.users(id) values ('10290100-0000-0000-0000-000000000001'),('10290100-0000-0000-0000-000000000002');
 insert into public.user_roles(user_id,role) values ('10290100-0000-0000-0000-000000000001','professional');
@@ -55,12 +57,18 @@ await db.exec(readFileSync('supabase/tests/historical/202610290002_note_backfill
 try { await db.exec(readFileSync('supabase/tests/202610290002_professional_workspace_history_notes.sql', 'utf8')); console.log('PASS professional model plans and private student notes') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 // The focused harness stubs account activity; the clean schema suite tests the real guard.
 await db.exec(`create or replace function public.assert_account_active() returns void language plpgsql as $$begin if auth.uid() is null then raise exception 'authentication required' using errcode='42501'; end if; end$$;`)
+await db.exec(readFileSync('supabase/migrations/202611010003_final_schema_regressions.sql', 'utf8'))
 await db.exec(readFileSync('supabase/migrations/202611020004_student_material_library_id.sql', 'utf8'))
 try { await db.exec(readFileSync('supabase/tests/202610310001_explicit_library_plan_application.sql', 'utf8')); console.log('PASS explicit professional plan application') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 for (const name of readdirSync('supabase/migrations').filter(name => name >= '202611020005').sort()) {
+ if(name==='202611030001_plan_relationship_lifecycle.sql') await seedRelationshipUpgrade(async source => (await db.exec(source)).flatMap(result=>result.rows.map(row=>Object.values(row).join('|'))).join('\n'))
  await db.exec(readFileSync('supabase/migrations/' + name, 'utf8'))
+ if(name==='202611030001_plan_relationship_lifecycle.sql') await verifyRelationshipUpgrade(async source => (await db.exec(source)).flatMap(result=>result.rows.map(row=>Object.values(row).join('|'))).join('\n'))
 }
 try { await db.exec(readFileSync('supabase/tests/202611020005_personal_professional_switching.sql', 'utf8')); console.log('PASS personal/professional switching (10 alternations, live routines, calendars, revisions, authorization)') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 try { await db.exec(readFileSync('supabase/tests/202611020008_plan_selection_notifications.sql', 'utf8')); console.log('PASS complete weeks and trainer selection notifications') } catch(e) { console.error(e.message,e.where); process.exit(1) }
+try { await db.exec(readFileSync('supabase/tests/202610290003_professional_profile_invites_model_delete.sql', 'utf8')); console.log('PASS professional profile save contract') } catch(e) { console.error(e.message,e.where,e.query); process.exit(1) }
+try { await db.exec(readFileSync('supabase/tests/202610290001_exercise_sprite_requirement.sql', 'utf8')); console.log('PASS sprite-only professional prescriptions and legacy activation guards') } catch(e) { console.error(e.message,e.where); process.exit(1) }
+try { await db.exec(readFileSync('supabase/tests/202611030001_plan_relationship_lifecycle.sql', 'utf8')); console.log('PASS relationship cycles, consent, revocation, personal fallback and authorization') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 await db.close()
 

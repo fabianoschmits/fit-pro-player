@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Hindi UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Confira o perfil antes de solicitar vínculo": "संबंध का अनुरोध करने से पहले प्रोफ़ाइल देखें",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "अनुरोध नहीं भेजा जा सका। कोड की समय सीमा समाप्त हो सकती है।",
+  "Solicitando…": "अनुरोध भेजा जा रहा है…",
+  "Solicitar vínculo": "संबंध का अनुरोध करें",
+
   "Abrir biblioteca para aplicar": "लागू करने के लिए लाइब्रेरी खोलें",
   "Aceito em {0}": "{0} को स्वीकार किया गया",
   "Acompanha seu nome profissional": "आपके पेशेवर नाम के अनुसार",

@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Confira o perfil antes de solicitar vínculo": "연결을 요청하기 전에 프로필을 확인하세요",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "요청을 보낼 수 없습니다. 코드가 만료되었을 수 있습니다.",
+  "Solicitando…": "요청 중…",
+  "Solicitar vínculo": "연결 요청",
+
   "Abrir biblioteca para aplicar": "적용하려면 라이브러리 열기",
   "Aceito em {0}": "{0}에 수락됨",
   "Acompanha seu nome profissional": "전문가 이름에 따라 변경됩니다",

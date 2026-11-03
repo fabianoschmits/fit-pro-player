@@ -1,3 +1,4 @@
+import useRelationshipRefresh from '../components/useRelationshipRefresh.js'
 import Link from '../components/ManagementLink.jsx'
 import { useCallback, useMemo } from 'react'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
@@ -32,12 +33,14 @@ function ProfessionalsOverview() {
 
 
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
-  const load = useCallback(async () => ({ professionals: await repo.studentProfessionals(), overview: {} }), [repo])
+  const load = useCallback(async () => { const [professionals, requests] = await Promise.all([repo.studentProfessionals(), repo.studentLinkRequests()]); return { professionals, requests } }, [repo])
   const { data, busy, error, refresh } = useStudentManagementRequest(load, 'Não foi possível carregar seus profissionais.')
+  useRelationshipRefresh(refresh)
   return <ManagementLayout audience="student" className="student-professionals-page" title={t('Meus profissionais')} subtitle={t('Pessoas que acompanham seu treino')} action={<Link className="management-button management-button-primary" to="/student/professionals/add">{t('Adicionar profissional')}</Link>}>
     {error && <p role="alert" className="management-error">{error} <Button onClick={refresh}>{t('Tentar novamente')}</Button></p>}
     {busy ? <FppSkeleton label={t('Carregando…')} /> : data && <>
       <Link className="management-shortcut" to="/plan">Planos recebidos · Abrir biblioteca</Link>
+      {data.requests.length > 0 && <ManagementPanel title="Solicitações de vínculo">{data.requests.map(request=><article key={request.id}><h3>{request.professionalName}</h3><p>{request.status==='pending'?'Solicitação enviada':request.status==='accepted'?'Solicitação aceita':request.status==='rejected'?'Solicitação recusada':'Solicitação cancelada'}</p><ManagementStatus>{request.status==='pending'?'Aguardando resposta':request.status==='accepted'?'Aceito':request.status==='rejected'?'Recusado':'Cancelado'}</ManagementStatus><time>{professionalDate(request.createdAt)}</time></article>)}</ManagementPanel>}
       <ManagementPanel title={t('Profissionais vinculados ({0})', data.professionals.length)}>{data.professionals.length ? <div className="management-person-list">{data.professionals.map(person => <Link className="management-person-link" to={`/student/professionals/${person.professionalId}`} key={person.professionalId}>
         <ManagementAvatar name={person.professionalName} avatarRef={person.avatarRef} userId={person.professionalId} /><div><h3>{person.professionalName}</h3>{person.specialties?.length > 0 && <p className="muted">{person.specialties.join(' · ')}</p>}<p>{person.receivedCount || 0} planos recebidos</p><small className="muted">{t('Desde {0}', professionalDate(person.linkedAt))}</small></div><ManagementStatus tone="success">{t('Vínculo ativo')}</ManagementStatus>
       </Link>)}</div> : <ManagementEmpty title={t('Você ainda não possui profissionais vinculados.')} description={t('Use o convite recebido para começar o acompanhamento.')} action={<Link className="management-button" to="/student/professionals/add">{t('Adicionar profissional')}</Link>} />}</ManagementPanel>

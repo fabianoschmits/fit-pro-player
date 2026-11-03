@@ -49,9 +49,11 @@ it('confirms removal from the calendar by applying the entire personal week, not
  await click('Treino do profissional'); await click('Usar este plano'); await click('Aplicar plano')
  expect(activeCalendar().textContent).toContain('Professional Monday')
 })
-it('opens the personal preview after returning from editing while keeping the professional active', async () => {
+it('focuses the active professional after returning from editing and allows personal preview', async () => {
  mocks.search = '?library=self'
  await render()
+ expect(button('Treino do profissional').getAttribute('aria-pressed')).toBe('true')
+ await click('Meus treinos')
  expect(button('Meus treinos').getAttribute('aria-pressed')).toBe('true')
  expect(container.querySelector('.created-workouts')).not.toBeNull()
  expect(activeCalendar().textContent).toContain('Professional Monday')

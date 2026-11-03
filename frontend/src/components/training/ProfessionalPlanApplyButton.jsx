@@ -56,6 +56,7 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, remov
   const apply = async () => {
     if (inFlight.current) return
     inFlight.current = true; setPending(true); setError(''); lock(true)
+    let context
     try {
       await requireScope().retryAccountSync()
       let store = requireScope()
@@ -65,30 +66,29 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, remov
       store = requireScope()
       if (store.S._pendingSync?.plan || planSnapshot(store.S) !== before) throw Object.assign(new Error('revision-conflict'), { code: '40001' })
       if (typeof targetId !== 'string' || !targetId) throw new Error('invalid-library-id')
-      const result = await repo.applyLibraryPlan(targetId, store.S.planServerRevision || 0)
+      context = store.beginAccountPlanApplication(token)
+      const expectedRevision = context.base.planServerRevision || 0
+      const result = await repo.applyLibraryPlan(targetId, expectedRevision)
       store = requireScope()
       const parsed = parsePlan(result, userId)
-      if (parsed.schedule?.revision !== (store.S.planServerRevision || 0) + 1) throw new Error('unexpected-plan-revision')
+      if (parsed.schedule?.revision !== expectedRevision + 1) throw new Error('unexpected-plan-revision')
       if (personal) {
-        const current = store.S.routines.filter(routine => !routine.assigned)
+        const current = context.base.routines.filter(routine => !routine.assigned)
         if (!parsed.schedule || parsed.schedule.values.assignedProgram != null || parsed.routines.some(routine => routine.prescription.assigned) || parsed.routines.length !== current.length || new Set(parsed.routines.map(routine => routine.id)).size !== current.length) throw new Error('invalid-personal-plan')
         // Compare the representation the store actually uses. Loading legacy starter
         // routines can add metadata without making the plan dirty or changing its prescription.
-        const restored = normalizeState({ ...store.S, ...applyDomainState(store.S, 'plan', parsed), onboardingDone: true }).routines
+        const restored = normalizeState({ ...context.base, ...applyDomainState(context.base, 'plan', parsed), onboardingDone: true }).routines
         for (const routine of current) {
           const match = restored.find(item => item.id === routine.id)
           if (!match || canonical(match) !== canonical(routine)) throw new Error('changed-personal-routine')
         }
-      } else validateExecutionPlan(parsed, store.S, versionId)
-      // Never overwrite a plan edited or synchronized while the request was outstanding.
-      if (store.S._pendingSync?.plan || planSnapshot(store.S) !== before) throw Object.assign(new Error('revision-conflict'), { code: '40001' })
-      const next = applyDomainState(store.S, 'plan', parsed)
+      } else validateExecutionPlan(parsed, context.base, versionId)
+      const next = applyDomainState(context.base, 'plan', parsed)
       const isActive = state => personal ? state.activeLibraryId === targetId && state.assignedProgram === null : isProfessionalPlanActive(state, targetId, versionId)
-      if (next === store.S || !isActive(next)) throw new Error('unexpected-active-plan')
-      if (!store.acceptConfirmedAccountPlan(parsed, token)) throw Object.assign(new Error('revision-conflict'), { code: '40001' })
+      if (!isActive(next)) throw new Error('unexpected-active-plan')
+      if (!store.acceptConfirmedAccountPlan(parsed, token, context)) throw new Error('account-scope')
       store = requireScope()
       store.replaceState({ ...store.S, onboardingDone: true }, false)
-      if (!isActive(useStore.getState().S)) throw new Error('unexpected-active-plan')
       close()
       // A failed list refresh must not turn a confirmed application into a retry.
       void Promise.resolve().then(() => onApplied?.()).catch(() => {})
@@ -96,6 +96,7 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, remov
       console.error('Plan library operation failed', cause)
       setError(applicationError(cause))
     } finally {
+      context?.release()
       inFlight.current = false; setPending(false); lock(false)
     }
   }

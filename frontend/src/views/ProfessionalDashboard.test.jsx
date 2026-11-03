@@ -3,7 +3,7 @@ import {act} from 'react'
 import {createRoot} from 'react-dom/client'
 import {MemoryRouter} from 'react-router-dom'
 import {beforeEach,afterEach,it,expect,vi} from 'vitest'
-const mocks=vi.hoisted(()=>({user:{id:'pro'},repo:{dashboardSummary:vi.fn(),studentPage:vi.fn()}}))
+const mocks=vi.hoisted(()=>({user:{id:'pro'},repo:{dashboardSummary:vi.fn(),studentPage:vi.fn(),linkRequests:vi.fn().mockResolvedValue({items:[],total:0})}}))
 vi.mock('../auth/AuthProvider.jsx',()=>({useAuth:()=>({user:mocks.user})}))
 vi.mock('../lib/professional-workflow.js',()=>({createProfessionalWorkflowRepository:()=>mocks.repo}))
 import ProfessionalDashboard from './ProfessionalDashboard.jsx'
@@ -12,3 +12,11 @@ beforeEach(()=>{globalThis.IS_REACT_ACT_ENVIRONMENT=true;mocks.repo.dashboardSum
 afterEach(async()=>{await act(async()=>root.unmount());vi.clearAllMocks()})
 it('renders server counts and scoped student cards with no publication workflow',async()=>{await act(async()=>root.render(<MemoryRouter><ProfessionalDashboard/></MemoryRouter>));expect(container.textContent).toContain('24');expect(container.textContent).toContain('8');expect(container.querySelector('a[href="/professional/students/s"]')).not.toBeNull();expect(mocks.repo.studentPage).toHaveBeenCalledWith({status:'attention',limit:10});expect(container.textContent).not.toContain('Publicar')})
 it('ignores a response from the previous account',async()=>{let resolve;mocks.repo.dashboardSummary.mockReturnValueOnce(new Promise(r=>resolve=r));await act(async()=>root.render(<MemoryRouter><ProfessionalDashboard/></MemoryRouter>));mocks.user={id:'other'};await act(async()=>root.render(<MemoryRouter><ProfessionalDashboard/></MemoryRouter>));await act(async()=>resolve({activeStudents:999,today:[]}));expect(container.textContent).not.toContain('999')})
+it('opens a pending request profile without accepting from the dashboard',async()=>{
+ mocks.repo.linkRequests.mockResolvedValueOnce({items:[{id:'request',studentUserId:'student',displayName:'João Silva',createdAt:'2026-11-03'}],total:1})
+ await act(async()=>root.render(<MemoryRouter><ProfessionalDashboard/></MemoryRouter>))
+ expect(container.textContent).toContain('Solicitações de vínculo · 1')
+ expect(container.querySelector('a[href="/professional/requests/request"]').textContent).toContain('João Silva')
+ expect(container.textContent).toContain('Aguardando resposta')
+ expect(container.textContent).not.toContain('Aceitar')
+})

@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Italian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Confira o perfil antes de solicitar vínculo": "Controlla il profilo prima di richiedere un collegamento",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "Impossibile inviare la richiesta. Il codice potrebbe essere scaduto.",
+  "Solicitando…": "Invio richiesta…",
+  "Solicitar vínculo": "Richiedi collegamento",
+
   "Abrir biblioteca para aplicar": "Apri la libreria per applicare",
   "Aceito em {0}": "Accettato il {0}",
   "Acompanha seu nome profissional": "Segue il tuo nome professionale",

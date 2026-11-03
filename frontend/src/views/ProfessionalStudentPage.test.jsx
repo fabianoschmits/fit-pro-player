@@ -3,7 +3,7 @@ import {act} from 'react'
 import {createRoot} from 'react-dom/client'
 import {MemoryRouter,Routes,Route} from 'react-router-dom'
 import {beforeEach,afterEach,it,expect,vi} from 'vitest'
-const mocks=vi.hoisted(()=>({repo:{clientDetail:vi.fn(),studentNote:vi.fn(),studentPlanDraft:vi.fn(),executionPage:vi.fn(),studentNotes:vi.fn(),addStudentNote:vi.fn()}}))
+const mocks=vi.hoisted(()=>({repo:{version:vi.fn(),relationshipCycles:vi.fn().mockResolvedValue([{id:'active',status:'active',created_at:'2026-11-03'}]),historicalClientDetail:vi.fn(),clientDetail:vi.fn(),studentNote:vi.fn(),studentPlanDraft:vi.fn(),executionPage:vi.fn(),studentNotes:vi.fn(),addStudentNote:vi.fn()}}))
 vi.mock('../auth/AuthProvider.jsx',()=>({useAuth:()=>({user:{id:'pro'}})}))
 vi.mock('../lib/professional-workflow.js',()=>({createProfessionalWorkflowRepository:()=>mocks.repo}))
 import ProfessionalStudentPage from './ProfessionalStudentPage.jsx'
@@ -14,6 +14,23 @@ afterEach(async()=>{await act(async()=>root.unmount());vi.clearAllMocks()})
 const render=()=>act(async()=>root.render(<MemoryRouter initialEntries={['/professional/students/s']}><Routes><Route path="/professional/students/:studentId" element={<ProfessionalStudentPage/>}/></Routes></MemoryRouter>))
 const fillTextArea=(textarea,value)=>{Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(textarea,value);textarea.dispatchEvent(new Event('input',{bubbles:true}))}
 it('opens the linked student and leads directly to their plan',async()=>{await render();expect(container.textContent).toContain('Ana');expect(container.querySelector('a[href="/professional/students/s/plan"]')).not.toBeNull();expect(container.querySelector('select')).toBeNull();expect(mocks.repo.clientDetail).toHaveBeenCalledWith('s')})
+it('shows closed cycles and historical notes read-only without operational plan actions',async()=>{
+ mocks.repo.relationshipCycles.mockResolvedValueOnce([{id:'r1',status:'revoked',created_at:'2026-08-12',revoked_at:'2026-10-25'}])
+ mocks.repo.clientDetail.mockResolvedValueOnce(null)
+ mocks.repo.historicalClientDetail.mockResolvedValueOnce({displayName:'Ana',assignments:[{id:'old',version_id:'old-version',status:'revoked',program_title:'Plano histórico'}],notes:[{id:'note',body:'Histórico privado',createdAt:'2026-10-20'}]})
+ mocks.repo.version.mockResolvedValueOnce({weekly_plan:{monday:[{exerciseId:'0043',sets:3,reps:10}]},workout_titles:{monday:'Prescrição histórica'}})
+ await render()
+ expect(container.textContent).toContain('Vínculo encerrado')
+ expect(container.querySelector('a[href="/professional/students/s/plan"]')).toBeNull()
+ expect(container.querySelector('textarea')).toBeNull()
+ expect(container.textContent).toContain('Histórico privado')
+ expect(container.textContent).toContain('Plano histórico')
+ const historical=container.querySelector('.professional-historical-plan')
+ expect(historical).not.toBeNull()
+ await act(async()=>{historical.open=true;historical.dispatchEvent(new Event('toggle',{bubbles:true}))})
+ expect(historical.textContent).toContain('Prescrição histórica')
+ expect(mocks.repo.version).toHaveBeenCalledExactlyOnceWith('old-version')
+})
 it('loads student executions on profile entry and expands actual workout details with duration',async()=>{
  mocks.repo.executionPage.mockResolvedValueOnce({items:[{id:'execution',dayKey:'monday',status:'completed',startedAt:'2026-10-28T10:00:00Z',completedAt:'2026-10-28T10:30:00Z',programTitle:'Força',prescriptionSnapshot:{workoutTitle:'Treino A',exercises:[{exerciseId:'0025',sets:3,reps:8}]},payload:{entries:[{id:'0025',sets:[{done:true,w:20,r:8}]}]}}],total:1,offset:0,hasMore:false})
  await render()

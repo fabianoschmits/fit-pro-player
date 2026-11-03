@@ -1,6 +1,7 @@
 import { bodyInput, bodyWire } from './body-sync-state.js'
 import { mergeChanges } from './three-way-merge.js'
 import { applyDomainState } from './domain-state.js'
+import { confirmedPlanState } from './confirmed-plan.js'
 import { bodyFingerprint, planFingerprint, preferenceFingerprint, preferenceValues } from './domain-sync-state.js'
 
 const DOMAINS = ['plan', 'body', 'preferences', 'history']
@@ -19,6 +20,8 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   let planRevision = 0
   let preferenceRevision = 0
   let bodyRevision = getState().bodyServerRevision || 0
+  let planApplication = null
+  let deferredPlanRead = null
   const bases = new Map(Object.entries(getState()._syncBases || {}))
   const failures = new Map(Object.keys(getState()._syncConflicts || {}).filter(domain => getState()._pendingSync?.[domain]).map(domain => [domain, 'sync-conflict']))
   const inFlight = new Map()
@@ -131,8 +134,19 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
 
   function acceptRemote(domain, data) {
     if (!current()) return
+    if (domain === 'plan' && planApplication) {
+      if (!deferredPlanRead || (data.schedule?.revision || 0) > (deferredPlanRead.schedule?.revision || 0)) deferredPlanRead = data
+      return
+    }
     if (domain === 'plan' && (data.schedule?.revision || 0) < (getState().planServerRevision || 0)) return
     if (domain === 'body' && data.revision < bodyRevision) return
+    if (domain === 'plan' && isPending('plan') && getState().assignedProgram && !data.schedule?.values?.assignedProgram
+      && (data.schedule?.revision || 0) > (getState().planServerRevision || 0)) {
+      const base = bases.get('plan')
+      const previous = base ? { ...getState(), planServerRevision: 0, ...applyDomainState({ ...getState(), planServerRevision: 0 }, 'plan', { routines: base.routines, schedule: { mode: base.mode, values: base.schedule, revision: 0 } }) } : { ...getState(), routines: [] }
+      acceptConfirmedPlan(data, { base: previous })
+      return
+    }
     const initial = firstRead.delete(domain)
     if ((domain === 'plan' || domain === 'preferences' || domain === 'body') && isPending(domain)) return
     recordRevision(domain, data)
@@ -162,14 +176,36 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
     replaceState(applyDomainState(getState(), domain, data))
   }
 
-  function acceptConfirmedPlan(data) {
-    if (!current() || isPending('plan') || inFlight.has('plan')) return false
-    if ((data.schedule?.revision || 0) < (getState().planServerRevision || 0)) return false
-    acceptRemote('plan', data)
+  function acceptConfirmedPlan(data, context = undefined) {
+    if (!current()) return false
+    if (!context && !planApplication && (isPending('plan') || inFlight.has('plan'))) return false
+    if ((data.schedule?.revision || 0) < (getState().planServerRevision || 0)) return !!(context || planApplication)
+    const next = confirmedPlanState(getState(), data, context?.base || planApplication?.base || getState(), context?.cached)
+    recordRevision('plan', data)
+    bases.set('plan', next._syncBases.plan)
+    failures.delete('plan')
+    if (next._syncConflicts?.plan) failures.set('plan', 'sync-conflict')
+    replaceState(next)
+    onCommitted('plan', next.planServerRevision || 0)
+    publish()
     return true
   }
 
+  function beginPlanApplication() {
+    if (!current() || planApplication || isPending('plan') || inFlight.has('plan')) throw new Error('pending-plan')
+    const context = { base: structuredClone(getState()), release: () => {
+      if (planApplication !== context) return
+      planApplication = null
+      const read = deferredPlanRead; deferredPlanRead = null
+      if (read) acceptRemote('plan', read)
+      if (current()) void changed()
+    } }
+    planApplication = context
+    return context
+  }
+
   function flushDomain(domain) {
+    if (domain === 'plan' && planApplication) return Promise.resolve()
     if (failures.get(domain) === 'sync-conflict') return Promise.resolve()
     if (inFlight.has(domain)) return inFlight.get(domain)
     const task = (async () => {
@@ -266,5 +302,5 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   function retry() { failures.clear(); return changed() }
   function dispose() { disposed = true; retryTimers.forEach(timer => clearTimeout(timer)); retryTimers.clear() }
 
-  return { acceptRemote, acceptConfirmedPlan, changed, start, retry, dispose, status, revision: domain => domain === 'plan' ? planRevision : domain === 'body' ? bodyRevision : preferenceRevision }
+  return { acceptRemote, acceptConfirmedPlan, beginPlanApplication, changed, start, retry, dispose, status, revision: domain => domain === 'plan' ? planRevision : domain === 'body' ? bodyRevision : preferenceRevision }
 }

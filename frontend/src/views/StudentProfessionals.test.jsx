@@ -3,7 +3,7 @@ import  { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ auth: {}, repo: { studentProfessionals: vi.fn(), assignments: vi.fn(), assignedPrograms: vi.fn(), studentOverview: vi.fn(), version: vi.fn() }, replace: vi.fn(), start: vi.fn(), state: {} }))
+const mocks = vi.hoisted(() => ({ auth: {}, repo: { studentLinkRequests: vi.fn().mockResolvedValue([]), studentProfessionals: vi.fn(), assignments: vi.fn(), assignedPrograms: vi.fn(), studentOverview: vi.fn(), version: vi.fn() }, replace: vi.fn(), start: vi.fn(), state: {} }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
@@ -16,6 +16,13 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 const render = async (path = '/student/professionals') => act(async () => root.render(<MemoryRouter initialEntries={[path]}><Routes><Route path="/student/professionals" element={<StudentProfessionals />} /><Route path="/student/professionals/add" element={<p>Add destination</p>} /></Routes></MemoryRouter>))
 it('names each linked professional and gives separate add and materials links', async () => { mocks.repo.studentProfessionals.mockResolvedValue([{ professionalId: 'p1', professionalName: 'Ana Silva', activeProgramTitle: 'Força' }, { professionalId: 'p2', professionalName: 'João Reis', activeProgramTitle: 'Corrida' }]); await render(); expect(container.textContent).toContain('Ana Silva'); expect(container.textContent).toContain('João Reis'); expect(container.querySelector('a[href="/student/professionals/p2"]').textContent).toContain('João Reis'); expect(container.querySelector('input')).toBeNull() })
 it('shows an actionable empty state', async () => { await render(); expect(container.textContent).toContain('Você ainda não possui profissionais vinculados.'); expect(container.querySelector('a[href="/student/professionals/add"]')).not.toBeNull() })
+it('shows a pending request separately from active professionals and later shows its rejection', async () => {
+ mocks.repo.studentLinkRequests.mockResolvedValueOnce([{id:'request',professionalName:'Ana Silva',status:'pending',createdAt:'2026-11-03'}])
+ await render()
+ expect(container.textContent).toContain('Solicitação enviada')
+ expect(container.textContent).toContain('Aguardando resposta')
+ expect(container.querySelector('a[href="/student/professionals/p1"]')).toBeNull()
+})
 it('preserves a code-bearing entry in the add destination', async () => { await render('/student/professionals?code=AB12'); expect(container.textContent).toContain('Add destination'); expect(mocks.repo.studentProfessionals).not.toHaveBeenCalled() })
 it('shows an error and retries the summary request', async () => { mocks.repo.studentProfessionals.mockRejectedValueOnce(new Error('offline')); await render(); expect(container.querySelector('[role="alert"]').textContent).toContain('Não foi possível carregar seus profissionais.'); await act(async () => [...container.querySelectorAll('button')].find(x => x.textContent === 'Tentar novamente').click()); expect(mocks.repo.studentProfessionals).toHaveBeenCalledTimes(2) })
 it('renders loading and discards an earlier account response and synchronization', async () => { let resolve; mocks.repo.studentProfessionals.mockReturnValueOnce(new Promise(r => { resolve = r })); await render(); expect(container.querySelector('[role="status"][aria-busy="true"]')?.getAttribute('aria-label')).toBe('Carregando…'); mocks.auth = { status: 'authenticated', user: { id: 's2' } }; await render(); await act(async () => resolve([{ professionalId: 'p1', professionalName: 'Wrong account' }])); expect(container.textContent).not.toContain('Wrong account'); expect(mocks.replace).not.toHaveBeenCalled() })

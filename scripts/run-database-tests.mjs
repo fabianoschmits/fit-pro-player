@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs'
-import { spawnSync } from 'node:child_process'
+import { spawnSync, spawn } from 'node:child_process'
+import { testPlanRelationshipConcurrency } from './plan-relationship-concurrency.mjs'
 import { fileURLToPath } from 'node:url'
 import { databaseTestInput, databaseTestPassed } from './database-test-tap.mjs'
 
@@ -18,4 +19,18 @@ for (const file of readdirSync(directory).filter(name => name.endsWith('.sql')).
   console.log(`${success ? 'PASS' : 'FAIL'} ${file}`)
   if (!success) { failed = true; console.error(result.stderr || ''); console.error(result.stdout || '') }
 }
+await testPlanRelationshipConcurrency({
+ sql: input => {
+  const result = spawnSync('psql', [connection, '-X', '-v', 'ON_ERROR_STOP=1', '-At'], { input, encoding: 'utf8' })
+  if (result.status !== 0) throw new Error(result.stderr || result.error?.message || 'psql failed')
+  return result.stdout
+ },
+ asyncSql: input => new Promise((resolve, reject) => {
+  const child = spawn('psql', [connection, '-X', '-v', 'ON_ERROR_STOP=1', '-At'], { windowsHide: true })
+  let out = '', err = ''
+  child.stdout.on('data', chunk => { out += chunk }); child.stderr.on('data', chunk => { err += chunk })
+  child.on('error', reject); child.on('close', code => code === 0 ? resolve(out) : reject(new Error(err)))
+  child.stdin.end(input)
+ }),
+})
 process.exitCode = failed ? 1 : 0

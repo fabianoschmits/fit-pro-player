@@ -13,3 +13,12 @@ afterEach(async()=>{await act(async()=>root.unmount());vi.useRealTimers();vi.cle
 const render=async()=>{await act(async()=>root.render(<MemoryRouter><ProfessionalStudents/></MemoryRouter>));await act(async()=>vi.advanceTimersByTimeAsync(220))}
 it('opens the student from a card and sends filters to the server',async()=>{await render();expect(container.querySelector('a[href="/professional/students/s"]')).not.toBeNull();await act(async()=>[...container.querySelectorAll('button')].find(x=>x.textContent==='Sem plano').click());await act(async()=>vi.advanceTimersByTimeAsync(220));expect(mocks.repo.studentPage).toHaveBeenLastCalledWith({search:'',status:'without_program',offset:0})})
 it('shows an actionable load error',async()=>{mocks.repo.studentPage.mockRejectedValueOnce(new Error('offline'));await render();expect(container.querySelector('[role="alert"]').textContent).toContain('Tentar novamente')})
+it('defaults to active and can inspect inactive students without losing their profile link',async()=>{
+ await render()
+ expect(mocks.repo.studentPage).toHaveBeenLastCalledWith({search:'',status:'active',offset:0})
+ mocks.repo.studentPage.mockResolvedValueOnce({items:[{studentUserId:'s',displayName:'Ana',relationshipStatus:'revoked',revokedAt:'2026-11-03',attentionReasons:[]}],total:1})
+ await act(async()=>[...container.querySelectorAll('button')].find(x=>x.textContent==='Inativos').click())
+ await act(async()=>vi.advanceTimersByTimeAsync(220))
+ expect(container.textContent).toContain('Vínculo encerrado')
+ expect(container.querySelector('a[href="/professional/students/s"]')).not.toBeNull()
+})

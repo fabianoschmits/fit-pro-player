@@ -85,7 +85,7 @@ test('reserved routes, aliases and handoff queries resolve through the applicati
   for (const route of ['/professional-profile?onboarding=1','/professional/profile/edit','/professional/programs/new','/student/professionals/materials','/student/professionals/add?code=A1B2C3D4E5','/connect?code=A1B2C3D4E5','/student/professionals?code=A1B2C3D4E5','/invite/A1B2C3D4E5']) {
     await page.goto(`/#${route}`)
     await expect(page.locator('.management-layout')).toBeVisible()
-    if (route.includes('code=') || route.startsWith('/invite/')) await expect(page.getByRole('button',{name:'Vincular a este profissional',exact:true})).toBeVisible()
+    if (route.includes('code=') || route.startsWith('/invite/')) await expect(page.getByRole('button',{name:'Solicitar vínculo',exact:true})).toBeVisible()
     if (route.startsWith('/connect') || route.startsWith('/student/professionals?code=')) await expect(page).toHaveURL(/student\/professionals\/add\?code=A1B2C3D4E5/)
     await page.reload(); await expect(page.locator('.management-layout')).toBeVisible()
   }
@@ -101,13 +101,13 @@ test('code entry remains accessible before onboarding and acceptance', async ({p
   const state = stateFixture(); state.onboardingDone = false
   await seed(page,{authenticated:true,state,rpc})
   await page.goto('/#/connect?code=A1B2C3D4E5')
-  await expect(page.getByRole('button',{name:'Vincular a este profissional',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Solicitar vínculo',exact:true})).toBeVisible()
   await expect(page).toHaveURL(/student\/professionals\/add\?code=/)
   await page.evaluate(() => sessionStorage.removeItem('fpp-pending-invite'))
   await page.goto('/#/connect')
   await expect(page).toHaveURL(/student\/professionals\/add$/)
   await expect(page.locator('#student-invite-code')).toBeVisible()
-  await expect(page.getByRole('button',{name:'Vincular a este profissional',exact:true})).toHaveCount(0)
+  await expect(page.getByRole('button',{name:'Solicitar vínculo',exact:true})).toHaveCount(0)
 })
 
 test('a direct invitation alias selects and reveals Add in the mobile management navigation', async ({page}) => {
@@ -117,7 +117,7 @@ test('a direct invitation alias selects and reveals Add in the mobile management
   const selected = page.locator('.management-nav [aria-current="page"]')
   await expect(selected).toHaveCount(1)
   await expect(selected).toHaveText('Adicionar profissional')
-  await expect(page.getByRole('button',{name:'Vincular a este profissional',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Solicitar vínculo',exact:true})).toBeVisible()
   const bounds = await selected.evaluate(link => {
     const selectedBounds = link.getBoundingClientRect(), navBounds = link.closest('nav').getBoundingClientRect()
     return {left:selectedBounds.left,right:selectedBounds.right,navLeft:navBounds.left,navRight:navBounds.right}
@@ -290,7 +290,7 @@ test('professional is directed to archive an assigned model when safe deletion i
 
 test('student profile loads workout history on entry and expands actual sets and total duration', async ({page}) => {
  const execution={id:'execution-a',student_user_id:STUDENT,day_key:'monday',status:'completed',started_at:'2026-10-28T10:00:00Z',completed_at:'2026-10-28T10:30:00Z',program_title:'Força',prescription_snapshot:{workoutTitle:'Treino A',exercises:[{exerciseId:'0025',sets:3,reps:8}]},payload:{entries:[{id:'0025',sets:[{done:true,w:20,r:8}]}]}}
- await seed(page,{professional:true,rpc:{professional_executions_page:{items:[execution],total:1,offset:0,has_more:false}}})
+ await seed(page,{professional:true,rpc:{...rpc,professional_executions_page:{items:[execution],total:1,offset:0,has_more:false}}})
  await page.goto(`/#/professional/students/${STUDENT}?section=history`)
  const card=page.locator('.professional-execution-card')
  await expect(card).toBeVisible()
@@ -304,7 +304,7 @@ test('student profile loads workout history on entry and expands actual sets and
 
 test('professional notes append privately with a visible date and time', async ({page}) => {
  let notes=[{id:'legacy-note',body:'Registro privado anterior',created_at:'2026-10-20T12:30:00Z'}]
- await seed(page,{professional:true,rpc:{list_professional_student_notes:()=>notes,add_professional_student_note:args=>{const note={id:`note-${notes.length+1}`,body:args.p_body,created_at:'2026-10-28T12:34:00Z'};notes=[note,...notes];return note}}})
+ await seed(page,{professional:true,rpc:{...rpc,list_professional_student_notes:()=>notes,add_professional_student_note:args=>{const note={id:`note-${notes.length+1}`,body:args.p_body,created_at:'2026-10-28T12:34:00Z'};notes=[note,...notes];return note}}})
  await page.goto(`/#/professional/students/${STUDENT}?section=notes`)
  await expect(page.getByText('Registro privado anterior',{exact:true})).toBeVisible()
  const composer=page.getByRole('textbox',{name:'Nova anotação privada'})

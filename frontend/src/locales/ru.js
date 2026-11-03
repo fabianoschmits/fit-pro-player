@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Confira o perfil antes de solicitar vínculo": "Проверьте профиль перед отправкой запроса",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "Не удалось отправить запрос. Возможно, срок действия кода истёк.",
+  "Solicitando…": "Отправка запроса…",
+  "Solicitar vínculo": "Запросить связь",
+
   "Abrir biblioteca para aplicar": "Открыть библиотеку для применения",
   "Aceito em {0}": "Принято {0}",
   "Acompanha seu nome profissional": "Соответствует вашему профессиональному имени",

@@ -1,5 +1,6 @@
 import { PlanWeek } from './TrainingPlanWorkspace.jsx'
 import { personalPlanPreview } from '../../lib/personal-plan-preview.js'
+import useRelationshipRefresh from '../useRelationshipRefresh.js'
 import TrainingPlanPreview from './TrainingPlanPreview.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider.jsx'
@@ -17,6 +18,14 @@ import ProfessionalPlanApplyButton, { isProfessionalPlanActive, openPlanApplicat
 import { exerciseName, exOr } from '../../lib/exercises.js'
 
 const PAGE_SIZE = 5
+
+export function activePlanSource(state, items = []) {
+  if (!state.activeLibraryId) return 'self'
+  const item = items.find(entry => entry.id === state.activeLibraryId)
+  if (item?.source_type === 'self') return 'self'
+  if (item) return item.source_type === 'professional' && isProfessionalPlanActive(state, item.id, item.version?.id) ? 'professional' : 'self'
+  return state.assignedProgram?.versionId ? 'professional' : 'self'
+}
 
 function PlanPreviewSheet({ item, state = undefined, routineId = undefined, close }) {
   return <section className="plan-library-preview-sheet">
@@ -60,17 +69,21 @@ function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
   </section>
 }
 
-export default function PlanLibrary({ onUpdates = undefined, onRemoveReady = undefined, initialChoice = null, children = undefined }) {
+export default function PlanLibrary({ onUpdates = undefined, onRemoveReady = undefined, children = undefined }) {
   const { user } = useAuth()
-  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates} onRemoveReady={onRemoveReady} initialChoice={initialChoice}>{children}</AccountPlanLibrary>
+  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates} onRemoveReady={onRemoveReady}>{children}</AccountPlanLibrary>
 }
 
-function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undefined, initialChoice = null, children = undefined }) {
+function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undefined, children = undefined }) {
   const nav = useNavigate()
   const state = useStore(s => s.S)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [visible, setVisible] = useState(PAGE_SIZE)
-  const [choice, setChoice] = useState(initialChoice)
+  const [choice, setChoice] = useState(null)
+  const source = activePlanSource(state, data.items)
+  const selectionKey = `${state.activeLibraryId || ''}:${state.assignedProgram?.versionId || ''}:${source}`
+  if (choice && choice.key !== selectionKey) setChoice(null)
+  const choose = value => setChoice({ key: selectionKey, value })
   const generation = useRef(0)
   const refresh = useCallback(async (offset = 0) => {
     const request = ++generation.current
@@ -89,6 +102,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
     }
     catch { if (request === generation.current) setError('Não foi possível carregar seus planos.') }
   }, [repo])
+  useRelationshipRefresh(refresh)
   useEffect(() => { if (user?.id) refresh(); return () => { generation.current += 1 } }, [user?.id, refresh])
 
   const acknowledge = async (item, dayKey) => {
@@ -155,7 +169,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
   }, [professionalWorkouts, onUpdates, state])
   const removeProfessional = useCallback(() => openPlanApplication({
     personal: true, removing: true, userId: user?.id, repo,
-    onApplied: () => { setChoice('self'); return refresh() },
+    onApplied: refresh,
   }), [user?.id, repo, refresh])
   useEffect(() => {
     onRemoveReady?.(removeProfessional)
@@ -164,16 +178,16 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
   const professionalPlans = data.items.filter(item => item.source_type === 'professional' && (item.available || item.id === state.activeLibraryId))
   const shownPlans = professionalPlans.slice(0, visible)
 
-  const professionalActive = Boolean(state.assignedProgram)
+  const professionalActive = source === 'professional'
   const hasProfessional = professionalActive || data.items.some(item => item.source_type === 'professional' && item.available)
   const personalPreview = personalPlanPreview(state, data.items)
-  const selectedChoice = choice || (professionalActive ? 'professional' : 'self')
+  const selectedChoice = choice?.key === selectionKey ? choice.value : source
   if (!user?.id || !hasProfessional) return <>{children}</>
   return <section className="plan-library received-workouts">
     <h3>Escolher plano</h3>
     <div className="plan-mode-options" role="group" aria-label="Escolher plano">
-      <button className={selectedChoice === 'professional' ? 'on' : ''} aria-pressed={selectedChoice === 'professional'} onClick={() => setChoice('professional')}>Treino do profissional</button>
-      <button className={selectedChoice === 'self' ? 'on' : ''} aria-pressed={selectedChoice === 'self'} onClick={() => setChoice('self')}>Meus treinos</button>
+      <button className={selectedChoice === 'professional' ? 'on' : ''} aria-pressed={selectedChoice === 'professional'} onClick={() => choose('professional')}>Treino do profissional</button>
+      <button className={selectedChoice === 'self' ? 'on' : ''} aria-pressed={selectedChoice === 'self'} onClick={() => choose('self')}>Meus treinos</button>
     </div>
     {selectedChoice === 'self' ? <>
       <section className="personal-plan-preview" aria-label="Visualização do plano pessoal">

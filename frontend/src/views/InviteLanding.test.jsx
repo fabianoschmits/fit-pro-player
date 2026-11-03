@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { Window } from 'happy-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'student-1' } }, repo: { previewInvite: vi.fn().mockResolvedValue([{ professional_name: 'Ana', bio: 'Força', verification_status: 'unverified' }]), acceptInvite: vi.fn().mockResolvedValue({ id: 'r1' }) } }))
+const mocks = vi.hoisted(() => ({ auth: { status: 'authenticated', user: { id: 'student-1' } }, repo: { previewInvite: vi.fn().mockResolvedValue([{ professional_name: 'Ana', bio: 'Força', verification_status: 'unverified' }]), requestLink: vi.fn().mockResolvedValue({ id: 'r1' }) } }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
@@ -23,7 +23,7 @@ describe('invite landing', () => {
     expect(container.textContent).toContain('Ana')
     expect(container.querySelector('.management-layout')).not.toBeNull()
     expect(container.querySelector('a[href="/student/professionals/add"]')).not.toBeNull()
-    expect(container.textContent).toContain('Vincular a este profissional')
-    expect(mocks.repo.acceptInvite).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Solicitar vínculo')
+    expect(mocks.repo.requestLink).not.toHaveBeenCalled()
   })
 })

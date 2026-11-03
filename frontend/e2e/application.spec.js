@@ -228,17 +228,23 @@ test('timed sets keep stop accessible and wait for play after rest expires', asy
 
 test('student receives a professional plan and applies it only after explicit confirmation',async({page})=>{
  const deliveryId='55555555-5555-4555-8555-555555555555',versionId='44444444-4444-4444-8444-444444444444'
- let accepted=false,applied=false
+ let requested=false,accepted=false,applied=false
  const weeklyPlan={monday:[{exerciseId:'0025',sets:1,reps:10,load:20,rest:15}]}
  await seed(page,{authenticated:true,rpc:{
   preview_professional_invite:[{professional_name:'Treinador de teste',bio:'Força',verification_status:'unverified',specialties:[]}],
-  accept_professional_invite:()=>{accepted=true;return{id:'66666666-6666-4666-8666-666666666666'}},
+  request_professional_link:()=>{requested=true;return{id:'66666666-6666-4666-8666-666666666666',status:'pending'}},
+  student_link_requests:()=>requested?[{id:'request',status:accepted?'accepted':'pending',professional_name:'Treinador de teste',created_at:'2026-11-03'}]:[],
   athlete_plan_library_page:()=>({items:accepted?[{id:deliveryId,available:true,source_type:'professional',professional_name:'Treinador de teste',version:{id:versionId,weekly_plan:weeklyPlan,workout_titles:{monday:'Plano recebido'}}}]:[],total:accepted?1:0}),
   apply_library_plan:args=>{applied=true;return {routines:[...stateFixture().routines.map((routine,position)=>({id:routine.id,user_id:USER,revision:3,title:routine.name,position,prescription:routine,created_at:'2026-11-01',updated_at:'2026-11-01'})),{id:'professional-routine',user_id:USER,revision:3,title:'Plano recebido',position:1,prescription:{assigned:true,programVersionId:versionId,ex:[{id:'0025',sets:1,reps:10,weight:20}]},created_at:'2026-11-01',updated_at:'2026-11-01'}],schedule:{user_id:USER,revision:args.p_expected_revision+1,mode:'weekly',schedule:{week:{1:'professional-routine'},libraryId:deliveryId,assignedProgram:{versionId}},updated_at:'2026-11-01T12:00:00Z'}}},
  }})
  await page.goto('/#/invite/A1B2C3D4E5')
- await page.getByRole('button',{name:'Vincular a este profissional',exact:true}).click()
+ await page.getByRole('button',{name:'Solicitar vínculo',exact:true}).click()
  await expect(page).toHaveURL(/student\/professionals/)
+ await expect(page.getByText('Aguardando resposta',{exact:true})).toBeVisible()
+ expect(accepted).toBe(false)
+ // The dedicated SQL lifecycle E2E exercises the professional's decision UI.
+ // This student-only scenario resumes after that explicit server decision.
+ accepted=true
  await page.goto('/#/plan')
  await page.getByRole('button',{name:'Treino do profissional',exact:true}).click()
  // The complete-week calendar also contains this title, with compact labels

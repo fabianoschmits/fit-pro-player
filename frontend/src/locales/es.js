@@ -2,6 +2,11 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Spanish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  "Confira o perfil antes de solicitar vínculo": "Revisa el perfil antes de solicitar el vínculo",
+  "Não foi possível enviar a solicitação. O código pode ter expirado.": "No se pudo enviar la solicitud. El código puede haber caducado.",
+  "Solicitando…": "Solicitando…",
+  "Solicitar vínculo": "Solicitar vínculo",
+
   "Abrir biblioteca para aplicar": "Abrir biblioteca para aplicar",
   "Aceito em {0}": "Aceptado el {0}",
   "Acompanha seu nome profissional": "Sigue tu nombre profesional",
