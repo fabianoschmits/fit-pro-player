@@ -89,7 +89,7 @@ describe('professional profile workspace', () => {
     await render('/professional/profile/edit')
     expect(container.querySelector('input[name="professionalName"]')?.value).toBe('Ana Silva')
     expect(container.querySelector('textarea[name="bio"]')?.value).toBe('Treinamento de força')
-    expect(container.querySelector('input[name="specialties"]')?.value).toBe('força, corrida')
+    expect(container.querySelector('button[aria-pressed="true"]')).toBeTruthy()
   })
   it('discards edits on cancel and reloads saved values when editing again', async () => {
     await render(); await click('Editar perfil'); await fill('professionalName', 'Rascunho'); await click('Cancelar')
@@ -104,11 +104,11 @@ describe('professional profile workspace', () => {
     expect(mocks.save).not.toHaveBeenCalled()
     expect(container.querySelector('[name="professionalName"]').getAttribute('aria-invalid')).toBe('true')
   })
-  it('preserves commas while typing specialties and saves the profile to the existing repository', async () => {
-    await render('/professional/profile/edit'); await fill('professionalName', 'Ana Souza'); await fill('specialties', 'força, ')
-    expect(container.querySelector('[name="specialties"]').value).toBe('força, ')
-    await fill('specialties', 'força, corrida'); await click('Salvar perfil')
-    expect(mocks.save).toHaveBeenCalledWith('professional-a', expect.objectContaining({ professionalName: 'Ana Souza', specialties: ['força', 'corrida'] }))
+  it('preserves specialties and saves the profile to the existing repository', async () => {
+    await render('/professional/profile/edit'); await fill('professionalName', 'Ana Souza')
+    await fill('customSpecialty', 'pilates personal'); await click('Adicionar')
+    await click('Salvar perfil')
+    expect(mocks.save).toHaveBeenCalledWith('professional-a', expect.objectContaining({ professionalName: 'Ana Souza', specialties: expect.arrayContaining(['força', 'corrida', 'pilates personal']) }))
     expect(container.querySelector('[data-location]').textContent).toBe('/professional/profile')
     expect(container.textContent).toContain('Ana Souza'); expect(container.textContent).not.toContain('Perfil salvo.')
   })

@@ -219,6 +219,9 @@ describe('AuthSheet', () => {
     await setValue(input('New password'), 'long-enough-password');
     await setValue(input('Confirm password'), 'long-enough-password');
     await acceptPrivacy();
+    await click(button('Continuar'));
+
+    expect(container.textContent).toContain('Perfil profissional');
     await click(button('Create account'));
 
     expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'professional' }));

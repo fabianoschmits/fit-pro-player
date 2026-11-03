@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js';
 import { MOBILE } from '../lib/mobile.js';
 import { parseCapacitorAuthUrl } from '../lib/capacitor-auth.js';
+import { normalizeProfessionalProfile, professionalProfileMetadata } from '../lib/professional-profile.js';
 import { toAuthError } from './auth-errors.js';
 import { disableBackgroundNotifications } from '../lib/notification-client.js';
 import { useUI } from '../store/useUI.js';
@@ -21,11 +22,28 @@ function publicUser(user) {
   };
 }
 
+function withSignupMetadata(sessionUser, metadata) {
+  return {
+    ...(sessionUser || {}),
+    user_metadata: { ...(sessionUser?.user_metadata || {}), ...metadata },
+  }
+}
+
 async function provisionProfessional(client, sessionUser) {
   if (sessionUser?.user_metadata?.account_type !== 'professional' || typeof client?.rpc !== 'function') return;
-  const professionalName = String(sessionUser.user_metadata?.display_name || sessionUser.email?.split('@')[0] || '').trim();
+  const draft = sessionUser.user_metadata?.professional_profile || {};
+  const professionalName = String(draft.professional_name || sessionUser.user_metadata?.display_name || sessionUser.email?.split('@')[0] || '').trim();
+  const profile = normalizeProfessionalProfile({ ...draft, professional_name: professionalName });
   const { error } = await client.rpc('provision_professional_profile', {
-    p_professional_name: professionalName,
+    p_professional_name: profile.professionalName,
+    p_bio: profile.bio,
+    p_specialties: profile.specialties,
+    p_city_region: profile.cityRegion,
+    p_registration_type: profile.registrationType,
+    p_registration_number: profile.registrationNumber,
+    p_state_uf: profile.stateUf,
+    p_city_name: profile.cityName,
+    p_neighborhood: profile.neighborhood,
   });
   if (error) throw error;
 }
@@ -257,8 +275,13 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
         if (result.kind !== 'success') return result;
         return { kind: 'authenticated', data: result.data };
       },
-      signUp: async ({ email, password, displayName, accountType = 'student', privacyVersion }) => {
-        const metadata = { display_name: displayName, account_type: accountType === 'professional' ? 'professional' : 'student', ...(privacyVersion ? { privacy_notice_version: privacyVersion, terms_version: privacyVersion } : {}) };
+      signUp: async ({ email, password, displayName, accountType = 'student', privacyVersion, professionalProfile } = {}) => {
+        const metadata = {
+          display_name: displayName,
+          account_type: accountType === 'professional' ? 'professional' : 'student',
+          ...(privacyVersion ? { privacy_notice_version: privacyVersion, terms_version: privacyVersion } : {}),
+          ...(accountType === 'professional' && professionalProfile ? { professional_profile: professionalProfileMetadata({ ...professionalProfile, professionalName: professionalProfile.professionalName || displayName }) } : {}),
+        };
         const current = state.user;
         if (current?.isAnonymous) {
           const result = await execute('signing_up', () => client.auth.updateUser({
@@ -268,7 +291,7 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
           }));
           if (result.kind !== 'success') return result;
           try {
-            await provisionProfessional(client, result.data?.user || { ...current, user_metadata: metadata });
+            await provisionProfessional(client, withSignupMetadata(result.data?.user || current, metadata));
           } catch (error) {
             const mapped = toAuthError(error, 'professional_onboarding');
             setState(next => ({ ...next, error: mapped }));
@@ -287,7 +310,7 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
         if (result.kind !== 'success') return result;
         if (result.data?.session) {
           try {
-            await provisionProfessional(client, result.data.session.user);
+            await provisionProfessional(client, withSignupMetadata(result.data.session.user, metadata));
           } catch (error) {
             const mapped = toAuthError(error, 'professional_onboarding');
             setState(currentState => ({ ...currentState, error: mapped }));

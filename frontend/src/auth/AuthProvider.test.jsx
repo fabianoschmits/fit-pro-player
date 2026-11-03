@@ -220,7 +220,7 @@ describe('AuthProvider', () => {
     expect(client.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({
       email: 'pro@example.com',
       password: 'long-enough-password',
-      options: expect.objectContaining({ data: { display_name: 'Ana', account_type: 'professional' } }),
+      options: expect.objectContaining({ data: expect.objectContaining({ display_name: 'Ana', account_type: 'professional' }) }),
     }));
   });
 
@@ -235,7 +235,7 @@ describe('AuthProvider', () => {
         .resolves.toEqual({ kind: 'authenticated' });
     });
 
-    expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', { p_professional_name: 'Ana' });
+    expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', expect.objectContaining({ p_professional_name: 'Ana' }));
   });
 
   it('provisions professional metadata through the protected Supabase RPC after session bootstrap', async () => {
@@ -244,7 +244,7 @@ describe('AuthProvider', () => {
     await renderProvider(client);
     await act(async () => Promise.resolve());
 
-    expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', { p_professional_name: 'Ana' });
+    expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', expect.objectContaining({ p_professional_name: 'Ana' }));
   });
 
   it('keeps professional intent through an email-confirmation reload', async () => {
@@ -256,7 +256,7 @@ describe('AuthProvider', () => {
     await act(async () => Promise.resolve());
 
     expect(client.auth.exchangeCodeForSession).toHaveBeenCalledWith('abc');
-    await vi.waitFor(() => expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', { p_professional_name: 'Ana' }));
+    await vi.waitFor(() => expect(client.rpc).toHaveBeenCalledWith('provision_professional_profile', expect.objectContaining({ p_professional_name: 'Ana' })));
     expect(latest.status).toBe('authenticated');
   });
 });

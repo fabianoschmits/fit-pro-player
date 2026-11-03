@@ -25,6 +25,9 @@ describe('professional profile repository', () => {
       p_city_region: null,
       p_registration_type: null,
       p_registration_number: null,
+      p_state_uf: null,
+      p_city_name: null,
+      p_neighborhood: null,
     })
     expect(from).not.toHaveBeenCalled()
     expect(saved.verificationStatus).toBe('verified')

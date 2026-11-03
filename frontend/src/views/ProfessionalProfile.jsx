@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { createProfessionalProfileRepository } from '../lib/professional-profile.js'
+import { describeSpecialty } from '../lib/professional-specialties.js'
 import { Button } from '../components/ui.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ManagementAvatar, ManagementPanel, ManagementStatus } from '../components/ManagementUI.jsx'
@@ -13,7 +14,12 @@ import ProfessionalProfileForm from '../components/ProfessionalProfileForm.jsx'
 import { FppActionFeedback, FppSkeleton } from '../components/FppFeedback.jsx'
 import { waitForFppConfirmation } from '../components/fpp-action-timing.js'
 
-const EMPTY = { professionalName: '', bio: '', specialties: [], cityRegion: '', registrationType: '', registrationNumber: '', verificationStatus: 'unverified' }
+const EMPTY = { professionalName: '', bio: '', specialties: [], cityRegion: '', stateUf: '', cityName: '', neighborhood: '', registrationType: '', registrationNumber: '', verificationStatus: 'unverified' }
+
+function specialtyText(value) {
+  const described = describeSpecialty(value)
+  return described.kind === 'teaching' ? `${t('Lecionar')}: ${described.label}` : described.label
+}
 
 // Changing the authenticated owner immediately removes all saved and draft identity data.
 export default function ProfessionalProfile() {
@@ -110,7 +116,7 @@ function ProfileWorkspace({ auth }) {
     </ManagementPanel>
     <div className="management-profile-details">
       <ManagementPanel title={t('Atuação')}>
-        <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{value}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Cidade/região')}</dt><dd>{profile.cityRegion || t('Não informado')}</dd></div></dl>
+        <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{specialtyText(value)}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Estado')}</dt><dd>{profile.stateUf || t('Não informado')}</dd></div><div><dt>{t('Cidade')}</dt><dd>{profile.cityName || t('Não informado')}</dd></div><div><dt>{t('Bairro')}</dt><dd>{profile.neighborhood || t('Não informado')}</dd></div></dl>
       </ManagementPanel>
       <ManagementPanel title={t('Registro profissional')}>
         <dl className="management-facts"><div><dt>{t('Tipo de registro')}</dt><dd>{profile.registrationType || t('Não informado')}</dd></div><div><dt>{t('Número do registro')}</dt><dd>{profile.registrationNumber || t('Não informado')}</dd></div><div><dt>{t('Status do registro')}</dt><dd><ManagementStatus tone={profile.verificationStatus === 'verified' ? 'success' : 'neutral'}>{status}</ManagementStatus></dd></div></dl>

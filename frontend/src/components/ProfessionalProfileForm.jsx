@@ -1,20 +1,101 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
+import { composeCityRegion, fetchBrazilianCities, fetchBrazilianStates } from '../lib/brazil-locations.js'
 import { t } from '../lib/i18n.js'
+import { combineProfessionalSpecialties, MAX_PROFESSIONAL_SPECIALTIES, MAX_SPECIALTY_LENGTH, PRACTICE_SPECIALTIES, splitProfessionalSpecialties } from '../lib/professional-specialties.js'
 import { Button, TextArea, TextField } from './ui.jsx'
 
-export default function ProfessionalProfileForm({ profile, onSave = undefined, onCancel = undefined, saving, state = 'idle', provisioning = false }) {
+function emptyDraft(profile) {
+  const split = splitProfessionalSpecialties(profile.specialties || [])
+  return {
+    professionalName: profile.professionalName || '',
+    bio: profile.bio || '',
+    practice: split.practice,
+    teaching: split.teaching,
+    custom: split.custom,
+    customDraft: '',
+    stateUf: profile.stateUf || '',
+    cityName: profile.cityName || '',
+    neighborhood: profile.neighborhood || '',
+    registrationType: profile.registrationType || '',
+    registrationNumber: profile.registrationNumber || '',
+  }
+}
+
+export default function ProfessionalProfileForm({
+  profile,
+  onSave = undefined,
+  onCancel = undefined,
+  saving,
+  state = 'idle',
+  provisioning = false,
+  submitLabel = undefined,
+  cancelLabel = undefined,
+}) {
   const id = useId()
   const nameRef = useRef(null)
-  const [draft, setDraft] = useState(() => ({ ...profile, specialties: (profile.specialties || []).join(', ') }))
+  const [draft, setDraft] = useState(() => emptyDraft(profile))
   const [nameError, setNameError] = useState(false)
+  const [states, setStates] = useState([])
+  const [cities, setCities] = useState([])
+  const [locationError, setLocationError] = useState('')
+  const selectedCount = draft.practice.length + draft.teaching.length + draft.custom.length
+  const atLimit = selectedCount >= MAX_PROFESSIONAL_SPECIALTIES
+
+  useEffect(() => {
+    let current = true
+    fetchBrazilianStates().then(items => { if (current) { setStates(items); setLocationError('') } }).catch(() => { if (current) setLocationError(t('Não foi possível carregar estados e cidades agora.')) })
+    return () => { current = false }
+  }, [])
+
+  useEffect(() => {
+    if (!draft.stateUf) { setCities([]); return undefined }
+    let current = true
+    fetchBrazilianCities(draft.stateUf).then(items => { if (current) setCities(items) }).catch(() => { if (current) setLocationError(t('Não foi possível carregar as cidades deste estado.')) })
+    return () => { current = false }
+  }, [draft.stateUf])
+
   const update = (key, value) => setDraft(current => ({ ...current, [key]: value }))
+  const toggle = (group, value) => setDraft(current => {
+    const selected = current[group].includes(value)
+    if (!selected && current.practice.length + current.teaching.length + current.custom.length >= MAX_PROFESSIONAL_SPECIALTIES) return current
+    return { ...current, [group]: selected ? current[group].filter(item => item !== value) : [...current[group], value] }
+  })
+  const addCustom = () => {
+    const value = draft.customDraft.trim().toLowerCase().slice(0, MAX_SPECIALTY_LENGTH)
+    if (!value || draft.custom.includes(value) || atLimit) return
+    setDraft(current => ({ ...current, custom: [...current.custom, value], customDraft: '' }))
+  }
   const submit = event => {
     event.preventDefault()
     if (saving) return
     if (!draft.professionalName.trim()) { setNameError(true); nameRef.current?.focus(); return }
     setNameError(false)
-    onSave({ ...draft, professionalName: draft.professionalName.trim(), specialties: draft.specialties.split(',').map(value => value.trim().toLowerCase()).filter(Boolean).slice(0, 8) }, event)
+    const pending = draft.customDraft.trim().toLowerCase().slice(0, MAX_SPECIALTY_LENGTH)
+    const custom = pending && !draft.custom.includes(pending) && !atLimit ? [...draft.custom, pending] : draft.custom
+    const specialties = combineProfessionalSpecialties({ ...draft, custom })
+    const cityRegion = composeCityRegion(draft)
+    onSave({
+      ...draft,
+      professionalName: draft.professionalName.trim(),
+      bio: draft.bio,
+      specialties,
+      cityRegion,
+      stateUf: draft.stateUf || null,
+      cityName: draft.cityName || null,
+      neighborhood: draft.neighborhood.trim() || null,
+      registrationType: draft.registrationType,
+      registrationNumber: draft.registrationNumber,
+    }, event)
   }
+  const chips = (group, items, prefix = '') => (
+    <div className="management-choice-chips" role="group">
+      {items.map(item => {
+        const pressed = draft[group].includes(item.id)
+        return <button key={`${group}-${item.id}`} type="button" className="management-choice-chip" aria-pressed={pressed} disabled={saving || (!pressed && atLimit)} onClick={() => toggle(group, item.id)}>{prefix}{item.label}</button>
+      })}
+    </div>
+  )
+
   return <form className="management-profile-form" onSubmit={submit} aria-busy={saving || undefined} noValidate>
     <fieldset disabled={saving} className="management-form-group">
       <legend>{t('Apresentação')}</legend>
@@ -24,9 +105,42 @@ export default function ProfessionalProfileForm({ profile, onSave = undefined, o
     </fieldset>
     <fieldset disabled={saving} className="management-form-group">
       <legend>{t('Atuação')}</legend>
-      <label htmlFor={`${id}-specialties`}>{t('Especialidades')}<TextField id={`${id}-specialties`} name="specialties" value={draft.specialties} onChange={event => update('specialties', event.target.value)} aria-describedby={`${id}-specialties-hint`} /></label>
-      <p id={`${id}-specialties-hint`} className="management-help">{t('Separe por vírgulas. Até 8 especialidades.')}</p>
-      <label htmlFor={`${id}-city`}>{t('Cidade/região')}<TextField id={`${id}-city`} name="cityRegion" autoComplete="address-level2" value={draft.cityRegion || ''} onChange={event => update('cityRegion', event.target.value)} maxLength={120} /></label>
+      <div>
+        <p id={`${id}-practice-label`} className="management-field-label">{t('Especialidades')}</p>
+        {chips('practice', PRACTICE_SPECIALTIES)}
+      </div>
+      <div>
+        <p id={`${id}-teaching-label`} className="management-field-label">{t('Lecionar')}</p>
+        <p className="management-help">{t('Marque também as especialidades que você leciona.')}</p>
+        {chips('teaching', PRACTICE_SPECIALTIES, `${t('Lecionar')} `)}
+      </div>
+      <label htmlFor={`${id}-custom`}>{t('Outra especialidade')}
+        <span className="management-chip-input">
+          <TextField id={`${id}-custom`} name="customSpecialty" value={draft.customDraft} onChange={event => update('customDraft', event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addCustom() } }} maxLength={MAX_SPECIALTY_LENGTH} aria-describedby={`${id}-specialties-hint`} disabled={atLimit} />
+          <Button type="button" activation="immediate" disabled={saving || atLimit || !draft.customDraft.trim()} onClick={addCustom}>{t('Adicionar')}</Button>
+        </span>
+      </label>
+      {!!draft.custom.length && <ul className="management-specialties">{draft.custom.map(value => (
+        <li key={value}><button type="button" className="management-choice-chip" aria-pressed="true" onClick={() => setDraft(current => ({ ...current, custom: current.custom.filter(item => item !== value) }))}>{value}</button></li>
+      ))}</ul>}
+      <p id={`${id}-specialties-hint`} className="management-help">{t('Escolha uma ou mais opções e, se quiser, digite especialidades extras. Até {0} no total.', MAX_PROFESSIONAL_SPECIALTIES)}</p>
+      <div className="management-form-columns">
+        <label htmlFor={`${id}-state`}>{t('Estado')}
+          <select id={`${id}-state`} className="field" name="stateUf" aria-label={t('Estado')} value={draft.stateUf} onChange={event => setDraft(current => ({ ...current, stateUf: event.target.value, cityName: '' }))}>
+            <option value="">{t('Selecione o estado')}</option>
+            {states.map(item => <option key={item.uf} value={item.uf}>{item.name} ({item.uf})</option>)}
+          </select>
+        </label>
+        <label htmlFor={`${id}-city`}>{t('Cidade')}
+          <select id={`${id}-city`} className="field" name="cityName" aria-label={t('Cidade')} value={draft.cityName} onChange={event => update('cityName', event.target.value)} disabled={!draft.stateUf}>
+            <option value="">{t('Selecione a cidade')}</option>
+            {cities.map(item => <option key={item.id || item.name} value={item.name}>{item.name}</option>)}
+            {draft.cityName && !cities.some(item => item.name === draft.cityName) && <option value={draft.cityName}>{draft.cityName}</option>}
+          </select>
+        </label>
+      </div>
+      <label htmlFor={`${id}-neighborhood`}>{t('Bairro')}<TextField id={`${id}-neighborhood`} name="neighborhood" value={draft.neighborhood} onChange={event => update('neighborhood', event.target.value)} maxLength={80} autoComplete="address-level3" /></label>
+      {locationError && <p className="management-help" role="status">{locationError}</p>}
     </fieldset>
     <fieldset disabled={saving} className="management-form-group">
       <legend>{t('Registro profissional')}</legend>
@@ -37,8 +151,8 @@ export default function ProfessionalProfileForm({ profile, onSave = undefined, o
       <p className="management-help">{t('Salvar exige conexão. O status de verificação é controlado pelo sistema.')}</p>
     </fieldset>
     <div className="management-form-actions">
-      <Button feedback="persistence" type="submit" variant="primary" intent="primary" state={state === 'success' ? state : saving ? 'loading' : state} loadingLabel={provisioning ? t('Criando…') : t('Salvando…')} successLabel={t('Perfil salvo.')} errorLabel={t('Tentar novamente')} disabled={saving}>{provisioning ? t('Criar perfil profissional') : t('Salvar perfil')}</Button>
-      <Button type="button" activation="immediate" disabled={saving} onClick={onCancel}>{t('Cancelar')}</Button>
+      <Button feedback="persistence" type="submit" variant="primary" intent="primary" state={state === 'success' ? state : saving ? 'loading' : state} loadingLabel={provisioning ? t('Criando…') : t('Salvando…')} successLabel={t('Perfil salvo.')} errorLabel={t('Tentar novamente')} disabled={saving}>{submitLabel || (provisioning ? t('Criar perfil profissional') : t('Salvar perfil'))}</Button>
+      <Button type="button" activation="immediate" disabled={saving} onClick={onCancel}>{cancelLabel || t('Cancelar')}</Button>
     </div>
   </form>
 }

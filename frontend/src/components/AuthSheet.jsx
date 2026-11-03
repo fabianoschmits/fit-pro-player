@@ -7,6 +7,7 @@ import { useUI } from '../store/useUI.js';
 import { useStore } from '../store/useStore.js';
 import { Button } from './ui.jsx';
 import Icon from './Icon.jsx';
+import ProfessionalProfileForm from './ProfessionalProfileForm.jsx';
 import { PRIVACY_DOCUMENT_VERSION } from '../lib/privacy-config.js'
 import { clearSignUpRateLimit, getSignUpRateLimitState, recordSignUpAttempt } from '../auth/rate-limit.js'
 import { waitForFppConfirmation } from './fpp-action-timing.js'
@@ -39,6 +40,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const auth = useAuth();
   const offlineName = useStore(s => s.S?.profile?.name || '');
   const [mode, setMode] = useState(() => initial(initialMode));
+  const [signupStep, setSignupStep] = useState(1);
   const [values, setValues] = useState(() => ({ name: formatPersonName(offlineName), email: '', password: '', confirmation: '', accountType: 'student' }));
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -60,6 +62,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
 
   useEffect(() => {
     setMode(initial(initialMode));
+    setSignupStep(1);
     setError('');
     setNotice('');
     setPrivacyAccepted(false)
@@ -77,6 +80,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const showMode = next => {
     if (submitLock.current) return;
     setMode(next);
+    setSignupStep(1);
     setSubmitState('idle');
     setError('');
     setNotice('');
@@ -85,7 +89,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   };
   const showError = code => setError(t(ERROR_COPY[code] || ERROR_COPY.auth_unavailable));
 
-  const submit = async event => {
+  const submit = async (event, professionalProfile) => {
     event.preventDefault();
     if (submitLock.current || busy) return;
     setError('');
@@ -100,6 +104,10 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       setError('Muitas tentativas de cadastro. Aguarde alguns minutos antes de tentar novamente.');
       return
     }
+    if (mode === 'sign_up' && values.accountType === 'professional' && signupStep === 1) {
+      setSignupStep(2);
+      return;
+    }
 
     submitLock.current = true;
     setSubmitState('loading');
@@ -107,7 +115,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     try {
       let result;
       if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
-      if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType, privacyVersion: PRIVACY_DOCUMENT_VERSION });
+      if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType, privacyVersion: PRIVACY_DOCUMENT_VERSION, professionalProfile });
       if (mode === 'forgot_password') result = await auth.sendPasswordRecovery(values.email);
       if (mode === 'reset_password') result = await auth.updatePassword(values.password);
       if (!mounted.current) return;
@@ -161,7 +169,31 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const isRecovery = mode === 'forgot_password';
   const isReset = mode === 'reset_password';
   const title = isSignUp ? 'Create account' : isRecovery ? 'Recover your password' : isReset ? 'Reset password' : 'Sign in';
-  const submitLabel = isSignUp ? 'Create account' : isRecovery ? 'Send recovery email' : isReset ? 'Reset password' : 'Sign in';
+  const submitLabel = isSignUp
+    ? (values.accountType === 'professional' ? 'Continuar' : 'Create account')
+    : isRecovery ? 'Send recovery email' : isReset ? 'Reset password' : 'Sign in';
+
+  if (isSignUp && values.accountType === 'professional' && signupStep === 2) {
+    return <div className="auth-form auth-professional-step">
+      <div className="auth-form-head">
+        <span className="auth-kicker">FIT PRO PLAYER · CONTA</span>
+        <h3>{t('Perfil profissional')}</h3>
+        <p>{t('Complete sua apresentação profissional para que os alunos encontrem você.')}</p>
+      </div>
+      <p id="auth-error" ref={alertRef} role="alert" tabIndex={-1}>{error}</p>
+      {notice && <p role="status">{notice}</p>}
+      <ProfessionalProfileForm
+        profile={{ professionalName: values.name, bio: '', specialties: [], cityRegion: '', stateUf: '', cityName: '', neighborhood: '', registrationType: '', registrationNumber: '' }}
+        saving={busy}
+        state={submitState}
+        provisioning
+        submitLabel={t('Create account')}
+        cancelLabel={t('Voltar')}
+        onSave={(profile, event) => submit(event, profile)}
+        onCancel={() => { if (!busy) { setSignupStep(1); setSubmitState('idle'); setError(''); setNotice('') } }}
+      />
+    </div>
+  }
 
   const passwordScore = values.password.length < 8 ? 0 : [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(pattern => pattern.test(values.password)).length + 1
   const passwordLabel = passwordScore < 2 ? 'Fraca' : passwordScore < 4 ? 'Boa' : 'Forte'

@@ -171,7 +171,15 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .management-layout textarea.field{min-height:84px;resize:vertical}
 .management-layout .field[aria-invalid="true"]{border-color:var(--red)}
 .management-form-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:640px){.management-form-columns{grid-template-columns:minmax(0,1fr)}}
 .management-help{font-size:12px;line-height:1.5;color:var(--management-muted);margin:0;max-width:66ch}
+.management-field-label{margin:0;font-size:12px;font-weight:650}
+.management-choice-chips{display:flex;flex-wrap:wrap;gap:8px}
+.management-choice-chip{min-height:36px;padding:6px 12px;border:1px solid var(--sep);border-radius:999px;background:transparent;color:var(--label);font:inherit;font-size:12px;cursor:pointer}
+.management-choice-chip[aria-pressed="true"]{background:var(--acc-soft);border-color:var(--acc);font-weight:650}
+.management-choice-chip:disabled{opacity:.45;cursor:not-allowed}
+.management-chip-input{display:flex;gap:8px;align-items:center;min-width:0}
+.management-chip-input .field{flex:1;min-width:0}
 .management-form-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px solid var(--sep)}
 .management-error,.management-notice,.management-success{margin:0;padding:10px 12px;background:var(--acc-soft);color:var(--label);overflow-wrap:anywhere;font-size:13px}
 .management-error{color:var(--red);background:transparent}

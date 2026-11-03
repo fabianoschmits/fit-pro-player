@@ -11,6 +11,7 @@ import ManagementLayout from './ManagementLayout.jsx'
 import { ManagementPanel, ManagementAvatar } from './ManagementUI.jsx'
 import useStudentManagementRequest from './useStudentManagementRequest.js'
 import { studentVerificationLabel } from './StudentProfessionalVerification.jsx'
+import { describeSpecialty } from '../lib/professional-specialties.js'
 import { FppSkeleton } from './FppFeedback.jsx'
 
 export default function StudentProfessionalInvite({ inviteCode = undefined }) {
@@ -58,6 +59,6 @@ function InviteWorkspace({ initialCode }) {
     </ManagementPanel>
     {busy && <FppSkeleton label={t('Consultando convite…')} rows={2} />}
     {!busy && data && !preview && data.code === code && <ManagementPanel title={t('Convite indisponível')}><p role="alert">{t('Convite inválido ou expirado.')}</p><p className="muted">{t('Peça um novo código ao profissional.')}</p></ManagementPanel>}
-    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} avatarRef={preview.avatar_ref} userId={preview.professional_user_id} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" intent="primary" disabled={accepting || busy} onAction={accept} onSuccess={() => { if (alive.current) navigate('/student/professionals?request=pending', { replace: true }) }} loadingLabel={t('Solicitando…')} errorLabel={t('Tentar novamente')}>{t('Solicitar vínculo')}</Button></ManagementPanel>}
+    {preview && <ManagementPanel title={t('Confira antes de vincular')}><div className="management-person-strip"><ManagementAvatar name={preview.professional_name} avatarRef={preview.avatar_ref} userId={preview.professional_user_id} /><div><h2>{preview.professional_name}</h2><p>{preview.bio || t('Perfil profissional')}</p>{preview.specialties?.length > 0 && <p className="muted">{preview.specialties.map(value => { const described = describeSpecialty(value); return described.kind === 'teaching' ? `${t('Lecionar')}: ${described.label}` : described.label }).join(' · ')}</p>}<p className="muted">{t('Verificação: {0}', studentVerificationLabel(preview.verification_status))}</p></div></div><Button variant="primary" intent="primary" disabled={accepting || busy} onAction={accept} onSuccess={() => { if (alive.current) navigate('/student/professionals?request=pending', { replace: true }) }} loadingLabel={t('Solicitando…')} errorLabel={t('Tentar novamente')}>{t('Solicitar vínculo')}</Button></ManagementPanel>}
   </ManagementLayout>
 }
