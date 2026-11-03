@@ -241,13 +241,19 @@ test('student receives a professional plan and applies it only after explicit co
  await expect(page).toHaveURL(/student\/professionals/)
  await page.goto('/#/plan')
  await page.getByRole('button',{name:'Treino do profissional',exact:true}).click()
- await expect(page.getByText('Plano recebido',{exact:true}).first()).toBeVisible()
+ // The complete-week calendar also contains this title, with compact labels
+ // hidden on mobile. Verify the visible received workout, not DOM order.
+ await expect(page.locator('.received-workout-main').getByText('Plano recebido',{exact:true})).toBeVisible()
+ await expect(page.locator('.professional-plan-preview .plan-day')).toHaveCount(7)
+ await expect(page.getByRole('button',{name:'Usar este plano',exact:true})).toHaveCount(1)
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem(`fpp_account_cache_v1:11111111-1111-4111-8111-111111111111`)).state.routines[0].name)).toBe('Treino de teste')
  expect(applied).toBe(false)
  await page.getByRole('button',{name:'Usar este plano',exact:true}).first().click()
  expect(applied).toBe(false)
  await page.getByRole('dialog').getByRole('button',{name:'Aplicar plano',exact:true}).click()
  await expect.poll(()=>applied).toBe(true)
+ await expect(page.getByRole('dialog')).toHaveCount(0)
+ await expect(page.locator('.plan-view > .training-plan-workspace .plan-day.on')).toHaveAttribute('aria-label','Segunda-feira: Plano recebido')
  await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('fpp_account_cache_v1:11111111-1111-4111-8111-111111111111')).state.activeLibraryId)).toBe(deliveryId)
 })
 

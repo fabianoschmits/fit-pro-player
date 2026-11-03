@@ -31,9 +31,14 @@ Nova migration 202611020008_plan_selection_notifications.sql; nenhuma migration 
 
 O E2E utiliza o servidor canônico controlado pelas fixtures; SQL executa as funções reais em bancos descartáveis. A instalação limpa, suíte E2E integral e supabase db reset real são repetidos pelo workflow Quality no GitHub. O link e resultado do CI no SHA final são informados na entrega, evitando criar um commit adicional apenas para registrar seu próprio resultado.
 
+## Ajuste após a execução integral do CI
+
+O primeiro CI completo teve 323 E2E aprovados e uma falha: o teste antigo usava getByText('Plano recebido').first(), que passou a encontrar o rótulo compacto (oculto no mobile) do novo calendário de preview antes do cartão do treino. A falha foi reproduzida localmente. O seletor agora aponta explicitamente para o treino recebido visível; também verifica sete dias, um único CTA, fechamento do modal e o dia aplicado no calendário principal. As verificações de ausência de aplicação antes da confirmação foram preservadas.
+
 ## Arquivos
 
 - docs/validation/2026-11-02-complete-plan-week.md
+- frontend/e2e/application.spec.js
 - frontend/e2e/plan-library.spec.js
 - frontend/e2e/plan-switching.spec.js
 - frontend/public/sw.js
