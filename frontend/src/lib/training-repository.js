@@ -31,6 +31,7 @@ function mapError(error) {
     return new TrainingRepositoryError('revision-conflict', { code, retryable: true, cause: error })
   }
   if (code === '42501' && message.includes('plan selection changed')) return new TrainingRepositoryError('selection-conflict', { code, cause: error })
+  if (code === '42501' && message === 'professional prescription is read only') return new TrainingRepositoryError('professional-prescription-conflict', { code, cause: error })
   if (code === '42501' && message.includes('workout session not found')) return new TrainingRepositoryError('session-missing', { code, retryable: true, cause: error })
   if (code === '42501' || code === 'PGRST301' || error?.status === 401) return new TrainingRepositoryError('forbidden', { code, cause: error })
   if (code === '55000') return new TrainingRepositoryError('finalized', { code, cause: error })

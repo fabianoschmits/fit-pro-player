@@ -329,7 +329,7 @@ function Shell() {
       onStatus: status => { if (current(accountId)) useStore.getState().setAccountSyncStatus(status) },
       onCommitted: (domain, revision) => tabSync?.publish(domain, revision),
     })
-    useStore.getState().configureAccountSync(() => sync.retry())
+    useStore.getState().configureAccountSync(() => sync.retry(), data => sync.acceptConfirmedPlan(data))
     const refresh = createDomainRefresh({
       accountId,
       repository,

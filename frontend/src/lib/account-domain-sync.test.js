@@ -191,6 +191,74 @@ it('keeps personal edits pending with a durable conflict when another device sel
  expect(h.repository.saveDetachedPlan).not.toHaveBeenCalled()
 })
 
+it.each([false, true])('recovers a stale selection with proven personal changes (base: %s)', async withBase => {
+ const h = harness()
+ const personal = { id: 'p', title: 'Personal', prescription: { ex: [] } }
+ const base = { mode: 'weekly', schedule: { libraryId: 'old', week: {}, dayPlan: {} }, routines: [personal] }
+ const remote = { routines: [personal, { id: 'assigned', title: 'Received', prescription: { assigned: true, ex: [] } }], schedule: { revision: 9, mode: 'weekly', values: { libraryId: 'new', week: { 1: 'assigned' }, dayPlan: {}, assignedProgram: { versionId: 'v1' } } } }
+ h.sync.acceptRemote('plan', { routines: withBase ? base.routines : [], schedule: { revision: 1, mode: base.mode, values: base.schedule } })
+ h.setState({ ...h.state(), bodyweight: [], routines: [{ id: 'p', name: withBase ? 'Personal edited' : 'Personal', ex: [] }], _pendingSync: { plan: true } })
+ h.repository.loadPlan = vi.fn(async () => remote)
+ h.repository.savePlan.mockRejectedValueOnce({ kind: 'selection-conflict' }).mockImplementation(async input => ({ routines: input.routines, schedule: { revision: 10, mode: input.mode, values: input.schedule } }))
+ if (!withBase) {
+  // A newly constructed engine has no trustworthy base for the old selection.
+  h.setState({ ...h.state(), assignedProgram: { versionId: 'old-professional' }, _syncBases: {} })
+ }
+ const sync = withBase ? h.sync : createAccountDomainSync({ repository: h.repository, getState: h.state, replaceState: h.setState, isCurrent: () => true, isOnline: () => true })
+ await sync.start()
+ expect(h.state()).toMatchObject({ activeLibraryId: 'new', week: { 1: 'assigned' }, _pendingSync: { plan: false } })
+ expect(h.state().routines.find(row => row.id === 'p').name).toBe(withBase ? 'Personal edited' : 'Personal')
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(withBase ? 2 : 1)
+})
+
+it('preserves a baseless personal calendar even when personal routines match the server', async () => {
+ const h = harness()
+ h.setState({ ...h.state(), bodyweight: [], activeLibraryId: 'old', assignedProgram: null, week: { 2: 'p' }, routines: [{ id: 'p', name: 'Personal', ex: [] }], _pendingSync: { plan: true } })
+ h.repository.savePlan.mockRejectedValue({ kind: 'selection-conflict' })
+ h.repository.loadPlan = vi.fn(async () => ({ routines: [{ id: 'p', title: 'Personal', prescription: { ex: [] } }], schedule: { revision: 3, mode: 'weekly', values: { libraryId: 'new', week: {}, dayPlan: {}, assignedProgram: { versionId: 'server-professional' } } } }))
+ await h.sync.start()
+ expect(h.state()).toMatchObject({ activeLibraryId: 'old', assignedProgram: null, week: { 2: 'p' }, _pendingSync: { plan: true }, _syncConflicts: { plan: { path: 'schedule.libraryId' } } })
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(1)
+})
+
+it('retains a pending personal reorder while rebasing a stale selection', async () => {
+ const h = harness()
+ const personal = ['a', 'b'].map(id => ({ id, title: id, prescription: { ex: [] } }))
+ h.sync.acceptRemote('plan', { routines: personal, schedule: { revision: 1, mode: 'weekly', values: { libraryId: 'old', week: {}, dayPlan: {} } } })
+ h.setState({ ...h.state(), bodyweight: [], routines: [...h.state().routines].reverse(), _pendingSync: { plan: true } })
+ const assigned = { id: 'assigned', title: 'Received', prescription: { assigned: true, ex: [] } }
+ h.repository.loadPlan = vi.fn(async () => ({ routines: [assigned, ...personal], schedule: { revision: 3, mode: 'weekly', values: { libraryId: 'new', week: { 1: 'assigned' }, dayPlan: {}, assignedProgram: { versionId: 'v1' } } } }))
+ h.repository.savePlan.mockRejectedValueOnce({ kind: 'selection-conflict' }).mockImplementation(async input => ({ routines: input.routines, schedule: { revision: 4, mode: input.mode, values: input.schedule } }))
+ await h.sync.start()
+ expect(h.state().routines.filter(row => !row.assigned).map(row => row.id)).toEqual(['b', 'a'])
+ expect(h.state().routines.find(row => row.assigned)).toEqual({ id: assigned.id, name: assigned.title, ...assigned.prescription })
+ expect(h.state()._pendingSync.plan).toBe(false)
+})
+
+it('recovers legacy professional prescription metadata using canonical assigned rows', async () => {
+ const h = harness()
+ const personal = { id: 'p', title: 'Personal', prescription: { ex: [] } }
+ const assigned = { id: 'canonical', title: 'Received', prescription: { assigned: true, ex: [{ id: 'x' }] } }
+ h.setState({ ...h.state(), bodyweight: [], activeLibraryId: 'current', assignedProgram: { versionId: 'v1' }, routines: [{ id: 'p', name: 'Personal', ex: [] }, { id: 'legacy', name: 'Received', assigned: true, emoji: '💪', ex: [{ id: 'x', legacy: true }] }], _pendingSync: { plan: true } })
+ h.repository.loadPlan = vi.fn(async () => ({ routines: [assigned, personal], schedule: { revision: 3, mode: 'weekly', values: { libraryId: 'current', week: { 1: 'canonical' }, dayPlan: {}, assignedProgram: { versionId: 'v1' } } } }))
+ h.repository.savePlan.mockRejectedValue({ kind: 'professional-prescription-conflict' })
+ await h.sync.start()
+ expect(h.state()).toMatchObject({ week: { 1: 'canonical' }, _pendingSync: { plan: false } })
+ expect(h.state().routines).toEqual([{ id: assigned.id, name: assigned.title, ...assigned.prescription }, { id: 'p', name: 'Personal', ex: [] }])
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(1)
+})
+
+it.each([false, true])('keeps unsafe professional prescription recovery durable (read fails: %s)', async readFails => {
+ const h = harness()
+ h.setState({ ...h.state(), bodyweight: [], assignedProgram: { versionId: 'v1' }, routines: [{ id: 'p', name: 'Unsent personal edit', ex: [] }], _pendingSync: { plan: true } })
+ h.repository.savePlan.mockRejectedValue({ kind: 'professional-prescription-conflict' })
+ h.repository.loadPlan = readFails ? vi.fn().mockRejectedValue(new Error('offline')) : vi.fn(async () => ({ routines: [], schedule: { revision: 3, mode: 'weekly', values: {} } }))
+ await h.sync.start()
+ expect(h.state()).toMatchObject({ routines: [{ name: 'Unsent personal edit' }], _pendingSync: { plan: true }, _syncConflicts: { plan: { path: 'routines.assigned', local: { routines: [{ title: 'Unsent personal edit' }] } } } })
+ if (readFails) expect(h.state()._syncConflicts.plan.remote).toBeNull()
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(1)
+})
+
 it('preserves professional assignment metadata when synchronizing personal edits', async () => {
   const h = harness()
   const assignment = { assignmentId: 'assignment', versionId: 'version' }
@@ -200,6 +268,19 @@ it('preserves professional assignment metadata when synchronizing personal edits
   expect(h.repository.savePlan.mock.calls[0][0].schedule.assignedProgram).toEqual(assignment)
   expect(h.state().assignedProgram).toEqual(assignment)
   expect(h.state()._pendingSync.plan).toBe(false)
+})
+
+it.each(['schedule', 'personal-conflict'])('keeps unsafe stale selection changes durable: %s', async reason => {
+ const h = harness()
+ const row = { id: 'p', title: 'Original', prescription: { ex: [] } }
+ h.sync.acceptRemote('plan', { routines: [row], schedule: { revision: 1, mode: 'weekly', values: { libraryId: 'old', week: {}, dayPlan: {} } } })
+ h.setState({ ...h.state(), bodyweight: [], week: reason === 'schedule' ? { 2: 'p' } : {}, routines: [{ id: 'p', name: 'Local edit', ex: [] }], _pendingSync: { plan: true } })
+ h.repository.savePlan.mockRejectedValue({ kind: 'selection-conflict' })
+ h.repository.loadPlan = vi.fn(async () => ({ routines: [{ ...row, title: reason === 'personal-conflict' ? 'Remote edit' : 'Original' }], schedule: { revision: 3, mode: 'weekly', values: { libraryId: 'new', week: {}, dayPlan: {} } } }))
+ await h.sync.start()
+ expect(h.state()).toMatchObject({ activeLibraryId: 'old', routines: [{ name: 'Local edit' }], _pendingSync: { plan: true }, _syncConflicts: { plan: { path: 'schedule.libraryId' } } })
+ if (reason === 'schedule') expect(h.state().week).toEqual({ 2: 'p' })
+ expect(h.repository.savePlan).toHaveBeenCalledTimes(1)
 })
 
 function planPair() {

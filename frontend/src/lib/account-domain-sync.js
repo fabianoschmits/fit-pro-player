@@ -5,6 +5,11 @@ import { bodyFingerprint, planFingerprint, preferenceFingerprint, preferenceValu
 
 const DOMAINS = ['plan', 'body', 'preferences', 'history']
 const fingerprints = { plan: planFingerprint, body: bodyFingerprint, preferences: preferenceFingerprint }
+const canonical = value => JSON.stringify(value, (_, entry) => entry && typeof entry === 'object' && !Array.isArray(entry)
+  ? Object.fromEntries(Object.entries(entry).sort(([a], [b]) => a.localeCompare(b))) : entry)
+const personalRoutines = plan => plan.routines.filter(row => !row.prescription?.assigned)
+const executionSchedule = plan => ({ mode: plan.mode, week: plan.schedule.week || {}, dayPlan: plan.schedule.dayPlan || {} })
+const isPlanExecutionConflict = error => ['selection-conflict', 'professional-prescription-conflict'].includes(error?.kind)
 
 
 /** Sends account changes immediately when connected. Local state is the durable pending journal. */
@@ -67,6 +72,32 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
       : repository.savePreferences({ ...value, expectedRevision })
     try { return await send(input, revision) }
     catch (error) {
+      if (domain === 'plan' && isPlanExecutionConflict(error)) {
+        let fresh
+        try { fresh = await repository.loadPlan() }
+        catch { throw error }
+        if (!current() || canonical(inputFor(domain, getState())) !== canonical(input)) throw error
+        const remote = wire(domain, fresh), base = bases.get(domain)
+        const localPersonal = personalRoutines(input), remotePersonal = personalRoutines(remote)
+        let mergedPersonal
+        if (!base) {
+          if (canonical(localPersonal) !== canonical(remotePersonal)) throw error
+          if (!input.schedule.assignedProgram && canonical(executionSchedule(input)) !== canonical(executionSchedule(remote))) throw error
+          mergedPersonal = remotePersonal
+        } else {
+          // A personal schedule is an editable journal too. A professional
+          // execution belongs to the selected server prescription instead.
+          if (!input.schedule.assignedProgram && canonical(executionSchedule(input)) !== canonical(executionSchedule(base))) throw error
+          try { mergedPersonal = mergeChanges(personalRoutines(base), localPersonal, remotePersonal) }
+          catch { throw error }
+        }
+        if (canonical(mergedPersonal) === canonical(remotePersonal)) return fresh
+        if (!current() || canonical(inputFor(domain, getState())) !== canonical(input)) throw error
+        const mergedById = new Map(mergedPersonal.map(row => [row.id, row]))
+        if (remote.routines.some(row => row.prescription?.assigned && mergedById.has(row.id))) throw error
+        const routines = [...remote.routines.filter(row => row.prescription?.assigned), ...mergedPersonal]
+        return send({ ...remote, routines }, fresh.schedule?.revision || 0)
+      }
       if (error?.kind !== 'revision-conflict') throw error
       const fresh = await (domain === 'plan' ? repository.loadPlan() : domain === 'body' ? repository.loadBody() : repository.loadPreferences())
       const remote = wire(domain, fresh)
@@ -100,6 +131,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
 
   function acceptRemote(domain, data) {
     if (!current()) return
+    if (domain === 'plan' && (data.schedule?.revision || 0) < (getState().planServerRevision || 0)) return
     if (domain === 'body' && data.revision < bodyRevision) return
     const initial = firstRead.delete(domain)
     if ((domain === 'plan' || domain === 'preferences' || domain === 'body') && isPending(domain)) return
@@ -130,6 +162,13 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
     replaceState(applyDomainState(getState(), domain, data))
   }
 
+  function acceptConfirmedPlan(data) {
+    if (!current() || isPending('plan') || inFlight.has('plan')) return false
+    if ((data.schedule?.revision || 0) < (getState().planServerRevision || 0)) return false
+    acceptRemote('plan', data)
+    return true
+  }
+
   function flushDomain(domain) {
     if (failures.get(domain) === 'sync-conflict') return Promise.resolve()
     if (inFlight.has(domain)) return inFlight.get(domain)
@@ -141,13 +180,13 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
         let saved
         try { saved = await save(domain, state) }
         catch (error) {
-          if (domain === 'plan' && error?.kind === 'selection-conflict') {
+          if (domain === 'plan' && isPlanExecutionConflict(error)) {
             if (!current()) break
             // A detached snapshot is not a writable journal: applying a personal
             // plan uses live server routines. Keep unsent edits in the durable
             // pending state until this selection conflict is explicitly resolved.
             const conflict = remote => ({ base: bases.get(domain) || null,
-              local: inputFor(domain, getState()), remote, path: 'schedule.libraryId' })
+              local: inputFor(domain, getState()), remote, path: error.kind === 'professional-prescription-conflict' ? 'routines.assigned' : 'schedule.libraryId' })
             replaceState({ ...getState(), _syncConflicts: { ...getState()._syncConflicts, plan: conflict(null) } })
             failures.set(domain, 'sync-conflict')
             try {
@@ -227,5 +266,5 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
   function retry() { failures.clear(); return changed() }
   function dispose() { disposed = true; retryTimers.forEach(timer => clearTimeout(timer)); retryTimers.clear() }
 
-  return { acceptRemote, changed, start, retry, dispose, status, revision: domain => domain === 'plan' ? planRevision : domain === 'body' ? bodyRevision : preferenceRevision }
+  return { acceptRemote, acceptConfirmedPlan, changed, start, retry, dispose, status, revision: domain => domain === 'plan' ? planRevision : domain === 'body' ? bodyRevision : preferenceRevision }
 }

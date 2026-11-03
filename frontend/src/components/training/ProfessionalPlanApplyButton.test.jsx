@@ -326,3 +326,20 @@ it('never applies over a pending personal edit when real synchronization discove
     expect(container.querySelector('[role="alert"]').textContent).toContain('sincronização')
   } finally { sync.dispose() }
 })
+
+it('acknowledges a confirmed application in the live sync engine and never lets an older read roll its base back', async () => {
+ const token=useStore.getState().getScopeToken()
+ const sync=createAccountDomainSync({repository:{},getState:()=>useStore.getState().S,replaceState:next=>useStore.getState().replaceState(next,false),isCurrent:()=>useStore.getState().isScopeCurrent(token),isOnline:()=>true})
+ const initial=parsePlan(response('v1'),userId); initial.schedule.revision=2
+ sync.acceptRemote('plan',initial)
+ useStore.getState().configureAccountSync(()=>sync.retry(),data=>sync.acceptConfirmedPlan(data))
+ try {
+  await sync.start()
+  await render(); await click('Usar este plano'); await click('Aplicar plano')
+  expect(useUI.getState().sheets).toHaveLength(0)
+  expect(sync.revision('plan')).toBe(3)
+  expect(useStore.getState().S._syncBases.plan.schedule.assignedProgram.versionId).toBe('v2')
+  sync.acceptRemote('plan',initial)
+  expect(useStore.getState().S._syncBases.plan.schedule.assignedProgram.versionId).toBe('v2')
+ } finally {sync.dispose()}
+})

@@ -80,6 +80,8 @@ describe('training repository', () => {
     [{ code: '40001', message: 'stale workout writer' }, 'stale-writer', false],
     [{ code: '40001', message: 'workout revision conflict' }, 'revision-conflict', true],
     [{ code: '42501', message: 'denied' }, 'forbidden', false],
+    [{ code: '42501', message: 'professional prescription is read only' }, 'professional-prescription-conflict', false],
+    [{ code: '42501', message: 'other professional prescription is read only failure' }, 'forbidden', false],
     [{ code: 'PGRST301', message: 'JWT expired' }, 'forbidden', false],
     [{ code: '55000', message: 'workout session already finalized' }, 'finalized', false],
     [{ code: '23505', message: 'active workout already exists' }, 'active-session', false],

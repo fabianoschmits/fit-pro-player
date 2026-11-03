@@ -11,7 +11,11 @@ export const isProfessionalPlanActive = (state, libraryPlanId, versionId) => Boo
 )
 
 const applicationError = error => error.message === 'pending-plan'
-  ? 'Existem alterações dos seus treinos aguardando sincronização. Tente sincronizar novamente antes de aplicar.'
+  ? error.syncKind === 'sync-conflict'
+    ? 'Há um conflito de sincronização com outra sessão. Suas alterações pessoais foram preservadas; o plano ainda não foi aplicado.'
+    : error.syncKind === 'offline'
+      ? 'Sem conexão para sincronizar seus treinos. Conecte-se e tente aplicar novamente.'
+      : 'Existem alterações dos seus treinos aguardando sincronização. Tente sincronizar novamente antes de aplicar.'
   : error.code === '42501' || error.code === '22023'
     ? 'Este plano não está mais disponível. Atualize os treinos recebidos.'
     : error.code === '40001' || error.kind === 'revision-conflict'
@@ -55,7 +59,7 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, remov
     try {
       await requireScope().retryAccountSync()
       let store = requireScope()
-      if (store.S._pendingSync?.plan) throw new Error('pending-plan')
+      if (store.S._pendingSync?.plan) throw Object.assign(new Error('pending-plan'), { syncKind: store.accountSync?.error, path: store.S._syncConflicts?.plan?.path })
       const before = planSnapshot(store.S)
       const targetId = personal ? await repo.savePersonalPlan('Meu plano') : libraryPlanId
       store = requireScope()
@@ -81,9 +85,9 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, remov
       const next = applyDomainState(store.S, 'plan', parsed)
       const isActive = state => personal ? state.activeLibraryId === targetId && state.assignedProgram === null : isProfessionalPlanActive(state, targetId, versionId)
       if (next === store.S || !isActive(next)) throw new Error('unexpected-active-plan')
-      next._pendingSync = { ...next._pendingSync, plan: false }
-      next.onboardingDone = true
-      store.replaceState(next, false)
+      if (!store.acceptConfirmedAccountPlan(parsed, token)) throw Object.assign(new Error('revision-conflict'), { code: '40001' })
+      store = requireScope()
+      store.replaceState({ ...store.S, onboardingDone: true }, false)
       if (!isActive(useStore.getState().S)) throw new Error('unexpected-active-plan')
       close()
       // A failed list refresh must not turn a confirmed application into a retry.

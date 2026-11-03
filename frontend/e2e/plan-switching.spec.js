@@ -247,3 +247,39 @@ test('creating a personal routine while professional is active returns to My wor
  await expect(header(page).locator('h1')).toHaveText(received.title)
  expect(server.calls).toBe(1)
 })
+
+for(const legacyError of ['plan selection changed','professional prescription is read only'])
+test(`a stale professional cache synchronizes without reapplying and then confirms the received update once: ${legacyError}`,async({page})=>{
+ const state=stateFixture()
+ state.activeLibraryId=legacyError==='plan selection changed'?'stale-local-selection':'server-old-plan'
+ state.assignedProgram={versionId:'previous-version'}
+ state.planServerRevision=23
+ state._pendingSync={plan:true}
+ let revision=24, applications=0, rejectedSaves=0
+ const personal=state.routines.map(({id,name,...prescription},position)=>({id,title:name,prescription,position,user_id:USER,revision:24,created_at:'2026-11-01',updated_at:'2026-11-01'}))
+ let routines=[...personal,{id:professionalRoutine,title:'Versão anterior',position:1,user_id:USER,revision:24,created_at:'2026-11-01',updated_at:'2026-11-01',prescription:{assigned:true,programVersionId:'previous-version',ex:[{id:'0025',sets:2,reps:12,weight:30}]}}]
+ let schedule={user_id:USER,revision,mode:'weekly',updated_at:'2026-11-01',schedule:{week:{1:professionalRoutine},dayPlan:{},libraryId:'server-old-plan',assignedProgram:{versionId:'previous-version'}}}
+ await seed(page,{authenticated:true,state,rpc:{
+  athlete_routines:()=>routines,athlete_schedules:()=>schedule,
+  athlete_plan_library_page:()=>({items:[received],total:1}),
+  save_athlete_plan:()=>{rejectedSaves++;return {__error:{status:403,body:{code:'42501',message:legacyError}}}},
+  apply_library_plan:args=>{
+   expect(args).toEqual({p_plan_id:planId,p_expected_revision:24})
+   applications++;revision++
+   routines=[...personal,{...routines[1],title:'Força prescrita',revision,prescription:{assigned:true,programVersionId:versionId,ex:[{id:'0025',sets:4,reps:8,weight:80}]}}]
+   schedule={...schedule,revision,schedule:{week:Object.fromEntries(days.map((_,day)=>[day,professionalRoutine])),dayPlan:{},libraryId:planId,libraryTitle:received.title,assignedProgram:{versionId}}}
+   return {routines,schedule}
+  },
+ }})
+ await page.goto('/#/plan')
+ await expect.poll(()=>page.evaluate(user=>JSON.parse(localStorage.getItem(`fpp_account_cache_v1:${user}`)).state._pendingSync.plan,USER)).toBe(false)
+ expect(applications).toBe(0)
+ expect(rejectedSaves).toBeGreaterThan(0)
+ await applyProfessional(page)
+ expect(applications).toBe(1)
+ await expect(page.getByRole('button',{name:'Em uso',exact:true})).toBeDisabled()
+ await expect(page.locator('.plan-view > .training-plan-workspace .plan-day.on')).toHaveCount(7)
+ const current=await page.evaluate(user=>JSON.parse(localStorage.getItem(`fpp_account_cache_v1:${user}`)).state,USER)
+ expect(current._syncBases.plan.schedule.assignedProgram.versionId).toBe(versionId)
+ expect(current.routines.find(r=>r.id==='e2e-routine').name).toBe('Treino de teste')
+})
