@@ -38,13 +38,11 @@ beforeEach(async () => {
   container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(() => { act(() => root.unmount()); container.remove() })
-it('shows five received workouts and reveals more on request', async () => {
+it('shows the complete professional week with one application for all seven workouts', async () => {
   await render()
-  expect(container.querySelectorAll('.received-workout-card')).toHaveLength(5)
-  const more = [...container.querySelectorAll('button')].find(button => button.textContent === 'Ver mais')
-  expect(more).toBeDefined()
-  await act(async () => more.click())
   expect(container.querySelectorAll('.received-workout-card')).toHaveLength(7)
+  expect([...container.querySelectorAll('button')].filter(button => button.textContent === 'Usar este plano')).toHaveLength(1)
+  expect(container.querySelectorAll('.professional-plan-preview .plan-day')).toHaveLength(7)
 })
 it('marks only changed workouts and acknowledges opening their details', async () => {
   await render()
@@ -110,4 +108,28 @@ it.each([{ items: [] }, { items: [{ ...delivery(), available: false }] }])('show
   expect(container.querySelector('.received-workouts')).toBeNull()
   expect(container.textContent).not.toContain('Treinos recebidos')
   expect(mocks.apply).not.toHaveBeenCalled()
+})
+
+it('applies an updated professional week once, including unchanged days, while retaining the old active version until confirmation', async () => {
+ const previous=delivery()
+ previous.available=false
+ const latest={...delivery(),id:'delivery-v2',version:{...delivery().version,id:'version-v2'}}
+ mocks.page.mockResolvedValue({items:[latest,previous],total:2})
+ useStore.setState({S:{...useStore.getState().S,activeLibraryId:'delivery',assignedProgram:{versionId:'version'},week:{1:'old'}}})
+ const result=appliedPlan()
+ result.schedule.schedule={week:Object.fromEntries(Array.from({length:7},(_,day)=>[day,`routine-${day}`])),libraryId:'delivery-v2',assignedProgram:{versionId:'version-v2'}}
+ result.routines=Array.from({length:7},(_,day)=>({...appliedPlan().routines[0],id:`routine-${day}`,title:`Day ${day}`,prescription:{assigned:true,programVersionId:'version-v2',ex:[{id:'0043'}]}}))
+ mocks.apply.mockResolvedValue(result)
+ await render()
+ expect(container.querySelectorAll('.professional-plan-preview')).toHaveLength(2)
+ expect(container.querySelectorAll('.received-workout-card')).toHaveLength(14)
+ expect([...container.querySelectorAll('button')].filter(button=>button.textContent==='Em uso')).toHaveLength(1)
+ await act(async()=>applyButton().click())
+ expect(useStore.getState().S.activeLibraryId).toBe('delivery')
+ expect(mocks.apply).not.toHaveBeenCalled()
+ await act(async()=>[...container.querySelectorAll('button')].find(button=>button.textContent==='Aplicar plano').click())
+ expect(mocks.apply).toHaveBeenCalledExactlyOnceWith('delivery-v2',2)
+ expect(Object.keys(useStore.getState().S.week)).toHaveLength(7)
+ expect(useStore.getState().S.assignedProgram.versionId).toBe('version-v2')
+ expect(useUI.getState().sheets).toHaveLength(0)
 })

@@ -106,3 +106,22 @@ it('keeps the private note draft after the save request fails',async()=>{
  expect(container.querySelector('textarea[aria-label="Nova anotação privada"]').value).toBe('Tentar novamente')
  expect(container.textContent).toContain('Não foi possível salvar a anotação.')
 })
+
+it('reports the actual selected professional version even if a newer assignment is available', async () => {
+ mocks.repo.clientDetail.mockResolvedValueOnce({displayName:'Ana',assignments:[{id:'latest',status:'active',program_title:'New version',is_selected:false},{id:'old',status:'revoked',program_title:'Active old version',is_selected:true}],executions:[]})
+ await render()
+ expect(container.querySelector('.student-active-plan-status').textContent).toContain('Usando seu plano: Active old version')
+})
+it('reports personal selection instead of treating a delivered assignment as in use', async () => {
+ mocks.repo.clientDetail.mockResolvedValueOnce({displayName:'Ana',assignments:[{id:'latest',status:'active',program_title:'Received',is_selected:false}],executions:[]})
+ await render()
+ expect(container.querySelector('.student-active-plan-status').textContent).toContain('Não está usando seu plano')
+})
+
+it('refreshes actual selection when a plan-selection notification arrives', async () => {
+ mocks.repo.clientDetail.mockResolvedValueOnce({displayName:'Ana',assignments:[{id:'plan',program_title:'Força',is_selected:false}],executions:[]})
+ await render()
+ mocks.repo.clientDetail.mockResolvedValueOnce({displayName:'Ana',assignments:[{id:'plan',program_title:'Força',is_selected:true}],executions:[]})
+ await act(async()=>window.dispatchEvent(new Event('professional-plan-selection-changed')))
+ expect(container.querySelector('.student-active-plan-status').textContent).toContain('Usando seu plano: Força')
+})

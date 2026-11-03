@@ -82,7 +82,7 @@ test('payloads expose only routing and generic localized copy without timer meta
   const languages = ['pt', 'de', 'es', 'fr', 'hi', 'it', 'ko', 'pl', 'ru', 'tr', 'zh'];
   const kinds = ['workout_reminder', 'weight_reminder', 'measurement_reminder',
     'program_updated', 'program_removed', 'relationship_accepted', 'relationship_ended',
-    'student_workout_completed', 'student_workout_abandoned', 'verification_changed'];
+    'student_workout_completed', 'student_workout_abandoned', 'verification_changed', 'student_plan_selected', 'student_plan_left'];
   for (const kind of kinds) {
     const english = buildPushPayload(makeJob({ kind, lang: 'en' })).body;
     for (const lang of languages) {

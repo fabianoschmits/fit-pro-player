@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import RoutineEdit, { RoutineTemplatePicker } from './RoutineEdit.jsx'
+import RoutineEdit, { RoutineEditor, RoutineTemplatePicker } from './RoutineEdit.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 
 const mocks = vi.hoisted(() => ({ navigate: vi.fn() }))
@@ -37,7 +37,34 @@ it('stays on the routine when local persistence fails and permits a successful s
   write.mockRestore()
   await act(async () => save().click())
   expect(useStore.getState().persistence.state).toBe('saved')
+  expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith('/plan?library=self')
+})
+
+it('returns to personal workouts when leaving an editable personal routine', () => {
+  act(() => container.querySelector('.routine-builder-head button').click())
+  expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith('/plan?library=self')
+})
+
+it('returns assigned routines to the regular plan', () => {
+  act(() => root.render(<RoutineEditor readOnly />))
+  act(() => container.querySelector('.routine-builder-head button').click())
   expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith('/plan')
+})
+
+it('preserves professional save and return callbacks', async () => {
+  const onSave = vi.fn().mockResolvedValue(undefined)
+  const onBack = vi.fn()
+  act(() => root.render(<RoutineEditor mode="professional" basePath="/professional/library" onSave={onSave} onBack={onBack} />))
+  await act(async () => container.querySelector('.routine-completion-actions button.primary').click())
+  expect(onSave).toHaveBeenCalledOnce()
+  expect(onBack).toHaveBeenCalledOnce()
+  expect(mocks.navigate).not.toHaveBeenCalled()
+})
+
+it('preserves custom editor return paths', () => {
+  act(() => root.render(<RoutineEditor basePath="/professional/library" mode="professional" />))
+  act(() => container.querySelector('.routine-builder-head button').click())
+  expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith('/professional/library')
 })
 
 it('shows deletion for a user-created routine directly below the ready action', () => {
@@ -69,4 +96,13 @@ it('loads a copy of the selected suggested routine into the editable draft', asy
   expect(draft.ex.length).toBeGreaterThan(0)
   expect(draft.starterKey).toBeUndefined()
   expect(close).toHaveBeenCalledOnce()
+})
+
+it('keeps the active professional calendar protected while editing a personal routine', () => {
+ useStore.setState({S:{...useStore.getState().S,assignedProgram:{versionId:'professional'},week:{1:'assigned'}}})
+ act(() => root.render(<RoutineEdit />))
+ const days=container.querySelectorAll('.routine-week-card .plan-week-grid button')
+ expect(days).toHaveLength(7)
+ expect([...days].every(button=>button.disabled)).toBe(true)
+ expect(container.querySelector('.routine-completion-actions button.primary').disabled).toBe(false)
 })

@@ -103,7 +103,8 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
   const [saveError, setSaveError] = useState('')
   const muscleMapRef = useRef(null)
   const r = S.routines.find(x => x.id === id)
-  useEffect(() => { if (!r) { if (onBack) onBack(); else nav(basePath) } }, [basePath, nav, onBack, r])
+  const returnPath = basePath === '/plan' && mode === 'athlete' && !readOnly && !r?.assigned ? '/plan?library=self' : basePath
+  useEffect(() => { if (!r) { if (onBack) onBack(); else nav(returnPath) } }, [returnPath, nav, onBack, r])
   useEffect(() => {
     if (!selectedMuscle) return undefined
     const clear = event => {
@@ -180,7 +181,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
   return <div className={`narrow routine-builder${mode === 'professional' ? ' management-routine-editor' : ''}`}>
     {planProgress && <PlanProgress progress={planProgress} />}
     <div className="hdr routine-builder-head">
-      <button className="iconbtn" onClick={() => onBack ? onBack() : nav(basePath)} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
+      <button className="iconbtn" onClick={() => onBack ? onBack() : nav(returnPath)} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
       <div className="routine-name-wrap">
         <input className="input routine-name" value={displayName} readOnly={readOnly}
           onChange={e => update(s => { const routine = s.routines.find(x => x.id === id); routine.name = e.target.value; delete routine.starterKey; routine.starterCustomName = true })}
@@ -221,6 +222,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
     {!readOnly && !r.ex.length && <Button appearance="custom" className="routine-template-link" onClick={openTemplatePicker} icon="sparkles">{t('Start with a suggested or existing workout')}</Button>}
 
     <div className="card routine-week-card">
+      {mode === 'athlete' && S.assignedProgram && !readOnly && <p>Para organizar os dias dos seus treinos, aplique Meus treinos. A semana profissional ativa permanece protegida.</p>}
       <div className="row between routine-card-title">
         <h2>{t('Week schedule')}</h2>
         <span className={'tag' + (assignedDays.length ? ' acc' : '')}>{assignedDays.length} / 7</span>
@@ -231,7 +233,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
           const other = !selected && S.routines.find(x => x.id === S.week[day])
           return <button key={day} className={'plan-day' + (selected ? ' on' : '') + (other ? ' has-other' : '')}
             aria-label={`${t(DAYN[day])}: ${selected ? displayName : other ? routineName(other) : t('Rest')}`}
-            disabled={readOnly} aria-pressed={selected} onClick={() => toggleDay(day)}>
+            disabled={readOnly || (mode === 'athlete' && Boolean(S.assignedProgram))} aria-pressed={selected} onClick={() => toggleDay(day)}>
             <span className="plan-day-label">{t(DAYS[day])}</span>
             <span className="plan-day-icon">{selected ? <RoutineMuscleThumb routine={r} body={S.body} /> : other ? <RoutineMuscleThumb routine={other} body={S.body} /> : <Icon name="moon" />}</span>
             <span className="plan-day-name">{selected ? displayName : other ? routineName(other) : t('Rest')}</span>
@@ -242,7 +244,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
 
     {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
     <div className="routine-completion-actions" hidden={readOnly}>
-      <Button feedback="persistence" variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => onBack ? onBack() : nav(basePath)} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
+      <Button feedback="persistence" variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => onBack ? onBack() : nav(returnPath)} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
         onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
       {canDelete && <Button variant="danger" icon="trash" onClick={deleteRoutine}>{t('Delete routine')}</Button>}
     </div>

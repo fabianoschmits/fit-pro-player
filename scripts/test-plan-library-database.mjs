@@ -61,5 +61,6 @@ for (const name of readdirSync('supabase/migrations').filter(name => name >= '20
  await db.exec(readFileSync('supabase/migrations/' + name, 'utf8'))
 }
 try { await db.exec(readFileSync('supabase/tests/202611020005_personal_professional_switching.sql', 'utf8')); console.log('PASS personal/professional switching (10 alternations, live routines, calendars, revisions, authorization)') } catch(e) { console.error(e.message,e.where); process.exit(1) }
+try { await db.exec(readFileSync('supabase/tests/202611020008_plan_selection_notifications.sql', 'utf8')); console.log('PASS complete weeks and trainer selection notifications') } catch(e) { console.error(e.message,e.where); process.exit(1) }
 await db.close()
 

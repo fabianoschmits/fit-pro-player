@@ -1,7 +1,7 @@
 import { hasAssignedProgram } from '../lib/assigned-program.js'
 import { PlanWeek, RoutineList } from '../components/training/TrainingPlanWorkspace.jsx'
 import PlanLibrary from '../components/training/PlanLibrary.jsx'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { routineId, todayISO } from '../lib/format.js'
@@ -9,7 +9,7 @@ import { t } from '../lib/i18n.js'
 import { effectiveRoutineId } from '../lib/history.js'
 import { ensureStarterRoutines } from '../lib/starter.js'
 import { planSetupProgress } from '../lib/ux.js'
-import { confirmSheet, dayAssignSheet } from '../sheets.jsx'
+import { dayAssignSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import { DEFAULT_GLYPH } from '../lib/glyphs.js'
 import PlanProgress from '../components/PlanProgress.jsx'
@@ -27,6 +27,9 @@ export default function Plan() {
   const [editingProfile, setEditingProfile] = useState(() => new URLSearchParams(location.search).get('profile') === 'edit')
   const [updatedDays, setUpdatedDays] = useState({})
   const receiveUpdates = useCallback(updates => setUpdatedDays(updates), [])
+  const removeProfessionalPlan = useRef(null)
+  const receiveRemoval = useCallback(handler => { removeProfessionalPlan.current = handler }, [])
+  const initialChoice = new URLSearchParams(location.search).get('library') === 'self' ? 'self' : null
 
   if (!S.onboardingDone || editingProfile) {
     const closeEditor = () => { setEditingProfile(false); nav('/plan', { replace: true }) }
@@ -69,16 +72,6 @@ export default function Plan() {
   }
 
   const personalRoutines = S.routines.filter(routine => !routine.assigned)
-  const removeProfessionalDay = day => {
-    const routine = S.routines.find(item => item.id === S.week[day])
-    if (!routine) return
-    confirmSheet({
-      title: 'Retirar treino deste dia?',
-      message: `${routine.name} continuará disponível nos seus planos recebidos.`,
-      confirmText: 'Retirar treino',
-      onConfirm: () => { update(state => { delete state.week[day] }); return true },
-    })
-  }
 
   return <div className="plan-view page-scenery">
     <AppHeader
@@ -88,9 +81,9 @@ export default function Plan() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
 
-    {mode === 'weekly' && <div className="training-plan-workspace"><PlanWeek state={S} updates={updatedDays} onDay={day => updatedDays[day] ? updatedDays[day]() : (usingProfessionalPlan ? removeProfessionalDay(day) : dayAssignSheet(day))} /></div>}
+    {mode === 'weekly' && <div className="training-plan-workspace"><PlanWeek state={S} updates={updatedDays} onDay={day => usingProfessionalPlan ? removeProfessionalPlan.current?.() : dayAssignSheet(day)} /></div>}
 
-    <PlanLibrary onUpdates={receiveUpdates}>
+    <PlanLibrary onUpdates={receiveUpdates} onRemoveReady={receiveRemoval} initialChoice={initialChoice}>
       <RoutineList state={S} onOpen={id => nav('/plan/r/' + id)} onAdd={addRoutine} routines={personalRoutines} title="Seus treinos criados" className="created-workouts" />
     </PlanLibrary>
 

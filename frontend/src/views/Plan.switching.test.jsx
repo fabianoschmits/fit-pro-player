@@ -5,9 +5,9 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { DEF, normalizeState, useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import Plan from './Plan.jsx'
-const mocks = vi.hoisted(() => ({ navigate: vi.fn(), repo: { planLibrary: vi.fn(), savePersonalPlan: vi.fn(), applyLibraryPlan: vi.fn() } }))
+const mocks = vi.hoisted(() => ({ search: '', navigate: vi.fn(), repo: { planLibrary: vi.fn(), savePersonalPlan: vi.fn(), applyLibraryPlan: vi.fn() } }))
 const userId = '11111111-1111-4111-8111-111111111111'
-vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useLocation: () => ({ search: '' }) }))
+vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useLocation: () => ({ search: mocks.search }) }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ status: 'authenticated', user: { id: '11111111-1111-4111-8111-111111111111' } }) }))
 vi.mock('../lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }))
 vi.mock('../lib/professional-workflow.js', () => ({ createProfessionalWorkflowRepository: () => mocks.repo }))
@@ -24,7 +24,7 @@ const render = async () => act(async () => root.render(<><Plan /><Sheets /></>))
 const activeCalendar = () => container.querySelector('.training-plan-workspace')
 const response = (professional, revision) => ({ routines: (professional ? [assigned, personal] : [personal]).map((r, position) => ({ id: r.id, user_id: userId, title: r.name, position, revision, created_at: '2026-11-02', updated_at: '2026-11-02', prescription: Object.fromEntries(Object.entries(r).filter(([key]) => !['id', 'name'].includes(key))) })), schedule: { user_id: userId, revision, updated_at: '2026-11-02', mode: 'weekly', schedule: { week: professional ? { 1: 'assigned' } : { 2: 'personal' }, dayPlan: {}, libraryId: professional ? 'pro' : 'self', libraryTitle: professional ? 'Força profissional' : 'Meu plano', ...(professional ? { assignedProgram: { versionId: 'v1', programId: 'program' } } : {}) } } })
 beforeEach(async () => {
- globalThis.IS_REACT_ACT_ENVIRONMENT = true; vi.clearAllMocks(); localStorage.clear()
+ globalThis.IS_REACT_ACT_ENVIRONMENT = true; vi.clearAllMocks(); localStorage.clear(); mocks.search = ''
  await useStore.getState().activateLocalScope(userId)
  useStore.setState({ S: normalizeState({ ...structuredClone(DEF), profile, onboardingDone: true, planServerRevision: 2, activeLibraryId: 'pro', activeLibraryTitle: 'Força profissional', assignedProgram: { versionId: 'v1', programId: 'program' }, routines: [assigned, personal], week: { 1: 'assigned' } }) })
  useUI.setState({ sheets: [] }); mocks.repo.planLibrary.mockImplementation(async () => ({ items: structuredClone([self, pro]), total: 2 })); mocks.repo.savePersonalPlan.mockResolvedValue('self')
@@ -32,6 +32,31 @@ beforeEach(async () => {
  container = document.createElement('div'); document.body.append(container); root = createRoot(container)
 })
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); useStore.getState().releaseAccountSync() })
+it('confirms removal from the calendar by applying the entire personal week, not deleting a single day', async () => {
+ mocks.repo.planLibrary.mockResolvedValue({items:[self,{...pro,workout_updates:{monday:'v1'},plan_update:{next_version:pro.version}}],total:2})
+ await render(); const before = useStore.getState().S
+ await act(async () => activeCalendar().querySelector('.plan-day.on').click())
+ expect(container.textContent).toContain('Retirar plano profissional?')
+ expect(useStore.getState().S).toBe(before); expect(mocks.repo.applyLibraryPlan).not.toHaveBeenCalled()
+ await click('Cancelar'); expect(useStore.getState().S).toBe(before)
+ await act(async () => activeCalendar().querySelector('.plan-day.on').click())
+ await click('Aplicar meus treinos')
+ expect(mocks.repo.applyLibraryPlan.mock.calls).toEqual([['self', 2]])
+ expect(useStore.getState().S).toMatchObject({ week: { 2: 'personal' }, assignedProgram: null, activeLibraryId: 'self' })
+ expect(useUI.getState().sheets).toHaveLength(0)
+ expect(button('Meus treinos').getAttribute('aria-pressed')).toBe('true')
+ expect(activeCalendar().textContent).not.toContain('Professional Monday')
+ await click('Treino do profissional'); await click('Usar este plano'); await click('Aplicar plano')
+ expect(activeCalendar().textContent).toContain('Professional Monday')
+})
+it('opens the personal preview after returning from editing while keeping the professional active', async () => {
+ mocks.search = '?library=self'
+ await render()
+ expect(button('Meus treinos').getAttribute('aria-pressed')).toBe('true')
+ expect(container.querySelector('.created-workouts')).not.toBeNull()
+ expect(activeCalendar().textContent).toContain('Professional Monday')
+ expect(mocks.repo.applyLibraryPlan).not.toHaveBeenCalled()
+})
 it('changes chooser preview without changing active header, calendar, revision or application', async () => {
  await render(); const before = useStore.getState().S
  await click('Meus treinos')

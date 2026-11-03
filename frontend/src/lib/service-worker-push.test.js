@@ -130,14 +130,14 @@ describe('durable account-scoped PWA push', () => {
     expect(w.show).toHaveBeenCalledTimes(1)
   })
 
-  it('accepts the ten fixed reminder/professional kinds without timer context and excludes retired timer metadata', async () => {
+  it('accepts fixed reminder/professional and plan selection kinds without timer context and excludes retired timer metadata', async () => {
     const w = worker()
     await w.setContext(context())
     const kinds = ['workout_reminder', 'weight_reminder', 'measurement_reminder', 'program_updated',
       'program_removed', 'relationship_accepted', 'relationship_ended', 'student_workout_completed',
-      'student_workout_abandoned', 'verification_changed']
+      'student_workout_abandoned', 'verification_changed', 'student_plan_selected', 'student_plan_left']
     for (const kind of kinds) await w.push(payload({ id: kind, kind, timerRevision: 123 }))
-    expect(w.show).toHaveBeenCalledTimes(10)
+    expect(w.show).toHaveBeenCalledTimes(kinds.length)
     expect(w.show.mock.calls.every(([, options]) => !Object.hasOwn(options.data, 'timerRevision'))).toBe(true)
   })
 

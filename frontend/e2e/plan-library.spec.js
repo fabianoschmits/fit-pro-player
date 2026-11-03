@@ -11,15 +11,14 @@ const canonicalPlan = state => ({
 })
 const delivered={id:entryId,user_id:USER,title:'Hipertrofia do profissional',source_type:'professional',assignment_id:'assignment',available:true,professional_name:'Fabiano',program_id:programId,created_at:'2026-10-27',version:{id:versionId,version_number:1,weekly_plan:{monday:[{exerciseId:'0025',sets:4,reps:8,load:80,rest:90}]},workout_titles:{monday:'Treino A'}}}
 
-test('received workouts paginate and opening an updated workout clears its badge across reloads', async ({ page }) => {
+test('complete professional week has one application and opening an update clears its badge across reloads', async ({ page }) => {
  const state=stateFixture(), days=['sunday','monday','tuesday','wednesday','thursday','friday','saturday']
  let seen=false
  const updated={...delivered,version:{...delivered.version,weekly_plan:Object.fromEntries(days.map(day=>[day,delivered.version.weekly_plan.monday])),workout_titles:Object.fromEntries(days.map((day,index)=>[day,`Recebido ${index+1}`]))}}
  await seed(page,{authenticated:true,state,rpc:{...canonicalPlan(state),athlete_plan_library_page:()=>({items:[{...updated,workout_updates:seen?{}:{monday:versionId}}],total:1,selectedId:null}),mark_library_workout_seen:args=>{expect(args).toEqual({p_plan_id:entryId,p_day:'monday',p_change_version_id:versionId});seen=true;return null}}})
  await page.goto('/#/plan')
  await page.getByRole('button',{name:'Treino do profissional',exact:true}).click()
- await expect(page.locator('.received-workout-card')).toHaveCount(5)
- await page.locator('.received-workouts').getByRole('button',{name:'Ver mais',exact:true}).click()
+ await expect(page.locator('.received-workouts').getByRole('button',{name:'Usar este plano',exact:true})).toHaveCount(1)
  await expect(page.locator('.received-workout-card')).toHaveCount(7)
  await expect(page.locator('.received-workouts .workout-update-badge')).toHaveCount(1)
  await page.locator('.received-workout-main').filter({hasText:'Recebido 2'}).click()
@@ -28,7 +27,7 @@ test('received workouts paginate and opening an updated workout clears its badge
  expect(seen).toBe(true)
  await page.reload()
  await page.getByRole('button',{name:'Treino do profissional',exact:true}).click()
- await expect(page.locator('.received-workout-card')).toHaveCount(5)
+ await expect(page.locator('.received-workout-card')).toHaveCount(7)
  await expect(page.locator('.received-workouts .workout-update-badge')).toHaveCount(0)
 })
 

@@ -9,12 +9,11 @@ import { getBrowserSupabaseClient } from '../../lib/supabase-client.js'
 import { weeklyPlanToWorkspace } from '../../lib/training-workspace.js'
 import { DAYS } from '../../lib/professional-program.js'
 import { Button } from '../ui.jsx'
-import { confirmSheet } from '../../sheets.jsx'
 import { useUI } from '../../store/useUI.js'
 import Icon from '../Icon.jsx'
 import { compareProfessionalPlanVersions } from '../../lib/professional-plan-diff.js'
 import { useNavigate } from 'react-router-dom'
-import ProfessionalPlanApplyButton, { isProfessionalPlanActive } from './ProfessionalPlanApplyButton.jsx'
+import ProfessionalPlanApplyButton, { isProfessionalPlanActive, openPlanApplication } from './ProfessionalPlanApplyButton.jsx'
 import { exerciseName, exOr } from '../../lib/exercises.js'
 
 const PAGE_SIZE = 5
@@ -61,18 +60,17 @@ function PlanUpdateSheet({ item, workout, close, acknowledge, onView }) {
   </section>
 }
 
-export default function PlanLibrary({ onUpdates = undefined, children = undefined }) {
+export default function PlanLibrary({ onUpdates = undefined, onRemoveReady = undefined, initialChoice = null, children = undefined }) {
   const { user } = useAuth()
-  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates}>{children}</AccountPlanLibrary>
+  return <AccountPlanLibrary key={user?.id || 'guest'} user={user} onUpdates={onUpdates} onRemoveReady={onRemoveReady} initialChoice={initialChoice}>{children}</AccountPlanLibrary>
 }
 
-function AccountPlanLibrary({ user, onUpdates = undefined, children = undefined }) {
+function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undefined, initialChoice = null, children = undefined }) {
   const nav = useNavigate()
   const state = useStore(s => s.S)
-  const update = useStore(s => s.update)
   const repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
   const [data, setData] = useState({ items: [], total: 0 }), [error, setError] = useState(''), [visible, setVisible] = useState(PAGE_SIZE)
-  const [choice, setChoice] = useState(null)
+  const [choice, setChoice] = useState(initialChoice)
   const generation = useRef(0)
   const refresh = useCallback(async (offset = 0) => {
     const request = ++generation.current
@@ -155,13 +153,16 @@ function AccountPlanLibrary({ user, onUpdates = undefined, children = undefined 
   useEffect(() => {
     onUpdates?.(Object.fromEntries(professionalWorkouts.filter(workout => isProfessionalPlanActive(state, workout.item.id, workout.item.version?.id) && workout.item.workout_updates?.[DAYS[workout.day]]).map(workout => [workout.day, () => openRef.current(workout)])))
   }, [professionalWorkouts, onUpdates, state])
-  const shownWorkouts = professionalWorkouts.slice(0, visible)
-  const removeFromDay = workout => confirmSheet({
-    title: 'Retirar treino deste dia?',
-    message: `${workout.routine.name} continuará disponível nos treinos recebidos do profissional.`,
-    confirmText: 'Retirar treino',
-    onConfirm: () => { update(next => { delete next.week[workout.day] }); return true },
-  })
+  const removeProfessional = useCallback(() => openPlanApplication({
+    personal: true, removing: true, userId: user?.id, repo,
+    onApplied: () => { setChoice('self'); return refresh() },
+  }), [user?.id, repo, refresh])
+  useEffect(() => {
+    onRemoveReady?.(removeProfessional)
+    return () => onRemoveReady?.(null)
+  }, [onRemoveReady, removeProfessional])
+  const professionalPlans = data.items.filter(item => item.source_type === 'professional' && (item.available || item.id === state.activeLibraryId))
+  const shownPlans = professionalPlans.slice(0, visible)
 
   const professionalActive = Boolean(state.assignedProgram)
   const hasProfessional = professionalActive || data.items.some(item => item.source_type === 'professional' && item.available)
@@ -191,19 +192,27 @@ function AccountPlanLibrary({ user, onUpdates = undefined, children = undefined 
     </> : <>
     <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Abra um treino para ver os detalhes. Confirme Aplicar plano para usar o plano na sua semana.</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
-    {!shownWorkouts.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
-    <div className="received-workout-list">{shownWorkouts.map(workout => {
-      const active = isProfessionalPlanActive(state, workout.item.id, workout.item.version?.id)
-      return <article className="card received-workout-card" key={`${workout.item.id}:${workout.day}`}>
-        <button className="received-workout-main" onClick={() => open(workout)}>
-          <span className="received-workout-copy"><strong>{workout.routine.name}</strong>{workout.item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}<small>{workout.routine.ex.length} exercícios · Prof. {workout.item.professional_name || 'Profissional'}</small></span>
-          <Icon name="chevronRight" />
-        </button>
-        {!workout.removed && <ProfessionalPlanApplyButton libraryPlanId={workout.item.id} versionId={workout.item.version?.id} repo={repo} onApplied={refresh} />}
-        {active && state.week[workout.day] && <Button variant="ghost" onClick={() => removeFromDay(workout)}>Retirar deste dia</Button>}
-      </article>
-    })}</div>
-    {professionalWorkouts.length > shownWorkouts.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais</Button>}
+    {!shownPlans.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
+    {shownPlans.map(item => {
+      const workouts = professionalWorkouts.filter(workout => workout.item.id === item.id)
+      const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)
+      const active = isProfessionalPlanActive(state, item.id, item.version?.id)
+      return <section className="card professional-plan-preview" key={item.id} aria-label={`Semana de ${item.title || 'plano profissional'}`}>
+        <h4>{item.title || 'Plano profissional'}</h4>
+        <p>Prof. {item.professional_name || 'Profissional'} · Semana completa</p>
+        {item.plan_update && !active && <p className="tag acc">Atualização disponível para a semana</p>}
+        <PlanWeek state={workspace} />
+        <div className="received-workout-list">{workouts.map(workout => <article className="received-workout-card" key={`${item.id}:${workout.day}`}>
+          <button className="received-workout-main" onClick={() => open(workout)}>
+            <span className="received-workout-copy"><strong>{workout.routine?.name || 'Descanso'}</strong>{item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}<small>{workout.routine?.ex.length || 0} exercícios · Prof. {item.professional_name || 'Profissional'}</small></span>
+            <Icon name="chevronRight" />
+          </button>
+        </article>)}</div>
+        <ProfessionalPlanApplyButton libraryPlanId={item.id} versionId={item.version?.id} repo={repo} onApplied={refresh} />
+        {active && <Button variant="ghost" onClick={removeProfessional}>Retirar plano profissional</Button>}
+      </section>
+    })}
+    {professionalPlans.length > shownPlans.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais planos</Button>}
     {data.items.length < data.total && <Button variant="ghost" onClick={() => refresh(data.items.length)}>Carregar mais planos</Button>}
     </>}
   </section>

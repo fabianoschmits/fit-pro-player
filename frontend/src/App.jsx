@@ -407,13 +407,18 @@ function Shell() {
     const messages = {
       workout_reminder: 'Your planned workout is coming up.',
       weight_reminder: 'Time to record your weight.', measurement_reminder: 'Time to record your body measurements.',
+      student_plan_selected: 'O aluno está usando o plano que você enviou.',
+      student_plan_left: 'O aluno deixou de usar seu plano. Abra o perfil para ver o plano atual.',
       program_received: 'Novo plano recebido. Abra sua biblioteca para visualizar e aplicar.',
       program_updated: 'Your training plan has an update.', program_removed: 'Your training plan has an update.',
       relationship_accepted: 'Your professional connection has an update.', relationship_ended: 'Your professional connection has an update.',
       student_workout_completed: 'A student recorded a workout update.', student_workout_abandoned: 'A student recorded a workout update.',
       verification_changed: 'Your professional verification has an update.',
     }
-    const notify = kind => { if (messages[kind]) useUI.getState().toast(t(messages[kind])) }
+    const notify = kind => {
+      if (messages[kind]) useUI.getState().toast(t(messages[kind]))
+      if (kind === 'student_plan_selected' || kind === 'student_plan_left') window.dispatchEvent(new Event('professional-plan-selection-changed'))
+    }
     const nativePush = MOBILE && Capacitor.getPlatform() === 'android' && Capacitor.isNativePlatform() ? createNativePushAdapter({
       expectedOwnerId: userId, notify, navigate: nav, onToken: () => { void reconnectNotifications() }, onVisibility: () => { void syncNotificationVisibility(); local.sync() },
     }) : null

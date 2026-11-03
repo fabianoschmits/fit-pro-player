@@ -40,7 +40,7 @@ function validateExecutionPlan(parsed, current, versionId) {
   }
 }
 
-function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, userId, repo, token, close, lock, onApplied }) {
+function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, removing, userId, repo, token, close, lock, onApplied }) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const inFlight = useRef(false)
@@ -95,24 +95,27 @@ function ProfessionalPlanApplyDialog({ libraryPlanId, versionId, personal, userI
       inFlight.current = false; setPending(false); lock(false)
     }
   }
-  return <section aria-label={personal ? 'Usar meus treinos?' : 'Aplicar plano profissional?'}>
-    <h3>{personal ? 'Usar meus treinos?' : 'Aplicar plano profissional?'}</h3>
-    <p>{personal ? 'Seu plano profissional continuará salvo e poderá ser usado novamente. Seus treinos pessoais atuais serão preservados, com sua configuração pessoal de semana e modo.' : 'Os treinos recebidos serão usados no seu perfil. Seus treinos criados continuarão salvos.'}</p>
+  const title = removing ? 'Retirar plano profissional?' : personal ? 'Usar meus treinos?' : 'Aplicar plano profissional?'
+  return <section aria-label={title}>
+    <h3>{title}</h3>
+    <p>{personal ? 'Todos os dias do plano profissional serão substituídos pela sua configuração pessoal de semana e modo. Seus treinos pessoais atuais serão preservados. O plano profissional continuará salvo e poderá ser usado novamente.' : 'A semana completa deste plano será aplicada, incluindo os treinos sem alterações e os dias de descanso. Seus treinos criados continuarão salvos.'}</p>
     {error && <p role="alert">{error}</p>}
     <Button variant="primary" activation="immediate" disabled={pending} aria-busy={pending} onClick={apply}>{pending ? 'Aplicando…' : personal ? 'Aplicar meus treinos' : 'Aplicar plano'}</Button>
     <Button variant="ghost" activation="immediate" disabled={pending} onClick={close}>Cancelar</Button>
   </section>
 }
 
+export function openPlanApplication({ libraryPlanId = undefined, versionId = undefined, personal = false, removing = false, userId, repo, onApplied = undefined }) {
+  const ui = useUI.getState()
+  if (ui.sheets.some(sheet => sheet.className === 'professional-plan-apply')) return
+  const token = useStore.getState().getScopeToken()
+  let handle
+  handle = ui.openSheet(close => <ProfessionalPlanApplyDialog libraryPlanId={libraryPlanId} versionId={versionId} personal={personal} removing={removing} userId={userId} repo={repo} token={token} close={close} lock={value => handle.lock(value)} onApplied={onApplied} />, { kind: 'center', className: 'professional-plan-apply' })
+}
+
 export default function ProfessionalPlanApplyButton({ libraryPlanId = undefined, versionId = undefined, personal = false, repo, onApplied = undefined }) {
   const { user } = useAuth()
   const active = useStore(s => isProfessionalPlanActive(s.S, libraryPlanId, versionId))
-  const open = () => {
-    const ui = useUI.getState()
-    if (ui.sheets.some(sheet => sheet.className === 'professional-plan-apply')) return
-    const token = useStore.getState().getScopeToken()
-    let handle
-    handle = ui.openSheet(close => <ProfessionalPlanApplyDialog libraryPlanId={libraryPlanId} versionId={versionId} personal={personal} userId={user?.id} repo={repo} token={token} close={close} lock={value => handle.lock(value)} onApplied={onApplied} />, { kind: 'center', className: 'professional-plan-apply' })
-  }
+  const open = () => openPlanApplication({ libraryPlanId, versionId, personal, userId: user?.id, repo, onApplied })
   return <Button variant={active ? 'tinted' : 'primary'} disabled={active || (!personal && (!libraryPlanId || !versionId))} activation="immediate" onClick={open}>{active ? 'Em uso' : personal ? 'Usar meus treinos' : 'Usar este plano'}</Button>
 }
