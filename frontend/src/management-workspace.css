@@ -75,17 +75,17 @@ body:has(.management-layout,.management-routine-editor) #tabbar { display:none; 
 .management-layout .management-overview > :nth-child(2) strong { color:var(--acc); }
 .management-layout .management-overview > :last-child strong { color:var(--red); }
 .management-layout .management-overview span { font-size:10px; line-height:1.2; color:var(--label-2); text-align:center; }
-.management-layout .management-requests-details { border:1px solid var(--sep-op); border-radius:16px; background:var(--surface); padding:0; overflow:hidden; }
-.management-layout .management-requests-details > summary { list-style:none; display:flex; align-items:center; justify-content:space-between; padding:14px 18px; cursor:pointer; font-weight:650; font-size:15px; color:var(--label); user-select:none; }
+.management-layout .management-requests-details { border:0; background:none; padding:0; margin:0 0 4px; }
+.management-layout .management-requests-details > summary { list-style:none; display:inline-flex; align-items:center; gap:8px; padding:4px 0; cursor:pointer; font-weight:600; font-size:14px; color:var(--label-2); user-select:none; }
 .management-layout .management-requests-details > summary::-webkit-details-marker { display:none; }
-.management-layout .management-requests-details > summary:focus-visible { outline:2px solid var(--acc); outline-offset:-2px; }
-.management-layout .management-requests-details > summary .requests-summary-label { display:flex; align-items:center; gap:8px; }
-.management-layout .management-requests-details > summary .requests-badge { font-size:11px; font-weight:700; padding:2px 7px; border-radius:999px; background:var(--acc-soft); color:var(--acc); }
-.management-layout .management-requests-details > summary .requests-expand-icon { font-size:12px; color:var(--label-2); transition:transform 0.18s ease; display:inline-block; }
-.management-layout .management-requests-details[open] > summary { border-bottom:1px solid var(--sep-op); }
+.management-layout .management-requests-details > summary:hover { color:var(--label); }
+.management-layout .management-requests-details > summary:focus-visible { outline:2px solid var(--acc); outline-offset:2px; border-radius:4px; }
+.management-layout .management-requests-details > summary .requests-summary-label { display:inline-flex; align-items:center; gap:6px; }
+.management-layout .management-requests-details > summary .requests-expand-icon { font-size:10px; color:var(--label-3); transition:transform 0.18s ease; display:inline-block; }
+.management-layout .management-requests-details[open] > summary { margin-bottom:8px; color:var(--label); }
 .management-layout .management-requests-details[open] > summary .requests-expand-icon { transform:rotate(180deg); }
-.management-layout .management-requests-details .management-requests-content { padding:14px 18px 18px; display:grid; gap:10px; }
-.management-layout .management-requests-details .management-requests-empty { margin:4px 0 0; color:var(--label-2); font-size:13px; }
+.management-layout .management-requests-details .management-requests-content { padding:0; display:grid; gap:8px; }
+.management-layout .management-requests-details .management-requests-empty { margin:2px 0 6px; color:var(--label-2); font-size:13px; }
 .management-layout .management-quick-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
 .management-layout .management-quick-actions .management-shortcut { flex-direction:column; justify-content:center; gap:9px; min-height:88px; padding:12px 4px; border:1px solid color-mix(in srgb,var(--acc) 18%,var(--sep)); border-radius:13px; background:var(--acc-soft); text-align:center; font-size:11px; }
 .management-quick-actions .icn { color:var(--acc); font-size:23px; }

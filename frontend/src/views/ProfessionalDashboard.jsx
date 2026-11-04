@@ -21,7 +21,7 @@ export default function ProfessionalDashboard() {
  const cards = items => items.map(student=><Link key={student.studentUserId} className="management-record card" to={`/professional/students/${student.studentUserId}`}><ManagementAvatar name={student.displayName} avatarRef={student.avatarRef} userId={student.studentUserId}/><div><strong>{student.displayName}</strong><p>{student.workoutTitle || student.currentProgram?.title || 'Sem plano'}</p></div><span>›</span></Link>)
  return <ManagementLayout title="Área profissional" subtitle={`Olá, ${name || 'profissional'}`} action={<Link to="/professional/profile" aria-label="Perfil"><ManagementAvatar name={name} avatarRef={avatarId}/></Link>}>
  {error&&<p role="alert">{error}<Button onClick={()=>setRetry(x=>x+1)}>Tentar novamente</Button></p>}
- <details className="management-requests-details card">
+ <details className="management-requests-details">
   <summary>
    <span className="requests-summary-label">
     <span>Solicitações de vínculo · {requests.total}</span>
