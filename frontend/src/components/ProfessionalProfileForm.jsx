@@ -188,7 +188,7 @@ export default function ProfessionalProfileForm({
       </div>
 
       <label htmlFor={`${id}-custom`}>{t('Outra especialidade')}
-        <span className="management-chip-input">
+        <span className="management-chip-input management-chip-input--stacked">
           <TextField id={`${id}-custom`} name="customSpecialty" value={draft.customDraft} onChange={event => update('customDraft', event.target.value)} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); addCustom() } }} maxLength={MAX_SPECIALTY_LENGTH} aria-describedby={`${id}-specialties-hint`} disabled={atLimit} />
           <Button type="button" activation="immediate" disabled={saving || atLimit || !draft.customDraft.trim()} onClick={addCustom}>{t('Adicionar')}</Button>
         </span>
