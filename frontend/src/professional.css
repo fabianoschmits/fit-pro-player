@@ -416,3 +416,11 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .management-delete-warning p{margin:0;font-size:13px;line-height:1.4}
 .management-delete-warning>.btn{flex:none;width:auto}
 @media(max-width:420px){.management-delete-warning{align-items:stretch;flex-direction:column}.management-delete-warning>.btn{width:100%}}
+
+.received-workout-card.item { width:100%; text-align:left; padding:12px 14px; }
+.received-workout-card.item:active { background:var(--surface-2); }
+.received-workout-card .tt { font-size:15px; font-weight:600; color:var(--label); }
+.received-workout-card .ss { font-size:13px; color:var(--label-2); }
+.plan-library-chooser { margin-top:12px; }
+.plan-update-sheet { max-width:480px; }
+.plan-update-sheet .card { padding:10px 12px; background:var(--surface-2); border-radius:10px; }

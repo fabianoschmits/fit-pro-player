@@ -1,4 +1,3 @@
-import { PlanWeek } from './TrainingPlanWorkspace.jsx'
 import { personalPlanPreview } from '../../lib/personal-plan-preview.js'
 import useRelationshipRefresh from '../useRelationshipRefresh.js'
 import TrainingPlanPreview from './TrainingPlanPreview.jsx'
@@ -184,17 +183,12 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
   const selectedChoice = choice?.key === selectionKey ? choice.value : source
   if (!user?.id || !hasProfessional) return <>{children}</>
   return <section className="plan-library received-workouts">
-    <h3>Escolher plano</h3>
-    <div className="plan-mode-options" role="group" aria-label="Escolher plano">
-      <button className={selectedChoice === 'professional' ? 'on' : ''} aria-pressed={selectedChoice === 'professional'} onClick={() => choose('professional')}>Treino do profissional</button>
-      <button className={selectedChoice === 'self' ? 'on' : ''} aria-pressed={selectedChoice === 'self'} onClick={() => choose('self')}>Meus treinos</button>
-    </div>
     {selectedChoice === 'self' ? <>
       <section className="personal-plan-preview" aria-label="Visualização do plano pessoal">
         <h4>Seu plano pessoal</h4>
         <p>{personalPreview.planMode === 'daily' ? 'Plano diário' : 'Plano semanal'}</p>
         {professionalActive && <p>Visualização. O plano ativo só muda após confirmar a aplicação.</p>}
-        <PlanWeek state={personalPreview} />
+        {children}
         {Object.keys(personalPreview.dayPlan).length > 0 && <ul>
           {Object.entries(personalPreview.dayPlan).sort(([a], [b]) => a.localeCompare(b)).map(([date, id]) => <li key={date}>
             <time>{date}</time>: {id === null || id === 'rest' ? 'Descanso' : personalPreview.routines.find(routine => routine.id === id)?.name}
@@ -202,26 +196,24 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
         </ul>}
       </section>
       {professionalActive ? <ProfessionalPlanApplyButton personal repo={repo} onApplied={refresh} /> : <span className="tag acc">Em uso</span>}
-      {children}
     </> : <>
-    <div className="plan-library-head"><h3>Treinos recebidos do profissional</h3><p>Abra um treino para ver os detalhes. Confirme Aplicar plano para usar o plano na sua semana.</p></div>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {!shownPlans.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
     {shownPlans.map(item => {
       const workouts = professionalWorkouts.filter(workout => workout.item.id === item.id)
-      const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)
       const active = isProfessionalPlanActive(state, item.id, item.version?.id)
       return <section className="card professional-plan-preview" key={item.id} aria-label={`Semana de ${item.title || 'plano profissional'}`}>
         <h4>{item.title || 'Plano profissional'}</h4>
-        <p>Prof. {item.professional_name || 'Profissional'} · Semana completa</p>
+        <p>Prof. {item.professional_name || 'Profissional'}</p>
         {item.plan_update && !active && <p className="tag acc">Atualização disponível para a semana</p>}
-        <PlanWeek state={workspace} />
-        <div className="received-workout-list">{workouts.map(workout => <article className="received-workout-card" key={`${item.id}:${workout.day}`}>
-          <button className="received-workout-main" onClick={() => open(workout)}>
-            <span className="received-workout-copy"><strong>{workout.routine?.name || 'Descanso'}</strong>{item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}<small>{workout.routine?.ex.length || 0} exercícios · Prof. {item.professional_name || 'Profissional'}</small></span>
-            <Icon name="chevronRight" />
-          </button>
-        </article>)}</div>
+        <div className="list plan-routine-list">{workouts.map(workout => <button key={`${item.id}:${workout.day}`} className={`item received-workout-card${workout.removed ? ' removed' : ''}`} onClick={() => open(workout)}>
+          <span className="grow">
+            <span className="tt">{workout.routine?.name || 'Descanso'}</span>
+            <span className="ss">{workout.routine?.ex.length || 0} exercícios</span>
+            {item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}
+          </span>
+          <Icon name="chevronRight" />
+        </button>)}</div>
         <ProfessionalPlanApplyButton libraryPlanId={item.id} versionId={item.version?.id} repo={repo} onApplied={refresh} />
         {active && <Button variant="ghost" onClick={removeProfessional}>Retirar plano profissional</Button>}
       </section>
@@ -229,5 +221,9 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
     {professionalPlans.length > shownPlans.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais planos</Button>}
     {data.items.length < data.total && <Button variant="ghost" onClick={() => refresh(data.items.length)}>Carregar mais planos</Button>}
     </>}
+    <div className="plan-mode-options plan-library-chooser" role="group" aria-label="Escolher plano">
+      <button className={selectedChoice === 'professional' ? 'on' : ''} aria-pressed={selectedChoice === 'professional'} onClick={() => choose('professional')}>Treino do profissional</button>
+      <button className={selectedChoice === 'self' ? 'on' : ''} aria-pressed={selectedChoice === 'self'} onClick={() => choose('self')}>Meus treinos</button>
+    </div>
   </section>
 }

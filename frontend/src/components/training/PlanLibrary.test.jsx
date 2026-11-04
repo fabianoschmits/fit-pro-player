@@ -58,7 +58,6 @@ it('shows the complete professional week with one application for all seven work
   await render()
   expect(container.querySelectorAll('.received-workout-card')).toHaveLength(7)
   expect([...container.querySelectorAll('button')].filter(button => button.textContent === 'Usar este plano')).toHaveLength(1)
-  expect(container.querySelectorAll('.professional-plan-preview .plan-day')).toHaveLength(7)
 })
 it('marks only changed workouts and acknowledges opening their details', async () => {
   await render()
