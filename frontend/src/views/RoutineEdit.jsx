@@ -186,12 +186,6 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
         <input className="input routine-name" value={r.name ?? (r.starterKey ? t(r.starterKey) : '')} readOnly={readOnly}
           placeholder={t('Routine')}
           onChange={e => update(s => { const routine = s.routines.find(x => x.id === id); routine.name = e.target.value; delete routine.starterKey; routine.starterCustomName = true })}
-          onBlur={e => {
-            const trimmed = e.target.value.trim();
-            if (!trimmed) {
-              update(s => { const routine = s.routines.find(x => x.id === id); routine.name = t('Routine'); delete routine.starterKey; routine.starterCustomName = true });
-            }
-          }}
           aria-label={t('Routine')} />
       </div>
       <span className="routine-builder-head-thumb" aria-hidden="true"><RoutineMuscleThumb routine={r} body={S.body} /></span>
