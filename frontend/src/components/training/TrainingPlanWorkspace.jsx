@@ -21,7 +21,22 @@ export function RoutineList({ state = undefined, onOpen = undefined, onAdd = und
   const [visible, setVisible] = useState(pageSize)
   const shown = routines.slice(0, visible)
   return <section className={className}><div className="row between plan-section-head"><h4 className="sec">{title}</h4>{onAdd && <Button size="sm" variant="tinted" icon="plus" onClick={onAdd}>{t('New')}</Button>}</div>
-    <div className="list plan-routine-list">{shown.map(routine => <button key={routine.id} className="item" onClick={() => onOpen(routine.id)}><span className="lrow-i"><RoutineMuscleThumb routine={routine} body={state.body} /></span><span className="grow"><span className="tt">{routineName(routine)}</span><span className="ss">{exCount(routine.ex.length)}</span></span><Icon name="chevronRight" /></button>)}</div>
+    <div className="list plan-routine-list">{shown.map(routine => {
+      const assignedDays = WEEK.filter(day => state?.week?.[day] === routine.id);
+      return <button key={routine.id} className="item" onClick={() => onOpen(routine.id)}>
+        <span className="lrow-i"><RoutineMuscleThumb routine={routine} body={state.body} /></span>
+        <span className="grow">
+          <span className="tt">{routineName(routine)}</span>
+          <span className="ss">{exCount(routine.ex.length)}</span>
+        </span>
+        {assignedDays.length > 0 && (
+          <span className={`routine-assigned-days count-${Math.min(assignedDays.length, 7)}`}>
+            {assignedDays.map(day => <span key={day} className="routine-assigned-day">{t(DAYN[day])}</span>)}
+          </span>
+        )}
+        <Icon name="chevronRight" />
+      </button>
+    })}</div>
     {routines.length > shown.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + pageSize)}>Mostrar mais</Button>}
   </section>
 }

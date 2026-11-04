@@ -424,3 +424,24 @@ body:has(.app-status-global) #app{padding-bottom:170px}
 .plan-library-chooser { margin-top:12px; }
 .plan-update-sheet { max-width:480px; }
 .plan-update-sheet .card { padding:10px 12px; background:var(--surface-2); border-radius:10px; }
+
+.routine-assigned-days {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  text-align: right;
+  flex-shrink: 0;
+  margin-left: auto;
+  margin-right: 8px;
+  line-height: 1.15;
+  color: var(--label-2);
+  white-space: nowrap;
+}
+.routine-assigned-days.count-1 { font-size: 13px; font-weight: 500; }
+.routine-assigned-days.count-2 { font-size: 11px; }
+.routine-assigned-days.count-3 { font-size: 10px; }
+.routine-assigned-days.count-4 { font-size: 9px; }
+.routine-assigned-days.count-5 { font-size: 8.5px; }
+.routine-assigned-days.count-6 { font-size: 8px; }
+.routine-assigned-days.count-7 { font-size: 7.5px; }

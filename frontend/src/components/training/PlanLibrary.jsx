@@ -8,6 +8,8 @@ import { createProfessionalWorkflowRepository } from '../../lib/professional-wor
 import { getBrowserSupabaseClient } from '../../lib/supabase-client.js'
 import { weeklyPlanToWorkspace } from '../../lib/training-workspace.js'
 import { DAYS } from '../../lib/professional-program.js'
+import { DAYN } from '../../lib/format.js'
+import { t } from '../../lib/i18n.js'
 import { Button } from '../ui.jsx'
 import { useUI } from '../../store/useUI.js'
 import Icon from '../Icon.jsx'
@@ -212,6 +214,11 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
             <span className="ss">{workout.routine?.ex.length || 0} exercícios</span>
             {item.workout_updates?.[DAYS[workout.day]] && <span className="tag acc workout-update-badge">Atualizado</span>}
           </span>
+          {workout.day != null && (
+            <span className="routine-assigned-days count-1">
+              <span className="routine-assigned-day">{t(DAYN[workout.day])}</span>
+            </span>
+          )}
           <Icon name="chevronRight" />
         </button>)}</div>
         {!active && <ProfessionalPlanApplyButton libraryPlanId={item.id} versionId={item.version?.id} repo={repo} onApplied={refresh} />}
