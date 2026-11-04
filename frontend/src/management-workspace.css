@@ -67,13 +67,25 @@ body:has(.management-layout,.management-routine-editor) #tabbar { display:none; 
 .management-layout .management-filter button[aria-pressed="true"] { color:var(--on-acc); background:var(--acc); border-color:var(--acc); }
 .management-layout .field,.management-layout select { background:var(--field-fill); border-radius:11px; min-height:46px; }
 .management-layout .searchf .field { padding-left:40px; }
-.management-layout .management-overview { gap:10px; border:0; padding:0; }
-.management-layout .management-overview > * { display:flex; flex-direction:column; align-items:flex-start; gap:7px; min-width:0; padding:16px 12px; border:1px solid var(--sep-op); border-radius:14px; background:var(--surface); font-size:12px; color:var(--label-2); }
+.management-layout .management-overview { gap:8px; border:0; padding:0; }
+.management-layout .management-overview > * { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:3px; min-width:0; padding:10px 8px; border:1px solid var(--sep-op); border-radius:12px; background:var(--surface); font-size:11px; line-height:1.25; color:var(--label-2); text-decoration:none; }
 .management-layout .management-overview > :first-child { background:color-mix(in srgb,var(--acc) 8%,var(--surface)); }
-.management-layout .management-overview > a:first-child,.management-layout .management-overview > a:last-child { padding:16px 12px; }
-.management-layout .management-overview strong { font-size:26px; color:var(--label); }
+.management-layout .management-overview > a:first-child,.management-layout .management-overview > a:last-child { padding:10px 8px; }
+.management-layout .management-overview strong { font-size:20px; line-height:1.2; color:var(--label); }
 .management-layout .management-overview > :nth-child(2) strong { color:var(--acc); }
 .management-layout .management-overview > :last-child strong { color:var(--red); }
+.management-layout .management-overview span { font-size:11px; line-height:1.2; color:var(--label-2); text-align:center; }
+.management-layout .management-requests-details { border:1px solid var(--sep-op); border-radius:16px; background:var(--surface); padding:0; overflow:hidden; }
+.management-layout .management-requests-details > summary { list-style:none; display:flex; align-items:center; justify-content:space-between; padding:14px 18px; cursor:pointer; font-weight:650; font-size:15px; color:var(--label); user-select:none; }
+.management-layout .management-requests-details > summary::-webkit-details-marker { display:none; }
+.management-layout .management-requests-details > summary:focus-visible { outline:2px solid var(--acc); outline-offset:-2px; }
+.management-layout .management-requests-details > summary .requests-summary-label { display:flex; align-items:center; gap:8px; }
+.management-layout .management-requests-details > summary .requests-badge { font-size:11px; font-weight:700; padding:2px 7px; border-radius:999px; background:var(--acc-soft); color:var(--acc); }
+.management-layout .management-requests-details > summary .requests-expand-icon { font-size:12px; color:var(--label-2); transition:transform 0.18s ease; display:inline-block; }
+.management-layout .management-requests-details[open] > summary { border-bottom:1px solid var(--sep-op); }
+.management-layout .management-requests-details[open] > summary .requests-expand-icon { transform:rotate(180deg); }
+.management-layout .management-requests-details .management-requests-content { padding:14px 18px 18px; display:grid; gap:10px; }
+.management-layout .management-requests-details .management-requests-empty { margin:4px 0 0; color:var(--label-2); font-size:13px; }
 .management-layout .management-quick-actions { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
 .management-layout .management-quick-actions .management-shortcut { flex-direction:column; justify-content:center; gap:9px; min-height:88px; padding:12px 4px; border:1px solid color-mix(in srgb,var(--acc) 18%,var(--sep)); border-radius:13px; background:var(--acc-soft); text-align:center; font-size:11px; }
 .management-quick-actions .icn { color:var(--acc); font-size:23px; }
@@ -192,7 +204,7 @@ body:has(.management-layout,.management-routine-editor) .professional-picker-row
   .management-layout .management-content > section.card,
   .management-layout .management-content > div > details.card { padding:16px; }
   .management-layout .management-overview { grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .management-layout .management-overview > * { min-height:88px; }
+  .management-layout .management-overview > * { min-height:64px; }
   .management-layout .professional-editor-grid.program-fields { grid-template-columns:minmax(0,1fr); }
   .management-layout .professional-day-tools .row-actions > * { flex:1 1 100%; }
   .management-layout .professional-prescription-heading { flex-wrap:wrap; }

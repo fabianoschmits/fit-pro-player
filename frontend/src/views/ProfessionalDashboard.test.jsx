@@ -15,8 +15,13 @@ it('ignores a response from the previous account',async()=>{let resolve;mocks.re
 it('opens a pending request profile without accepting from the dashboard',async()=>{
  mocks.repo.linkRequests.mockResolvedValueOnce({items:[{id:'request',studentUserId:'student',displayName:'João Silva',createdAt:'2026-11-03'}],total:1})
  await act(async()=>root.render(<MemoryRouter><ProfessionalDashboard/></MemoryRouter>))
+ const details = container.querySelector('details.management-requests-details')
+ expect(details).not.toBeNull()
+ expect(details.open).toBe(false)
  expect(container.textContent).toContain('Solicitações de vínculo · 1')
  expect(container.querySelector('a[href="/professional/requests/request"]').textContent).toContain('João Silva')
  expect(container.textContent).toContain('Aguardando resposta')
  expect(container.textContent).not.toContain('Aceitar')
+ details.open = true
+ expect(details.open).toBe(true)
 })

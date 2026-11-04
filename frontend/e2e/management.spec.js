@@ -126,13 +126,13 @@ test('a direct invitation alias selects and reveals Add in the mobile management
   expect(bounds.right).toBeLessThanOrEqual(bounds.navRight + 1)
 })
 
-test('professional dashboard quick actions use readable columns on narrow screens', async ({page}) => {
+test('professional dashboard renders overview metrics on narrow screens', async ({page}) => {
   for (const width of [320,360,390,430]) {
     await page.setViewportSize({width,height:800})
     await seed(page,{professional:true,rpc})
     await page.goto('/#/professional')
-    const columns = await page.locator('.management-quick-actions').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)
-    expect(columns,`${width}px quick action columns`).toBe(2)
+    const columns = await page.locator('.management-overview').evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)
+    expect(columns,`${width}px overview columns`).toBe(3)
   }
 })
 
