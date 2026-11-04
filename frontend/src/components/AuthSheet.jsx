@@ -58,8 +58,9 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [submitState, setSubmitState] = useState('idle');
   const busy = submitState === 'loading' || auth.operation === operationFor[mode];
   const signUpLimit = mode === 'sign_up' ? getSignUpRateLimitState(values.email) : null
-  const [emailStatus, setEmailStatus] = useState('idle'); // 'idle' | 'checking' | 'taken' | 'available'
+  const [emailStatus, setEmailStatus] = useState('idle'); // 'idle' | 'invalid' | 'checking' | 'taken'
   const emailCheckRef = useRef(null);
+  const isValidEmail = email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; confirmation.current?.abort() } }, []);
 
@@ -86,20 +87,21 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     if (key === 'email') setEmailStatus('idle');
   };
   const checkEmail = async email => {
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
     emailCheckRef.current?.abort();
+    if (!email) { setEmailStatus('idle'); return; }
+    if (!isValidEmail(email)) { setEmailStatus('invalid'); return; }
     const controller = new AbortController();
     emailCheckRef.current = controller;
-    setEmailStatus('checking');
+    setEmailStatus('idle');
     try {
       const client = getBrowserSupabaseClient();
-      if (!client) { setEmailStatus('idle'); return; }
-      const { data, error } = await client.rpc('check_email_registered', { p_email: email });
+      if (!client) return;
+      const { data, error } = await client.rpc('check_email_registered', { p_email: email.trim() });
       if (controller.signal.aborted) return;
-      if (error) { setEmailStatus('idle'); return; }
-      setEmailStatus(data ? 'taken' : 'available');
+      if (error) return;
+      if (data) setEmailStatus('taken');
     } catch {
-      if (!controller.signal.aborted) setEmailStatus('idle');
+      // silently ignore network errors during the pre-check
     }
   };
   const showMode = next => {
@@ -239,10 +241,9 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       <div style={{ height: 10 }} />
     </>}
     {!isReset && <>
-      <label>{t('Email')}<input className="input" type="email" inputMode="email" aria-label={t('Email')} autoComplete="email" required aria-describedby="auth-error" value={values.email} onChange={change('email')} onBlur={isSignUp ? () => checkEmail(values.email) : undefined} /></label>
-      {isSignUp && emailStatus === 'checking' && <p className="auth-email-status auth-email-checking" aria-live="polite">Verificando email…</p>}
+      <label>{t('Email')}<input className="input" type="email" inputMode="email" aria-label={t('Email')} autoComplete="email" required aria-describedby={emailStatus === 'invalid' ? 'auth-email-hint' : 'auth-error'} value={values.email} onChange={change('email')} onBlur={isSignUp ? () => checkEmail(values.email) : undefined} /></label>
+      {isSignUp && emailStatus === 'invalid' && <p id="auth-email-hint" className="auth-email-status auth-email-taken" role="alert">Digite um email válido (ex: nome@email.com).</p>}
       {isSignUp && emailStatus === 'taken' && <p className="auth-email-status auth-email-taken" role="alert">Este email já tem uma conta. <button type="button" className="link" onClick={() => showMode('sign_in')}>Entrar</button></p>}
-      {isSignUp && emailStatus === 'available' && <p className="auth-email-status auth-email-available" aria-live="polite">Email disponível ✓</p>}
       <div style={{ height: 10 }} />
     </>}
     {!isRecovery && <>
