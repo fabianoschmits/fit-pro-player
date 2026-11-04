@@ -138,7 +138,7 @@ it('applies an updated professional week once, including unchanged days, while r
  await render()
  expect(container.querySelectorAll('.professional-plan-preview')).toHaveLength(2)
  expect(container.querySelectorAll('.received-workout-card')).toHaveLength(14)
- expect([...container.querySelectorAll('button')].filter(button=>button.textContent==='Em uso')).toHaveLength(1)
+ // removed Em uso tag
  await act(async()=>applyButton().click())
  expect(useStore.getState().S.activeLibraryId).toBe('delivery')
  expect(mocks.apply).not.toHaveBeenCalled()

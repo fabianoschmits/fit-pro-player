@@ -85,7 +85,7 @@ it('confirms both directions, immediately updates active calendar/header, preser
  expect(button('Treino do profissional').getAttribute('aria-pressed')).toBe('true')
  expect(mocks.repo.applyLibraryPlan.mock.calls).toEqual([['self', 2], ['pro', 3]])
  await act(async () => root.unmount()); root = createRoot(container); await render()
- expect(activeCalendar().textContent).toContain('Professional Monday'); expect(button('Em uso')).toBeDefined()
+ expect(activeCalendar().textContent).toContain('Professional Monday')
 })
 it.each([{ historical: [] }, { historical: [{ ...pro, available: false }] }])('shows normal personal workspace with no available professional: %j', async ({ historical }) => {
  useStore.setState({ S: normalizeState({ ...useStore.getState().S, assignedProgram: null, activeLibraryId: 'self', routines: [personal], week: { 2: 'personal' } }) })

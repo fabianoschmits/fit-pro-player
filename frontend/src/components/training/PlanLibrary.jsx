@@ -195,7 +195,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
           </li>)}
         </ul>}
       </section>
-      {professionalActive ? <ProfessionalPlanApplyButton personal repo={repo} onApplied={refresh} /> : <span className="tag acc">Em uso</span>}
+      {professionalActive && <ProfessionalPlanApplyButton personal repo={repo} onApplied={refresh} />}
     </> : <>
     {error && <p role="alert">{error} <Button onClick={() => refresh()}>Tentar novamente</Button></p>}
     {!shownPlans.length && !error && <div className="card plan-library-empty"><Icon name="clipboard" /><div><strong>Nenhum treino recebido</strong><p>Quando um profissional enviar um plano, os treinos aparecerão aqui.</p></div></div>}
@@ -214,8 +214,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
           </span>
           <Icon name="chevronRight" />
         </button>)}</div>
-        <ProfessionalPlanApplyButton libraryPlanId={item.id} versionId={item.version?.id} repo={repo} onApplied={refresh} />
-        {active && <Button variant="ghost" onClick={removeProfessional}>Retirar plano profissional</Button>}
+        {!active && <ProfessionalPlanApplyButton libraryPlanId={item.id} versionId={item.version?.id} repo={repo} onApplied={refresh} />}
       </section>
     })}
     {professionalPlans.length > shownPlans.length && <Button className="plan-show-more" variant="ghost" onClick={() => setVisible(count => count + PAGE_SIZE)}>Ver mais planos</Button>}
