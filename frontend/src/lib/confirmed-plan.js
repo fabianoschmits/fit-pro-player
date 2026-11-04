@@ -4,7 +4,7 @@ import { mergeChanges } from './three-way-merge.js'
 export const planWire = state => ({
   mode: state.planMode,
   schedule: { week: state.week, dayPlan: state.dayPlan, ...(state.assignedProgram ? { assignedProgram: state.assignedProgram } : {}), ...(state.activeLibraryId ? { libraryId: state.activeLibraryId, libraryTitle: state.activeLibraryTitle } : {}) },
-  routines: state.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
+  routines: state.routines.map(({ id, name, ...prescription }) => ({ id, title: name ?? 'Routine', prescription })),
 })
 
 /** A confirmed write owns execution; concurrent personal changes remain a durable journal. */

@@ -46,7 +46,7 @@ export function createAccountDomainSync({ repository, getState, replaceState, is
     if (domain === 'preferences') return { displayUnit: state.displayUnit, values: preferenceValues(state) }
     return {
       mode: state.planMode, schedule: { week: state.week, dayPlan: state.dayPlan, ...(state.assignedProgram ? { assignedProgram: state.assignedProgram } : {}), ...(state.activeLibraryId ? { libraryId: state.activeLibraryId, libraryTitle: state.activeLibraryTitle } : {}) },
-      routines: state.routines.map(({ id, name, ...prescription }) => ({ id, title: name || 'Routine', prescription })),
+      routines: state.routines.map(({ id, name, ...prescription }) => ({ id, title: name ?? 'Routine', prescription })),
     }
   }
 
