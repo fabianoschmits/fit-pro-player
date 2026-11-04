@@ -19,3 +19,4 @@ $$;
 -- Allow public (anon) role to call this function.
 grant execute on function public.check_email_registered(text) to anon;
 grant execute on function public.check_email_registered(text) to authenticated;
+
