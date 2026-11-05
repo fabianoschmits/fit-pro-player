@@ -1,4 +1,3 @@
-import AccountPhone from '../components/AccountPhone.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -114,8 +113,6 @@ export default function Settings() {
       </> : <Row icon="lock" iconTint="var(--grey)" title={t('Guest mode — data lives only in this browser.')} />}
     </Section>
     {!auth.user && !DEMO && !MOBILE && !STANDALONE && <p className="sect-f" style={{ marginTop: -18, marginBottom: 22 }}>{t('Guest mode — data lives only in this browser.')}</p>}
-
-    {auth.status === 'authenticated' && !auth.user?.isAnonymous && <AccountPhone editable />}
 
     {/* ---------- general ---------- */}
     <Section collapsible defaultOpen={false} title={t('General')} footer={t('Weights are stored safely in kilograms and converted for display.')}>

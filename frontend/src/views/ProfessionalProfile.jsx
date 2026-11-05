@@ -116,7 +116,7 @@ function ProfileWorkspace({ auth }) {
       <div className="management-profile-bio"><h3>{t('Apresentação')}</h3><p>{profile.bio || t('Adicione uma apresentação curta.')}</p></div>
     </ManagementPanel>
     <AccountPhone />
-    <Link className="management-button" to="/settings">Alterar telefone na configuração da conta</Link>
+    <Link className="management-button" to="/personal-data">Alterar telefone em Dados pessoais</Link>
     <div className="management-profile-details">
       <ManagementPanel title={t('Atuação')}>
         <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{specialtyText(value)}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Estado')}</dt><dd>{profile.stateUf || t('Não informado')}</dd></div><div><dt>{t('Cidade')}</dt><dd>{profile.cityName || t('Não informado')}</dd></div><div><dt>{t('Bairro')}</dt><dd>{profile.neighborhood || t('Não informado')}</dd></div></dl>

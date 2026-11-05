@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useAuth } from '../auth/AuthProvider.jsx'
+import AccountPhone from '../components/AccountPhone.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import AvatarPicker from '../components/AvatarPicker.jsx'
 import AvatarImage from '../components/AvatarImage.jsx'
@@ -48,6 +50,7 @@ function MeasuresField({ height, weight, onSave = undefined }) {
 }
 
 export default function PersonalData() {
+  const auth = useAuth()
   const S = useStore(state => state.S)
   const update = useStore(state => state.update)
   const profile = normalizeProfile(S.profile, S.body)
@@ -65,6 +68,7 @@ export default function PersonalData() {
     </section>
     <div className="personal-fields">
       <EditableField name="name" label="Nome" value={formatPersonName(profile.name || '')} summary={formatPersonName(profile.name || '')} onChange={value => commit('name', formatPersonName(value))} inputProps={{ autoComplete: 'name' }} />
+      {auth.status === 'authenticated' && !auth.user?.isAnonymous && <AccountPhone editable />}
       <EditableField name="sex" label="Sexo" value={profile.sex} summary={profile.sex === 'female' ? 'Feminino' : 'Masculino'} onChange={value => commit('sex', value)}>{({ editing, value, setValue }) => <Segmented options={[{ value: 'male', label: 'Masculino' }, { value: 'female', label: 'Feminino' }]} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="birthDate" label="Data de nascimento" value={profile.birthDate || defaultBirthDate()} summary={profile.birthDate || 'Não informado'} onChange={value => commit('birthDate', value)}>{({ editing, value, setValue }) => <DateWheelPicker value={value} max={new Date().toISOString().slice(0, 10)} onChange={setValue} disabled={!editing} />}</EditableField>
       <MeasuresField height={heightText(profile.heightCm)} weight={weightText(profile.startWeight)} onSave={({ height, weight }) => {

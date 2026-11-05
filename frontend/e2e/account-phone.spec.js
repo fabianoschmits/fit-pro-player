@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { seed, USER, STUDENT } from './fixtures.test.js'
 
-test('phone settings persist international numbers, load SVG flags and allow removal', async ({ page }, testInfo) => {
+test('personal data contacts persist international numbers, load SVG flags and allow removal', async ({ page }, testInfo) => {
  let saved = '+5511912345678'
  const calls = []
  await seed(page, { authenticated: true, rpc: {
@@ -9,6 +9,8 @@ test('phone settings persist international numbers, load SVG flags and allow rem
   save_account_phone: args => { calls.push(args); saved = args.p_phone; return saved },
  } })
  await page.goto('/#/settings')
+ await expect(page.getByLabel('Contato da conta')).toHaveCount(0)
+ await page.goto('/#/personal-data')
  const field = page.getByLabel('Telefone / WhatsApp (opcional)', { exact: true })
  await expect(field).toHaveValue('(11) 91234-5678')
  await page.getByLabel('País do telefone: Brasil, +55', { exact: true }).click()
@@ -38,6 +40,9 @@ test('phone settings persist international numbers, load SVG flags and allow rem
  await expect.poll(() => saved).toBeNull()
  await page.reload()
  await expect(field).toHaveValue('')
+ await page.goto('/#/settings')
+ await expect(page.getByRole('heading', { name: 'Configurações', exact: true })).toBeVisible()
+ await expect(page.getByLabel('Contato da conta')).toHaveCount(0)
 })
 
 test('student sees professional WhatsApp only while authorized, and revalidates on focus', async ({ page }) => {

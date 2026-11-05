@@ -14,6 +14,7 @@ vi.mock('../store/useStore.js', () => {
   return { useStore }
 })
 vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }))
+vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ status: 'guest', user: null }) }))
 
 import PersonalData from './PersonalData.jsx'
 
