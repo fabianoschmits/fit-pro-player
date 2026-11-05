@@ -79,6 +79,22 @@ afterEach(async () => {
 });
 
 describe('AuthSheet', () => {
+  it('submits optional phone with the selected country and a fictional masked example', async () => {
+    vi.spyOn(globalThis.navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
+    mocks.auth = auth({ signUp: vi.fn().mockResolvedValue({ kind: 'confirmation_required' }) });
+    await render('sign_up');
+    const telephone = input('Telefone / WhatsApp (opcional)');
+    expect(telephone.placeholder).toBe('(11) 91234-5678');
+    expect(telephone.required).toBe(false);
+    await setValue(telephone, '11912345678');
+    expect(telephone.value).toBe('(11) 91234-5678');
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('New password'), 'long-enough-password');
+    await setValue(input('Confirm password'), 'long-enough-password');
+    await acceptPrivacy();
+    await act(async () => container.querySelector('form').dispatchEvent(new dom.Event('submit', { bubbles: true, cancelable: true })));
+    expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ phone: '+5511912345678' }));
+  });
   it('capitalizes signup names using the onboarding rules', async () => {
     await render('sign_up');
     await setValue(input('Name'), 'joÃO da SILVA');

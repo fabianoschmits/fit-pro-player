@@ -224,6 +224,13 @@ describe('AuthProvider', () => {
     }));
   });
 
+  it('passes a normalized optional phone to the private signup capture trigger', async () => {
+    const client = createFakeClient();
+    await renderProvider(client);
+    await act(async () => { await latest.signUp({ email: 'student@example.com', password: 'long-enough-password', displayName: 'Ana', phone: '+5511912345678' }); });
+    expect(client.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ options: expect.objectContaining({ data: expect.objectContaining({ phone_e164: '+5511912345678' }) }) }));
+  });
+
   it('does not finish an immediate professional signup before the protected RPC succeeds', async () => {
     const professionalUser = { ...user, user_metadata: { display_name: 'Ana', account_type: 'professional' } };
     const client = createFakeClient();

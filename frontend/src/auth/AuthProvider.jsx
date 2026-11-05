@@ -275,9 +275,10 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
         if (result.kind !== 'success') return result;
         return { kind: 'authenticated', data: result.data };
       },
-      signUp: async (/** @type {{ email?: string, password?: string, displayName?: string, accountType?: string, privacyVersion?: string, professionalProfile?: Partial<ReturnType<typeof normalizeProfessionalProfile>> }} */ { email, password, displayName, accountType = 'student', privacyVersion, professionalProfile } = {}) => {
+      signUp: async (/** @type {{ email?: string, password?: string, displayName?: string, phone?: string, accountType?: string, privacyVersion?: string, professionalProfile?: Partial<ReturnType<typeof normalizeProfessionalProfile>> }} */ { email, password, displayName, phone, accountType = 'student', privacyVersion, professionalProfile } = {}) => {
         const metadata = {
           display_name: displayName,
+          ...(phone ? { phone_e164: phone } : {}),
           account_type: accountType === 'professional' ? 'professional' : 'student',
           ...(privacyVersion ? { privacy_notice_version: privacyVersion, terms_version: privacyVersion } : {}),
           ...(accountType === 'professional' && professionalProfile ? { professional_profile: professionalProfileMetadata({ ...professionalProfile, professionalName: professionalProfile.professionalName || displayName }) } : {}),

@@ -8,6 +8,8 @@ import { useStore } from '../store/useStore.js';
 import { Button } from './ui.jsx';
 import Icon from './Icon.jsx';
 import ProfessionalProfileForm from './ProfessionalProfileForm.jsx';
+import PhoneField from './PhoneField.jsx'
+import { phoneDraft, normalizePhone } from '../lib/phone.js'
 import { PRIVACY_DOCUMENT_VERSION } from '../lib/privacy-config.js'
 import { clearSignUpRateLimit, getSignUpRateLimitState, recordSignUpAttempt } from '../auth/rate-limit.js'
 import { waitForFppConfirmation } from './fpp-action-timing.js'
@@ -43,6 +45,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [mode, setMode] = useState(() => initial(initialMode));
   const [signupStep, setSignupStep] = useState(1);
   const [values, setValues] = useState(() => ({ name: formatPersonName(offlineName), email: '', password: '', confirmation: '', accountType: 'student' }));
+  const [phone, setPhone] = useState(() => phoneDraft(null));
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
@@ -126,6 +129,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       setError(t('Passwords do not match.'));
       return;
     }
+    if (mode === 'sign_up') { try { normalizePhone(phone.number, phone.country) } catch (cause) { setError(cause.message); return } }
     if (mode === 'sign_up' && !privacyAccepted) { setError('Aceite o Aviso de Privacidade e os Termos para criar a conta.'); return }
     if (mode === 'sign_up' && signUpLimit?.blocked) {
       setError('Muitas tentativas de cadastro. Aguarde alguns minutos antes de tentar novamente.');
@@ -142,7 +146,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     try {
       let result;
       if (mode === 'sign_in') result = await auth.signIn({ email: values.email, password: values.password });
-      if (mode === 'sign_up') result = await auth.signUp({ displayName: values.name, email: values.email, password: values.password, accountType: values.accountType, privacyVersion: PRIVACY_DOCUMENT_VERSION, professionalProfile });
+      if (mode === 'sign_up') result = await auth.signUp({ phone: normalizePhone(phone.number, phone.country), displayName: values.name, email: values.email, password: values.password, accountType: values.accountType, privacyVersion: PRIVACY_DOCUMENT_VERSION, professionalProfile });
       if (mode === 'forgot_password') result = await auth.sendPasswordRecovery(values.email);
       if (mode === 'reset_password') result = await auth.updatePassword(values.password);
       if (!mounted.current) return;
@@ -234,6 +238,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     {isSignUp && <>
       <label>{t('Name')}<input className="input" aria-label={t('Name')} autoComplete="name" required value={values.name} onChange={change('name')} /></label>
       <div style={{ height: 10 }} />
+      <PhoneField value={phone} onChange={setPhone} disabled={busy} />
       <label>{t('Account type')}<select className="input" aria-label={t('Account type')} value={values.accountType} onChange={change('accountType')}>
         <option value="student">{t('Training account')}</option>
         <option value="professional">{t('Professional account')}</option>

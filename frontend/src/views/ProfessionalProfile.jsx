@@ -1,3 +1,4 @@
+import AccountPhone from '../components/AccountPhone.jsx'
 import { useStore } from '../store/useStore.js'
 import Link from '../components/ManagementLink.jsx'
 import { t } from '../lib/i18n.js'
@@ -114,6 +115,8 @@ function ProfileWorkspace({ auth }) {
       <div className="management-person-heading"><ManagementAvatar name={profile.professionalName} avatarRef={avatarId} userId={auth.user?.id} /><div><h2>{profile.professionalName || t('Sem perfil profissional')}</h2>{profile.cityRegion && <p>{profile.cityRegion}</p>}</div></div>
       <div className="management-profile-bio"><h3>{t('Apresentação')}</h3><p>{profile.bio || t('Adicione uma apresentação curta.')}</p></div>
     </ManagementPanel>
+    <AccountPhone />
+    <Link className="management-button" to="/settings">Alterar telefone na configuração da conta</Link>
     <div className="management-profile-details">
       <ManagementPanel title={t('Atuação')}>
         <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{specialtyText(value)}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Estado')}</dt><dd>{profile.stateUf || t('Não informado')}</dd></div><div><dt>{t('Cidade')}</dt><dd>{profile.cityName || t('Não informado')}</dd></div><div><dt>{t('Bairro')}</dt><dd>{profile.neighborhood || t('Não informado')}</dd></div></dl>
