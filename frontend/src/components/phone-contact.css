@@ -16,4 +16,9 @@
 .fpp-whatsapp-contact { margin-block: 12px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .fpp-whatsapp-contact svg { width: 22px; height: 22px; color: #25d366; flex-shrink: 0; }
 .fpp-whatsapp-contact a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+.fpp-whatsapp-contact.is-icon-only { margin: 0; }
+.fpp-whatsapp-contact .fpp-whatsapp-icon { width: 44px; height: 44px; justify-content: center; border-radius: 50%; color: #25d366; text-decoration: none; }
+.fpp-whatsapp-contact .fpp-whatsapp-icon svg { width: 20px; height: 20px; }
+.fpp-whatsapp-contact .fpp-whatsapp-icon:hover { background: var(--surface-2); }
+.fpp-whatsapp-contact .fpp-whatsapp-icon:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
 .fpp-phone-field :focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }

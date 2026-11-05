@@ -48,12 +48,15 @@ test('personal data contacts persist international numbers, load SVG flags and a
 test('student sees professional WhatsApp only while authorized, and revalidates on focus', async ({ page }) => {
  let phone = '+5511912345678'
  await seed(page, { authenticated: true, rpc: {
-  student_professional_detail: [{ professional: { professional_user_id: STUDENT, professional_name: 'Profissional Teste' }, relationship: { id: 'relationship', status: 'active' }, materials: [], executions: [] }],
+  student_professional_detail: [{ professional: { professional_user_id: STUDENT, professional_name: 'Profissional Teste', city_region: 'Porto Alegre · RS' }, relationship: { id: 'relationship', status: 'active' }, materials: [], executions: [] }],
   account_contact_phone: args => args.p_user_id === STUDENT ? phone : null,
  } })
  await page.goto(`/#/student/professionals/${STUDENT}`)
  const link = page.getByRole('link', { name: 'Conversar pelo WhatsApp' })
  await expect(link).toHaveAttribute('href', 'https://wa.me/5511912345678')
+ await expect(link).toHaveText('')
+ await expect(page.locator('main')).not.toContainText('+55 11')
+ await expect(link.locator('xpath=ancestor::section[1]')).toContainText('Porto Alegre · RS')
  await expect(link).toHaveAttribute('rel', 'noopener noreferrer')
  phone = null
  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
@@ -72,4 +75,19 @@ test('professional sees linked student WhatsApp, and no action when the student 
  phone = null
  await page.evaluate(() => window.dispatchEvent(new Event('professional-relationship-changed')))
  await expect(link).toHaveCount(0)
+})
+
+test('own professional profile shows a small WhatsApp icon inside the location card without phone text', async ({ page }) => {
+ await seed(page, { professional: true, rpc: {
+  professional_profiles: { user_id: USER, professional_name: 'Profissional Teste', state_uf: 'RS', city_name: 'Porto Alegre', specialties: [] },
+  account_contact_phone: '+5511912345678',
+ } })
+ await page.goto('/#/professional/profile')
+ const card = page.getByRole('region', { name: 'Atuação', exact: true })
+ const link = card.getByRole('link', { name: 'Conversar pelo WhatsApp' })
+ await expect(link).toHaveAttribute('href', 'https://wa.me/5511912345678')
+ await expect(link).toHaveText('')
+ await expect(card).toContainText('Porto Alegre')
+ await expect(page.locator('main')).not.toContainText('+55 11')
+ expect(await link.locator('svg').evaluate(icon => icon.getBoundingClientRect().width)).toBe(20)
 })

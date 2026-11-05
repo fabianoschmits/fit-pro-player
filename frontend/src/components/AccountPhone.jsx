@@ -6,11 +6,11 @@ import { displayPhone, normalizePhone, phoneDraft, whatsappUrl } from '../lib/ph
 import PhoneField from './PhoneField.jsx'
 import { Button } from './ui.jsx'
 
-export default function AccountPhone({ userId = undefined, editable = false }) {
+export default function AccountPhone({ userId = undefined, editable = false, iconOnly = false }) {
  const auth = useAuth(), caller = auth.user?.id, target = userId || caller
- return <ScopedPhone key={`${caller}:${target}`} caller={caller} target={target} editable={editable && target === caller} />
+ return <ScopedPhone key={`${caller}:${target}`} caller={caller} target={target} iconOnly={iconOnly} editable={editable && target === caller} />
 }
-function ScopedPhone({ caller, target, editable }) {
+function ScopedPhone({ caller, target, editable, iconOnly }) {
  const [phone, setPhone] = useState(null), [draft, setDraft] = useState(() => phoneDraft(null))
  const [state, setState] = useState('loading'), [error, setError] = useState('')
  const [revision, setRevision] = useState(0)
@@ -47,7 +47,7 @@ function ScopedPhone({ caller, target, editable }) {
  </section>
  const url = whatsappUrl(phone)
  if (!url || state !== 'ready') return null
- return <div className="fpp-whatsapp-contact"><a className="management-button" href={url} target="_blank" rel="noopener noreferrer" aria-label="Conversar pelo WhatsApp">
+ return <div className={`fpp-whatsapp-contact${iconOnly ? ' is-icon-only' : ''}`}><a className={iconOnly ? 'fpp-whatsapp-icon' : 'management-button'} title="Conversar pelo WhatsApp" href={url} target="_blank" rel="noopener noreferrer" aria-label="Conversar pelo WhatsApp">
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11.8 11.8 0 0 0 12.1 0C5.5 0 .2 5.3.2 11.9c0 2.1.6 4.2 1.6 6L0 24l6.3-1.7a12 12 0 0 0 5.8 1.5h.1C18.7 23.8 24 18.5 24 12c0-3.2-1.2-6.2-3.5-8.5ZM12.1 21.8c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-3.7 1 1-3.6-.2-.4a9.8 9.8 0 0 1-1.5-5.3A9.9 9.9 0 0 1 12.1 2 9.9 9.9 0 0 1 22 12a9.9 9.9 0 0 1-9.9 9.8Zm5.4-7.4c-.3-.1-1.8-.9-2.1-1-.3-.1-.5-.1-.7.2l-1 1.2c-.2.2-.4.2-.7.1a8.2 8.2 0 0 1-2.5-1.5 9.4 9.4 0 0 1-1.7-2.1c-.2-.3 0-.5.1-.6l.5-.6.3-.5c.1-.2 0-.4 0-.6l-1-2.3c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.1 1.1-1.1 2.6s1.1 2.9 1.3 3.1c.1.2 2.2 3.4 5.4 4.8l1.8.6c.7.2 1.3.2 1.8.1.6-.1 1.8-.7 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4Z" /></svg>
-  WhatsApp</a><span>{displayPhone(phone)}</span></div>
+  {!iconOnly && 'WhatsApp'}</a>{!iconOnly && <span>{displayPhone(phone)}</span>}</div>
 }
