@@ -31,7 +31,7 @@ for (const failFirst of [false, true]) test(`collapsed invites support confirmat
   await card.getByRole('button', { name: 'Confirmar', exact: true }).click()
   if (failFirst) {
     await expect(page.getByRole('alert')).toContainText('Não foi possível revogar este convite.')
-    await expect(card).toContainText('Pendente')
+    await expect(card).toContainText('Ativo')
     await card.getByRole('button', { name: 'Tentar novamente', exact: true }).click()
   }
   await expect(page.locator('.management-notice')).toContainText('Convite revogado.')

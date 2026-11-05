@@ -134,7 +134,7 @@ export function createProfessionalWorkflowRepository({ client = undefined } = {}
     const columns = 'id,kind,code,status,created_at,accepted_at,is_personal,is_custom'
     const [personal, generated] = await Promise.all([
       read('professional_invites', q => q.select(columns).eq('is_personal', true).limit(1)),
-      read('professional_invites', q => q.select(columns).eq('is_personal', false).order('created_at', { ascending: false }).limit(500)),
+      rpc('professional_generated_invites', {}),
     ])
     return [...personal, ...generated]
   }
@@ -158,6 +158,7 @@ export function createProfessionalWorkflowRepository({ client = undefined } = {}
   const historicalClientDetail = studentId => rpc('professional_historical_student_detail', { p_student_id: studentId }).then(value => value ? ({ ...toClientDetail(value), notes: (value.notes || []).map(toStudentNoteEntry) }) : null)
   const revokeRelationship = id => rpc('revoke_professional_relationship', { p_relationship_id: id })
   const revokeInvite = id => rpc('revoke_professional_invite', { p_invite_id: id })
+  const deleteInvite = id => rpc('delete_revoked_professional_invite', { p_invite_id: id })
   const programs = () => read('programs', q => q.select('*').order('updated_at', { ascending: false }).limit(500))
   const program = id => read('programs', q => q.select('*').eq('id', id).limit(1)).then(rows => rows[0] || null)
   const versions = programId => read('program_versions', q => q.select('*').eq('program_id', programId).order('version_number', { ascending: false }).limit(100))
@@ -211,5 +212,5 @@ export function createProfessionalWorkflowRepository({ client = undefined } = {}
   const studentPlanDraft = studentId => read('professional_plan_drafts', q => q.select('*').eq('student_id', studentId).limit(1)).then(rows => rows[0] || null)
   const savePlanDraft = (studentId, title, workspace, revision) => rpc('save_student_plan_draft', { p_student_id: studentId, p_title: title, p_workspace: workspace, p_expected_revision: revision })
   const sendPlan = (studentId, revision) => rpc('send_student_plan', { p_student_id: studentId, p_expected_revision: revision })
-  return Object.freeze({ requestLink, linkRequests, linkRequestDetail, acceptLinkRequest, rejectLinkRequest, studentLinkRequests, relationshipCycles, historicalClientDetail, program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, savePersonalInviteCode, previewInvite, acceptInvite, revokeRelationship, revokeInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, deleteProgram, studentNote, saveStudentNote, studentNotes, addStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
+  return Object.freeze({ requestLink, linkRequests, linkRequestDetail, acceptLinkRequest, rejectLinkRequest, studentLinkRequests, relationshipCycles, historicalClientDetail, program, planLibrary, markLibraryWorkoutSeen, markProfessionalPlanUpdateSeen, markProfessionalPlanUpdateDaySeen, applyLibraryPlan, savePersonalPlan, studentPlanDraft, savePlanDraft, sendPlan, toProfile, toClientSummary, toClientDetail, professionalRole, relationships, invites, createInvite, savePersonalInviteCode, previewInvite, acceptInvite, revokeRelationship, revokeInvite, deleteInvite, programs, versions, version, createProgram, updateProgram, publishVersion, updateProgramMetadata, publishProgramDraft, duplicateProgram, deleteProgram, studentNote, saveStudentNote, studentNotes, addStudentNote, dashboardSummary, studentPage, programPage, executionPage, revokeAssignment, assignments, assignedPrograms, assign, executions, clientSummaries, clientDetail, publishProgramVersion, assignProgramVersion, studentOverview, studentProfessionals, studentProfessionalDetail })
 }

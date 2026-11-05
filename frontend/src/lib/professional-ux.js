@@ -24,8 +24,13 @@ export function studentStats(student = {}) {
   return { hasProgram: Boolean(student.programId || student.programTitle), lastStatus: student.lastExecutionStatus || null, lastExecutionAt: student.lastExecutionAt || null }
 }
 
+export function professionalInviteState(invite) {
+  if (invite.is_used || invite.status === 'active' || invite.accepted_by || invite.accepted_at || invite.used_by) return 'used'
+  return invite.status === 'revoked' ? 'revoked' : 'active'
+}
+
 export function statusLabel(status) {
-  return t(({ pending: 'Pendente', active: 'Ativo', revoked: 'Revogado', completed: 'Concluído', in_progress: 'Em andamento', abandoned: 'Abandonado', replaced: 'Substituído', archived: 'Arquivado', unverified: 'não verificado' })[status] || 'Desconhecido')
+  return t(({ pending: 'Pendente', active: 'Ativo', used: 'Utilizado', revoked: 'Revogado', completed: 'Concluído', in_progress: 'Em andamento', abandoned: 'Abandonado', replaced: 'Substituído', archived: 'Arquivado', unverified: 'não verificado' })[status] || 'Desconhecido')
 }
 
 export function attentionReasons(student = {}, now = new Date()) {

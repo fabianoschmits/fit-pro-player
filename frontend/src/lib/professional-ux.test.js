@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { FILTERS, filterStudents, inviteLink, normalizeInviteCode, statusLabel, studentStats, withTimeout, attentionReasons } from './professional-ux.js'
+import { FILTERS, filterStudents, inviteLink, normalizeInviteCode, statusLabel, studentStats, withTimeout, attentionReasons, professionalInviteState } from './professional-ux.js'
 
 describe('professional UX contracts', () => {
+  it('distinguishes usable, revoked and used invites across both acceptance paths', () => {
+    expect(professionalInviteState({ status: 'pending' })).toBe('active')
+    expect(professionalInviteState({ status: 'revoked' })).toBe('revoked')
+    expect(professionalInviteState({ status: 'active' })).toBe('used')
+    expect(professionalInviteState({ status: 'pending', is_used: true })).toBe('used')
+    expect(professionalInviteState({ status: 'revoked', accepted_by: 'student' })).toBe('used')
+  })
   it('selects attention only from missing prescription, inactivity and abandoned sessions', () => {
     const now = new Date('2026-10-02T12:00:00Z')
     expect(attentionReasons({ programTitle: 'Força', lastExecutionAt: '2026-10-01T12:00:00Z', lastExecutionStatus: 'completed' }, now)).toEqual([])
