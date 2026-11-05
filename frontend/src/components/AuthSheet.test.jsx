@@ -79,6 +79,21 @@ afterEach(async () => {
 });
 
 describe('AuthSheet', () => {
+  it('marks an invalid optional phone inline and blocks signup until it is corrected', async () => {
+    vi.spyOn(globalThis.navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
+    await render('sign_up');
+    const telephone = input('Telefone / WhatsApp (opcional)');
+    await setValue(telephone, '123');
+    await act(async () => telephone.dispatchEvent(new dom.FocusEvent('focusout', { bubbles: true })));
+    expect(telephone.getAttribute('aria-invalid')).toBe('true');
+    expect(container.querySelector('.fpp-phone-error')?.textContent).toContain('Informe um telefone válido');
+    await acceptPrivacy();
+    await act(async () => container.querySelector('form').dispatchEvent(new dom.Event('submit', { bubbles: true, cancelable: true })));
+    expect(mocks.auth.signUp).not.toHaveBeenCalled();
+    await setValue(telephone, '11912345678');
+    expect(telephone.getAttribute('aria-invalid')).toBe('false');
+    expect(container.querySelector('.fpp-phone-error')).toBeNull();
+  });
   it('submits optional phone with the selected country and a fictional masked example', async () => {
     vi.spyOn(globalThis.navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
     mocks.auth = auth({ signUp: vi.fn().mockResolvedValue({ kind: 'confirmation_required' }) });

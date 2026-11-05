@@ -14,6 +14,7 @@ function ScopedPhone({ caller, target, editable, iconOnly, contactLabel }) {
  const [phone, setPhone] = useState(null), [draft, setDraft] = useState(() => phoneDraft(null))
  const [state, setState] = useState('loading'), [error, setError] = useState('')
  const [revision, setRevision] = useState(0)
+ const [phoneValidationAttempted, setPhoneValidationAttempted] = useState(false)
  useRelationshipRefresh(() => { if (!editable) { setState('loading'); setPhone(null); setRevision(value => value + 1) } })
  useEffect(() => {
   let alive = true
@@ -30,8 +31,9 @@ function ScopedPhone({ caller, target, editable, iconOnly, contactLabel }) {
  }, [caller, target, editable, revision])
  const save = async () => {
   setError('')
+  setPhoneValidationAttempted(true)
+  const next = normalizePhone(draft.number, draft.country)
   try {
-   const next = normalizePhone(draft.number, draft.country)
    const client = getBrowserSupabaseClient()
    if (!client) throw new Error('Não foi possível salvar o telefone.')
    const { error: cause } = await client.rpc('save_account_phone', { p_phone: next })
@@ -43,7 +45,7 @@ function ScopedPhone({ caller, target, editable, iconOnly, contactLabel }) {
   <details className="fpp-account-phone-details">
   <summary>Telefone / WhatsApp</summary>
   <div className="fpp-account-phone-editor">
-  {state === 'loading' ? <p role="status">Carregando telefone…</p> : state === 'ready' ? <><PhoneField value={draft} onChange={setDraft} /><Button onAction={save} successLabel="Telefone salvo">Salvar telefone</Button><p className="fpp-phone-hint">Para remover o contato, deixe o campo vazio e salve.</p></> : null}
+  {state === 'loading' ? <p role="status">Carregando telefone…</p> : state === 'ready' ? <><PhoneField value={draft} onChange={setDraft} showErrors={phoneValidationAttempted} /><Button onAction={save} successLabel="Telefone salvo">Salvar telefone</Button><p className="fpp-phone-hint">Para remover o contato, deixe o campo vazio e salve.</p></> : null}
   {error && <p role="alert">{error}</p>}
   {state === 'error' && <Button onClick={() => { setError(''); setState('loading'); setRevision(value => value + 1) }}>Tentar carregar telefone novamente</Button>}
   </div>

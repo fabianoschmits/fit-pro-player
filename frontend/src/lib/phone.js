@@ -9,19 +9,20 @@ export function defaultPhoneCountry(languages = globalThis.navigator?.languages 
  return 'BR'
 }
 export function formatPhoneInput(value, country) {
+ if (/[^\d\s()+.-]/.test(String(value || ''))) return String(value || '')
  const digits = String(value || '').replace(/\D/g, '')
  if (country === 'BR') {
-  const national = digits.slice(0, 11)
+  const national = digits
   if (national.length <= 2) return national
   const rest = national.slice(2), split = rest.length > 8 ? 5 : 4
   return `(${national.slice(0, 2)}) ${rest.slice(0, split)}${rest.length > split ? `-${rest.slice(split)}` : ''}`
  }
- return new AsYouType(country).input(digits.slice(0, 15))
+ return new AsYouType(country).input(digits)
 }
 export function normalizePhone(value, country) {
  if (!String(value || '').trim()) return null
- const phone = parsePhoneNumberFromString(value, country)
- if (!phone?.isValid() || phone.ext) throw new Error('Informe um telefone válido com código de área.')
+ const phone = /^[+\d\s().-]+$/.test(value) && parsePhoneNumberFromString(value, { defaultCountry: country, extract: false })
+ if (!phone || !phone.isValid() || phone.ext || phone.country !== country) throw new Error('Informe um telefone válido com código de área para o país selecionado.')
  return phone.number
 }
 export function phoneDraft(value) {

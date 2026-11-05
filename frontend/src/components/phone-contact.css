@@ -36,3 +36,5 @@
 .fpp-account-phone-details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
 .fpp-account-phone-editor { padding-top: 12px; }
 .fpp-phone-field :focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.fpp-phone-field input[aria-invalid="true"] { border-color: var(--red); outline-color: var(--red); }
+.fpp-phone-error { color: var(--red); font-size: 13px; line-height: 1.4; margin: 8px 0; }

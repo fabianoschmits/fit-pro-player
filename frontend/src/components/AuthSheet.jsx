@@ -46,6 +46,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
   const [signupStep, setSignupStep] = useState(1);
   const [values, setValues] = useState(() => ({ name: formatPersonName(offlineName), email: '', password: '', confirmation: '', accountType: 'student' }));
   const [phone, setPhone] = useState(() => phoneDraft(null));
+  const [phoneValidationAttempted, setPhoneValidationAttempted] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
@@ -129,7 +130,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       setError(t('Passwords do not match.'));
       return;
     }
-    if (mode === 'sign_up') { try { normalizePhone(phone.number, phone.country) } catch (cause) { setError(cause.message); return } }
+    if (mode === 'sign_up') { setPhoneValidationAttempted(true); try { normalizePhone(phone.number, phone.country) } catch { return } }
     if (mode === 'sign_up' && !privacyAccepted) { setError('Aceite o Aviso de Privacidade e os Termos para criar a conta.'); return }
     if (mode === 'sign_up' && signUpLimit?.blocked) {
       setError('Muitas tentativas de cadastro. Aguarde alguns minutos antes de tentar novamente.');
@@ -238,7 +239,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
     {isSignUp && <>
       <label>{t('Name')}<input className="input" aria-label={t('Name')} autoComplete="name" required value={values.name} onChange={change('name')} /></label>
       <div style={{ height: 10 }} />
-      <PhoneField value={phone} onChange={setPhone} disabled={busy} />
+      <PhoneField value={phone} onChange={setPhone} disabled={busy} showErrors={phoneValidationAttempted} />
       <label>{t('Account type')}<select className="input" aria-label={t('Account type')} value={values.accountType} onChange={change('accountType')}>
         <option value="student">{t('Training account')}</option>
         <option value="professional">{t('Professional account')}</option>
