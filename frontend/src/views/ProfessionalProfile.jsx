@@ -116,8 +116,8 @@ function ProfileWorkspace({ auth }) {
       <div className="management-profile-bio"><h3>{t('Apresentação')}</h3><p>{profile.bio || t('Adicione uma apresentação curta.')}</p></div>
     </ManagementPanel>
     <div className="management-profile-details">
-      <ManagementPanel title={t('Atuação')} action={<AccountPhone iconOnly />}>
-        <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{specialtyText(value)}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Estado')}</dt><dd>{profile.stateUf || t('Não informado')}</dd></div><div><dt>{t('Cidade')}</dt><dd>{profile.cityName || t('Não informado')}</dd></div><div><dt>{t('Bairro')}</dt><dd>{profile.neighborhood || t('Não informado')}</dd></div></dl>
+      <ManagementPanel title={t('Atuação')}>
+        <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{specialtyText(value)}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Estado')}</dt><dd>{profile.stateUf || t('Não informado')}</dd></div><div><dt>{t('Cidade')}</dt><dd>{profile.cityName || t('Não informado')}</dd></div><div><dt>{t('Bairro')}</dt><dd>{profile.neighborhood || t('Não informado')}</dd></div><div className="professional-contact-fact"><dt>{t('Contato')}</dt><dd><AccountPhone iconOnly /></dd></div></dl>
       </ManagementPanel>
       <ManagementPanel title={t('Registro profissional')}>
         <dl className="management-facts"><div><dt>{t('Tipo de registro')}</dt><dd>{profile.registrationType || t('Não informado')}</dd></div><div><dt>{t('Número do registro')}</dt><dd>{profile.registrationNumber || t('Não informado')}</dd></div><div><dt>{t('Status do registro')}</dt><dd><ManagementStatus tone={profile.verificationStatus === 'verified' ? 'success' : 'neutral'}>{status}</ManagementStatus></dd></div></dl>

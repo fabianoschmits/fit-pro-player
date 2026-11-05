@@ -21,4 +21,18 @@
 .fpp-whatsapp-contact .fpp-whatsapp-icon svg { width: 20px; height: 20px; }
 .fpp-whatsapp-contact .fpp-whatsapp-icon:hover { background: var(--surface-2); }
 .fpp-whatsapp-contact .fpp-whatsapp-icon:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.fpp-whatsapp-contact.has-contact-label .fpp-whatsapp-icon { flex-direction: column; width: 60px; height: auto; min-height: 48px; gap: 4px; padding: 4px; border-radius: 10px; }
+.fpp-whatsapp-contact.has-contact-label .fpp-whatsapp-icon span { font-size: 11px; line-height: 1.2; color: var(--label-2); }
+.professional-student-heading-text { flex: 1; }
+.professional-student-contact-action { flex: 0 0 auto; align-self: flex-start; margin-left: auto; }
+.management-layout .management-facts > .professional-contact-fact { align-items: center; }
+.professional-contact-fact dt, .professional-contact-fact dd { font-size: 13px; }
+.professional-contact-fact .fpp-whatsapp-icon { font-size: inherit; }
+.professional-contact-fact .fpp-whatsapp-icon svg { width: 1em; height: 1em; }
+.fpp-account-phone-details > summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; justify-content: space-between; list-style: none; }
+.fpp-account-phone-details > summary::-webkit-details-marker { display: none; }
+.fpp-account-phone-details > summary::after { content: '+'; color: var(--label-2); font-size: 20px; }
+.fpp-account-phone-details[open] > summary::after { content: '−'; }
+.fpp-account-phone-details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.fpp-account-phone-editor { padding-top: 12px; }
 .fpp-phone-field :focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }

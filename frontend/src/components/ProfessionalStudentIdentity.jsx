@@ -10,7 +10,7 @@ const goals = {lose_weight:'Perder peso',build_muscle:'Ganhar massa muscular',im
 const levels = {beginner:'Iniciante',intermediate:'Intermediário',advanced:'Avançado'}
 const date = value => value ? professionalDate(value.length === 10 ? `${value}T12:00:00` : value) : missing
 
-export default function ProfessionalStudentIdentity({data}) {
+export default function ProfessionalStudentIdentity({data, action = undefined}) {
  const profile = data.profile || {}
  const weights = [...(data.weightHistory || [])].sort((a,b)=>b.measured_on.localeCompare(a.measured_on) || String(b.created_at || '').localeCompare(String(a.created_at || '')))
  const weight = currentProfileWeight({profile,bodyweight:weights.map(row=>({w:Number(row.weight_kg),d:row.measured_on,t:Date.parse(row.created_at)||0}))})
@@ -29,7 +29,8 @@ export default function ProfessionalStudentIdentity({data}) {
  return <section className="card professional-student-identity" aria-label={`Resumo de ${data.displayName}`}>
   <div className="professional-student-heading">
    <ManagementAvatar name={data.displayName} avatarRef={data.avatarRef} userId={data.studentUserId}/>
-   <div><h2>{data.displayName}</h2><p>Aluno desde {professionalDate(data.relationshipCreatedAt)}</p></div>
+   <div className="professional-student-heading-text"><h2>{data.displayName}</h2><p>Aluno desde {professionalDate(data.relationshipCreatedAt)}</p></div>
+   {action && <div className="professional-student-contact-action">{action}</div>}
   </div>
   {details(fields)}
   <button type="button" className="professional-student-expand" aria-label={`Ver perfil completo de ${data.displayName}`} aria-haspopup="dialog" onClick={open}>Expandir<span aria-hidden="true">＋</span></button>
