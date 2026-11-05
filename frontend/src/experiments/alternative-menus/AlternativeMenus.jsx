@@ -101,7 +101,7 @@ export default function AlternativeMenus() {
 
   return <AccessGate allowed={allowed}>
     <ConsoleShell userId={userId} allowed={allowed} back="/console/laboratory" backLabel="Laboratório de testes">
-      <div className="cx-page-body am-page">
+      <div className="cx-page-body am-page fpp-ui-lab-menus">
         <GlassRefraction />
         <div className="am-intro"><div><h1 className="cx-page-title">Menus alternativos</h1><p className="cx-page-sub">Dez jeitos de dar movimento ao Fit Pro Player. Abra os menus e toque nos ícones para sentir cada versão, sem sair desta tela.</p></div><span className="am-count">10 <small>versões</small></span></div>
         <div className="am-toolbar" role="group" aria-label="Controles dos menus">

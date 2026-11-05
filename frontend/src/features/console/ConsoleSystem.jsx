@@ -55,7 +55,7 @@ export default function ConsoleSystem() {
   return (
     <AccessGate allowed={allowed}>
       <ConsoleShell userId={userId} allowed={allowed}>
-        <div className="cx-page-body">
+        <div className="cx-page-body fpp-console-page fpp-console-page--system">
           <div className="cx-page-head">
             <h1 className="cx-page-title">Sistema & Banco de Dados</h1>
             <p className="cx-page-sub">

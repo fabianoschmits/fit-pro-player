@@ -95,7 +95,7 @@ function ProfileWorkspace({ auth }) {
 
   if (!authenticated) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p>{t('Entre em uma conta para acessar o perfil profissional.')}</p></ManagementPanel></ManagementLayout>
   if (busy) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><FppSkeleton label={t('Carregando…')} /></ManagementLayout>
-  if (loadError) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p role="alert" className="management-error">{t('Não foi possível carregar o perfil profissional.')}</p><Button onClick={() => setAttempt(value => value + 1)}>{t('Tentar novamente')}</Button></ManagementPanel></ManagementLayout>
+  if (loadError) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p role="alert" className="management-error fpp-inline-notice">{t('Não foi possível carregar o perfil profissional.')}</p><Button onClick={() => setAttempt(value => value + 1)}>{t('Tentar novamente')}</Button></ManagementPanel></ManagementLayout>
 
   if (!capability || editing) return <ManagementLayout
     title={capability ? t('Editar perfil') : t('Tornar-se profissional')}
@@ -103,7 +103,7 @@ function ProfileWorkspace({ auth }) {
     backTo={capability ? '/professional/profile' : '/settings'}
     nav={capability ? undefined : false}
   >
-    {error && <p role="alert" className="management-error">{error}</p>}
+    {error && <p role="alert" className="management-error fpp-inline-notice">{error}</p>}
     <ProfessionalProfileForm key={pathname} profile={profile} saving={saving} state={saveState} provisioning={!capability} onSave={persist} onCancel={() => navigate(capability ? '/professional/profile' : '/settings')} />
   </ManagementLayout>
 

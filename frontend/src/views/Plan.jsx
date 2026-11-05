@@ -72,7 +72,7 @@ export default function Plan() {
 
   const personalRoutines = S.routines.filter(routine => !routine.assigned)
 
-  return <div className="plan-view page-scenery">
+  return <div className="plan-view page-scenery fpp-ui-view fpp-screen-plan">
     <AppHeader
       title={headerTitle}
       subtitle={headerSubtitle}
@@ -88,11 +88,11 @@ export default function Plan() {
 
     <section className="plan-mode-section">
       <h4 className="sec">{t('Plan style')}</h4>
-      <div className="plan-mode-card">
+      <div className="plan-mode-card fpp-panel-content">
         {usingProfessionalPlan ? <div className="plan-professional-mode"><strong>Plano profissional ativo</strong><small>A prescrição é protegida. Escolha outro plano na sua biblioteca para alterar o que você executa.</small></div> : <><div><strong>{t('Change plan mode')}</strong><small>{t('Your profile, routines and history are kept in both modes.')}</small></div>
-          <div className="plan-mode-options">
-            <button className={mode === 'weekly' ? 'on' : ''} aria-pressed={mode === 'weekly'} onClick={() => switchMode('weekly')}><Icon name="calendar" /><span>{t('Weekly plan')}</span>{mode === 'weekly' && <Icon name="check" />}</button>
-            <button className={mode === 'daily' ? 'on' : ''} aria-pressed={mode === 'daily'} onClick={() => switchMode('daily')}><Icon name="dumbbell" /><span>{t('Daily plan')}</span>{mode === 'daily' && <Icon name="check" />}</button>
+          <div className="plan-mode-options" role="group" aria-label="Estilo do plano">
+            <button type="button" className={mode === 'weekly' ? 'on' : ''} aria-pressed={mode === 'weekly'} onClick={() => switchMode('weekly')}><Icon name="calendar" /><span>{t('Weekly plan')}</span>{mode === 'weekly' && <Icon name="check" />}</button>
+            <button type="button" className={mode === 'daily' ? 'on' : ''} aria-pressed={mode === 'daily'} onClick={() => switchMode('daily')}><Icon name="dumbbell" /><span>{t('Daily plan')}</span>{mode === 'daily' && <Icon name="check" />}</button>
           </div></>}
       </div>
     </section>

@@ -117,7 +117,7 @@ export default function Home() {
       </div>
       <div className="home-now-progress"><i style={{ '--progress': activeTotal ? activeDone / activeTotal : 0 }} /></div>
       <div className="home-now-progress-label"><span>{t('{0} sets', `${activeDone}/${activeTotal}`)}</span></div>
-      <div className="home-now-actions">
+      <div className="home-now-actions fpp-spaced-actions">
         <Button variant="primary" icon={active.start ? 'play' : 'timer'} onClick={() => nav('/workout')}>{active.start ? t('Resume') : t('Start workout')}</Button>
       </div>
     </section>
@@ -129,7 +129,7 @@ export default function Home() {
       <h2>{todayWorkout.name}</h2>
       <SessionMetrics workout={todayWorkout} unit={displayUnit} />
       {nextWorkout && <div className="home-next-session"><span>{t('Next')}</span><b>{routineName(nextWorkout.routine)}</b><small>{fmtDate(nextWorkout.iso, true)}</small></div>}
-      <div className="home-now-actions">
+      <div className="home-now-actions fpp-spaced-actions">
         <Button variant="plain" size="sm" onClick={() => workoutDetailSheet(todayWorkout)}>{t('Details')}</Button>
       </div>
     </section>
@@ -144,7 +144,7 @@ export default function Home() {
         {routineMuscles.map(muscle => <span key={muscle}>{sentenceCase(t(muscle))}</span>)}
       </div>
       {matchingPrevious && workoutDuration(matchingPrevious) > 0 && <div className="home-last-session"><span>{t('Last time')}</span><b>{fmtDur(workoutDuration(matchingPrevious))}</b><small>{fmtDate(matchingPrevious.d, true)}</small></div>}
-      <div className="home-now-actions">
+      <div className="home-now-actions fpp-spaced-actions">
         <Button variant="primary" icon="play" onClick={() => startFlow(routine.id)}>{t('Start {0}', routineName(routine))}</Button>
       </div>
     </section>
@@ -153,7 +153,7 @@ export default function Home() {
       <div className="home-now-top"><span className="home-now-kicker">{t("Today's plan")}</span></div>
       <h2>{routineName(routine)}</h2>
       <p>{t('No exercises yet — add your first one.')}</p>
-      <div className="home-now-actions">
+      <div className="home-now-actions fpp-spaced-actions">
         <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + routine.id)}>{t('Add exercise')}</Button>
       </div>
     </section>
@@ -162,7 +162,7 @@ export default function Home() {
       <div className="home-now-top"><span className="home-now-kicker">{t('Welcome!')}</span></div>
       <h2>{t('Build my own plan')}</h2>
       <p>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</p>
-      <div className="home-now-actions">
+      <div className="home-now-actions fpp-spaced-actions">
         <Button variant="primary" icon="plus" onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
         <Button variant="plain" onClick={() => { loadStarterPlan(); nav('/plan') }}>{t('Load starter plan (PPL)')}</Button>
       </div>
@@ -181,7 +181,7 @@ export default function Home() {
     </section>
   }
 
-  return <div className="narrow home-view">
+  return <div className="narrow home-view fpp-ui-view fpp-screen-home">
     <div className="hdr home-titlebar">
       <div><h1>{t('Today')}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
       <button

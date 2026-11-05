@@ -87,7 +87,7 @@ export function ConsoleUserPage() {
   return (
     <AccessGate allowed={allowed}>
       <ConsoleShell userId={userId} allowed={allowed} back="/console/users" backLabel="Usuários">
-        <div className="cx-page-body">
+        <div className="cx-page-body fpp-console-page fpp-console-page--user-detail">
 
           {error && <Alert>{error}</Alert>}
           {message && <div className="cx-success" role="status">{message}</div>}

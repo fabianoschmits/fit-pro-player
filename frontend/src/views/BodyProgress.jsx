@@ -745,7 +745,7 @@ export default function BodyProgress() {
     setMode('history')
   }
 
-  return <main className="body-progress-view page-scenery">
+  return <main className="body-progress-view page-scenery fpp-ui-view fpp-screen-body">
     <header className="bp-header">
       <button className="iconbtn" type="button" onClick={() => navigate(-1)} aria-label={t('Back')}><Icon name="chevronLeft" /></button>
       <div><h1>Evolução corporal</h1><p>Circunferências semanais, forma corporal e progresso em um só lugar.</p></div>
@@ -754,7 +754,7 @@ export default function BodyProgress() {
 
     <Segmented className="bp-mode-tabs" value={mode} onChange={changeMode} options={MODES} />
 
-    {mode === 'checkin' && <section className={`card bp-week-card${done === total ? ' complete' : ''}`}>
+    {mode === 'checkin' && <section className={`card bp-week-card fpp-polished-card${done === total ? ' complete' : ''}`}>
       <ProgressRing value={percent} />
       <div className="bp-week-copy"><span className="bp-eyebrow">Check-in desta semana</span><strong>{done === total ? 'Tudo registrado' : `${done} de ${total} circunferências`}</strong><p>{done === total ? `Próximo check-in a partir de ${fmtDate(nextWeekDate(todayISO()))}.` : done ? `${total - done} medidas ainda estão pendentes.` : 'Use sempre os mesmos pontos anatômicos e as mesmas condições.'}</p></div>
       {nextPending ? <Button size="sm" variant="tinted" onClick={continueCheckin}>{done ? 'Continuar' : 'Começar'}</Button> : <span className="bp-complete-icon"><Icon name="check" /></span>}

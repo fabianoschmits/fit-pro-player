@@ -5,7 +5,7 @@ const links = <p className="privacy-page-links"><Link to="/privacy">Aviso de Pri
 
 function Shell({ title, children = undefined }) {
   const config = getPrivacyConfig()
-  return <main className="privacy-page narrow">
+  return <main className="privacy-page narrow fpp-ui-view fpp-screen-legal">
     <header className="privacy-page-header"><a href="#/" aria-label="Voltar para o início">←</a><div><span>FIT PRO PLAYER</span><small>Documento v{PRIVACY_DOCUMENT_VERSION}</small></div></header>
     <h1>{title}</h1>
     {!isPrivacyConfigComplete(config) && <div className="privacy-config-warning" role="note">A configuração jurídica do controlador ainda precisa ser preenchida antes da publicação.</div>}

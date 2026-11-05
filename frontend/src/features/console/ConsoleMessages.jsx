@@ -197,11 +197,11 @@ export default function ConsoleMessages() {
   return (
     <AccessGate allowed={allowed}>
       <ConsoleShell userId={userId} allowed={allowed}>
-        <div className="cx-page-body">
+        <div className="cx-page-body fpp-console-page fpp-console-page--messages">
           {/* Cabeçalho limpo com botões de ação */}
           <div className="cx-page-head console-page-heading">
             <h1 className="cx-page-title">Mensagens</h1>
-            <div className="console-head-actions">
+            <div className="console-head-actions fpp-spaced-actions">
               <button
                 type="button"
                 className={`cx-pill-btn ${selectionMode ? 'is-active' : ''}`}

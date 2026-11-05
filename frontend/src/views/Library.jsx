@@ -22,21 +22,20 @@ export default function Library() {
   const eqOn = eqOpts.includes(eq) ? eq : ''
   const f = eqOn ? base.filter(e => e.eq === eqOn) : base
 
-  return <div className="library-view page-scenery">
+  return <div className="library-view page-scenery fpp-ui-view fpp-screen-library">
     <AppHeader title={t('Exercises')} subtitle={t('{0} exercises in the catalogue', EXDB.length)} backTo="/more" />
-    <div style={{ marginBottom: 10 }}>
+    <div className="fpp-filter-stack" role="group" aria-label="Filtros da biblioteca">
       <SearchField placeholder={t('Search…')} value={q}
         onChange={e => { setQ(e.target.value); setShown(40) }} onClear={() => { setQ(''); setShown(40) }} />
+    <div className="chips" role="group" aria-label="Filtrar por região do corpo">
+      <button type="button" aria-pressed={!bp} className={'chip nocap' + (!bp ? ' on' : '')} onClick={() => { setBp(''); setEq(''); setShown(40) }}>{t('All')}</button>
+      {BODYPARTS.map(b => <button type="button" key={b} aria-pressed={bp === b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(40) }}>{sentenceCase(t(b))}</button>)}
     </div>
-    <div className="chips" style={{ marginBottom: eqOpts.length > 1 ? 8 : 12 }}>
-      <button aria-pressed={!bp} className={'chip nocap' + (!bp ? ' on' : '')} onClick={() => { setBp(''); setEq(''); setShown(40) }}>{t('All')}</button>
-      {BODYPARTS.map(b => <button key={b} aria-pressed={bp === b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(40) }}>{sentenceCase(t(b))}</button>)}
-    </div>
-    {eqOpts.length > 1 && <div className="chips" style={{ marginBottom: 12 }}>
-      <button aria-pressed={!eqOn} className={'chip nocap' + (!eqOn ? ' on' : '')} onClick={() => { setEq(''); setShown(40) }}>{t('Any equipment')}</button>
-      {eqOpts.map(x => <button key={x} aria-pressed={eqOn === x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(40) }}>{sentenceCase(t(x))}</button>)}
-    </div>}
-    <div className="row between" style={{marginBottom:12}}><span role="status" className="muted small">{t('{0} exercises', f.length)}</span>{(q || bp || eqOn) && <Button size="sm" onClick={() => {setQ('');setBp('');setEq('');setShown(40)}}>{t('Clear filters')}</Button>}</div>
+    {eqOpts.length > 1 && <div className="chips" role="group" aria-label="Filtrar por equipamento">
+      <button type="button" aria-pressed={!eqOn} className={'chip nocap' + (!eqOn ? ' on' : '')} onClick={() => { setEq(''); setShown(40) }}>{t('Any equipment')}</button>
+      {eqOpts.map(x => <button type="button" key={x} aria-pressed={eqOn === x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(40) }}>{sentenceCase(t(x))}</button>)}
+    </div>}</div>
+    <div className="row between fpp-filter-summary"><span role="status" className="muted small">{t('{0} exercises', f.length)}</span>{(q || bp || eqOn) && <Button size="sm" onClick={() => {setQ('');setBp('');setEq('');setShown(40)}}>{t('Clear filters')}</Button>}</div>
     <div className="list library-list">
       <button type="button" className="item" onClick={() => customExSheet(null, ex => exerciseDetailSheet(ex), q.trim())}>
         <div className="thumb thumb-x"><Icon name="plus" /></div>
@@ -55,6 +54,6 @@ export default function Library() {
       })}
       {f.length === 0 && <div className="empty"><div className="ico"><Icon name="magnifier" /></div>{t('No match')}</div>}
     </div>
-    {f.length > shown && <><div style={{ height: 10 }} /><Button onClick={() => setShown(s => s + 40)}>{t('Show more')}</Button></>}
+    {f.length > shown && <div className="fpp-list-more"><Button onClick={() => setShown(s => s + 40)}>{t('Show more')}</Button></div>}
   </div>
 }

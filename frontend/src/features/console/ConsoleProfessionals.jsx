@@ -61,7 +61,7 @@ export function ConsoleProfessionals() {
   return (
     <AccessGate allowed={allowed}>
       <ConsoleShell userId={userId} allowed={allowed}>
-        <div className="cx-page-body">
+        <div className="cx-page-body fpp-console-page fpp-console-page--professionals">
           <div className="cx-page-head">
             <h1 className="cx-page-title">Profissionais</h1>
             <p className="cx-page-sub">Verificação e perfis profissionais</p>

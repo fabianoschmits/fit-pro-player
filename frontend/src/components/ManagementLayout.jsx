@@ -33,7 +33,7 @@ export default function ManagementLayout({ title, subtitle = undefined, backTo =
   const sceneryClass = getSceneryClass(pathname)
   const navigation = nav === undefined ? (audience === 'student' ? <StudentWorkspaceNav /> : <ProfessionalWorkspaceNav />) : nav
   const home = audience === 'student' ? '/student/professionals' : '/professional'
-  return <div className={`management-layout ${sceneryClass} ${className}`.trim()}>
+  return <div className={`management-layout fpp-ui-management ${sceneryClass} ${className}`.trim()}>
     <header className="management-topbar">
       <Link className="management-brand" to={home}><span className="management-brand-mark"><Icon name={audience === 'student' ? 'personCircle' : 'clipboard'} /></span><span>{t(audience === 'student' ? 'Meus profissionais' : 'Área profissional')}<small>Fit Pro Player</small></span></Link>
       <Link className="management-return" to="/home" aria-label={t('Back to app')}><Icon name="chevronLeft" /><span>{t('Back to app')}</span></Link>

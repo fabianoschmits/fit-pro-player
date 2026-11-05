@@ -119,13 +119,13 @@ export function SectionTitle({ children = undefined, action = undefined }) {
 
 /* ── surface card ────────────────────────────────────────── */
 export function SectionBody({ children = undefined, className = '' }) {
-  return <div className={`console-section-body ${className}`.trim()}>{children}</div>
+  return <div className={`console-section-body fpp-console-section-body ${className}`.trim()}>{children}</div>
 }
 
 /* ── inline alert ─────────────────────────────────────────── */
 export function Alert({ children = undefined, onRetry = undefined }) {
   return (
-    <div className="cx-alert" role="alert">
+    <div className="cx-alert fpp-console-alert" role="alert">
       <span>{children}</span>
       {onRetry && <button type="button" className="cx-alert-retry" onClick={onRetry}>Tentar novamente</button>}
     </div>

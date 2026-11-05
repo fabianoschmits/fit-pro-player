@@ -36,7 +36,7 @@ export default function ConsoleLaboratory() {
   const { userId, allowed } = useConsoleAccess()
   return <AccessGate allowed={allowed}>
     <ConsoleShell userId={userId} allowed={allowed} back="/console" backLabel="Visão geral">
-      <div className="cx-page-body">
+      <div className="cx-page-body fpp-console-page fpp-console-page--laboratory">
         <div className="cx-page-head">
           <h1 className="cx-page-title">Laboratório de testes</h1>
           <p className="cx-page-sub">Um lugar para explorar as páginas experimentais e os próximos testes da plataforma.</p>

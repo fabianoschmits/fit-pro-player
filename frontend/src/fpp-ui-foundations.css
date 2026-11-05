@@ -1,0 +1,348 @@
+/* FPP UI Foundations — composition contracts, not a visual rebrand.
+ * Reuse existing theme tokens, animated buttons, safe areas and focus states.
+ * Layouts are opt-in to avoid changing workout player and social surfaces. */
+
+:root {
+  --fpp-action-gap: var(--space-3, 12px);
+  --fpp-section-gap: var(--space-5, 20px);
+  --fpp-field-gap: var(--space-2, 8px);
+}
+
+/* Never rely on adjacent inline buttons or ad-hoc <div style={height:...}>. */
+.fpp-action-group {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: var(--fpp-action-gap);
+  min-width: 0;
+}
+.fpp-action-group > :is(.btn, .fpp-button, .management-button, button, a) {
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.fpp-action-group[data-layout="equal"] > :is(.btn, .fpp-button, .management-button, button, a) {
+  flex: 1 1 148px;
+}
+.fpp-action-group[data-layout="end"] { justify-content: flex-end; }
+.fpp-action-group[data-layout="stack"] { flex-direction: column; }
+.fpp-action-group[data-layout="stack"] > :is(.btn, .fpp-button, .management-button, button, a) {
+  width: 100%;
+}
+
+/* Shared field rhythm. Labels and helper text remain tied to each input. */
+.fpp-form-field { display: grid; gap: var(--fpp-field-gap); min-width: 0; }
+.fpp-form-field > span:first-child { font-size: 13px; font-weight: 650; color: var(--label-2); }
+.management-layout label.fpp-form-field { gap: var(--fpp-field-gap); }
+.fpp-form-field > :is(input, select, textarea, .field) { min-width: 0; width: 100%; }
+.fpp-form-stack { display: grid; align-content: start; gap: var(--space-4, 16px); min-width: 0; }
+.fpp-filter-stack { display: grid; gap: var(--space-3, 12px); min-width: 0; }
+.fpp-card-flow { display: grid; gap: var(--space-3, 12px); min-width: 0; }
+.fpp-card-flow > * { margin-block: 0; }
+.fpp-panel-flow { display: grid; gap: var(--space-4, 16px); min-width: 0; }
+.fpp-panel-flow > .management-panel-heading { margin-bottom: 0; }
+
+/* A nested collection appears *under* its parent action, never beside it. */
+.fpp-choice-section {
+  display: grid;
+  gap: var(--space-3, 12px);
+  min-width: 0;
+  padding-top: var(--space-4, 16px);
+  border-top: 1px solid var(--sep-op);
+}
+.fpp-choice-heading { display: grid; gap: 4px; }
+.fpp-choice-heading > h3 { margin: 0; font-size: 15px; color: var(--label); }
+.fpp-choice-heading > p { margin: 0; color: var(--label-2); font-size: 13px; line-height: 1.5; }
+.fpp-choice-list { display: grid; gap: var(--space-2, 8px); min-width: 0; }
+.management-layout .btn.fpp-choice-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid var(--sep-op);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--label);
+}
+.management-layout .btn.fpp-choice-row .fpp-button-labels { min-width: 0; flex: 1 1 auto; }
+.management-layout .btn.fpp-choice-row .fpp-button-label { overflow-wrap: anywhere; }
+.management-layout .btn.fpp-choice-row .icn { flex: none; color: var(--label-2); }
+.management-layout .btn.fpp-choice-row:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.fpp-empty-inline { margin: 0; color: var(--label-2); font-size: 13px; line-height: 1.5; }
+
+.fpp-details-body { display: grid; gap: var(--space-3, 12px); min-width: 0; padding-top: var(--space-3, 12px); }
+.fpp-history-list { display: grid; gap: var(--space-2, 8px); min-width: 0; }
+.fpp-history-list > details { border-top: 1px solid var(--sep-op); padding-top: var(--space-2, 8px); }
+.fpp-history-list summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+
+/* A workout choice remains a full-row control and gains keyboard support. */
+.fpp-item-button { text-align: left; width: 100%; color: inherit; cursor: pointer; }
+.fpp-item-button:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* Mobile: intentional full-width actions without accidental adjacent borders. */
+@media (max-width: 360px) {
+  .fpp-action-group[data-layout="equal"] > :is(.btn, .fpp-button, .management-button, button, a) { flex-basis: 100%; }
+}
+
+/* Shared filter spacing, for both management screens and the exercise library. */
+.management-layout .row-actions { gap: var(--fpp-action-gap); }
+.fpp-filter-stack + .fpp-filter-summary { margin-top: var(--space-3, 12px); margin-bottom: var(--space-3, 12px); }
+.fpp-list-more { margin-top: var(--space-3, 12px); }
+.fpp-list-more > .btn { width: 100%; }
+
+/* ── Phase 2 / cross-route design contracts ──────────────────────────────
+ * Applied to high-level layouts only. Important: no destructive global
+ * button/card reset; FPP animations and specialist player/feed remain intact. */
+:root {
+  --fpp-ui-shell-inset: var(--space-4, 16px);
+  --fpp-ui-control-radius: 12px;
+  --fpp-ui-card-radius: 16px;
+  --fpp-ui-list-gap: var(--space-3, 12px);
+  --fpp-ui-text-regular: 14px;
+  --fpp-ui-subtle-shadow: 0 4px 18px rgba(0, 0, 0, .10);
+}
+
+/* Component rhythm: compositional, never a giant position override. */
+.fpp-ui-view { min-width: 0; }
+.fpp-ui-view :where(.app-header-copy, .app-header-main, .row.between, .grow) { min-width: 0; }
+.fpp-ui-view :where(.app-header-copy h1, h2, h3) { overflow-wrap: break-word; }
+.fpp-ui-view :where(.btn, .field, .input, select, textarea) { max-width: 100%; }
+.fpp-ui-view :where(button, a, input, select, textarea, [role="button"]):focus-visible,
+.fpp-ui-chat :where(button, a, input, textarea, [role="button"]):focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 3px;
+}
+
+/* Modules opt into a consistent, low-noise surface elevation. */
+.fpp-polished-card {
+  min-width: 0;
+  border-radius: var(--fpp-ui-card-radius);
+  border-color: var(--surface-border);
+}
+.fpp-panel-content { min-width: 0; }
+.fpp-panel-content > :is(.field, input, select, textarea) { min-width: 0; }
+.fpp-spaced-actions { column-gap: var(--fpp-action-gap); row-gap: var(--space-2); }
+.fpp-spaced-actions > .btn { min-width: 0; }
+.fpp-ui-view .app-header :where(h1, .sub) { overflow-wrap: break-word; }
+
+/* Progress, settings, profile and management should have clear action order. */
+:where(.management-layout, .fpp-ui-view) .fpp-inline-notice {
+  margin: 0;
+  padding: 12px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--sep-op);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--label);
+  line-height: 1.45;
+  font-size: 13px;
+}
+:where(.management-layout, .fpp-ui-view) .fpp-inline-notice[data-tone="error"] {
+  border-color: color-mix(in srgb, var(--red) 42%, var(--sep-op));
+}
+.fpp-inline-notice > .btn { margin-left: auto; }
+
+/* Action cards and filters: same spacing, but keep native wrapping/scroll. */
+.management-layout .management-filter { gap: var(--space-2); }
+.management-layout .management-filter button { min-height: 44px; }
+.management-layout :where(.row-actions, .management-plan-actions) { column-gap: var(--space-3); row-gap: var(--space-2); }
+.management-layout .management-content > :is(.card, .management-panel) { min-width: 0; }
+.management-layout .management-content > .fpp-panel-flow { gap: var(--space-4); }
+.management-layout .fpp-card-flow > :where(.management-button, .btn) { justify-self: start; }
+
+/* Horizontal filters and small navigation still fit 320px screens. */
+.fpp-ui-view :where(.chips, .support-category-row) { column-gap: var(--space-2); row-gap: var(--space-2); }
+.fpp-ui-view :where(.chips, .support-category-row) > button { white-space: nowrap; min-height: 40px; }
+.fpp-ui-view :where(.support-actions, .support-list-actions) { column-gap: var(--fpp-action-gap); row-gap: var(--space-3); }
+.fpp-ui-view .support-form.fpp-form-stack { gap: var(--space-4); }
+.fpp-ui-view .support-form label { min-width: 0; }
+.fpp-ui-view .support-form :where(select, textarea, input) { max-width: 100%; }
+
+/* Page-specific groups remain visually distinct without extra graphics. */
+.home-view.fpp-ui-view .home-now-actions { gap: var(--space-3); }
+.plan-view.fpp-ui-view .plan-mode-options { gap: var(--space-2); }
+.routine-builder.fpp-ui-view :is(.routine-builder-actions, .routine-completion-actions) { gap: var(--space-3); }
+.stats-view.fpp-ui-view .stats-card-heading { gap: var(--space-3); }
+.history-view.fpp-ui-view .history-month + .history-month { margin-top: var(--space-6); }
+.body-progress-view.fpp-ui-view .bp-header { gap: var(--space-3); }
+.personal-data-page.fpp-ui-view .personal-field-actions { gap: var(--space-2); flex-wrap: wrap; }
+.settings-page.fpp-ui-view .sect { min-width: 0; }
+.more-page.fpp-ui-view .more-section { min-width: 0; }
+
+/* Social and messages: honor their dedicated layouts; improve tap/focus clarity. */
+.community-view.fpp-ui-view .community-layout { min-width: 0; }
+.community-view.fpp-ui-view :where(.community-post, .community-feed, .community-topbar) { min-width: 0; }
+.dm-inbox.fpp-ui-view .dm-inbox-row { min-width: 0; }
+.fpp-ui-chat :where(.chat-input-bar, .chat-input-col, .chat-thread) { min-width: 0; }
+.fpp-ui-chat :where(.chat-textarea) { min-width: 0; max-width: 100%; }
+
+/* Admin should inherit the same readable hierarchy, without flattening its UI. */
+.cx-shell.fpp-ui-view { --fpp-admin-gap: var(--space-4); }
+.cx-shell.fpp-ui-view :where(.cx-metric-card, .cx-panel, .cx-kv) { min-width: 0; }
+.cx-shell.fpp-ui-view :where(.cx-metric-label, .cx-metric-sub) { overflow-wrap: break-word; }
+
+@media (max-width: 430px) {
+  .fpp-ui-view { --fpp-action-gap: var(--space-2, 8px); }
+  .fpp-ui-view .fpp-spaced-actions > .btn { min-width: 0; }
+  .fpp-ui-view .fpp-inline-notice > .btn { margin-left: 0; }
+  .fpp-ui-view .fpp-form-stack > :is(label, .fpp-form-field) { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fpp-ui-view :where(.fpp-polished-card, .fpp-choice-section),
+  .fpp-ui-chat :where(.fpp-inline-notice) { scroll-behavior: auto; }
+}
+
+/* Bottom actions follow the already-established professional plan behavior. */
+.management-layout .fpp-editor-actions {
+  position: sticky;
+  bottom: calc(84px + var(--sab, 0px));
+  z-index: 4;
+  margin-top: var(--space-4);
+  padding: 12px;
+  border: 1px solid var(--sep-op);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--fpp-ui-subtle-shadow);
+}
+@media (min-width: 960px) {
+  .management-layout .fpp-editor-actions { bottom: 20px; }
+}
+
+/* ── Phase 3: per-screen contracts (individually opted-in) ────────────────
+ * These adjustments are deliberately additive, low-specificity and limited
+ * to screens that were audited. Do not flatten custom feed, player, or graphs.
+ */
+.fpp-ui-management { min-width: 0; }
+.fpp-ui-management :where(.management-content,.management-main,.management-panel,.management-person-strip,.management-record) { min-width: 0; }
+.fpp-ui-management :where(.management-panel-heading,.management-person-strip) { row-gap: var(--space-3); }
+.fpp-ui-management :where(.management-record strong,.management-person-strip strong,.management-panel p) { overflow-wrap: anywhere; }
+.fpp-ui-management .fpp-spaced-actions { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--fpp-action-gap); }
+.fpp-ui-management .fpp-spaced-actions > :is(.btn,.management-button,a) { flex: 0 1 auto; min-width: 0; }
+.fpp-ui-management .fpp-scroll-tabs { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scroll-snap-type: x proximity; }
+.fpp-ui-management .fpp-scroll-tabs > a { flex-shrink: 0; scroll-snap-align: start; min-height: 44px; }
+.fpp-ui-management .fpp-request-row { padding: 12px 0; display: grid; gap: 6px; border-bottom: 1px solid var(--sep-op); }
+.fpp-ui-management .fpp-request-row:last-child { border-bottom: 0; }
+.fpp-ui-management .fpp-material-entry { min-width: 0; padding-block: 8px; }
+.fpp-ui-management .fpp-material-entry + .fpp-material-entry { border-top: 1px solid var(--sep-op); }
+.fpp-ui-management .fpp-screen-student-filter { gap: var(--space-3); }
+.fpp-ui-management .fpp-screen-management-overview { min-width: 0; }
+.fpp-ui-management .management-form-actions.fpp-spaced-actions > .btn { flex: 1 1 160px; }
+.fpp-ui-management .management-invite-form.fpp-form-stack { gap: var(--space-3); }
+.fpp-ui-management .management-invite-form .row-actions { padding-top: var(--space-1); }
+.fpp-ui-management .fpp-form-field > .field { width: 100%; }
+.fpp-ui-management .fpp-panel-flow .fpp-inline-notice { margin: 0; }
+.fpp-ui-management .fpp-details-flow > summary { min-height: 44px; cursor: pointer; }
+.fpp-ui-management .fpp-management-invites .row-actions > .btn { min-width: 0; }
+
+/* Athlete flow */
+.fpp-screen-home :where(.home-now,.home-week-block) { min-width: 0; }
+.fpp-screen-home .home-now-actions > :is(button,a,.btn) { min-width: 0; }
+.fpp-screen-plan :where(.plan-mode-card,.plan-routine-list,.plan-week-card) { min-width: 0; }
+.fpp-screen-plan .plan-mode-options > button { min-width: 0; min-height: 44px; overflow-wrap: anywhere; }
+.fpp-screen-workout .fpp-item-button { min-height: 52px; }
+.fpp-screen-library .fpp-filter-stack { margin-bottom: var(--space-3); gap: var(--space-3); }
+.fpp-screen-library .fpp-filter-summary { gap: var(--space-2); flex-wrap: wrap; }
+.fpp-screen-history .fpp-history-group { min-width: 0; }
+.fpp-screen-history .history-month-heading { gap: var(--space-3); }
+.fpp-screen-stats :where(.stats-card-heading,.stats-exercise-picker) { min-width: 0; }
+.fpp-screen-stats .stats-card-heading { flex-wrap: wrap; }
+.fpp-screen-body .bp-header { min-width: 0; }
+.fpp-screen-body .bp-week-card { min-width: 0; }
+.fpp-screen-routine :where(.routine-name-wrap,.routine-builder-actions,.routine-completion-actions) { min-width: 0; }
+.fpp-screen-routine :where(.routine-builder-actions,.routine-completion-actions) > .btn { min-width: 0; }
+.fpp-screen-more .more-account-card { min-height: 64px; }
+.fpp-screen-more .more-account-copy { min-width: 0; overflow-wrap: anywhere; }
+.fpp-screen-settings .swatches { gap: var(--space-2); }
+.fpp-screen-settings .swatch:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.fpp-screen-settings .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--acc); }
+.fpp-screen-personal .personal-field-head { row-gap: var(--space-2); }
+.fpp-screen-personal .personal-field-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.fpp-screen-privacy > .btn { max-width: 100%; min-height: 44px; }
+.fpp-screen-legal .privacy-page-links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+.fpp-screen-legal .privacy-page-links > a { min-height: 40px; display: inline-flex; align-items: center; }
+.fpp-screen-motion :where(.motion-showcase-controls,.motion-showcase-tabs) { min-width: 0; }
+.fpp-screen-landing .landing-invite-actions.fpp-spaced-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.fpp-screen-landing .landing-invite-actions .btn { flex: 1 1 150px; min-width: 0; }
+.fpp-screen-landing :where(.landing-nav-cta,.landing-account-actions button) { min-height: 44px; }
+
+/* Social, tickets, chat */
+.fpp-screen-community :where(.community-topbar,.community-layout,.community-post,.community-feed) { min-width: 0; }
+.fpp-screen-community .community-topbar { gap: var(--space-3); }
+.fpp-screen-inbox .dm-inbox-row { min-width: 0; }
+.fpp-screen-inbox .dm-preview { min-width: 0; }
+.fpp-screen-conversation .dm-menu-trigger { min-width: 44px; min-height: 44px; }
+.fpp-screen-conversation .dm-menu-trigger:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.fpp-screen-support .support-faq-list { min-width: 0; }
+.fpp-screen-support .support-faq-item > button { min-height: 44px; }
+.fpp-screen-tickets .support-list-actions { gap: var(--space-3); }
+.fpp-screen-tickets .fpp-friendly-empty { display: grid; justify-items: start; gap: var(--space-2); }
+.fpp-screen-tickets .fpp-friendly-empty a { min-height: 44px; display: inline-flex; align-items: center; }
+.fpp-screen-ticket-chat .fpp-chat-composer { min-width: 0; }
+.fpp-screen-ticket-chat .fpp-chat-composer :where(.chat-input-col,.chat-textarea) { min-width: 0; max-width: 100%; }
+
+/* Console: consistent, calm administrative scan patterns. */
+.fpp-ui-console-shell { --fpp-console-rhythm: var(--space-4); }
+.fpp-console-page { min-width: 0; }
+.fpp-console-page :where(.cx-page-head,.cx-grid-2,.cx-search-wrap,.cx-user-row,.cx-pro-card,.cx-page-title) { min-width: 0; }
+.fpp-console-page .cx-page-head { gap: var(--space-3); }
+.fpp-console-page .cx-page-title { overflow-wrap: anywhere; }
+.fpp-console-page :where(.cx-search,.cx-field,textarea,select,input) { max-width: 100%; }
+.fpp-console-page :where(.cx-pill-btn,.cx-filter-pill,.cx-load-more) { min-height: 44px; }
+.fpp-console-page :where(.cx-search,.cx-field) { min-height: 44px; }
+.fpp-console-page :where(.cx-filter-pills,.cx-action-list,.console-head-actions) { gap: var(--space-2); }
+.fpp-console-page :where(.cx-user-name,.cx-user-meta,.cx-pro-card strong) { overflow-wrap: anywhere; }
+.fpp-console-page :where(.console-section-body,.console-filter-section) { min-width: 0; }
+.fpp-console-page--overview .console-workspace-link { min-height: 62px; }
+.fpp-console-page--users .cx-user-info,
+.fpp-console-page--professionals .cx-pro-card { min-width: 0; }
+.fpp-console-page--user-detail .console-detail-tabs { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+.fpp-console-page--system :where(pre,table,.cx-table,.console-table) { max-width: 100%; overflow-wrap: anywhere; }
+.fpp-console-page--community .console-filter-section { min-width: 0; }
+.fpp-console-page--community .cx-action-list--row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.fpp-console-page--faq .console-faq-editor.fpp-form-stack { gap: var(--space-4); }
+.fpp-console-page--faq .console-faq-editor .cx-field { width: 100%; }
+.fpp-console-page--messages .console-head-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+.fpp-console-page--messages .console-messages-tabs { min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; }
+.fpp-console-page--ticket .fpp-console-composer { min-width: 0; }
+.fpp-console-page--ticket .fpp-console-composer textarea { min-width: 0; width: 100%; }
+.fpp-console-page--laboratory .console-workspace-link { min-height: 52px; }
+.fpp-console-access { min-width: 0; }
+.fpp-console-notifications { width: min(100%, 600px); max-height: min(90dvh, 760px); overflow: auto; }
+.fpp-console-moderation { min-width: 0; }
+.fpp-console-moderation :where(.cx-field,textarea,select) { max-width: 100%; }
+.fpp-console-alert { line-height: 1.45; overflow-wrap: anywhere; }
+.fpp-console-section-body { min-width: 0; }
+
+@media (max-width: 430px) {
+  .fpp-ui-management .fpp-spaced-actions > :is(.btn,.management-button,a) { flex: 1 1 100%; }
+  .fpp-ui-management .management-form-actions.fpp-spaced-actions > .btn { flex: 1 1 100%; }
+  .fpp-screen-landing .landing-invite-actions .btn { flex-basis: 100%; }
+  .fpp-console-page .cx-page-head { flex-wrap: wrap; }
+  .fpp-console-page--messages .console-head-actions { justify-content: flex-start; }
+  .fpp-console-page--ticket .fpp-console-composer { max-width: 100%; }
+}
+
+/* Laboratories deliberately keep their experimental look; only shared fit/focus. */
+.fpp-ui-lab-home, .fpp-ui-lab-menus, .fpp-ui-lab-player { min-width: 0; }
+.fpp-ui-lab-home :where(.home-now,.home-glass-frame) { min-width: 0; }
+.fpp-ui-lab-menus :where(.am-toolbar,.am-intro,.am-gallery,.am-demo) { min-width: 0; }
+.fpp-ui-lab-menus .am-toolbar-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.fpp-ui-lab-menus .am-toolbar-actions button { min-height: 44px; }
+.fpp-ui-lab-player :where(.wpl-page,.wpl-workbench,.wpl-catalogue,.wpl-preview) { min-width: 0; }
+.fpp-ui-lab-player button:focus-visible, .fpp-ui-lab-menus button:focus-visible {
+  outline: 2px solid var(--acc); outline-offset: 3px;
+}
+
+/* Shared confirmation dialogs: no inline spacer between actions. */
+.fpp-confirm-sheet { display: grid; justify-items: stretch; gap: var(--space-3); padding: 4px 0; min-width: 0; text-align: center; }
+.fpp-confirm-sheet > h3 { margin: 0; color: var(--label); font-size: 19px; line-height: 1.3; overflow-wrap: anywhere; }
+.fpp-confirm-sheet .fpp-confirm-message { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.fpp-confirm-sheet .fpp-confirm-actions { margin-top: var(--space-2); gap: var(--space-2); }
+.fpp-confirm-sheet .fpp-confirm-actions > .btn { width: 100%; min-height: 46px; }

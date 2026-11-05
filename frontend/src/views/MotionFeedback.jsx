@@ -49,7 +49,7 @@ export default function MotionFeedback() {
     if (fail) current.reject(new Error('showcase'))
     else current.resolve(true)
   }
-  return <main className="narrow motion-showcase" data-motion-showcase>
+  return <main className="narrow motion-showcase fpp-screen-motion" data-motion-showcase>
     <AppHeader title={t('Motion & feedback')} subtitle="FIT PRO PLAYER" backTo="/console/laboratory" />
     <p className="muted small">{t('Performance · progress · precision')}</p>
     <div className="motion-showcase-controls">

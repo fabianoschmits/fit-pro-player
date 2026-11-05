@@ -51,7 +51,7 @@ export default function CommunityModerationPanel({ targetUserId, sourceTicketId 
     finally { lock.current = false }
   }
   if (!allowed || !targetUserId) return null
-  const content = <div className="console-panel-content console-field-stack" aria-label="Moderação da Comunidade">
+  const content = <div className="console-panel-content console-field-stack fpp-console-moderation" aria-label="Moderação da Comunidade">
     <h3>Comunidade</h3>
     <Link className="console-text-link" to={`/console/users/${targetUserId}`}>Ver usuário moderado</Link>
     {error && <Alert onRetry={refresh}>{error}</Alert>}

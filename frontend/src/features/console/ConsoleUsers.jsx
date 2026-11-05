@@ -38,7 +38,7 @@ export function ConsoleUsers() {
   return (
     <AccessGate allowed={allowed}>
       <ConsoleShell userId={userId} allowed={allowed}>
-        <div className="cx-page-body">
+        <div className="cx-page-body fpp-console-page fpp-console-page--users">
           <div className="cx-page-head">
             <h1 className="cx-page-title">Usuários</h1>
             <p className="cx-page-sub">Contas cadastradas, perfis e permissões de acesso.</p>

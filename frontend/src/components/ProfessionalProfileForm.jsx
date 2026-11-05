@@ -224,7 +224,7 @@ export default function ProfessionalProfileForm({
       </div>
       <p className="management-help">{t('Salvar exige conexão. O status de verificação é controlado pelo sistema.')}</p>
     </fieldset>
-    <div className="management-form-actions">
+    <div className="management-form-actions fpp-spaced-actions">
       <Button feedback="persistence" type="submit" variant="primary" intent="primary" state={state === 'success' ? state : saving ? 'loading' : state} loadingLabel={provisioning ? t('Criando…') : t('Salvando…')} successLabel={t('Perfil salvo.')} errorLabel={t('Tentar novamente')} disabled={saving}>{submitLabel || (provisioning ? t('Criar perfil profissional') : t('Salvar perfil'))}</Button>
       <Button type="button" activation="immediate" disabled={saving} onClick={onCancel}>{cancelLabel || t('Cancelar')}</Button>
     </div>

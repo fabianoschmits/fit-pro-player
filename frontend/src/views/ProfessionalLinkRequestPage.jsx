@@ -34,12 +34,12 @@ function RequestProfile({ requestId }) {
  const accept = useFppAction({ onAction: () => resolve(true), onSuccess })
  const reject = useFppAction({ onAction: () => resolve(false), onSuccess })
  return <ManagementLayout title="Solicitação de vínculo" backTo="/professional">
-  {error && <p role="alert">{error}{!request && <Button onClick={() => setRetry(value => value + 1)}>Tentar novamente</Button>}</p>}
+  {error && <p role="alert" className="fpp-inline-notice" data-tone="error">{error}{!request && <Button onClick={() => setRetry(value => value + 1)}>Tentar novamente</Button>}</p>}
   {!request && !error && <p role="status">Carregando solicitação…</p>}
   {request && <ManagementPanel title="Perfil da solicitação">
    <div className="management-person-strip"><ManagementAvatar name={request.displayName} avatarRef={request.avatarRef} userId={request.studentUserId} /><div><h2>{request.displayName}</h2><p>Solicitado em {professionalDate(request.createdAt)}</p></div><ManagementStatus>{({ pending: 'Aguardando resposta', accepted: 'Aceito', rejected: 'Recusado', cancelled: 'Cancelado' })[request.status]}</ManagementStatus></div>
    <p>O acompanhamento começa após o aceite do vínculo.</p>
-   {request.status === 'pending' && <div className="row-actions">
+   {request.status === 'pending' && <div className="row-actions fpp-spaced-actions" role="group" aria-label="Responder à solicitação">
     <Button variant="primary" state={accept.state} disabled={deciding || accept.locked || reject.locked} onClick={accept.run} loadingLabel="Aceitando…" successLabel="Aceito" errorLabel="Tentar novamente">Aceitar</Button>
     <Button variant="danger" state={reject.state} disabled={deciding || accept.locked || reject.locked} onClick={reject.run} loadingLabel="Recusando…" successLabel="Recusado" errorLabel="Tentar novamente">Recusar</Button>
    </div>}

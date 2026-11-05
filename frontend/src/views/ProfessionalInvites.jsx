@@ -174,13 +174,13 @@ function InvitesWorkspace({ userId = undefined }) {
   const selected = selectedCode ? generated.find(item => normalizeInviteCode(item.code) === normalizeInviteCode(selectedCode)) : null
   const visible = selectedCode ? selected ? [selected] : [] : generated
 
-  return <ManagementLayout className="professional-page" title={creating ? t('Convidar aluno') : t('Convites')} subtitle={t('Convide alunos para criar um vínculo')} backTo={creating || selectedCode ? '/professional/invites' : '/professional'} action={!creating && !selectedCode && <Link className="management-button management-button-primary" to="/professional/invites?section=create">{t('Convidar aluno')}</Link>}>
+  return <ManagementLayout className="professional-page fpp-management-invites" title={creating ? t('Convidar aluno') : t('Convites')} subtitle={t('Convide alunos para criar um vínculo')} backTo={creating || selectedCode ? '/professional/invites' : '/professional'} action={!creating && !selectedCode && <Link className="management-button management-button-primary" to="/professional/invites?section=create">{t('Convidar aluno')}</Link>}>
     {error && <p role="alert" className="management-error">{error} <Button intent="quick" onClick={refresh}>{t('Tentar novamente')}</Button></p>}
     {message && <FppActionFeedback state="success" className="management-notice">{message}</FppActionFeedback>}
     {!userId ? <ManagementEmpty title={t('Entre na sua conta para continuar.')} />
       : creating ? <ManagementPanel title={t('Novo convite')}>
         <p className="muted">{t('Crie um único convite e compartilhe o mesmo código ou link. O vínculo só nasce depois que o aluno confirmar.')}</p>
-        <div className="row-actions">
+        <div className="row-actions fpp-spaced-actions">
           <Button variant="primary" intent="primary" onAction={create} onSuccess={created} disabled={saving || busy} loadingLabel={t('Criando…')} successLabel={t('Convite criado.')} errorLabel={t('Tentar novamente')}>{t('Gerar convite')}</Button>
           <Link className="management-button" to="/professional/invites">{t('Cancelar')}</Link>
         </div>
@@ -199,12 +199,12 @@ function InvitesWorkspace({ userId = undefined }) {
                   <label htmlFor="professional-personal-code">{t('Código pessoal')}</label>
                   <TextField id="professional-personal-code" aria-label={t('Código pessoal')} autoComplete="off" maxLength={120} value={personalDraft} onChange={event => setPersonalDraft(event.target.value)} />
                   <p className="muted small">{t('Espaços e pontuação serão removidos ao salvar.')}</p>
-                  <div className="row-actions">
+                  <div className="row-actions fpp-spaced-actions">
                     <Button variant="primary" intent="primary" disabled={savingPersonal || !normalizeInviteCode(personalDraft)} onClick={savePersonal}>{savingPersonal ? t('Salvando…') : t('Salvar código')}</Button>
                     <Button disabled={savingPersonal} onClick={cancelPersonalEdit}>{t('Cancelar')}</Button>
                   </div>
                 </div> : <div className="management-personal-invite-actions">
-                  <div className="row-actions">
+                  <div className="row-actions fpp-spaced-actions">
                     <Button intent="quick" onAction={() => share(normalizeInviteCode(personal.code), 'code')} successLabel={t('Código copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar código')}</Button>
                     <Button variant="primary" icon="link" intent="quick" onAction={() => share(normalizeInviteCode(personal.code), 'link')} successLabel={t('Link copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar link')}</Button>
                     {navigator.share && <Button intent="quick" onAction={() => share(normalizeInviteCode(personal.code), 'share')} errorLabel={t('Tentar novamente')}>{t('Compartilhar')}</Button>}
@@ -228,7 +228,7 @@ function InvitesWorkspace({ userId = undefined }) {
                   <p className="muted small">{t('Criado em {0}', professionalDate(item.created_at))}</p>
                   {item.status === 'active' && item.accepted_at && <p className="muted small">{t('Aceito em {0}', professionalDate(item.accepted_at))}</p>}
                   {isPending && <>
-                    <div className="row-actions">
+                    <div className="row-actions fpp-spaced-actions">
                       <Button intent="quick" onAction={() => share(code, 'code')} successLabel={t('Código copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar código')}</Button>
                       <Button variant="primary" icon="link" intent="quick" onAction={() => share(code, 'link')} successLabel={t('Link copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar link')}</Button>
                       {navigator.share && <Button intent="quick" onAction={() => share(code, 'share')} errorLabel={t('Tentar novamente')}>{t('Compartilhar')}</Button>}

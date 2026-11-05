@@ -14,7 +14,7 @@ export default function ConsoleFaq() {
   const [query, setQuery] = useState(''), [visibility, setVisibility] = useState('all')
   const { data, busy, error, refresh } = useConsoleResource({ userId, allowed, resourceKey: 'faq', load: () => repo.listFaqAdmin() })
   const articles = (data || []).filter(article => (visibility === 'all' || article.isPublished === (visibility === 'published')) && `${article.question} ${article.answer} ${article.categoryLabel}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')))
-  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed}><div className="cx-page-body">
+  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed}><div className="cx-page-body fpp-console-page fpp-console-page--faq">
     <div className="cx-page-head console-page-heading"><div><h1 className="cx-page-title">Perguntas frequentes</h1><p className="cx-page-sub">Gerencie o conteúdo de Ajuda e suporte.</p></div><Link className="cx-pill-btn cx-pill-btn--accent" to="/console/faq/new">Nova pergunta</Link></div>
     <section className="console-filter-section" aria-label="Filtros do FAQ"><div className="console-faq-filters"><label className="cx-label">Buscar no FAQ<input className="cx-field" type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Pergunta, resposta ou categoria" /></label><label className="cx-label">Publicação<select className="cx-field" value={visibility} onChange={e => setVisibility(e.target.value)}><option value="all">Todas</option><option value="published">Publicadas</option><option value="draft">Rascunhos</option></select></label></div></section>
     {error && <Alert onRetry={refresh}>{error}</Alert>}
@@ -50,10 +50,10 @@ export function ConsoleFaqEditor() {
     onError: () => { if (current.current === identity) setSaveError('Não foi possível salvar a pergunta. Seu texto foi mantido.') },
   })
   const save = event => { event.preventDefault(); void operation.run(event) }
-  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed} back="/console/faq" backLabel="Perguntas frequentes"><div className="cx-page-body">
+  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed} back="/console/faq" backLabel="Perguntas frequentes"><div className="cx-page-body fpp-console-page fpp-console-page--faq">
     <div className="cx-page-head"><h1 className="cx-page-title">{articleId === 'new' ? 'Nova pergunta' : 'Editar pergunta'}</h1><p className="cx-page-sub">Escreva uma resposta clara e escolha como ela aparece no FAQ.</p></div>
     {error && <Alert onRetry={refresh}>{error}</Alert>}{saveError && <Alert>{saveError}</Alert>}
-    {busy ? <Loading label="Carregando editor…" /> : form && <form className="console-faq-editor" onSubmit={save}>
+    {busy ? <Loading label="Carregando editor…" /> : form && <form className="console-faq-editor fpp-form-stack" onSubmit={save}>
       <section><h2>Conteúdo</h2><SectionBody><div className="console-panel-content console-field-stack">
         <label className="cx-label">Categoria<select className="cx-field" value={form.categorySlug} onChange={e => field('categorySlug', e.target.value)}>{data.categories.map(category => <option key={category.slug} value={category.slug}>{category.label}</option>)}</select></label>
         <label className="cx-label">Pergunta<input className="cx-field" value={form.question} onChange={e => field('question', e.target.value)} maxLength={240} required minLength={3} /></label>

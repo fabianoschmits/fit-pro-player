@@ -18,7 +18,7 @@ export default function ConsoleCommunity() {
   const [selected, setSelected] = useState(null)
   const { data, busy, error, refresh } = useConsoleResource({ userId, allowed, resourceKey: `restrictions:${search}:${status}:${duration}:${offset}`, load: () => repo.list({ search, status, duration, offset, limit: 30 }) })
   const change = (setter, value) => { setter(value); setOffset(0); setSelected(null) }
-  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed}><div className="cx-page-body">
+  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed}><div className="cx-page-body fpp-console-page fpp-console-page--community">
     <div className="cx-page-head"><h1 className="cx-page-title">Moderação da Comunidade</h1><p className="cx-page-sub">Bloqueios ativos e histórico. Para aplicar um bloqueio, abra o perfil do usuário ou o chamado da denúncia.</p></div>
     <Link className="console-text-link" to="/console/users">Buscar usuário para moderar</Link>
     <div className="cx-form-grid">
@@ -35,7 +35,7 @@ export default function ConsoleCommunity() {
           {selected === row.id && <CommunityModerationPanel key={`${row.user_id}:${row.id}`} targetUserId={row.user_id} onChanged={refresh} />}
         </div>
       </SectionBody>)}
-      <div className="cx-action-list cx-action-list--row"><button type="button" className="cx-pill-btn" disabled={offset === 0} onClick={() => { setOffset(value => Math.max(0, value - 30)); setSelected(null) }}>Página anterior</button><span className="cx-muted">Página {offset / 30 + 1}</span><button type="button" className="cx-pill-btn" disabled={!data.hasMore} onClick={() => { setOffset(value => value + 30); setSelected(null) }}>Próxima página</button></div>
+      <div className="cx-action-list cx-action-list--row fpp-spaced-actions"><button type="button" className="cx-pill-btn" disabled={offset === 0} onClick={() => { setOffset(value => Math.max(0, value - 30)); setSelected(null) }}>Página anterior</button><span className="cx-muted">Página {offset / 30 + 1}</span><button type="button" className="cx-pill-btn" disabled={!data.hasMore} onClick={() => { setOffset(value => value + 30); setSelected(null) }}>Próxima página</button></div>
     </>}
   </div></ConsoleShell></AccessGate>
 }

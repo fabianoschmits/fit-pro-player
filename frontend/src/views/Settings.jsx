@@ -86,7 +86,7 @@ export default function Settings() {
     try { rd.readAsText(f) } catch { rd.onerror?.(undefined) }
   }
 
-  return <div className="narrow settings-page">
+  return <div className="narrow settings-page fpp-ui-view fpp-screen-settings">
     <AppHeader title={t('Settings')} backTo="/more" />
 
     <Section collapsible defaultOpen={false} title={STANDALONE ? t('Your data') : DEMO ? t('Demo') : t('Account')}>
@@ -193,9 +193,9 @@ export default function Settings() {
       </Row>
       <div className="lrow" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12, paddingTop: 13, paddingBottom: 14 }}>
         <span className="lrow-t">{t('Accent color')}</span>
-        <div className="swatches">
+        <div className="swatches" role="group" aria-label="Cor de destaque">
           {Object.entries(ACCENTS).map(([k, c]) => (
-            <button key={k} className={'swatch' + ((S.accent || 'lime') === k ? ' on' : '')}
+            <button type="button" key={k} aria-pressed={(S.accent || 'lime') === k} className={'swatch' + ((S.accent || 'lime') === k ? ' on' : '')}
               style={{ background: c }} onClick={() => update(s => { s.accent = k })} aria-label={k} />
           ))}
         </div>

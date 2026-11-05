@@ -53,10 +53,10 @@ export default function More() {
     },
   })
 
-  return <div className="narrow more-page">
+  return <div className="narrow more-page fpp-ui-view fpp-screen-more">
     <AppHeader title="Conta" subtitle={t('Settings, history & account')} />
 
-    <button type="button" className="more-account-card" onClick={() => nav('/personal-data')}>
+    <button type="button" className="more-account-card" aria-label="Abrir dados pessoais" onClick={() => nav('/personal-data')}>
       <span className="more-account-avatar"><AvatarImage avatarId={profile.avatarId} alt="" /></span>
       <span className="more-account-copy"><strong>{displayName}</strong><span>{email}</span><em>{account ? 'Ver conta' : 'Editar perfil'} <Icon name="chevronRight" /></em></span>
       <Icon name="chevronRight" className="more-account-chevron" />
