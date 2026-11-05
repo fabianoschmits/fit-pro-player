@@ -223,19 +223,26 @@ function InvitesWorkspace({ userId = undefined }) {
                 const code = normalizeInviteCode(item.code)
                 const isPending = item.status === 'pending'
                 return <article className="management-invite" key={item.id || code}>
-                  {isPending && <InviteQrCode value={inviteLink(window.location.origin, code)} />}
-                  <div className="management-record-heading"><strong className="invite-code">{code}</strong><ManagementStatus tone={isPending ? 'success' : 'neutral'}>{statusLabel(item.status)}</ManagementStatus></div>
-                  <p className="muted small">{t('Criado em {0}', professionalDate(item.created_at))}</p>
-                  {item.status === 'active' && item.accepted_at && <p className="muted small">{t('Aceito em {0}', professionalDate(item.accepted_at))}</p>}
-                  {isPending && <>
-                    <div className="row-actions fpp-spaced-actions">
-                      <Button intent="quick" onAction={() => share(code, 'code')} successLabel={t('Código copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar código')}</Button>
-                      <Button variant="primary" icon="link" intent="quick" onAction={() => share(code, 'link')} successLabel={t('Link copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar link')}</Button>
-                      {navigator.share && <Button intent="quick" onAction={() => share(code, 'share')} errorLabel={t('Tentar novamente')}>{t('Compartilhar')}</Button>}
+                  <details className="management-invite-options" open={Boolean(selectedCode)} onToggle={event => { if (!event.currentTarget.open && confirmId === item.id) setConfirmId('') }}>
+                    <summary>
+                      <span className="management-record-heading"><strong className="invite-code">{code}</strong><ManagementStatus tone={isPending ? 'success' : 'neutral'}>{statusLabel(item.status)}</ManagementStatus></span>
+                      <span className="muted small management-invite-date">{t('Criado em {0}', professionalDate(item.created_at))}</span>
+                    </summary>
+                    <div className="management-invite-options-body">
+                      {item.status === 'active' && item.accepted_at && <p className="muted small">{t('Aceito em {0}', professionalDate(item.accepted_at))}</p>}
+                      {isPending && <>
+                        <InviteQrCode value={inviteLink(window.location.origin, code)} />
+                        <div className="row-actions fpp-spaced-actions">
+                          <Button intent="quick" onAction={() => share(code, 'code')} successLabel={t('Código copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar código')}</Button>
+                          <Button variant="primary" icon="link" intent="quick" onAction={() => share(code, 'link')} successLabel={t('Link copiado.')} errorLabel={t('Tentar novamente')}>{t('Copiar link')}</Button>
+                          {navigator.share && <Button intent="quick" onAction={() => share(code, 'share')} errorLabel={t('Tentar novamente')}>{t('Compartilhar')}</Button>}
+                        </div>
+                        {confirmId === item.id ? <div className="danger-confirm"><span>{t('Revogar este convite?')}</span><Button variant="danger" intent="critical" disabled={saving} onAction={() => revoke(item.id)} onSuccess={revoked} successLabel={t('Convite revogado.')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button activation="immediate" disabled={saving} onClick={() => setConfirmId('')}>{t('Cancelar')}</Button></div>
+                          : item.id && <Button variant="ghost" onClick={() => setConfirmId(item.id)}>{t('Revogar')}</Button>}
+                      </>}
+                      {!isPending && <p className="muted small">{t(item.status === 'revoked' ? 'Convite revogado.' : 'Este convite já foi aceito.')}</p>}
                     </div>
-                    {confirmId === item.id ? <div className="danger-confirm"><span>{t('Revogar este convite?')}</span><Button variant="danger" intent="critical" disabled={saving} onAction={() => revoke(item.id)} onSuccess={revoked} successLabel={t('Convite revogado.')} errorLabel={t('Tentar novamente')}>{t('Confirmar')}</Button><Button activation="immediate" disabled={saving} onClick={() => setConfirmId('')}>{t('Cancelar')}</Button></div>
-                      : item.id && <Button variant="ghost" onClick={() => setConfirmId(item.id)}>{t('Revogar')}</Button>}
-                  </>}
+                  </details>
                 </article>
               })}</div>
               {selectedCode && <Link className="management-button" to="/professional/invites">{t('Voltar para convites')}</Link>}
