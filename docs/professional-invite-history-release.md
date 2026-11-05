@@ -7,10 +7,10 @@
 - Only unused revoked invitations can be deleted, after confirmation. Requests and relationships are retained; the existing FK clears only the invitation reference.
 - Personal reusable invitations retain their existing controls and are excluded from the generated-history RPC.
 
-## Database rollout before frontend release
-Apply `supabase/migrations/202611050001_professional_invite_history.sql` to the existing Fit Pro Player project `bgqavxoxwgheloeubbpf` before updating main/master. This adds an accepted-source index and two owner-scoped RPCs; it does not rewrite invitation statuses or relationships. The new frontend requires the history RPC.
+## Database rollout
+`supabase/migrations/202611050001_professional_invite_history.sql` was applied transactionally on 2026-11-05 to the existing Fit Pro Player project `bgqavxoxwgheloeubbpf`, before updating main/master. This adds an accepted-source index and two owner-scoped RPCs; it does not rewrite invitation statuses or relationships. The new frontend requires the history RPC.
 
-The CLI account available during implementation did not list this project. Production migration and frontend release remain pending correct project access. Do not use one of the unrelated projects listed by that account.
+Production verification confirmed migration version `202611050001`, both RPC functions, the accepted-source index, execution permission for authenticated callers, and denial for anonymous callers. The migration used the existing project credentials without copying or committing any secret values.
 
 ## Validation
 - Lint, typecheck and build:vercel passed.
