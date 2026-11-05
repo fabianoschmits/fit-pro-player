@@ -1,0 +1,36 @@
+/* Photo-backed introductions share contrast tokens; cards and controls keep their own styles. */
+:is(.page-scenery, .home-route-scenery) {
+  --scenery-top-veil: color-mix(in srgb, var(--bg) 58%, transparent);
+  --scenery-mid-veil: color-mix(in srgb, var(--bg) 44%, transparent);
+  --scenery-supporting-text: #d9e2ed;
+  --scenery-text-shadow: 0 1px 3px rgb(0 0 0 / 90%), 0 0 1px rgb(255 255 255 / 18%);
+}
+
+:root[data-theme="light"] :is(.page-scenery, .home-route-scenery) {
+  --scenery-top-veil: color-mix(in srgb, var(--bg) 76%, transparent);
+  --scenery-mid-veil: color-mix(in srgb, var(--bg) 58%, transparent);
+  --scenery-supporting-text: #334155;
+  --scenery-text-shadow: 0 1px 2px rgb(255 255 255 / 95%), 0 0 1px rgb(15 23 42 / 18%);
+}
+
+:is(.page-scenery, .home-route-scenery) :is(
+  .hdr h1, .hdr .sub,
+  .app-header h1, .app-header .sub,
+  .bp-header h1, .bp-header > div > p,
+  .community-topbar h1, .community-intro, .community-kicker,
+  .profile-hero-name, .profile-hero-facts, .profile-hero-goal-head,
+  .home-now h2, .home-now-kicker, .home-now-context, .home-now-progress-label, .home-now > p,
+  .workout-session-title, .stats-overview span,
+  .management-brand, .management-return
+) {
+  text-shadow: var(--scenery-text-shadow);
+}
+
+:is(.page-scenery, .home-route-scenery) :is(
+  .hdr .sub, .app-header .sub, .bp-header > div > p,
+  .community-intro, .profile-hero-facts, .profile-hero-goal-head, .profile-hero-goal-head strong,
+  .home-now-context, .home-now-progress-label, .home-now > p,
+  .workout-session-title > span, .stats-overview span, .management-brand small
+) {
+  color: var(--scenery-supporting-text);
+}

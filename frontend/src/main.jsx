@@ -15,6 +15,7 @@ import './professional.css'
 import './management-workspace.css'
 import './motion-feedback.css'
 import './fpp-ui-foundations.css'
+import './page-scenery-legibility.css'
 
 installPwaViewport({ native: MOBILE })
 // Capture the browser offer at startup, before the lazy settings page mounts.
