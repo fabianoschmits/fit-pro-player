@@ -130,3 +130,20 @@ it('renders the avatar picker as a horizontal scroller', async () => {
   })
   expect(picker.scrollLeft).toBe(160)
 })
+
+it('saves the habitual duration while preserving manual prescriptions and history', async () => {
+  const manual = { id: 'manual-flex', name: 'Meu treino', ex: [{ id: '0025', sets: 5, reps: 10 }] }
+  mocks.state.S.routines = [manual]
+  mocks.state.S.workouts = [{ id: 'completed-flex', entries: [] }]
+  const original = JSON.stringify({ routines: mocks.state.S.routines, workouts: mocks.state.S.workouts })
+  mocks.update.mockImplementation(recipe => { recipe(mocks.state.S); mocks.state.persistence = { state: 'saved' } })
+  await render()
+  const field = container.querySelector('[data-profile-field="preferredWorkoutMinutes"]')
+  expect(field.querySelector('.personal-field-summary').textContent).toBe('60 minutos')
+  await act(async () => field.querySelector('.personal-edit').click())
+  await act(async () => [...field.querySelectorAll('.workout-minutes-options button')].find(button => button.textContent === '45 min').click())
+  expect(mocks.update).not.toHaveBeenCalled()
+  await act(async () => { field.querySelector('.personal-save').click(); await Promise.resolve() })
+  expect(mocks.state.S.profile.preferredWorkoutMinutes).toBe(45)
+  expect(JSON.stringify({ routines: mocks.state.S.routines, workouts: mocks.state.S.workouts })).toBe(original)
+})

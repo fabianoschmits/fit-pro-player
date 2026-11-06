@@ -3,7 +3,7 @@ import {
   ageFromBirthDate, dateFromParts, dateParts, daysInMonth, decimalNumber,
   currentProfileWeight,
   defaultBirthDate, formatPersonName, heightCmFromText, heightInput, heightText,
-  latestBodyWeight, normalizeProfile, syncProfileWeightFromBodyweight, weightInput, weightText,
+  latestBodyWeight, normalizePreferredWorkoutMinutes, normalizeProfile, syncProfileWeightFromBodyweight, weightInput, weightText,
 } from './profile.js'
 import { AVATARS, DEFAULT_AVATAR_ID } from './avatars.js'
 
@@ -74,4 +74,10 @@ describe('personal profile', () => {
     expect(dateParts('1990-09-08')).toEqual({ year: 1990, month: 9, day: 8 })
     expect(defaultBirthDate(new Date('2026-09-08T12:00:00'))).toBe('2001-09-08')
   })
+})
+
+it('validates workout minutes without rounding arbitrary input and defaults old profiles', () => {
+  expect(normalizeProfile({}).preferredWorkoutMinutes).toBe(60)
+  for (const value of [15, 20, 45, 180]) expect(normalizePreferredWorkoutMinutes(value)).toBe(value)
+  for (const value of [null, undefined, '', '45', 14, 181, 42, 45.1, NaN, Infinity]) expect(normalizePreferredWorkoutMinutes(value)).toBe(60)
 })

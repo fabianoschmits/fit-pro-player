@@ -3,6 +3,7 @@ import { ManagementAvatar } from './ManagementUI.jsx'
 import { useUI } from '../store/useUI.js'
 import { ageFromBirthDate, heightText, weightText, currentProfileWeight } from '../lib/profile.js'
 import { BODY_MEASUREMENT_BY_ID } from '../lib/body-measurements.js'
+import { getPreferredWorkoutMinutes } from '../lib/workout-duration.js'
 import { professionalDate } from '../lib/professional-ux.js'
 
 const missing = 'Não informado'
@@ -16,6 +17,7 @@ export default function ProfessionalStudentIdentity({data, action = undefined}) 
  const weight = currentProfileWeight({profile,bodyweight:weights.map(row=>({w:Number(row.weight_kg),d:row.measured_on,t:Date.parse(row.created_at)||0}))})
  const age = ageFromBirthDate(profile.birthDate)
  const fields = [['Altura',profile.heightCm > 0 ? `${heightText(profile.heightCm)} m` : missing],['Peso atual',weight ? `${weightText(weight)} kg` : missing],['Idade',age == null ? missing : `${age} anos`]]
+ if (data.relationshipActive) fields.push(['Tempo habitual de treino', `${getPreferredWorkoutMinutes(profile)} minutos`])
  const allFields = [...fields,['Nascimento',date(profile.birthDate)],['Sexo',{male:'Masculino',female:'Feminino'}[profile.sex] || missing],['Objetivo',goals[profile.goal] || missing],['Experiência',levels[profile.experience] || missing],['Aluno desde',date(data.relationshipCreatedAt)]]
  const details = entries => <dl className="professional-student-facts">{entries.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
  const open = () => useUI.getState().openSheet(close=><section className="professional-student-details">

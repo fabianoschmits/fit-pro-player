@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { EXERCISE_SPRITE_EXERCISE_IDS } from './exercise-guide-assets.js'
 import {
-  applyPersonalizedPlan, personalizedRestSeconds, personalizedRoutineSpecs, splitKeys,
+  applyPersonalizedPlan, personalizedRestSeconds, personalizedRoutineSpecs, splitKeys, refreshManagedPersonalizedPlan,
 } from './personalized-plan.js'
 
 const goals = ['lose_weight', 'build_muscle', 'improve_fitness', 'maintain_weight']
@@ -78,7 +78,7 @@ describe('personalized training plans', () => {
   it('replaces only app-managed routines, preserves custom work and reuses routine ids', () => {
     const current = state()
     current.routines = [
-      { id: 'managed-a', name: 'Chest Day', starterKey: 'Chest Day', ex: [] },
+      { ...personalizedRoutineSpecs(profile('lose_weight', 'beginner'), 3)[0], id: 'managed-a', name: 'Full Body A' },
       { id: 'custom-a', name: 'Meu treino', ex: [{ id: '0025', sets: 2, reps: 8 }] },
     ]
     current.dayPlan['2026-09-08'] = 'managed-a'
@@ -95,4 +95,45 @@ describe('personalized training plans', () => {
     expect(second.map(routine => routine.id)).toEqual(ids)
     expect(current.routines.filter(routine => routine.id === 'custom-a')).toHaveLength(1)
   })
+})
+
+
+it('adapts automatic candidates to duration while retaining prescription and manual routines', () => {
+  const long = personalizedRoutineSpecs({ ...profile('build_muscle', 'advanced'), preferredWorkoutMinutes: 90 }, 3)
+  const short = personalizedRoutineSpecs({ ...profile('build_muscle', 'advanced'), preferredWorkoutMinutes: 15 }, 3)
+  expect(short[0].ex.length).toBeLessThan(long[0].ex.length)
+  expect(short[0].ex.length).toBeGreaterThan(0)
+  for (const entry of short[0].ex) expect(entry).toEqual(long[0].ex.find(ex => ex.id === entry.id))
+  const current = state()
+  current.profile = { ...profile('build_muscle', 'advanced'), preferredWorkoutMinutes: 90 }
+  applyPersonalizedPlan(current, current.profile, 3)
+  const manual = { id: 'manual', planGenerated: true, personalizedKey: 'push', ex: [{ id: '0025', sets: 9 }] }
+  current.routines.push(manual)
+  const active = current.routines[0]
+  current.active = { routineId: active.id, entries: [] }
+  current.profile.preferredWorkoutMinutes = 15
+  refreshManagedPersonalizedPlan(current)
+  expect(current.routines.find(r => r.id === active.id)).toEqual(active)
+  expect(current.routines.find(r => r.id === 'manual')).toEqual(manual)
+  expect(current.routines[1].ex.length).toBeLessThan(long[1].ex.length)
+})
+
+it('keeps management evidence after explicit persisted-state projection', async () => {
+  const { projectPersistedState } = await import('./persisted-state.js')
+  const current = state()
+  current.profile = { ...profile('build_muscle', 'advanced'), preferredWorkoutMinutes: 90 }
+  applyPersonalizedPlan(current, current.profile, 3)
+  const reloaded = JSON.parse(JSON.stringify(projectPersistedState(current)))
+  const before = reloaded.routines[0].ex.length
+  reloaded.profile.preferredWorkoutMinutes = 15
+  refreshManagedPersonalizedPlan(reloaded)
+  expect(reloaded.routines[0].ex.length).toBeLessThan(before)
+})
+
+it('never treats an unsigned legacy starter marker as permission to discard a prescription', () => {
+  const current = state()
+  const legacy = { id: 'legacy', starterKey: 'Chest Day', ex: [{ id: '0025', sets: 9, reps: 8, weight: 80 }] }
+  current.routines = [structuredClone(legacy)]
+  applyPersonalizedPlan(current, profile('lose_weight', 'beginner'), 3)
+  expect(current.routines.find(routine => routine.id === 'legacy')).toEqual(legacy)
 })

@@ -19,6 +19,9 @@ import {  DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import { isWarmupRow } from '../lib/workout-model.js'
 import { applyPreviousSetValues, replaceSessionExercise } from '../lib/workout-session.js'
+import { createFlexSelection, toggleFlexSelection, confirmFlexSelection, estimateWorkoutDuration, getPreferredWorkoutMinutes } from '../lib/workout-duration.js'
+import WorkoutDurationSheet from '../components/WorkoutDurationSheet.jsx'
+import ExerciseSpriteThumb from '../components/ExerciseSpriteThumb.jsx'
 
 /* ---------- start chooser (no active workout) ---------- */
 function StartChooser() {
@@ -168,6 +171,22 @@ function ActiveWorkout() {
   const S = useStore(s => s.S)
   const { startRest, stopRest, work, manualSet, stopManualSet } = useUI()
   const A = S.active
+  const queueRef = useRef(null)
+  const stageRef = useRef(null)
+  const [queueOpen, setQueueOpen] = useState(A.flex?.phase === 'review')
+  const reviewing = !A.start && A.flex?.phase === 'review'
+  useEffect(() => {
+    if (!reviewing) return
+    setQueueOpen(true)
+    // Runs after React commits the expanded details; no positioning timer.
+    queueRef.current?.scrollIntoView?.({ block: 'nearest', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+  }, [reviewing])
+  useEffect(() => {
+    if (A.start && A.flex?.phase === 'confirmed') stageRef.current?.focus({ preventScroll: true })
+  }, [A.start, A.flex?.phase])
+  const selectedCount = reviewing ? A.flex.outline.filter(item => item.selected).length : A.entries.length
+  const estimatedMinutes = Math.ceil(estimateWorkoutDuration(reviewing ? A.entries.filter((_, index) => A.flex.outline[index]?.selected) : A.entries, { restSec: S.restSec }) / 60)
+  const overTime = !!A.flex && estimatedMinutes > A.flex.targetMinutes
   const units = supersetUnits(A.entries)
   const cur = Math.min(A.cur, Math.max(0, A.entries.length - 1))
   const unit = A.entries.length ? unitOf(units, cur) : []
@@ -193,11 +212,33 @@ function ActiveWorkout() {
     const active = store.S.active
     if (active && store.queueSessionOperation) void store.queueSessionOperation({ kind, payload: { active } })
   }
-  const startWorkout = () => {
+  const beginExecution = () => {
     update(s => {
       if (s.active && !s.active.start) { s.active.start = Date.now(); s.active.durationMs = Math.max(0, Number(s.active?.durationMs) || 0) }
     })
     queueActive()
+  }
+  const confirmSelection = () => {
+    const active = useStore.getState().S.active
+    if (!active || active.id !== A.id || active.start) return
+    update(s => { s.active = confirmFlexSelection(s.active) })
+    setQueueOpen(false)
+    beginExecution()
+  }
+  const startWorkout = () => {
+    const current = useStore.getState().S.active
+    if (!current || current.id !== A.id || current.start) return
+    if (current.flex?.phase === 'review') { setQueueOpen(true); queueRef.current?.scrollIntoView?.({ block: 'nearest' }); return }
+    if (current.flex?.phase === 'confirmed') { beginExecution(); return }
+    const preferred = getPreferredWorkoutMinutes(S.profile)
+    useUI.getState().openSheet(close => <WorkoutDurationSheet preferredMinutes={preferred} close={close} onConfirm={minutes => {
+      const fresh = useStore.getState().S.active
+      if (!fresh || fresh.id !== A.id || fresh.start || fresh.flex) return
+      const flex = createFlexSelection(fresh, minutes, preferred, { restSec: S.restSec, goal: S.profile?.goal })
+      update(s => { if (s.active?.id === A.id) s.active.flex = flex })
+      if (flex.phase === 'confirmed') beginExecution()
+      else setQueueOpen(true)
+    }} />)
   }
   // Superset flow: keep the active exercise in view - completing a set scrolls to the
   // next exercise in the group, then back up to the first exercise of the next round.
@@ -489,15 +530,27 @@ function ActiveWorkout() {
         <div className="ss-hd"><Icon name="link" /><span>{t('Superset · do these back-to-back, rest when done')}</span></div>
         <div className="wp-superset-members">{unit.map(idx => <button type="button" key={idx} disabled={navigationLocked} aria-current={cur === idx ? 'step' : undefined} onClick={() => navigateExercise(idx)}>{exerciseName(exOr(A.entries[idx].id))}</button>)}</div>
       </div>}
-      <div ref={el => { exRefs.current[cur] = el }} className={'workout-unit-stage' + (isSuperset ? ' ss-ex' : '')} data-exidx={cur}>
+      <div ref={el => { exRefs.current[cur] = el; stageRef.current = el }} tabIndex={-1} className={'workout-unit-stage' + (isSuperset ? ' ss-ex' : '')} data-exidx={cur}>
         <WorkoutExercisePlayer entryIdx={cur} locked={!workoutStarted} onStartWorkout={startWorkout}
           onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onStartTimed={i => startTimed(cur, i)}
           onAddSet={() => addSet(cur)}
           onPrevious={() => navigateExercise(cur - 1)} onNext={() => navigateExercise(cur + 1)} previousDisabled={navigationLocked || cur === 0} nextDisabled={navigationLocked || cur === A.entries.length - 1}
           exerciseDots={<div className="wp-exercise-dots" aria-label={t('Exercises')}>{A.entries.map((entry, idx) => <button type="button" key={idx} className={'wp-exercise-dot' + (entry.sets.length && entry.sets.every(set => set.done) ? ' is-done' : '')}
             aria-label={`${idx + 1}. ${exerciseName(exOr(entry.id))}`} aria-current={idx === cur ? 'step' : undefined} disabled={navigationLocked} onClick={() => navigateExercise(idx)} />)}</div>}
-          queueDetails={A.entries.length > 0 && <details className="wp-queue-details"><summary>{t('Exercises')}<span>{cur + 1}/{A.entries.length}</span><Icon name="chevronDown" /></summary><div className="workout-exercise-rail" aria-label={t('Exercises')}>
-            {units.map((indices, index) => {
+          queueDetails={A.entries.length > 0 && <details ref={queueRef} className={'wp-queue-details' + (reviewing ? ' is-flex-review' : '')} open={queueOpen || reviewing} onToggle={event => setQueueOpen(event.currentTarget.open)}><summary><span>{t('Exercises')}</span><span className={'fpp-flex-estimate' + (overTime ? ' is-over' : '')}>{selectedCount}{A.flex?.outline?.length ? ` de ${A.flex.outline.length}` : ''} exercícios · {estimatedMinutes} min</span><Icon name="chevronDown" /></summary><div className="workout-exercise-rail" aria-label={t('Exercises')}>
+            {reviewing ? A.entries.map((entry, index) => {
+              const selected = A.flex.outline[index]?.selected
+              const group = units.find(indices => indices.includes(index)) || [index]
+              const lastSelectedGroup = selected && selectedCount === group.length
+              return <div key={A.flex.outline[index].key} className={'workout-exercise-tab fpp-flex-exercise' + (selected ? ' is-selected' : ' is-omitted')}>
+                <ExerciseSpriteThumb ex={exOr(entry.id)} />
+                <b>{exerciseName(exOr(entry.id))}</b>
+                <small>{entry.sets.length} séries{group.length > 1 ? ' · Supersérie' : ''}</small>
+                <button type="button" className="fpp-flex-toggle" aria-pressed={!!selected} disabled={lastSelectedGroup} aria-label={`${selected ? 'Retirar' : 'Incluir'} ${exerciseName(exOr(entry.id))}${group.length > 1 ? ' e supersérie' : ''}`} onClick={() => update(s => { if (s.active?.id === A.id) s.active.flex = toggleFlexSelection(s.active, index, { restSec: s.restSec }) })}>
+                  {selected ? 'Selecionado' : 'Retirado pelo tempo'}
+                </button>
+              </div>
+            }) : units.map((indices, index) => {
               const entries = indices.map(entryIndex => A.entries[entryIndex])
               const unitDone = entries.every(entry => entry.sets.length > 0 && entry.sets.every(set => set.done))
               const unitSets = entries.reduce((count, entry) => count + entry.sets.length, 0)
@@ -507,17 +560,21 @@ function ActiveWorkout() {
               return <button type="button" key={indices.join('-')} className={'workout-exercise-tab' + (index === unitIdx ? ' is-active' : '') + (unitDone ? ' is-done' : '')}
                 disabled={navigationLocked} aria-current={index === unitIdx ? 'step' : undefined}
                 onClick={() => navigateExercise(targetIndex)}>
-                <span>{unitDone ? <Icon name="check" /> : index + 1}</span>
+                <ExerciseSpriteThumb ex={exOr(entries[0].id)} />
                 <b>{label}</b>
                 <small>{unitSetsDone}/{unitSets}</small>
               </button>
             })}
-            <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>
-          </div></details>} />
+            {!reviewing && <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>}
+          </div>
+          {!reviewing && A.flex?.outline?.some(item => !item.selected) && <div className="fpp-flex-omitted-summary"><small>Retirados pelo tempo</small>{A.flex.outline.filter(item => !item.selected).map(item => <span key={item.key}>{item.name || exerciseName(exOr(item.exerciseId))} · {item.sets} séries</span>)}</div>}
+          {reviewing && <div className="fpp-flex-confirm"><Button variant="primary" disabled={!selectedCount} onClick={confirmSelection}>Confirmar treino</Button></div>}
+          </details>} />
       </div>
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 
     {!A.entries.length && <Button variant="primary" onClick={addExerciseFlow} icon="plus">{t('Add exercise')}</Button>}
+    {!A.entries.length && !A.start && <Button onClick={startWorkout}>Começar treino</Button>}
     {A.entries.length > 0 && <details className="workout-tools" key={`${A.id}:${unit.join('-')}`}>
       <summary className="workout-tools-toggle"><Icon name="wrench" /><span>{t('Workout adjustments')}</span><Icon name="chevronDown" /></summary>
       <div className="workout-tools-content">

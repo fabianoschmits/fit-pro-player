@@ -36,6 +36,7 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
     bw: active.bw,
     entries,
     prs,
+    ...(active.flex ? { flex: structuredClone(active.flex) } : {}),
     ...(Number.isFinite(active?.durationMs) ? { durationMs: Math.max(0, Math.round(active.durationMs)) } : {}),
     ...(endedEarly ? { endedEarly: true } : {}),
     ...(normalizedNote ? { note: normalizedNote } : {}),

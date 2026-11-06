@@ -40,6 +40,21 @@ function validEntries(entries) {
     && Array.isArray(entry.sets) && entry.sets.length <= 200 && entry.sets.every(validSet))
 }
 
+const validWorkoutMinutes = value => Number.isInteger(value) && value >= 15 && value <= 180 && value % 5 === 0
+function validFlex(value, entries = []) {
+  if (value == null) return true
+  return isObject(value) && validWorkoutMinutes(value.targetMinutes) && validWorkoutMinutes(value.preferredMinutes)
+    && bounded(value.estimatedMinutes, 0, 100000) && value.estimatedMinutes != null
+    && ['adapted', 'full'].includes(value.mode) && ['review', 'confirmed'].includes(value.phase)
+    && Array.isArray(value.outline) && value.outline.length <= 200
+    && new Set(value.outline.map(item => item?.key)).size === value.outline.length
+    && value.outline.every(item => isObject(item) && /^position:\d+$/.test(item.key)
+      && identifier(item.exerciseId) && typeof item.selected === 'boolean')
+    && (!value.outline.length || value.outline.some(item => item.selected))
+    && (value.phase !== 'review' || value.outline.length === entries.length
+      && value.outline.every((item, index) => item.key === `position:${index}` && item.exerciseId === entries[index]?.id))
+}
+
 function validNotificationPreferences(value) {
   if (!isObject(value)) return false
   const has = key => Object.prototype.hasOwnProperty.call(value, key)
@@ -73,10 +88,10 @@ export function validateBackup(data) {
       && (entry.sets == null || Array.isArray(entry.sets) ? entry.sets == null || entry.sets.length <= 200 && entry.sets.every(validSet) : bounded(entry.sets, 1, 200))))) {
     throw new Error('backup contains an invalid routine')
   }
-  if (!data.workouts.every(workout => isObject(workout) && identifier(workout.id) && (workout.d == null || validDate(workout.d)) && validEntries(workout.entries))) {
+  if (!data.workouts.every(workout => isObject(workout) && identifier(workout.id) && (workout.d == null || validDate(workout.d)) && validEntries(workout.entries) && validFlex(workout.flex, workout.entries))) {
     throw new Error('backup contains an invalid workout')
   }
-  if (data.active != null && (!isObject(data.active) || !validEntries(data.active.entries))) {
+  if (data.active != null && (!isObject(data.active) || !validEntries(data.active.entries) || !validFlex(data.active.flex, data.active.entries))) {
     throw new Error('backup contains an invalid active workout')
   }
   if (data.bodyweight != null && (!Array.isArray(data.bodyweight) || !data.bodyweight.every(item =>
@@ -95,6 +110,7 @@ export function validateBackup(data) {
   if (!bounded(data.restSec, 0, 86400) || !bounded(data.targetW, 0.1, 1000) || !bounded(data._ts, 0, Number.MAX_SAFE_INTEGER)) throw new Error('backup contains invalid settings')
   if (data.week && !Object.entries(data.week).every(([key, value]) => /^[0-6]$/.test(key) && (value == null || identifier(value)))) throw new Error('backup contains an invalid weekly plan')
   if (data.dayPlan && !Object.entries(data.dayPlan).every(([key, value]) => validDate(key) && (value == null || identifier(value)))) throw new Error('backup contains an invalid daily plan')
+  if (data.profile?.preferredWorkoutMinutes !== undefined && !validWorkoutMinutes(data.profile.preferredWorkoutMinutes)) throw new Error('backup contains an invalid workout preference')
   if (data.profile?.name != null && (typeof data.profile.name !== 'string' || data.profile.name.length > 200)) throw new Error('backup contains an invalid profile')
   if (data.customEx && !data.customEx.every(item => identifier(item.id) && typeof (item.name ?? item.n) === 'string' && (item.name ?? item.n).length <= 200)) throw new Error('backup contains an invalid custom exercise')
   if (data.pendingProfessionalEvents != null && (!Array.isArray(data.pendingProfessionalEvents) || data.pendingProfessionalEvents.length > 2000 || !data.pendingProfessionalEvents.every(isObject))) throw new Error('backup contains an invalid event queue')

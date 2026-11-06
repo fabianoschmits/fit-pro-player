@@ -6,6 +6,7 @@ import {beforeEach,afterEach,it,expect,vi} from 'vitest'
 const mocks=vi.hoisted(()=>({repo:{version:vi.fn(),relationshipCycles:vi.fn().mockResolvedValue([{id:'active',status:'active',created_at:'2026-11-03'}]),historicalClientDetail:vi.fn(),clientDetail:vi.fn(),studentNote:vi.fn(),studentPlanDraft:vi.fn(),executionPage:vi.fn(),studentNotes:vi.fn(),addStudentNote:vi.fn()}}))
 vi.mock('../auth/AuthProvider.jsx',()=>({useAuth:()=>({user:{id:'pro'}})}))
 vi.mock('../lib/professional-workflow.js',()=>({createProfessionalWorkflowRepository:()=>mocks.repo}))
+vi.mock('../components/AccountPhone.jsx',()=>({default:()=>null}))
 import ProfessionalStudentPage from './ProfessionalStudentPage.jsx'
 import {useUI} from '../store/useUI.js'
 let root,container
@@ -141,4 +142,19 @@ it('refreshes actual selection when a plan-selection notification arrives', asyn
  mocks.repo.clientDetail.mockResolvedValueOnce({displayName:'Ana',assignments:[{id:'plan',program_title:'Força',is_selected:true}],executions:[]})
  await act(async()=>window.dispatchEvent(new Event('professional-plan-selection-changed')))
  expect(container.querySelector('.student-active-plan-status').textContent).toContain('Usando seu plano: Força')
+})
+
+it('shows habitual duration only for an actively linked student',async()=>{
+ mocks.repo.clientDetail.mockResolvedValueOnce({displayName:'Ana',profile:{preferredWorkoutMinutes:45},assignments:[],executions:[]})
+ await render()
+ expect(container.textContent).toContain('Tempo habitual de treino')
+ expect(container.textContent).toContain('45 minutos')
+})
+
+it('does not show a duration preference for a historical relationship', async () => {
+ mocks.repo.relationshipCycles.mockResolvedValueOnce([{id:'r1',status:'revoked',created_at:'2026-08-12',revoked_at:'2026-10-25'}])
+ mocks.repo.clientDetail.mockResolvedValueOnce(null)
+ mocks.repo.historicalClientDetail.mockResolvedValueOnce({displayName:'Ana',profile:{preferredWorkoutMinutes:45},assignments:[],notes:[]})
+ await render()
+ expect(container.textContent).not.toContain('Tempo habitual de treino')
 })

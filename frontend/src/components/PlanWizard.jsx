@@ -10,9 +10,11 @@ import {
   EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS,
   currentProfileWeight,
   decimalNumber, defaultBirthDate, formatPersonName, heightCmFromText, heightInput,
-  heightText, normalizeProfile, weightInput, weightText,
+  heightText, normalizeProfile, isValidWorkoutMinutes, weightInput, weightText,
 } from '../lib/profile.js'
-import { applyPersonalizedPlan, personalizedRoutineSpecs } from '../lib/personalized-plan.js'
+import { applyPersonalizedPlan, personalizedRoutineSpecs, refreshManagedPersonalizedPlan, isManagedPersonalizedRoutine, personalizedRestSeconds } from '../lib/personalized-plan.js'
+import WorkoutMinutesSelector from './WorkoutMinutesSelector.jsx'
+import { estimateWorkoutDuration } from '../lib/workout-duration.js'
 import BodyMap from './BodyMap.jsx'
 import DateWheelPicker from './DateWheelPicker.jsx'
 import AvatarPicker from './AvatarPicker.jsx'
@@ -54,6 +56,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
     targetWeight: weightText(toDisplayMass(S.targetW, S.displayUnit || 'kg')),
     goal: profile.goal || '',
     experience: profile.experience || '',
+    preferredWorkoutMinutes: profile.preferredWorkoutMinutes,
     unit: S.displayUnit === 'lb' ? 'lb' : 'kg',
     planMode: S.planMode === 'daily' ? 'daily' : 'weekly',
   }))
@@ -67,14 +70,14 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
   const previewRoutines = useMemo(() => {
     const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
     const generated = personalizedRoutineSpecs({
-      goal: draft.goal, experience: draft.experience, startWeight,
+      goal: draft.goal, experience: draft.experience, startWeight, preferredWorkoutMinutes: draft.preferredWorkoutMinutes,
     }, draft.planMode === 'daily' ? 7 : Math.max(1, days.length), {
       daily: draft.planMode === 'daily', state: S,
     }).map(routine => ({ ...routine, id: `plan:${routine.personalizedKey}`, name: routine.starterKey }))
     if (draft.planMode !== 'daily') return generated
     const custom = S.routines.filter(routine => !routine.planGenerated && !isStarterRoutine(routine))
     return [...generated, ...custom]
-  }, [S, days.length, draft.experience, draft.goal, draft.planMode, draft.startWeight, draft.unit])
+  }, [S, days.length, draft.experience, draft.goal, draft.planMode, draft.startWeight, draft.unit, draft.preferredWorkoutMinutes])
 
   const set = patch => setDraft(current => ({ ...current, ...patch }))
   const switchUnit = unit => setDraft(current => {
@@ -107,6 +110,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
     const startWeight = decimalNumber(draft.startWeight)
     if (step === 3 && (!heightCm || heightCm < 100 || heightCm > 250 || !startWeight)) return t('Enter valid measurements to continue.')
     if (step === 4 && (!draft.goal || !draft.experience)) return t('Choose a goal and experience level.')
+    if (step >= 5 && !isValidWorkoutMinutes(draft.preferredWorkoutMinutes)) return 'Escolha de 15 a 180 minutos, em intervalos de 5.'
     if (step === 5 && !draft.planMode) return t('Choose how you want to plan your workouts.')
     if (step === 6 && draft.planMode === 'weekly' && !days.length) return t('Choose at least one training day.')
     if (step === 6 && draft.planMode === 'daily' && !dailyRoutineKey) return t("Choose today's workout.")
@@ -129,8 +133,8 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
     const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
     const targetWeight = fromDisplayMass(decimalNumber(draft.targetWeight), draft.unit)
     const name = formatPersonName(draft.name).trim()
+    const durationChanged = profile.preferredWorkoutMinutes !== draft.preferredWorkoutMinutes
     const planInputsChanged = !editing
-      || !S.routines.some(routine => routine.planGenerated)
       || S.profile?.goal !== draft.goal
       || S.profile?.experience !== draft.experience
       || Number(currentProfileWeight(S)) !== startWeight
@@ -147,6 +151,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
         startWeight,
         goal: draft.goal,
         experience: draft.experience,
+        preferredWorkoutMinutes: draft.preferredWorkoutMinutes,
         completedAt: state.profile?.completedAt || Date.now(),
       }
       state.body = draft.sex
@@ -161,12 +166,13 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
 
       const ready = planInputsChanged
         ? applyPersonalizedPlan(state, state.profile, draft.planMode === 'daily' ? 7 : days.length, { daily: draft.planMode === 'daily' })
-        : state.routines
+        : durationChanged ? refreshManagedPersonalizedPlan(state) : state.routines
       if (draft.planMode === 'weekly') {
         WEEK_DAYS.filter(day => !days.includes(day)).forEach(day => { delete state.week[day] })
         WEEK_DAYS.filter(day => days.includes(day)).forEach((day, index) => {
           const current = state.week[day]
-          if (planInputsChanged || !editing || !state.routines.some(r => r.id === current)) state.week[day] = ready[index % ready.length].id
+          const currentRoutine = state.routines.find(r => r.id === current)
+          if (!editing || !currentRoutine || (planInputsChanged && isManagedPersonalizedRoutine(currentRoutine) && state.active?.routineId !== current)) state.week[day] = ready[index % ready.length]?.id
         })
       } else if (dailyRoutineKey) {
         const customId = dailyRoutineKey.startsWith('custom:') ? dailyRoutineKey.slice(7) : ''
@@ -184,11 +190,14 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
     const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
     const targetWeight = fromDisplayMass(decimalNumber(draft.targetWeight), draft.unit)
     const name = formatPersonName(draft.name).trim()
+    if (!isValidWorkoutMinutes(draft.preferredWorkoutMinutes)) { setError('Escolha de 15 a 180 minutos, em intervalos de 5.'); return }
     if (!name && !S.profile?.name) { setError(t('Enter your name to continue.')); return }
     update(state => {
       const current = normalizeProfile(state.profile, state.body)
+      const durationChanged = current.preferredWorkoutMinutes !== draft.preferredWorkoutMinutes
       state.profile = {
         ...current,
+        preferredWorkoutMinutes: draft.preferredWorkoutMinutes,
         ...(name ? { name } : {}),
         ...(draft.avatarId ? { avatarId: draft.avatarId } : {}),
         ...(draft.birthDate ? { birthDate: draft.birthDate } : {}),
@@ -202,6 +211,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
       state.displayUnit = draft.unit
       if (targetWeight) state.targetW = targetWeight
       state.planMode = draft.planMode
+      if (durationChanged) refreshManagedPersonalizedPlan(state)
       if (startWeight) {
         const today = todayISO()
         const existing = state.bodyweight.find(entry => entry.d === today)
@@ -284,6 +294,9 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
         <Choice selected={draft.planMode === 'weekly'} icon="calendar" title={t('Weekly plan')} copy={t('Choose your training days and follow a recurring schedule.')} onClick={() => set({ planMode: 'weekly' })} />
         <Choice selected={draft.planMode === 'daily'} icon="dumbbell" title={t('Daily plan')} copy={t('Choose the workout you want each day and keep previous days in history.')} onClick={() => set({ planMode: 'daily' })} />
       </div>
+      <h2>Quanto tempo você costuma treinar?</h2>
+      <p>Escolha a duração média dos seus treinos. O FPP usará esse tempo para organizar seus exercícios. Você poderá mudar quando quiser.</p>
+      <WorkoutMinutesSelector value={draft.preferredWorkoutMinutes} onChange={preferredWorkoutMinutes => set({ preferredWorkoutMinutes })} />
     </div>,
     <div className="wizard-step" key="schedule">
       <span className="wizard-kicker">{draft.planMode === 'weekly' ? t('Weekly plan') : t('Daily plan')}</span>
@@ -297,7 +310,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
         <div className="wizard-schedule-preview">
           {WEEK_DAYS.filter(day => days.includes(day)).map((day, index) => {
             const routine = previewRoutines[index % previewRoutines.length]
-            return <div key={day}><span>{t(DAYN[day])}</span><p><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)}</small></p></div>
+            return <div key={day}><span>{t(DAYN[day])}</span><p><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)} · {Math.ceil(estimateWorkoutDuration(routine.ex, { restSec: routine.planGenerated ? personalizedRestSeconds(draft.goal, draft.experience) : S.restSec }) / 60)} min</small></p></div>
           })}
         </div>
       </> : <div className="wizard-routine-grid">
@@ -305,7 +318,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
           const key = routine.personalizedKey || routine.starterKey || `custom:${routine.id}`
           const selected = dailyRoutineKey === key || dailyRoutineKey === routine.starterKey
           return <button type="button" key={routine.id} className={selected ? 'on' : ''} aria-pressed={selected} onClick={() => setDailyRoutineKey(key)}>
-          <span className="lrow-i"><RoutineMuscleThumb routine={routine} body={S.body} /></span><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)}</small>
+          <span className="lrow-i"><RoutineMuscleThumb routine={routine} body={S.body} /></span><strong>{routineName(routine)}</strong><small>{exCount(routine.ex.length)} · {Math.ceil(estimateWorkoutDuration(routine.ex, { restSec: routine.planGenerated ? personalizedRestSeconds(draft.goal, draft.experience) : S.restSec }) / 60)} min</small>
           </button>
         })}
       </div>}

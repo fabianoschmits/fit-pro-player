@@ -275,6 +275,8 @@ export const useStore = create((set, get) => {
     startSessionRecovery(active) {
       if (!sessionRecovery || !active) return Promise.resolve({ state: 'idle', pending: 0 })
       const prescriptionSnapshot = {
+        ...(active.flex ? { flex: clone(active.flex) } : {}),
+        ...(active.prescribedEntries ? { prescribedEntries: clone(active.prescribedEntries) } : {}),
         name: active.name || '',
         bodyweightKg: active.bw ?? null,
         massUnit: MASS_UNIT,

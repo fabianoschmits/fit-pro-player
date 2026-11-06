@@ -1,0 +1,8 @@
+.workout-minutes-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.workout-minutes-options button{min-height:46px;padding:8px 3px;border-radius:11px;background:var(--surface);border:var(--hair) solid var(--surface-border);color:var(--label-2);font:inherit;font-size:13px}
+.workout-minutes-options button.on{background:var(--acc-soft);border-color:var(--acc-line);color:var(--acc);font-weight:650}
+.workout-minutes-options small{display:block;font-size:10px;line-height:1.2}
+.workout-minutes-custom{display:grid;gap:7px;margin-top:12px;font-size:13px;color:var(--label-2)}
+.workout-minutes-custom small{font-size:12px}
+.workout-minutes-error{display:block;color:var(--red);margin-top:8px}
+.workout-minutes-options button:disabled{opacity:.5}

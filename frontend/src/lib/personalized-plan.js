@@ -2,7 +2,12 @@ import { uid } from './format.js'
 import { suggestedWeightFor } from './history.js'
 import { EXERCISE_SPRITE_EXERCISE_IDS } from './exercise-guide-assets.js'
 import { isBodyweightEq } from './exercises.js'
-import { isStarterRoutine } from './starter.js'
+import { fitWorkoutToMinutes } from './workout-duration.js'
+import { normalizePreferredWorkoutMinutes } from './profile.js'
+
+const prescriptionSignature = exercises => JSON.stringify(exercises, (_key, value) =>
+  value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value)
 
 const ACTIVE_IDS = new Set(EXERCISE_SPRITE_EXERCISE_IDS)
 
@@ -166,6 +171,13 @@ export function personalizedRoutineSpecs(profile = {}, dayCount = 3, options = {
   return keys.map((key, templateIndex) => {
     const [starterKey, emoji] = TEMPLATES[key]
     const ids = exerciseIdsFor(key, goal, experience, count, templateIndex)
+    const candidates = ids.map((id, index) => exerciseConfig(id, index, {
+      goal, experience, dayCount: count, state, recovery: key === 'recovery',
+    }))
+    const fitted = fitWorkoutToMinutes(candidates, normalizePreferredWorkoutMinutes(profile.preferredWorkoutMinutes), {
+      goal, restSec: personalizedRestSeconds(goal, experience),
+    })
+    const exercises = fitted.selectedIndices.map(index => candidates[index])
     return {
       personalizedKey: key,
       starterKey,
@@ -174,20 +186,38 @@ export function personalizedRoutineSpecs(profile = {}, dayCount = 3, options = {
       planGoal: goal,
       planExperience: experience,
       prog: goal === 'build_muscle' || goal === 'maintain_weight' ? 'double' : 'linear',
-      ex: ids.map((id, index) => exerciseConfig(id, index, {
-        goal, experience, dayCount: count, state, recovery: key === 'recovery',
-      })),
+      ex: exercises,
+      planSignature: prescriptionSignature(exercises),
     }
   })
 }
 
-const managedRoutine = routine => !routine?.starterCustomName && (routine?.planGenerated || isStarterRoutine(routine))
+// A persisted signature proves that a generated prescription is still app-owned.
+// Legacy generated lists without that evidence are preserved on duration-only edits.
+export const isManagedPersonalizedRoutine = routine => !routine?.assigned && !routine?.starterCustomName
+  && routine?.planGenerated === true && typeof routine.planSignature === 'string'
+  && routine.planSignature === prescriptionSignature(routine.ex || [])
+
+/** Refit only proven app-owned routines, keeping schedules, active work and manual plans. */
+export function refreshManagedPersonalizedPlan(state) {
+  const daily = state.planMode === 'daily'
+  const scheduled = new Set(Object.values(state.week || {}).filter(Boolean))
+  const count = daily ? 7 : Math.max(1, Math.min(7, scheduled.size || (state.routines || []).filter(isManagedPersonalizedRoutine).length || 3))
+  const specs = personalizedRoutineSpecs(state.profile, count, { daily, state })
+  state.routines = (state.routines || []).map(routine => {
+    if (!isManagedPersonalizedRoutine(routine) || state.active?.routineId === routine.id) return routine
+    const spec = specs.find(candidate => candidate.personalizedKey === routine.personalizedKey)
+    return spec ? { ...routine, ...spec } : routine
+  })
+  return state.routines
+}
 
 /** Replace only app-managed routines, preserving custom routines and reusing ids where possible. */
 export function applyPersonalizedPlan(state, profile, dayCount, options = {}) {
   const specs = personalizedRoutineSpecs(profile, dayCount, { ...options, state })
-  const managed = (state.routines || []).filter(managedRoutine)
-  const custom = (state.routines || []).filter(routine => !managedRoutine(routine))
+  const canReplace = routine => isManagedPersonalizedRoutine(routine) && state.active?.routineId !== routine.id
+  const managed = (state.routines || []).filter(canReplace)
+  const custom = (state.routines || []).filter(routine => !canReplace(routine))
   const unused = [...managed]
   const routines = specs.map(spec => {
     const exactIndex = unused.findIndex(routine => routine.personalizedKey === spec.personalizedKey || routine.starterKey === spec.starterKey)

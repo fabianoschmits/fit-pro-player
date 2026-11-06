@@ -9,11 +9,17 @@ export const DEFAULT_PROFILE = {
   startWeight: null,
   goal: '',
   experience: '',
+  preferredWorkoutMinutes: 60,
   completedAt: null,
 }
 
 export const PROFILE_GOALS = ['lose_weight', 'build_muscle', 'improve_fitness', 'maintain_weight']
 export const EXPERIENCE_LEVELS = ['beginner', 'intermediate', 'advanced']
+
+export const isValidWorkoutMinutes = value => typeof value === 'number' && Number.isInteger(value)
+  && value >= 15 && value <= 180 && value % 5 === 0
+
+export const normalizePreferredWorkoutMinutes = value => isValidWorkoutMinutes(value) ? value : 60
 
 export const PROFILE_GOAL_LABELS = {
   lose_weight: 'Lose weight',
@@ -101,6 +107,7 @@ export function normalizeProfile(profile, fallbackBody = 'male') {
     ...(profile && typeof profile === 'object' ? profile : {}),
     name: formatPersonName(profile?.name || ''),
     avatarId: isAvatarId(profile?.avatarId) ? profile.avatarId : DEFAULT_AVATAR_ID,
+    preferredWorkoutMinutes: normalizePreferredWorkoutMinutes(profile?.preferredWorkoutMinutes),
     sex: profile?.sex === 'female' ? 'female' : profile?.sex === 'male' ? 'male' : fallbackBody === 'female' ? 'female' : 'male',
   }
 }

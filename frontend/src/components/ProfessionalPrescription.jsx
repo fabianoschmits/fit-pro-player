@@ -22,6 +22,7 @@ export function ProfessionalSessionDetail({ execution }) {
   const actual = payload.entries || []
   const unit = payload.massUnit || payload.unit || 'kg'
   return <div className="professional-session-detail">
+    {payload.flex?.mode === 'adapted' && <p className="muted small">FPP Flex · tempo escolhido: {payload.flex.targetMinutes} min · {payload.flex.outline?.filter(item => !item.selected).length || 0} exercícios retirados pelo tempo</p>}
     <div><h4>{t('Prescrito')}</h4>{prescription.length ? <ProfessionalPrescription entries={prescription} unit={unit} /> : <p className="muted">{t('Prescrição não disponível nesta execução.')}</p>}</div>
     <div><h4>{t('Realizado')}</h4>{actual.length ? actual.map((entry, index) => {
       const sets = entry.sets || []; const completed = sets.filter(set => set.done)

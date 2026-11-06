@@ -6,10 +6,12 @@ import AvatarPicker from '../components/AvatarPicker.jsx'
 import AvatarImage from '../components/AvatarImage.jsx'
 import DateWheelPicker from '../components/DateWheelPicker.jsx'
 import Icon from '../components/Icon.jsx'
+import WorkoutMinutesSelector from '../components/WorkoutMinutesSelector.jsx'
+import { refreshManagedPersonalizedPlan } from '../lib/personalized-plan.js'
 import { Button, Segmented, TextField } from '../components/ui.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 import { useStore } from '../store/useStore.js'
-import { EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS, defaultBirthDate, formatPersonName, heightCmFromText, heightInput, heightText, normalizeProfile, weightText } from '../lib/profile.js'
+import { EXPERIENCE_LABELS, EXPERIENCE_LEVELS, PROFILE_GOAL_LABELS, PROFILE_GOALS, defaultBirthDate, formatPersonName, heightCmFromText, heightInput, heightText, normalizeProfile, isValidWorkoutMinutes, weightText } from '../lib/profile.js'
 import { t } from '../lib/i18n.js'
 import { todayISO } from '../lib/format.js'
 
@@ -19,7 +21,7 @@ async function confirmPersonalSave() {
   return true
 }
 function PersonalSaveButton({ onSave = undefined, onError }) {
-  return <Button feedback="persistence" appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={() => onError(localSaveError())}
+  return <Button feedback="persistence" appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={error => onError(error instanceof Error ? error.message : localSaveError())}
     loadingLabel={t('Saving…')} successLabel={t('Saved')} errorLabel={t('Save')}>{t('Save')}</Button>
 }
 
@@ -86,6 +88,14 @@ export default function PersonalData() {
       }} />
       <EditableField name="goal" label="Objetivo" value={profile.goal} summary={profile.goal ? t(PROFILE_GOAL_LABELS[profile.goal]) : 'Não informado'} onChange={value => commit('goal', value)}>{({ editing, value, setValue }) => <Segmented options={PROFILE_GOALS.map(goal => ({ value: goal, label: t(PROFILE_GOAL_LABELS[goal]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="experience" label="Experiência" value={profile.experience} summary={profile.experience ? t(EXPERIENCE_LABELS[profile.experience]) : 'Não informado'} onChange={value => commit('experience', value)}>{({ editing, value, setValue }) => <Segmented options={EXPERIENCE_LEVELS.map(level => ({ value: level, label: t(EXPERIENCE_LABELS[level]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
+      <EditableField name="preferredWorkoutMinutes" label="Tempo habitual de treino" value={profile.preferredWorkoutMinutes} summary={`${profile.preferredWorkoutMinutes} minutos`} onChange={value => {
+        if (!isValidWorkoutMinutes(value)) throw new Error('Escolha de 15 a 180 minutos, em intervalos de 5.')
+        update(state => {
+          state.profile = { ...normalizeProfile(state.profile, state.body), preferredWorkoutMinutes: value }
+          refreshManagedPersonalizedPlan(state)
+        })
+        return confirmPersonalSave()
+      }}>{({ editing, value, setValue }) => <WorkoutMinutesSelector value={value} onChange={setValue} disabled={!editing} />}</EditableField>
     </div>
   </main>
 }

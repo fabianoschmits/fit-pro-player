@@ -1451,7 +1451,7 @@ const flushEvents = () => flushProfessionalEvents({ client: getBrowserSupabaseCl
 function queueAbandon(state) {
   const active = state.active
   if (!active?.professionalExecutionId) return
-  enqueueProfessionalEvent(state, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: active.professionalExecutionId, type: 'abandon', payload: { source: 'professional-program', workoutId: active.id, prescription: active.prescribedEntries, entries: active.entries, massUnit: 'kg' } })
+  enqueueProfessionalEvent(state, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: active.professionalExecutionId, type: 'abandon', payload: { source: 'professional-program', workoutId: active.id, prescription: active.prescribedEntries, entries: active.entries, ...(active.flex ? { flex: active.flex } : {}), massUnit: 'kg' } })
 }
 export function abandonWorkout() {
   stopWorkoutExecution()
@@ -1632,7 +1632,7 @@ function doFinishWorkout(note) {
       if (mx > 0) { const cur = s.exWeights[e.id]; if (!cur || mx > cur.w) s.exWeights[e.id] = { w: mx, d: w.d } }
     })
     s.workouts.push(w)
-    if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, durationMs: w.durationMs, massUnit: 'kg', prescription: A.prescribedEntries, entries: A.entries } })
+    if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, durationMs: w.durationMs, massUnit: 'kg', prescription: A.prescribedEntries, entries: A.entries, ...(A.flex ? { flex: A.flex } : {}) } })
     s.active = null
   })
   flushEvents()

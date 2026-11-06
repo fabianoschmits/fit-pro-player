@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
     exercisePicker: vi.fn(),
     exConfigSheet: vi.fn(),
     startFlow: vi.fn(),
+    openSheet: vi.fn(),
     navigate: vi.fn(),
   }
   state.storeSnapshot = () => ({
@@ -43,6 +44,7 @@ const mocks = vi.hoisted(() => {
     startWork: state.startWork,
     finishWorkEarly: state.finishWorkEarly,
     toast: vi.fn(),
+    openSheet: state.openSheet,
   })
   return state
 })
@@ -549,6 +551,10 @@ describe('Workout set completion flow', () => {
 
     await act(async () => { startWorkoutButton().dispatchEvent(new dom.Event('click', { bubbles: true })) })
 
+    expect(mocks.S.active.start).toBeNull()
+    const durationSheet = mocks.openSheet.mock.calls[0][0](() => {})
+    expect(durationSheet.props.preferredMinutes).toBe(60)
+    await act(async () => durationSheet.props.onConfirm(60))
     expect(mocks.S.active.start).toEqual(expect.any(Number))
     await act(async () => { root.render(React.createElement(Workout)) })
     expect(container.querySelector('.set-start-action')?.disabled).toBe(false)
@@ -567,6 +573,33 @@ describe('Workout set completion flow', () => {
     const starts = [...container.querySelectorAll('button')].filter(button => button.textContent.includes('Começar treino'))
     expect(starts).toHaveLength(1)
     expect([...container.querySelectorAll('.set-action')].every(checkbox => checkbox.disabled)).toBe(true)
+  })
+
+  it('reviews a temporary selection before starting and preserves the original prescription', async () => {
+    await mount(Array.from({ length: 5 }, (_, index) => exercise(`exercise-${index}`, [false, false, false, false], { target: { reps: 12, rest: 180 } })))
+    mocks.S.active.start = null
+    mocks.S.profile = { preferredWorkoutMinutes: 60 }
+    mocks.S.active.prescribedEntries = [{ id: 'original-prescription' }]
+    await act(async () => root.render(<Workout />))
+    await clickAndRender(startWorkoutButton())
+    const sheet = mocks.openSheet.mock.calls[0][0](() => {})
+    await act(async () => sheet.props.onConfirm(20))
+    await act(async () => root.render(<Workout />))
+    expect(mocks.S.active.start).toBeNull()
+    expect(mocks.S.active.entries).toHaveLength(5)
+    expect(container.querySelector('.wp-queue-details').hasAttribute('open')).toBe(true)
+    expect(container.querySelectorAll('.fpp-flex-toggle')).toHaveLength(5)
+    expect(container.textContent).toContain('Retirado pelo tempo')
+    const removed = container.querySelector('.fpp-flex-toggle[aria-pressed="false"]')
+    await clickAndRender(removed)
+    const selectedCount = mocks.S.active.flex.outline.filter(item => item.selected).length
+    await clickAndRender(buttonNamed(container, 'Confirmar treino'))
+    expect(mocks.S.active.start).toEqual(expect.any(Number))
+    expect(mocks.S.active.entries).toHaveLength(selectedCount)
+    expect(mocks.S.active.prescribedEntries).toEqual([{ id: 'original-prescription' }])
+    expect(mocks.S.profile.preferredWorkoutMinutes).toBe(60)
+    expect(container.querySelectorAll('.fpp-flex-toggle')).toHaveLength(0)
+    expect(mocks.S.active.entries.every(entry => entry.sets.every(set => !set.done))).toBe(true)
   })
 
   it('starts rest between sets but finishes immediately after the final set of the workout', async () => {

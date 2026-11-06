@@ -8,6 +8,7 @@ import { t } from '../lib/i18n.js'
 import { planSetupProgress, smartDefaultConfig } from '../lib/ux.js'
 import { supersetUnits, cleanupSg } from '../lib/history.js'
 import ExerciseCard from '../components/training/ExerciseCard.jsx'
+import ProfessionalWorkoutDuration from '../components/ProfessionalWorkoutDuration.jsx'
 
 import { exercisePicker, exConfigSheet, confirmSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
@@ -89,7 +90,7 @@ export function RoutineTemplatePicker({ currentId, close, state = undefined, onU
 
 export default function RoutineEdit() { return <RoutineEditor /> }
 
-export function RoutineEditor({ state = undefined, onUpdate = undefined, routineId: suppliedId = undefined, basePath = '/plan', onSave = undefined, onBack = undefined, onOpen = undefined, readOnly = false, mode = 'athlete' } = {}) {
+export function RoutineEditor({ state = undefined, onUpdate = undefined, routineId: suppliedId = undefined, basePath = '/plan', onSave = undefined, onBack = undefined, onOpen = undefined, readOnly = false, mode = 'athlete', studentProfile = undefined } = {}) {
   const nav = useNavigate()
   const { id: routeId } = useParams()
   const id = suppliedId || routeId
@@ -190,6 +191,8 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
       </div>
       <span className="routine-builder-head-thumb" aria-hidden="true"><RoutineMuscleThumb routine={r} body={S.body} /></span>
     </div>
+
+    {mode === 'professional' && <ProfessionalWorkoutDuration routine={r} studentProfile={studentProfile} context={{ ...S, ...r }} onApply={!readOnly && studentProfile ? exercises => update(next => { const draft = next.routines.find(item => item.id === id); if (draft) draft.ex = exercises.map(entry => ({ ...entry })) }) : undefined} />}
 
     <div className="row between routine-section-head">
       <h4 className="sec">{t('Exercises')}</h4>

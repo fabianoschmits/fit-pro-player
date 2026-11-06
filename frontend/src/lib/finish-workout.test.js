@@ -3,6 +3,16 @@ import { buildCompletedWorkout } from './finish-workout.js'
 import { workoutDuration } from './format.js'
 
 describe('completed workout boundary', () => {
+  it('keeps the time adaptation separate from completed exercises', () => {
+    const flex = { targetMinutes: 40, preferredMinutes: 60, estimatedMinutes: 39, mode: 'adapted', phase: 'confirmed', outline: [
+      { key: 'position:0', exerciseId: 'bench', selected: true },
+      { key: 'position:1', exerciseId: 'row', selected: false },
+    ] }
+    const completed = buildCompletedWorkout({ id: 'flex', flex, entries: [{ id: 'bench', sets: [{ r: 10, done: true }] }] })
+    expect(completed.flex).toEqual(flex)
+    expect(completed.entries.map(entry => entry.id)).toEqual(['bench'])
+    expect(completed.flex).not.toBe(flex)
+  })
   it('retains execution, assignment and immutable prescription identifiers in personal history', () => {
     const active = { id: 'w', professionalExecutionId: 'execution', assignmentId: 'a', programVersionId: 'v', prescribedEntries: [{ id: 'x' }], entries: [] }
     expect(buildCompletedWorkout(active)).toMatchObject({ professionalExecutionId: 'execution', assignmentId: 'a', programVersionId: 'v', prescribedEntries: [{ id: 'x' }], massUnit: 'kg' })

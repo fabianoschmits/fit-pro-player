@@ -9,6 +9,8 @@ import { validateAvailableWeeklyPlan as validateWeeklyPlan } from '../lib/profes
 import { UNAVAILABLE_EXERCISE_MESSAGE } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
 import { RoutineEditor } from './RoutineEdit.jsx'
+import ProfessionalWorkoutDuration from '../components/ProfessionalWorkoutDuration.jsx'
+import { getPreferredWorkoutMinutes } from '../lib/workout-duration.js'
 import TrainingPlanWorkspace from '../components/training/TrainingPlanWorkspace.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
 import { ActionGroup, Button, TextField } from '../components/ui.jsx'
@@ -45,8 +47,9 @@ function StudentPlan({ studentId, routineId = undefined }) {
  }
  const create = workspace => { setState(workspace || weeklyPlanToWorkspace()); setDirty(true) }
  const chooseTemplate = async item => { try { const versions = await repo.versions(item.id); if (!alive.current) return; const version = versions[0]; if (!version?.weekly_plan) throw new Error('model-without-version'); create(weeklyPlanToWorkspace(version.weekly_plan, version.workout_titles)); setTitle(item.title); setTemplates(null); setError('') } catch (cause) { if (alive.current) setError('Não foi possível abrir este modelo.'); throw cause } }
- if (routineId && state) return <fieldset disabled={busy} style={{ display: 'contents' }}><RoutineEditor mode="professional" state={{ ...prefs, ...state, onboardingDone: true }} onUpdate={update} routineId={routineId} basePath={base} onSave={save} /></fieldset>
+ if (routineId && state) return <fieldset disabled={busy} style={{ display: 'contents' }}><RoutineEditor mode="professional" studentProfile={student?.profile || {}} state={{ ...prefs, ...state, onboardingDone: true }} onUpdate={update} routineId={routineId} basePath={base} onSave={save} /></fieldset>
  return <ManagementLayout title="Plano de treino" subtitle={student?.displayName || 'Aluno'} backTo={`/professional/students/${studentId}`}>
+   {student && <p className="small dim">Tempo habitual do aluno: {getPreferredWorkoutMinutes(student.profile)} min</p>}
    {error && <p role="alert" className="fpp-inline-notice" data-tone="error">{error}</p>}
    {loading ? <p role="status">Carregando plano…</p> : !student ? (!error && <p>Aluno indisponível.</p>) : !state ? (
      <ManagementPanel title="Criar plano" description="Escolha como começar a prescrição deste aluno." className="fpp-panel-flow">
@@ -68,6 +71,7 @@ function StudentPlan({ studentId, routineId = undefined }) {
    ) : <>
      <label className="fpp-form-field" htmlFor="student-plan-title"><span>Nome do plano</span><TextField id="student-plan-title" maxLength={160} value={title} onChange={e => { setTitle(e.target.value); setDirty(true) }} /></label>
      <div className="card management-plan-status" data-pending={dirty || draft?.sent_revision !== draft?.revision} role="status"><strong>{dirty || draft?.sent_revision !== draft?.revision ? 'Alterações não enviadas' : 'Plano enviado ao aluno'}</strong>{draft && !dirty && <p>Rascunho salvo · {new Date(draft.updated_at).toLocaleString('pt-BR')}</p>}</div>
+     <div className="fpp-panel-flow" aria-label="Duração dos treinos">{state.routines.map(routine => <ProfessionalWorkoutDuration key={routine.id} routine={routine} studentProfile={student.profile || {}} context={{ ...prefs, ...routine }} onApply={busy ? undefined : exercises => update(next => { const item = next.routines.find(value => value.id === routine.id); if (item) item.ex = exercises.map(entry => ({ ...entry })) })} />)}</div>
      <TrainingPlanWorkspace state={{ ...prefs, ...state }} onOpen={id => nav(`${base}/r/${id}`)} onAdd={() => { const id = crypto.randomUUID(); update(next => { next.routines.push({ id, name: `Treino ${String.fromCharCode(65 + next.routines.length)}`, ex: [] }) }); nav(`${base}/r/${id}`) }} />
      <ActionGroup layout="equal" className="management-plan-actions"><Button feedback="persistence" disabled={busy || !title.trim()} onAction={save}>Salvar para depois</Button><Button variant="primary" disabled={busy || !title.trim()} onClick={send}>{draft?.sent_revision ? 'Enviar atualização' : 'Enviar ao aluno'}</Button></ActionGroup>
    </>}
