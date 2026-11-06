@@ -1,3 +1,4 @@
+import AccountPhone from '../components/AccountPhone.jsx'
 import { useStore } from '../store/useStore.js'
 import Link from '../components/ManagementLink.jsx'
 import { t } from '../lib/i18n.js'
@@ -95,7 +96,7 @@ function ProfileWorkspace({ auth }) {
 
   if (!authenticated) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p>{t('Entre em uma conta para acessar o perfil profissional.')}</p></ManagementPanel></ManagementLayout>
   if (busy) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><FppSkeleton label={t('Carregando…')} /></ManagementLayout>
-  if (loadError) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p role="alert" className="management-error">{t('Não foi possível carregar o perfil profissional.')}</p><Button onClick={() => setAttempt(value => value + 1)}>{t('Tentar novamente')}</Button></ManagementPanel></ManagementLayout>
+  if (loadError) return <ManagementLayout title={t('Perfil profissional')} backTo="/more" nav={false}><ManagementPanel><p role="alert" className="management-error fpp-inline-notice">{t('Não foi possível carregar o perfil profissional.')}</p><Button onClick={() => setAttempt(value => value + 1)}>{t('Tentar novamente')}</Button></ManagementPanel></ManagementLayout>
 
   if (!capability || editing) return <ManagementLayout
     title={capability ? t('Editar perfil') : t('Tornar-se profissional')}
@@ -103,7 +104,7 @@ function ProfileWorkspace({ auth }) {
     backTo={capability ? '/professional/profile' : '/settings'}
     nav={capability ? undefined : false}
   >
-    {error && <p role="alert" className="management-error">{error}</p>}
+    {error && <p role="alert" className="management-error fpp-inline-notice">{error}</p>}
     <ProfessionalProfileForm key={pathname} profile={profile} saving={saving} state={saveState} provisioning={!capability} onSave={persist} onCancel={() => navigate(capability ? '/professional/profile' : '/settings')} />
   </ManagementLayout>
 
@@ -116,7 +117,7 @@ function ProfileWorkspace({ auth }) {
     </ManagementPanel>
     <div className="management-profile-details">
       <ManagementPanel title={t('Atuação')}>
-        <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{specialtyText(value)}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Estado')}</dt><dd>{profile.stateUf || t('Não informado')}</dd></div><div><dt>{t('Cidade')}</dt><dd>{profile.cityName || t('Não informado')}</dd></div><div><dt>{t('Bairro')}</dt><dd>{profile.neighborhood || t('Não informado')}</dd></div></dl>
+        <dl className="management-facts"><div><dt>{t('Especialidades')}</dt><dd>{profile.specialties.length ? <ul className="management-specialties">{profile.specialties.map(value => <li key={value}>{specialtyText(value)}</li>)}</ul> : t('Não informado')}</dd></div><div><dt>{t('Estado')}</dt><dd>{profile.stateUf || t('Não informado')}</dd></div><div><dt>{t('Cidade')}</dt><dd>{profile.cityName || t('Não informado')}</dd></div><div><dt>{t('Bairro')}</dt><dd>{profile.neighborhood || t('Não informado')}</dd></div><div className="professional-contact-fact"><dt>{t('Contato')}</dt><dd><AccountPhone iconOnly /></dd></div></dl>
       </ManagementPanel>
       <ManagementPanel title={t('Registro profissional')}>
         <dl className="management-facts"><div><dt>{t('Tipo de registro')}</dt><dd>{profile.registrationType || t('Não informado')}</dd></div><div><dt>{t('Número do registro')}</dt><dd>{profile.registrationNumber || t('Não informado')}</dd></div><div><dt>{t('Status do registro')}</dt><dd><ManagementStatus tone={profile.verificationStatus === 'verified' ? 'success' : 'neutral'}>{status}</ManagementStatus></dd></div></dl>

@@ -120,7 +120,7 @@ export default function ConsoleConversation() {
     }
   }
 
-  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed} back={back} backLabel="Caixa de entrada"><div className="cx-page-body console-conversation-page">
+  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed} back={back} backLabel="Caixa de entrada"><div className="cx-page-body console-conversation-page fpp-console-page fpp-console-page--ticket">
     {error && <Alert onRetry={refresh}>{error}</Alert>}
     {busy ? <Loading label="Carregando conversa…" /> : ticket && <>
       {actionError && <Alert>{actionError}</Alert>}{success && <div className="cx-success" role="status">{success}</div>}
@@ -196,7 +196,7 @@ export default function ConsoleConversation() {
                 <CxButton type="button" className="cx-pill-btn cx-pill-btn--accent" state={actionState('reopen')} disabled={operation.locked} onClick={event => update(event, 'reopen', { status: 'pending' })}>Reabrir chamado</CxButton>
               </div>
             ) : (
-              <form className="console-chat-bar" onSubmit={e => { e.preventDefault(); if (draft.trim() && !charOver) void run(e, 'reply', () => repo.reply(ticketId, draft.trim()), 'Resposta enviada ao usuário.') }}>
+              <form className="console-chat-bar fpp-console-composer" onSubmit={e => { e.preventDefault(); if (draft.trim() && !charOver) void run(e, 'reply', () => repo.reply(ticketId, draft.trim()), 'Resposta enviada ao usuário.') }}>
                 <div className="console-chat-input-col">
                   <textarea
                     className={`console-chat-textarea${charOver ? ' is-over' : ''}`}

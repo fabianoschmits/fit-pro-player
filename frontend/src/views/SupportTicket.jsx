@@ -207,7 +207,7 @@ export default function SupportTicket() {
   const sendsLeft = RATE_MAX_SENDS - recentSends
 
   return (
-    <div className="chat-page">
+    <div className="chat-page fpp-ui-chat fpp-screen-ticket-chat">
       {/* Header — Fixed on top */}
       <div className="chat-header">
         <AppHeader title={ticket?.subject || 'Chamado'} subtitle={ticket?.categoryLabel} backTo="/support/tickets" />
@@ -259,7 +259,7 @@ export default function SupportTicket() {
       {isArchived ? (
         <div className="chat-archived"><Icon name="lock" /><span>Este chamado está arquivado.</span></div>
       ) : (
-        <form className="chat-input-bar" onSubmit={send} noValidate>
+        <form className="chat-input-bar fpp-chat-composer" onSubmit={send} noValidate>
           <div className="chat-input-col">
             <textarea
               ref={textareaRef}

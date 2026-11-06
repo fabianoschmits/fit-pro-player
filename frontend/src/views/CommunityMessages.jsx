@@ -29,8 +29,8 @@ function ActionMenu({ label = undefined, open, onToggle = undefined, children = 
     document.addEventListener('pointerdown', close)
     return () => document.removeEventListener('pointerdown', close)
   }, [open, onToggle])
-  return <div ref={root} className={`dm-action-menu ${className}${open ? ' is-open' : ''}`.trim()}>
-    <button type="button" className="dm-menu-trigger" aria-label={label} aria-expanded={open} onClick={event => { event.stopPropagation(); onToggle() }}><Icon name="more" /></button>
+  return <div ref={root} className={`dm-action-menu ${className}${open ? ' is-open' : ''}`.trim()} onKeyDown={event => { if (event.key === 'Escape' && open) { event.stopPropagation(); onToggle() } }}>
+    <button type="button" className="dm-menu-trigger" aria-haspopup="menu" aria-label={label} aria-expanded={open} onClick={event => { event.stopPropagation(); onToggle() }}><Icon name="more" /></button>
     {open && <div className="dm-menu-popover" role="menu">{children}</div>}
   </div>
 }
@@ -81,7 +81,7 @@ function Inbox({ repo, userId = undefined }) {
       await refresh()
     } catch { setError('Não foi possível atualizar a conversa. Tente novamente.') }
   }
-  return <div className="dm-inbox page-scenery"><AppHeader title="Conversas" backTo="/community" />
+  return <div className="dm-inbox page-scenery fpp-ui-view fpp-screen-inbox"><AppHeader title="Conversas" backTo="/community" />
     <BlockedUsers repo={repo} /><label className="dm-search"><Icon name="search" /><input aria-label="Pesquisar conversas" placeholder="Pesquisar conversas" value={query} onChange={event => setQuery(event.target.value)} /></label>
     {error && <p className="support-error" role="alert">{error} <button onClick={refresh}>Tentar novamente</button></p>}
     {loading && <p role="status">Carregando conversas…</p>}
@@ -193,7 +193,7 @@ function Conversation({ repo, client, userId = undefined, peerId }) {
   }
   const beginEdit = message => { setMenu(null); nonce.current = null; setEditing(message); setBody(message.body) }
   const cancelEdit = () => { setEditing(null); setBody(''); nonce.current = null }
-  return <div className="chat-page dm-conversation"><div className="chat-header"><AppHeader title={profile?.display_name || 'Conversa'} subtitle="Mensagem privada" backTo="/community/messages" identity={<Avatar profile={profile} className="dm-header-avatar" />} action={<ActionMenu label="Ações da conversa" open={menu === 'conversation'} onToggle={() => setMenu(menu === 'conversation' ? null : 'conversation')} className="dm-conversation-menu"><button role="menuitem" onClick={() => void actOnConversation('profile')}>Ver perfil</button><button role="menuitem" onClick={() => void actOnConversation('block')}>Bloquear</button><button role="menuitem" onClick={() => void actOnConversation('unblock')}>Desbloquear</button><button role="menuitem" onClick={() => void actOnConversation('unread')}>Marcar como não lida</button><button role="menuitem" className="dm-danger" onClick={() => void actOnConversation('hide')}>Apagar conversa</button></ActionMenu>} /></div>
+  return <div className="chat-page dm-conversation fpp-ui-chat fpp-screen-conversation"><div className="chat-header"><AppHeader title={profile?.display_name || 'Conversa'} subtitle="Mensagem privada" backTo="/community/messages" identity={<Avatar profile={profile} className="dm-header-avatar" />} action={<ActionMenu label="Ações da conversa" open={menu === 'conversation'} onToggle={() => setMenu(menu === 'conversation' ? null : 'conversation')} className="dm-conversation-menu"><button role="menuitem" onClick={() => void actOnConversation('profile')}>Ver perfil</button><button role="menuitem" onClick={() => void actOnConversation('block')}>Bloquear</button><button role="menuitem" onClick={() => void actOnConversation('unblock')}>Desbloquear</button><button role="menuitem" onClick={() => void actOnConversation('unread')}>Marcar como não lida</button><button role="menuitem" className="dm-danger" onClick={() => void actOnConversation('hide')}>Apagar conversa</button></ActionMenu>} /></div>
     <div className="chat-thread" ref={thread} aria-label="Conversa" aria-live="polite" onScroll={() => { const el = thread.current; atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80 }}>
       {!validPeer && <p role="alert">Este destinatário não está disponível.</p>}
       {loading && <p role="status">Carregando conversa…</p>}

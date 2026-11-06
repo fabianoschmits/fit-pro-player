@@ -49,5 +49,5 @@ export function PlayerLab() {
 
 export default function WorkoutPlayers() {
   const { userId, allowed } = useConsoleAccess()
-  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed} back="/console/laboratory" backLabel="Laboratório de testes"><div className="cx-page-body"><PlayerLab /></div></ConsoleShell></AccessGate>
+  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed} back="/console/laboratory" backLabel="Laboratório de testes"><div className="cx-page-body fpp-ui-lab-player"><PlayerLab /></div></ConsoleShell></AccessGate>
 }

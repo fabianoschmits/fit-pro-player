@@ -7,7 +7,7 @@ import { Button } from '../ui.jsx'
 import { useState } from 'react'
 const WEEK = [1, 2, 3, 4, 5, 6, 0]
 export function PlanWeek({ state = undefined, onDay = undefined, updates = {} }) {
-  return <section><h4 className="sec">{t('Week schedule')}</h4><div className="plan-week-card"><div className="plan-week-grid">
+  return <section aria-label={t('Week schedule')}><h4 className="sec">{t('Week schedule')}</h4><div className="plan-week-card"><div className="plan-week-grid">
     {WEEK.map(day => { const routine = state.routines.find(r => r.id === state.week[day]); return <div key={day} className="plan-day-column">
       <span className="plan-day-marker">{routine?.assigned && <span className="plan-day-professional"><Icon name="shield" /><span>Prof.</span></span>}</span>
       <button className={'plan-day' + (routine ? ' on' : '') + (routine?.assigned ? ' professional' : '')} disabled={!onDay} aria-label={`${t(DAYN[day])}: ${routine ? routineName(routine) : t('Rest')}`} onClick={() => onDay?.(day)}>
@@ -20,7 +20,7 @@ export function PlanWeek({ state = undefined, onDay = undefined, updates = {} })
 export function RoutineList({ state = undefined, onOpen = undefined, onAdd = undefined, routines = state.routines, title = t('Routines'), className = '', pageSize = 5 }) {
   const [visible, setVisible] = useState(pageSize)
   const shown = routines.slice(0, visible)
-  return <section className={className}><div className="row between plan-section-head"><h4 className="sec">{title}</h4>{onAdd && <Button size="sm" variant="tinted" icon="plus" onClick={onAdd}>{t('New')}</Button>}</div>
+  return <section className={className} aria-label={title}><div className="row between plan-section-head"><h4 className="sec">{title}</h4>{onAdd && <Button size="sm" variant="tinted" icon="plus" onClick={onAdd}>{t('New')}</Button>}</div>
     <div className="list plan-routine-list">{shown.map(routine => {
       const assignedDays = WEEK.filter(day => state?.week?.[day] === routine.id);
       return <button key={routine.id} className="item" onClick={() => onOpen(routine.id)}>

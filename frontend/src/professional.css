@@ -1,6 +1,7 @@
 /* Professional workspace: quiet hierarchy, legible controls, mobile-first layouts. */
-:root{--r-md:var(--r);--shadow-1:var(--card-shadow);--shadow-2:var(--toast-shadow);--label-3:#a7a7b1;--type-body:15px;--type-meta:12px}
-:root[data-theme="light"]{--label-3:#59677a}
+:root{--r-md:var(--r);--shadow-1:var(--card-shadow);--shadow-2:var(--toast-shadow);--type-body:15px;--type-meta:12px}
+:is(.management-layout,.management-routine-editor,.professional-page){--label-3:#a7a7b1}
+:root[data-theme="light"] :is(.management-layout,.management-routine-editor,.professional-page){--label-3:#59677a}
 .dialog-layer{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:20px}
 .dialog-backdrop{position:absolute;inset:0;background:var(--overlay);backdrop-filter:blur(5px)}
 .dialog-surface{position:relative;width:min(100%,720px);max-height:90dvh;overflow:auto;background:var(--surface);border:1px solid var(--sep);border-radius:var(--r-xl);padding:20px;box-shadow:var(--shadow-2);animation:dialog-enter 160ms var(--ease)}

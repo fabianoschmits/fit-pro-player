@@ -169,7 +169,7 @@ export default function ConsoleNotifications({ userId = undefined, allowed }) {
           >
             <div
               ref={dialog}
-              className="console-notification-dialog"
+              className="console-notification-dialog fpp-console-notifications"
               role="dialog"
               aria-modal="true"
               aria-labelledby={titleId}

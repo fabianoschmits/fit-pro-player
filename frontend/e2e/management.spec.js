@@ -211,7 +211,10 @@ test('professional invitations separate reusable code and preserve generated inv
   await expect(personal).not.toContainText('Pendente')
   await expect(page.getByText('ACCEPTED1')).toBeVisible()
   await expect(page.getByText('REVOKED1')).toBeVisible()
-  await expect(page.getByRole('button',{name:'Revogar',exact:true})).toHaveCount(1)
+  const pendingInvite = page.locator('.management-invite').filter({hasText:'A1B2C3D4E5'})
+  await expect(pendingInvite.getByRole('button',{name:'Revogar',exact:true})).toBeHidden()
+  await pendingInvite.locator('summary').click()
+  await expect(pendingInvite.getByRole('button',{name:'Revogar',exact:true})).toBeVisible()
   for (const width of [320,360,390,430]) {
     await page.setViewportSize({width,height:800})
     await expect(personal).toBeVisible()
@@ -229,7 +232,7 @@ test('professional invitations separate reusable code and preserve generated inv
   await page.getByRole('button',{name:'Revogar',exact:true}).click()
   await expect(page.getByText('Revogar este convite?')).toBeVisible()
   await page.getByRole('button',{name:'Confirmar',exact:true}).click()
-  await expect(page.getByText('Convite revogado.',{exact:true})).toBeVisible()
+  await expect(page.locator('.management-notice')).toContainText('Convite revogado.')
 })
 test('legacy program creation redirects to the shared template editor', async ({page}) => {
  let created=null

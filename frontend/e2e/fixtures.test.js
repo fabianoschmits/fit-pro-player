@@ -44,6 +44,11 @@ export async function seed(page,{professional=false,authenticated=professional,u
     else if(name==='professional_relationship_cycles' && !Object.hasOwn(rpc,name))data=[{id:'fixture-cycle',professional_user_id:userId,student_user_id:STUDENT,status:'active',created_at:'2026-10-10T12:00:00Z'}]
     else if(name==='user_roles')data=(roles || (professional?['professional']:[])).map(role=>({role}))
     else if(name==='save_own_account_snapshot')data=[{status:'APPLIED',revision:2,updated_at:new Date().toISOString()}]
+    else if(name==='professional_generated_invites' && !Object.hasOwn(rpc,name)) {
+      const source = rpc.professional_invites
+      const rows = typeof source === 'function' ? await source({}, {userId,user,request:route.request()}) : source || []
+      data = Array.isArray(rows) ? rows.filter(item=>!item.is_personal) : rows
+    }
     else if(Object.hasOwn(rpc,name))data=typeof rpc[name]==='function'?await rpc[name](JSON.parse(route.request().postData()||'{}'),{userId,user,request:route.request()}):rpc[name]
     if(name==='professional_invites'&&Array.isArray(data)){
       const personalFilter=url.searchParams.get('is_personal')

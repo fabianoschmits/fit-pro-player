@@ -464,7 +464,7 @@ export default function Landing({ invitePath = false }) {
         : 'Usar neste dispositivo'
 
   return (
-    <main className="landing-page">
+    <main className="landing-page fpp-screen-landing">
       <div className="landing-atmosphere" aria-hidden="true" />
 
       {invitePath && (
@@ -472,7 +472,7 @@ export default function Landing({ invitePath = false }) {
           <div className="landing-invite-banner">
             <strong>Você recebeu um convite profissional.</strong>
             <span>Crie sua conta ou entre para aceitar o vínculo.</span>
-            <div className="landing-invite-actions">
+            <div className="landing-invite-actions fpp-spaced-actions">
               <Button variant="primary" onClick={() => openAuthSheet('sign_up')}>Criar conta</Button>
               <Button variant="secondary" onClick={() => openAuthSheet('entry')}>Já tenho conta</Button>
             </div>

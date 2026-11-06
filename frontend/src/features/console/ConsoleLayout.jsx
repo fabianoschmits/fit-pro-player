@@ -18,7 +18,7 @@ const navigation = [
 export default function ConsoleShell({ children = undefined, back = undefined, backLabel = 'Voltar', userId = undefined, allowed = false }) {
   const { pathname } = useLocation()
   const navRef = useManagementNavVisibility()
-  return <div className="cx-shell console-workspace">
+  return <div className="cx-shell console-workspace fpp-ui-view fpp-ui-console-shell">
     <header className="console-topbar">
       <Link to="/console" className="console-brand"><span className="console-brand-mark"><Icon name="shield" /></span><span>Central da plataforma<small>Fit Pro Player</small></span></Link>
       <div className="console-topbar-actions"><ConsoleNotifications userId={userId} allowed={allowed} /><Link className="console-return" to="/more" aria-label="Voltar ao aplicativo"><Icon name="chevronLeft" /><span>Voltar ao aplicativo</span></Link></div>

@@ -40,9 +40,9 @@ export default function SupportTickets() {
   }, [repo])
 
   return (
-    <div className="narrow support-page">
+    <div className="narrow support-page fpp-ui-view fpp-screen-tickets">
       <AppHeader title="Meus chamados" subtitle="Acompanhe suas conversas com a equipe." backTo="/support" />
-      <div className="support-list-actions">
+      <div className="support-list-actions fpp-spaced-actions">
         <Link className="management-button management-button-primary" to="/support/tickets/new">
           <Icon name="plus" /> Novo chamado
         </Link>
@@ -52,7 +52,7 @@ export default function SupportTickets() {
       {error && <p role="alert" className="support-error">{error}</p>}
 
       {!busy && !error && !tickets.length && (
-        <div className="support-empty">
+        <div className="support-empty fpp-friendly-empty">
           <strong>Você ainda não abriu nenhum chamado.</strong>
           <Link to="/support/tickets/new">Enviar uma mensagem</Link>
         </div>

@@ -1,0 +1,40 @@
+.fpp-phone-field { min-width: 0; width: 100%; }
+.fpp-phone-field > label { display: block; margin-bottom: 8px; font-weight: 600; }
+.fpp-phone-controls { display: flex; align-items: stretch; gap: 8px; min-width: 0; }
+.fpp-phone-controls > input { flex: 1; min-width: 0; width: 100%; margin: 0; }
+.fpp-phone-country { position: relative; flex: 0 0 auto; }
+.fpp-phone-country > summary { display: flex; align-items: center; justify-content: center; gap: 7px; height: 100%; min-height: 48px; padding: 10px; border: 1px solid var(--surface-border); border-radius: 12px; background: var(--surface); cursor: pointer; list-style: none; }
+.fpp-phone-country > summary::-webkit-details-marker { display: none; }
+.fpp-phone-country img { object-fit: cover; border-radius: 2px; flex-shrink: 0; }
+.fpp-phone-country-menu { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; width: min(320px, 78vw); padding: 10px; border: 1px solid var(--surface-border); border-radius: 14px; background: var(--surface); box-shadow: 0 12px 30px #0005; }
+.fpp-phone-country-options { max-height: 240px; overflow-y: auto; margin-top: 8px; }
+.fpp-phone-country-options button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; border: 0; border-radius: 8px; padding: 8px; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.fpp-phone-country-options button span:nth-child(2) { flex: 1; }
+.fpp-phone-country-options button:hover, .fpp-phone-country-options button[aria-pressed="true"] { background: var(--surface-2, #8882); }
+.fpp-phone-hint { margin: 8px 0 12px; font-size: 12px; line-height: 1.5; color: var(--label-2); }
+.fpp-account-phone { padding: 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--surface-border); margin-block: 12px; }
+.fpp-whatsapp-contact { margin-block: 12px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.fpp-whatsapp-contact svg { width: 22px; height: 22px; color: #25d366; flex-shrink: 0; }
+.fpp-whatsapp-contact a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+.fpp-whatsapp-contact.is-icon-only { margin: 0; }
+.fpp-whatsapp-contact .fpp-whatsapp-icon { width: 44px; height: 44px; justify-content: center; border-radius: 50%; color: #25d366; text-decoration: none; }
+.fpp-whatsapp-contact .fpp-whatsapp-icon svg { width: 20px; height: 20px; }
+.fpp-whatsapp-contact .fpp-whatsapp-icon:hover { background: var(--surface-2); }
+.fpp-whatsapp-contact .fpp-whatsapp-icon:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.fpp-whatsapp-contact.has-contact-label .fpp-whatsapp-icon { flex-direction: column; width: 60px; height: auto; min-height: 48px; gap: 4px; padding: 4px; border-radius: 10px; }
+.fpp-whatsapp-contact.has-contact-label .fpp-whatsapp-icon span { font-size: 11px; line-height: 1.2; color: var(--label-2); }
+.professional-student-heading-text { flex: 1; }
+.professional-student-contact-action { flex: 0 0 auto; align-self: flex-start; margin-left: auto; }
+.management-layout .management-facts > .professional-contact-fact { align-items: center; }
+.professional-contact-fact dt, .professional-contact-fact dd { font-size: 13px; }
+.professional-contact-fact .fpp-whatsapp-icon { font-size: inherit; }
+.professional-contact-fact .fpp-whatsapp-icon svg { width: 1em; height: 1em; }
+.fpp-account-phone-details > summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; justify-content: space-between; list-style: none; }
+.fpp-account-phone-details > summary::-webkit-details-marker { display: none; }
+.fpp-account-phone-details > summary::after { content: '+'; color: var(--label-2); font-size: 20px; }
+.fpp-account-phone-details[open] > summary::after { content: '−'; }
+.fpp-account-phone-details > summary:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.fpp-account-phone-editor { padding-top: 12px; }
+.fpp-phone-field :focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; }
+.fpp-phone-field input[aria-invalid="true"] { border-color: var(--red); outline-color: var(--red); }
+.fpp-phone-error { color: var(--red); font-size: 13px; line-height: 1.4; margin: 8px 0; }

@@ -178,7 +178,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
   readOnly = readOnly || Boolean(r.assigned)
   const canDelete = !readOnly
 
-  return <div className={`narrow routine-builder${mode === 'professional' ? ' management-routine-editor' : ''}`}>
+  return <div className={`narrow routine-builder fpp-ui-view fpp-screen-routine${mode === 'professional' ? ' management-routine-editor' : ''}`}>
     {planProgress && <PlanProgress progress={planProgress} />}
     <div className="hdr routine-builder-head">
       <button className="iconbtn" onClick={() => onBack ? onBack() : nav(returnPath)} aria-label={t('Plan')}><Icon name="chevronLeft" /></button>
@@ -215,7 +215,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
     })}</div> : <div className="empty routine-empty"><div className="ico"><Icon name="dumbbell" /></div>{t('No exercises yet — add your first one.')}</div>}
 
     {organizing && <div className="small dim row routine-organize-help"><Icon name="link" />{t('Tap the link button on an exercise to superset it with the one above — you’ll do them back-to-back.')}</div>}
-    <div className="routine-builder-actions" hidden={readOnly}>
+    <div className="routine-builder-actions fpp-spaced-actions" hidden={readOnly}>
       <Button variant="tinted" onClick={addExercise} icon="plus">{t('Add exercise')}</Button>
       <Button variant="plain" onClick={duplicateRoutine} icon="reset">{t('Duplicate routine')}</Button>
     </div>
@@ -243,7 +243,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
     </div>
 
     {saveError && <FppActionFeedback state="error">{saveError}</FppActionFeedback>}
-    <div className="routine-completion-actions" hidden={readOnly}>
+    <div className="routine-completion-actions fpp-spaced-actions" hidden={readOnly}>
       <Button feedback="persistence" variant="primary" icon="check" onAction={saveRoutine} onSuccess={() => onBack ? onBack() : nav(returnPath)} loadingLabel={t('Salvando…')} successLabel={t('Salvo')}
         onError={() => setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.'))}>{t('Done')}</Button>
       {canDelete && <Button variant="danger" icon="trash" onClick={deleteRoutine}>{t('Delete routine')}</Button>}

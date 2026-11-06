@@ -2,6 +2,16 @@ import { describe, expect, it, vi } from 'vitest'
 import { createProfessionalWorkflowRepository, programMuscleRoutine } from './professional-workflow.js'
 
 describe('professional management repository', () => {
+  it('loads authoritative generated invite history and deletes only through its protected RPC', async () => {
+    const used = { id: 'used', status: 'pending', is_used: true, used_by_name: 'Ana', used_at: '2026-11-05T12:00:00Z' }
+    const rpc = vi.fn().mockResolvedValueOnce({ data: [used], error: null }).mockResolvedValueOnce({ data: true, error: null })
+    const chain = { select: () => chain, eq: () => chain, order: () => chain, limit: async () => ({ data: [{ id: 'personal', is_personal: true }], error: null }) }
+    const repo = createProfessionalWorkflowRepository({ client: { rpc, from: () => chain } })
+    expect(await repo.invites()).toEqual([{ id: 'personal', is_personal: true }, used])
+    expect(rpc).toHaveBeenNthCalledWith(1, 'professional_generated_invites', {})
+    await repo.deleteInvite('revoked')
+    expect(rpc).toHaveBeenNthCalledWith(2, 'delete_revoked_professional_invite', { p_invite_id: 'revoked' })
+  })
   it('maps the latest published weekly plan into program summaries for muscle previews', async () => {
     const weeklyPlan = { monday: [{ exerciseId: '0025', sets: 3, reps: 8 }] }
     const repo = createProfessionalWorkflowRepository({ client: { rpc: async () => ({ data: { items: [{ id: 'p', title: 'Base', weekly_plan: weeklyPlan }], total: 1, offset: 0, has_more: false }, error: null }) } })
@@ -238,15 +248,16 @@ describe('professional management repository', () => {
       }
       return query
     })
-    const rpc = vi.fn().mockResolvedValue({ data: { ...rows[0], code: 'ANAFIT', is_custom: true }, error: null })
+    const rpc = vi.fn().mockResolvedValueOnce({ data: generated, error: null }).mockResolvedValueOnce({ data: { ...rows[0], code: 'ANAFIT', is_custom: true }, error: null })
     const repo = createProfessionalWorkflowRepository({ client: { from, rpc } })
 
     const inviteRows = await repo.invites()
     expect(inviteRows).toHaveLength(501)
     expect(inviteRows[0]).toEqual(rows[0])
-    expect(filters).toEqual([true, false])
+    expect(filters).toEqual([true])
     expect(await repo.savePersonalInviteCode('Ana Fit')).toMatchObject({ code: 'ANAFIT', is_personal: true, is_custom: true })
-    expect(rpc).toHaveBeenCalledExactlyOnceWith('save_professional_personal_invite', { p_code: 'Ana Fit' })
+    expect(rpc).toHaveBeenNthCalledWith(1, 'professional_generated_invites', {})
+    expect(rpc).toHaveBeenNthCalledWith(2, 'save_professional_personal_invite', { p_code: 'Ana Fit' })
   })
 
   it('maps personal-code conflicts to a stable repository error', async () => {

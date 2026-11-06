@@ -12,12 +12,12 @@ export default function History() {
     result.get(key).push(workout)
     return result
   }, new Map())
-  return <div className="history-view page-scenery">
+  return <div className="history-view page-scenery fpp-ui-view fpp-screen-history">
     <AppHeader title={t('History')} subtitle={t('{0} workouts', S.workouts.length)} backTo="/progress" className="history-titlebar" />
     {S.workouts.length ? <div className="history-groups">{[...groups].map(([month, workouts]) => {
       const date = new Date(`${month}-01T12:00:00`)
       const label = Number.isNaN(date.getTime()) ? month : date.toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' })
-      return <section className="history-month" key={month}>
+      return <section className="history-month fpp-history-group" key={month} aria-label={label}>
         <div className="history-month-heading"><h2>{label}</h2><span>{workouts.length}</span></div>
         <div className="list history-list">{workouts.map(workout => <WorkoutRow key={workout.id} w={workout} onClick={() => workoutDetailSheet(workout)} />)}</div>
       </section>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../auth/AuthProvider.jsx'
+import AccountPhone from '../components/AccountPhone.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import AvatarPicker from '../components/AvatarPicker.jsx'
 import AvatarImage from '../components/AvatarImage.jsx'
@@ -49,7 +50,7 @@ function MeasuresField({ height, weight, onSave = undefined }) {
 }
 
 export default function PersonalData() {
-  const nav = useNavigate()
+  const auth = useAuth()
   const S = useStore(state => state.S)
   const update = useStore(state => state.update)
   const profile = normalizeProfile(S.profile, S.body)
@@ -57,9 +58,8 @@ export default function PersonalData() {
   const [avatarDraft, setAvatarDraft] = useState(profile.avatarId)
   const [avatarError, setAvatarError] = useState('')
   const commit = (key, value) => { update(state => { state.profile = { ...normalizeProfile(state.profile, state.body), [key]: value }; if (key === 'sex') state.body = value }); return confirmPersonalSave() }
-  return <main className="narrow personal-data-page">
-    <AppHeader title="Dados pessoais" subtitle="Mantenha seu perfil atualizado" />
-    <button type="button" className="personal-back" onClick={() => nav('/more')}><Icon name="chevronLeft" /> Voltar</button>
+  return <main className="narrow personal-data-page fpp-ui-view fpp-screen-personal">
+    <AppHeader title="Dados pessoais" subtitle="Mantenha seu perfil atualizado" backTo="/more" />
     <section className={`personal-avatar-card ${avatarEditing ? 'is-editing' : ''}`} data-profile-field="avatarId">
       <div className="personal-field-head"><span>Seu avatar</span>{avatarEditing ? <span className="personal-field-actions"><button type="button" className="personal-cancel" onClick={() => { setAvatarError(''); setAvatarDraft(profile.avatarId); setAvatarEditing(false) }}>Cancelar</button><PersonalSaveButton onSave={() => { setAvatarError(''); setAvatarEditing(false); return commit('avatarId', avatarDraft) }} onError={setAvatarError} /></span> : <button type="button" className="personal-edit" onClick={() => { setAvatarDraft(profile.avatarId); setAvatarEditing(true) }}><Icon name="edit" /><span>Editar</span></button>}</div>
       {avatarError && <FppActionFeedback state="error">{avatarError}</FppActionFeedback>}
@@ -68,6 +68,7 @@ export default function PersonalData() {
     </section>
     <div className="personal-fields">
       <EditableField name="name" label="Nome" value={formatPersonName(profile.name || '')} summary={formatPersonName(profile.name || '')} onChange={value => commit('name', formatPersonName(value))} inputProps={{ autoComplete: 'name' }} />
+      {auth.status === 'authenticated' && !auth.user?.isAnonymous && <AccountPhone editable />}
       <EditableField name="sex" label="Sexo" value={profile.sex} summary={profile.sex === 'female' ? 'Feminino' : 'Masculino'} onChange={value => commit('sex', value)}>{({ editing, value, setValue }) => <Segmented options={[{ value: 'male', label: 'Masculino' }, { value: 'female', label: 'Feminino' }]} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="birthDate" label="Data de nascimento" value={profile.birthDate || defaultBirthDate()} summary={profile.birthDate || 'Não informado'} onChange={value => commit('birthDate', value)}>{({ editing, value, setValue }) => <DateWheelPicker value={value} max={new Date().toISOString().slice(0, 10)} onChange={setValue} disabled={!editing} />}</EditableField>
       <MeasuresField height={heightText(profile.heightCm)} weight={weightText(profile.startWeight)} onSave={({ height, weight }) => {

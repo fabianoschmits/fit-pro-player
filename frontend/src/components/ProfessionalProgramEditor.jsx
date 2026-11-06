@@ -6,7 +6,7 @@ import { weeklyPlanToWorkspace, workspaceToWeeklyPlan } from '../lib/training-wo
 import { validateAvailableWeeklyPlan as validateWeeklyPlan } from '../lib/professional-program.js'
 import { UNAVAILABLE_EXERCISE_MESSAGE } from '../lib/exercises.js'
 import { t } from '../lib/i18n.js'
-import { Button, TextField, TextArea } from './ui.jsx'
+import { ActionGroup, Button, TextField, TextArea } from './ui.jsx'
 /** @param {{initialPlan?: object, initialMetadata?: {title?:string, description?:string, workoutTitles?:object}, onCancel?: (...args: any[])=>any, onPublish?: Function, onSaveMetadata?: (...args: any[])=>any, onPublished?: (...args: any[])=>any}} props */
 export default function ProfessionalProgramEditor({ initialPlan = {}, initialMetadata = {}, onPublish, onPublished = undefined, onSaveMetadata = undefined, onCancel = undefined }) {
  const prefs = useStore(s => s.S)
@@ -22,10 +22,10 @@ export default function ProfessionalProgramEditor({ initialPlan = {}, initialMet
    onPublished?.(id)
  }
  return <div className="training-plan-workspace">
-   <TextField aria-label="Nome do modelo" value={metadata.title || ''} onChange={e => setMetadata({ ...metadata, title: e.target.value })} />
-   <details className="card"><summary>Mais opções</summary><TextArea aria-label="Descrição" value={metadata.description || ''} onChange={e => setMetadata({ ...metadata, description: e.target.value })} />{onSaveMetadata && <Button onAction={() => onSaveMetadata(metadata)}>Salvar informações</Button>}</details>
+   <label className="fpp-form-field" htmlFor="model-editor-title"><span>Nome do modelo</span><TextField id="model-editor-title" value={metadata.title || ''} onChange={e => setMetadata({ ...metadata, title: e.target.value })} /></label>
+   <details className="card"><summary>Mais opções</summary><div className="fpp-details-body"><label className="fpp-form-field" htmlFor="model-editor-description"><span>Descrição</span><TextArea id="model-editor-description" value={metadata.description || ''} onChange={e => setMetadata({ ...metadata, description: e.target.value })} /></label>{onSaveMetadata && <ActionGroup><Button onAction={() => onSaveMetadata(metadata)}>Salvar informações</Button></ActionGroup>}</div></details>
    {error && <p role="alert">{error}</p>}
    <TrainingPlanWorkspace state={{ ...prefs, ...state }} onOpen={setRoutineId} onAdd={() => { const id = crypto.randomUUID(); update(next => next.routines.push({ id, name: `Treino ${String.fromCharCode(65 + next.routines.length)}`, ex: [] })); setRoutineId(id) }} />
-   <div className="row"><Button onAction={save} onError={() => setError(current => current || 'Não foi possível salvar o modelo.')} variant="primary">Salvar modelo</Button><Button onClick={onCancel}>Cancelar</Button></div>
+   <ActionGroup layout="equal" className="fpp-editor-actions"><Button onAction={save} onError={() => setError(current => current || 'Não foi possível salvar o modelo.')} variant="primary">Salvar modelo</Button><Button onClick={onCancel}>Cancelar</Button></ActionGroup>
  </div>
 }

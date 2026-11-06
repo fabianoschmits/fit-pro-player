@@ -18,7 +18,7 @@ import ExerciseGuideAnimation from './components/ExerciseGuideAnimation.jsx'
 import Stepper from './components/Stepper.jsx'
 import Icon from './components/Icon.jsx'
 import MetricInfoButton from './components/MetricInfoButton.jsx'
-import { Button, Slider, Switch, Segmented, SelectRow, Row } from './components/ui.jsx'
+import { ActionGroup, Button, Slider, Switch, Segmented, SelectRow, Row } from './components/ui.jsx'
 import { glyphOf, GLYPH_GROUPS, DEFAULT_GLYPH } from './lib/glyphs.js'
 import BodyMap from './components/BodyMap.jsx'
 import RoutineMuscleThumb from './components/RoutineMuscleThumb.jsx'
@@ -168,14 +168,13 @@ function ConfirmDialog({ title, message, confirmText, cancelText, danger = undef
       if (!asynchronous) release()
     }
   }
-  return <div style={{ textAlign: 'center', padding: '4px 0' }}>
-    {title && <h3 style={{ marginBottom: 8 }}>{title}</h3>}
-    <div className="muted" style={{ marginBottom: 18, lineHeight: 1.5 }}>{message}</div>
+  return <div className="fpp-confirm-sheet">
+    {title && <h3>{title}</h3>}
+    <p className="fpp-confirm-message muted">{message}</p>
     {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
-    <Button variant={danger ? 'danger' : 'primary'} intent={danger ? 'critical' : 'primary'} onAction={confirm} onSuccess={complete}
+    <ActionGroup layout="stack" className="fpp-confirm-actions"><Button variant={danger ? 'danger' : 'primary'} intent={danger ? 'critical' : 'primary'} onAction={confirm} onSuccess={complete}
       loadingLabel={t('Processando…')} onError={() => setError(t('Não foi possível concluir a ação. Tente novamente.'))}>{confirmText || t('Confirm')}</Button>
-    <div style={{ height: 8 }} />
-    <Button variant="ghost" className="dim" activation="immediate" disabled={pending} onClick={close}>{cancelText || t('Cancel')}</Button>
+    <Button variant="ghost" className="dim" activation="immediate" disabled={pending} onClick={close}>{cancelText || t('Cancel')}</Button></ActionGroup>
   </div>
 }
 // Themed replacement for window.confirm — callback-based (no blocking).

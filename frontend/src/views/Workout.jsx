@@ -41,7 +41,7 @@ function StartChooser() {
     })
     nav('/plan/r/' + r.id)
   }
-  return <div className="narrow workout-start-view page-scenery">
+  return <div className="narrow workout-start-view page-scenery fpp-ui-view fpp-screen-workout">
     <div className="hdr"><div><h1>{t('Start workout')}</h1><div className="sub">{t(DAYN[new Date().getDay()])} — {scheduledToday ? t('today is {0}', routineName(scheduledToday)) : t('rest day, but no one’s stopping you')}</div></div></div>
     {completedToday && <div className="card" style={{ borderColor: 'var(--acc)' }}>
       <h2 className="accent">{t(completedToday.endedEarly ? 'Treino do dia encerrado mais cedo' : 'Treino do dia concluído')}</h2>
@@ -68,7 +68,7 @@ function StartChooser() {
       <Button variant="primary" icon="plus" onClick={() => nav('/plan/r/' + emptyToday.id)}>{t('Add exercise')}</Button>
     </div>}
     {!restDay && !completedToday && availableRoutines.length > 0 && <><h4 className="sec">{t('Other routines')}</h4>
-      <div className="list">{availableRoutines.map(r => <div key={r.id} className="item" onClick={() => startFlow(r.id)}>
+      <div className="list">{availableRoutines.map(r => <div key={r.id} className="item fpp-item-button" role="button" tabIndex={0} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); startFlow(r.id) } }} onClick={() => startFlow(r.id)}>
         <span className="lrow-i"><RoutineMuscleThumb routine={r} body={S.body} /></span>
         <div className="grow"><div className="tt">{routineName(r)}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         <span className="tag acc">{t('Start')}</span></div>)}</div></>}
@@ -76,7 +76,7 @@ function StartChooser() {
     {restDay && <div className="card">
       <h2>{t('No workout scheduled today')}</h2>
       <div className="muted small" style={{ marginBottom: 12 }}>{t('Choose a workout for today or do a freestyle workout.')}</div>
-      {availableRoutines.length > 0 && <><h4 className="sec">{t('Choose a workout for today')}</h4><div className="list">{availableRoutines.map(r => <div key={r.id} className="item" onClick={() => startFlow(r.id)}>
+      {availableRoutines.length > 0 && <><h4 className="sec">{t('Choose a workout for today')}</h4><div className="list">{availableRoutines.map(r => <div key={r.id} className="item fpp-item-button" role="button" tabIndex={0} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); startFlow(r.id) } }} onClick={() => startFlow(r.id)}>
         <span className="lrow-i"><RoutineMuscleThumb routine={r} body={S.body} /></span>
         <div className="grow"><div className="tt">{routineName(r)}</div><div className="ss">{exCount(r.ex.length)}</div></div>
         <span className="tag acc">{t('Start')}</span>

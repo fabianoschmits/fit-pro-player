@@ -20,8 +20,8 @@ export default function ProfessionalDashboard() {
  useEffect(() => { let alive=true; Promise.all([repo.dashboardSummary({ localDate: todayISO(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),repo.studentPage({ status:'attention',limit:10 }),repo.linkRequests()]).then(([summary,page,pending])=>{if(alive){setData(summary);setAttention(page.items);setRequests(pending);setError('')}}).catch(()=>{if(alive)setError('Não foi possível carregar a área profissional.')});return()=>{alive=false}},[repo,user?.id,retry])
  const cards = items => items.map(student=><Link key={student.studentUserId} className="management-record card" to={`/professional/students/${student.studentUserId}`}><ManagementAvatar name={student.displayName} avatarRef={student.avatarRef} userId={student.studentUserId}/><div><strong>{student.displayName}</strong><p>{student.workoutTitle || student.currentProgram?.title || 'Sem plano'}</p></div><span>›</span></Link>)
  return <ManagementLayout title="Área profissional" subtitle={`Olá, ${name || 'profissional'}`} action={<Link to="/professional/profile" aria-label="Perfil"><ManagementAvatar name={name} avatarRef={avatarId}/></Link>}>
- {error&&<p role="alert">{error}<Button onClick={()=>setRetry(x=>x+1)}>Tentar novamente</Button></p>}
- <details className="management-requests-details">
+ {error&&<p role="alert" className="fpp-inline-notice" data-tone="error">{error}<Button onClick={()=>setRetry(x=>x+1)}>Tentar novamente</Button></p>}
+ <details className="management-requests-details fpp-details-flow">
   <summary>
    <span className="requests-summary-label">
     <span>Solicitações de vínculo · {requests.total}</span>
@@ -33,6 +33,6 @@ export default function ProfessionalDashboard() {
    {!requests.total&&<p className="management-requests-empty">Nenhuma solicitação pendente.</p>}
   </div>
  </details>
- {data&&<><div className="management-overview"><Link to="/professional/students"><strong>{data.activeStudents}</strong><span>alunos</span></Link><div><strong>{data.todayWorkouts}</strong><span>treinos hoje</span></div><Link to="/professional/students?status=attention"><strong>{data.attentionStudents}</strong><span>precisam de atenção</span></Link></div><section><h2>Hoje</h2>{cards(data.today)}{!data.today.length&&<p>Nenhum treino previsto hoje.</p>}</section><section><h2>Precisam de atenção</h2>{cards(attention)}{!attention.length&&<p>Nenhuma pendência identificada.</p>}</section></>}
+ {data&&<><div className="management-overview fpp-screen-management-overview"><Link to="/professional/students"><strong>{data.activeStudents}</strong><span>alunos</span></Link><div><strong>{data.todayWorkouts}</strong><span>treinos hoje</span></div><Link to="/professional/students?status=attention"><strong>{data.attentionStudents}</strong><span>precisam de atenção</span></Link></div><section><h2>Hoje</h2>{cards(data.today)}{!data.today.length&&<p>Nenhum treino previsto hoje.</p>}</section><section><h2>Precisam de atenção</h2>{cards(attention)}{!attention.length&&<p>Nenhuma pendência identificada.</p>}</section></>}
  </ManagementLayout>
 }

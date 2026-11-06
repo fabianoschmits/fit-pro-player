@@ -20,7 +20,7 @@ export function useConsoleAccess() {
 }
 
 export function AccessGate({ allowed, children = undefined }) {
-  if (allowed === null) return <ConsoleShell><div className="cx-page-body"><Loading label="Verificando acesso…" /></div></ConsoleShell>
-  if (!allowed) return <ConsoleShell><div className="cx-page-body"><Empty title="Sem acesso" sub="Esta área está disponível apenas para a equipe autorizada." /></div></ConsoleShell>
+  if (allowed === null) return <ConsoleShell><div className="cx-page-body fpp-console-access"><Loading label="Verificando acesso…" /></div></ConsoleShell>
+  if (!allowed) return <ConsoleShell><div className="cx-page-body fpp-console-access"><Empty title="Sem acesso" sub="Esta área está disponível apenas para a equipe autorizada." /></div></ConsoleShell>
   return children
 }

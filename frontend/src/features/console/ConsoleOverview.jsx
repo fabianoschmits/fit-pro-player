@@ -20,7 +20,7 @@ export default function ConsoleOverview() {
     return { accounts: accounts.status === 'fulfilled' ? accounts.value : null, messages: messages.status === 'fulfilled' ? messages.value : null }
   } })
   const accounts = data?.accounts, messages = data?.messages
-  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed}><div className="cx-page-body">
+  return <AccessGate allowed={allowed}><ConsoleShell userId={userId} allowed={allowed}><div className="cx-page-body fpp-console-page fpp-console-page--overview">
     <div className="cx-page-head"><h1 className="cx-page-title">Central da plataforma</h1><p className="cx-page-sub">Acompanhe a operação e escolha o que precisa de atenção.</p></div>
     {error && <Alert onRetry={refresh}>{error}</Alert>}
     {busy ? <Loading label="Carregando visão geral…" /> : <>

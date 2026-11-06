@@ -346,6 +346,13 @@ function require_ui() {
   return _ui.getState()
 }
 
+/* ============================ action groups ============================ */
+
+/** Groups actions without modifying the existing animated Button behavior. */
+export function ActionGroup({ children = undefined, layout = 'wrap', className = '', ...rest }) {
+  return <div {...rest} className={`fpp-action-group ${className}`.trim()} data-layout={layout}>{children}</div>
+}
+
 /* ============================ buttons ============================ */
 
 export const Button = FppPerformanceButton

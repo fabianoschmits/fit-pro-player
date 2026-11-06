@@ -11,7 +11,8 @@ import { t } from '../lib/i18n.js'
 import { RoutineEditor } from './RoutineEdit.jsx'
 import TrainingPlanWorkspace from '../components/training/TrainingPlanWorkspace.jsx'
 import ManagementLayout from '../components/ManagementLayout.jsx'
-import { Button, TextField } from '../components/ui.jsx'
+import { ActionGroup, Button, TextField } from '../components/ui.jsx'
+import { ManagementPanel } from '../components/ManagementUI.jsx'
 import { confirmSheet } from '../sheets.jsx'
 export default function ProfessionalStudentPlan() {
  const { studentId, routineId } = useParams(), { user } = useAuth()
@@ -43,15 +44,32 @@ function StudentPlan({ studentId, routineId = undefined }) {
    } })
  }
  const create = workspace => { setState(workspace || weeklyPlanToWorkspace()); setDirty(true) }
- const chooseTemplate = async item => { try { const versions = await repo.versions(item.id); if (!alive.current) return; const version = versions[0]; create(weeklyPlanToWorkspace(version?.weekly_plan, version?.workout_titles)); setTitle(item.title); setTemplates(null) } catch { setError('Não foi possível abrir este modelo.') } }
+ const chooseTemplate = async item => { try { const versions = await repo.versions(item.id); if (!alive.current) return; const version = versions[0]; if (!version?.weekly_plan) throw new Error('model-without-version'); create(weeklyPlanToWorkspace(version.weekly_plan, version.workout_titles)); setTitle(item.title); setTemplates(null); setError('') } catch (cause) { if (alive.current) setError('Não foi possível abrir este modelo.'); throw cause } }
  if (routineId && state) return <fieldset disabled={busy} style={{ display: 'contents' }}><RoutineEditor mode="professional" state={{ ...prefs, ...state, onboardingDone: true }} onUpdate={update} routineId={routineId} basePath={base} onSave={save} /></fieldset>
  return <ManagementLayout title="Plano de treino" subtitle={student?.displayName || 'Aluno'} backTo={`/professional/students/${studentId}`}>
-   {error && <p role="alert">{error}</p>}
-   {loading ? <p role="status">Carregando plano…</p> : !student ? <p>Aluno indisponível.</p> : !state ? <div className="card"><h2>Criar plano</h2><Button onClick={() => create()}>Criar do zero</Button><Button onAction={async () => { const page = await repo.programPage({ archived: false }); if (alive.current) setTemplates(page) }}>Usar um modelo</Button>{templates?.items.map(item => <Button key={item.id} onClick={() => chooseTemplate(item)}>{item.title}</Button>)}</div> : <>
-     <TextField aria-label="Nome do plano" maxLength={160} value={title} onChange={e => { setTitle(e.target.value); setDirty(true) }} />
+   {error && <p role="alert" className="fpp-inline-notice" data-tone="error">{error}</p>}
+   {loading ? <p role="status">Carregando plano…</p> : !student ? (!error && <p>Aluno indisponível.</p>) : !state ? (
+     <ManagementPanel title="Criar plano" description="Escolha como começar a prescrição deste aluno." className="fpp-panel-flow">
+       <ActionGroup layout="equal" role="group" aria-label="Como criar o plano">
+         <Button variant="primary" onClick={() => create()}>Criar do zero</Button>
+         <Button variant="plain" aria-expanded={Boolean(templates)} aria-controls="professional-plan-template-list" loadingLabel="Carregando modelos…" successLabel="Usar um modelo" errorLabel="Tentar novamente" onAction={async () => {
+           if (templates) { setTemplates(null); return }
+           try { const page = await repo.programPage({ archived: false }); if (alive.current) { setTemplates(page || { items: [] }); setError('') } }
+           catch (cause) { if (alive.current) setError('Não foi possível carregar os modelos.'); throw cause }
+         }}>Usar um modelo</Button>
+       </ActionGroup>
+       {templates && <section id="professional-plan-template-list" className="fpp-choice-section" aria-label="Modelos disponíveis">
+         <div className="fpp-choice-heading"><h3>Escolha um modelo</h3><p>Uma cópia será usada neste aluno. O modelo original será preservado.</p></div>
+         {templates.items?.length ? <div className="fpp-choice-list">
+           {templates.items.map(item => <Button key={item.id} className="fpp-choice-row" trailingIcon="chevronRight" onAction={() => chooseTemplate(item)}>{item.title}</Button>)}
+         </div> : <p className="fpp-empty-inline">Nenhum modelo disponível. Crie um modelo na área profissional ou comece do zero.</p>}
+       </section>}
+     </ManagementPanel>
+   ) : <>
+     <label className="fpp-form-field" htmlFor="student-plan-title"><span>Nome do plano</span><TextField id="student-plan-title" maxLength={160} value={title} onChange={e => { setTitle(e.target.value); setDirty(true) }} /></label>
      <div className="card management-plan-status" data-pending={dirty || draft?.sent_revision !== draft?.revision} role="status"><strong>{dirty || draft?.sent_revision !== draft?.revision ? 'Alterações não enviadas' : 'Plano enviado ao aluno'}</strong>{draft && !dirty && <p>Rascunho salvo · {new Date(draft.updated_at).toLocaleString('pt-BR')}</p>}</div>
      <TrainingPlanWorkspace state={{ ...prefs, ...state }} onOpen={id => nav(`${base}/r/${id}`)} onAdd={() => { const id = crypto.randomUUID(); update(next => { next.routines.push({ id, name: `Treino ${String.fromCharCode(65 + next.routines.length)}`, ex: [] }) }); nav(`${base}/r/${id}`) }} />
-     <div className="row management-plan-actions"><Button feedback="persistence" disabled={busy || !title.trim()} onAction={save}>Salvar para depois</Button><Button variant="primary" disabled={busy || !title.trim()} onClick={send}>{draft?.sent_revision ? 'Enviar atualização' : 'Enviar ao aluno'}</Button></div>
+     <ActionGroup layout="equal" className="management-plan-actions"><Button feedback="persistence" disabled={busy || !title.trim()} onAction={save}>Salvar para depois</Button><Button variant="primary" disabled={busy || !title.trim()} onClick={send}>{draft?.sent_revision ? 'Enviar atualização' : 'Enviar ao aluno'}</Button></ActionGroup>
    </>}
  </ManagementLayout>
 }

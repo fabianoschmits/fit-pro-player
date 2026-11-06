@@ -124,7 +124,7 @@ function MuscleBalance({ S }) {
   const max = worked.length ? load[worked[0]] : 0
   const sets = m => Math.round((load[m] || 0) * 10) / 10
 
-  return <div className="card stats-balance-card">
+  return <div className="card stats-balance-card fpp-polished-card">
     <Segmented className="seg-range" value={view} onChange={setView}
       options={[{ value: 'balance', label: t('Muscle balance') }, { value: 'fatigue', label: t('Fatigue') }, { value: 'strength', label: t('Strength') }]} />
     {view === 'balance' ? <>
@@ -242,7 +242,7 @@ function EffortCard({ S }) {
   // Bins run hardest-first in both scales: RIR 0 and RPE 10 are the same set.
   const binLabel = b => kind === 'rpe' ? (b.tail ? '≤ 6' : String(10 - b.rir)) : (b.tail ? b.rir + '+' : String(b.rir))
 
-  return <div className="card stats-effort-card">
+  return <div className="card stats-effort-card fpp-polished-card">
     <h2>{t('Effort')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('how close to failure')}</span></h2>
     <Segmented className="seg-range" value={win} onChange={setWin}
       options={[{ value: 30, label: '30d' }, { value: 90, label: '90d' }, { value: 365, label: '1Y' }, { value: 0, label: t('All') }]} />
@@ -391,7 +391,7 @@ export default function Stats() {
   if (showE1) exOpts.push({ value: 'e1rm', label: t('Est. 1RM') })
   if (showEff) exOpts.push({ value: 'effort', label: t('Effort') })
 
-  return <div className="stats-view page-scenery">
+  return <div className="stats-view page-scenery fpp-ui-view fpp-screen-stats">
     <AppHeader title="Evolução" subtitle={t('Progress & history')} className="stats-titlebar"
       action={<button className="iconbtn" aria-label={t('History')} onClick={() => nav('/progress/history')}><Icon name="history" /></button>} />
     <section className="stats-overview" aria-label={t('Stats')}>
