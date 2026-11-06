@@ -252,6 +252,8 @@ describe('Workout set completion flow', () => {
     expect(mocks.startManualSet).toHaveBeenCalledWith(`${mocks.S.active.id}:${mocks.S.active.start}`, 0, 0)
     const stop = container.querySelector('.wp-main-action.is-executing')
     expect(stop.getAttribute('aria-label')).toContain('Concluir série')
+    expect(container.querySelectorAll('.wp-series-segment.is-executing .wp-execution-signal')).toHaveLength(1)
+    expect(container.querySelector('.wp-series-segment.is-executing')).toBe(container.querySelectorAll('.wp-series-segment')[0])
     expect(stop.getAttribute('role')).toBeNull()
     expect(stop.getAttribute('aria-describedby')).toBe(container.querySelector('.set-execution-hint').id)
     expect(container.querySelector('.set-execution-hint').textContent).toContain('Executando série')
@@ -264,6 +266,7 @@ describe('Workout set completion flow', () => {
     expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(0)
     expect(container.querySelector('.wp-main-action').disabled).toBe(true)
     expect(container.querySelector('.set-execution-hint').textContent).toContain('Descansando')
+    expect(container.querySelector('.wp-series-segment.is-executing')).toBeNull()
     mocks.timer = null
     await act(async () => root.render(<Workout />))
     expect(container.querySelectorAll('.chk.is-executing')).toHaveLength(0)

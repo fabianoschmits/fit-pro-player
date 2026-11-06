@@ -161,7 +161,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
     </div>}
     <div className="wp-series-status"><span>{t('Sets')}</span><strong>{completedCount}/{entry.sets.length}</strong></div>
     <div className="wp-series-track" role="progressbar" aria-label={t('Sets')} aria-valuemin={0} aria-valuemax={entry.sets.length} aria-valuenow={completedCount}>
-      {entry.sets.map((s, i) => <span key={i} className={'wp-series-segment' + (s.done ? ' is-done' : i === currentIndex ? ' is-current' : '') + (isWarmupRow(s) ? ' is-warmup' : '')} />)}
+      {entry.sets.map((s, i) => <span key={i} className={'wp-series-segment' + (s.done ? ' is-done' : i === currentIndex ? ' is-current' : '') + (isWarmupRow(s) ? ' is-warmup' : '') + (executing && i === currentIndex && !s.done ? ' is-executing' : '')}>{executing && i === currentIndex && !s.done && <span className="wp-execution-signal" aria-hidden="true"><span /></span>}</span>)}
     </div>
     {queueDetails}
     {/* A timed superset may already show its next member while the previous member owns rest. */}
