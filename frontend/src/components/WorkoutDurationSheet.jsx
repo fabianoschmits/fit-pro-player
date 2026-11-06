@@ -3,8 +3,8 @@ import WorkoutMinutesSelector from './WorkoutMinutesSelector.jsx'
 import { Button } from './ui.jsx'
 import { isValidWorkoutMinutes } from '../lib/profile.js'
 
-export default function WorkoutDurationSheet({ preferredMinutes, onConfirm, close }) {
-  const [minutes, setMinutes] = useState(preferredMinutes)
+export default function WorkoutDurationSheet({ preferredMinutes, initialMinutes = preferredMinutes, onConfirm, close }) {
+  const [minutes, setMinutes] = useState(initialMinutes)
   return <>
     <h3>Quanto tempo vai treinar hoje?</h3>
     <p className="muted small">Seu tempo habitual: {preferredMinutes} minutos</p>

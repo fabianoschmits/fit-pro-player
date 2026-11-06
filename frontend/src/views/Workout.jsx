@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
@@ -22,6 +23,8 @@ import { applyPreviousSetValues, replaceSessionExercise } from '../lib/workout-s
 import { createFlexSelection, toggleFlexSelection, confirmFlexSelection, estimateWorkoutDuration, getPreferredWorkoutMinutes } from '../lib/workout-duration.js'
 import WorkoutDurationSheet from '../components/WorkoutDurationSheet.jsx'
 import ExerciseSpriteThumb from '../components/ExerciseSpriteThumb.jsx'
+import ExerciseGuideAnimation from '../components/ExerciseGuideAnimation.jsx'
+import { hasExerciseGuideAsset } from '../lib/exercise-guide-assets.js'
 
 /* ---------- start chooser (no active workout) ---------- */
 function StartChooser() {
@@ -174,6 +177,8 @@ function ActiveWorkout() {
   const queueRef = useRef(null)
   const stageRef = useRef(null)
   const [queueOpen, setQueueOpen] = useState(A.flex?.phase === 'review')
+  const reducedMotion = useReducedMotion()
+  const [animatePreviews, setAnimatePreviews] = useState(true)
   const reviewing = !A.start && A.flex?.phase === 'review'
   useEffect(() => {
     if (!reviewing) return
@@ -225,20 +230,27 @@ function ActiveWorkout() {
     setQueueOpen(false)
     beginExecution()
   }
+  const openDurationSheet = (changing = false) => {
+    const current = useStore.getState().S.active
+    if (!current || current.id !== A.id || current.start) return
+    const preferred = getPreferredWorkoutMinutes(S.profile)
+    useUI.getState().openSheet(close => <WorkoutDurationSheet preferredMinutes={preferred} initialMinutes={current.flex?.targetMinutes ?? preferred} close={close} onConfirm={minutes => {
+      const fresh = useStore.getState().S.active
+      if (!fresh || fresh.id !== A.id || fresh.start || (fresh.flex && !changing)) return
+      if (changing && fresh.flex?.targetMinutes === minutes) return
+      const flex = createFlexSelection(fresh, minutes, preferred, { restSec: S.restSec, goal: S.profile?.goal })
+      if (changing && fresh.entries.length) flex.phase = 'review'
+      update(s => { if (s.active?.id === A.id) s.active.flex = flex })
+      if (flex.phase === 'confirmed') beginExecution()
+      else setQueueOpen(true)
+    }} />)
+  }
   const startWorkout = () => {
     const current = useStore.getState().S.active
     if (!current || current.id !== A.id || current.start) return
     if (current.flex?.phase === 'review') { setQueueOpen(true); queueRef.current?.scrollIntoView?.({ block: 'nearest' }); return }
     if (current.flex?.phase === 'confirmed') { beginExecution(); return }
-    const preferred = getPreferredWorkoutMinutes(S.profile)
-    useUI.getState().openSheet(close => <WorkoutDurationSheet preferredMinutes={preferred} close={close} onConfirm={minutes => {
-      const fresh = useStore.getState().S.active
-      if (!fresh || fresh.id !== A.id || fresh.start || fresh.flex) return
-      const flex = createFlexSelection(fresh, minutes, preferred, { restSec: S.restSec, goal: S.profile?.goal })
-      update(s => { if (s.active?.id === A.id) s.active.flex = flex })
-      if (flex.phase === 'confirmed') beginExecution()
-      else setQueueOpen(true)
-    }} />)
+    openDurationSheet()
   }
   // Superset flow: keep the active exercise in view - completing a set scrolls to the
   // next exercise in the group, then back up to the first exercise of the next round.
@@ -543,7 +555,9 @@ function ActiveWorkout() {
               const group = units.find(indices => indices.includes(index)) || [index]
               const lastSelectedGroup = selected && selectedCount === group.length
               return <div key={A.flex.outline[index].key} className={'workout-exercise-tab fpp-flex-exercise' + (selected ? ' is-selected' : ' is-omitted')}>
-                <ExerciseSpriteThumb ex={exOr(entry.id)} />
+                <div className="fpp-flex-preview" aria-hidden="true">{!reducedMotion && hasExerciseGuideAsset(exOr(entry.id))
+                  ? <ExerciseGuideAnimation ex={exOr(entry.id)} playing={animatePreviews && (queueOpen || reviewing)} fallback={<ExerciseSpriteThumb ex={exOr(entry.id)} />} />
+                  : <ExerciseSpriteThumb ex={exOr(entry.id)} />}</div>
                 <b>{exerciseName(exOr(entry.id))}</b>
                 <small>{entry.sets.length} séries{group.length > 1 ? ' · Supersérie' : ''}</small>
                 <button type="button" className="fpp-flex-toggle" aria-pressed={!!selected} disabled={lastSelectedGroup} aria-label={`${selected ? 'Retirar' : 'Incluir'} ${exerciseName(exOr(entry.id))}${group.length > 1 ? ' e supersérie' : ''}`} onClick={() => update(s => { if (s.active?.id === A.id) s.active.flex = toggleFlexSelection(s.active, index, { restSec: s.restSec }) })}>
@@ -565,7 +579,11 @@ function ActiveWorkout() {
             {!reviewing && <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>}
           </div>
           {!reviewing && A.flex?.outline?.some(item => !item.selected) && <div className="fpp-flex-omitted-summary"><small>Retirados pelo tempo</small>{A.flex.outline.filter(item => !item.selected).map(item => <span key={item.key}>{item.name || exerciseName(exOr(item.exerciseId))} · {item.sets} séries</span>)}</div>}
-          {reviewing && <div className="fpp-flex-confirm"><Button variant="primary" disabled={!selectedCount} onClick={confirmSelection}>Confirmar treino</Button></div>}
+          {reviewing && <div className="fpp-flex-confirm">
+            <div className="fpp-flex-duration"><span>Tempo escolhido: {A.flex.targetMinutes} min</span><Button size="sm" variant="ghost" onClick={() => openDurationSheet(true)}>Alterar tempo</Button></div>
+            {!reducedMotion && <Button size="sm" variant="ghost" aria-pressed={animatePreviews} onClick={() => setAnimatePreviews(value => !value)}>{animatePreviews ? 'Pausar animações' : 'Animar exercícios'}</Button>}
+            <Button variant="primary" disabled={!selectedCount} onClick={confirmSelection}>Confirmar treino</Button>
+          </div>}
           </details>} />
       </div>
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}

@@ -17,6 +17,43 @@ async function prepare(page, theme = 'dark') {
 }
 
 for (const [theme, width] of [['dark', 320], ['light', 390]]) {
+  test(`animated previews are centered and the selected time can change in ${theme}`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 780 })
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    const original = await prepare(page, theme)
+    await page.getByRole('button', { name: 'Começar treino', exact: true }).click()
+    await page.getByRole('button', { name: '20 min', exact: true }).click()
+    await page.getByRole('button', { name: 'Confirmar duração', exact: true }).click()
+    const queue = page.locator('.wp-queue-details')
+    const animations = queue.locator('.fpp-flex-preview [data-exercise-animation]')
+    await expect(animations).toHaveCount(5)
+    const animation = animations.first()
+    await animation.scrollIntoViewIfNeeded()
+    await expect(animation).not.toHaveAttribute('aria-busy', 'true')
+    const frame = () => animation.locator('[data-guide-frame].is-active').getAttribute('data-guide-frame')
+    const initial = await frame()
+    await expect.poll(frame).not.toBe(initial)
+    const alignment = await animation.evaluate(element => {
+      const parent = element.parentElement.getBoundingClientRect(), rect = element.getBoundingClientRect()
+      return { offset: Math.abs(parent.x + parent.width / 2 - rect.x - rect.width / 2), fit: getComputedStyle(element.querySelector('img')).objectFit }
+    })
+    expect(alignment.offset).toBeLessThan(1)
+    expect(alignment.fit).toBe('contain')
+    await expect(queue.locator('.fpp-flex-duration')).toContainText('Tempo escolhido: 20 min')
+    await queue.getByRole('button', { name: 'Pausar animações', exact: true }).click()
+    await expect(animation).not.toHaveClass(/is-playing/)
+    await queue.getByRole('button', { name: 'Alterar tempo', exact: true }).click()
+    await expect(page.getByRole('button', { name: '20 min', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    await page.getByRole('button', { name: '40 min', exact: true }).click()
+    await page.getByRole('button', { name: 'Confirmar duração', exact: true }).click()
+    await expect(queue.locator('.fpp-flex-duration')).toContainText('Tempo escolhido: 40 min')
+    expect((await saved(page)).active.start).toBeNull()
+    expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(60)
+    expect((await saved(page)).routines).toEqual(original.routines)
+    await queue.getByRole('button', { name: 'Animar exercícios', exact: true }).click()
+    await expect(animation).toHaveClass(/is-playing/)
+    await page.screenshot({ path: testInfo.outputPath(`flex-animated-${theme}.png`), fullPage: true })
+  })
   test(`FPP Flex review, recovery and confirmation in ${theme} at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 780 })
     await page.emulateMedia({ reducedMotion: 'reduce' })
