@@ -224,8 +224,35 @@ test('exercise queue animates both directions and collapses after confirming the
     const [from, to] = motion[0].frames.map(parseFloat)
     expect(expanded ? to > from : to < from).toBe(true)
     await expect(summary).toHaveAttribute('aria-expanded', String(expanded))
-    if (expanded) await expect.poll(() => queue.evaluate(element => element.getAnimations().length)).toBe(0)
-    else await expect(queue).not.toHaveAttribute('open', '')
+    if (expanded) {
+      await expect.poll(() => queue.evaluate(element => element.getAnimations().length)).toBe(0)
+      const preview = queue.locator('.workout-queue-preview [data-exercise-animation]').first()
+      await preview.scrollIntoViewIfNeeded()
+      await expect(preview).not.toHaveAttribute('aria-busy', 'true')
+      const frame = () => preview.locator('[data-guide-frame].is-active').getAttribute('data-guide-frame')
+      const initial = await frame()
+      await expect.poll(frame).not.toBe(initial)
+      const edit = await queue.locator('.workout-exercise-edit').boundingBox()
+      const card = await queue.locator('.workout-exercise-tab.is-active').boundingBox()
+      expect(edit.x).toBeGreaterThanOrEqual(card.x)
+      expect(edit.y).toBeGreaterThanOrEqual(card.y)
+      expect(edit.x + edit.width).toBeLessThanOrEqual(card.x + card.width)
+      expect(edit.y + edit.height).toBeLessThanOrEqual(card.y + card.height)
+    } else await expect(queue).not.toHaveAttribute('open', '')
+  }
+  for (const selector of ['.wp-series-details', '.wp-exercise-details', '.workout-tools', '.wp-session-details']) {
+    const panel = page.locator(selector)
+    for (const expanded of [true, false]) {
+      const durations = await panel.locator('summary').first().evaluate(async element => {
+        element.click()
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+        return element.parentElement.getAnimations().map(animation => animation.effect.getTiming().duration)
+      })
+      expect(durations).toEqual([240])
+      await expect(panel.locator('summary').first()).toHaveAttribute('aria-expanded', String(expanded))
+      await expect.poll(() => panel.evaluate(element => element.getAnimations().length)).toBe(0)
+      if (!expanded) await expect(panel).not.toHaveAttribute('open', '')
+    }
   }
 })
 

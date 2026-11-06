@@ -8,6 +8,7 @@ import { isWarmupRow } from '../lib/workout-model.js'
 import { fromDisplayMass, toDisplayMass } from '../lib/mass.js'
 import { t } from '../lib/i18n.js'
 import { exerciseDetailSheet } from '../sheets.jsx'
+import AnimatedDetails from './AnimatedDetails.jsx'
 import Media from './Media.jsx'
 import WorkSetOverlay from './WorkSetOverlay.jsx'
 import Icon from './Icon.jsx'
@@ -161,7 +162,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
     </div>}
     <div className="wp-series-status"><span>{t('Sets')}</span><strong>{completedCount}/{entry.sets.length}</strong></div>
     <div className="wp-series-track" role="progressbar" aria-label={t('Sets')} aria-valuemin={0} aria-valuemax={entry.sets.length} aria-valuenow={completedCount}>
-      {entry.sets.map((s, i) => <span key={i} className={'wp-series-segment' + (s.done ? ' is-done' : i === currentIndex ? ' is-current' : '') + (isWarmupRow(s) ? ' is-warmup' : '') + (executing && i === currentIndex && !s.done ? ' is-executing' : '')}>{executing && i === currentIndex && !s.done && <span className="wp-execution-signal" aria-hidden="true"><span /></span>}</span>)}
+      {entry.sets.map((s, i) => <span key={i} className={'wp-series-segment' + (s.done ? ' is-done' : i === currentIndex ? ' is-current' : '') + (isWarmupRow(s) ? ' is-warmup' : '') + (!locked && i === currentIndex && !s.done ? ' is-executing' : '')}>{!locked && i === currentIndex && !s.done && <span className="wp-execution-signal" aria-hidden="true"><span /></span>}</span>)}
     </div>
     {queueDetails}
     {/* A timed superset may already show its next member while the previous member owns rest. */}
@@ -170,7 +171,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
       aria-label={setsOpen ? t('Collapse') : t('Expand sets')} aria-expanded={setsOpen} onClick={() => setSetsOpen(value => !value)}>
       {t('Exercise complete')} · {entry.sets.length} {entry.sets.length === 1 ? t('set') : t('sets')}
     </Button>}
-    <details className="wp-series-details" open={setsOpen} onToggle={event => setSetsOpen(event.currentTarget.open)}>
+    <AnimatedDetails className="wp-series-details" open={setsOpen} onOpenChange={setSetsOpen}>
       <summary>{t('Sets')} <span>{completedCount}/{entry.sets.length}</span><Icon name="chevronDown" /></summary>
       <div className={'exercise-input-card' + (locked ? ' is-locked' : '')}>
         <div className={'sethead' + (col3 ? ' eff3' : '')}><span className="n-sp" /><span className="w-sp">{col1.hd}</span>{col2 && <span className="r-sp">{col2.hd}</span>}{col3 && <span className="eff-sp">{col3.hd}</span>}<span className="ck-sp" /></div>
@@ -192,8 +193,8 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
         })}
       </div>
       {onAddSet && <Button size="sm" variant="ghost" icon="plus" className="wp-add-set-btn" disabled={locked} onClick={onAddSet}>{t('Add set')}</Button>}
-    </details>
-    {(ex.tg || ex.bp || ex.eq || cfg.notes || last || best > 0 || (plan?.why && plan.kind !== 'off')) && <details className="wp-exercise-details">
+    </AnimatedDetails>
+    {(ex.tg || ex.bp || ex.eq || cfg.notes || last || best > 0 || (plan?.why && plan.kind !== 'off')) && <AnimatedDetails className="wp-exercise-details">
       <summary>{t('Details')}<Icon name="chevronDown" /></summary>
       {(ex.tg || ex.bp) && <span className="tag">{sentenceCase(t(ex.tg || ex.bp))}</span>}
       {ex.eq && <span className="tag">{sentenceCase(t(ex.eq))}</span>}
@@ -201,6 +202,6 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
       {cfg.notes && <p className="muted">{cfg.notes}</p>}
       {last && <div className="workout-last-values"><div className="grow"><small>{t('Last time')} · {fmtDate(last.d)}</small><strong>{lastLabels.slice(0, 3).join(' · ')}{lastLabels.length > 3 ? ` · +${lastLabels.length - 3}` : ''}</strong></div></div>}
       {plan?.why && plan.kind !== 'off' && <div className={'progline' + (plan.kind === 'deload' ? ' warn' : '')}><Icon name={plan.kind === 'up' ? 'arrowUp' : plan.kind === 'deload' ? 'arrowDown' : 'lightbulb'} /><span>{t(...plan.why)}</span></div>}
-    </details>}
+    </AnimatedDetails>}
   </section>
 }

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -9,6 +9,7 @@ import { todayISO, exCount, DAYN, routineId } from '../lib/format.js'
 import { beep, vibrate } from '../lib/sound.js'
 import { t } from '../lib/i18n.js'
 import { setProgressHighWater, supersetFlowStep } from '../lib/supersetFlow.js'
+import AnimatedDetails from '../components/AnimatedDetails.jsx'
 import WorkoutExercisePlayer from '../components/WorkoutExercisePlayer.jsx'
 import '../workout-player.css'
 import { startFlow, exercisePicker, exConfigSheet, topWeightSheet, finishWorkout, workoutCompleteSheet, confirmSheet, abandonWorkout } from '../sheets.jsx'
@@ -176,9 +177,7 @@ function ActiveWorkout() {
   const A = S.active
   const queueRef = useRef(null)
   const stageRef = useRef(null)
-  const queueAnimation = useRef(null)
   const queueHeightBeforeConfirm = useRef(null)
-  const queueInitialized = useRef(false)
   const [queueOpen, setQueueOpen] = useState(A.flex?.phase === 'review')
   const reducedMotion = useReducedMotion()
   const [animatePreviews, setAnimatePreviews] = useState(true)
@@ -186,43 +185,6 @@ function ActiveWorkout() {
   useEffect(() => {
     if (reviewing) setQueueOpen(true)
   }, [reviewing])
-  useLayoutEffect(() => {
-    const details = queueRef.current
-    if (!details) return
-    const from = queueHeightBeforeConfirm.current ?? details.getBoundingClientRect().height
-    queueHeightBeforeConfirm.current = null
-    queueAnimation.current?.cancel()
-    details.toggleAttribute('open', queueOpen)
-    const to = details.getBoundingClientRect().height
-    const scrollToReview = () => {
-      if (queueOpen && reviewing && !details.contains(document.activeElement)) details.scrollIntoView?.({ block: 'nearest', behavior: reducedMotion ? 'instant' : 'smooth' })
-    }
-    if (!queueInitialized.current || reducedMotion || !details.animate || from === to) {
-      queueInitialized.current = true
-      scrollToReview()
-      return
-    }
-    // Keep native details open until the closing transition finishes. Its toggle
-    // event must not write back into React and reopen a just-confirmed session.
-    details.setAttribute('open', '')
-    details.style.overflow = 'hidden'
-    const animation = details.animate([{ height: `${from}px` }, { height: `${to}px` }], {
-      duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both',
-    })
-    queueAnimation.current = animation
-    void animation.finished.then(() => {
-      if (queueAnimation.current !== animation) return
-      details.toggleAttribute('open', queueOpen)
-      animation.cancel()
-      details.style.overflow = ''
-      queueAnimation.current = null
-      scrollToReview()
-    }).catch(() => {}) // Reversing direction or leaving the screen cancels motion.
-    return () => {
-      animation.cancel()
-      details.style.overflow = ''
-    }
-  }, [queueOpen, reducedMotion, reviewing])
   useEffect(() => {
     if (A.start && A.flex?.phase === 'confirmed') stageRef.current?.focus({ preventScroll: true })
   }, [A.start, A.flex?.phase])
@@ -612,7 +574,7 @@ function ActiveWorkout() {
           onPrevious={() => navigateExercise(cur - 1)} onNext={() => navigateExercise(cur + 1)} previousDisabled={navigationLocked || cur === 0} nextDisabled={navigationLocked || cur === A.entries.length - 1}
           exerciseDots={<div className="wp-exercise-dots" aria-label={t('Exercises')}>{A.entries.map((entry, idx) => <button type="button" key={idx} className={'wp-exercise-dot' + (entry.sets.length && entry.sets.every(set => set.done) ? ' is-done' : '')}
             aria-label={`${idx + 1}. ${exerciseName(exOr(entry.id))}`} aria-current={idx === cur ? 'step' : undefined} disabled={navigationLocked} onClick={() => navigateExercise(idx)} />)}</div>}
-          queueDetails={A.entries.length > 0 && <details ref={queueRef} className={'wp-queue-details' + (reviewing ? ' is-flex-review' : '')} data-expanded={queueOpen}><summary aria-expanded={queueOpen} onClick={event => { event.preventDefault(); setQueueOpen(value => !value) }}><span>{t('Exercises')}</span><span className={'fpp-flex-estimate' + (overTime ? ' is-over' : '')}>{selectedCount}{A.flex?.outline?.length ? ` de ${A.flex.outline.length}` : ''} exercícios · {estimatedMinutes} min</span><Icon name="chevronDown" /></summary><div className="wp-queue-content" inert={!queueOpen} aria-hidden={!queueOpen}><div className="workout-exercise-rail" aria-label={t('Exercises')}>
+          queueDetails={A.entries.length > 0 && <AnimatedDetails elementRef={queueRef} initialHeightRef={queueHeightBeforeConfirm} open={queueOpen} onOpenChange={setQueueOpen} onExpanded={() => { if (reviewing && !queueRef.current?.contains(document.activeElement)) queueRef.current?.scrollIntoView?.({ block: 'nearest', behavior: reducedMotion ? 'instant' : 'smooth' }) }} className={'wp-queue-details' + (reviewing ? ' is-flex-review' : '')}><summary><span>{t('Exercises')}</span><span className={'fpp-flex-estimate' + (overTime ? ' is-over' : '')}>{selectedCount}{A.flex?.outline?.length ? ` de ${A.flex.outline.length}` : ''} exercícios · {estimatedMinutes} min</span><Icon name="chevronDown" /></summary><div className="workout-exercise-rail" aria-label={t('Exercises')}>
             {reviewing ? A.entries.map((entry, index) => {
               const selected = A.flex.outline[index]?.selected
               const group = units.find(indices => indices.includes(index)) || [index]
@@ -636,7 +598,9 @@ function ActiveWorkout() {
                 <button type="button" className={'workout-exercise-tab' + (entryIndex === cur ? ' is-active' : '') + (entryDone ? ' is-done' : '')}
                 disabled={navigationLocked} aria-current={entryIndex === cur ? 'step' : undefined}
                 onClick={() => navigateExercise(entryIndex)}>
-                <ExerciseSpriteThumb ex={exOr(entry.id)} />
+                {queueOpen && !reducedMotion && hasExerciseGuideAsset(exOr(entry.id))
+                  ? <span className="thumb workout-queue-preview" aria-hidden="true"><ExerciseGuideAnimation ex={exOr(entry.id)} playing={animatePreviews && queueOpen} fallback={<ExerciseSpriteThumb ex={exOr(entry.id)} />} /></span>
+                  : <ExerciseSpriteThumb ex={exOr(entry.id)} />}
                 <b>{exerciseName(exOr(entry.id))}</b>
                 <small>{entry.sets.length} séries · {doneSets}/{entry.sets.length}{indices.length > 1 ? ` · Supersérie ${index + 1}` : ''}</small>
               </button></div>
@@ -650,13 +614,13 @@ function ActiveWorkout() {
             {!reducedMotion && <Button size="sm" variant="ghost" aria-pressed={animatePreviews} onClick={() => setAnimatePreviews(value => !value)}>{animatePreviews ? 'Pausar animações' : 'Animar exercícios'}</Button>}
             <Button variant="primary" disabled={!selectedCount} onClick={confirmSelection}>Confirmar treino</Button>
           </div>}
-          </div></details>} />
+          </AnimatedDetails>} />
       </div>
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 
     {!A.entries.length && <Button variant="primary" onClick={addExerciseFlow} icon="plus">{t('Add exercise')}</Button>}
     {!A.entries.length && !A.start && <Button onClick={startWorkout}>Começar treino</Button>}
-    {A.entries.length > 0 && <details className="workout-tools" key={`${A.id}:${unit.join('-')}`}>
+    {A.entries.length > 0 && <AnimatedDetails className="workout-tools" key={`${A.id}:${unit.join('-')}`}>
       <summary className="workout-tools-toggle"><Icon name="wrench" /><span>{t('Workout adjustments')}</span><Icon name="chevronDown" /></summary>
       <div className="workout-tools-content">
         {unit.map((idx, num) => <div key={idx}>
@@ -672,12 +636,12 @@ function ActiveWorkout() {
           <Button size="sm" variant="ghost" icon="minus" className="workout-danger-action" disabled={adjustmentsLocked} onClick={removeExerciseSheet}>{t('Remove exercise')}</Button>
         </div>
       </div>
-    </details>}
+    </AnimatedDetails>}
     <section className="workout-session-footer" aria-label={t('Workout summary')}>
-      <details className="wp-session-details"><summary>{t('Workout summary')}<Icon name="chevronDown" /></summary><div className="workout-progress-summary">
+      <AnimatedDetails className="wp-session-details"><summary>{t('Workout summary')}<Icon name="chevronDown" /></summary><div className="workout-progress-summary">
         <h2>{t('Workout summary')}</h2>
         <p><span>{t('{0} sets', done + '/' + total)}</span><span>{t('{0} exercises', completedExercises + '/' + A.entries.length)}</span></p>
-      </div></details>
+      </div></AnimatedDetails>
       <div className="workout-primary-action">
         <Button variant={allExercisesDone ? 'primary' : 'ghost'} icon={allExercisesDone ? 'flag' : 'check'} onClick={finishWorkout}>
           {allExercisesDone ? t('Finish workout') : t('Finish workout early')}
