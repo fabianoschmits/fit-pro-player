@@ -182,6 +182,17 @@ test('seven-step onboarding saves duration only on completion and keeps it after
   const completed = await saved(page)
   expect(completed.profile.preferredWorkoutMinutes).toBe(40)
   expect(completed.routines.length).toBeGreaterThan(0)
+  const estimates = await page.evaluate(async routines => {
+    const durationModule = '/src/lib/workout-duration.js'
+    const { estimateWorkoutDuration } = await import(durationModule)
+    return routines.map(routine => estimateWorkoutDuration(routine.ex) / 60)
+  }, completed.routines)
+  for (const minutes of estimates) {
+    expect(minutes).toBeGreaterThanOrEqual(32)
+    expect(minutes).toBeLessThanOrEqual(40)
+  }
+  expect(completed.routines.every(routine => routine.planTemplateVersion === 2 && routine.planTargetMinutes === 40)).toBe(true)
+  expect(completed.routines.every(routine => !/push|pull/i.test(routine.starterKey))).toBe(true)
   await page.reload()
   await expect(page.locator('.plan-wizard')).toHaveCount(0)
   expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(40)

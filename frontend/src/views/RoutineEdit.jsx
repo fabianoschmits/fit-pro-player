@@ -18,7 +18,8 @@ import { POLICIES_FOR, POLICY_NAME, POLICY_DESC } from '../lib/progression.js'
 import BodyMap from '../components/BodyMap.jsx'
 import PlanProgress from '../components/PlanProgress.jsx'
 import { loadOfRoutine, rankOf, MUSCLE_NAME } from '../lib/muscles.js'
-import { routineName, starterRoutines } from '../lib/starter.js'
+import { routineName, readyMadeRoutines } from '../lib/starter.js'
+import { estimateWorkoutDuration } from '../lib/workout-duration.js'
 import { DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 
@@ -49,7 +50,7 @@ export function RoutineTemplatePicker({ currentId, close, state = undefined, onU
   const storeUpdate = useStore(s => s.update)
   const S = state || stored
   const update = onUpdate || storeUpdate
-  const suggested = starterRoutines(S)
+  const suggested = readyMadeRoutines(S)
   const existing = S.routines.filter(routine => routine.id !== currentId && !routine.assigned && !routine.starterKey && !routine.planGenerated
     && (routine.ex || []).every(ex => catalogOnly ? isAvailableExercise(ex.id) : !isPendingExercise(ex.id)))
 
@@ -79,7 +80,7 @@ export function RoutineTemplatePicker({ currentId, close, state = undefined, onU
     <h3>{t('Choose a workout to get started')}</h3>
     <p className="dim">{t('Load a copy, edit it as you like, and finish when ready.')}</p>
     <h4>{t('Suggested by Fit Pro Player')}</h4>
-    <div className="routine-template-list">{suggested.map(routine => option(routine, t('Recommended template')))}</div>
+    <div className="routine-template-list">{suggested.map(routine => option(routine, `${t('Recommended template')} · ${Math.ceil(estimateWorkoutDuration(routine.ex, { restSec: S.restSec }) / 60)} min`))}</div>
     <h4>{t('My workouts')}</h4>
     {existing.length
       ? <div className="routine-template-list">{existing.map(routine => option(routine, t('{0} exercises', routine.ex?.length || 0)))}</div>

@@ -1,4 +1,5 @@
 // The ready-made routines shared by onboarding, Settings and the demo build.
+import { personalizedRoutineSpecs } from './personalized-plan.js'
 import { routineId } from './format.js'
 import { t } from './i18n-core.js'
 import { suggestedWeightFor } from './history.js'
@@ -59,6 +60,10 @@ export const starterRoutines = st =>
     }))
   }))
 
+/** Complete duration-aware catalogue, shared by the existing picker and setup flow. */
+export const readyMadeRoutines = (state = {}) => personalizedRoutineSpecs(state.profile, 7, { daily: true, state })
+  .map(spec => ({ ...spec, id: routineId(), name: t(spec.starterKey) }))
+
 /** Display a built-in routine in the active language while custom names stay untouched. */
 export const routineName = routine => routine?.starterKey ? t(routine.starterKey) : (routine?.name || '')
 
@@ -94,11 +99,11 @@ export function annotateStarterRoutines(st) {
 /** Add only missing built-in routines and annotate routines created by older versions. */
 export function ensureStarterRoutines(st) {
   annotateStarterRoutines(st)
-  const ready = starterRoutines(st)
+  const ready = readyMadeRoutines(st)
   const ordered = []
   ready.forEach((candidate, index) => {
     let existing = (st.routines || []).find(r => r.starterKey === candidate.starterKey)
-    if (!existing) existing = (st.routines || []).find(r => signatureIndex(r) === index)
+    if (!existing && index < 7) existing = (st.routines || []).find(r => signatureIndex(r) === index)
     if (existing) {
       existing.starterKey = candidate.starterKey
       ordered.push(existing)

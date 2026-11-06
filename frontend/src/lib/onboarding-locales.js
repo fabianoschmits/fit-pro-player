@@ -10,6 +10,7 @@ const ROUTINE_KEYS = [
 
 const KEYS = [
   ...ROUTINE_KEYS,
+  'Chest, Shoulders & Triceps', 'Back, Rear Shoulders & Biceps', 'Biceps Day', 'Triceps Day', 'Forearms Day', 'Calves Day', 'Hamstrings Day', 'Quadriceps Day',
   'Your profile', 'Edit your personal data', "Let's build your plan",
   'These details personalize your progress, body map and training suggestions.',
   'How should we call you?', 'Enter your name to continue.', 'Your avatar', 'Choose your avatar',
@@ -72,7 +73,7 @@ const KEYS = [
 const BASE = Object.fromEntries(KEYS.map(key => [key, key]))
 
 const ROUTINES = {
-  pt: ['Dia de Peito', 'Dia de Costas', 'Dia de Pernas', 'Dia de Abdômen', 'Dia de Braços', 'Dia de Ombros', 'Dia de Glúteos', 'Corpo Inteiro', 'Corpo Inteiro A', 'Corpo Inteiro B', 'Parte Superior', 'Parte Inferior', 'Dia de Empurrar', 'Dia de Puxar', 'Peito e Tríceps', 'Costas e Bíceps', 'Pernas e Core', 'Ombros e Abdômen', 'Braços e Core', 'Glúteos e Pernas', 'Condicionamento', 'Cardio e Core', 'Recuperação Ativa'],
+  pt: ['Dia de Peito', 'Dia de Costas', 'Dia de Pernas', 'Dia de Abdômen', 'Dia de Braços', 'Dia de Ombros', 'Dia de Glúteos', 'Corpo Inteiro', 'Corpo Inteiro A', 'Corpo Inteiro B', 'Parte Superior', 'Parte Inferior', 'Dia de Peito, Ombros e Tríceps', 'Dia de Costas e Bíceps', 'Peito e Tríceps', 'Costas e Bíceps', 'Pernas e Core', 'Ombros e Abdômen', 'Braços e Core', 'Glúteos e Pernas', 'Condicionamento', 'Cardio e Core', 'Recuperação Ativa'],
   de: ['Brusttag', 'Rückentag', 'Beintag', 'Bauchtag', 'Armtag', 'Schultertag', 'Gesäßtag', 'Ganzkörper', 'Ganzkörper A', 'Ganzkörper B', 'Oberkörper', 'Unterkörper', 'Drücktag', 'Zugtag', 'Brust & Trizeps', 'Rücken & Bizeps', 'Beine & Rumpf', 'Schultern & Bauch', 'Arme & Rumpf', 'Gesäß & Beine', 'Kondition', 'Cardio & Rumpf', 'Aktive Erholung'],
   es: ['Día de pecho', 'Día de espalda', 'Día de piernas', 'Día de abdominales', 'Día de brazos', 'Día de hombros', 'Día de glúteos', 'Cuerpo completo', 'Cuerpo completo A', 'Cuerpo completo B', 'Tren superior', 'Tren inferior', 'Día de empuje', 'Día de tirón', 'Pecho y tríceps', 'Espalda y bíceps', 'Piernas y core', 'Hombros y abdomen', 'Brazos y core', 'Glúteos y piernas', 'Acondicionamiento', 'Cardio y core', 'Recuperación activa'],
   fr: ['Jour pectoraux', 'Jour dos', 'Jour jambes', 'Jour abdominaux', 'Jour bras', 'Jour épaules', 'Jour fessiers', 'Corps entier', 'Corps entier A', 'Corps entier B', 'Haut du corps', 'Bas du corps', 'Jour poussée', 'Jour tirage', 'Pectoraux et triceps', 'Dos et biceps', 'Jambes et sangle abdominale', 'Épaules et abdominaux', 'Bras et sangle abdominale', 'Fessiers et jambes', 'Conditionnement', 'Cardio et sangle abdominale', 'Récupération active'],
@@ -86,6 +87,14 @@ const ROUTINES = {
 }
 
 const PT = {
+  'Chest, Shoulders & Triceps': 'Dia de Peito, Ombros e Tríceps',
+  'Back, Rear Shoulders & Biceps': 'Dia de Costas, Ombros posteriores e Bíceps',
+  'Biceps Day': 'Dia de Bíceps',
+  'Triceps Day': 'Dia de Tríceps',
+  'Forearms Day': 'Dia de Antebraços',
+  'Calves Day': 'Dia de Panturrilhas',
+  'Hamstrings Day': 'Dia de Posteriores de coxa',
+  'Quadriceps Day': 'Dia de Quadríceps',
   'Admin': 'Administrador',
   'All sets completed. Great work!': 'Todas as séries concluídas. Ótimo trabalho!',
   'Collapse': 'Recolher',

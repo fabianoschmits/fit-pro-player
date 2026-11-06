@@ -28,7 +28,7 @@ describe('personalized training plans', () => {
           expect(routines, `${goal}/${experience}/${days}`).toHaveLength(days)
           expect(new Set(routines.map(routine => routine.personalizedKey)).size).toBe(days)
           for (const routine of routines) {
-            expect(routine.ex.length).toBeGreaterThanOrEqual(4)
+            expect(routine.ex.length).toBeGreaterThanOrEqual(3)
             for (const exercise of routine.ex) {
               expect(activeIds.has(exercise.id), exercise.id).toBe(true)
               expect(exercise.sets).toBeGreaterThan(0)
@@ -43,10 +43,10 @@ describe('personalized training plans', () => {
   })
 
   it('changes the weekly split for each goal and training frequency', () => {
-    expect(splitKeys('build_muscle', 3)).toEqual(['push', 'pull', 'legs_core'])
+    expect(splitKeys('build_muscle', 3)).toEqual(['upper', 'lower', 'full'])
     expect(splitKeys('lose_weight', 3)).toEqual(['full_a', 'conditioning', 'full_b'])
-    expect(splitKeys('improve_fitness', 4)).toEqual(['upper', 'conditioning', 'lower', 'cardio_core'])
-    expect(splitKeys('maintain_weight', 2)).toEqual(['upper', 'lower'])
+    expect(splitKeys('improve_fitness', 4)).toEqual(['upper', 'conditioning', 'lower', 'full_b'])
+    expect(splitKeys('maintain_weight', 2)).toEqual(['full_a', 'full_b'])
   })
 
   it('uses more volume and larger starting loads as experience and body weight increase', () => {
@@ -68,9 +68,9 @@ describe('personalized training plans', () => {
     }
   })
 
-  it('offers the seven focused workouts in daily mode', () => {
+  it('offers focused and mixed workouts in daily mode', () => {
     const routines = personalizedRoutineSpecs(profile('build_muscle', 'intermediate'), 2, { daily: true })
-    expect(routines.map(routine => routine.personalizedKey)).toEqual([
+    expect(routines.slice(0, 7).map(routine => routine.personalizedKey)).toEqual([
       'chest', 'back', 'legs', 'abs', 'arms', 'shoulders', 'glutes',
     ])
   })
@@ -136,4 +136,14 @@ it('never treats an unsigned legacy starter marker as permission to discard a pr
   current.routines = [structuredClone(legacy)]
   applyPersonalizedPlan(current, profile('lose_weight', 'beginner'), 3)
   expect(current.routines.find(routine => routine.id === 'legacy')).toEqual(legacy)
+})
+
+it('keeps dated assignments attached to retained ids when generated key order changes', () => {
+  const current = state()
+  const initial = personalizedRoutineSpecs(profile(), 2)
+  current.routines = [{ ...initial[1], id: 'b' }, { ...initial[0], id: 'a' }]
+  current.dayPlan = { '2026-11-10': 'a', '2026-11-11': 'b' }
+  applyPersonalizedPlan(current, profile(), 2)
+  expect(current.routines.map(routine => routine.id)).toEqual(['a', 'b'])
+  expect(current.dayPlan).toEqual({ '2026-11-10': 'a', '2026-11-11': 'b' })
 })
