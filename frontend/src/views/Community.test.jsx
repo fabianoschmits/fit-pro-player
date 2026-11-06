@@ -26,7 +26,7 @@ const bob = { id: 'bob', display_name: 'Bruno', avatar_ref: 'avatar-05' }
 const makePost = (id, author) => ({ id, author_id: author.id, author, image_path: `${author.id}/${id}.jpg`, caption: id, created_at: '2026-10-23T12:00:00Z', comments: [], likes: [] })
 let root, container, writes, rows, notificationRows, failure, missingProfile, missingOwnProfile
 function client() {
-  return { rpc: vi.fn(async () => ({ data: 'ticket-1', error: null })), storage: { from: () => ({ upload: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) }) }, from(table) {
+  return { auth: { getSession: async () => ({ data: { session: { user: { id: 'alice' }, access_token: 'test-token' } } }) }, functions: { invoke: vi.fn(async () => ({ error: null })) }, rpc: vi.fn(async () => ({ data: 'ticket-1', error: null })), storage: { from: () => ({ upload: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) }) }, from(table) {
     const query = { table, filters: [], operation: 'select', select(fields) { if (fields?.includes('avatar_id')) throw Error('Invalid public column'); return this }, eq(key,value) { this.filters.push([key,value]); return this }, order() { return this }, limit() { return this }, or() { return this }, in() { return this }, is() { return this }, maybeSingle() { this.singleResult = true; return this }, single() { this.singleResult = true; return this }, match(value) { this.filters.push(...Object.entries(value)); return this }, insert(value) { this.operation = 'insert'; this.value = value; return this }, update(value) { this.operation = 'update'; this.value = value; return this }, delete() { this.operation = 'delete'; return this }, then(resolve,reject) {
       return Promise.resolve().then(() => {
         if (this.operation !== 'select') {
@@ -48,6 +48,26 @@ beforeEach(() => { globalThis.IS_REACT_ACT_ENVIRONMENT = true; mocks.user = { id
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks() })
 async function mount(path='/community') { function Page() { return <Community /> }; await act(async () => root.render(<MemoryRouter initialEntries={[path]}><Page /></MemoryRouter>)) }
 const click = async button => act(async () => button.click())
+
+it('keeps a post visible when server photo cleanup fails and retries through the authenticated endpoint', async () => {
+  window.confirm = vi.fn(() => true)
+  mocks.client.functions.invoke.mockResolvedValueOnce({ error: new Error('Falha ao excluir') })
+  await mount()
+  const openDelete = async () => {
+    const post = container.querySelector('article[data-post-id="mine"]')
+    await click(post.querySelector('[aria-label="Mais opções"]'))
+    await click([...post.querySelectorAll('button')].find(button => button.textContent === 'Excluir'))
+  }
+  await openDelete()
+  expect(container.querySelector('article[data-post-id="mine"]')).not.toBeNull()
+  expect(writes.filter(write => write.table === 'community_posts' && write.operation === 'delete')).toHaveLength(0)
+  expect(mocks.client.functions.invoke).toHaveBeenCalledWith('body-progress-photo-cleanup', {
+    body: { action: 'community-post', postId: 'mine' }, headers: { Authorization: 'Bearer test-token' },
+  })
+  await click([...container.querySelector('article[data-post-id="mine"]').querySelectorAll('button')].find(button => button.textContent === 'Excluir'))
+  expect(container.querySelector('article[data-post-id="mine"]')).toBeNull()
+  expect(mocks.client.functions.invoke).toHaveBeenCalledTimes(2)
+})
 const textButton = text => [...container.querySelectorAll('button')].find(button => button.textContent.trim() === text)
 async function type(selector,value) { const element = container.querySelector(selector); await act(async () => { Object.getOwnPropertyDescriptor(element.tagName === 'TEXTAREA' ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype,'value').set.call(element,value); element.dispatchEvent(new Event('input',{bubbles:true})) }) }
 

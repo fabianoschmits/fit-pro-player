@@ -1,5 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0'
 import { cleanupPhotos } from './cleanup.mjs'
+import { removeCommunityPost, removeAccountObjects } from './community-cleanup.mjs'
 
 const bucket = 'body-progress-photos'
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Cache-Control': 'no-store' }
@@ -21,8 +22,22 @@ Deno.serve(async request => {
   if ((await caller.rpc('assert_account_active')).error) return reply(403)
   try {
     const body = await request.json()
-    if (!['photo', 'account', 'orphans'].includes(body.action)) return reply(400)
-    await cleanupPhotos({ db: admin, store: admin.storage.from(bucket), owner, action: body.action, photoId: body.photoId })
+    if (!['photo', 'account', 'orphans', 'community-post'].includes(body.action)) return reply(400)
+    if (body.action === 'community-post') {
+      if (!/^[0-9a-f-]{36}$/.test(body.postId || '')) return reply(400)
+      await removeCommunityPost({ db: admin, store: admin.storage.from('community-posts'), owner, postId: body.postId })
+    } else {
+      await cleanupPhotos({ db: admin, store: admin.storage.from(bucket), owner, action: body.action, photoId: body.photoId })
+      if (body.action === 'account') {
+        const { data: buckets, error: bucketError } = await admin.storage.listBuckets()
+        if (bucketError) throw bucketError
+        for (const accountBucket of ['community-posts', 'professional-photos']) {
+          if (buckets.some(item => item.id === accountBucket)) {
+            await removeAccountObjects({ store: admin.storage.from(accountBucket), owner })
+          }
+        }
+      }
+    }
     return reply(200, true)
   } catch {
     // Never log image contents, signed URLs, paths or request bodies.

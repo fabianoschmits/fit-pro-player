@@ -15,7 +15,7 @@ import { useDialogFocus } from '../lib/dialog-focus.js'
 import Icon from '../components/Icon.jsx'
 import CommunityComments from '../components/community/CommunityComments.jsx'
 import CommunityReportDialog from '../components/community/CommunityReportDialog.jsx'
-import CommunityPostMedia, { CommunityImage, CommunityPostSkeleton, communityStoragePath } from '../components/community/CommunityPostMedia.jsx'
+import CommunityPostMedia, { CommunityImage, CommunityPostSkeleton } from '../components/community/CommunityPostMedia.jsx'
 import CommunityCropEditor, { cropCommunityImage, useFilePreview } from '../components/community/CommunityComposerMedia.jsx'
 import MessageButton from '../components/community/MessageButton.jsx'
 import './direct-messages.css'
@@ -218,21 +218,30 @@ function CommunitySession() {
       }
       setComposerOpen(false); setEditingPost(null); setFile(null); setCaption('')
     } catch (failure) {
-      if (uploadedPath && !inserted) { try { await client.storage.from(BUCKET).remove([uploadedPath]) } catch { /* surfaced publication error remains retryable */ } }
+      if (uploadedPath && !inserted) {
+        try {
+          const cleanup = await client.storage.from(BUCKET).remove([uploadedPath])
+          if (cleanup.error) throw cleanup.error
+        } catch {
+          setError('Não foi possível publicar nem concluir a limpeza da foto. Tente novamente com conexão estável.')
+          return
+        }
+      }
       setError(failure.message || 'Não foi possível publicar. Tente novamente.')
     } finally { savingRef.current = false; setSaving(false); setPendingPost(false) }
   }
   const removePost = async post => {
     if (!window.confirm('Excluir esta postagem?')) return
     try {
-      const result = await client.from('community_posts').delete().eq('id', post.id).eq('author_id', userId)
+      const { data, error: sessionError } = await client.auth.getSession()
+      if (sessionError) throw sessionError
+      if (data?.session?.user?.id !== userId) throw new Error('Sua conta mudou. Abra novamente a Comunidade.')
+      const result = await client.functions.invoke('body-progress-photo-cleanup', {
+        body: { action: 'community-post', postId: post.id },
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      })
       if (result.error) throw result.error
       store.removePost(post.id); setActiveMenuId(null)
-      const path = communityStoragePath(post.image_path)
-      if (path?.startsWith(`${userId}/`)) {
-        const removed = await client.storage.from(BUCKET).remove([path])
-        if (removed.error) setError('Postagem excluída. Não foi possível remover o arquivo da foto agora.')
-      }
     } catch (failure) { setError(failure.message) }
   }
   const openEdit = post => { setEditingPost(post); setFile(null); setCaption(post.caption || ''); setCommentsDisabled(post.comments_disabled); setCropConfirmed(true); setError(''); setComposerOpen(true); setActiveMenuId(null) }
