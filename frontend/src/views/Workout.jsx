@@ -641,8 +641,8 @@ function ActiveWorkout() {
                 <small>{entry.sets.length} séries · {doneSets}/{entry.sets.length}{indices.length > 1 ? ` · Supersérie ${index + 1}` : ''}</small>
               </button></div>
             }))}
-            {!reviewing && <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>}
-            {!reviewing && <button type="button" className="workout-exercise-add workout-exercise-remove" disabled={navigationLocked || adjustmentsLocked} aria-label={t('Remove exercise')} onClick={removeExerciseSheet}><Icon name="minus" /></button>}
+            {!reviewing && <div className="workout-exercise-queue-actions"><button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>
+            <button type="button" className="workout-exercise-add workout-exercise-remove" disabled={navigationLocked || adjustmentsLocked} aria-label={t('Remove exercise')} onClick={removeExerciseSheet}><Icon name="minus" /></button></div>}
           </div>
           {!reviewing && A.flex?.outline?.some(item => !item.selected) && <div className="fpp-flex-omitted-summary"><small>Retirados pelo tempo</small>{A.flex.outline.filter(item => !item.selected).map(item => <span key={item.key}>{item.name || exerciseName(exOr(item.exerciseId))} · {item.sets} séries</span>)}</div>}
           {reviewing && <div className="fpp-flex-confirm">
