@@ -75,6 +75,7 @@ vi.mock('../components/LineChart.jsx', () => ({
   default: props => React.createElement('div', { 'data-points': props.points.length, 'data-goal': props.goal }),
 }))
 vi.mock('../components/Icon.jsx', () => ({ default: ({ name }) => React.createElement('span', { 'data-icon': name }) }))
+vi.mock('../components/ProgressPhotoDemo.jsx', () => ({ default: ({ body }) => React.createElement('div', { 'data-photo-demo': body }) }))
 
 let dom
 let root
@@ -85,6 +86,7 @@ beforeEach(() => {
   mocks.auth = { configured: false }
   mocks.storeState = { S: { mediaSize: 'full', displayUnit: 'kg', exWeights: {}, active: null }, enterApp: null, setGuest: null }
   dom = new Window({ url: 'http://localhost/' })
+  dom.IntersectionObserver = undefined
   dom.matchMedia = () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })
   globalThis.window = dom
   globalThis.document = dom.document
@@ -114,6 +116,20 @@ afterEach(async () => {
 const button = label => [...container.querySelectorAll('button')].find(item => item.textContent.trim() === label)
 
 describe('public landing page', () => {
+  it('demonstrates both photo models without upload controls or entering the app', async () => {
+    await act(async () => { root.render(<Landing />) })
+    const section = container.querySelector('#evolucao-fotografica')
+    expect(section).toBeTruthy()
+    expect(section.querySelector('[data-photo-demo]').getAttribute('data-photo-demo')).toBe('male')
+    await act(async () => { button('Feminino').click() })
+    expect(section.querySelector('[data-photo-demo]').getAttribute('data-photo-demo')).toBe('female')
+    expect(button('Feminino').getAttribute('aria-pressed')).toBe('true')
+    expect(section.querySelector('input[type=file]')).toBeNull()
+    expect(mocks.setGuest).not.toHaveBeenCalled()
+    expect(container.textContent).toContain('Biblioteca de planos')
+    expect(container.textContent).toContain('Acompanhamento profissional')
+    expect(container.textContent).toContain('Medidas e histórico')
+  })
   it('keeps a short mobile-first product page without marketing filler', async () => {
     await act(async () => { root.render(<Landing />) })
 

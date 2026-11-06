@@ -14,7 +14,9 @@ import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
+import ProgressPhotoDemo from '../components/ProgressPhotoDemo.jsx'
 import '../workout-player.css'
+import '../body-progress.css'
 import '../landing.css'
 
 const DAY = 86400000
@@ -84,6 +86,37 @@ function useReducedMotion() {
     return () => query.removeEventListener?.('change', sync)
   }, [])
   return reduced
+}
+
+function PhotoPreview() {
+  const [body, setBody] = useState('male')
+  const [visible, setVisible] = useState(false)
+  const preview = useRef(null)
+  useEffect(() => {
+    if (!window.IntersectionObserver) { setVisible(true); return undefined }
+    const observer = new window.IntersectionObserver(entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        setVisible(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '240px' })
+    observer.observe(preview.current)
+    return () => observer.disconnect()
+  }, [])
+  return <section className="landing-block landing-block--flip landing-photo-block" id="evolucao-fotografica" aria-labelledby="landing-photo-title" ref={preview}>
+    <div className="landing-block-copy">
+      <h2 id="landing-photo-title">Sua evolução, lado a lado.</h2>
+      <p>Arraste a linha e experimente a comparação de fotos. No app, seus registros ficam privados na sua conta.</p>
+      <div className="landing-photo-models" role="group" aria-label="Modelo da demonstração">
+        <button type="button" aria-pressed={body === 'male'} onClick={() => setBody('male')}>Masculino</button>
+        <button type="button" aria-pressed={body === 'female'} onClick={() => setBody('female')}>Feminino</button>
+      </div>
+      <p className="landing-photo-note">Imagens ilustrativas. Cada evolução é individual.</p>
+    </div>
+    <div className="landing-block-visual landing-photo-visual">
+      {visible && <ProgressPhotoDemo body={body} />}
+    </div>
+  </section>
 }
 
 function PhoneFrame({ label = undefined, children = undefined, tall = undefined }) {
@@ -535,7 +568,9 @@ export default function Landing({ invitePath = false }) {
           </div>
         </section>
 
-        <section className="landing-block landing-block--flip" id="estatisticas">
+        <PhotoPreview />
+
+        <section className="landing-block" id="estatisticas">
           <div className="landing-block-copy">
             <h2>Corpo</h2>
             <p>Equilíbrio, fadiga e força no mapa.</p>
@@ -543,6 +578,15 @@ export default function Landing({ invitePath = false }) {
           <div className="landing-block-visual">
             <StatsPreview />
           </div>
+        </section>
+
+        <section className="landing-more" aria-labelledby="landing-more-title">
+          <h2 id="landing-more-title">Do plano ao próximo resultado.</h2>
+          <dl>
+            <div><dt>Biblioteca de planos</dt><dd>Organize seus planos de treino e escolha qual seguir na sua rotina.</dd></div>
+            <div><dt>Acompanhamento profissional</dt><dd>Vincule-se ao seu profissional e receba seus planos de treino no app.</dd></div>
+            <div><dt>Medidas e histórico</dt><dd>Registre peso e circunferências e compare suas medidas ao longo do tempo.</dd></div>
+          </dl>
         </section>
 
         <footer className="landing-footer">

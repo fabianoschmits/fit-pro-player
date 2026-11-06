@@ -434,6 +434,19 @@ body.landing-mode #tabbar {
   color: var(--acc);
 }
 
+.landing-photo-visual{width:100%;min-height:440px;max-width:400px;margin-inline:auto}
+.landing-photo-models{display:flex;justify-content:center;gap:8px;margin-top:18px}
+.landing-photo-models button{min-height:44px;padding:9px 16px;border:1px solid var(--sep);border-radius:var(--r);color:var(--landing-muted);background:transparent;font:inherit;cursor:pointer}
+.landing-photo-models button[aria-pressed=true]{background:var(--acc-soft);border-color:var(--acc);color:var(--landing-label)}
+.landing-photo-models button:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.landing-block-copy .landing-photo-note{font-size:12px;color:var(--landing-faint);margin-top:12px}
+.landing-photo-visual .bp-photo-demo-caption{color:var(--landing-muted)}
+.landing-more{padding:24px 0 36px;border-top:var(--hair) solid var(--sep)}
+.landing-more h2{font-size:22px;letter-spacing:-.02em;margin:0 0 24px}
+.landing-more dl{display:grid;gap:24px;margin:0}
+.landing-more dt{font-size:16px;font-weight:650}
+.landing-more dd{margin:8px 0 0;color:var(--landing-muted);font-size:14px;line-height:1.6;max-width:38ch}
+
 /* Desktop: full-width product layout, not a centered phone column. */
 @media (min-width: 900px) {
   .landing-nav {
@@ -541,6 +554,8 @@ body.landing-mode #tabbar {
   .landing-footer {
     padding-top: 36px;
   }
+  .landing-photo-models{justify-content:flex-start}
+  .landing-more dl{grid-template-columns:repeat(3,minmax(0,1fr));gap:32px}
 }
 
 @media (prefers-reduced-motion: reduce) {
