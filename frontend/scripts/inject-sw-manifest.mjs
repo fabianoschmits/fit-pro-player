@@ -27,6 +27,9 @@ const result = await injectManifest({
     'assets/*.webp',
   ],
   globIgnores: [
+    // Private photo UI and pose code are loaded only when explicitly used.
+    'assets/ProgressPhoto*.js',
+    'assets/progress-photo*.js',
     // Exercise sprite frames and loaders — loaded on demand into exercise cache
     'assets/frames-*.js',
     'assets/frame-*.webp',

@@ -342,9 +342,24 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
       },
       deleteAccount: async () => {
         if (globalThis.navigator?.onLine === false) return { kind: 'error', error: 'network_unavailable' };
-        const result = await execute('deleting_account', () => client.rpc('delete_my_account'));
+        const owner = state.user?.id;
+        const deletingRevision = revision.current;
+        const sameAccount = () => revision.current === deletingRevision;
+        const result = await execute('deleting_account', async () => {
+          const { data: sessionData, error: sessionError } = await client.auth.getSession();
+          if (sessionError) return { data: null, error: sessionError };
+          const token = sessionData?.session?.access_token;
+          if (!sameAccount() || !owner || sessionData?.session?.user?.id !== owner || !token) throw new Error('account changed');
+          const { error } = await client.functions.invoke('body-progress-photo-cleanup', { body: { action: 'account' }, headers: { Authorization: `Bearer ${token}` } });
+          if (error) return { data: null, error };
+          if (!sameAccount()) throw new Error('account changed');
+          // Pin the authorization header: cross-tab session changes can never target another user.
+          return client.rpc('delete_my_account').setHeader('Authorization', `Bearer ${token}`);
+        });
         if (result.kind !== 'success') return result;
+        if (!sameAccount()) return result;
         await disableBackgroundNotifications();
+        if (!sameAccount()) return result;
         await client.auth.signOut({ scope: 'local' });
         setState(current => ({ ...current, suppressLegacyResume: true, user: null, status: 'anonymous' }));
         // The server-side delete already succeeded. Clear the local Auth session even if

@@ -59,3 +59,7 @@ enabled = false
 [functions.push-dispatch]
 # Cron uses a dedicated Vault secret verified by the handler, never a browser key.
 verify_jwt = false
+
+[functions.body-progress-photo-cleanup]
+# Handler verifies bearer token through Auth before any owner-scoped operation.
+verify_jwt = false

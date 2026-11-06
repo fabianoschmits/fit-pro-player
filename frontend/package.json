@@ -31,6 +31,7 @@
     "@capacitor/local-notifications": "^7.0.7",
     "@capacitor/push-notifications": "^7.0.7",
     "@capacitor/share": "^7.0.4",
+    "@mediapipe/tasks-vision": "1.2.2",
     "@supabase/supabase-js": "^2.116.0",
     "framer-motion": "^12.43.0",
     "html-to-image": "^1.11.13",

@@ -5,7 +5,7 @@ import imports from 'eslint-plugin-import'
 import promise from 'eslint-plugin-promise'
 import globals from 'globals'
 export default [
- { ignores: ['dist/**','android/**','ios/**','node_modules/**','test-results*/**','playwright-report/**','src/data/**','src/assets/**'] },
+ { ignores: ['dist/**','android/**','ios/**','node_modules/**','test-results*/**','playwright-report/**','src/data/**','src/assets/**','public/pose/wasm/**'] },
  js.configs.recommended,
  { files:['**/*.{js,jsx,mjs}'], languageOptions:{ globals:{...globals.browser,...globals.node,...globals.serviceworker}, parserOptions:{ecmaFeatures:{jsx:true}} },
  plugins:{react,'react-hooks':hooks,import:imports,promise},settings:{react:{version:'19.2'},'import/resolver':{typescript:{alwaysTryTypes:true}}},

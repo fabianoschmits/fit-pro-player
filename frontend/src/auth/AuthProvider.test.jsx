@@ -14,7 +14,7 @@ const user = { id: '72d8d4df-efce-4ea3-9d6b-5d5c4651b9c2', email: 'ana@example.c
 function createFakeClient({ session = null, getSession } = {}) {
   let listener;
   const auth = {
-    getSession: getSession || vi.fn().mockResolvedValue({ data: { session }, error: null }),
+    getSession: getSession || vi.fn().mockResolvedValue({ data: { session: session ? { access_token: 'test-token', ...session } : null }, error: null }),
     onAuthStateChange: vi.fn(callback => {
       listener = callback;
       return { data: { subscription: { unsubscribe: vi.fn() } } };
@@ -28,7 +28,7 @@ function createFakeClient({ session = null, getSession } = {}) {
     signOut: vi.fn().mockResolvedValue({ error: null }),
     rpc: vi.fn().mockResolvedValue({ data: { verification_status: 'unverified' }, error: null }),
   };
-  return { auth, rpc: auth.rpc, emit: (event, nextSession) => listener(event, nextSession) };
+  return { auth, rpc: auth.rpc, functions: { invoke: vi.fn().mockResolvedValue({ data: { ok: true }, error: null }) }, emit: (event, nextSession) => listener(event, nextSession) };
 }
 
 let dom;
@@ -183,13 +183,15 @@ describe('AuthProvider', () => {
 
   it('deletes the authenticated account through the protected RPC before clearing the local session', async () => {
     const client = createFakeClient({ session: { user } });
-    client.rpc.mockImplementation(async name => name === 'delete_my_account' ? { data: null, error: null } : { data: {}, error: null });
+    client.rpc.mockImplementation(name => Object.assign(Promise.resolve(name === 'delete_my_account' ? { data: null, error: null } : { data: {}, error: null }), { setHeader: vi.fn().mockReturnThis() }));
     await renderProvider(client);
     await act(async () => Promise.resolve());
 
     await act(async () => { await expect(latest.deleteAccount()).resolves.toEqual({ kind: 'success' }); });
 
     expect(client.rpc).toHaveBeenCalledWith('delete_my_account');
+    expect(client.functions.invoke).toHaveBeenCalledWith('body-progress-photo-cleanup', { body: { action: 'account' }, headers: { Authorization: 'Bearer test-token' } });
+    expect(client.functions.invoke.mock.invocationCallOrder[0]).toBeLessThan(client.rpc.mock.invocationCallOrder.find(order => order > client.functions.invoke.mock.invocationCallOrder[0]));
     expect(client.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
     expect(latest.status).toBe('anonymous');
     expect(latest.user).toBeNull();
@@ -197,9 +199,9 @@ describe('AuthProvider', () => {
 
   it('keeps the account session when remote deletion fails', async () => {
     const client = createFakeClient({ session: { user } });
-    client.rpc.mockImplementation(async name => name === 'delete_my_account'
+    client.rpc.mockImplementation(name => Object.assign(Promise.resolve(name === 'delete_my_account'
       ? { data: null, error: { code: 'network_error' } }
-      : { data: {}, error: null });
+      : { data: {}, error: null }), { setHeader: vi.fn().mockReturnThis() }));
     await renderProvider(client);
     await act(async () => Promise.resolve());
 
@@ -207,6 +209,31 @@ describe('AuthProvider', () => {
 
     expect(client.auth.signOut).not.toHaveBeenCalled();
     expect(latest.status).toBe('authenticated');
+  });
+
+  it('never deletes a newly signed in account after pending photo cleanup', async () => {
+    const client = createFakeClient({ session: { user } });
+    let finishCleanup;
+    client.functions.invoke.mockImplementation(() => new Promise(resolve => { finishCleanup = resolve; }));
+    await renderProvider(client);
+    let deletion;
+    await act(async () => { deletion = latest.deleteAccount(); });
+    expect(finishCleanup).toBeTypeOf('function');
+    const other = { ...user, id: '22222222-2222-4222-8222-222222222222' };
+    await act(async () => { client.emit('SIGNED_IN', { user: other }); });
+    await act(async () => { finishCleanup({ data: { ok: true }, error: null }); await deletion; });
+    expect(client.rpc).not.toHaveBeenCalledWith('delete_my_account');
+    expect(client.auth.signOut).not.toHaveBeenCalled();
+    expect(latest.user.id).toBe(other.id);
+  });
+
+  it('keeps account when photo cleanup fails', async () => {
+    const client = createFakeClient({ session: { user } });
+    client.functions.invoke.mockResolvedValue({ data: null, error: { code: 'network_error' } });
+    await renderProvider(client);
+    await act(async () => { await latest.deleteAccount(); });
+    expect(client.rpc).not.toHaveBeenCalledWith('delete_my_account');
+    expect(client.auth.signOut).not.toHaveBeenCalled();
   });
 
   it('passes the selected account type as public signup metadata', async () => {

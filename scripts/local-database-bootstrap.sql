@@ -1,4 +1,5 @@
 create role authenticator; create schema extensions;
+create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;
 alter table auth.users add column email varchar(255),add column encrypted_password text,add column email_confirmed_at timestamptz,add column raw_app_meta_data jsonb default '{}',add column created_at timestamptz default now(),add column updated_at timestamptz default now(),add column is_anonymous boolean default false,add column last_sign_in_at timestamptz;
 create schema storage;
 create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
