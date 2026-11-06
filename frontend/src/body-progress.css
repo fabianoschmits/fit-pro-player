@@ -258,6 +258,9 @@
 }
 /* Private body photographs: fixed coordinate planes; divider never resizes images. */
 .bp-section-navigation{margin-bottom:18px;min-width:0}
+.bp-photo-demo-caption{margin:0 0 10px;text-align:center;font-size:11px;line-height:1.4;color:var(--label-2)}
+.bp-photo-demo :is(.bp-photo-stage,.bp-photo-top){background:#202020}
+.bp-photo-demo-signin{display:grid;gap:12px;margin-top:16px;color:var(--label-2);font-size:13px}
 .stats-photo-progress{margin-bottom:var(--space-4,16px)}
 .stats-photo-progress>.bp-section-navigation{margin-bottom:16px}
 .bp-photo-mode-preview :is(.bp-photo-comparison,.bp-photo-single){max-width:520px}

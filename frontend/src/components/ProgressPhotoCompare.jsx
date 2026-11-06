@@ -8,11 +8,11 @@ import Icon from './Icon.jsx'
 const baseTransform = photo => photo.manual_transform || photo.auto_transform || defaultTransform(photo.width, photo.height)
 
 export function PhotoLayer({ photo, url, transform = baseTransform(photo), onLoad, onError }) {
-  return <img className="bp-photo-image" src={url} alt={`Registro corporal de ${fmtDate(photo.photo_date)}`} draggable={false} referrerPolicy="no-referrer" onLoad={onLoad} onError={onError}
+  return <img className="bp-photo-image" src={url} alt={photo.alt || `Registro corporal de ${fmtDate(photo.photo_date)}`} draggable={false} referrerPolicy="no-referrer" onLoad={onLoad} onError={onError}
     style={{ width: `${photo.width / photo.height * transform.scale / .75 * 100}%`, height: `${transform.scale * 100}%`, left: `${transform.x / .75 * 100}%`, top: `${transform.y * 100}%` }} />
 }
 
-export default function ProgressPhotoCompare({ before, after, beforeURL, afterURL, onSave, controls = true, collapsibleControls = false, children = undefined }) {
+export default function ProgressPhotoCompare({ before, after, beforeURL, afterURL, onSave = undefined, controls = true, collapsibleControls = false, children = undefined }) {
   const stage = useRef(null)
   const drag = useRef(null)
   const [divider, setDivider] = useState(50)
@@ -50,8 +50,8 @@ export default function ProgressPhotoCompare({ before, after, beforeURL, afterUR
         <PhotoLayer photo={after} url={afterURL} transform={imageTransform(after)} onLoad={() => setLoaded(s => ({ ...s, after: true }))} onError={() => { setLoaded(s => ({ ...s, after: true })); setError('Falha ao carregar a imagem atual. Atualize o histórico.') }} />
       </div>
       {!loaded.before || !loaded.after ? <div className="bp-photo-loading"><FppActionFeedback state="loading">Carregando imagens…</FppActionFeedback></div> : null}
-      <div className="bp-photo-label before">ANTES <small>{fmtDate(before.photo_date)}</small></div>
-      <div className="bp-photo-label after">DEPOIS <small>{fmtDate(after.photo_date)}</small></div>
+      <div className="bp-photo-label before">ANTES <small>{before.date_label || fmtDate(before.photo_date)}</small></div>
+      <div className="bp-photo-label after">DEPOIS <small>{after.date_label || fmtDate(after.photo_date)}</small></div>
       {!editing && <button type="button" className="bp-photo-divider" role="slider" aria-label="Divisor antes e depois" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(divider)} aria-valuetext={`${Math.round(divider)}% antes`} aria-orientation="horizontal" style={{ left: `${divider}%` }}
         onPointerDown={event => { if (event.button !== 0) return; event.currentTarget.setPointerCapture(event.pointerId); moveDivider(event) }}
         onPointerMove={event => { if (event.currentTarget.hasPointerCapture(event.pointerId)) moveDivider(event) }}

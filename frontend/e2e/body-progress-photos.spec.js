@@ -51,7 +51,7 @@ test('private photo history works without circumference check-ins', async ({ pag
   await page.getByRole('button', { name: 'Editar fotos', exact: true }).click()
   await expect(page).toHaveURL(/#\/progress\/photos$/)
   await expect(page.getByText('Check-in desta semana')).toHaveCount(0)
-  await expect(page.getByText('Nenhuma fotografia cadastrada')).toBeVisible()
+  await expect(page.getByText('Demonstração · modelo masculino')).toBeVisible()
   for (const date of ['2026-01-01', '2026-02-01']) {
     await page.getByRole('button', { name: 'Adicionar foto', exact: true }).click()
     await page.locator('input[type=file]').first().setInputFiles({ name: 'body.png', mimeType: 'image/png', buffer: image })

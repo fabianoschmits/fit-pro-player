@@ -8,9 +8,11 @@ import { fmtDate } from '../lib/format.js'
 import { Button } from './ui.jsx'
 import { FppActionFeedback } from './FppFeedback.jsx'
 import Dialog from './Dialog.jsx'
+import { useStore } from '../store/useStore.js'
 
 const Compare = lazy(() => import('./ProgressPhotoCompare.jsx'))
 const Upload = lazy(() => import('./ProgressPhotoUpload.jsx'))
+const Demo = lazy(() => import('./ProgressPhotoDemo.jsx'))
 const loading = <FppActionFeedback state="loading">Carregando fotos…</FppActionFeedback>
 
 function PrivatePhoto({ photo, repository, large = false }) {
@@ -25,7 +27,7 @@ function PrivatePhoto({ photo, repository, large = false }) {
   return error ? <span>Imagem indisponível</span> : url ? <img className={large ? 'bp-photo-full' : 'bp-photo-thumbnail'} src={url} alt={`Fotografia corporal de ${fmtDate(photo.photo_date)}`} loading={large ? 'eager' : 'lazy'} referrerPolicy="no-referrer" onError={() => setError(true)} /> : <span>Carregando…</span>
 }
 
-function AccountGallery({ userId, mode }) {
+function AccountGallery({ userId, mode, body }) {
   const editor = mode === 'editor'
   const [repository, setRepository] = useState(null)
   const [photos, setPhotos] = useState([])
@@ -96,7 +98,7 @@ function AccountGallery({ userId, mode }) {
     finally { if (live.current) setBusy(false) }
   }
   const editorFields = editor && <div className="bp-photo-editor-fields">
-    <Button className="bp-photo-add" variant="tinted" icon="plus" disabled={!repository || busy || uploading} onClick={() => setUploading(true)}>Adicionar foto</Button>
+    <Button className="bp-photo-add" variant="tinted" icon="plus" disabled={!repository || status === 'loading' || busy || uploading} onClick={() => setUploading(true)}>Adicionar foto</Button>
     {uploading && repository && <Suspense fallback={loading}><Upload repository={repository} onCancel={() => setUploading(false)} onSaved={nextAngle => {
       if (!live.current) return
       setUploading(false); setAngle(nextAngle); setSelection({ before: '', after: '' }); useUI.getState().toast('Fotografia salva'); void refresh()
@@ -110,6 +112,7 @@ function AccountGallery({ userId, mode }) {
   </div>
   const pair = Boolean(before && after)
   const urlsReady = pair && urls?.key === `${before.id}:${after.id}`
+  const showDemo = status === 'idle' && photos.length === 0
   let comparison = <section className="bp-photo-placeholder bp-empty"><strong>{photos.length ? 'Nenhuma foto deste ângulo' : 'Nenhuma fotografia cadastrada'}</strong><span>{editor ? 'Adicione duas fotos do mesmo ângulo para comparar sua evolução.' : 'Use Editar fotos para preparar sua comparação privada.'}</span></section>
   if (before) comparison = <div className="bp-photo-single"><PrivatePhoto photo={before} repository={repository} large /><p className="bp-neutral-note">Adicione outra foto deste ângulo para comparar sua evolução.</p></div>
   if (pair) comparison = urlsReady ? <Suspense fallback={loading}><Compare key={`${before.id}:${after.id}`} before={before} after={after} beforeURL={urls.before} afterURL={urls.after} controls={editor} collapsibleControls={editor} onSave={async (photo, transform) => {
@@ -117,9 +120,10 @@ function AccountGallery({ userId, mode }) {
         if (live.current) { setPhotos(current => current.map(item => item.id === photo.id ? { ...item, manual_transform: transform } : item)); useUI.getState().toast('Alinhamento salvo') }
       }}>{editorFields}</Compare></Suspense> : loading
   if (status === 'loading') comparison = loading
+  if (showDemo) comparison = <Suspense fallback={loading}><Demo body={body}>{editorFields}</Demo></Suspense>
   return <div className={`bp-photo-section bp-photo-mode-${mode}`}>
     {comparison}
-    {editor && (!urlsReady || status === 'loading') && editorFields}
+    {editor && !showDemo && (!urlsReady || status === 'loading') && editorFields}
     {error && <FppActionFeedback state={navigator.onLine === false ? 'offline' : 'error'}>{error}</FppActionFeedback>}
     {editor && <>
       <details className="bp-photo-disclosure bp-photo-history-disclosure" onToggle={event => setHistoryOpen(event.currentTarget.open)}><summary><span>Histórico de fotos</span><small>{photos.length} {photos.length === 1 ? 'foto' : 'fotos'}</small></summary>
@@ -138,6 +142,7 @@ function AccountGallery({ userId, mode }) {
 
 export default function ProgressPhotoGallery({ mode = 'editor' }) {
   const auth = useAuth()
-  if (!auth.user?.id || auth.user.isAnonymous) return <section className="bp-photo-placeholder bp-empty"><strong>Guarde suas fotos em uma conta</strong><span>Entre ou crie uma conta para manter suas fotografias privadas e disponíveis nos seus dispositivos.</span>{mode === 'editor' && <Button onClick={() => openAuthSheet()}>Entrar ou criar conta</Button>}</section>
-  return <AccountGallery key={auth.user.id} userId={auth.user.id} mode={mode} />
+  const body = useStore(state => state.S.body)
+  if (!auth.user?.id || auth.user.isAnonymous) return <Suspense fallback={loading}><Demo body={body}>{mode === 'editor' && <div className="bp-photo-demo-signin"><p>Entre ou crie uma conta para adicionar suas fotografias privadas.</p><Button onClick={() => openAuthSheet()}>Entrar ou criar conta</Button></div>}</Demo></Suspense>
+  return <AccountGallery key={auth.user.id} userId={auth.user.id} mode={mode} body={body} />
 }
