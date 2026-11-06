@@ -252,9 +252,6 @@ function ActiveWorkout() {
     if (current.flex?.phase === 'confirmed') { beginExecution(); return }
     openDurationSheet()
   }
-  // Superset flow: keep the active exercise in view - completing a set scrolls to the
-  // next exercise in the group, then back up to the first exercise of the next round.
-  const exRefs = useRef({})
   const progressHighWater = useRef(A.entries.map(e => e.sets.filter(s => s.done).length))
   // The marks are index-keyed, and removing an exercise shifts every index above it down
   // (removeActiveExercise splices). Re-baseline whenever the list length changes, otherwise a
@@ -262,11 +259,7 @@ function ActiveWorkout() {
   useEffect(() => {
     progressHighWater.current = A.entries.map(e => e.sets.filter(s => s.done).length)
   }, [A.entries, A.entries.length])
-  useEffect(() => {
-    if (!isSuperset) return
-    const el = exRefs.current[cur]
-    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-  }, [cur, isSuperset, A.entries.length])
+
 
   const total = A.entries.reduce((n, e) => n + e.sets.length, 0)
   const done = setsDoneActive(A)
@@ -571,7 +564,7 @@ function ActiveWorkout() {
         <div className="ss-hd"><Icon name="link" /><span>{t('Superset · do these back-to-back, rest when done')}</span></div>
         <div className="wp-superset-members">{unit.map(idx => <button type="button" key={idx} disabled={navigationLocked} aria-current={cur === idx ? 'step' : undefined} onClick={() => navigateExercise(idx)}>{exerciseName(exOr(A.entries[idx].id))}</button>)}</div>
       </div>}
-      <div ref={el => { exRefs.current[cur] = el; stageRef.current = el }} tabIndex={-1} className={'workout-unit-stage' + (isSuperset ? ' ss-ex' : '')} data-exidx={cur}>
+      <div ref={stageRef} tabIndex={-1} className={'workout-unit-stage' + (isSuperset ? ' ss-ex' : '')} data-exidx={cur}>
         <WorkoutExercisePlayer entryIdx={cur} locked={!workoutStarted} onStartWorkout={startWorkout}
           onToggle={i => toggle(cur, i)} onField={(i, f, v) => setField(cur, i, f, v)} onStartTimed={i => startTimed(cur, i)}
           onAddSet={() => addSet(cur)}

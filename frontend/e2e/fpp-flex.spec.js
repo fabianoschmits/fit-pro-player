@@ -304,3 +304,34 @@ test('expanded queue edits and removes only today’s exercises and survives rel
   expect(restored.active.entries[0].sets).toHaveLength(2)
   expect(restored.routines).toEqual(original.routines)
 })
+
+for (const width of [320, 390]) test(`long exercise names shrink without moving the main card or controls at ${width}px`, async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width, height: 780 })
+  const state = stateFixture()
+  const names = ['Remada', 'Elevação lateral unilateral com halteres sentado e apoio do braço no banco inclinado']
+  state.customEx = names.map((n, index) => ({ id: `custom-stable-${index}`, n, bp: 'back', tg: 'lats', eq: 'dumbbell', custom: true }))
+  state.active = { id: 'stable-name-session', name: 'Treino', d: '2026-11-06', start: Date.now(), durationMs: 0, cur: 0,
+    entries: state.customEx.map(ex => ({ id: ex.id, sg: 'stable-pair', target: { mode: 'reps', reps: 10, weight: 20, rest: 90 }, sets: [{ w: 20, r: 10, done: false }] })) }
+  await seed(page, { state })
+  await page.goto('/#/workout')
+  const title = page.locator('.wp-exercise-title')
+  await expect(title).toHaveText(names[0])
+  const measure = () => page.evaluate(() => {
+    const title = document.querySelector('.wp-exercise-title')
+    const cover = document.querySelector('.wp-media-card').getBoundingClientRect()
+    const controls = document.querySelector('.wp-current-controls').getBoundingClientRect()
+    return { height: cover.height, controlsTop: controls.top + scrollY, scrollY,
+      font: parseFloat(getComputedStyle(title).fontSize), textHeight: title.firstElementChild.getBoundingClientRect().height, area: title.clientHeight }
+  })
+  await page.locator('.wp-main-action.set-start-action').click()
+  const short = await measure()
+  await page.locator('.wp-main-action.is-executing').click()
+  await expect(title).toHaveText(names[1])
+  const long = await measure()
+  expect(long.font).toBeLessThan(short.font)
+  expect(long.textHeight).toBeLessThanOrEqual(long.area + 1)
+  expect(Math.abs(long.height - short.height)).toBeLessThan(1)
+  expect(Math.abs(long.controlsTop - short.controlsTop)).toBeLessThan(1)
+  expect(Math.abs(long.scrollY - short.scrollY)).toBeLessThan(1)
+})

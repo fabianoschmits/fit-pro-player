@@ -104,13 +104,20 @@
 .workout-player-page .wp-exercise-title {
   margin: 0;
   color: var(--label);
-  font-size: clamp(21px, 5.8vw, 27px);
+  --wp-title-base: clamp(21px, 5.8vw, 27px);
+  font-size: var(--wp-title-base);
+  height: calc(var(--wp-title-base) * 2.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   font-weight: 750;
   line-height: 1.14;
   letter-spacing: -.025em;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }
+.workout-player-page .wp-exercise-title > span { display: block; width: 100%; min-width: 0; }
 .workout-player-page .wp-exercise-target {
   display: flex;
   justify-content: center;

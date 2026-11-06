@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { exOr, exerciseName } from '../lib/exercises.js'
@@ -15,6 +15,38 @@ import Icon from './Icon.jsx'
 import { Button, Check, NumberField } from './ui.jsx'
 import { Elapsed } from '../views/Workout.jsx'
 import MetricInfoButton from './MetricInfoButton.jsx'
+
+function ExerciseTitle({ name }) {
+  const ref = useRef(null)
+  useLayoutEffect(() => {
+    const title = ref.current
+    if (!title) return
+    let alive = true
+    const fit = () => {
+      if (!alive || !title.clientWidth || !title.clientHeight) return
+      title.style.fontSize = ''
+      const maximum = Math.floor(parseFloat(window.getComputedStyle(title).fontSize) || 21)
+      let low = 10, high = maximum, best = 10
+      while (low <= high) {
+        const size = Math.floor((low + high) / 2)
+        title.style.fontSize = `${size}px`
+        const text = title.firstElementChild.getBoundingClientRect()
+        if (text.height <= title.clientHeight + 0.5 && title.scrollWidth <= title.clientWidth + 1) {
+          best = size
+          low = size + 1
+        } else high = size - 1
+      }
+      title.style.fontSize = `${best}px`
+    }
+    fit()
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(fit) : null
+    observer?.observe(title)
+    if (!observer) window.addEventListener('resize', fit)
+    void document.fonts?.ready.then(fit)
+    return () => { alive = false; observer?.disconnect(); window.removeEventListener('resize', fit) }
+  }, [name])
+  return <h2 ref={ref} className="wp-exercise-title workout-exercise-name" title={name}><span>{name}</span></h2>
+}
 
 export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, locked = false, onStartWorkout = undefined, onToggle = undefined, onField = undefined, onStartTimed = undefined,
   onAddSet = undefined, onPrevious = undefined, onNext = undefined, previousDisabled = undefined, nextDisabled = undefined, exerciseDots = undefined, queueDetails = undefined }) {
@@ -128,7 +160,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
     <div className="wp-media-card">
       <div className="wp-card-clock" aria-label={t('Elapsed')}><Icon name="clock" /><span><Elapsed active={S.active} /></span></div>
       <div className="wp-exercise-header">
-        <h2 className="wp-exercise-title workout-exercise-name">{exerciseName(ex)}</h2>
+        <ExerciseTitle name={exerciseName(ex)} />
         <div className="wp-exercise-target">{current ? setLabel(entry.id, current, entry.target, displayUnit) : t('Exercise complete')}{cardio && <span>{t('Cardio')}</span>}</div>
         {entry.replacedFrom && <div className="workout-exercise-replacement"><Icon name="shuffle" /><span>{t('Replaces {0}', exerciseName(exOr(entry.replacedFrom)))}</span></div>}
       </div>
