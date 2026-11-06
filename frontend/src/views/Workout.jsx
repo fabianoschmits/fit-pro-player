@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -176,16 +176,53 @@ function ActiveWorkout() {
   const A = S.active
   const queueRef = useRef(null)
   const stageRef = useRef(null)
+  const queueAnimation = useRef(null)
+  const queueHeightBeforeConfirm = useRef(null)
+  const queueInitialized = useRef(false)
   const [queueOpen, setQueueOpen] = useState(A.flex?.phase === 'review')
   const reducedMotion = useReducedMotion()
   const [animatePreviews, setAnimatePreviews] = useState(true)
   const reviewing = !A.start && A.flex?.phase === 'review'
   useEffect(() => {
-    if (!reviewing) return
-    setQueueOpen(true)
-    // Runs after React commits the expanded details; no positioning timer.
-    queueRef.current?.scrollIntoView?.({ block: 'nearest', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' })
+    if (reviewing) setQueueOpen(true)
   }, [reviewing])
+  useLayoutEffect(() => {
+    const details = queueRef.current
+    if (!details) return
+    const from = queueHeightBeforeConfirm.current ?? details.getBoundingClientRect().height
+    queueHeightBeforeConfirm.current = null
+    queueAnimation.current?.cancel()
+    details.toggleAttribute('open', queueOpen)
+    const to = details.getBoundingClientRect().height
+    const scrollToReview = () => {
+      if (queueOpen && reviewing && !details.contains(document.activeElement)) details.scrollIntoView?.({ block: 'nearest', behavior: reducedMotion ? 'instant' : 'smooth' })
+    }
+    if (!queueInitialized.current || reducedMotion || !details.animate || from === to) {
+      queueInitialized.current = true
+      scrollToReview()
+      return
+    }
+    // Keep native details open until the closing transition finishes. Its toggle
+    // event must not write back into React and reopen a just-confirmed session.
+    details.setAttribute('open', '')
+    details.style.overflow = 'hidden'
+    const animation = details.animate([{ height: `${from}px` }, { height: `${to}px` }], {
+      duration: 240, easing: 'cubic-bezier(.2,.8,.2,1)', fill: 'both',
+    })
+    queueAnimation.current = animation
+    void animation.finished.then(() => {
+      if (queueAnimation.current !== animation) return
+      details.toggleAttribute('open', queueOpen)
+      animation.cancel()
+      details.style.overflow = ''
+      queueAnimation.current = null
+      scrollToReview()
+    }).catch(() => {}) // Reversing direction or leaving the screen cancels motion.
+    return () => {
+      animation.cancel()
+      details.style.overflow = ''
+    }
+  }, [queueOpen, reducedMotion, reviewing])
   useEffect(() => {
     if (A.start && A.flex?.phase === 'confirmed') stageRef.current?.focus({ preventScroll: true })
   }, [A.start, A.flex?.phase])
@@ -226,6 +263,7 @@ function ActiveWorkout() {
   const confirmSelection = () => {
     const active = useStore.getState().S.active
     if (!active || active.id !== A.id || active.start) return
+    queueHeightBeforeConfirm.current = queueRef.current?.getBoundingClientRect().height ?? null
     update(s => { s.active = confirmFlexSelection(s.active) })
     setQueueOpen(false)
     beginExecution()
@@ -248,7 +286,7 @@ function ActiveWorkout() {
   const startWorkout = () => {
     const current = useStore.getState().S.active
     if (!current || current.id !== A.id || current.start) return
-    if (current.flex?.phase === 'review') { setQueueOpen(true); queueRef.current?.scrollIntoView?.({ block: 'nearest' }); return }
+    if (current.flex?.phase === 'review') { setQueueOpen(true); return }
     if (current.flex?.phase === 'confirmed') { beginExecution(); return }
     openDurationSheet()
   }
@@ -549,14 +587,14 @@ function ActiveWorkout() {
           onPrevious={() => navigateExercise(cur - 1)} onNext={() => navigateExercise(cur + 1)} previousDisabled={navigationLocked || cur === 0} nextDisabled={navigationLocked || cur === A.entries.length - 1}
           exerciseDots={<div className="wp-exercise-dots" aria-label={t('Exercises')}>{A.entries.map((entry, idx) => <button type="button" key={idx} className={'wp-exercise-dot' + (entry.sets.length && entry.sets.every(set => set.done) ? ' is-done' : '')}
             aria-label={`${idx + 1}. ${exerciseName(exOr(entry.id))}`} aria-current={idx === cur ? 'step' : undefined} disabled={navigationLocked} onClick={() => navigateExercise(idx)} />)}</div>}
-          queueDetails={A.entries.length > 0 && <details ref={queueRef} className={'wp-queue-details' + (reviewing ? ' is-flex-review' : '')} open={queueOpen || reviewing} onToggle={event => setQueueOpen(event.currentTarget.open)}><summary><span>{t('Exercises')}</span><span className={'fpp-flex-estimate' + (overTime ? ' is-over' : '')}>{selectedCount}{A.flex?.outline?.length ? ` de ${A.flex.outline.length}` : ''} exercícios · {estimatedMinutes} min</span><Icon name="chevronDown" /></summary><div className="workout-exercise-rail" aria-label={t('Exercises')}>
+          queueDetails={A.entries.length > 0 && <details ref={queueRef} className={'wp-queue-details' + (reviewing ? ' is-flex-review' : '')} data-expanded={queueOpen}><summary aria-expanded={queueOpen} onClick={event => { event.preventDefault(); setQueueOpen(value => !value) }}><span>{t('Exercises')}</span><span className={'fpp-flex-estimate' + (overTime ? ' is-over' : '')}>{selectedCount}{A.flex?.outline?.length ? ` de ${A.flex.outline.length}` : ''} exercícios · {estimatedMinutes} min</span><Icon name="chevronDown" /></summary><div className="wp-queue-content" inert={!queueOpen} aria-hidden={!queueOpen}><div className="workout-exercise-rail" aria-label={t('Exercises')}>
             {reviewing ? A.entries.map((entry, index) => {
               const selected = A.flex.outline[index]?.selected
               const group = units.find(indices => indices.includes(index)) || [index]
               const lastSelectedGroup = selected && selectedCount === group.length
               return <div key={A.flex.outline[index].key} className={'workout-exercise-tab fpp-flex-exercise' + (selected ? ' is-selected' : ' is-omitted')}>
                 <div className="fpp-flex-preview" aria-hidden="true">{!reducedMotion && hasExerciseGuideAsset(exOr(entry.id))
-                  ? <ExerciseGuideAnimation ex={exOr(entry.id)} playing={animatePreviews && (queueOpen || reviewing)} fallback={<ExerciseSpriteThumb ex={exOr(entry.id)} />} />
+                  ? <ExerciseGuideAnimation ex={exOr(entry.id)} playing={animatePreviews && queueOpen} fallback={<ExerciseSpriteThumb ex={exOr(entry.id)} />} />
                   : <ExerciseSpriteThumb ex={exOr(entry.id)} />}</div>
                 <b>{exerciseName(exOr(entry.id))}</b>
                 <small>{entry.sets.length} séries{group.length > 1 ? ' · Supersérie' : ''}</small>
@@ -584,7 +622,7 @@ function ActiveWorkout() {
             {!reducedMotion && <Button size="sm" variant="ghost" aria-pressed={animatePreviews} onClick={() => setAnimatePreviews(value => !value)}>{animatePreviews ? 'Pausar animações' : 'Animar exercícios'}</Button>}
             <Button variant="primary" disabled={!selectedCount} onClick={confirmSelection}>Confirmar treino</Button>
           </div>}
-          </details>} />
+          </div></details>} />
       </div>
     </> : <div className="empty"><div className="ico"><Icon name="shuffle" /></div>{t('Freestyle workout — add your first exercise.')}</div>}
 

@@ -633,6 +633,8 @@ describe('Workout set completion flow', () => {
     expect(mocks.S.active.prescribedEntries).toEqual([{ id: 'original-prescription' }])
     expect(mocks.S.profile.preferredWorkoutMinutes).toBe(60)
     expect(container.querySelectorAll('.fpp-flex-toggle')).toHaveLength(0)
+    expect(container.querySelector('.wp-queue-details').hasAttribute('open')).toBe(false)
+    expect(container.querySelector('.wp-queue-details > summary').getAttribute('aria-expanded')).toBe('false')
     expect(mocks.S.active.entries.every(entry => entry.sets.every(set => !set.done))).toBe(true)
   })
 

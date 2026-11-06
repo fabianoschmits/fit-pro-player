@@ -82,6 +82,7 @@ for (const [theme, width] of [['dark', 320], ['light', 390]]) {
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 2)).toBe(false)
     await page.screenshot({ path: testInfo.outputPath(`fpp-flex-${theme}-${width}.png`), fullPage: true })
     await page.getByRole('button', { name: 'Confirmar treino', exact: true }).click()
+    await expect(queue).not.toHaveAttribute('open', '')
     await expect(page.locator('.set-start-action')).toBeVisible()
     const confirmed = await saved(page)
     expect(confirmed.active.start).toBeGreaterThan(0)
@@ -196,4 +197,34 @@ test('seven-step onboarding saves duration only on completion and keeps it after
   await page.reload()
   await expect(page.locator('.plan-wizard')).toHaveCount(0)
   expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(40)
+})
+
+test('exercise queue animates both directions and collapses after confirming the selection', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await prepare(page)
+  await page.getByRole('button', { name: 'Começar treino', exact: true }).click()
+  await page.getByRole('button', { name: '20 min', exact: true }).click()
+  await page.getByRole('button', { name: 'Confirmar duração', exact: true }).click()
+  const queue = page.locator('.wp-queue-details')
+  await expect(queue.getByRole('button', { name: 'Confirmar treino', exact: true })).toBeVisible()
+  await queue.getByRole('button', { name: 'Confirmar treino', exact: true }).click()
+  await expect(queue).not.toHaveAttribute('open', '')
+  expect((await saved(page)).active.entries.every(entry => entry.sets.every(set => !set.done))).toBe(true)
+  const summary = queue.locator('summary')
+  for (const expanded of [true, false]) {
+    const motion = await summary.evaluate(async element => {
+      element.click()
+      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      const details = element.parentElement
+      return details.getAnimations().map(animation => ({ duration: animation.effect.getTiming().duration,
+        frames: animation.effect.getKeyframes().map(frame => frame.height) }))
+    })
+    expect(motion).toHaveLength(1)
+    expect(motion[0].duration).toBe(240)
+    const [from, to] = motion[0].frames.map(parseFloat)
+    expect(expanded ? to > from : to < from).toBe(true)
+    await expect(summary).toHaveAttribute('aria-expanded', String(expanded))
+    if (expanded) await expect.poll(() => queue.evaluate(element => element.getAnimations().length)).toBe(0)
+    else await expect(queue).not.toHaveAttribute('open', '')
+  }
 })
