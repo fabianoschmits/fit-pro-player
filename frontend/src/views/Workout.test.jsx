@@ -196,6 +196,25 @@ describe('Workout set completion flow', () => {
     expect(container.querySelectorAll('.workout-tool-group')).toHaveLength(2)
   })
 
+  it('shows each superset member with its own thumbnail, full name, sets and navigation', async () => {
+    await mount([exercise('0025', [true, true], { sg: 'pair' }), exercise('0043', [false, false, false], { sg: 'pair' })])
+    const items = container.querySelectorAll('.workout-exercise-tab')
+    expect(items).toHaveLength(2)
+    expect(items[0].querySelector('.thumb')).toBeTruthy()
+    expect(items[1].querySelector('.thumb')).toBeTruthy()
+    expect(items[0].textContent).toContain('2 séries')
+    expect(items[1].textContent).toContain('3 séries')
+    expect(items[0].className).toContain('is-done')
+    expect(items[1].textContent).toContain('Supersérie')
+    await clickAndRender(items[1])
+    expect(mocks.S.active.cur).toBe(1)
+    expect(mocks.S.active.entries[1].sets.some(set => set.done)).toBe(false)
+    expect(mocks.startRest).not.toHaveBeenCalled()
+    mocks.manualSet = { sessionId: `${mocks.S.active.id}:${mocks.S.active.start}`, entryIdx: 1, setIdx: 0, exerciseId: '0043' }
+    await act(async () => root.render(<Workout />))
+    expect(container.querySelectorAll('.workout-exercise-tab')[0].disabled).toBe(true)
+  })
+
   it('requires a fresh Play after navigating away from an executing set', async () => {
     await mount([exercise('bench', [false]), exercise('row', [false])])
     await act(async () => container.querySelector('.set-start-action').click())

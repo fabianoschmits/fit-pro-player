@@ -7,6 +7,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   state: { S: { body: 'male', targetW: 70, unit: 'kg', profile: { name: 'Ana', avatarId: 'avatar-1', birthDate: '1990-01-01', sex: 'female', heightCm: 167, startWeight: 71, goal: 'lose_weight', experience: 'intermediate' }, bodyweight: [] } },
   update: vi.fn(), toast: vi.fn(),
+  refit: vi.fn(),
 }))
 vi.mock('../store/useStore.js', () => {
   const useStore = selector => selector({ ...mocks.state, update: mocks.update })
@@ -15,6 +16,7 @@ vi.mock('../store/useStore.js', () => {
 })
 vi.mock('../store/useUI.js', () => ({ useUI: selector => selector({ toast: mocks.toast }) }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ status: 'guest', user: null }) }))
+vi.mock('../sheets.jsx', () => ({ confirmWorkoutDurationRefit: mocks.refit }))
 
 import PersonalData from './PersonalData.jsx'
 
@@ -146,4 +148,19 @@ it('saves the habitual duration while preserving manual prescriptions and histor
   await act(async () => { field.querySelector('.personal-save').click(); await Promise.resolve() })
   expect(mocks.state.S.profile.preferredWorkoutMinutes).toBe(45)
   expect(JSON.stringify({ routines: mocks.state.S.routines, workouts: mocks.state.S.workouts })).toBe(original)
+  expect(mocks.refit).toHaveBeenLastCalledWith(60)
+})
+
+it('does not offer a refit when saving the preference fails', async () => {
+  mocks.refit.mockClear()
+  mocks.state.S.profile.preferredWorkoutMinutes = 60
+  mocks.update.mockImplementation(() => { mocks.state.persistence = { state: 'error' } })
+  await render()
+  const field = container.querySelector('[data-profile-field="preferredWorkoutMinutes"]')
+  await act(async () => field.querySelector('.personal-edit').click())
+  await act(async () => [...field.querySelectorAll('.workout-minutes-options button')].find(button => button.textContent === '40 min').click())
+  await act(async () => field.querySelector('.personal-save').click())
+  expect(mocks.refit).not.toHaveBeenCalled()
+  expect(field.className).toContain('is-editing')
+  expect(field.querySelector('[data-state="error"]')).not.toBeNull()
 })

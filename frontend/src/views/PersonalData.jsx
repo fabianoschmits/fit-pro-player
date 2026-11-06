@@ -7,7 +7,7 @@ import AvatarImage from '../components/AvatarImage.jsx'
 import DateWheelPicker from '../components/DateWheelPicker.jsx'
 import Icon from '../components/Icon.jsx'
 import WorkoutMinutesSelector from '../components/WorkoutMinutesSelector.jsx'
-import { refreshManagedPersonalizedPlan } from '../lib/personalized-plan.js'
+import { confirmWorkoutDurationRefit } from '../sheets.jsx'
 import { Button, Segmented, TextField } from '../components/ui.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 import { useStore } from '../store/useStore.js'
@@ -88,13 +88,15 @@ export default function PersonalData() {
       }} />
       <EditableField name="goal" label="Objetivo" value={profile.goal} summary={profile.goal ? t(PROFILE_GOAL_LABELS[profile.goal]) : 'Não informado'} onChange={value => commit('goal', value)}>{({ editing, value, setValue }) => <Segmented options={PROFILE_GOALS.map(goal => ({ value: goal, label: t(PROFILE_GOAL_LABELS[goal]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
       <EditableField name="experience" label="Experiência" value={profile.experience} summary={profile.experience ? t(EXPERIENCE_LABELS[profile.experience]) : 'Não informado'} onChange={value => commit('experience', value)}>{({ editing, value, setValue }) => <Segmented options={EXPERIENCE_LEVELS.map(level => ({ value: level, label: t(EXPERIENCE_LABELS[level]) }))} value={value} onChange={setValue} className={editing ? '' : 'personal-disabled-control'} />}</EditableField>
-      <EditableField name="preferredWorkoutMinutes" label="Tempo habitual de treino" value={profile.preferredWorkoutMinutes} summary={`${profile.preferredWorkoutMinutes} minutos`} onChange={value => {
+      <EditableField name="preferredWorkoutMinutes" label="Tempo habitual de treino" value={profile.preferredWorkoutMinutes} summary={`${profile.preferredWorkoutMinutes} minutos`} onChange={async value => {
         if (!isValidWorkoutMinutes(value)) throw new Error('Escolha de 15 a 180 minutos, em intervalos de 5.')
+        const previousMinutes = normalizeProfile(useStore.getState().S.profile).preferredWorkoutMinutes
         update(state => {
           state.profile = { ...normalizeProfile(state.profile, state.body), preferredWorkoutMinutes: value }
-          refreshManagedPersonalizedPlan(state)
         })
-        return confirmPersonalSave()
+        await confirmPersonalSave()
+        confirmWorkoutDurationRefit(previousMinutes)
+        return true
       }}>{({ editing, value, setValue }) => <WorkoutMinutesSelector value={value} onChange={setValue} disabled={!editing} />}</EditableField>
     </div>
   </main>

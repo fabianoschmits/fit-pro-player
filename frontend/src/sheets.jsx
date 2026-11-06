@@ -36,6 +36,8 @@ import { resetHistoricalSets } from './lib/workout-session.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import { enqueueProfessionalEvent, flushProfessionalEvents } from './lib/professional-events.js'
 import { assignedSessionEntries } from './lib/assigned-program.js'
+import { isManagedPersonalizedRoutine, refreshManagedPersonalizedPlan } from './lib/personalized-plan.js'
+import { getPreferredWorkoutMinutes } from './lib/workout-duration.js'
 import { WorkoutShareModal } from './components/WorkoutShareModal.jsx'
 import { FppActionFeedback, FppStatusAnimation } from './components/FppFeedback.jsx'
 import { fromDisplayMass, toDisplayMass } from './lib/mass.js'
@@ -183,6 +185,27 @@ export function confirmSheet(opts) {
   const handle = ui().openSheet((close, context) => <ConfirmDialog {...opts} close={close} sheetId={context?.id || sheetId} />, { kind: 'center' })
   sheetId = handle.id
   return handle
+}
+
+// The preference is already saved. Dismissal therefore keeps the prescription;
+// only the explicit affirmative action may refit eligible automatic routines.
+export function confirmWorkoutDurationRefit(previousMinutes, refit = refreshManagedPersonalizedPlan) {
+  const state = S()
+  const minutes = getPreferredWorkoutMinutes(state.profile)
+  if (previousMinutes === minutes || useStore.getState().persistence?.state === 'error'
+    || !(state.routines || []).some(routine => isManagedPersonalizedRoutine(routine) && routine.id !== state.active?.routineId)) return
+  return confirmSheet({
+    title: 'Readequar seus treinos?',
+    message: `Seu tempo habitual foi alterado para ${minutes} minutos. Deseja ajustar também os treinos criados automaticamente pelo FPP para essa duração?`,
+    cancelText: 'Manter meus treinos',
+    confirmText: 'Readequar treinos',
+    onConfirm: () => {
+      // A later preference change must not authorize a refit for an older choice.
+      if (getPreferredWorkoutMinutes(S().profile) !== minutes) return false
+      update(current => refit(current))
+      return true
+    },
+  })
 }
 
 /* ============================ starter plan ============================ */

@@ -12,7 +12,8 @@ import {
   decimalNumber, defaultBirthDate, formatPersonName, heightCmFromText, heightInput,
   heightText, normalizeProfile, isValidWorkoutMinutes, weightInput, weightText,
 } from '../lib/profile.js'
-import { applyPersonalizedPlan, personalizedRoutineSpecs, refreshManagedPersonalizedPlan, isManagedPersonalizedRoutine, personalizedRestSeconds } from '../lib/personalized-plan.js'
+import { applyPersonalizedPlan, personalizedRoutineSpecs, isManagedPersonalizedRoutine, personalizedRestSeconds } from '../lib/personalized-plan.js'
+import { confirmWorkoutDurationRefit } from '../sheets.jsx'
 import WorkoutMinutesSelector from './WorkoutMinutesSelector.jsx'
 import { estimateWorkoutDuration } from '../lib/workout-duration.js'
 import BodyMap from './BodyMap.jsx'
@@ -125,6 +126,30 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
     setStep(next)
   }
 
+  const applySchedule = (state, ready, regenerated) => {
+    if (draft.planMode === 'weekly') {
+      WEEK_DAYS.filter(day => !days.includes(day)).forEach(day => { delete state.week[day] })
+      WEEK_DAYS.filter(day => days.includes(day)).forEach((day, index) => {
+        const current = state.week[day]
+        const currentRoutine = state.routines.find(r => r.id === current)
+        if (!editing || !currentRoutine || (regenerated && isManagedPersonalizedRoutine(currentRoutine) && state.active?.routineId !== current)) state.week[day] = ready[index % ready.length]?.id
+      })
+    } else if (dailyRoutineKey) {
+      const customId = dailyRoutineKey.startsWith('custom:') ? dailyRoutineKey.slice(7) : ''
+      const chosen = state.routines.find(routine => routine.id === customId)
+        || ready.find(routine => routine.personalizedKey === dailyRoutineKey || routine.starterKey === dailyRoutineKey)
+      if (chosen) state.dayPlan[todayISO()] = chosen.id
+    }
+  }
+
+  // Keep the existing profile-change generation behind the same affirmative
+  // choice when duration changes too (the new split may use different keys).
+  const refitEditedPlan = state => {
+    const ready = applyPersonalizedPlan(state, state.profile, draft.planMode === 'daily' ? 7 : days.length, { daily: draft.planMode === 'daily' })
+    applySchedule(state, ready, true)
+    return ready
+  }
+
   const finish = () => {
     const message = validate()
     if (message) { setError(message); return }
@@ -140,6 +165,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
       || Number(currentProfileWeight(S)) !== startWeight
       || S.planMode !== draft.planMode
       || (draft.planMode === 'weekly' && scheduled.length !== days.length)
+    const regeneratePlan = planInputsChanged && (!editing || !durationChanged)
     update(state => {
       state.profile = {
         ...normalizeProfile(state.profile, state.body),
@@ -164,25 +190,15 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
       else state.bodyweight.push({ d: today, w: startWeight, t: Date.now() })
       state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
 
-      const ready = planInputsChanged
+      const ready = regeneratePlan
         ? applyPersonalizedPlan(state, state.profile, draft.planMode === 'daily' ? 7 : days.length, { daily: draft.planMode === 'daily' })
-        : durationChanged ? refreshManagedPersonalizedPlan(state) : state.routines
-      if (draft.planMode === 'weekly') {
-        WEEK_DAYS.filter(day => !days.includes(day)).forEach(day => { delete state.week[day] })
-        WEEK_DAYS.filter(day => days.includes(day)).forEach((day, index) => {
-          const current = state.week[day]
-          const currentRoutine = state.routines.find(r => r.id === current)
-          if (!editing || !currentRoutine || (planInputsChanged && isManagedPersonalizedRoutine(currentRoutine) && state.active?.routineId !== current)) state.week[day] = ready[index % ready.length]?.id
-        })
-      } else if (dailyRoutineKey) {
-        const customId = dailyRoutineKey.startsWith('custom:') ? dailyRoutineKey.slice(7) : ''
-        const chosen = state.routines.find(routine => routine.id === customId)
-          || ready.find(routine => routine.personalizedKey === dailyRoutineKey || routine.starterKey === dailyRoutineKey)
-        if (chosen) state.dayPlan[today] = chosen.id
-      }
+        : state.routines
+      applySchedule(state, ready, regeneratePlan)
       state.onboardingDone = true
     })
+    if (useStore.getState().persistence?.state === 'error') { setError(t('Não foi possível salvar neste dispositivo. Tente novamente.')); return }
     onDone?.()
+    if (editing && durationChanged) confirmWorkoutDurationRefit(profile.preferredWorkoutMinutes, planInputsChanged ? refitEditedPlan : undefined)
   }
 
   const saveProgress = () => {
@@ -190,11 +206,13 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
     const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
     const targetWeight = fromDisplayMass(decimalNumber(draft.targetWeight), draft.unit)
     const name = formatPersonName(draft.name).trim()
+    const previousMinutes = profile.preferredWorkoutMinutes
+    const profilePlanChanged = profile.goal !== draft.goal || profile.experience !== draft.experience
+      || Number(currentProfileWeight(S)) !== startWeight || S.planMode !== draft.planMode
     if (!isValidWorkoutMinutes(draft.preferredWorkoutMinutes)) { setError('Escolha de 15 a 180 minutos, em intervalos de 5.'); return }
     if (!name && !S.profile?.name) { setError(t('Enter your name to continue.')); return }
     update(state => {
       const current = normalizeProfile(state.profile, state.body)
-      const durationChanged = current.preferredWorkoutMinutes !== draft.preferredWorkoutMinutes
       state.profile = {
         ...current,
         preferredWorkoutMinutes: draft.preferredWorkoutMinutes,
@@ -211,7 +229,6 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
       state.displayUnit = draft.unit
       if (targetWeight) state.targetW = targetWeight
       state.planMode = draft.planMode
-      if (durationChanged) refreshManagedPersonalizedPlan(state)
       if (startWeight) {
         const today = todayISO()
         const existing = state.bodyweight.find(entry => entry.d === today)
@@ -220,7 +237,9 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
         state.bodyweight.sort((a, b) => a.d.localeCompare(b.d))
       }
     })
+    if (useStore.getState().persistence?.state === 'error') { setError(t('Não foi possível salvar neste dispositivo. Tente novamente.')); return }
     onDone?.()
+    if (editing && previousMinutes !== draft.preferredWorkoutMinutes) confirmWorkoutDurationRefit(previousMinutes, profilePlanChanged ? refitEditedPlan : undefined)
   }
 
   /** @type {import('framer-motion').HTMLMotionProps<'div'>} */

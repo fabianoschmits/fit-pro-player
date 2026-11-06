@@ -69,9 +69,57 @@ test('keeping habitual duration starts the complete prescription without review'
   expect(active.flex.phase).toBe('confirmed')
   await expect(page.locator('.fpp-flex-toggle')).toHaveCount(0)
   await expect(page.locator('.wp-queue-details')).not.toHaveAttribute('open', '')
+  await page.locator('.wp-queue-details > summary').click()
+  const items = page.locator('.wp-queue-details .workout-exercise-tab')
+  await expect(items).toHaveCount(5)
+  await expect(items.nth(2)).toContainText('Supersérie')
+  await expect(items.nth(3)).toContainText('Supersérie')
+  await expect(items.nth(2).locator('.thumb')).toHaveCount(1)
+  await expect(items.nth(3).locator('.thumb')).toHaveCount(1)
+  await items.nth(3).click()
+  expect((await saved(page)).active.cur).toBe(3)
+  expect((await saved(page)).active.entries.every(entry => entry.sets.every(set => !set.done))).toBe(true)
 })
 
+for (const decision of ['Manter meus treinos', 'Readequar treinos', 'dismiss']) {
+  test(`habitual duration is saved while refit requires explicit choice: ${decision}`, async ({ page }) => {
+    const state = stateFixture()
+    state.profile.preferredWorkoutMinutes = 60
+    const automatic = state.routines[0]
+    automatic.ex = [{ id: '0025', sets: 6, reps: 12, weight: 80, rest: 180 }]
+    automatic.planGenerated = true
+    automatic.personalizedKey = 'full'
+    automatic.planSignature = JSON.stringify(automatic.ex, (_key, value) => value && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value)
+    state.routines.push({ id: 'manual', name: 'Manual', ex: [{ id: '0043', sets: 5, reps: 10, weight: 40 }] })
+    state.active = { id: 'unchanged-active', routineId: 'manual', start: 1, cur: 0, entries: [{ id: '0043', sets: [{ w: 40, r: 10, done: false }] }] }
+    state.workouts = [{ id: 'history', entries: [] }]
+    await seed(page, { state })
+    await page.goto('/#/personal-data')
+    const field = page.locator('[data-profile-field="preferredWorkoutMinutes"]')
+    await field.getByRole('button', { name: 'Editar Tempo habitual de treino', exact: true }).click()
+    await field.getByRole('button', { name: '40 min', exact: true }).click()
+    await field.locator('.personal-save').click()
+    await expect(page.getByRole('heading', { name: 'Readequar seus treinos?', exact: true })).toBeVisible()
+    expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(40)
+    expect((await saved(page)).routines).toEqual(state.routines)
+    if (decision === 'dismiss') await page.keyboard.press('Escape')
+    else await page.getByRole('button', { name: decision, exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Readequar seus treinos?', exact: true })).toHaveCount(0)
+    const after = await saved(page)
+    if (decision === 'Readequar treinos') expect(after.routines[0].ex).not.toEqual(automatic.ex)
+    else expect(after.routines).toEqual(state.routines)
+    expect(after.routines[1]).toEqual(state.routines[1])
+    expect(after.active).toEqual(state.active)
+    expect(after.workouts).toEqual(state.workouts)
+    expect(after.week).toEqual(state.week)
+    await page.reload()
+    await expect(field.locator('.personal-field-summary')).toHaveText('40 minutos')
+    expect((await saved(page)).routines).toEqual(after.routines)
+  })
+}
+
 test('seven-step onboarding saves duration only on completion and keeps it after reload', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   const state = stateFixture()
   state.onboardingDone = false
   state.routines = []

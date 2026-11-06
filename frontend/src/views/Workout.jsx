@@ -550,21 +550,18 @@ function ActiveWorkout() {
                   {selected ? 'Selecionado' : 'Retirado pelo tempo'}
                 </button>
               </div>
-            }) : units.map((indices, index) => {
-              const entries = indices.map(entryIndex => A.entries[entryIndex])
-              const unitDone = entries.every(entry => entry.sets.length > 0 && entry.sets.every(set => set.done))
-              const unitSets = entries.reduce((count, entry) => count + entry.sets.length, 0)
-              const unitSetsDone = entries.reduce((count, entry) => count + entry.sets.filter(set => set.done).length, 0)
-              const label = entries.map(entry => exerciseName(exOr(entry.id))).join(' + ')
-              const targetIndex = indices.find(entryIndex => A.entries[entryIndex].sets.some(set => !set.done)) ?? indices[0]
-              return <button type="button" key={indices.join('-')} className={'workout-exercise-tab' + (index === unitIdx ? ' is-active' : '') + (unitDone ? ' is-done' : '')}
-                disabled={navigationLocked} aria-current={index === unitIdx ? 'step' : undefined}
-                onClick={() => navigateExercise(targetIndex)}>
-                <ExerciseSpriteThumb ex={exOr(entries[0].id)} />
-                <b>{label}</b>
-                <small>{unitSetsDone}/{unitSets}</small>
+            }) : units.flatMap((indices, index) => indices.map(entryIndex => {
+              const entry = A.entries[entryIndex]
+              const entryDone = entry.sets.length > 0 && entry.sets.every(set => set.done)
+              const doneSets = entry.sets.filter(set => set.done).length
+              return <button type="button" key={entryIndex} className={'workout-exercise-tab' + (entryIndex === cur ? ' is-active' : '') + (entryDone ? ' is-done' : '')}
+                disabled={navigationLocked} aria-current={entryIndex === cur ? 'step' : undefined}
+                onClick={() => navigateExercise(entryIndex)}>
+                <ExerciseSpriteThumb ex={exOr(entry.id)} />
+                <b>{exerciseName(exOr(entry.id))}</b>
+                <small>{entry.sets.length} séries · {doneSets}/{entry.sets.length}{indices.length > 1 ? ` · Supersérie ${index + 1}` : ''}</small>
               </button>
-            })}
+            }))}
             {!reviewing && <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>}
           </div>
           {!reviewing && A.flex?.outline?.some(item => !item.selected) && <div className="fpp-flex-omitted-summary"><small>Retirados pelo tempo</small>{A.flex.outline.filter(item => !item.selected).map(item => <span key={item.key}>{item.name || exerciseName(exOr(item.exerciseId))} · {item.sets} séries</span>)}</div>}
