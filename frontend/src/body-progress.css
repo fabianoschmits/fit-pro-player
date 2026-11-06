@@ -257,6 +257,26 @@
   .measurement-bodymap .bm-shape-group,.measurement-bodymap .bm-shape-path,.measurement-ring,.measurement-hotspot-dot,.measurement-hotspot-label,.bp-header-history,.bp-checkin-chevron{transition-duration:.01ms!important}
 }
 /* Private body photographs: fixed coordinate planes; divider never resizes images. */
+.bp-section-navigation{margin-bottom:18px;min-width:0}
+.stats-photo-progress{margin-bottom:var(--space-4,16px)}
+.stats-photo-progress>.bp-section-navigation{margin-bottom:16px}
+.bp-photo-mode-preview :is(.bp-photo-comparison,.bp-photo-single){max-width:520px}
+.bp-photo-placeholder{min-height:240px;border:var(--hair) dashed var(--sep);border-radius:var(--r);padding:28px 20px;background:var(--surface-2)}
+.bp-photo-editor-fields{display:grid;gap:12px;margin-top:16px}
+.bp-photo-add{width:100%;min-height:48px}
+.bp-photo-disclosure{padding:0;border:var(--hair) solid var(--sep);border-radius:var(--r);background:var(--surface);min-width:0}
+.bp-photo-disclosure>summary{display:flex;align-items:center;gap:10px;min-height:48px;padding:13px 14px;cursor:pointer;list-style:none;color:var(--label);font-size:13px;font-weight:650}
+.bp-photo-disclosure>summary::-webkit-details-marker{display:none}
+.bp-photo-disclosure>summary::after{content:"";width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-left:auto;flex:none}
+.bp-photo-disclosure[open]>summary::after{transform:rotate(225deg)}
+.bp-photo-disclosure>summary>small{color:var(--label-2);font-size:11px;font-weight:500}
+.bp-photo-disclosure>summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:inherit}
+.bp-photo-disclosure>label,.bp-photo-disclosure>.bp-date-selectors,.bp-photo-disclosure>.bp-photo-actions,.bp-photo-disclosure>.bp-photo-history,.bp-photo-disclosure>.bp-photo-adjust,.bp-photo-disclosure>p{margin:0 14px 14px}
+.bp-photo-disclosure label{display:grid;gap:7px;color:var(--label-2);font-size:13px}
+.bp-photo-comparison>.bp-photo-disclosure{margin-top:12px}
+.bp-photo-single{width:100%;max-width:620px;margin-inline:auto}
+.bp-photo-single>.bp-photo-full{aspect-ratio:3/4;max-height:none;background:var(--surface);border-radius:var(--r)}
+.bp-photo-single>.bp-neutral-note{margin-top:10px}
 .bp-photo-mode-tabs{max-width:360px;margin-bottom:18px}
 .bp-photo-section{display:grid;gap:18px;min-width:0}
 .bp-photo-heading{display:flex;align-items:center;justify-content:space-between;gap:18px}

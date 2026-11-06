@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
@@ -23,6 +23,10 @@ import { Button, Segmented, SelectRow } from '../components/ui.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import TipOnce from '../components/TipOnce.jsx'
 import { toDisplayMass } from '../lib/mass.js'
+import BodyProgressNavigation from '../components/BodyProgressNavigation.jsx'
+import { FppActionFeedback } from '../components/FppFeedback.jsx'
+
+const ProgressPhotoGallery = lazy(() => import('../components/ProgressPhotoGallery.jsx'))
 
 // Which muscles the training in a window actually hit — and, the point of the card,
 // which ones it keeps missing. Shading is relative within the window (lib/muscles.js).
@@ -401,15 +405,10 @@ export default function Stats() {
       <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{displayBwDelta30 === null ? '—' : (displayBwDelta30 > 0 ? '+' : '') + fmtNum(displayBwDelta30) + ' ' + displayUnit}</b></div>
     </section>
 
-    <button
-      type="button"
-      className="card stats-body-progress-link"
-      onClick={() => nav('/progress/body')}
-    >
-      <span className="stats-body-progress-icon"><Icon name="ruler" /></span>
-      <span><strong>Evolução corporal</strong><small>Medidas semanais, histórico e comparação</small></span>
-      <Icon name="chevronRight" />
-    </button>
+    <section className="card stats-photo-progress fpp-polished-card" aria-label="Comparação corporal">
+      <BodyProgressNavigation current="comparison" />
+      <Suspense fallback={<FppActionFeedback state="loading">Carregando comparação…</FppActionFeedback>}><ProgressPhotoGallery mode="preview" /></Suspense>
+    </section>
 
     <MuscleBalance S={S} />
 

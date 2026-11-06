@@ -36,6 +36,7 @@ vi.mock('../sheets.jsx', () => ({
 }))
 vi.mock('../components/LineChart.jsx', () => ({ default: () => React.createElement('div') }))
 vi.mock('../components/Heatmap.jsx', () => ({ default: () => React.createElement('div') }))
+vi.mock('../components/ProgressPhotoGallery.jsx', () => ({ default: ({ mode }) => React.createElement('div', { 'data-photo-mode': mode }) }))
 vi.mock('../components/Icon.jsx', () => ({ default: props => React.createElement('span', props) }))
 vi.mock('../components/BodyMap.jsx', () => ({
   default: function MockBodyMap(props) {
@@ -196,8 +197,20 @@ describe('Stats muscle recovery view runtime', () => {
   it('uses the same direct body-progress navigation as the More menu', async () => {
     await mountStats()
 
-    await click(container.querySelector('.stats-body-progress-link'))
+    await click([...container.querySelectorAll('.bp-section-navigation button')].find(button => button.textContent === 'Medidas'))
     expect(mocks.navigate).toHaveBeenCalledWith('/progress/body')
+  })
+
+  it('prioritizes the photo demonstrator directly above muscle balance and keeps editing separate', async () => {
+    await mountStats()
+    const preview = container.querySelector('.stats-photo-progress')
+    expect(preview.nextElementSibling.classList.contains('stats-balance-card')).toBe(true)
+    expect(preview.querySelector('[data-photo-mode="preview"]')).toBeTruthy()
+    const tabs = [...preview.querySelectorAll('.bp-section-navigation button')]
+    expect(tabs.map(button => button.textContent)).toEqual(['Comparação', 'Medidas', 'Editar fotos'])
+    expect(tabs[0].getAttribute('aria-pressed')).toBe('true')
+    await click(tabs[2])
+    expect(mocks.navigate).toHaveBeenCalledWith('/progress/photos')
   })
 
   it('dispatches real clicks through Balance, Fatigue, and Strength and preserves selection', async () => {

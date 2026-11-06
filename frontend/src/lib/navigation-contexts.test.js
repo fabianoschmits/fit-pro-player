@@ -67,7 +67,7 @@ describe('navigation-contexts resolver', () => {
     expect(res.items.map(i => i.k)).toEqual(['home', 'plan', 'start', 'history'])
   })
 
-  it.each(['/progress', '/progress/history', '/progress/body', '/stats', '/history', '/body-progress'])('resolves Progress context on %s', pathname => {
+  it.each(['/progress', '/progress/history', '/progress/body', '/progress/photos', '/stats', '/history', '/body-progress'])('resolves Progress context on %s', pathname => {
     const result = resolveNavigationContext({ pathname })
     expect(result.contextId).toBe('progress')
     expect(result.activeKey).toBe('progress')

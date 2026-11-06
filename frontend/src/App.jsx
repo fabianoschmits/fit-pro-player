@@ -89,6 +89,7 @@ const Settings = lazy(loadSettings)
 const MotionFeedback = lazy(() => import('./views/MotionFeedback.jsx'))
 const PersonalData = lazy(loadPersonalData)
 const BodyProgress = lazy(loadBodyProgress)
+const ProgressPhotos = lazy(() => import('./views/ProgressPhotos.jsx'))
 const ProfessionalProfile = lazy(loadProfessionalProfile)
 const ProfessionalDashboard = lazy(loadProfessionalDashboard)
 const ProfessionalInvites = lazy(loadProfessionalInvites)
@@ -514,6 +515,7 @@ function Shell() {
                 <Route path="/progress" element={<Stats />} />
                 <Route path="/progress/history" element={<History />} />
                 <Route path="/progress/body" element={<BodyProgress />} />
+                <Route path="/progress/photos" element={<ProgressPhotos />} />
                 <Route path="/stats" element={<CanonicalRedirect to="/progress" />} />
                 <Route path="/history" element={<CanonicalRedirect to="/progress/history" />} />
                 <Route path="/body-progress" element={<CanonicalRedirect to="/progress/body" />} />

@@ -53,3 +53,17 @@ it('ajusta apenas uma foto e permite cancelar', async () => {
   await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === 'Cancelar').click())
   expect(container.querySelector('[role=slider]')).not.toBeNull()
 })
+
+it('mantém o divisor acessível sem ferramentas de edição no demonstrador', async () => {
+  await act(async () => root.render(<ProgressPhotoCompare before={photo} after={{ ...photo, id: 'b' }} beforeURL="/a.jpg" afterURL="/b.jpg" controls={false} />))
+  expect(container.querySelector('[role=slider]')).toBeTruthy()
+  expect(container.querySelector('details,input')).toBeNull()
+  expect(container.textContent).not.toMatch(/Ajustar|Centralizar|Detecção/)
+})
+
+it('encerra o carregamento quando as imagens falham e mantém o erro visível', async () => {
+  await render()
+  await act(async () => { for (const image of container.querySelectorAll('img')) image.dispatchEvent(new Event('error')) })
+  expect(container.querySelector('.bp-photo-loading')).toBeNull()
+  expect(container.textContent).toContain('Falha ao carregar')
+})

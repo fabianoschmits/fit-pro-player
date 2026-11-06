@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -21,8 +21,7 @@ import MeasurementBodyMap from '../components/MeasurementBodyMap.jsx'
 import { Button, NumberField, Segmented } from '../components/ui.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 import '../body-progress.css'
-
-const ProgressPhotoGallery = lazy(() => import('../components/ProgressPhotoGallery.jsx'))
+import BodyProgressNavigation from '../components/BodyProgressNavigation.jsx'
 
 const PERIODS = [
   { value: 30, label: '30 dias' },
@@ -699,7 +698,6 @@ export default function BodyProgress() {
   const reducedMotion = useReducedMotion()
   const focusNonce = useRef(0)
   const [mode, setMode] = useState('checkin')
-  const [compareMode, setCompareMode] = useState('measurements')
   const [view, setView] = useState('front')
   const [selected, setSelected] = useState(null)
   const [period, setPeriod] = useState(90)
@@ -751,10 +749,11 @@ export default function BodyProgress() {
   return <main className="body-progress-view page-scenery fpp-ui-view fpp-screen-body">
     <header className="bp-header">
       <button className="iconbtn" type="button" onClick={() => navigate(-1)} aria-label={t('Back')}><Icon name="chevronLeft" /></button>
-      <div><h1>Evolução corporal</h1><p>Circunferências semanais, forma corporal e progresso em um só lugar.</p></div>
+      <div><h1>Medidas corporais</h1><p>Check-ins semanais, histórico e comparação de circunferências.</p></div>
       <button className="bp-header-history" type="button" onClick={() => changeMode('history')}><Icon name="history" /><span>Evolução</span></button>
     </header>
 
+    <BodyProgressNavigation current="measurements" />
     <Segmented className="bp-mode-tabs" value={mode} onChange={changeMode} options={MODES} />
 
     {mode === 'checkin' && <section className={`card bp-week-card fpp-polished-card${done === total ? ' complete' : ''}`}>
@@ -765,10 +764,7 @@ export default function BodyProgress() {
 
     {mode === 'checkin' && <CheckinView S={S} checkins={checkins} selected={selected} setSelected={setSelected} period={period} setPeriod={setPeriod} view={view} setView={setView} />}
     {mode === 'history' && <EvolutionView S={S} checkins={checkins} selected={selected} setSelected={setSelected} period={period} setPeriod={setPeriod} view={view} setView={setView} focusRequest={historyFocus} />}
-    {mode === 'compare' && <>
-      <Segmented className="bp-photo-mode-tabs" value={compareMode} onChange={setCompareMode} options={[{ value: 'measurements', label: 'Medidas' }, { value: 'photos', label: 'Fotos' }]} />
-      {compareMode === 'measurements' ? <CompareView checkins={checkins} /> : <Suspense fallback={<FppActionFeedback state="loading">Carregando fotos…</FppActionFeedback>}><ProgressPhotoGallery /></Suspense>}
-    </>}
+    {mode === 'compare' && <CompareView checkins={checkins} />}
     <CheckinHistory S={S} checkins={checkins} onOpenEvolution={openHistoricalCheckin} />
   </main>
 }

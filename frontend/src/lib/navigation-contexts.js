@@ -68,7 +68,7 @@ export function resolveNavigationContext({
     detectedContext = 'training'
     if (normPath.startsWith('/plan')) activeKey = 'plan'
     else if (normPath === '/library') activeKey = 'library'
-  } else if (normPath === '/progress' || normPath === '/progress/history' || normPath === '/progress/body' || normPath === '/stats' || normPath === '/history' || normPath === '/body-progress' || normPath === '/stats/body-progress') {
+  } else if (normPath === '/progress' || normPath === '/progress/history' || normPath === '/progress/body' || normPath === '/progress/photos' || normPath === '/stats' || normPath === '/history' || normPath === '/body-progress' || normPath === '/stats/body-progress') {
     detectedContext = 'progress'
     activeKey = 'progress'
   } else if (normPath === '/account' || normPath === '/more') {
