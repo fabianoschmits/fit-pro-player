@@ -637,6 +637,6 @@ body:has(.workout-player-page) #timer .btn { min-height: 44px; }
 .workout-player-page .wp-series-segment.is-executing { position: relative; }
 .workout-player-page .wp-series-segment.is-executing .wp-execution-signal { inset: -2px; padding: 1px; border-radius: inherit; }
 
-.workout-player-page .workout-exercise-queue-item .workout-exercise-tab.is-active { padding-right: 32px; }
+.workout-player-page .workout-exercise-queue-item .workout-exercise-tab { padding-top: 30px; }
 .workout-player-page .workout-queue-preview { overflow: hidden; }
 .workout-player-page .workout-queue-preview > .exercise-guide-motion { width: 100%; height: 100%; }

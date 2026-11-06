@@ -263,6 +263,15 @@ test('expanded queue edits and removes only today’s exercises and survives rel
   await page.getByRole('button', { name: 'Confirmar duração', exact: true }).click()
   const queue = page.locator('.wp-queue-details')
   await queue.locator('summary').click()
+  const cardSizes = () => queue.locator('.workout-exercise-tab').evaluateAll(cards => cards.map(card => {
+    const rect = card.getBoundingClientRect()
+    return { width: rect.width, height: rect.height, nameWidth: card.querySelector('b').getBoundingClientRect().width }
+  }))
+  const originalSizes = await cardSizes()
+  await queue.locator('.workout-exercise-tab').nth(1).click()
+  expect(await cardSizes()).toEqual(originalSizes)
+  await queue.locator('.workout-exercise-tab').first().click()
+  expect(await cardSizes()).toEqual(originalSizes)
   await queue.locator('.workout-exercise-edit').click()
   await page.getByRole('textbox', { name: 'Séries', exact: true }).fill('3')
   await page.getByRole('textbox', { name: /^(Reps|Repetições)$/ }).fill('8')
