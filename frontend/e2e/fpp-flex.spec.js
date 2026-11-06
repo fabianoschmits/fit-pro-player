@@ -117,6 +117,13 @@ test('keeping habitual duration starts the complete prescription without review'
   await items.nth(3).click()
   expect((await saved(page)).active.cur).toBe(3)
   expect((await saved(page)).active.entries.every(entry => entry.sets.every(set => !set.done))).toBe(true)
+  await page.locator('.wp-main-action.set-start-action').click()
+  const controls = page.locator('.wp-current-controls')
+  await expect(controls.locator('.wp-bump-btn:enabled')).toHaveCount(0)
+  expect(await controls.getByRole('textbox').evaluateAll(inputs => inputs.every(input => input.disabled))).toBe(true)
+  await page.locator('.wp-main-action.is-executing').click()
+  await expect.poll(() => controls.locator('.wp-bump-btn:enabled').count()).toBeGreaterThan(0)
+  expect(await controls.getByRole('textbox').evaluateAll(inputs => inputs.every(input => !input.disabled))).toBe(true)
 })
 
 for (const decision of ['Manter meus treinos', 'Readequar treinos', 'dismiss']) {

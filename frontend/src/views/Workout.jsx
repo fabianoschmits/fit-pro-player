@@ -292,14 +292,18 @@ function ActiveWorkout() {
   }
   // Clearing an optional field drops the key rather than storing null, so a set only carries
   // what was actually logged — in the session, in history and in a backup.
-  const setField = (idx, i, field, v) => mutEntry(idx, e => {
-    if (v == null) delete e.sets[i][field]; else e.sets[i][field] = v
-    // Changing a weight cascades to the following sets of the same phase, so a
-    // heavier bar carries through the set instead of retyping every row.
-    if (field === 'w') {
-      e.sets = cascadeWeight(e.sets, i, v)
-    }
-  })
+  const setField = (idx, i, field, v) => {
+    const ui = useUI.getState()
+    if (ui.manualSet || ui.work?.phase === 'work') return
+    mutEntry(idx, e => {
+      if (v == null) delete e.sets[i][field]; else e.sets[i][field] = v
+      // Changing a weight cascades to the following sets of the same phase, so a
+      // heavier bar carries through the set instead of retyping every row.
+      if (field === 'w') {
+        e.sets = cascadeWeight(e.sets, i, v)
+      }
+    })
+  }
   const modeAt = idx => modeOf({ ...(A.entries[idx].target || {}), id: A.entries[idx].id })
   const addSet = idx => mutEntry(idx, e => {
     const l = e.sets[e.sets.length - 1]

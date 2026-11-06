@@ -52,6 +52,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
   const current = entry.sets[currentIndex]
   const resting = !!timer || working?.phase === 'rest'
   const anyRunning = !!manualSet || working?.phase === 'work'
+  const fieldsLocked = locked || anyRunning
   const executing = !locked && !resting && runningIndex >= 0
   const ready = !locked && !resting && !anyRunning && currentIndex >= 0
   const phaseNumber = i => entry.sets.slice(0, i + 1).filter(s => isWarmupRow(s) === isWarmupRow(entry.sets[i])).length
@@ -78,6 +79,7 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
         : ''
 
   const bump = (s, i, col, direction) => {
+    if (fieldsLocked) return
     const value = col.eff ? stepEffort(col.eff, s[col.f], direction)
       : Math.max(0, Math.round(((s[col.f] || 0) + direction * col.step) * 100) / 100)
     const floatId = nextFloatId.current++
@@ -92,15 +94,15 @@ export default function WorkoutExercisePlayer({ entryIdx, compact = undefined, l
     const decFloats = floats.filter(f => f.btnKey === `${col.f}-dec`)
     const incFloats = floats.filter(f => f.btnKey === `${col.f}-inc`)
     return <div className={'stp ' + cls}>
-      <button type="button" className="wp-bump-btn" aria-label={`${t('Decrease')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, -1)}>
+      <button type="button" className="wp-bump-btn" aria-label={`${t('Decrease')} ${col.hd}`} disabled={fieldsLocked} onClick={() => bump(s, i, col, -1)}>
         <Icon name="minus" />
         {decFloats.map(f => <span key={f.id} className="wp-bump-float wp-bump-float--minus" aria-hidden="true">{f.symbol}</span>)}
       </button>
       <span className="val"><NumberField decimal={col.dec} nullable={col.opt}
         value={col.f === 'w' ? (toDisplayMass(s[col.f] ?? 0, displayUnit) ?? '') : (s[col.f] ?? '')}
-        aria-label={col.hd} disabled={locked}
+        aria-label={col.hd} disabled={fieldsLocked}
         onChange={v => onField(i, col.f, col.eff ? capEffort(col.eff, v) : col.f === 'w' ? fromDisplayMass(v, displayUnit) : v)} /></span>
-      <button type="button" className="wp-bump-btn" aria-label={`${t('Increase')} ${col.hd}`} disabled={locked} onClick={() => bump(s, i, col, 1)}>
+      <button type="button" className="wp-bump-btn" aria-label={`${t('Increase')} ${col.hd}`} disabled={fieldsLocked} onClick={() => bump(s, i, col, 1)}>
         <Icon name="plus" />
         {incFloats.map(f => <span key={f.id} className="wp-bump-float wp-bump-float--plus" aria-hidden="true">{f.symbol}</span>)}
       </button>
