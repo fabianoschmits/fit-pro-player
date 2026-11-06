@@ -24,12 +24,15 @@ const mocks = vi.hoisted(() => {
     exConfigSheet: vi.fn(),
     startFlow: vi.fn(),
     openSheet: vi.fn(),
+    confirmSheet: vi.fn(),
+    queueSessionOperation: vi.fn(),
     navigate: vi.fn(),
   }
   state.storeSnapshot = () => ({
     S: state.S,
     sessionRecovery: state.sessionRecovery,
     user: null,
+    queueSessionOperation: state.queueSessionOperation,
     update: mut => mut(state.S),
   })
   state.uiSnapshot = () => ({
@@ -68,7 +71,7 @@ vi.mock('../sheets.jsx', () => ({
   topWeightSheet: mocks.topWeightSheet,
   finishWorkout: vi.fn(),
   workoutCompleteSheet: mocks.workoutCompleteSheet,
-  confirmSheet: vi.fn(),
+  confirmSheet: mocks.confirmSheet,
 }))
 vi.mock('../components/Media.jsx', () => ({ default: () => null }))
 let dom
@@ -592,6 +595,56 @@ describe('Workout set completion flow', () => {
     const starts = [...container.querySelectorAll('button')].filter(button => button.textContent.includes('Começar treino'))
     expect(starts).toHaveLength(1)
     expect([...container.querySelectorAll('.set-action')].every(checkbox => checkbox.disabled)).toBe(true)
+  })
+
+  it('edits the selected queue exercise only for today without overwriting completed work or plans', async () => {
+    await mount([exercise('0025', [true, false], { sg: 'pair' }), exercise('0047', [false, false], { sg: 'pair' })])
+    mocks.S.routines = [{ id: 'routine', ex: [{ id: '0025', sets: 2, reps: 5, weight: 60 }] }]
+    mocks.S.active.prescribedEntries = structuredClone(mocks.S.routines[0].ex)
+    mocks.S.exWeights = { '0025': { w: 200 } }
+    const routine = structuredClone(mocks.S.routines)
+    const prescribed = structuredClone(mocks.S.active.prescribedEntries)
+    await clickAndRender(container.querySelector('.workout-exercise-edit'))
+    const [ex, seed, save] = mocks.exConfigSheet.mock.calls.at(-1)
+    expect(ex.id).toBe('0025')
+    expect(seed).toMatchObject({ sets: 2, reps: 5, weight: 60 })
+    await act(async () => save({ mode: 'reps', sets: 3, reps: 12, weight: 30 }))
+    await act(async () => root.render(<Workout />))
+    expect(mocks.S.active.entries[0].sets).toEqual([
+      { w: 60, r: 5, done: true }, { w: 30, r: 12, done: false }, { w: 30, r: 12, done: false },
+    ])
+    expect(mocks.S.active.entries[0].sg).toBe('pair')
+    expect(mocks.S.active.cur).toBe(0)
+    expect(mocks.S.routines).toEqual(routine)
+    expect(mocks.S.active.prescribedEntries).toEqual(prescribed)
+    expect(mocks.S.exWeights['0025'].w).toBe(200)
+    expect(mocks.queueSessionOperation).toHaveBeenCalledWith(expect.objectContaining({ kind: 'set_upserted' }))
+    await clickAndRender(container.querySelectorAll('.wp-queue-details .workout-exercise-tab')[1])
+    await clickAndRender(container.querySelector('.workout-exercise-edit'))
+    expect(mocks.exConfigSheet.mock.calls.at(-1)[0].id).toBe('0047')
+  })
+
+  it('removes from the expanded queue using the existing session-only confirmation', async () => {
+    await mount([exercise('0025', [false]), exercise('0047', [false])])
+    mocks.S.routines = [{ id: 'routine', ex: [{ id: '0025', sets: 1 }, { id: '0047', sets: 1 }] }]
+    const plan = structuredClone(mocks.S.routines)
+    await clickAndRender(container.querySelector('.workout-exercise-remove'))
+    expect(mocks.S.active.entries).toHaveLength(2)
+    await act(async () => mocks.confirmSheet.mock.calls.at(-1)[0].onConfirm())
+    await act(async () => root.render(<Workout />))
+    expect(mocks.S.active.entries.map(entry => entry.id)).toEqual(['0047'])
+    expect(mocks.S.routines).toEqual(plan)
+    expect(mocks.queueSessionOperation).toHaveBeenCalledWith(expect.objectContaining({ kind: 'exercise_removed' }))
+  })
+
+  it('does not apply a stale editor to shifted session occurrences', async () => {
+    await mount([exercise('0025', [false]), exercise('0025', [false])])
+    await clickAndRender(container.querySelector('.workout-exercise-edit'))
+    const save = mocks.exConfigSheet.mock.calls.at(-1)[2]
+    mocks.S.active.entries.splice(0, 1)
+    const before = structuredClone(mocks.S.active.entries)
+    await act(async () => save({ sets: 8, mode: 'reps', reps: 15, weight: 90 }))
+    expect(mocks.S.active.entries).toEqual(before)
   })
 
   it('reviews a temporary selection before starting and preserves the original prescription', async () => {

@@ -19,7 +19,7 @@ import { nextPrescription, applyPrescription } from '../lib/progression.js'
 import {  DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import { isWarmupRow } from '../lib/workout-model.js'
-import { applyPreviousSetValues, replaceSessionExercise } from '../lib/workout-session.js'
+import { applyPreviousSetValues, replaceSessionExercise, editSessionExercise } from '../lib/workout-session.js'
 import { createFlexSelection, toggleFlexSelection, confirmFlexSelection, estimateWorkoutDuration, getPreferredWorkoutMinutes } from '../lib/workout-duration.js'
 import WorkoutDurationSheet from '../components/WorkoutDurationSheet.jsx'
 import ExerciseSpriteThumb from '../components/ExerciseSpriteThumb.jsx'
@@ -396,6 +396,31 @@ function ActiveWorkout() {
     }, null, routine, seed)
   })
 
+  const editExercise = idx => {
+    if (navigationLocked || adjustmentsLocked) return
+    const active = useStore.getState().S.active
+    const entry = active?.entries[idx]
+    if (!entry || active.id !== A.id) return
+    const fingerprint = JSON.stringify(active.entries)
+    const workRows = entry.sets.filter(set => !isWarmupRow(set))
+    const row = workRows.find(set => !set.done) || workRows[0] || {}
+    const seed = { ...entry.target, mode: modeOf({ ...entry.target, id: entry.id }), sets: workRows.length || 1,
+      reps: row.r ?? entry.target?.reps, weight: row.w ?? entry.target?.weight,
+      sec: row.sec ?? entry.target?.sec, min: row.min ?? entry.target?.min, speed: row.speed ?? entry.target?.speed }
+    exConfigSheet(exOr(entry.id), seed, cfg => {
+      const live = useStore.getState().S.active
+      const ui = useUI.getState()
+      if (!live || live.id !== active.id || JSON.stringify(live.entries) !== fingerprint
+        || ui.manualSet || ['work', 'rest'].includes(ui.work?.phase)) {
+        ui.toast('Este exercício mudou. Abra o editor novamente.')
+        return
+      }
+      ui.stopWork()
+      update(state => { state.active.entries[idx] = editSessionExercise(state.active.entries[idx], cfg) })
+      queueActive()
+    }, null, null, null, t('Save'))
+  }
+
   const openReplacementPicker = idx => exercisePicker(ex => {
     const live = useStore.getState().S
     const previous = live.active?.entries?.[idx]
@@ -606,15 +631,18 @@ function ActiveWorkout() {
               const entry = A.entries[entryIndex]
               const entryDone = entry.sets.length > 0 && entry.sets.every(set => set.done)
               const doneSets = entry.sets.filter(set => set.done).length
-              return <button type="button" key={entryIndex} className={'workout-exercise-tab' + (entryIndex === cur ? ' is-active' : '') + (entryDone ? ' is-done' : '')}
+              return <div key={entryIndex} className="workout-exercise-queue-item">
+                {entryIndex === cur && <button type="button" className="workout-exercise-edit" disabled={navigationLocked || adjustmentsLocked} aria-label={`${t('Edit')} ${exerciseName(exOr(entry.id))}`} title={t('Edit')} onClick={() => editExercise(entryIndex)}><Icon name="pencil" /></button>}
+                <button type="button" className={'workout-exercise-tab' + (entryIndex === cur ? ' is-active' : '') + (entryDone ? ' is-done' : '')}
                 disabled={navigationLocked} aria-current={entryIndex === cur ? 'step' : undefined}
                 onClick={() => navigateExercise(entryIndex)}>
                 <ExerciseSpriteThumb ex={exOr(entry.id)} />
                 <b>{exerciseName(exOr(entry.id))}</b>
                 <small>{entry.sets.length} séries · {doneSets}/{entry.sets.length}{indices.length > 1 ? ` · Supersérie ${index + 1}` : ''}</small>
-              </button>
+              </button></div>
             }))}
             {!reviewing && <button type="button" className="workout-exercise-add" disabled={adjustmentsLocked} aria-label={t('Add exercise')} onClick={addExerciseFlow}><Icon name="plus" /></button>}
+            {!reviewing && <button type="button" className="workout-exercise-add workout-exercise-remove" disabled={navigationLocked || adjustmentsLocked} aria-label={t('Remove exercise')} onClick={removeExerciseSheet}><Icon name="minus" /></button>}
           </div>
           {!reviewing && A.flex?.outline?.some(item => !item.selected) && <div className="fpp-flex-omitted-summary"><small>Retirados pelo tempo</small>{A.flex.outline.filter(item => !item.selected).map(item => <span key={item.key}>{item.name || exerciseName(exOr(item.exerciseId))} · {item.sets} séries</span>)}</div>}
           {reviewing && <div className="fpp-flex-confirm">

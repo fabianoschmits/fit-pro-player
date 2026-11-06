@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyPreviousSetValues, replaceSessionExercise, resetHistoricalSets } from './workout-session.js'
+import { applyPreviousSetValues, replaceSessionExercise, resetHistoricalSets, editSessionExercise } from './workout-session.js'
 
 describe('applyPreviousSetValues', () => {
   it('copies previous work values while preserving completed rows', () => {
@@ -119,5 +119,35 @@ describe('resetHistoricalSets', () => {
     ])
     fresh[1].w = 70
     expect(historical[1].w).toBe(60)
+  })
+})
+
+describe('session-only exercise configuration', () => {
+  it('updates pending work while preserving completed rows, warmups and supersets', () => {
+    const entry = { id: '0025', sg: 'pair', target: { reps: 8, rest: 120 }, plan: { weight: 80 }, sets: [
+      { phase: 'warmup', w: 20, r: 10, done: true },
+      { w: 60, r: 8, done: true, rir: 2 }, { w: 60, r: 8, done: false },
+    ] }
+    const before = structuredClone(entry)
+    const edited = editSessionExercise(entry, { mode: 'reps', sets: 3, reps: 12, weight: 45 })
+    expect(edited.sg).toBe('pair')
+    expect(edited.sets.slice(0, 2)).toEqual(entry.sets.slice(0, 2))
+    expect(edited.sets.slice(2)).toEqual([{ w: 45, r: 12, done: false }, { w: 45, r: 12, done: false }])
+    expect(edited.target.rest).toBe(120)
+    expect(edited.target.sets).toBe(3)
+    expect(edited.plan).toBeNull()
+    expect(entry).toEqual(before)
+    const shorter = editSessionExercise({ ...entry, sets: [...entry.sets, { w: 55, r: 8, done: true }] }, { mode: 'reps', sets: 1, reps: 6, weight: 30 })
+    expect(shorter.sets.filter(set => set.done && set.phase !== 'warmup')).toHaveLength(2)
+    expect(shorter.target.sets).toBe(2)
+  })
+  it('edits timed and cardio targets and keeps the mode of completed rows', () => {
+    const entry = { id: '2138', target: { mode: 'cardio', min: 20 }, sets: [{ min: 20, speed: 4, done: true }, { min: 20, done: false }] }
+    const cardio = editSessionExercise(entry, { sets: 2, min: 10, speed: 6 })
+    expect(cardio.target.mode).toBe('cardio')
+    expect(cardio.sets[1]).toEqual({ min: 10, speed: 6, done: false })
+    const timed = editSessionExercise(entry, { mode: 'time', sets: 2, sec: 30, weight: 5 })
+    expect(timed.sets[0]).toMatchObject({ mode: 'cardio', min: 20, done: true })
+    expect(timed.sets[1]).toEqual({ sec: 30, w: 5, done: false })
   })
 })

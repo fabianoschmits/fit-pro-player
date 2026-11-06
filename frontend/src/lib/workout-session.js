@@ -1,4 +1,5 @@
-import { isWarmupRow } from './workout-model.js'
+import { buildSets, modeOf } from './history.js'
+import { isWarmupRow, modeForSet } from './workout-model.js'
 
 const MODE_FIELDS = {
   cardio: ['min', 'speed'],
@@ -75,4 +76,26 @@ export function replaceSessionExercise(entries = [], index, replacement) {
 /** Build fresh editable rows from a historical entry without sharing references. */
 export function resetHistoricalSets(sets = []) {
   return sets.map(set => ({ ...set, done: false }))
+}
+
+/** Change today's pending prescription without rewriting completed work or warmups. */
+export function editSessionExercise(entry, config) {
+  const mode = modeOf({ ...config, id: entry.id })
+  const completed = entry.sets.filter(set => set.done && !isWarmupRow(set)).length
+  const count = Math.max(completed, Math.max(1, Math.round(Number(config.sets)) || 1))
+  // Explicit edits must win over history and confirmed-load smart defaults.
+  const fresh = buildSets({ workouts: [], exWeights: {} }, { ...config, id: entry.id, mode, sets: count - completed })
+    .slice(0, count - completed)
+  let index = 0
+  const sets = entry.sets.flatMap(set => {
+    if (set.done || isWarmupRow(set)) {
+      const originalMode = modeForSet(set, entry.target)
+      return [{ ...set, ...(originalMode !== mode ? { mode: originalMode } : {}) }]
+    }
+    return index < fresh.length ? [{ ...fresh[index++] }] : []
+  })
+  sets.push(...fresh.slice(index).map(set => ({ ...set })))
+  const target = { ...(entry.target || {}) }
+  for (const key of ['mode', 'sets', 'reps', 'min', 'sec', 'speed', 'weight', 'bodyweight', 'side', 'prog', 'inc', 'repsMin', 'repsMax']) delete target[key]
+  return { ...entry, target: { ...target, ...config, mode, sets: count }, plan: null, sets }
 }
