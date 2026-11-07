@@ -6,7 +6,7 @@ import { MOBILE } from '../lib/mobile.js'
 import '../fpp-launch.css'
 
 const owners = new WeakMap()
-const MINIMUM = 350, SETTLE = 120, REVEAL = 620, FINISH = 100
+const MINIMUM = 350, SETTLE = 120, REVEAL = 1400, FINISH = 100
 const ROUTE_LIMIT = 4000, SAFETY_LIMIT = 30000
 
 // The shaft contains a radius-.8 circle: exceeding the diagonal covers every
@@ -31,6 +31,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const symbol = /** @type {SVGSVGElement} */ (layer.querySelector('.fpp-launch-symbol svg'))
   const curtain = layer.querySelector('.fpp-launch-curtain')
   const hole = layer.querySelector('[data-launch-hole]')
+  const outline = layer.querySelector('[data-launch-outline]')
   const frames = new Set(), timers = new Set()
   let disposed = false, active = false, pending = false, phase = 'completed'
   let openedAt = 0, readyAt = null, wake = null, settleAnimation = null
@@ -92,7 +93,9 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       // keeps the complete dumbbell legible for most of the approach.
       const depth = 1 - tunnelEase(progress) * (1 - (4 / Math.max(4, endScale)) ** 2)
       const scale = progress === 1 ? endScale : 4 / Math.sqrt(depth)
-      hole.setAttribute('transform', `translate(${width / 2} ${height / 2}) scale(${scale})`)
+      const transform = `translate(${width / 2} ${height / 2}) scale(${scale})`
+      hole.setAttribute('transform', transform)
+      outline.setAttribute('transform', transform)
     }
     paint(0); setPhase('revealing')
     animate(REVEAL, paint, () => { layer.setAttribute('data-launch-finishing', ''); later(complete, FINISH) })
@@ -129,7 +132,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     clearWork(); active = true; openedAt = now(); readyAt = null
     layer.hidden = false; layer.removeAttribute('aria-hidden'); layer.removeAttribute('data-launch-finishing')
     layer.removeAttribute('data-reduced-motion'); layer.removeAttribute('data-paused')
-    layer.style.opacity = ''; symbol.style.transform = ''; hole.removeAttribute('transform')
+    layer.style.opacity = ''; symbol.style.transform = ''; hole.removeAttribute('transform'); outline.removeAttribute('transform')
     surface.removeAttribute('data-launch-timeout')
     if (!adopt) layer.dataset.launchCycle = String(Number(layer.dataset.launchCycle || 0) + 1)
     setPhase('loading')

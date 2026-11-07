@@ -42,7 +42,7 @@ it('keeps the identity for 350ms on an instant installed launch and waits for th
   await advance(70); expect(layer.dataset.state).toBe('settling')
   await advance(150); expect(layer.dataset.state).toBe('revealing')
   expect(document.querySelector('[data-launch-hole]').getAttribute('transform')).toContain('scale(')
-  await advance(850); expect(layer.hidden).toBe(true); expect(layer.dataset.state).toBe('completed')
+  await advance(800); expect(layer.hidden).toBe(false); await advance(850); expect(layer.hidden).toBe(true); expect(layer.dataset.state).toBe('completed')
 })
 
 it('enforces the installed minimum without delaying browser or native boot', async () => {
@@ -52,6 +52,19 @@ it('enforces the installed minimum without delaying browser or native boot', asy
   controller.destroy(); installed = false
   controller = createLaunchController({ isReady: () => true })
   await advance(40); expect(layer.dataset.state).toBe('settling')
+})
+
+it('reveals slowly with a single accent outline synchronized to the opening', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(600)
+  const outline = document.querySelector('[data-launch-outline]')
+  expect(outline).not.toBeNull()
+  expect(outline.getAttribute('stroke')).toBe('var(--acc, #0F8B8D)')
+  await advance(800)
+  expect(layer.dataset.state).toBe('revealing'); expect(layer.hidden).toBe(false)
+  expect(outline.getAttribute('transform')).toBe(document.querySelector('[data-launch-hole]').getAttribute('transform'))
+  expect(outline.querySelector('use').getAttribute('href')).toBe('#fpp-launch-silhouette')
+  await advance(1000); expect(layer.hidden).toBe(true)
 })
 
 it('stops work and observers on disposal without leaving an invisible touch blocker', async () => {
@@ -65,14 +78,14 @@ it('stops work and observers on disposal without leaving an invisible touch bloc
 
 it('deduplicates visibility and persisted pageshow while preserving the live DOM, route and edit', async () => {
   controller = createLaunchController({ isReady: () => true })
-  await advance(1600)
+  await advance(2400)
   const input = document.querySelector('input'); input.value = 'Treino em andamento'; input.focus()
   const cycle = Number(layer.dataset.launchCycle)
   visibility('hidden'); visibility('visible'); restore(); window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
   expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
   expect(document.querySelector('input')).toBe(input); expect(input.value).toBe('Treino em andamento')
   expect(document.activeElement).toBe(input)
-  await advance(1600); expect(layer.hidden).toBe(true)
+  await advance(2400); expect(layer.hidden).toBe(true)
   window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
   expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
 })
@@ -80,7 +93,7 @@ it('deduplicates visibility and persisted pageshow while preserving the live DOM
 it.each([false, true])('does not replay on browser/native resume (native=%s)', async native => {
   installed = native
   controller = createLaunchController({ isReady: () => true, native })
-  await advance(1500); const cycle = layer.dataset.launchCycle
+  await advance(2200); const cycle = layer.dataset.launchCycle
   visibility('hidden'); visibility('visible'); restore()
   expect(layer.dataset.launchCycle).toBe(cycle); expect(layer.hidden).toBe(true)
 })
@@ -94,7 +107,7 @@ it('uses opacity for reduced motion and removes all interception afterward', asy
 
 it('bounds route fallback waiting and provides recovery if boot never finishes', async () => {
   document.getElementById('root').insertAdjacentHTML('beforeend', '<div data-route-loading></div>')
-  controller = createLaunchController({ isReady: () => true }); await advance(5500)
+  controller = createLaunchController({ isReady: () => true }); await advance(6200)
   expect(layer.hidden).toBe(true)
   controller.destroy(); controller = createLaunchController({ isReady: () => false })
   await advance(30100); expect(layer.hidden).toBe(true)
@@ -115,5 +128,5 @@ it('coordinates ready/auth and survives StrictMode without a duplicate cold open
   await advance(500); expect(layer.dataset.state).toBe('loading')
   state.auth = 'anonymous'
   await act(async () => root.render(<StrictMode><AppLaunchTransition /></StrictMode>))
-  await advance(1200); expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
+  await advance(2000); expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
 })
