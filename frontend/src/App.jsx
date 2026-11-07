@@ -13,7 +13,6 @@ import { DEFAULT_LANG, setLang, useLang, t } from './lib/i18n.js'
 import { setNav, nav } from './lib/nav.js'
 import { initBackButton } from './lib/back.js'
 import { useWakeLock } from './lib/wakelock.js'
-import Icon from './components/Icon.jsx'
 import TabBar from './components/TabBar.jsx'
 import { preloadPageScenery } from './lib/page-scenery-cache.js'
 import PageTransition from './components/PageTransition.jsx'
@@ -497,7 +496,7 @@ function Shell() {
 
   return (
     <>
-      {!ready && !authed ? <div id="app"><div className="boot-loading"><Icon name="dumbbell" /><span className="muted small">{t('Loading…')}</span></div></div> : <>
+      {!ready && !authed ? <div id="app" data-app-booting=""><RouteFallback /><div className="boot-recovery"><p>{t('Something went wrong')}</p><button className="btn" onClick={() => location.reload()}>{t('Reload Fit Pro Player')}</button></div></div> : <>
       {/* Navigation clears failed renders without remounting a healthy workspace. */}
       <PageTransition>
         <ErrorBoundary resetKey={`${loc.pathname}${loc.search}`}>

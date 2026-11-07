@@ -42,6 +42,7 @@ async function waitForPrecache(page, minEntries = 10) {
 
 test.describe('PWA Offline', () => {
   test('Test 1 — cold start offline: app opens after SW install without internet', async ({ page, context }) => {
+    await page.addInitScript(() => Object.defineProperty(navigator, 'standalone', { configurable: true, value: true }))
     await seed(page)
     await page.goto('/#/home')
     await waitForSWController(page)
@@ -53,6 +54,8 @@ test.describe('PWA Offline', () => {
     const root = page.locator('#root')
     await expect(root).not.toBeEmpty({ timeout: 15000 })
     await expect(page).toHaveTitle(/Fit Pro Player/i)
+    await expect(page.locator('#fpp-launch')).toBeHidden()
+    await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '1')
   })
 
   test('Test 2 — offline navigation: main routes load without internet', async ({ page, context }) => {

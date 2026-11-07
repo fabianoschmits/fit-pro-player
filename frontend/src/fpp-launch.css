@@ -1,0 +1,16 @@
+/* Geometry and the first loading frame live in index.html, before module fetch. */
+#fpp-launch[data-state="settling"] .fpp-launch-caption{opacity:0;transition:opacity 120ms ease-out}
+#fpp-launch[data-state="revealing"]{background:transparent}
+#fpp-launch[data-state="revealing"] .fpp-launch-symbol,
+#fpp-launch[data-state="revealing"] .fpp-launch-caption{visibility:hidden}
+#fpp-launch[data-state="revealing"] .fpp-launch-curtain{display:block}
+#fpp-launch[data-launch-finishing]{opacity:0;transition:opacity 100ms linear}
+#fpp-launch[data-reduced-motion="true"][data-state="revealing"]{background:#000}
+#fpp-launch[data-reduced-motion="true"] .fpp-launch-curtain{display:none}
+#fpp-launch[data-paused] *{animation-play-state:paused!important}
+.boot-recovery{display:none;text-align:center;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
+#root[data-launch-timeout] .boot-recovery{display:block}
+@media(prefers-reduced-motion:reduce){
+  #fpp-launch .fpp-launch-symbol svg,#fpp-launch .fpp-launch-track i{animation:none}
+  #fpp-launch .fpp-launch-caption{transition:none}
+}

@@ -2274,12 +2274,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 }
 
 /* ----------------------------------------------------------- UX additions -- */
-.boot-loading{
-  padding-top:42vh;display:flex;flex-direction:column;align-items:center;gap:12px;
-  font-size:34px;color:var(--label-3);
-}
 .route-loading{min-height:180px;display:grid;place-items:center;color:var(--label-3);font-size:24px}
-.boot-loading .muted{font-size:15px}
 
 .plan-progress{padding:12px 14px;margin-bottom:12px}
 .plan-progress-bar{height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}

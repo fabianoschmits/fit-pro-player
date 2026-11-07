@@ -6,6 +6,7 @@ import { MOBILE } from './lib/mobile.js'
 import { useStore } from './store/useStore.js'
 import { canReloadForUpdate } from './lib/reload-safety.js'
 import AppStatus from './components/AppStatus.jsx'
+import AppLaunchTransition from './components/AppLaunchTransition.jsx'
 import { installDiagnostics } from './lib/diagnostics.js'
 import { installPwaViewport } from './lib/pwa-viewport.js'
 import { pwaInstaller } from './lib/pwa-install.js'
@@ -23,7 +24,7 @@ if (!MOBILE) pwaInstaller.start()
 installDiagnostics()
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode><AuthProvider><App /><AppStatus /></AuthProvider></StrictMode>
+  <StrictMode><AuthProvider><App /><AppStatus /><AppLaunchTransition /></AuthProvider></StrictMode>
 )
 
 // Backgrounds are CSS images, so request and decode them before a route first
