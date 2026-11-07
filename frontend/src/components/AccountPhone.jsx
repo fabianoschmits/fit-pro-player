@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useState } from 'react'
 import useRelationshipRefresh from './useRelationshipRefresh.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -24,7 +25,7 @@ function ScopedPhone({ caller, target, editable, iconOnly, contactLabel }) {
    if (!alive) return
    if (cause) { setState('error'); setError('Não foi possível carregar o telefone.'); return }
    setPhone(typeof data === 'string' ? data : null); setDraft(phoneDraft(typeof data === 'string' ? data : null)); setState('ready')
-  }).catch(() => { if (alive) { setState('error'); setError('Não foi possível carregar o telefone.') } })
+  }).catch((failure) => { if (alive) { setState('error'); setError(appErrorMessage(failure, 'Não foi possível carregar o telefone.')) } })
   const visible = () => { if (!editable && document.visibilityState === 'visible') { setState('loading'); setPhone(null); setRevision(value => value + 1) } }
   document.addEventListener('visibilitychange', visible)
   return () => { alive = false; document.removeEventListener('visibilitychange', visible) }
@@ -39,7 +40,7 @@ function ScopedPhone({ caller, target, editable, iconOnly, contactLabel }) {
    const { error: cause } = await client.rpc('save_account_phone', { p_phone: next })
    if (cause) throw new Error('Não foi possível salvar o telefone. Tente novamente.')
    setPhone(next)
-  } catch (cause) { setError(cause.message); throw cause }
+  } catch (cause) { setError(appErrorMessage(cause)); throw cause }
  }
  if (editable) return <section className="fpp-account-phone" aria-label="Contato da conta">
   <details className="fpp-account-phone-details">

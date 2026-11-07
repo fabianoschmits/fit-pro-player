@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Korean UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...projectErrorLocale('ko'),
   "Clique para desmarcar": "선택을 해제하려면 클릭",
   "Clique para remover": "삭제하려면 클릭",
   "Disciplinas que você leciona:": "지도하는 분야:",

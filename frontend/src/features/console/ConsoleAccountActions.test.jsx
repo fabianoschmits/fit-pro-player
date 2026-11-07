@@ -64,7 +64,7 @@ it('guards verification writes and shows retry after a rejected request', async 
   expect(button('Aprovar').getAttribute('aria-busy')).toBe('true')
   await act(async () => reject(new Error('offline')))
   expect(host.querySelector('[data-state="error"]').disabled).toBe(false)
-  expect(host.textContent).toContain('Não foi possível atualizar a verificação.')
+  expect(host.textContent).toContain('Verifique sua conexão e tente novamente.')
   await act(async () => host.querySelector('[data-state="error"]').click())
   expect(mocks.repo.setVerification).toHaveBeenCalledTimes(2)
 })

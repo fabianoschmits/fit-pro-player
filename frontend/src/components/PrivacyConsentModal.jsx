@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
@@ -55,7 +56,7 @@ export default function PrivacyConsentModal() {
       if (auth.status === 'authenticated' && client) await persistConsent(client, saved)
       return saved
     } catch (error) {
-      setSaveError('Suas escolhas foram salvas neste dispositivo. Não foi possível sincronizá-las; tente novamente quando estiver conectado.')
+      setSaveError(appErrorMessage(error, 'Suas escolhas foram salvas neste dispositivo. Não foi possível sincronizá-las; tente novamente quando estiver conectado.'))
       throw error
     }
   }

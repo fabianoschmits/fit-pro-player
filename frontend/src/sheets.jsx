@@ -1,3 +1,4 @@
+import { appErrorMessage } from './lib/app-errors.js'
 import ExerciseSpriteThumb from './components/ExerciseSpriteThumb.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -1093,7 +1094,7 @@ function PlanTools({ close }) {
     const finishRead = () => { activeReader.current = null; readingFile.current = false; setReading(false) }
     rd.onload = () => {
       try { const bundle = parsePlan(rd.result); close(); planImportSheet(bundle) }
-      catch (e) { setError(t('Import failed: {0}', e.message)) }
+      catch (e) { setError(t('Import failed: {0}', appErrorMessage(e))) }
       finally { finishRead() }
     }
     rd.onerror = () => { setError(t('Could not read that file')); finishRead() }

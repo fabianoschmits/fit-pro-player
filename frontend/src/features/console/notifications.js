@@ -1,8 +1,9 @@
+import { serviceError } from '../../lib/app-errors.js'
 export function createConsoleNotificationRepository({ client = undefined } = {}) {
   const rpc = async (name, args) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
-    const { data, error } = await client.rpc(name, args)
-    if (error) throw error
+    const { data, error, status } = await client.rpc(name, args)
+    if (error) throw serviceError(error, status)
     return data
   }
   return {

@@ -1,13 +1,13 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest'
 import { DEF, hasData, normalizeState, useStore } from './useStore.js'
-import { starterRoutines } from '../lib/starter.js'
+import { starterRoutines, readyMadeRoutines } from '../lib/starter.js'
 
 describe('state migration for first-run profiles', () => {
   it('seeds ready-made routines without treating a fresh install as user data', () => {
     const state = normalizeState(DEF)
     expect(state.onboardingDone).toBe(false)
-    expect(state.routines).toHaveLength(7)
+    expect(state.routines.map(routine => routine.starterKey)).toEqual(readyMadeRoutines(DEF).map(routine => routine.starterKey))
     expect(state.week).toEqual({})
     expect(hasData(state)).toBe(false)
   })

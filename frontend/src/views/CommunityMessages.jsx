@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { BlockedUsers } from '../components/community/UserBlockActions.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -67,7 +68,7 @@ function Inbox({ repo, userId = undefined }) {
       const result = await Promise.all(Array.from({ length: pages }, (_, index) => repo.inbox(index * 50, search)))
       if (!mounted.current || request !== version.current) return
       setRows([...new Map(result.flat().map(row => [row.peer_id, row])).values()]); setMore(result.at(-1).length === 50); setError('')
-    } catch { if (mounted.current && request === version.current) setError('Não foi possível carregar as conversas. Tente novamente.') }
+    } catch (failure) { if (mounted.current && request === version.current) setError(appErrorMessage(failure, 'Não foi possível carregar as conversas. Tente novamente.')) }
     finally { if (mounted.current && request === version.current) setLoading(false) }
   }, [repo, pages, search])
   useRefresh(refresh)
@@ -79,7 +80,7 @@ function Inbox({ repo, userId = undefined }) {
       if (action === 'unread') await repo.markUnread(row.peer_id)
       else await repo.hideConversation(row.peer_id)
       await refresh()
-    } catch { setError('Não foi possível atualizar a conversa. Tente novamente.') }
+    } catch (failure) { setError(appErrorMessage(failure, 'Não foi possível atualizar a conversa. Tente novamente.')) }
   }
   return <div className="dm-inbox page-scenery fpp-ui-view fpp-screen-inbox"><AppHeader title="Conversas" backTo="/community" />
     <BlockedUsers repo={repo} /><label className="dm-search"><Icon name="search" /><input aria-label="Pesquisar conversas" placeholder="Pesquisar conversas" value={query} onChange={event => setQuery(event.target.value)} /></label>
@@ -106,7 +107,7 @@ function Conversation({ repo, client, userId = undefined, peerId }) {
       if (!active.current) return
       if (failure || !data) throw new Error('Perfil indisponível.')
       setProfile(data); setProfileError('')
-    } catch { if (active.current) setProfileError('Não foi possível carregar o perfil.') }
+    } catch (failure) { if (active.current) setProfileError(appErrorMessage(failure, 'Não foi possível carregar o perfil.')) }
   }, [client, peerId, validPeer])
   useEffect(() => { void loadProfile() }, [loadProfile])
   const refresh = useCallback(async () => {
@@ -126,7 +127,7 @@ function Conversation({ repo, client, userId = undefined, peerId }) {
       setMessages(previous => mergeMessages(previous, rows).filter(message => !removedMessageIds.current.has(message.id)))
       if (rows.length && document.visibilityState !== 'hidden') await repo.read(peerId, rows.at(-1).id)
       if (active.current) setError('')
-    } catch { if (active.current) setError('Não foi possível atualizar a conversa. Tente novamente.') }
+    } catch (failure) { if (active.current) setError(appErrorMessage(failure, 'Não foi possível atualizar a conversa. Tente novamente.')) }
     finally { inFlight.current = false; if (active.current) setLoading(false) }
   }, [repo, peerId, validPeer])
   useRefresh(refresh)
@@ -141,7 +142,7 @@ function Conversation({ repo, client, userId = undefined, peerId }) {
       if (rows.length) oldestDisplayed.current = rows[0].id
       atBottom.current = false; setMessages(previous => mergeMessages(previous, rows)); setOlder(rows.length === 50)
       requestAnimationFrame(() => { if (active.current && thread.current) thread.current.scrollTop += thread.current.scrollHeight - height })
-    } catch { if (active.current) setError('Não foi possível carregar as mensagens antigas.') }
+    } catch (failure) { if (active.current) setError(appErrorMessage(failure, 'Não foi possível carregar as mensagens antigas.')) }
     finally { if (active.current) setLoadingOlder(false) }
   }
   const send = async event => {
@@ -162,7 +163,7 @@ function Conversation({ repo, client, userId = undefined, peerId }) {
       if (!active.current) return
       setBody(''); nonce.current = null; atBottom.current = true
       await refresh()
-    } catch (failure) { if (active.current) setError(failure.message || 'Não foi possível enviar. Sua mensagem foi preservada.') }
+    } catch (failure) { if (active.current) setError(appErrorMessage(failure, 'Não foi possível enviar. Sua mensagem foi preservada.')) }
     finally { sendLock.current = false; if (active.current) setSending(false) }
   }
   const actOnConversation = async action => {
@@ -173,7 +174,7 @@ function Conversation({ repo, client, userId = undefined, peerId }) {
       if (action === 'unread') { await repo.markUnread(peerId); navigate('/community/messages'); return }
       if (action === 'hide') { await repo.hideConversation(peerId); navigate('/community/messages'); return }
       navigate(`/community/user/${peerId}`)
-    } catch { if (active.current) setError('Não foi possível atualizar a conversa. Tente novamente.') }
+    } catch (failure) { if (active.current) setError(appErrorMessage(failure, 'Não foi possível atualizar a conversa. Tente novamente.')) }
   }
   const deleteMessage = async message => {
     if (removing.has(message.id)) return
@@ -186,9 +187,9 @@ function Conversation({ repo, client, userId = undefined, peerId }) {
       const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       await new Promise(resolve => setTimeout(resolve, reduceMotion ? 0 : 180))
       if (active.current) setMessages(previous => previous.filter(row => row.id !== message.id))
-    } catch {
+    } catch (failure) {
       removedMessageIds.current.delete(message.id)
-      if (active.current) { setRemoving(previous => { const next = new Set(previous); next.delete(message.id); return next }); setError('Não foi possível apagar a mensagem. Tente novamente.') }
+      if (active.current) { setRemoving(previous => { const next = new Set(previous); next.delete(message.id); return next }); setError(appErrorMessage(failure, 'Não foi possível apagar a mensagem. Tente novamente.')) }
     }
   }
   const beginEdit = message => { setMenu(null); nonce.current = null; setEditing(message); setBody(message.body) }

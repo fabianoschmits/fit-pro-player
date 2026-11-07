@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Spanish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...projectErrorLocale('es'),
   "Clique para desmarcar": "Haz clic para desmarcar",
   "Clique para remover": "Haz clic para eliminar",
   "Disciplinas que você leciona:": "Disciplinas que enseñas:",

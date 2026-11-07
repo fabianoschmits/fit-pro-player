@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import useRelationshipRefresh from '../components/useRelationshipRefresh.js'
 import Link from '../components/ManagementLink.jsx'
 import { useEffect, useMemo, useState } from 'react'
@@ -17,7 +18,7 @@ export default function ProfessionalDashboard() {
  const avatarId = useStore(s => s.S.profile?.avatarId)
  const [data,setData]=useState(null), [attention,setAttention]=useState([]), [requests,setRequests]=useState({items:[],total:0}), [error,setError]=useState(''), [retry,setRetry]=useState(0)
  useRelationshipRefresh(() => setRetry(value => value + 1))
- useEffect(() => { let alive=true; Promise.all([repo.dashboardSummary({ localDate: todayISO(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),repo.studentPage({ status:'attention',limit:10 }),repo.linkRequests()]).then(([summary,page,pending])=>{if(alive){setData(summary);setAttention(page.items);setRequests(pending);setError('')}}).catch(()=>{if(alive)setError('Não foi possível carregar a área profissional.')});return()=>{alive=false}},[repo,user?.id,retry])
+ useEffect(() => { let alive=true; Promise.all([repo.dashboardSummary({ localDate: todayISO(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),repo.studentPage({ status:'attention',limit:10 }),repo.linkRequests()]).then(([summary,page,pending])=>{if(alive){setData(summary);setAttention(page.items);setRequests(pending);setError('')}}).catch((failure)=>{if(alive)setError(appErrorMessage(failure, 'Não foi possível carregar a área profissional.'))});return()=>{alive=false}},[repo,user?.id,retry])
  const cards = items => items.map(student=><Link key={student.studentUserId} className="management-record card" to={`/professional/students/${student.studentUserId}`}><ManagementAvatar name={student.displayName} avatarRef={student.avatarRef} userId={student.studentUserId}/><div><strong>{student.displayName}</strong><p>{student.workoutTitle || student.currentProgram?.title || 'Sem plano'}</p></div><span>›</span></Link>)
  return <ManagementLayout title="Área profissional" subtitle={`Olá, ${name || 'profissional'}`} action={<Link to="/professional/profile" aria-label="Perfil"><ManagementAvatar name={name} avatarRef={avatarId}/></Link>}>
  {error&&<p role="alert" className="fpp-inline-notice" data-tone="error">{error}<Button onClick={()=>setRetry(x=>x+1)}>Tentar novamente</Button></p>}

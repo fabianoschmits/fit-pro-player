@@ -96,7 +96,7 @@ it('rolls back an unsuccessful like rather than appending another page', async (
   await mount(); failure='Offline'
   await click(container.querySelector('[aria-label="Curtir postagem"]'))
   expect(container.querySelector('.community-liker-summary')).toBeNull()
-  expect(container.querySelector('[role="alert"]').textContent).toContain('Offline')
+  expect(container.querySelector('[role="alert"]').textContent).toContain('Verifique sua conexão')
 })
 
 it('shows a report action in another author’s menu and sends its post context', async () => {

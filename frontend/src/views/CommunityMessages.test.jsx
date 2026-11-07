@@ -55,10 +55,10 @@ it('retries a failed profile request and enables the composer', async () => {
   mocks.profile.mockRejectedValueOnce(Error('offline'))
   await mount()
   expect(host.querySelector('textarea').disabled).toBe(true)
-  expect(host.textContent).toContain('Não foi possível carregar o perfil')
+  expect(host.textContent).toContain('Verifique sua conexão')
   await act(async () => [...host.querySelectorAll('button')].find(button => button.textContent === 'Tentar novamente').click())
   expect(host.querySelector('textarea').disabled).toBe(false)
-  expect(host.textContent).not.toContain('Não foi possível carregar o perfil')
+  expect(host.textContent).not.toContain('Verifique sua conexão')
 })
 it('fills history gaps on refresh and updates receipts on older loaded messages', async () => {
   const row = id => ({ id: String(id), sender_id: '11111111-1111-4111-8111-111111111111', body: `Mensagem ${id}`, created_at: '2026-10-25T12:00:00Z', read_at: null })

@@ -25,7 +25,7 @@ function PwaInstallSheet({ close }) {
   const update = useStore(s => s.update)
   const settled = useRef(false)
   const [target] = useState(() => detectInstallTarget())
-  const [platform, setPlatform] = useState(target.platform === 'desktop' ? 'android' : target.platform)
+  const [platform, setPlatform] = useState(target.platform)
   const snapshot = useSyncExternalStore(pwaInstaller.subscribe, pwaInstaller.getSnapshot, pwaInstaller.getSnapshot)
   const [statusTitle, statusDescription, statusIcon] = installStatus(snapshot)
   const browsers = GUIDES[platform] || GUIDES.android
@@ -61,7 +61,7 @@ function PwaInstallSheet({ close }) {
   }
 
   return (
-    <div className="pwa-install-prompt" role="dialog" aria-labelledby="pwa-install-prompt-title">
+    <div className="pwa-install-prompt">
       <header className="pwa-install-prompt-head">
         <span className="pwa-install-icon" aria-hidden="true"><Icon name="download" /></span>
         <div>

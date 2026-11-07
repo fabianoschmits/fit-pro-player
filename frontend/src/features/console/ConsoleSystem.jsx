@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Icon from '../../components/Icon.jsx'
@@ -41,7 +42,7 @@ export default function ConsoleSystem() {
       await repo.resolveSystemError(errorId)
       refresh()
     } catch (err) {
-      setResolveMessage('Falha ao resolver erro: ' + (err.message || 'Erro desconhecido'))
+      setResolveMessage('Falha ao resolver erro: ' + (appErrorMessage(err, 'Erro desconhecido')))
     } finally {
       setResolvingId(null)
     }

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed, stateFixture, USER, openMainNavigation } from './fixtures.test.js'
+import { seed, stateFixture, USER, openMainNavigation, startWorkoutExecution } from './fixtures.test.js'
 
 async function startPlayer(page) {
   await page.goto('/#/home')
@@ -8,7 +8,7 @@ async function startPlayer(page) {
   await page.locator('[data-tab-key="start"]').click()
   await expect(page).toHaveURL(/#\/workout$/)
   await expect(page.locator('.workout-session-title')).toBeVisible()
-  await page.locator('.active-workout').getByRole('button', { name: 'Começar treino', exact: true }).click()
+  await startWorkoutExecution(page)
   await expect(page.locator('.set-start-action')).toBeVisible()
 }
 
@@ -21,7 +21,7 @@ test('execution signal animates only while performing and remains static with re
   await startPlayer(page)
   await expect(page.locator('.wp-execution-signal')).toHaveCount(0)
   await page.locator('.wp-main-action').click()
-  const signal = page.locator('.wp-execution-signal > span')
+  const signal = page.locator('.wp-main-action .wp-execution-signal > span')
   await expect(signal).toBeVisible()
   expect(await signal.evaluate(el => getComputedStyle(el).animationName)).toBe('wp-execution-orbit')
   const first = await signal.evaluate(el => getComputedStyle(el).transform)

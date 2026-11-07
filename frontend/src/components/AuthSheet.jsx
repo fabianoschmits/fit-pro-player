@@ -24,6 +24,7 @@ const ERROR_COPY = {
   email_confirmation_required: 'Confirm your email before signing in.',
   recovery_link_expired: 'This recovery link has expired. Request a new one.',
   recovery_link_invalid: 'This recovery link is invalid. Request a new one.',
+  session_expired: 'Your session has expired. Sign in again to continue.',
 };
 
 const operationFor = {
@@ -193,7 +194,7 @@ export function AuthSheet({ close, initialMode = 'entry' }) {
       <div className="auth-form-head"><span className="auth-kicker">FIT PRO PLAYER · SEU TREINO</span><h3>{t('Protect your training')}</h3><p>Seu histórico merece continuar com você. Entre para sincronizar seus treinos ou crie uma conta em menos de um minuto.</p></div>
       <Button variant="primary" onClick={() => showMode('sign_in')}>{t('Sign in')}</Button>
       <Button onClick={() => showMode('sign_up')}>{t('Create account')}</Button>
-      <button type="button" className="link" onClick={close}>Continuar sem conta</button>
+      <button type="button" className="link" onClick={() => { useStore.getState().enterApp(); close(); }}>Continuar sem conta</button>
     </div>;
   }
 

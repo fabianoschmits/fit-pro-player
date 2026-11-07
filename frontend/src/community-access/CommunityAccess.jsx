@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -98,7 +99,7 @@ function RestrictionNotice({restriction,acknowledge}) {
  const dialog=useRef(null)
  const [busy,setBusy]=useState(false),[error,setError]=useState('')
  useDialogFocus(dialog,{locked:true,titleId:'community-restriction-title'})
- const accept=async()=>{if(busy)return;setBusy(true);setError('');try{await acknowledge()}catch{setError('Não foi possível confirmar. Verifique sua conexão e tente novamente.')}finally{setBusy(false)}}
+ const accept=async()=>{if(busy)return;setBusy(true);setError('');try{await acknowledge()}catch (failure){setError(appErrorMessage(failure, 'Não foi possível confirmar. Verifique sua conexão e tente novamente.'))}finally{setBusy(false)}}
  return <div className="community-restriction-overlay"><section ref={dialog} className="community-restriction-dialog" role="dialog" aria-modal="true" aria-labelledby="community-restriction-title">
   <h2 id="community-restriction-title">Seu acesso à Comunidade foi restringido</h2>
   <p><strong>Motivo:</strong> {COMMUNITY_REASON_LABELS[restriction.reason] || 'Violação das regras da Comunidade'}</p>

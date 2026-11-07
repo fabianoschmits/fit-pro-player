@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  ...projectErrorLocale('pt'),
   "Clique para desmarcar": "Clique para desmarcar",
   "Clique para remover": "Clique para remover",
   "Disciplinas que você leciona:": "Disciplinas que você leciona:",

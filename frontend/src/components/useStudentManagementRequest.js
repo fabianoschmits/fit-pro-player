@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { withTimeout } from '../lib/professional-ux.js'
 import { t } from '../lib/i18n.js'
+import { appErrorMessage } from '../lib/app-errors.js'
 
 // Each workspace is keyed by account/person. Request generations also protect retries.
 export default function useStudentManagementRequest(load, failure) {
@@ -14,7 +15,7 @@ export default function useStudentManagementRequest(load, failure) {
     const current = () => alive.current && generation.current === request
     setBusy(true); setError(''); setData(null)
     try { const value = await withTimeout(load(current), 10000); if (current()) setData(value) }
-    catch (cause) { if (current()) { generation.current += 1; setError(t(cause?.message === 'request-timeout' ? 'A conexão demorou mais que o esperado.' : failure)); setBusy(false) } }
+    catch (cause) { if (current()) { generation.current += 1; setError(appErrorMessage(cause, failure)); setBusy(false) } }
     finally { if (current()) setBusy(false) }
   }, [auth.user?.id, auth.status, load, failure])
   useEffect(() => {

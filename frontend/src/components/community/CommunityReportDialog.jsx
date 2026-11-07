@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
@@ -18,7 +19,7 @@ export default function CommunityReportDialog({ client, target = undefined, onCl
       if (reason === 'other' && description.trim().length < 3) { setError('Explique o motivo da denúncia com pelo menos 3 caracteres.'); return false }
       setError('')
       return repository.reportCommunityContent({ targetKind: target.targetKind, postId: target.postId, commentId: target.commentId, reason, description: description.trim() || null })
-    }, onSuccess: () => setSuccess(true), onError: failure => setError(failure.message || 'Não foi possível enviar a denúncia. Tente novamente.'),
+    }, onSuccess: () => setSuccess(true), onError: failure => setError(appErrorMessage(failure, 'Não foi possível enviar a denúncia. Tente novamente.')),
   })
   useDialogFocus(dialog, { onClose, locked: action.locked, titleId: 'community-report-title' })
   const submit = event => { event.preventDefault(); void action.run(event) }

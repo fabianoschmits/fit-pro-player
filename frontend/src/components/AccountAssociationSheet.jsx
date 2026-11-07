@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useRef, useState } from 'react'
 import { useUI } from '../store/useUI.js'
 import { ASSOCIATION_CHOICE } from '../lib/account-association.js'
@@ -31,7 +32,7 @@ export function AccountAssociationSheet({ close, conflict, onChoice }) {
       return choice
     } catch (cause) {
       operation.current = false
-      if (mounted.current) { setError(cause.message || 'Não foi possível concluir a associação.'); setPendingChoice(null) }
+      if (mounted.current) { setError(appErrorMessage(cause, 'Não foi possível concluir a associação.')); setPendingChoice(null) }
       throw cause
     }
   }

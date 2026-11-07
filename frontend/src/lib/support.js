@@ -1,3 +1,4 @@
+import { serviceError } from './app-errors.js'
 const mapCategory = row => row ? ({ slug: row.slug, label: row.label || '', description: row.description || '', sortOrder: Number(row.sort_order || 0) }) : null
 const mapFaq = row => row ? ({ articleId: row.article_id, categoryId: row.category_id || null, categorySlug: row.category_slug, categoryLabel: row.category_label || '', question: row.question || '', answer: row.answer || '', sortOrder: Number(row.sort_order || 0), isFeatured: Boolean(row.is_featured), isPublished: Boolean(row.is_published), updatedAt: row.updated_at || null }) : null
 const mapReportContext = row => row ? ({ targetKind: row.target_kind, postId: row.post_id, commentId: row.comment_id || null, reportedUserId: row.reported_user_id, reason: row.reason, description: row.description || null, contentExcerpt: row.content_excerpt, imagePath: row.image_path || null, verificationLink: row.verification_link }) : null
@@ -6,8 +7,8 @@ const mapTicket = row => row ? ({ ticketId: row.ticket_id, userId: row.user_id |
 export function createSupportRepository({ client = undefined } = {}) {
   const rpc = async (name, args = {}) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
-    const { data, error } = await client.rpc(name, args)
-    if (error) throw error
+    const { data, error, status } = await client.rpc(name, args)
+    if (error) throw serviceError(error, status)
     return data
   }
   const rows = value => Array.isArray(value) ? value : value ? [value] : []

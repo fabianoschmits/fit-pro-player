@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { openAuthSheet } from './AuthSheet.jsx'
@@ -57,12 +58,12 @@ function AccountGallery({ userId, mode, body }) {
     try {
       const rows = await repo.list()
       if (live.current && token === revision.current) { setPhotos(rows); setStatus('idle') }
-    } catch (err) { if (live.current && token === revision.current) { setStatus('error'); setError(err.message) } }
+    } catch (err) { if (live.current && token === revision.current) { setStatus('error'); setError(appErrorMessage(err)) } }
   }
   useEffect(() => {
     if (!repository) return undefined
     let active = true
-    repository.list().then(rows => { if (active) { setPhotos(rows); setAngle(rows.find(photo => !photo.deleting && !photo.upload_pending)?.angle || 'front'); setStatus('idle') } }).catch(err => { if (active) { setError(err.message); setStatus('error') } })
+    repository.list().then(rows => { if (active) { setPhotos(rows); setAngle(rows.find(photo => !photo.deleting && !photo.upload_pending)?.angle || 'front'); setStatus('idle') } }).catch(err => { if (active) { setError(appErrorMessage(err)); setStatus('error') } })
     return () => { active = false }
   }, [repository])
   const matching = photos.filter(photo => photo.angle === angle && !photo.deleting && !photo.upload_pending)
@@ -75,7 +76,7 @@ function AccountGallery({ userId, mode, body }) {
     let active = true
     Promise.all([repository.url(before), repository.url(after)]).then(([a, b]) => {
       if (active) setURLs({ before: a, after: b, key: `${before.id}:${after.id}` })
-    }).catch(err => { if (active) setError(err.message) })
+    }).catch(err => { if (active) setError(appErrorMessage(err)) })
     return () => { active = false }
   }, [repository, before, after])
 
@@ -87,14 +88,14 @@ function AccountGallery({ userId, mode, body }) {
       try {
         await repository.remove(photo)
         if (live.current) { useUI.getState().toast('Fotografia excluída'); setViewing(null); await refresh() }
-      } catch (err) { if (live.current) { await refresh(); setError(`${err.message} Se a exclusão ficou pendente, toque em Excluir novamente.`) } }
+      } catch (err) { if (live.current) { await refresh(); setError(`${appErrorMessage(err)} Se a exclusão ficou pendente, toque em Excluir novamente.`) } }
       finally { if (live.current) setBusy(false) }
     },
   })
   const cleanup = async () => {
     setBusy(true); setError('')
     try { await repository.cleanIncomplete(); if (live.current) { await refresh(); useUI.getState().toast('Limpeza concluída. Envios da última hora foram preservados; use Excluir para removê-los.') } }
-    catch (err) { if (live.current) setError(err.message) }
+    catch (err) { if (live.current) setError(appErrorMessage(err)) }
     finally { if (live.current) setBusy(false) }
   }
   const editorFields = editor && <div className="bp-photo-editor-fields">

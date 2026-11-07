@@ -52,7 +52,7 @@ test('only a confirmed revoked invitation is deleted, and a failed delete can be
   expect(attempts).toBe(0)
   await card.getByRole('button', { name: 'Excluir do histórico', exact: true }).click()
   await card.getByRole('button', { name: 'Confirmar exclusão', exact: true }).click()
-  await expect(page.getByRole('alert')).toContainText('Não foi possível excluir este convite.')
+  await expect(page.getByRole('alert')).toContainText('Este recurso está temporariamente indisponível. Tente novamente em instantes.')
   await expect(card).toBeVisible()
   await card.getByRole('button', { name: 'Tentar novamente', exact: true }).click()
   await expect(card).toHaveCount(0)

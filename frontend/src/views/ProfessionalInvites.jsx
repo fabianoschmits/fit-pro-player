@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import Icon from '../components/Icon.jsx'
 import InviteQrCode from '../components/InviteQrCode.jsx'
 import Link from '../components/ManagementLink.jsx'
@@ -57,8 +58,8 @@ function InvitesWorkspace({ userId = undefined }) {
         const personal = rows.find(item => item.is_personal)
         if (!editingPersonalRef.current && personal) setPersonalDraft(personal.code)
       }
-    } catch {
-      if (mounted.current) setError(t('Não foi possível carregar os convites.'))
+    } catch (failure) {
+      if (mounted.current) setError(appErrorMessage(failure, t('Não foi possível carregar os convites.')))
     } finally {
       if (mounted.current) setBusy(false)
     }
@@ -85,7 +86,7 @@ function InvitesWorkspace({ userId = undefined }) {
       setInvites(items => items.some(item => normalizeInviteCode(item.code) === code) ? items : [{ ...invite, code, is_personal: false, status: 'pending' }, ...items])
       return { code, requestContext, invite }
     } catch (cause) {
-      if (mounted.current) setError(t('Não foi possível criar o convite.'))
+      if (mounted.current) setError(appErrorMessage(cause, t('Não foi possível criar o convite.')))
       throw cause
     } finally {
       savingRef.current = false
@@ -117,7 +118,7 @@ function InvitesWorkspace({ userId = undefined }) {
     } catch (cause) {
       if (mounted.current) setError(cause.message === 'professional-invite-code-taken'
         ? t('Esse código já está em uso. Escolha outro.')
-        : t('Não foi possível salvar o código pessoal. Tente novamente.'))
+        : appErrorMessage(cause, 'Não foi possível salvar o código pessoal. Tente novamente.'))
       return false
     } finally {
       if (mounted.current) setSavingPersonal(false)
@@ -138,7 +139,7 @@ function InvitesWorkspace({ userId = undefined }) {
       if (!mounted.current) return false
       return true
     } catch (cause) {
-      if (mounted.current) setError(t('Não foi possível revogar este convite.'))
+      if (mounted.current) setError(appErrorMessage(cause, t('Não foi possível revogar este convite.')))
       throw cause
     } finally {
       savingRef.current = false
@@ -159,7 +160,7 @@ function InvitesWorkspace({ userId = undefined }) {
       await repo.deleteInvite(id)
       return { id }
     } catch (cause) {
-      if (mounted.current) setError(t('Não foi possível excluir este convite.'))
+      if (mounted.current) setError(appErrorMessage(cause, t('Não foi possível excluir este convite.')))
       throw cause
     } finally {
       savingRef.current = false
@@ -185,7 +186,7 @@ function InvitesWorkspace({ userId = undefined }) {
       }
     } catch (err) {
       if (err?.name === 'AbortError') return false
-      if (mounted.current) setError(t('Não foi possível compartilhar o convite. Tente novamente.'))
+      if (mounted.current) setError(appErrorMessage(err, t('Não foi possível compartilhar o convite. Tente novamente.')))
       throw err
     }
   }

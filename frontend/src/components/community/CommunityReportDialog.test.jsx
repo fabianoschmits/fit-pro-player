@@ -35,7 +35,7 @@ it('sends the selected community target and preserves a failed description', asy
   await mount(); await choose('other'); await type('Conteúdo fora do contexto'); await submit()
   expect(mocks.report).toHaveBeenCalledWith({ targetKind: 'comment', postId: 'post-1', commentId: 'comment-1', reason: 'other', description: 'Conteúdo fora do contexto' })
   expect(container.querySelector('textarea').value).toBe('Conteúdo fora do contexto')
-  expect(container.querySelector('[role="alert"]').textContent).toContain('Sem conexão')
+  expect(container.querySelector('[role="alert"]').textContent).toContain('Verifique sua conexão')
 })
 
 it('confirms the report and directs the user to their support tickets', async () => {

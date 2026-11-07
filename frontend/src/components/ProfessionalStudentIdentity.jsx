@@ -28,7 +28,7 @@ export default function ProfessionalStudentIdentity({data, action = undefined}) 
   <h3>Medidas corporais</h3>
   {data.measurements?.length ? data.measurements.map(row=><section key={row.id}><h4>{date(row.measured_on)}</h4>{details(Object.entries(row.measurements_cm || {}).map(([part,value])=>[BODY_MEASUREMENT_BY_ID[part]?.label || part,`${weightText(Number(value))} cm`]))}{row.note && <p>{row.note}</p>}</section>) : <p>Nenhuma medida registrada.</p>}
  </section>)
- return <section className="card professional-student-identity" aria-label={`Resumo de ${data.displayName}`}>
+ return <section className="card professional-student-identity" data-facts={fields.length} aria-label={`Resumo de ${data.displayName}`}>
   <div className="professional-student-heading">
    <ManagementAvatar name={data.displayName} avatarRef={data.avatarRef} userId={data.studentUserId}/>
    <div className="professional-student-heading-text"><h2>{data.displayName}</h2><p>Aluno desde {professionalDate(data.relationshipCreatedAt)}</p></div>

@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useState } from 'react'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
 import { useStore } from '../store/useStore.js'
@@ -7,7 +8,7 @@ const REQUESTS = [['access', 'Acessar meus dados'], ['correction', 'Corrigir meu
 
 export default function PrivacyControls({ toast }) {
   const [type, setType] = useState('access'); const [details, setDetails] = useState(''); const [busy, setBusy] = useState(false); const [protocol, setProtocol] = useState(''); const [error, setError] = useState('')
-  const submit = async event => { event.preventDefault(); setBusy(true); setError(''); setProtocol(''); try { const client = getBrowserSupabaseClient(); if (!client) throw new Error('auth_unavailable'); const { data, error: rpcError } = await client.rpc('create_privacy_request', { p_request_type: type, p_details: details }); if (rpcError) throw rpcError; setProtocol(data?.protocol || 'recebido'); setDetails(''); toast?.('Solicitação LGPD registrada') } catch { setError('Não foi possível registrar a solicitação. Tente novamente ou use o canal LGPD.') } finally { setBusy(false) } }
+  const submit = async event => { event.preventDefault(); setBusy(true); setError(''); setProtocol(''); try { const client = getBrowserSupabaseClient(); if (!client) throw new Error('auth_unavailable'); const { data, error: rpcError } = await client.rpc('create_privacy_request', { p_request_type: type, p_details: details }); if (rpcError) throw rpcError; setProtocol(data?.protocol || 'recebido'); setDetails(''); toast?.('Solicitação LGPD registrada') } catch (failure) { setError(appErrorMessage(failure, 'Não foi possível registrar a solicitação. Tente novamente ou use o canal LGPD.')) } finally { setBusy(false) } }
   const exportLocal = () => { const state = useStore.getState().S; const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `fitproplayer-dados-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(a.href) }
   return <div className="privacy-controls">
     <p className="muted privacy-controls-intro">Gerencie seus documentos, seus dados e seus direitos em áreas separadas.</p>

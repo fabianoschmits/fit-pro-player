@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import useRelationshipRefresh from '../components/useRelationshipRefresh.js'
 import Link from '../components/ManagementLink.jsx'
 import { useEffect, useMemo, useState } from 'react'
@@ -12,7 +13,7 @@ export default function ProfessionalStudents() {
  const {user}=useAuth(), [params]=useSearchParams(),repo=useMemo(()=>createProfessionalWorkflowRepository({client:getBrowserSupabaseClient()}),[])
  const [query,setQuery]=useState(''),[status,setStatus]=useState(['attention','inactive'].includes(params.get('status'))?params.get('status'):'active'),[offset,setOffset]=useState(0),[page,setPage]=useState({items:[],hasMore:false}),[error,setError]=useState(''),[loading,setLoading]=useState(false),[retry,setRetry]=useState(0)
  useRelationshipRefresh(() => setRetry(value => value + 1))
- useEffect(()=>{let alive=true;setLoading(true);const timer=setTimeout(()=>repo.studentPage({search:query,status,offset}).then(result=>{if(alive){setPage(old=>({...result,items:offset?[...old.items,...result.items]:result.items}));setError('')}}).catch(()=>{if(alive)setError('Não foi possível carregar os alunos.')}).finally(()=>{if(alive)setLoading(false)}),200);return()=>{alive=false;clearTimeout(timer)}},[repo,user?.id,query,status,offset,retry])
+ useEffect(()=>{let alive=true;setLoading(true);const timer=setTimeout(()=>repo.studentPage({search:query,status,offset}).then(result=>{if(alive){setPage(old=>({...result,items:offset?[...old.items,...result.items]:result.items}));setError('')}}).catch((failure)=>{if(alive)setError(appErrorMessage(failure, 'Não foi possível carregar os alunos.'))}).finally(()=>{if(alive)setLoading(false)}),200);return()=>{alive=false;clearTimeout(timer)}},[repo,user?.id,query,status,offset,retry])
  useEffect(()=>{const refresh=()=>setRetry(value=>value+1);window.addEventListener('professional-plan-selection-changed',refresh);return()=>window.removeEventListener('professional-plan-selection-changed',refresh)},[])
  return <ManagementLayout title="Meus alunos" backTo="/professional" action={<Link className="management-button" to="/professional/invites">Convidar aluno</Link>}>
  <div className="fpp-filter-stack fpp-screen-student-filter"><SearchField onClear={() => { setQuery(''); setOffset(0) }} aria-label="Buscar aluno" placeholder="Buscar aluno" value={query} onChange={e=>{setQuery(e.target.value);setOffset(0)}}/><div className="management-filter" role="group" aria-label="Filtrar alunos">{[['active','Ativos'],['attention','Atenção'],['without_program','Sem plano'],['inactive','Inativos']].map(([value,label])=><Button appearance="custom" intent="quick" key={value} aria-pressed={status===value} onClick={()=>{setStatus(value);setOffset(0)}}>{label}</Button>)}</div></div>

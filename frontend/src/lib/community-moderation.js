@@ -1,3 +1,4 @@
+import { serviceError } from './app-errors.js'
 export const COMMUNITY_REASON_LABELS = {
   spam: 'Spam', harassment: 'Assédio ou discurso de ódio', inappropriate: 'Conteúdo impróprio',
   misinformation: 'Informação enganosa', abusive: 'Comportamento abusivo', repeated: 'Violações repetidas', other: 'Outro',
@@ -10,8 +11,8 @@ export const COMMUNITY_STATUS_LABELS = { active: 'Ativos', temporary: 'Temporár
 export function createCommunityModerationRepository(client) {
   const rpc = async (name, args = {}) => {
     if (!client?.rpc) throw new Error('Serviço indisponível.')
-    const { data, error } = await client.rpc(name, args)
-    if (error) throw error
+    const { data, error, status } = await client.rpc(name, args)
+    if (error) throw serviceError(error, status)
     return data
   }
   return {

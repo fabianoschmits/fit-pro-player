@@ -1,5 +1,15 @@
 // English source equivalents for the Portuguese-authored professional workspace.
 export default {
+  'Confirmar exclusão': 'Confirm deletion',
+  'Contato': 'Contact',
+  'Convite excluído do histórico.': 'Invitation deleted from history.',
+  'Convite excluído.': 'Invitation deleted.',
+  'Excluir do histórico': 'Delete from history',
+  'Excluir este convite do histórico?': 'Delete this invitation from history?',
+  'Não foi possível excluir este convite.': 'Could not delete this invitation.',
+  'Usuário indisponível': 'User unavailable',
+  'Utilizado por': 'Used by',
+  'Utilizados': 'Used',
   "Clique para desmarcar": "Click to deselect",
   "Clique para remover": "Click to remove",
   "Disciplinas que você leciona:": "Subjects you teach:",

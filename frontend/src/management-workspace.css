@@ -52,6 +52,7 @@ body:has(.management-layout,.management-routine-editor) #tabbar { display:none; 
 .professional-student-heading p { margin:0; color:var(--label-2); font-size:12px; }
 .professional-student-identity .professional-student-facts { grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin:0; }
 .professional-student-identity .professional-student-facts > div { min-width:0; }
+.management-layout .professional-student-identity[data-facts="4"] .professional-student-facts { grid-template-columns:repeat(4,minmax(0,1fr)); }
 .professional-student-identity .professional-student-facts > div + div { border-left:1px solid var(--sep-op); padding-left:10px; }
 .professional-student-identity .professional-student-facts dt { color:var(--label-2); opacity:1; font-size:11px; }
 .professional-student-identity .professional-student-facts dd { font-size:15px; line-height:1.35; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }

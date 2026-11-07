@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Italian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...projectErrorLocale('it'),
   "Clique para desmarcar": "Clicca per deselezionare",
   "Clique para remover": "Clicca per rimuovere",
   "Disciplinas que você leciona:": "Discipline che insegni:",

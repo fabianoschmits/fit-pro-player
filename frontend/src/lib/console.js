@@ -1,3 +1,4 @@
+import { serviceError } from './app-errors.js'
 const toOverview = row => row ? ({
   userCount: Number(row.user_count || 0),
   professionalCount: Number(row.professional_count || 0),
@@ -49,8 +50,8 @@ const toProfessional = row => row ? ({
 export function createConsoleRepository({ client = undefined } = {}) {
   const rpc = async (name, args = {}) => {
     if (!client?.rpc) throw new Error('supabase-unavailable')
-    const { data, error } = await client.rpc(name, args)
-    if (error) throw error
+    const { data, error, status } = await client.rpc(name, args)
+    if (error) throw serviceError(error, status)
     return data
   }
   const read = async (table, query) => {

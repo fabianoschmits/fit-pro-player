@@ -79,6 +79,12 @@ afterEach(async () => {
 });
 
 describe('AuthSheet', () => {
+  it('enters the local app before closing when the visitor continues without an account', async () => {
+    await render('entry');
+    await click(button('Continuar sem conta'));
+    expect(mocks.enterApp).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledOnce();
+  });
   it('marks an invalid optional phone inline and blocks signup until it is corrected', async () => {
     vi.spyOn(globalThis.navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
     await render('sign_up');

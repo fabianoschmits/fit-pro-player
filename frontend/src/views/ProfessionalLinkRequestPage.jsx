@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -21,14 +22,14 @@ function RequestProfile({ requestId }) {
  const decision = useRef(false), [deciding, setDeciding] = useState(false)
  useEffect(() => {
   let alive = true
-  repo.linkRequestDetail(requestId).then(value => { if (alive) { setRequest(value); setError('') } }).catch(() => { if (alive) setError('Não foi possível carregar a solicitação.') })
+  repo.linkRequestDetail(requestId).then(value => { if (alive) { setRequest(value); setError('') } }).catch((failure) => { if (alive) setError(appErrorMessage(failure, 'Não foi possível carregar a solicitação.')) })
   return () => { alive = false }
  }, [repo, requestId, retry])
  const resolve = async accept => {
   if (decision.current || request?.status !== 'pending') return false
   decision.current = true; setDeciding(true); setError('')
   try { return await (accept ? repo.acceptLinkRequest(requestId) : repo.rejectLinkRequest(requestId)) }
-  catch (cause) { decision.current = false; setDeciding(false); setError('Não foi possível responder à solicitação. Tente novamente.'); throw cause }
+  catch (cause) { decision.current = false; setDeciding(false); setError(appErrorMessage(cause, 'Não foi possível responder à solicitação. Tente novamente.')); throw cause }
  }
  const onSuccess = () => { window.dispatchEvent(new Event('professional-relationship-changed')); nav('/professional', { replace: true }) }
  const accept = useFppAction({ onAction: () => resolve(true), onSuccess })

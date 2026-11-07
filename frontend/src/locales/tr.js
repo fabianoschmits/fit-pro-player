@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Turkish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...projectErrorLocale('tr'),
   "Clique para desmarcar": "Seçimi kaldırmak için tıklayın",
   "Clique para remover": "Kaldırmak için tıklayın",
   "Disciplinas que você leciona:": "Eğitim verdiğiniz alanlar:",

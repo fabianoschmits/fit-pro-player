@@ -1,3 +1,4 @@
+import { appErrorMessage } from './app-errors.js'
 import { COMMUNITY_PROFILE_FIELDS } from './community-identity.js'
 
 export const COMMUNITY_COMMENT_SELECT = `id,post_id,author_id,body,parent_comment_id,created_at,author:profiles!community_comments_author_id_fkey(${COMMUNITY_PROFILE_FIELDS}),likes:community_comment_likes(user_id)`
@@ -57,7 +58,7 @@ export function createCommunityFeedStore(client) {
         : [...current.posts, ...additions]
       write(scope, { posts, initialized: true, hasMore: rows.length === PAGE_SIZE, cursor: rows.at(-1) || null })
     } catch (error) {
-      if (snapshot(scope).request === request) write(scope, { error: error.message || 'Não foi possível carregar as postagens. Tente novamente.' })
+      if (snapshot(scope).request === request) write(scope, { error: appErrorMessage(error, 'Não foi possível carregar as postagens. Tente novamente.') })
     } finally {
       if (snapshot(scope).request === request) write(scope, { loading: false })
     }

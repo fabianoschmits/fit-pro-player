@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useRef, useState } from 'react'
 import { Button } from './ui.jsx'
 import { clampTransform, defaultTransform } from '../lib/progress-photo-alignment.js'
@@ -31,7 +32,7 @@ export default function ProgressPhotoCompare({ before, after, beforeURL, afterUR
   const confirm = async () => {
     setSaving(true)
     setError('')
-    try { await onSave(editedPhoto, draft); setEditing(null) } catch { setError('Não foi possível salvar o alinhamento. Tente novamente.') } finally { setSaving(false) }
+    try { await onSave(editedPhoto, draft); setEditing(null) } catch (failure) { setError(appErrorMessage(failure, 'Não foi possível salvar o alinhamento. Tente novamente.')) } finally { setSaving(false) }
   }
   const alignmentControls = editing ? <div className="card bp-photo-adjust">
     <strong>Ajustar alinhamento · {editing === before.id ? 'Antes' : 'Depois'}</strong>

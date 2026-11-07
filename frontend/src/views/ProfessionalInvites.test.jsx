@@ -46,7 +46,7 @@ describe('professional invites page', () => {
     await act(async () => fail(new Error('offline')))
     expect(action.getAttribute('data-state')).toBe('error')
     expect(action.disabled).toBe(false)
-    expect(container.querySelector('[role="alert"]').textContent).toContain('Não foi possível criar o convite.')
+    expect(container.querySelector('[role="alert"]').textContent).toContain('Verifique sua conexão e tente novamente.')
     await act(async () => action.click())
     expect(mocks.repo.createInvite).toHaveBeenCalledTimes(2)
     expect(container.textContent).toContain('ZX98YU76')

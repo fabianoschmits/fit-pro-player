@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useId, useRef, useState } from 'react'
 import { BRAZILIAN_STATES, composeCityRegion, fetchBrazilianCities, fetchBrazilianStates } from '../lib/brazil-locations.js'
 import { t } from '../lib/i18n.js'
@@ -45,14 +46,14 @@ export default function ProfessionalProfileForm({
 
   useEffect(() => {
     let current = true
-    fetchBrazilianStates().then(items => { if (current && items?.length) { setStates(items); setLocationError('') } }).catch(() => { if (current) setLocationError(t('Não foi possível carregar estados e cidades agora.')) })
+    fetchBrazilianStates().then(items => { if (current && items?.length) { setStates(items); setLocationError('') } }).catch((failure) => { if (current) setLocationError(appErrorMessage(failure, t('Não foi possível carregar estados e cidades agora.'))) })
     return () => { current = false }
   }, [])
 
   useEffect(() => {
     if (!draft.stateUf) { setCities([]); return undefined }
     let current = true
-    fetchBrazilianCities(draft.stateUf).then(items => { if (current) setCities(items) }).catch(() => { if (current) setLocationError(t('Não foi possível carregar as cidades deste estado.')) })
+    fetchBrazilianCities(draft.stateUf).then(items => { if (current) setCities(items) }).catch((failure) => { if (current) setLocationError(appErrorMessage(failure, t('Não foi possível carregar as cidades deste estado.'))) })
     return () => { current = false }
   }, [draft.stateUf])
 

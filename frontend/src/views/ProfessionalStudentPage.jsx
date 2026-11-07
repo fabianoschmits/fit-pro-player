@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import AccountPhone from '../components/AccountPhone.jsx'
 import useRelationshipRefresh from '../components/useRelationshipRefresh.js'
 import Link from '../components/ManagementLink.jsx'
@@ -25,7 +26,7 @@ function HistoricalPlan({ assignment, repo }) {
   if(version||loading.current)return
   loading.current=true;setError('')
   try { const value=await repo.version(assignment.version_id);if(alive.current){if(!value)throw new Error('missing-version');setVersion(value)} }
-  catch {if(alive.current)setError('Não foi possível carregar o plano histórico.')}
+  catch (failure) {if(alive.current)setError(appErrorMessage(failure, 'Não foi possível carregar o plano histórico.'))}
   finally {loading.current=false}
  }
  return <details className="professional-historical-plan" onToggle={event=>{if(event.currentTarget.open)void load()}}>
@@ -53,11 +54,11 @@ function StudentProfile({studentId,professionalId}) {
   const active=cycles.some(cycle=>cycle.status==='active')
   const profile=detail || (!active && cycles.length ? await repo.historicalClientDetail(studentId) : null)
   if(alive){if(!profile){setData(null);setError('Não foi possível carregar este aluno.');return}setData({...profile,draft:active?draft:null,cycles,relationshipActive:active});setError('')}
- }).catch(()=>{if(alive)setError('Não foi possível carregar este aluno.')});return()=>{alive=false}},[repo,studentId,reload])
- useEffect(()=>{if(!data)return undefined;if(!data.relationshipActive){setNotes(data.notes||[]);setNoteLoading(false);return undefined}let alive=true;setNoteLoading(true);setNoteError('');repo.studentNotes(studentId).then(value=>{if(alive)setNotes(value)}).catch(()=>{if(alive)setNoteError('Não foi possível carregar as anotações privadas.')}).finally(()=>{if(alive)setNoteLoading(false)});return()=>{alive=false}},[repo,studentId,noteRetry,data])
- useEffect(()=>{if(!data)return undefined;let alive=true;setHistoryLoading(true);setHistoryError('');repo.executionPage({studentId,...(!data.relationshipActive?{historical:true}:{})}).then(page=>{if(alive)setHistoryPage(page)}).catch(()=>{if(alive)setHistoryError('Não foi possível carregar o histórico de treinos.')}).finally(()=>{if(alive)setHistoryLoading(false)});return()=>{alive=false}},[repo,studentId,historyRetry,data])
- const loadMoreHistory=async()=>{if(historyLoadingMore||!historyPage.hasMore)return;setHistoryLoadingMore(true);setHistoryError('');try{const next=await repo.executionPage({studentId,offset:historyPage.items.length,...(!data.relationshipActive?{historical:true}:{})});setHistoryPage(current=>({...next,items:[...current.items,...next.items]}))}catch{setHistoryError('Não foi possível carregar o histórico de treinos.')}finally{setHistoryLoadingMore(false)}}
- const addNote=async()=>{if(!data?.relationshipActive||noteSubmitting.current||!noteDraft.trim())return;noteSubmitting.current=true;setNoteSaving(true);setNoteError('');try{const saved=await repo.addStudentNote({studentId,body:noteDraft});setNotes(current=>[saved,...current]);setNoteDraft('')}catch{setNoteError('Não foi possível salvar a anotação.')}finally{noteSubmitting.current=false;setNoteSaving(false)}}
+ }).catch((failure)=>{if(alive)setError(appErrorMessage(failure, 'Não foi possível carregar este aluno.'))});return()=>{alive=false}},[repo,studentId,reload])
+ useEffect(()=>{if(!data)return undefined;if(!data.relationshipActive){setNotes(data.notes||[]);setNoteLoading(false);return undefined}let alive=true;setNoteLoading(true);setNoteError('');repo.studentNotes(studentId).then(value=>{if(alive)setNotes(value)}).catch((failure)=>{if(alive)setNoteError(appErrorMessage(failure, 'Não foi possível carregar as anotações privadas.'))}).finally(()=>{if(alive)setNoteLoading(false)});return()=>{alive=false}},[repo,studentId,noteRetry,data])
+ useEffect(()=>{if(!data)return undefined;let alive=true;setHistoryLoading(true);setHistoryError('');repo.executionPage({studentId,...(!data.relationshipActive?{historical:true}:{})}).then(page=>{if(alive)setHistoryPage(page)}).catch((failure)=>{if(alive)setHistoryError(appErrorMessage(failure, 'Não foi possível carregar o histórico de treinos.'))}).finally(()=>{if(alive)setHistoryLoading(false)});return()=>{alive=false}},[repo,studentId,historyRetry,data])
+ const loadMoreHistory=async()=>{if(historyLoadingMore||!historyPage.hasMore)return;setHistoryLoadingMore(true);setHistoryError('');try{const next=await repo.executionPage({studentId,offset:historyPage.items.length,...(!data.relationshipActive?{historical:true}:{})});setHistoryPage(current=>({...next,items:[...current.items,...next.items]}))}catch (failure){setHistoryError(appErrorMessage(failure, 'Não foi possível carregar o histórico de treinos.'))}finally{setHistoryLoadingMore(false)}}
+ const addNote=async()=>{if(!data?.relationshipActive||noteSubmitting.current||!noteDraft.trim())return;noteSubmitting.current=true;setNoteSaving(true);setNoteError('');try{const saved=await repo.addStudentNote({studentId,body:noteDraft});setNotes(current=>[saved,...current]);setNoteDraft('')}catch (failure){setNoteError(appErrorMessage(failure, 'Não foi possível salvar a anotação.'))}finally{noteSubmitting.current=false;setNoteSaving(false)}}
  useEffect(()=>{const refresh=()=>setReload(value=>value+1);window.addEventListener('professional-plan-selection-changed',refresh);return()=>window.removeEventListener('professional-plan-selection-changed',refresh)},[])
  const plan=data?.assignments?.find(item=>item.status==='active')
  const selectedPlan=data?.assignments?.find(item=>item.is_selected===true)

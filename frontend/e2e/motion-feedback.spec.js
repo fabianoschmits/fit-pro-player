@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed, openMainNavigation } from './fixtures.test.js'
+import { seed, openMainNavigation, startWorkoutExecution } from './fixtures.test.js'
 
 test.beforeEach(async ({ page }) => {
   await seed(page)
@@ -92,6 +92,6 @@ test('navigation keeps one workout surface and one start action', async ({ page 
   await page.locator('[data-tab-key="start"]').click()
   await expect(page).toHaveURL(/workout/)
   expect(await page.locator('#app').count()).toBe(1)
-  await page.locator('.active-workout').getByRole('button', { name: 'Começar treino', exact: true }).click()
+  await startWorkoutExecution(page)
   await expect(page.locator('.set-start-action')).toHaveCount(1)
 })

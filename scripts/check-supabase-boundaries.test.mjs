@@ -63,6 +63,31 @@ test('allows only the exact HTTPS IBGE locality service used by professional pro
   }
 })
 
+test('does not confuse unrelated URL parameters or comments with token persistence', () => {
+  const file = 'frontend/src/auth/callback.js'
+  assert.deepEqual(runCheck([...requiredFiles, file], {
+    [file]: `// No custom caches should ever hold credentials.
+      export function callback(url) { url.searchParams.set('auth_flow', 'recovery'); }
+      export function authorization(session) { return { Authorization: 'Bearer ' + session.access_token }; }`,
+  }), [])
+})
+
+test('rejects a token passed through an alias into a URL or custom cache', () => {
+  const file = 'frontend/src/auth/leak.js'
+  for (const sink of ["url.searchParams.set('value', credential)", "caches.put('/x', new Response(credential))", "console.log(credential)"]) {
+    const violations = runCheck([...requiredFiles, file], { [file]: `const credential = session.access_token; ${sink};` })
+    assert.ok(violations.length, sink)
+  }
+})
+
+test('rejects destructured credentials and credentials returned by a local function', () => {
+  const file = 'frontend/src/auth/leak.js'
+  for (const source of [
+    'const { access_token: credential } = session; console.log(credential)',
+    'function credential() { return session.refresh_token }; sessionStorage.setItem("x", credential())',
+  ]) assert.ok(runCheck([...requiredFiles, file], { [file]: source }).length, source)
+})
+
 test('rejects direct Supabase token persistence in gym state', () => {
   const violations = runCheck([
     ...requiredFiles,
@@ -73,6 +98,17 @@ test('rejects direct Supabase token persistence in gym state', () => {
 
   assert.match(violations.join('\n'), /gym_state_v1/i)
   assert.match(violations.join('\n'), /access_token/i)
+})
+
+test('rejects assignments and aliases of URL, cache and database destinations', () => {
+  const file = 'frontend/src/auth/leak.js'
+  for (const source of [
+    'location.href = session.access_token',
+    'const p = new URLSearchParams(); p.set("auth", session.access_token)',
+    'const p = url.searchParams; p.append("auth", session.refresh_token)',
+    'const request = indexedDB.open("private"); const db = request.result; db.objectStore("auth").put(session.access_token)',
+    'const cache = await caches.open("private"); cache.put("auth", new Response(session.access_token))',
+  ]) assert.ok(runCheck([...requiredFiles, file], { [file]: source }).length, source)
 })
 
 test('allows the SDK client with no custom storage adapter', () => {

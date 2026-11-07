@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { personalPlanPreview } from '../../lib/personal-plan-preview.js'
 import useRelationshipRefresh from '../useRelationshipRefresh.js'
 import TrainingPlanPreview from './TrainingPlanPreview.jsx'
@@ -101,7 +102,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
         setError('')
       }
     }
-    catch { if (request === generation.current) setError('Não foi possível carregar seus planos.') }
+    catch (failure) { if (request === generation.current) setError(appErrorMessage(failure, 'Não foi possível carregar seus planos.')) }
   }, [repo])
   useRelationshipRefresh(refresh)
   useEffect(() => { if (user?.id) refresh(); return () => { generation.current += 1 } }, [user?.id, refresh])
@@ -120,7 +121,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
         const workoutUpdates = { ...entry.workout_updates }; delete workoutUpdates[dayKey]
         return { ...entry, workout_updates: workoutUpdates, plan_update: Object.keys(workoutUpdates).length ? entry.plan_update : null }
       }) }))
-    } catch { if (request === generation.current) setError('Não foi possível marcar a atualização como vista. Tente novamente.') }
+    } catch (failure) { if (request === generation.current) setError(appErrorMessage(failure, 'Não foi possível marcar a atualização como vista. Tente novamente.')) }
   }
   const open = async workout => {
     const { item, day } = workout
@@ -146,7 +147,7 @@ function AccountPlanLibrary({ user, onUpdates = undefined, onRemoveReady = undef
         delete updates[dayKey]
         return { ...entry, workout_updates: updates }
       }) }))
-    } catch { if (request === generation.current) setError('Não foi possível marcar a atualização como vista. Abra o treino novamente para tentar.') }
+    } catch (failure) { if (request === generation.current) setError(appErrorMessage(failure, 'Não foi possível marcar a atualização como vista. Abra o treino novamente para tentar.')) }
   }
   const professionalWorkouts = useMemo(() => data.items.filter(item => item.source_type === 'professional' && (item.available || item.id === state.activeLibraryId)).flatMap(item => {
     const workspace = weeklyPlanToWorkspace(item.version?.weekly_plan, item.version?.workout_titles)

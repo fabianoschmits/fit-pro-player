@@ -116,7 +116,7 @@ it('prevents duplicate sends, rolls back an unsuccessful comment and retains the
   await act(async () => request.resolve({ error: new Error('Sem conexão') }))
   expect(currentPost.comments).toHaveLength(0)
   expect(container.querySelector('textarea, input').value).toBe('Texto para tentar novamente')
-  expect(container.querySelector('[role="alert"]').textContent).toContain('Sem conexão')
+  expect(container.querySelector('[role="alert"]').textContent).toContain('Verifique sua conexão')
 })
 
 it('updates edits in shared state and preserves an unsuccessful edit for retry', async () => {

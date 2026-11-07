@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -79,7 +80,7 @@ export default function Settings() {
           if (!saved) throw new Error(t('Could not save on this device. Export a backup before closing the app.'))
           toast(t('Backup imported'), { tone: 'success' })
         } })
-      } catch (e) { setImportState('error'); setImportError(t('Import failed: {0}', e.message)) }
+      } catch (e) { setImportState('error'); setImportError(t('Import failed: {0}', appErrorMessage(e))) }
     }
     rd.onerror = () => { setImportState('error'); setImportError(t('Could not read that file')) }
     rd.onabort = () => setImportState('idle')

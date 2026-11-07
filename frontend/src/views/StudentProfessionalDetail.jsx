@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import AccountPhone from '../components/AccountPhone.jsx'
 import ProfessionalPlanApplyButton from '../components/training/ProfessionalPlanApplyButton.jsx'
 import Link from '../components/ManagementLink.jsx'
@@ -59,7 +60,7 @@ function DetailWorkspace({ professionalId }) {
       if (!alive.current || !ownsState) return false
       return requestQuery
     }
-    catch (cause) { if (alive.current) setActionError(t('Não foi possível encerrar o vínculo.')); throw cause }
+    catch (cause) { if (alive.current) setActionError(appErrorMessage(cause, t('Não foi possível encerrar o vínculo.'))); throw cause }
     finally { mutationPending.current = false; if (alive.current) setSaving(false) }
   }
   const revokeAction = useFppAction({ onAction: revoke, onSuccess: async requestQuery => {

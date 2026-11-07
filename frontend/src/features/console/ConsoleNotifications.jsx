@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
@@ -73,7 +74,7 @@ export default function ConsoleNotifications({ userId = undefined, allowed }) {
         if (current.current !== identity) return false
         return { identity }
       } catch (failure) {
-        if (current.current === identity) setActionError('Não foi possível marcar as notificações. Tente novamente.')
+        if (current.current === identity) setActionError(appErrorMessage(failure, 'Não foi possível marcar as notificações. Tente novamente.'))
         throw failure
       }
     },
@@ -112,8 +113,8 @@ export default function ConsoleNotifications({ userId = undefined, allowed }) {
       await repo.deleteNotifications(ids)
       setSelectedIds(new Set())
       refresh()
-    } catch {
-      setActionError('Erro ao excluir notificações selecionadas.')
+    } catch (failure) {
+      setActionError(appErrorMessage(failure, 'Erro ao excluir notificações selecionadas.'))
     } finally {
       setDeleting(false)
     }
@@ -131,8 +132,8 @@ export default function ConsoleNotifications({ userId = undefined, allowed }) {
         return next
       })
       refresh()
-    } catch {
-      setActionError('Erro ao excluir notificação.')
+    } catch (failure) {
+      setActionError(appErrorMessage(failure, 'Erro ao excluir notificação.'))
     }
   }
 

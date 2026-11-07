@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -336,7 +337,7 @@ function CheckinView({ S, checkins, selected = undefined, setSelected, period, s
     try {
       update(state => { state.bodyMeasurements = upsertBodyMeasurement(state.bodyMeasurements, { date: today, partId: selected, value: draft }) })
       if (useStore.getState().persistence?.state === 'error') throw new Error('local-write-failed')
-    } catch { setSaveError(t('Não foi possível salvar neste dispositivo. Tente novamente.')); return }
+    } catch (failure) { setSaveError(appErrorMessage(failure, t('Não foi possível salvar neste dispositivo. Tente novamente.'))); return }
   }
   const saveGoal = async () => {
     if (!part) return false

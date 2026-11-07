@@ -30,7 +30,7 @@ for (const failFirst of [false, true]) test(`collapsed invites support confirmat
   await card.getByRole('button', { name: 'Revogar', exact: true }).click()
   await card.getByRole('button', { name: 'Confirmar', exact: true }).click()
   if (failFirst) {
-    await expect(page.getByRole('alert')).toContainText('Não foi possível revogar este convite.')
+    await expect(page.getByRole('alert')).toContainText('Este recurso está temporariamente indisponível. Tente novamente em instantes.')
     await expect(card).toContainText('Ativo')
     await card.getByRole('button', { name: 'Tentar novamente', exact: true }).click()
   }

@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore.js'
 import Link from '../components/ManagementLink.jsx'
 import { t } from '../lib/i18n.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
@@ -89,7 +90,7 @@ function ProfileWorkspace({ auth }) {
         : cause.message === 'professional-profile-forbidden' ? t('Sua conta não tem acesso à edição profissional.')
           : cause.message === 'professional-profile-invalid' ? t('Confira os dados informados e tente novamente.')
             : cause.message === 'professional-profile-not-found' ? t('Seu perfil profissional não foi encontrado. Atualize a página e tente novamente.')
-              : provisioning ? t('Não foi possível criar o perfil profissional. Verifique sua conexão.') : t('Não foi possível salvar agora. Verifique sua conexão.'))
+              : appErrorMessage(cause, provisioning ? 'Não foi possível criar o perfil profissional. Verifique sua conexão.' : 'Não foi possível salvar agora. Verifique sua conexão.'))
       return false
     } finally { savingRef.current = false; if (active.current) setSaving(false) }
   }

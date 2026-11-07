@@ -24,6 +24,7 @@ test('real SQL: student request, professional decision, prescription, switching,
   }
   const accept = async () => {
    await page.goto('/#/professional')
+   await page.locator('.management-requests-details > summary').click()
    const pending = page.getByRole('link').filter({ hasText: 'João Silva' }).filter({ hasText: 'Aguardando resposta' })
    await expect(pending).toBeVisible(); await pending.click()
    await expect(page.getByRole('heading', { name: 'João Silva', exact: true })).toBeVisible()
@@ -34,6 +35,7 @@ test('real SQL: student request, professional decision, prescription, switching,
    await expect(page.getByRole('button', { name: 'Ativos', exact: true })).toHaveAttribute('aria-pressed', 'true')
    await page.getByRole('link').filter({ hasText: 'João Silva' }).click()
   }
+  await student.clock.install({ time: new Date('2026-11-07T12:00:00-03:00') })
   await requestLink()
   await accept()
   const firstCycle = (await h.rpc(USER, 'professional_relationship_cycles', { p_student_id: STUDENT }))[0].id
@@ -71,6 +73,8 @@ test('real SQL: student request, professional decision, prescription, switching,
   await expect(calendar.getByRole('button', { name: 'Segunda-feira: Peito profissional', exact: true })).toBeVisible()
   await expect(calendar.getByRole('button', { name: 'Quarta-feira: Descanso', exact: true })).toBeVisible()
   await student.goto('/#/home'); await openMainNavigation(student); await student.locator('[data-tab-key="start"]').click()
+  // Saturday is a rest day for this prescription: explicitly select the routine.
+  await student.getByRole('button', { name: 'Peito profissional 1 exercício Começar', exact: true }).first().click()
   await expect(student.locator('.workout-session-title')).toContainText('Peito profissional')
   const active = await student.evaluate(user => JSON.parse(localStorage.getItem(`fpp_account_cache_v1:${user}`)).state.active, STUDENT)
   expect(active.entries[0].id).toBe('0025')

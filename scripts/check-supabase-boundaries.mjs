@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import ts from '../frontend/node_modules/typescript/lib/typescript.js'
 
 export const REQUIRED_FILES = [
   'supabase/config.toml',
@@ -119,17 +120,78 @@ export function checkVercelCsp({ text, requiredSupabaseOrigin = REQUIRED_SUPABAS
 }
 
 const manualTokenSinkViolation = (file, text) => {
-  const tokenMatch = text.match(TOKEN_PATTERN)
-  if (!tokenMatch) return null
-
-  for (const [sink, pattern] of TOKEN_SINKS) {
-    const sinkMatch = text.match(pattern)
-    if (sinkMatch) {
-      return `${file}:${lineNumberAt(text, Math.min(tokenMatch.index ?? 0, sinkMatch.index ?? 0))}: frontend writes Supabase token ${tokenMatch[0]} to ${sink}`
-    }
+  if (!TOKEN_PATTERN.test(text)) return null
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)
+  const aliases = new Set()
+  const sinkAliases = new Map()
+  const sinkOf = node => {
+    if (!node) return null
+    if (ts.isIdentifier(node) && sinkAliases.has(node.text)) return sinkAliases.get(node.text)
+    const expression = node.getText(source)
+    if (/\b(?:URLSearchParams|searchParams)\b/.test(expression)) return 'URL mutation'
+    if (/\bindexedDB\b/.test(expression)) return 'IndexedDB'
+    if (/\b(?:caches|cacheStorage)\b/.test(expression)) return 'custom cache'
+    if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node) || ts.isCallExpression(node) || ts.isNewExpression(node) || ts.isAwaitExpression(node)) return sinkOf(node.expression)
+    return null
   }
-
-  return null
+  const containsToken = node => {
+    if (!node) return false
+    if (ts.isPropertyAccessExpression(node) && TOKEN_PATTERN.test(node.name.text)) return true
+    if (ts.isElementAccessExpression(node) && ts.isStringLiteral(node.argumentExpression) && TOKEN_PATTERN.test(node.argumentExpression.text)) return true
+    if (ts.isIdentifier(node) && (TOKEN_PATTERN.test(node.text) || aliases.has(node.text))) return true
+    return !!ts.forEachChild(node, child => containsToken(child) || undefined)
+  }
+  const visit = (node, action) => { action(node); ts.forEachChild(node, child => visit(child, action)) }
+  // Propagate local aliases, including multi-step JSON payloads. Inspect syntax,
+  // not comments or unrelated functions which merely mention the SDK token.
+  let changed = true
+  while (changed) {
+    changed = false
+    visit(source, node => {
+      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
+        const sink = sinkOf(node.initializer)
+        if (sink && !sinkAliases.has(node.name.text)) {
+          sinkAliases.set(node.name.text, sink); changed = true
+        }
+      }
+      if (ts.isVariableDeclaration(node) && ts.isObjectBindingPattern(node.name)) {
+        for (const binding of node.name.elements) {
+          if (ts.isIdentifier(binding.name) && TOKEN_PATTERN.test((binding.propertyName || binding.name).getText(source)) && !aliases.has(binding.name.text)) {
+            aliases.add(binding.name.text); changed = true
+          }
+        }
+      }
+      if (ts.isFunctionDeclaration(node) && node.name && containsToken(node.body) && !aliases.has(node.name.text)) {
+        aliases.add(node.name.text); changed = true
+      }
+      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && containsToken(node.initializer) && !aliases.has(node.name.text)) {
+        aliases.add(node.name.text); changed = true
+      }
+      if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && ts.isIdentifier(node.left) && containsToken(node.right) && !aliases.has(node.left.text)) {
+        aliases.add(node.left.text); changed = true
+      }
+    })
+  }
+  let violation = null
+  visit(source, node => {
+    if (violation) return
+    const assignment = ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && containsToken(node.right)
+    const callWithToken = ts.isCallExpression(node) && node.arguments.some(containsToken)
+    if (!assignment && !callWithToken) return
+    const destination = assignment ? node.left : node.expression
+    const call = destination.getText(source)
+    const aliasSink = sinkOf(destination)
+    for (const [sink, pattern] of TOKEN_SINKS) {
+      const matches = sink === 'gym_state_v1'
+        ? callWithToken && /(?:localStorage|storage)\s*\.\s*setItem/.test(call) && node.arguments.some(argument => ts.isStringLiteral(argument) && argument.text === 'gym_state_v1')
+        : pattern.test(call) || aliasSink === sink
+      if (matches) {
+        violation = `${file}:${lineNumberAt(text, node.getStart(source))}: frontend writes Supabase access_token/refresh_token to ${sink}`
+        break
+      }
+    }
+  })
+  return violation
 }
 
 /**

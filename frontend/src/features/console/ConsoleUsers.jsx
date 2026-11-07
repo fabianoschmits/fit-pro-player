@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -23,7 +24,7 @@ export function ConsoleUsers() {
     try {
       const next = await repo.listUsers({ query, accountKind: kind || null, limit })
       if (owner.current === id) { setRows(next); setError('') }
-    } catch { if (owner.current === id) setError('Não foi possível carregar os usuários.') }
+    } catch (failure) { if (owner.current === id) setError(appErrorMessage(failure, 'Não foi possível carregar os usuários.')) }
     finally { if (owner.current === id) setBusy(false) }
   }, [userId, repo, query, kind, limit])
 

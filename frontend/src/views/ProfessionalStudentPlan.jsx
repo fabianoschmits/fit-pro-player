@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -27,7 +28,7 @@ function StudentPlan({ studentId, routineId = undefined }) {
  const [draft, setDraft] = useState(null), [state, setState] = useState(null), [title, setTitle] = useState('Plano de treino'), [student, setStudent] = useState(null), [error, setError] = useState(''), [busy, setBusy] = useState(false), [dirty, setDirty] = useState(false), [templates, setTemplates] = useState(null)
  const alive = useRef(true), pending = useRef(false)
  const base = `/professional/students/${studentId}/plan`
- useEffect(() => { alive.current = true; Promise.all([repo.studentPlanDraft(studentId), repo.clientDetail(studentId)]).then(([value, person]) => { if (!alive.current) return; setLoading(false); setStudent(person); setDraft(value); if (value) { setTitle(value.title); setState(value.workspace) } }).catch(() => { if (alive.current) { setLoading(false); setError('Não foi possível carregar o plano.') } }); return () => { alive.current = false } }, [repo, studentId])
+ useEffect(() => { alive.current = true; Promise.all([repo.studentPlanDraft(studentId), repo.clientDetail(studentId)]).then(([value, person]) => { if (!alive.current) return; setLoading(false); setStudent(person); setDraft(value); if (value) { setTitle(value.title); setState(value.workspace) } }).catch((failure) => { if (alive.current) { setLoading(false); setError(appErrorMessage(failure, 'Não foi possível carregar o plano.')) } }); return () => { alive.current = false } }, [repo, studentId])
  const update = fn => { setState(old => { const next = structuredClone(old); fn(next); return next }); setDirty(true) }
  const save = async () => {
    if (pending.current) throw new Error('pending')
@@ -41,12 +42,12 @@ function StudentPlan({ studentId, routineId = undefined }) {
    if (!validation.ok) { setError(validation.error === 'weekly-plan-exercise-unavailable' ? t(UNAVAILABLE_EXERCISE_MESSAGE) : 'Adicione exercícios e organize os dias antes de enviar.'); return }
    confirmSheet({ title: draft?.sent_revision ? `Atualizar plano enviado para ${student?.displayName || 'aluno'}?` : `Enviar plano para ${student?.displayName || 'aluno'}?`, message: `${state.routines.length} treinos · ${Object.keys(state.week).length} dias na semana. ${draft?.sent_revision ? 'A atualização será enviada ao aluno. O plano atualmente ativo continuará sendo usado até que ele aceite e aplique a nova versão.' : 'O plano será enviado ao aluno e ficará disponível para análise. Ele precisará aceitar e aplicar o plano antes que ele substitua o plano atualmente ativo.'}`, confirmText: draft?.sent_revision ? 'Enviar atualização' : 'Enviar plano', onConfirm: async () => {
      try { const saved = dirty || !draft ? await save() : draft; setBusy(true); await repo.sendPlan(studentId, saved.revision); if (alive.current) setDraft({ ...saved, sent_revision: saved.revision }); return true }
-     catch { if (alive.current) setError('Não foi possível enviar o plano. Tente novamente.'); return false }
+     catch (failure) { if (alive.current) setError(appErrorMessage(failure, 'Não foi possível enviar o plano. Tente novamente.')); return false }
      finally { if (alive.current) setBusy(false) }
    } })
  }
  const create = workspace => { setState(workspace || weeklyPlanToWorkspace()); setDirty(true) }
- const chooseTemplate = async item => { try { const versions = await repo.versions(item.id); if (!alive.current) return; const version = versions[0]; if (!version?.weekly_plan) throw new Error('model-without-version'); create(weeklyPlanToWorkspace(version.weekly_plan, version.workout_titles)); setTitle(item.title); setTemplates(null); setError('') } catch (cause) { if (alive.current) setError('Não foi possível abrir este modelo.'); throw cause } }
+ const chooseTemplate = async item => { try { const versions = await repo.versions(item.id); if (!alive.current) return; const version = versions[0]; if (!version?.weekly_plan) throw new Error('model-without-version'); create(weeklyPlanToWorkspace(version.weekly_plan, version.workout_titles)); setTitle(item.title); setTemplates(null); setError('') } catch (cause) { if (alive.current) setError(appErrorMessage(cause, 'Não foi possível abrir este modelo.')); throw cause } }
  if (routineId && state) return <fieldset disabled={busy} style={{ display: 'contents' }}><RoutineEditor mode="professional" studentProfile={student?.profile || {}} state={{ ...prefs, ...state, onboardingDone: true }} onUpdate={update} routineId={routineId} basePath={base} onSave={save} /></fieldset>
  return <ManagementLayout title="Plano de treino" subtitle={student?.displayName || 'Aluno'} backTo={`/professional/students/${studentId}`}>
    {student && <p className="small dim">Tempo habitual do aluno: {getPreferredWorkoutMinutes(student.profile)} min</p>}
@@ -58,7 +59,7 @@ function StudentPlan({ studentId, routineId = undefined }) {
          <Button variant="plain" aria-expanded={Boolean(templates)} aria-controls="professional-plan-template-list" loadingLabel="Carregando modelos…" successLabel="Usar um modelo" errorLabel="Tentar novamente" onAction={async () => {
            if (templates) { setTemplates(null); return }
            try { const page = await repo.programPage({ archived: false }); if (alive.current) { setTemplates(page || { items: [] }); setError('') } }
-           catch (cause) { if (alive.current) setError('Não foi possível carregar os modelos.'); throw cause }
+           catch (cause) { if (alive.current) setError(appErrorMessage(cause, 'Não foi possível carregar os modelos.')); throw cause }
          }}>Usar um modelo</Button>
        </ActionGroup>
        {templates && <section id="professional-plan-template-list" className="fpp-choice-section" aria-label="Modelos disponíveis">

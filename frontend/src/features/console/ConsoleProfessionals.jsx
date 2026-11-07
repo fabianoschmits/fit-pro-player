@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -27,7 +28,7 @@ export function ConsoleProfessionals() {
     try {
       const next = await repo.listProfessionals({ query, status: status || null, limit })
       if (owner.current === id) { setRows(next); setError('') }
-    } catch { if (owner.current === id) setError('Não foi possível carregar os profissionais.') }
+    } catch (failure) { if (owner.current === id) setError(appErrorMessage(failure, 'Não foi possível carregar os profissionais.')) }
     finally { if (owner.current === id) setBusy(false) }
   }, [identity, repo, query, status, limit])
 
@@ -44,7 +45,7 @@ export function ConsoleProfessionals() {
       if (owner.current !== identity) return false
       return { identity }
     } catch (err) {
-      if (owner.current === identity) setError('Não foi possível atualizar a verificação.')
+      if (owner.current === identity) setError(appErrorMessage(err, 'Não foi possível atualizar a verificação.'))
       throw err
     }
   }, onSuccess: result => {

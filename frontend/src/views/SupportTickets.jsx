@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { CommunityImage } from '../components/community/CommunityPostMedia.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -34,7 +35,7 @@ export default function SupportTickets() {
     let live = true
     repo.listMyTickets()
       .then(rows => { if (live) setTickets(rows) })
-      .catch(err => { if (live) setError(err.message || 'Não foi possível carregar seus chamados.') })
+      .catch(err => { if (live) setError(appErrorMessage(err, 'Não foi possível carregar seus chamados.')) })
       .finally(() => { if (live) setBusy(false) })
     return () => { live = false }
   }, [repo])

@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import Link from './ManagementLink.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -49,7 +50,7 @@ function InviteWorkspace({ initialCode }) {
       if (!alive.current) return false
       sessionStorage.removeItem('fpp-pending-invite')
       return true
-    } catch (cause) { if (alive.current) setActionError(t('Não foi possível enviar a solicitação. O código pode ter expirado.')); throw cause }
+    } catch (cause) { if (alive.current) setActionError(appErrorMessage(cause, t('Não foi possível enviar a solicitação. O código pode ter expirado.'))); throw cause }
     finally { acceptancePending.current = false; if (alive.current) setAccepting(false) }
   }
   return <ManagementLayout audience="student" className="student-invite-page fpp-screen-invite" title={t('Adicionar profissional')} subtitle={t('Confira o perfil antes de solicitar vínculo')} backTo="/student/professionals">

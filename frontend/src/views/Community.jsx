@@ -1,3 +1,5 @@
+import { appErrorMessage } from '../lib/app-errors.js'
+import { openAuthSheet } from '../components/AuthSheet.jsx'
 import { UserBlockButton } from '../components/community/UserBlockActions.jsx'
 import { pageScrollY } from '../lib/page-scroll-lock.js'
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
@@ -86,7 +88,7 @@ function CommunitySession() {
         setViewedProfileState(data || viewedUserId === userId ? 'ready' : 'unavailable')
         if (failure) setError('Não foi possível carregar este perfil.')
       }
-    }).catch(() => { if (!cancelled) { setViewedProfileState('unavailable'); setError('Não foi possível carregar este perfil.') } })
+    }).catch((failure) => { if (!cancelled) { setViewedProfileState('unavailable'); setError(appErrorMessage(failure, 'Não foi possível carregar este perfil.')) } })
     const position = store.snapshot(scope).scrollY
     const frame = requestAnimationFrame(() => window.scrollTo(0, position))
     const onScroll = () => { store.saveScroll(scope, pageScrollY()); setShowFeedTop(pageScrollY() > 280) }
@@ -148,7 +150,7 @@ function CommunitySession() {
       if (failure || !data) { setError('Esta postagem não está mais disponível.'); return }
       store.addPost(data); setHighlightedPostId(data.id); setHighlightCommentId(commentId); setCommentsId(commentId ? data.id : null)
       requestAnimationFrame(() => window.scrollTo({ top: 0 }))
-    }).catch(() => { if (!cancelled) setError('Não foi possível abrir esta postagem.') })
+    }).catch((failure) => { if (!cancelled) setError(appErrorMessage(failure, 'Não foi possível abrir esta postagem.')) })
     return () => { cancelled = true }
   }, [location.search, client, userId, scope, store])
 
@@ -166,7 +168,7 @@ function CommunitySession() {
       const result = liked ? await client.from('community_likes').delete().match({ post_id: post.id, user_id: userId }) : await client.from('community_likes').insert({ post_id: post.id, user_id: userId })
       if (result.error) throw result.error
       if (!liked) void notify(post.author_id, 'like', post.id)
-    } catch (failure) { mutatePost(post.id, current => ({ ...current, likes: [...(current.likes || []).filter(like => like.user_id !== userId), ...likes.filter(like => like.user_id === userId)] })); setError(failure.message) }
+    } catch (failure) { mutatePost(post.id, current => ({ ...current, likes: [...(current.likes || []).filter(like => like.user_id !== userId), ...likes.filter(like => like.user_id === userId)] })); setError(appErrorMessage(failure)) }
     finally { pendingLikes.current.delete(post.id) }
   }
   const submitComment = async (post, body, parentId) => {
@@ -189,7 +191,7 @@ function CommunitySession() {
   const confirmCrop = async () => {
     if (!file || savingRef.current) return
     savingRef.current = true; setSaving(true); setError('')
-    try { setFile(await cropCommunityImage(file, crop)); setCropConfirmed(true) } catch (failure) { setError(failure.message) }
+    try { setFile(await cropCommunityImage(file, crop)); setCropConfirmed(true) } catch (failure) { setError(appErrorMessage(failure)) }
     finally { savingRef.current = false; setSaving(false) }
   }
   const publish = async event => {
@@ -222,12 +224,12 @@ function CommunitySession() {
         try {
           const cleanup = await client.storage.from(BUCKET).remove([uploadedPath])
           if (cleanup.error) throw cleanup.error
-        } catch {
-          setError('Não foi possível publicar nem concluir a limpeza da foto. Tente novamente com conexão estável.')
+        } catch (failure) {
+          setError(appErrorMessage(failure, 'Não foi possível publicar nem concluir a limpeza da foto. Tente novamente com conexão estável.'))
           return
         }
       }
-      setError(failure.message || 'Não foi possível publicar. Tente novamente.')
+      setError(appErrorMessage(failure, 'Não foi possível publicar. Tente novamente.'))
     } finally { savingRef.current = false; setSaving(false); setPendingPost(false) }
   }
   const removePost = async post => {
@@ -242,7 +244,7 @@ function CommunitySession() {
       })
       if (result.error) throw result.error
       store.removePost(post.id); setActiveMenuId(null)
-    } catch (failure) { setError(failure.message) }
+    } catch (failure) { setError(appErrorMessage(failure)) }
   }
   const openEdit = post => { setEditingPost(post); setFile(null); setCaption(post.caption || ''); setCommentsDisabled(post.comments_disabled); setCropConfirmed(true); setError(''); setComposerOpen(true); setActiveMenuId(null) }
   const openUser = id => { if (id) { store.saveScroll(scope, pageScrollY()); setCommentsId(null); navigate(id === userId ? '/community/profile' : `/community/user/${id}`) } }
@@ -254,10 +256,11 @@ function CommunitySession() {
       const read_at = new Date().toISOString(), result = await client.from('community_notifications').update({ read_at }).eq('recipient_id', userId).in('id', ids)
       if (result.error) throw result.error
       setNotifications(items => items.map(item => ids.includes(item.id) ? { ...item, read_at } : item))
-    } catch { setError('Não foi possível marcar as notificações como lidas.') }
+    } catch (failure) { setError(appErrorMessage(failure, 'Não foi possível marcar as notificações como lidas.')) }
   }
   const ownLoadedPostCount = posts.filter(post => post.author_id === userId).length
-  if (!userId || !client) return <div className="community-empty">Entre na sua conta para acessar a Comunidade.</div>
+  if (!userId) return <div className="community-empty"><p>Entre na sua conta para acessar a Comunidade.</p><button type="button" className="community-primary-action" onClick={() => openAuthSheet('entry')}>Entrar ou criar conta</button></div>
+  if (!client) return <div className="community-empty" role="alert">{appErrorMessage(new Error('supabase-unavailable'))}</div>
   return <div className="community-view page-scenery fpp-ui-view fpp-screen-community">
     {showFeedTop && <button type="button" className="community-feed-top" aria-label="Voltar ao topo e atualizar o feed" onClick={() => { store.saveScroll(scope, 0); window.scrollTo({ top: 0, behavior: 'smooth' }); void store.load(scope, true) }}>↑</button>}
     <header className="community-topbar"><div><p className="community-kicker"><span className="kicker-word">FIT </span><span className="kicker-pro">PRO</span><span className="kicker-word"> PLAYER</span></p><h1>Comunidade</h1><p className="community-intro">Treinos, conquistas e conversas que mantêm o ritmo.</p></div><div className="community-topbar-actions"><input ref={fileInput} className="community-file-input" type="file" accept="image/*" onChange={chooseFile} /><button className="community-primary-action community-topbar-publish" onClick={() => fileInput.current?.click()}><Icon name="camera" /><span>Nova postagem</span></button><MessageButton client={client} userId={userId} /><button className="community-notifications" aria-label="Notificações" onClick={markRead}><Icon name="bell" />{notifications.some(item => !item.read_at) && <b>Novas notificações</b>}</button><div className="community-profile-tools"><button className="community-profile-button" aria-label="Meu perfil" onClick={() => openUser(userId)}><Avatar profile={ownIdentity} /></button></div></div></header>

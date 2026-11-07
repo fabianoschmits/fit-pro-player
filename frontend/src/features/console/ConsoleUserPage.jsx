@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { VERIFICATION_LABELS, verificationTone } from '../../lib/console.js'
@@ -46,7 +47,7 @@ export function ConsoleUserPage() {
         setSpecialtiesText((next?.specialties || []).join(', '))
         setError(next ? '' : 'Usuário não encontrado.')
       }
-    } catch { if (owner.current === id) setError('Não foi possível carregar o usuário.') }
+    } catch (failure) { if (owner.current === id) setError(appErrorMessage(failure, 'Não foi possível carregar o usuário.')) }
     finally { if (owner.current === id) setBusy(false) }
   }, [identity, repo, targetId])
 
@@ -64,7 +65,7 @@ export function ConsoleUserPage() {
       setMessage(success)
       return { key, identity }
     } catch (err) {
-      if (owner.current === identity) setError(err?.message || 'A operação falhou.')
+      if (owner.current === identity) setError(appErrorMessage(err, 'A operação falhou.'))
       throw err
     }
   }, onSuccess: async result => {

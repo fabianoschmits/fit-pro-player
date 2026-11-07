@@ -63,7 +63,7 @@ describe('AccountAssociationSheet', () => {
     onChoice.mockRejectedValueOnce(new Error('Falha ao associar'))
     await render()
     await click(choice('Usar dados da nuvem'))
-    expect(container.querySelector('[role="alert"]').textContent).toBe('Falha ao associar')
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Não foi possível concluir a associação.')
     expect(close).not.toHaveBeenCalled()
     expect([...container.querySelectorAll('button')].every(button => !button.disabled)).toBe(true)
     await click(container.querySelector('button[data-state="error"]'))

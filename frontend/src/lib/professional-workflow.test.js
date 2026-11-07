@@ -101,8 +101,8 @@ describe('professional management repository', () => {
     expect(await repo.saveStudentNote({ studentId: 'student', body: 'Preservar espaço\n' })).toEqual({ body: 'Preservar espaço\n', updatedAt: '2026-10-09' })
     expect(rpc).toHaveBeenNthCalledWith(1, 'professional_student_note', { p_student_id: 'student' })
     expect(rpc).toHaveBeenNthCalledWith(2, 'save_professional_student_note', { p_student_id: 'student', p_body: 'Preservar espaço\n' })
-    await expect(repo.studentNote('student')).rejects.toEqual({ code: '42501' })
-    await expect(repo.saveStudentNote({ studentId: 'student', body: 'Denied' })).rejects.toEqual({ code: '42501' })
+    await expect(repo.studentNote('student')).rejects.toMatchObject({ code: '42501' })
+    await expect(repo.saveStudentNote({ studentId: 'student', body: 'Denied' })).rejects.toMatchObject({ code: '42501' })
   })
   it('lists private student notes and appends a dated note through protected RPCs', async () => {
     const created = { id: 'note-2', body: 'Nova nota', created_at: '2026-10-28T12:34:00Z' }
@@ -117,8 +117,8 @@ describe('professional management repository', () => {
     const rpc = vi.fn().mockResolvedValueOnce({ data: [{ body: 'missing id' }], error: null }).mockResolvedValueOnce({ data: null, error: { code: '42501' } }).mockResolvedValueOnce({ data: null, error: { code: '42501' } })
     const repo = createProfessionalWorkflowRepository({ client: { rpc } })
     await expect(repo.studentNotes('student')).rejects.toThrow('invalid-private-note')
-    await expect(repo.studentNotes('student')).rejects.toEqual({ code: '42501' })
-    await expect(repo.addStudentNote({ studentId: 'student', body: 'Denied' })).rejects.toEqual({ code: '42501' })
+    await expect(repo.studentNotes('student')).rejects.toMatchObject({ code: '42501' })
+    await expect(repo.addStudentNote({ studentId: 'student', body: 'Denied' })).rejects.toMatchObject({ code: '42501' })
   })
 
   it('propagates versioned names and objective into received material DTOs', async () => {
@@ -227,8 +227,8 @@ describe('professional management repository', () => {
     expect(await repository.studentProfessionalDetail('pro-1')).toMatchObject({ relationship: { id: 'link-1', status: 'active', linkedAt: null }, materials: [], executions: [] })
     const denied = { code: '42501', message: 'authentication required' }
     rpc.mockResolvedValue({ data: null, error: denied })
-    await expect(repository.studentProfessionals()).rejects.toEqual(denied)
-    await expect(repository.studentProfessionalDetail('pro-1')).rejects.toEqual(denied)
+    await expect(repository.studentProfessionals()).rejects.toMatchObject(denied)
+    await expect(repository.studentProfessionalDetail('pro-1')).rejects.toMatchObject(denied)
   })
 })
   it('keeps the personal invite separate from the capped generated-invite history and persists edits through the RPC', async () => {

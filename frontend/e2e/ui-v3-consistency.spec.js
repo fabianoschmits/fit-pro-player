@@ -27,7 +27,7 @@ for (const scenario of ['empty', 'list-error', 'missing-version', 'valid-version
     await page.goto(`/#/professional/students/${STUDENT}/plan`)
     await page.getByRole('button', { name: 'Usar um modelo', exact: true }).click()
     if (scenario === 'list-error') {
-      await expect(page.getByRole('alert')).toContainText('Não foi possível carregar os modelos.')
+      await expect(page.getByRole('alert')).toContainText('Este recurso está temporariamente indisponível. Tente novamente em instantes.')
     } else if (scenario === 'empty') {
       await expect(page.getByText(/Nenhum modelo disponível/)).toBeVisible()
     } else {

@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from './ui.jsx'
 import { FppActionFeedback, FppProgress } from './FppFeedback.jsx'
@@ -39,7 +40,7 @@ export default function ProgressPhotoUpload({ repository, onSaved, onCancel }) {
     try {
       const result = await processProgressPhoto(file)
       if (token === generation.current) { setProcessed(result); setState('idle') }
-    } catch (err) { if (token === generation.current) { setError(err.message); setState('error') } }
+    } catch (err) { if (token === generation.current) { setError(appErrorMessage(err)); setState('error') } }
   }
   const save = async event => {
     event.preventDefault()
@@ -55,7 +56,7 @@ export default function ProgressPhotoUpload({ repository, onSaved, onCancel }) {
       setState('saving')
       await repository.upload(processed, { date, angle, automatic })
       if (token === generation.current) onSaved(angle)
-    } catch (err) { if (token === generation.current) { setError(err.message); setState('error') } }
+    } catch (err) { if (token === generation.current) { setError(appErrorMessage(err)); setState('error') } }
     finally { lock.current = false }
   }
   return <form className="card bp-photo-upload" onSubmit={save} aria-label="Adicionar fotografia corporal">

@@ -1,3 +1,4 @@
+import { serviceError } from './app-errors.js'
 import { normalizeWeeklyPlan, validateAvailableWeeklyPlan } from './professional-program.js'
 
 /** @typedef {{title:string,description:string,objective:string,weeklyPlan:Object,workoutTitles:Object<string,string>}} WeekDraft */
@@ -118,8 +119,8 @@ export function createProfessionalWorkflowRepository({ client = undefined } = {}
       if (!validation.ok) throw new Error(validation.error)
     }
     if (!client?.rpc) throw new Error('supabase-unavailable')
-    const { data, error } = await client.rpc(name, args)
-    if (error) throw error
+    const { data, error, status } = await client.rpc(name, args)
+    if (error) throw serviceError(error, status)
     return data
   }
   const read = async (table, query) => {

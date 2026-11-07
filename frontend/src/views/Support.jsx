@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -31,7 +32,7 @@ export default function Support() {
   const [error, setError] = useState('')
   const [reload, setReload] = useState(0)
   const repo = useMemo(repoFor, [])
-  useEffect(() => { let live = true; setBusy(true); setError(''); repo.listFaq({ query, category }).then(rows => live && setFaq(rows)).catch(e => live && setError(e.message || 'Não foi possível carregar a ajuda.')).finally(() => live && setBusy(false)); return () => { live = false } }, [repo, query, category, reload])
+  useEffect(() => { let live = true; setBusy(true); setError(''); repo.listFaq({ query, category }).then(rows => live && setFaq(rows)).catch(e => live && setError(appErrorMessage(e, 'Não foi possível carregar a ajuda.'))).finally(() => live && setBusy(false)); return () => { live = false } }, [repo, query, category, reload])
   return <div className="narrow support-page fpp-ui-view fpp-screen-support">
     <AppHeader title="Ajuda e suporte" subtitle="Encontre respostas ou fale com a equipe." />
     <div className="support-actions"><Link className="support-action-card" to="/support/tickets/new"><Icon name="chat" /><span><strong>Fale com a equipe</strong><small>Envie dúvidas, sugestões, críticas ou relatos de problemas.</small></span><Icon name="chevronRight" /></Link><Link className="support-action-card" to="/support/tickets"><Icon name="history" /><span><strong>Meus chamados</strong><small>Acompanhe suas mensagens e respostas.</small></span><Icon name="chevronRight" /></Link></div>
@@ -54,7 +55,7 @@ export function SupportComposer() {
       return repo.createTicket({ categorySlug: form.category, subject: form.subject, body: form.body })
     },
     onSuccess: id => { setSuccess(true); nav(`/support/tickets/${id}`) },
-    onError: err => setErrors({ form: err.message || 'Não foi possível enviar. Tente novamente.' }),
+    onError: err => setErrors({ form: appErrorMessage(err, 'Não foi possível enviar. Tente novamente.') }),
   })
   const submit = e => { e.preventDefault(); void action.run(e) }
   return <div className="narrow support-page fpp-ui-view fpp-screen-support"><AppHeader title="Fale com a equipe" subtitle="Responderemos pelo próprio aplicativo." backTo="/support" /><form className="support-form fpp-form-stack" onSubmit={submit} noValidate>

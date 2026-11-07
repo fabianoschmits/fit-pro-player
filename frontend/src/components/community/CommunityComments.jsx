@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../../lib/app-errors.js'
 import { useMemo, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import Icon from '../Icon.jsx'
@@ -88,7 +89,7 @@ export default function CommunityComments({ post, client, userId = undefined, ow
     try {
       const result = liked ? await client.from('community_comment_likes').delete().match({ comment_id: comment.id, user_id: userId }) : await client.from('community_comment_likes').insert({ comment_id: comment.id, user_id: userId })
       if (result.error) throw result.error
-    } catch (failure) { change(items => items.map(item => item.id === comment.id ? { ...item, likes: [...(item.likes || []).filter(like => like.user_id !== userId), ...(previousLike ? [previousLike] : [])] } : item)); setError(failure.message) }
+    } catch (failure) { change(items => items.map(item => item.id === comment.id ? { ...item, likes: [...(item.likes || []).filter(like => like.user_id !== userId), ...(previousLike ? [previousLike] : [])] } : item)); setError(appErrorMessage(failure)) }
     finally { pending.current.delete(comment.id) }
   }
   const remove = async comment => {
@@ -101,7 +102,7 @@ export default function CommunityComments({ post, client, userId = undefined, ow
       const removedIds = commentDescendants(comments, comment.id)
       if (replyTo && removedIds.has(replyTo.id)) setReplyTo(null)
       if (editing && removedIds.has(editing.id)) { setEditing(null); setBody('') }
-    } catch (failure) { setError(failure.message) }
+    } catch (failure) { setError(appErrorMessage(failure)) }
     finally { pending.current.delete(comment.id) }
   }
   const submit = async event => {
@@ -131,7 +132,7 @@ export default function CommunityComments({ post, client, userId = undefined, ow
       setBody(''); setReplyTo(null)
     } catch (failure) {
       if (optimisticId) change(items => items.filter(item => item.id !== optimisticId))
-      setError(failure.message || 'Não foi possível salvar. Tente novamente.')
+      setError(appErrorMessage(failure, 'Não foi possível salvar. Tente novamente.'))
     } finally { sendingRef.current = false; setSending(false) }
   }
   const renderThread = (comment, ancestors = new Set()) => {

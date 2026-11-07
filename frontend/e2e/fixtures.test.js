@@ -8,6 +8,13 @@ export async function openMainNavigation(page) {
   if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click()
   await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 }
+export async function startWorkoutExecution(page) {
+  await page.locator('.active-workout').getByRole('button', { name: 'Começar treino', exact: true }).click()
+  const duration = page.getByRole('dialog', { name: 'Quanto tempo vai treinar hoje?' })
+  await expect(duration).toBeVisible()
+  await duration.getByRole('button', { name: 'Confirmar duração', exact: true }).click()
+  await expect(duration).toHaveCount(0)
+}
 export function stateFixture(){
   return {pwaInstallPrompt:{dismissForever:true},stateSchemaVersion:2,massUnit:'kg',displayUnit:'kg',restSec:90,sound:false,keepAwake:false,lang:'pt',theme:'dark',accent:'lime',body:'male',targetW:null,
     profile:{name:'Pessoa Teste',avatarId:'avatar-27',birthDate:'1995-01-01',sex:'male',heightCm:175,startWeight:75,goal:'build_muscle',experience:'intermediate',completedAt:'2026-10-02T12:00:00Z'},

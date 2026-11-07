@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Russian UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...projectErrorLocale('ru'),
   "Clique para desmarcar": "Нажмите, чтобы снять отметку",
   "Clique para remover": "Нажмите, чтобы удалить",
   "Disciplinas que você leciona:": "Дисциплины, которые вы преподаёте:",

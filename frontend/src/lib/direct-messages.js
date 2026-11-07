@@ -1,8 +1,9 @@
+import { serviceError } from './app-errors.js'
 export function createMessageRepository(client) {
   const rpc = async (name, args = {}) => {
     if (!client?.rpc) throw new Error('Mensagens indisponíveis. Tente novamente.')
-    const { data, error } = await client.rpc(name, args)
-    if (error) throw error
+    const { data, error, status } = await client.rpc(name, args)
+    if (error) throw serviceError(error, status)
     return data
   }
   return {

@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Polish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...projectErrorLocale('pl'),
   "Clique para desmarcar": "Kliknij, aby odznaczyć",
   "Clique para remover": "Kliknij, aby usunąć",
   "Disciplinas que você leciona:": "Dziedziny, których nauczasz:",

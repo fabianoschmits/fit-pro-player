@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import AccountPhone from '../components/AccountPhone.jsx'
@@ -21,7 +22,7 @@ async function confirmPersonalSave() {
   return true
 }
 function PersonalSaveButton({ onSave = undefined, onError }) {
-  return <Button feedback="persistence" appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={error => onError(error instanceof Error ? error.message : localSaveError())}
+  return <Button feedback="persistence" appearance="custom" className="personal-save" icon="check" onAction={onSave} onError={error => onError(appErrorMessage(error, localSaveError()))}
     loadingLabel={t('Saving…')} successLabel={t('Saved')} errorLabel={t('Save')}>{t('Save')}</Button>
 }
 

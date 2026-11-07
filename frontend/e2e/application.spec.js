@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed, stateFixture, USER, openMainNavigation } from './fixtures.test.js'
+import { seed, stateFixture, USER, openMainNavigation, startWorkoutExecution } from './fixtures.test.js'
 
 for (const width of [320, 390]) {
   test(`workout adjustments stay below series and leave execution unobstructed at ${width}px`, async ({page}) => {
@@ -11,7 +11,7 @@ for (const width of [320, 390]) {
     await page.goto('/#/home')
     await openMainNavigation(page)
     await page.locator('[data-tab-key="start"]').click()
-    await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
+    await startWorkoutExecution(page)
 
     const card = page.locator('.exercise-input-card')
     const tools = page.locator('details.workout-tools')
@@ -103,7 +103,7 @@ test('execution guidance waits for play before each set and progresses after sto
   await page.locator('[data-tab-key="start"]').click()
   await expect(page.locator('.exercise-muscle-static svg')).toBeVisible()
   await expect(page.locator('.wp-main-action.is-executing')).toHaveCount(0)
-  await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
+  await startWorkoutExecution(page)
   const firstPlay = page.locator('.set-start-action')
   await expect(firstPlay).toHaveAccessibleName('Iniciar série 1')
   await expect(firstPlay.locator('svg')).toBeVisible()
@@ -163,7 +163,7 @@ test('rest expiration leaves the next set waiting for play', async ({page}) => {
   await page.goto('/#/home')
   await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
-  await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
+  await startWorkoutExecution(page)
   await page.locator('.set-start-action').click()
   await page.getByRole('button', {name:'Concluir série 1', exact:true}).click()
   await expect(page.locator('#timer')).toBeVisible()
@@ -187,7 +187,7 @@ test('timed sets keep stop accessible and wait for play after rest expires', asy
   await page.goto('/#/home')
   await openMainNavigation(page)
   await page.locator('[data-tab-key="start"]').click()
-  await page.locator('.active-workout').getByRole('button', {name:'Começar treino', exact:true}).click()
+  await startWorkoutExecution(page)
   await expect(page.locator('.work-set-overlay')).toHaveCount(0)
   await page.locator('.set-start-action').click()
   await expect(page.locator('.work-set-overlay__time')).toBeVisible()
@@ -249,8 +249,8 @@ test('student receives a professional plan and applies it only after explicit co
  await page.getByRole('button',{name:'Treino do profissional',exact:true}).click()
  // The complete-week calendar also contains this title, with compact labels
  // hidden on mobile. Verify the visible received workout, not DOM order.
- await expect(page.locator('.received-workout-main').getByText('Plano recebido',{exact:true})).toBeVisible()
- await expect(page.locator('.professional-plan-preview .plan-day')).toHaveCount(7)
+ await expect(page.locator('.received-workout-card').getByText('Plano recebido',{exact:true})).toBeVisible()
+ await expect(page.locator('.professional-plan-preview .received-workout-card')).toHaveCount(1)
  await expect(page.getByRole('button',{name:'Usar este plano',exact:true})).toHaveCount(1)
  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem(`fpp_account_cache_v1:11111111-1111-4111-8111-111111111111`)).state.routines[0].name)).toBe('Treino de teste')
  expect(applied).toBe(false)
@@ -282,7 +282,7 @@ test('guest can start, discard, reload and keep the planned routine',async({page
 test('completed workout is persisted and remains in history after reload',async({page})=>{
   await seed(page);await page.goto('/#/home');await openMainNavigation(page);await page.locator('[data-tab-key="start"]').click()
   await expect(page.locator('.workout-session-title')).toBeVisible()
-  await page.locator('.active-workout').getByRole('button',{name:'Começar treino',exact:true}).click()
+  await startWorkoutExecution(page)
   await page.locator('.set-start-action').click()
   await page.getByRole('button',{name:'Concluir série 1',exact:true}).click()
   const dialog=page.getByRole('dialog').last()

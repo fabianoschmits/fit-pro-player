@@ -1,3 +1,4 @@
+import { appErrorMessage } from '../lib/app-errors.js'
 import { CommunityImage } from '../components/community/CommunityPostMedia.jsx'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -95,7 +96,7 @@ export default function SupportTicket() {
       }
     } catch (err) {
       if (current.current === ticketId && request.current === version)
-        setError(err.message || 'Chamado não encontrado.')
+        setError(appErrorMessage(err, 'Chamado não encontrado.'))
     } finally {
       if (current.current === ticketId && request.current === version) setBusy(false)
     }
@@ -187,7 +188,7 @@ export default function SupportTicket() {
       void load()
       return true
     },
-    onError: err => { if (current.current === ticketId) setError(err.message || 'Não foi possível enviar.') },
+    onError: err => { if (current.current === ticketId) setError(appErrorMessage(err, 'Não foi possível enviar.')) },
   })
 
   const send = e => { e.preventDefault(); void action.run(e) }

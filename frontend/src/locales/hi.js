@@ -1,7 +1,9 @@
+import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Hindi UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...projectErrorLocale('hi'),
   "Clique para desmarcar": "चयन हटाने के लिए क्लिक करें",
   "Clique para remover": "हटाने के लिए क्लिक करें",
   "Disciplinas que você leciona:": "आप जो विषय सिखाते हैं:",
