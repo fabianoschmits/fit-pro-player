@@ -1,8 +1,8 @@
 import { appErrorMessage } from '../lib/app-errors.js'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js'
-import { DEFAULT_PRIVACY_CONSENT, readPrivacyConsent, savePrivacyConsent } from '../lib/privacy-consent.js'
+import { DEFAULT_PRIVACY_CONSENT, readPrivacyConsent, savePrivacyConsent, setAnalyticsConsentAccount, hasPendingAnalyticsRevocation, setPendingAnalyticsRevocation } from '../lib/privacy-consent.js'
 import { Button } from './ui.jsx'
 
 const REMOTE_PURPOSE = 'cookie_preferences'
@@ -15,6 +15,8 @@ function preferencesFromRows(rows) {
 
 export default function PrivacyConsentModal() {
   const auth = useAuth()
+  const currentAccount=useRef(auth.user?.id)
+  currentAccount.current=auth.user?.id
   const [consent, setConsent] = useState(() => readPrivacyConsent())
   const [customizing, setCustomizing] = useState(false)
   const [draft, setDraft] = useState(() => readPrivacyConsent() || DEFAULT_PRIVACY_CONSENT)
@@ -24,14 +26,23 @@ export default function PrivacyConsentModal() {
 
   useEffect(() => {
     let active = true
+    setAnalyticsConsentAccount(null)
     const load = async () => {
       let next = readPrivacyConsent()
       const client = getBrowserSupabaseClient()
       if (auth.status === 'authenticated' && auth.user?.id && client) {
         const { data } = await client.from('privacy_consents').select('purpose,granted,details').eq('user_id', auth.user.id)
         const remote = preferencesFromRows(data)
-        if (remote) next = savePrivacyConsent(remote)
-        else if (next) await persistConsent(client, next)
+        if (!active) return
+        if (hasPendingAnalyticsRevocation(auth.user.id)) {
+          next=savePrivacyConsent({...DEFAULT_PRIVACY_CONSENT,...remote,analytics:false})
+          await persistConsent(client,next,auth.user.id)
+          if (!active) return
+          setPendingAnalyticsRevocation(auth.user.id,false)
+          setAnalyticsConsentAccount(auth.user.id)
+        }
+        else if (remote) { next = savePrivacyConsent(remote); setAnalyticsConsentAccount(auth.user.id) }
+        else if (next?.analytics) next = null
       }
       if (!active) return
       setConsent(next); setDraft(next || DEFAULT_PRIVACY_CONSENT); setVisible(!next); setReady(true)
@@ -50,10 +61,11 @@ export default function PrivacyConsentModal() {
   const save = async next => {
     setSaveError('')
     const saved = savePrivacyConsent(next)
+    if (auth.user?.id && !saved.analytics) setPendingAnalyticsRevocation(auth.user.id,true)
     setConsent(saved); setDraft(saved)
     const client = getBrowserSupabaseClient()
     try {
-      if (auth.status === 'authenticated' && client) await persistConsent(client, saved)
+      if (auth.status === 'authenticated' && client) { await persistConsent(client, saved,auth.user?.id); setPendingAnalyticsRevocation(auth.user?.id,false); if(currentAccount.current===auth.user?.id) setAnalyticsConsentAccount(auth.user?.id) }
       return saved
     } catch (error) {
       setSaveError(appErrorMessage(error, 'Suas escolhas foram salvas neste dispositivo. Não foi possível sincronizá-las; tente novamente quando estiver conectado.'))
@@ -72,7 +84,7 @@ export default function PrivacyConsentModal() {
         <div className="privacy-consent-options">
           <ConsentOption label="Necessários" description="Essenciais para login, segurança e funcionamento." checked disabled />
           <ConsentOption label="Preferências" description="Lembra escolhas e melhora a experiência." checked={draft.preferences} onChange={value => setDraft(current => ({ ...current, preferences: value }))} />
-          <ConsentOption label="Medição de uso" description="Ajuda a entender desempenho e erros do app." checked={draft.analytics} onChange={value => setDraft(current => ({ ...current, analytics: value }))} />
+          <ConsentOption label="Medição de uso" description="Com sua permissão, mede etapas de uso, desempenho e categorias de erro por até 90 dias. Não coleta mensagens, fotos ou dados corporais. Você pode revogar e excluir os registros em Privacidade." checked={draft.analytics} onChange={value => setDraft(current => ({ ...current, analytics: value }))} />
           <ConsentOption label="Comunicações" description="Permite mensagens opcionais e novidades." checked={draft.communications} onChange={value => setDraft(current => ({ ...current, communications: value }))} />
         </div>
         <div className="privacy-consent-actions"><Button feedback="persistence" variant="primary" onAction={() => save(draft)} onSuccess={closeAfterSave} loadingLabel="Salvando…" successLabel="Salvo" errorLabel="Tentar novamente">Salvar escolhas</Button></div>
@@ -87,8 +99,8 @@ function ConsentOption({ label = undefined, description = undefined, checked, di
   return <label className="privacy-consent-option"><span><strong>{label}</strong><small>{description}</small></span><input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange?.(event.target.checked)} /></label>
 }
 
-async function persistConsent(client, consent) {
+async function persistConsent(client, consent, accountId) {
   const details = JSON.stringify({ version: consent.version, preferences: consent.preferences, analytics: consent.analytics, communications: consent.communications })
-  const { error } = await client.rpc('record_privacy_consent', { p_version: consent.version, p_purpose: REMOTE_PURPOSE, p_granted: true, p_details: details })
+  const { error } = await client.rpc('record_scoped_privacy_consent', { p_expected_account:accountId,p_version: consent.version, p_purpose: REMOTE_PURPOSE, p_granted: true, p_details: details })
   if (error) throw error
 }

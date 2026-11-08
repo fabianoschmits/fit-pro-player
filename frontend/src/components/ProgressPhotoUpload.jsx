@@ -1,3 +1,4 @@
+import { trackInsight } from '../lib/insights-client.js'
 import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from './ui.jsx'
@@ -7,7 +8,9 @@ import { processProgressPhoto } from '../lib/progress-photo-processing.js'
 import { analyzeProgressPhoto } from '../lib/progress-photo-alignment.js'
 import { todayISO } from '../lib/format.js'
 
-export default function ProgressPhotoUpload({ repository, onSaved, onCancel }) {
+export default function ProgressPhotoUpload({ repository, onSaved, onCancel, insightJourney = null }) {
+  const journey = useRef(insightJourney || crypto.randomUUID())
+  const emit = (name,step) => trackInsight(name,{flow:'photos',step,journey_id:journey.current})
   const [processed, setProcessed] = useState(null)
   const [preview, setPreview] = useState('')
   const [date, setDate] = useState(todayISO)
@@ -35,6 +38,7 @@ export default function ProgressPhotoUpload({ repository, onSaved, onCancel }) {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file || lock.current) return
+    emit('photo_selection_started','select')
     const token = ++generation.current
     setError(''); setWarning(''); setProcessed(null); setState('processing')
     try {
@@ -46,6 +50,7 @@ export default function ProgressPhotoUpload({ repository, onSaved, onCancel }) {
     event.preventDefault()
     if (!processed || lock.current) return
     if (navigator.onLine === false) { setError('Sem conexão. Conecte-se à internet para salvar a fotografia.'); setState('error'); return }
+    emit('photo_upload_started','upload')
     lock.current = true
     const token = ++generation.current
     setError(''); setState('analyzing')
@@ -55,7 +60,7 @@ export default function ProgressPhotoUpload({ repository, onSaved, onCancel }) {
       if (!automatic) setWarning('Alinhamento automático indisponível para esta foto. Você poderá ajustar manualmente.')
       setState('saving')
       await repository.upload(processed, { date, angle, automatic })
-      if (token === generation.current) onSaved(angle)
+      if (token === generation.current) { emit('photo_upload_completed','processed'); onSaved(angle) }
     } catch (err) { if (token === generation.current) { setError(appErrorMessage(err)); setState('error') } }
     finally { lock.current = false }
   }
@@ -72,6 +77,6 @@ export default function ProgressPhotoUpload({ repository, onSaved, onCancel }) {
     {busy && <><FppProgress label={state === 'processing' ? 'Processando imagem' : state === 'analyzing' ? 'Analisando alinhamento' : 'Salvando fotografia'} /><FppActionFeedback state="loading">{state === 'processing' ? 'Processando imagem…' : state === 'analyzing' ? 'Analisando alinhamento neste dispositivo…' : 'Enviando e salvando fotografia…'}</FppActionFeedback></>}
     {warning && <FppActionFeedback state="warning">{warning}</FppActionFeedback>}
     {error && <FppActionFeedback state="error">{error}</FppActionFeedback>}
-    <div className="bp-photo-actions"><Button type="button" variant="plain" disabled={state === 'saving'} onClick={onCancel}>Cancelar</Button><Button type="submit" disabled={!processed || busy}>Salvar fotografia</Button></div>
+    <div className="bp-photo-actions"><Button type="button" variant="plain" disabled={state === 'saving'} onClick={() => { trackInsight('flow_interrupted',{flow:'photos',journey_id:journey.current,outcome:state==='error'?'high':'neutral',error_category:state==='error'?'after_errors':'voluntary_exit'}); onCancel() }}>Cancelar</Button><Button type="submit" disabled={!processed || busy}>Salvar fotografia</Button></div>
   </form>
 }

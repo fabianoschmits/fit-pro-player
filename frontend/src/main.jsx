@@ -1,3 +1,4 @@
+import { trackInsight } from './lib/insights-client.js'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App, { preloadCoreRoutes } from './App.jsx'
@@ -95,7 +96,7 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
     }
     const checkForUpdate = () => {
       if (document.visibilityState === 'hidden') return
-      registration.update().then(activateWaiting).catch(() => {})
+      registration.update().then(activateWaiting).catch(() => { if(navigator.onLine!==false) trackInsight('service_worker_failed',{action:'update',error_category:'update_failed'}) })
       checkAppShell().catch(() => {})
     }
 
@@ -135,5 +136,5 @@ if (!MOBILE && 'serviceWorker' in navigator && (location.protocol === 'https:' |
       window.removeEventListener('online', checkForUpdate)
       document.removeEventListener('visibilitychange', checkForUpdate)
     }, { once: true })
-  }).catch(() => {})
+  }).catch(() => { if(navigator.onLine!==false) trackInsight('service_worker_failed',{action:'register',error_category:'registration_failed'}) })
 }

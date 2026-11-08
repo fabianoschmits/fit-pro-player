@@ -1,5 +1,6 @@
+import { trackInsight } from '../lib/insights-client.js'
 import { appErrorMessage } from '../lib/app-errors.js'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from './ui.jsx'
 import { clampTransform, defaultTransform } from '../lib/progress-photo-alignment.js'
 import { fmtDate } from '../lib/format.js'
@@ -13,7 +14,9 @@ export function PhotoLayer({ photo, url, transform = baseTransform(photo), onLoa
     style={{ width: `${photo.width / photo.height * transform.scale / .75 * 100}%`, height: `${transform.scale * 100}%`, left: `${transform.x / .75 * 100}%`, top: `${transform.y * 100}%` }} />
 }
 
-export default function ProgressPhotoCompare({ before, after, beforeURL, afterURL, onSave = undefined, controls = true, collapsibleControls = false, children = undefined }) {
+export default function ProgressPhotoCompare({ before, after, beforeURL, afterURL, onSave = undefined, controls = true, collapsibleControls = false, children = undefined, insightJourney = null }) {
+  const observed = useRef(false), interacted = useRef(false)
+  useEffect(()=>{if(insightJourney && !observed.current){observed.current=true;trackInsight('photo_comparison_opened',{flow:'photos',step:'compare',journey_id:insightJourney})}},[insightJourney])
   const stage = useRef(null)
   const drag = useRef(null)
   const [divider, setDivider] = useState(50)
@@ -23,6 +26,7 @@ export default function ProgressPhotoCompare({ before, after, beforeURL, afterUR
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState({ before: false, after: false })
   const moveDivider = event => {
+    if(insightJourney && !interacted.current){interacted.current=true;trackInsight('photo_comparison_interacted',{flow:'photos',step:'interact',journey_id:insightJourney})}
     const rect = stage.current.getBoundingClientRect()
     setDivider(Math.max(0, Math.min(100, (event.clientX - rect.left) / rect.width * 100)))
   }

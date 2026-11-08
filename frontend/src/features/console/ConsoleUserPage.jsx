@@ -8,13 +8,14 @@ import { useConsoleAccess, AccessGate } from './ConsoleAccess.jsx'
 import { Avatar, Chip, SectionBody, Kv, Loading, Empty, Alert, fmtDate, weekSchedule, workoutVolumePoints, bodyweightPoints, CxButton } from './ConsoleUI.jsx'
 import { useFppAction } from '../../components/useFppAction.js'
 import { fppActionInput } from '../../components/fpp-action-timing.js'
+import InsightsUserExperience from './insights/InsightsUserExperience.jsx'
 import CommunityModerationPanel from './CommunityModerationPanel.jsx'
 
 export function ConsoleUserPage() {
   const { userId: targetId } = useParams()
   const { key: navigationKey } = useLocation()
   const [params] = useSearchParams()
-  const section = ['account', 'training', 'professional'].includes(params.get('section')) ? params.get('section') : 'account'
+  const section = ['account', 'training', 'professional', 'experience'].includes(params.get('section')) ? params.get('section') : 'account'
   const navigate = useNavigate()
   const { userId, repo, allowed } = useConsoleAccess()
   const [user, setUser] = useState(null)
@@ -112,12 +113,14 @@ export function ConsoleUserPage() {
               </div>
 
               <nav className="console-detail-tabs" aria-label="Seções do usuário">
+                <Link to="?section=experience" aria-current={section === 'experience' ? 'page' : undefined}>Experiência de uso</Link>
                 <Link to={`?section=account`} aria-current={section === 'account' ? 'page' : undefined}>Conta e acesso</Link>
                 <Link to={`?section=training`} aria-current={section === 'training' ? 'page' : undefined}>Treinos e evolução</Link>
                 {isPro && <Link to={`?section=professional`} aria-current={section === 'professional' ? 'page' : undefined}>Perfil profissional</Link>}
               </nav>
 
               {/* ── resumo da seção selecionada ── */}
+              {section === 'experience' && <InsightsUserExperience key={`${userId}:${targetId}`} targetId={targetId} />}
               <div className="cx-grid-2">
                 {section === 'account' && <SectionBody>
                   <div className="cx-section-label">Conta</div>

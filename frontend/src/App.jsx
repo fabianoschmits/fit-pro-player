@@ -4,6 +4,8 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useStore } from './store/useStore.js'
+import { observeInsightsOpening } from './lib/insights-performance.js'
+import { activateInsights, installInsightsTransport, trackInsight } from './lib/insights-client.js'
 import { useAuth } from './auth/AuthProvider.jsx'
 import { openAuthSheet } from './components/AuthSheet.jsx'
 import { useUI } from './store/useUI.js'
@@ -110,6 +112,7 @@ const ConsoleProfessionals = lazy(() => loadConsole().then(module => ({ default:
 const ConsoleUserPage = lazy(() => loadConsole().then(module => ({ default: module.ConsoleUserPage })))
 const ConsoleSupport = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupport })))
 const ConsoleSupportTicket = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupportTicket })))
+const ConsoleInsights = lazy(() => loadConsole().then(module => ({ default: module.ConsoleInsights })))
 const ConsoleSystem = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSystem })))
 const ConsoleFaq = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaq })))
 const ConsoleFaqEditor = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaqEditor })))
@@ -276,6 +279,18 @@ function Shell() {
   const navigate = useNavigate()
   const loc = useLocation()
   const auth = useAuth()
+  const insightsRoute = useRef('')
+  useEffect(() => {
+    activateInsights(auth.status === 'authenticated' && !auth.user?.isAnonymous ? auth.user?.id : null)
+    const dispose = installInsightsTransport()
+    const stopOpening = observeInsightsOpening()
+    return () => { stopOpening(); dispose() }
+  }, [auth.status, auth.user?.id, auth.user?.isAnonymous])
+  useEffect(() => {
+    if (auth.status !== 'authenticated' || auth.user?.isAnonymous || insightsRoute.current === loc.pathname || loc.pathname.startsWith('/console')) return
+    insightsRoute.current = loc.pathname
+    trackInsight('screen_viewed', { route: loc.pathname })
+  }, [loc.pathname, auth.status, auth.user?.isAnonymous])
   const recoveryShown = useRef(false)
   const boot = useStore(s => s.boot)
   const { S, ready } = useStore()
@@ -321,13 +336,22 @@ function Shell() {
     const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
     const repository = createTrainingRepository({ client, accountId })
     let tabSync = null
+    let observedSyncState = 'saved'
     const sync = createAccountDomainSync({
       repository,
       getState: () => useStore.getState().S,
       replaceState: next => useStore.getState().replaceState(next, false),
       isCurrent: () => current(accountId),
       isOnline: () => navigator.onLine !== false,
-      onStatus: status => { if (current(accountId)) useStore.getState().setAccountSyncStatus(status) },
+      onStatus: status => {
+        if (!current(accountId)) return
+        useStore.getState().setAccountSyncStatus(status)
+        if (status.state !== observedSyncState) {
+          if (status.state === 'error') trackInsight('sync_failed',{action:'account_sync',error_category:'sync_failed'})
+          if (status.state === 'saved' && observedSyncState === 'error') trackInsight('sync_recovered',{action:'account_sync'})
+          observedSyncState=status.state
+        }
+      },
       onCommitted: (domain, revision) => tabSync?.publish(domain, revision),
     })
     useStore.getState().configureAccountSync(() => sync.retry(), (data, context) => sync.acceptConfirmedPlan(data, context), () => sync.beginPlanApplication())
@@ -560,6 +584,7 @@ function Shell() {
                 <Route path="/motion-feedback" element={<MotionFeedback />} />
                 <Route path="/console" element={<ConsoleHome />} />
                 <Route path="/console/community" element={<ConsoleCommunity />} />
+                <Route path="/console/insights" element={<ConsoleInsights />} />
                 <Route path="/console/system" element={<ConsoleSystem />} />
                 <Route path="/console/laboratory" element={<ConsoleLaboratory />} />
                 <Route path="/console/laboratory/menus" element={<AlternativeMenus />} />

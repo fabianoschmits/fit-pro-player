@@ -1,0 +1,7 @@
+import InsightsDonutChart from './InsightsDonutChart.jsx'
+import InsightsPanel from './InsightsPanel.jsx'
+import InsightsKpis from './InsightsKpis.jsx'
+import InsightsTrendChart from './InsightsTrendChart.jsx'
+export default function InsightsRetention(props) {
+  return <><InsightsPanel {...props} title="Retenção e engajamento" method="getInsightsRetention">{data => <><InsightsKpis items={(data.cohorts || []).map(c => ({ label: `Retenção D${c.day}`, value: c.rate, suffix: '%' }))} /><p className="fi-note">{data.definition} Só usuários com consentimento. Coortes com menos de cinco usuários são protegidas.</p><InsightsTrendChart rows={data.rows} /><InsightsTrendChart rows={data.weekly} label="Atividade por semana" /><InsightsDonutChart rows={data.platforms} /></>}</InsightsPanel><InsightsPanel {...props} title="Ativação e recorrência de treinos" method="getInsightsActivation">{data=><><InsightsKpis items={[{label:'Usuários com treino concluído',value:data.eligible_users},{label:'Primeiro treino na fonte atual',value:data.first_workout_users},{label:'Dois ou mais treinos no período',value:data.recurring_workout_users},{label:'Treinos por usuário',value:data.average_completed}]} /><p className="fi-note">Fonte operacional: sessões confirmadas no servidor. Primeiro treino refere-se ao primeiro registro concluído em workout_sessions; não presume ausência de treinos legados.</p></>}</InsightsPanel></>
+}

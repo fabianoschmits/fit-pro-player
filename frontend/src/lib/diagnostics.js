@@ -1,3 +1,4 @@
+import { trackInsight } from './insights-client.js'
 const KEY = 'fpp_diagnostics_v1'
 const TYPES = new Set(['runtime-error','asset-error','unhandled-rejection','navigation','long-task','storage-error','sync-error'])
 export function readDiagnostics(storage = globalThis.localStorage) {
@@ -5,6 +6,8 @@ export function readDiagnostics(storage = globalThis.localStorage) {
 }
 export function recordDiagnostic(type, data = {}, storage = globalThis.localStorage) {
   if (!TYPES.has(type)) return
+  const event = { 'runtime-error':'runtime_error','asset-error':'asset_load_failed','unhandled-rejection':'runtime_error','storage-error':'storage_failed','sync-error':'sync_failed','long-task':'operation_slow','navigation':'app_open_measured' }[type]
+  if (event) trackInsight(event, { error_category: type.replaceAll('-', '_'), duration_ms: data.duration })
   const safe={type,at:new Date().toISOString()}
   for(const field of ['duration','transferSize','count']) if(Number.isFinite(data[field]) && data[field]>=0) safe[field]=Math.round(data[field])
   try { storage.setItem(KEY,JSON.stringify([...readDiagnostics(storage),safe].slice(-50))) } catch { /* diagnostic failure never breaks training */ }

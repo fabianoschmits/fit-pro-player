@@ -1,3 +1,4 @@
+import { beginPersonalRoutineJourney } from '../lib/insights-journeys.js'
 import { hasAssignedProgram } from '../lib/assigned-program.js'
 import { PlanWeek, RoutineList } from '../components/training/TrainingPlanWorkspace.jsx'
 import PlanLibrary from '../components/training/PlanLibrary.jsx'
@@ -38,6 +39,7 @@ export default function Plan() {
   const addRoutine = () => {
     const suffix = String.fromCharCode(65 + Math.min(S.routines.length, 25))
     const r = { id: routineId(), name: `${t('Routine')} ${suffix}`, emoji: DEFAULT_GLYPH, ex: [] }
+    beginPersonalRoutineJourney(r.id,{hasName:Boolean(r.name)})
     update(state => { state.routines.push(r) })
     nav('/plan/r/' + r.id)
   }

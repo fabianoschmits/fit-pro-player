@@ -1,3 +1,4 @@
+import { trackInsight } from '../lib/insights-client.js'
 import { appErrorMessage } from '../lib/app-errors.js'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -29,6 +30,9 @@ function PrivatePhoto({ photo, repository, large = false }) {
 }
 
 function AccountGallery({ userId, mode, body }) {
+  const insightJourney = useRef(crypto.randomUUID())
+  const observed = useRef(false)
+  useEffect(()=>{if (!observed.current) { observed.current=true; trackInsight('photo_feature_opened',{flow:'photos',step:'open',journey_id:insightJourney.current}) }},[])
   const editor = mode === 'editor'
   const [repository, setRepository] = useState(null)
   const [photos, setPhotos] = useState([])
@@ -100,7 +104,7 @@ function AccountGallery({ userId, mode, body }) {
   }
   const editorFields = editor && <div className="bp-photo-editor-fields">
     <Button className="bp-photo-add" variant="tinted" icon="plus" disabled={!repository || status === 'loading' || busy || uploading} onClick={() => setUploading(true)}>Adicionar foto</Button>
-    {uploading && repository && <Suspense fallback={loading}><Upload repository={repository} onCancel={() => setUploading(false)} onSaved={nextAngle => {
+    {uploading && repository && <Suspense fallback={loading}><Upload insightJourney={insightJourney.current} repository={repository} onCancel={() => setUploading(false)} onSaved={nextAngle => {
       if (!live.current) return
       setUploading(false); setAngle(nextAngle); setSelection({ before: '', after: '' }); useUI.getState().toast('Fotografia salva'); void refresh()
     }} /></Suspense>}
@@ -116,7 +120,7 @@ function AccountGallery({ userId, mode, body }) {
   const showDemo = status === 'idle' && photos.length === 0
   let comparison = <section className="bp-photo-placeholder bp-empty"><strong>{photos.length ? 'Nenhuma foto deste ângulo' : 'Nenhuma fotografia cadastrada'}</strong><span>{editor ? 'Adicione duas fotos do mesmo ângulo para comparar sua evolução.' : 'Use Editar fotos para preparar sua comparação privada.'}</span></section>
   if (before) comparison = <div className="bp-photo-single"><PrivatePhoto photo={before} repository={repository} large /><p className="bp-neutral-note">Adicione outra foto deste ângulo para comparar sua evolução.</p></div>
-  if (pair) comparison = urlsReady ? <Suspense fallback={loading}><Compare key={`${before.id}:${after.id}`} before={before} after={after} beforeURL={urls.before} afterURL={urls.after} controls={editor} collapsibleControls={editor} onSave={async (photo, transform) => {
+  if (pair) comparison = urlsReady ? <Suspense fallback={loading}><Compare insightJourney={insightJourney.current} key={`${before.id}:${after.id}`} before={before} after={after} beforeURL={urls.before} afterURL={urls.after} controls={editor} collapsibleControls={editor} onSave={async (photo, transform) => {
         await repository.saveTransform(photo, transform)
         if (live.current) { setPhotos(current => current.map(item => item.id === photo.id ? { ...item, manual_transform: transform } : item)); useUI.getState().toast('Alinhamento salvo') }
       }}>{editorFields}</Compare></Suspense> : loading

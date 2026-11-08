@@ -1,3 +1,4 @@
+export { default as ConsoleInsights } from '../features/console/ConsoleInsights.jsx'
 export { default } from '../features/console/ConsoleOverview.jsx'
 export { ConsoleUsers } from '../features/console/ConsoleUsers.jsx'
 export { ConsoleProfessionals } from '../features/console/ConsoleProfessionals.jsx'

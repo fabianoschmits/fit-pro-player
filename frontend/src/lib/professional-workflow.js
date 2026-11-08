@@ -1,3 +1,4 @@
+import { getInsightsAccount, trackInsight } from './insights-client.js'
 import { serviceError } from './app-errors.js'
 import { normalizeWeeklyPlan, validateAvailableWeeklyPlan } from './professional-program.js'
 
@@ -119,8 +120,28 @@ export function createProfessionalWorkflowRepository({ client = undefined } = {}
       if (!validation.ok) throw new Error(validation.error)
     }
     if (!client?.rpc) throw new Error('supabase-unavailable')
+    const owner = getInsightsAccount(), operation = crypto.randomUUID(), started = performance.now()
+    const monitored = ['request_professional_link','accept_professional_link_request','accept_professional_invite','apply_library_plan','send_student_plan']
+    if (monitored.includes(name) && name !== 'apply_library_plan') trackInsight(name === 'request_professional_link' ? 'professional_link_requested' : 'professional_step_completed',{flow:'professional',action:name,operation_id:operation,journey_id:args.p_request_id || operation,step:['request_professional_link','accept_professional_invite'].includes(name)?'start':undefined,outcome:'attempted'})
     const { data, error, status } = await client.rpc(name, args)
-    if (error) throw serviceError(error, status)
+    if (error) {
+      if (monitored.includes(name) && owner === getInsightsAccount() && navigator.onLine !== false) trackInsight('action_failed',{flow:name==='apply_library_plan'?'plan_selection':'professional',action:name,operation_id:operation,error_category:'request_failed'})
+      throw serviceError(error, status)
+    }
+    if (owner && monitored.includes(name) && owner === getInsightsAccount()) {
+      const source = Array.isArray(data) ? data[0] : data
+      const entity = args.p_request_id || (name === 'apply_library_plan' ? args.p_plan_id : name === 'request_professional_link' ? source?.id : source?.relationship_id || source?.id)
+      const kind = args.p_request_id || name === 'request_professional_link' ? 'request' : name === 'apply_library_plan' ? 'plan' : 'relationship'
+      if (entity) void client.rpc('insights_link_context',{p_kind:kind,p_id:entity}).then(result=>{
+        if (result.error || !result.data || owner !== getInsightsAccount()) return
+        const journey = result.data
+        const steps = name === 'request_professional_link' ? ['start','sent','received'] : name === 'apply_library_plan' ? ['selected'] : name === 'accept_professional_invite' ? ['sent','received','linked'] : name.startsWith('accept_') ? ['linked'] : ['available']
+        for (const step of steps) trackInsight(name==='apply_library_plan'?'professional_plan_selected':'professional_step_completed',{flow:'professional',step,journey_id:journey,operation_id:operation,outcome:'server_confirmed'})
+      }).catch(()=>{})
+      const journey = undefined
+      const event = name === 'apply_library_plan' ? 'professional_plan_selected' : name === 'request_professional_link' ? 'professional_link_requested' : name.startsWith('accept_') ? 'professional_link_established' : 'professional_step_completed'
+      if(name!=='apply_library_plan') trackInsight(event,{flow:'professional',action:name,operation_id:operation,journey_id:journey,step:name === 'request_professional_link' ? 'sent' : name === 'apply_library_plan' ? 'selected' : name.startsWith('accept_') ? 'linked' : 'available',outcome:'server_confirmed',duration_ms:performance.now()-started})
+    }
     return data
   }
   const read = async (table, query) => {

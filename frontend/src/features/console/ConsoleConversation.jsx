@@ -39,7 +39,8 @@ export default function ConsoleConversation() {
     if (!ticket?.ticketId) throw new Error('ticket-not-found')
     const person = await accounts.userDetail(ticket.userId).catch(() => null)
     const reportedPerson = ticket.reportContext?.reportedUserId ? await accounts.userDetail(ticket.reportContext.reportedUserId).catch(() => null) : null
-    return { ticket, person, reportedPerson }
+    const diagnostics = await getBrowserSupabaseClient()?.rpc('ops_support_diagnostics',{p_ticket_id:ticketId}).then(result=>result.error ? null : result.data).catch(()=>null)
+    return { ticket, person, reportedPerson, diagnostics }
   } })
   const ticket = data?.ticket
 
@@ -238,6 +239,7 @@ export default function ConsoleConversation() {
 
         <aside className="console-conversation-sidebar">
           {ticket.reportContext?.reportedUserId && <section><SectionTitle>Moderação da Comunidade</SectionTitle><SectionBody><p>Usuário denunciado: {data.reportedPerson?.displayName || ticket.reportContext.reportedUserId}</p><CommunityModerationPanel key={`${identity}:${ticket.reportContext.reportedUserId}`} targetUserId={ticket.reportContext.reportedUserId} sourceTicketId={ticketId} initialReason={ticket.reportContext.reason} /></SectionBody></section>}
+          {data.diagnostics?.length > 0 && <section><SectionTitle>Diagnóstico compartilhado</SectionTitle><SectionBody>{data.diagnostics.map((item,i)=><p key={i}>{item.type} · {item.duration || 0} ms · {item.count || 0} registros</p>)}</SectionBody></section>}
           <section><SectionTitle>Quem enviou</SectionTitle><SectionBody><div className="console-panel-content"><strong>{data.person?.displayName || 'Usuário'}</strong><p>{data.person?.email || ticket.email || 'Conta sem e-mail'}</p><Link className="console-text-link" to={`/console/users/${ticket.userId}`}>Ver perfil do usuário</Link></div></SectionBody></section>
           <section><SectionTitle>Organização</SectionTitle><SectionBody><div className="console-panel-content console-field-stack">
             <label className="cx-label">Status<select className="cx-field" value={ticket.status} disabled={operation.locked} aria-busy={acting === 'status' && operation.busy || undefined} onChange={e => update(e, 'status', { status: e.target.value })}>{Object.entries(supportStatusLabel).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>

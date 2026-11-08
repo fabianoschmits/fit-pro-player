@@ -1,3 +1,4 @@
+import { trackInsight } from '../lib/insights-client.js'
 import { Component } from 'react'
 import { useStore } from '../store/useStore.js'
 import { t } from '../lib/i18n.js'
@@ -16,7 +17,7 @@ import { confirmSheet } from '../sheets.jsx'
 export default class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { failed: false } }
   static getDerivedStateFromError() { return { failed: true } }
-  componentDidCatch(err) { console.error('Fit Pro Player render error:', err) }
+  componentDidCatch(err) { trackInsight('runtime_error',{error_category:'render_failed'}); console.error('Fit Pro Player render error:', err) }
   componentDidUpdate(previous) {
     if (this.state.failed && previous.resetKey !== this.props.resetKey) this.setState({ failed: false })
   }

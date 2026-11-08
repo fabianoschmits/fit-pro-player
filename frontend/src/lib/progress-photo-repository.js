@@ -1,3 +1,4 @@
+import { getInsightsAccount, trackInsight } from './insights-client.js'
 import { getBrowserSupabaseClient } from './supabase-client.js'
 
 export const PHOTO_ANGLES = [
@@ -81,6 +82,7 @@ export function createProgressPhotoRepository(userId, client = getBrowserSupabas
         await assertOwner()
         return row
       } catch (error) {
+        if (globalThis.navigator?.onLine !== false && getInsightsAccount() === userId) trackInsight('photo_upload_failed',{flow:'photos',action:'upload',error_category:'request_failed'})
         // Same-owner cleanup only; a switched account can never remove the old owner's objects.
         if (reserved && !committed) {
           try { await cleanup({ action: 'photo', photoId: id }) } catch {

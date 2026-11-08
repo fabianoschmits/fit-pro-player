@@ -1,3 +1,5 @@
+import { getInsightsAccount, trackInsight } from './insights-client.js'
+import { beginInsightOperation } from './insights-operation.js'
 import {
   parsePlan,
   parseBodyData,
@@ -60,14 +62,20 @@ export function createTrainingRepository({ client, accountId }) {
   }
 
   async function rpc(name, parameters, parser) {
+    const report = beginInsightOperation(name, parameters, accountId)
     let result
     try {
       result = await client.rpc(name, parameters)
     } catch (error) {
-      throw mapError(error)
+      report(mapError(error)); throw mapError(error)
     }
-    if (result?.error) throw mapError({ ...result.error, status: result.error.status ?? result.status })
-    return parseResponse(parser, result?.data, accountId)
+    if (result?.error) { const failure = mapError({ ...result.error, status: result.error.status ?? result.status }); report(failure); throw failure }
+    const parsed = parseResponse(parser, result?.data, accountId)
+    report(null)
+    if (name === 'complete_workout_session' && getInsightsAccount() === accountId) void client.rpc('insights_link_context',{p_kind:'session',p_id:parameters.p_session_id}).then(result=>{
+      if (!result.error && result.data && getInsightsAccount() === accountId) trackInsight('professional_step_completed',{flow:'professional',step:'first_workout',journey_id:result.data,outcome:'server_confirmed'})
+    }).catch(()=>{})
+    return parsed
   }
 
   async function read(query, parser) {

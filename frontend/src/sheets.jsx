@@ -1,3 +1,4 @@
+import { beginPersonalRoutineJourney } from './lib/insights-journeys.js'
 import { appErrorMessage } from './lib/app-errors.js'
 import ExerciseSpriteThumb from './components/ExerciseSpriteThumb.jsx'
 import { useEffect, useRef, useState } from 'react'
@@ -646,7 +647,7 @@ function AddToRoutine({ ex, close }) {
       })
       const r = isNew ? S().routines[S().routines.length - 1] : st.routines.find(x => x.id === rid)
       toast(t('“{0}” added to {1}', exerciseName(ex), r ? r.name : t('routine')))
-      if (isNew && r) nav('/plan/r/' + r.id)
+      if (isNew && r) { beginPersonalRoutineJourney(r.id,{hasName:Boolean(r.name),hasExercises:r.ex.length>0}); nav('/plan/r/' + r.id) }
     }, null, isNew ? null : st.routines.find(x => x.id === rid))
   }
   return <>

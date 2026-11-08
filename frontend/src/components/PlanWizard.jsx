@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { trackInsight } from '../lib/insights-client.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { useAuth } from '../auth/AuthProvider.jsx'
@@ -36,6 +37,11 @@ function Choice({ selected = undefined, icon = undefined, title, copy = undefine
 }
 
 export default function PlanWizard({ editing = false, onCancel = undefined, onDone = undefined }) {
+  const journey = useRef(crypto.randomUUID())
+  const observed = useRef(new Set())
+  const emit = (name, step, outcome = undefined) => {
+    if (!editing) trackInsight(name, { flow: 'onboarding', journey_id: journey.current, step, outcome })
+  }
   const auth = useAuth()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
@@ -45,6 +51,13 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
   const lastWeight = currentProfileWeight(S)
   const scheduled = WEEK_DAYS.filter(day => S.week?.[day] && S.routines.some(r => r.id === S.week[day]))
   const [step, setStep] = useState(0)
+  const stepNames = ['personal','avatar','body','measurements','goal','style','days']
+  useEffect(() => {
+    if (editing || observed.current.has(step)) return
+    observed.current.add(step)
+    if (step === 0) trackInsight('onboarding_started', { flow:'onboarding',step:'personal',journey_id:journey.current })
+    trackInsight('onboarding_step_viewed', { flow:'onboarding',step:['personal','avatar','body','measurements','goal','style','days'][step],journey_id:journey.current })
+  }, [step,editing])
   const [direction, setDirection] = useState(1)
   const [error, setError] = useState('')
   const [draft, setDraft] = useState(() => ({
@@ -120,7 +133,8 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
 
   const go = next => {
     const message = next > step ? validate() : ''
-    if (message) { setError(message); return }
+    if (message) { emit('onboarding_validation_failed', stepNames[step], 'invalid'); setError(message); return }
+    if (next > step) emit('onboarding_step_completed', stepNames[step])
     setError('')
     setDirection(next > step ? 1 : -1)
     setStep(next)
@@ -152,7 +166,7 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
 
   const finish = () => {
     const message = validate()
-    if (message) { setError(message); return }
+    if (message) { emit('onboarding_validation_failed',stepNames[step],'invalid'); setError(message); return }
     const today = todayISO()
     const heightCm = heightCmFromText(draft.height)
     const startWeight = fromDisplayMass(decimalNumber(draft.startWeight), draft.unit)
@@ -197,6 +211,8 @@ export default function PlanWizard({ editing = false, onCancel = undefined, onDo
       state.onboardingDone = true
     })
     if (useStore.getState().persistence?.state === 'error') { setError(t('Não foi possível salvar neste dispositivo. Tente novamente.')); return }
+    emit('onboarding_step_completed', 'days')
+    emit('onboarding_completed', 'saved', 'local_saved')
     onDone?.()
     if (editing && durationChanged) confirmWorkoutDurationRefit(profile.preferredWorkoutMinutes, planInputsChanged ? refitEditedPlan : undefined)
   }

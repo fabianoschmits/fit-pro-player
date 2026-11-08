@@ -35,3 +35,7 @@ As funções `ops_list_notifications` e `ops_mark_notifications_read` exigem `op
 - Navegador: no diretório `frontend`, `node node_modules/@playwright/test/cli.js test --config=playwright.console.config.js` (porta 8082, desktop e celular).
 - Banco: `supabase/tests/202610150024_ops_notification_center.sql` e `supabase/tests/202610150025_ops_notification_routing.sql`. Os testes executam dentro de transações e revertem seus dados de teste.
 - Migrações: `202610150024_ops_notification_center.sql` e `202610150025_ops_notification_routing.sql`.
+
+## FPP Insights
+
+A Central inclui o módulo em /console/insights, com uso consentido, dificuldades, funis, treinos oficiais, retenção, desempenho, suporte e alertas persistidos. O perfil administrativo possui a seção Experiência de uso, sujeita a consentimento atual e auditoria. Chamados podem conter diagnóstico técnico compartilhado voluntariamente. Consulte [FPP_INSIGHTS.md](FPP_INSIGHTS.md) para eventos, fórmulas, segurança, retenção e migrations.

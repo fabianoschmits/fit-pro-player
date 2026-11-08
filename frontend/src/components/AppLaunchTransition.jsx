@@ -186,7 +186,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       // counters otherwise cover pixels that were visible in the prior frame.
       // Retain each painted opening until completion so reveal only advances.
       trail.setAttribute('transform', `translate(${originX} ${originY})`)
-      const stamp = hole.cloneNode(true)
+      const stamp = /** @type {Element} */ (hole.cloneNode(true))
       stamp.removeAttribute('data-launch-hole')
       stamp.removeAttribute('opacity')
       stamp.setAttribute('transform', `scale(${scale})`)

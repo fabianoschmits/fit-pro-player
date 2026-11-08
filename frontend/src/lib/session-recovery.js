@@ -1,3 +1,4 @@
+import { detectInsightFailure, getInsightsAccount, trackInsight } from './insights-client.js'
 import { projectSessionRecovery } from './persisted-state.js'
 import { MASS_UNIT } from './mass.js'
 
@@ -136,6 +137,10 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
     lastFailure = null
   }
   const fail = error => {
+    if (getInsightsAccount() === accountId && isOnline() && error?.kind !== 'offline' && retryAttempts >= 5) {
+      detectInsightFailure('session_recovery',current?.session?.id,'recovery_exhausted',{exhausted:true})
+      trackInsight('workout_recovery_failed',{flow:'workout',journey_id:current?.session?.id,outcome:'high',error_category:'recovery_exhausted'})
+    }
     lastFailure = error
     // Conflicts and authentication need their own resolution. Retry only a
     // transient transport/server failure, with a finite background budget.

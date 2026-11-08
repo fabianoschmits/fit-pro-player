@@ -1,3 +1,4 @@
+import { getInsightsAccount, trackInsight } from '../lib/insights-client.js'
 import { appErrorMessage } from '../lib/app-errors.js'
 import { openAuthSheet } from '../components/AuthSheet.jsx'
 import { UserBlockButton } from '../components/community/UserBlockActions.jsx'
@@ -53,6 +54,10 @@ function CommunitySession() {
   const posts = useMemo(() => page.posts.map(post => hydrateCommunityPost(post, ownIdentity)), [page.posts, ownIdentity])
   const [error, setError] = useState(''), [commentsId, setCommentsId] = useState(null), [highlightedPostId, setHighlightedPostId] = useState(null), [highlightCommentId, setHighlightCommentId] = useState(null), [notificationsOpen, setNotificationsOpen] = useState(false), [reportTarget, setReportTarget] = useState(null)
   const commentsPost = posts.find(post => post.id === commentsId)
+  const insightJourneyRef = useRef(crypto.randomUUID())
+  const feedObserved = useRef(false)
+  const publicationFailed = useRef(false)
+  useEffect(()=>{ if (!feedObserved.current) { feedObserved.current=true; trackInsight('community_feed_viewed',{flow:'community',step:'feed',journey_id:insightJourneyRef.current}) } },[])
   const [notifications, setNotifications] = useState([]), [composerOpen, setComposerOpen] = useState(false), [editingPost, setEditingPost] = useState(null)
   const [file, setFile] = useState(null), [caption, setCaption] = useState(''), [commentsDisabled, setCommentsDisabled] = useState(false)
   const [saving, setSaving] = useState(false), [pendingPost, setPendingPost] = useState(false), [cropConfirmed, setCropConfirmed] = useState(false), [composerExpanded, setComposerExpanded] = useState(false)
@@ -64,7 +69,7 @@ function CommunitySession() {
   const blockUpdates = Boolean(composerOpen || commentsId || reportTarget || pendingPost || saving)
   const mutatePost = (id, updater) => store.updatePost(id, updater)
   const changeComments = (id, updater) => mutatePost(id, post => ({ ...post, comments: updater(post.comments || []) }))
-  const closeComposer = () => { if (savingRef.current) return; setComposerOpen(false); setEditingPost(null); setFile(null); setCaption('') }
+  const closeComposer = () => { if (savingRef.current) return; if(!editingPost) trackInsight('flow_interrupted',{flow:'community',journey_id:insightJourneyRef.current,outcome:publicationFailed.current?'high':'neutral',error_category:publicationFailed.current?'after_errors':'voluntary_exit'}); setComposerOpen(false); setEditingPost(null); setFile(null); setCaption('') }
 
   useDialogFocus(composerDialog, { active: composerOpen, onClose: closeComposer, locked: saving, titleId: 'community-composer-title' })
   useDialogFocus(notificationsDialog, { active: notificationsOpen, onClose: () => setNotificationsOpen(false), titleId: 'community-notifications-title' })
@@ -186,6 +191,8 @@ function CommunitySession() {
     const next = event.target.files?.[0]; event.target.value = ''
     if (!next || savingRef.current) return
     if (!next.type.startsWith('image/')) { setError('Escolha um arquivo de imagem.'); return }
+    publicationFailed.current=false
+    trackInsight('community_publish_started',{flow:'community',step:'start',journey_id:insightJourneyRef.current})
     setEditingPost(null); setCaption(''); setCommentsDisabled(false); setError(''); setFile(next); setCrop({ aspect: 'landscape', x: 50, y: 50 }); setCropConfirmed(false); setComposerExpanded(false); setComposerOpen(true)
   }
   const confirmCrop = async () => {
@@ -198,6 +205,7 @@ function CommunitySession() {
     event.preventDefault()
     if (savingRef.current || (!editingPost && (!file || !cropConfirmed))) return
     savingRef.current = true; setSaving(true); setError('')
+    const insightJourney = insightJourneyRef.current
     let uploadedPath = null, inserted = false
     try {
       if (editingPost) {
@@ -210,9 +218,11 @@ function CommunitySession() {
         uploadedPath = `${userId}/${crypto.randomUUID()}.jpg`
         const upload = await client.storage.from(BUCKET).upload(uploadedPath, file, { contentType: 'image/jpeg', upsert: false })
         if (upload.error) throw upload.error
+        getInsightsAccount() === userId && getInsightsAccount() === userId && trackInsight('community_upload_completed',{flow:'community',step:'uploaded',journey_id:insightJourney})
         const result = await client.from('community_posts').insert({ author_id: userId, image_path: uploadedPath, caption: caption.trim(), comments_disabled: commentsDisabled }).select().single()
         if (result.error) throw result.error
         inserted = true
+        getInsightsAccount() === userId && getInsightsAccount() === userId && trackInsight('community_publish_completed',{flow:'community',step:'published',journey_id:insightJourney,outcome:'server_confirmed'})
         store.addPost({ ...result.data, author: ownIdentity, comments: [], likes: [] })
         store.saveScroll('feed', 0)
         if (scope !== 'feed') navigate('/community')
@@ -220,6 +230,8 @@ function CommunitySession() {
       }
       setComposerOpen(false); setEditingPost(null); setFile(null); setCaption('')
     } catch (failure) {
+      if(!editingPost) publicationFailed.current=true
+      if (!editingPost && navigator.onLine !== false && getInsightsAccount() === userId) trackInsight('community_publish_failed',{flow:'community',journey_id:insightJourney,error_category:'request_failed'})
       if (uploadedPath && !inserted) {
         try {
           const cleanup = await client.storage.from(BUCKET).remove([uploadedPath])

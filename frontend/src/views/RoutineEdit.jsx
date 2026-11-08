@@ -1,3 +1,5 @@
+import { beginPersonalRoutineJourney, personalRoutineJourney } from '../lib/insights-journeys.js'
+import { trackInsight } from '../lib/insights-client.js'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -104,6 +106,10 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
   const [selectedMuscle, setSelectedMuscle] = useState(null)
   const [saveError, setSaveError] = useState('')
   const muscleMapRef = useRef(null)
+  const insightJourney = useRef(personalRoutineJourney(id))
+  const insightSteps = useRef(new Set())
+  useEffect(()=>{insightJourney.current=personalRoutineJourney(id);insightSteps.current.clear()},[id])
+  const insight = step => { if (!insightJourney.current || mode !== 'athlete' || readOnly || insightSteps.current.has(step)) return; insightSteps.current.add(step); trackInsight(step === 'create' ? 'plan_creation_started' : 'plan_creation_step_completed',{flow:'plan_creation',step,journey_id:insightJourney.current}) }
   const r = S.routines.find(x => x.id === id)
   const returnPath = basePath === '/plan' && mode === 'athlete' && !readOnly && !r?.assigned ? '/plan?library=self' : basePath
   useEffect(() => { if (!r) { if (onBack) onBack(); else nav(returnPath) } }, [returnPath, nav, onBack, r])
@@ -117,7 +123,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
   }, [selectedMuscle])
   if (!r) return null
 
-  const edit = fn => update(s => { fn(s.routines.find(x => x.id === id).ex) })
+  const edit = fn => { update(s => { fn(s.routines.find(x => x.id === id).ex) }); insight('configure') }
   const move = (i, dir) => edit(ex => { const j = i + dir; if (j < 0 || j >= ex.length) return;[ex[i], ex[j]] = [ex[j], ex[i]]; cleanupSg(ex) })
   const toggleLink = i => edit(ex => {
     if (i < 1) return
@@ -131,6 +137,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
     else s.week[day] = id
   })
   const addExercise = () => exercisePicker((ex, meta) => {
+    insight('exercise')
     if (meta?.configure) {
       exConfigSheet(ex, null, cfg => edit(list => { list.push({ id: ex.id, ...cfg }) }), null, r)
       return
@@ -148,6 +155,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
     }
     delete copy.starterKey
     delete copy.starterCustomName
+    if(mode==='athlete') beginPersonalRoutineJourney(copy.id,{hasName:Boolean(copy.name),hasExercises:copy.ex.length>0})
     update(state => { state.routines.push(copy) })
     useUI.getState().toast(t('Routine duplicated'))
     if (onOpen) onOpen(copy.id)
@@ -156,7 +164,10 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
   const saveRoutine = async () => {
     setSaveError('')
     if (onSave) return onSave()
-    if (!(await useStore.getState().flushPersistence())) throw new Error('local-write-failed')
+    if (!(await useStore.getState().flushPersistence())) { if(insightJourney.current) trackInsight('plan_creation_failed',{flow:'plan_creation',journey_id:insightJourney.current,error_category:'storage_failed'}); throw new Error('local-write-failed') }
+    insight('save')
+    if (Object.values(useStore.getState().S.week || {}).includes(id) || Object.values(useStore.getState().S.dayPlan || {}).includes(id)) insight('apply')
+    if(insightJourney.current) trackInsight('plan_creation_completed',{flow:'plan_creation',journey_id:insightJourney.current,step:'save',outcome:'local_saved'})
   }
   const deleteRoutine = () => confirmSheet({
     title: t('Delete routine?'), message: t('“{0}” and its exercises will be removed.', displayName), confirmText: t('Delete'), danger: true,
@@ -187,7 +198,7 @@ export function RoutineEditor({ state = undefined, onUpdate = undefined, routine
       <div className="routine-name-wrap">
         <input className="input routine-name" value={r.name ?? (r.starterKey ? t(r.starterKey) : '')} readOnly={readOnly}
           placeholder={t('Routine')}
-          onChange={e => update(s => { const routine = s.routines.find(x => x.id === id); routine.name = e.target.value; delete routine.starterKey; routine.starterCustomName = true })}
+          onChange={e => { update(s => { const routine = s.routines.find(x => x.id === id); routine.name = e.target.value; delete routine.starterKey; routine.starterCustomName = true }); if(e.target.value.trim()) insight('name') }}
           aria-label={t('Routine')} />
       </div>
       <span className="routine-builder-head-thumb" aria-hidden="true"><RoutineMuscleThumb routine={r} body={S.body} /></span>

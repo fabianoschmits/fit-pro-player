@@ -1,3 +1,4 @@
+import { trackInsight } from '../lib/insights-client.js'
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -227,21 +228,24 @@ function ActiveWorkout() {
     if (!active || active.id !== A.id || active.start) return
     queueHeightBeforeConfirm.current = queueRef.current?.getBoundingClientRect().height ?? null
     update(s => { s.active = confirmFlexSelection(s.active) })
+    trackInsight('flex_adjustment_completed',{flow:'flex',journey_id:A.id,action:'confirm',outcome:'local_applied'})
     setQueueOpen(false)
     beginExecution()
   }
   const openDurationSheet = (changing = false) => {
     const current = useStore.getState().S.active
     if (!current || current.id !== A.id || current.start) return
+    trackInsight('flex_adjustment_started',{flow:'flex',journey_id:A.id,action:'review'})
     const preferred = getPreferredWorkoutMinutes(S.profile)
     useUI.getState().openSheet(close => <WorkoutDurationSheet preferredMinutes={preferred} initialMinutes={current.flex?.targetMinutes ?? preferred} close={close} onConfirm={minutes => {
       const fresh = useStore.getState().S.active
       if (!fresh || fresh.id !== A.id || fresh.start || (fresh.flex && !changing)) return
       if (changing && fresh.flex?.targetMinutes === minutes) return
+      trackInsight('flex_adjustment_started',{flow:'flex',journey_id:A.id,action:'duration_selection',step:minutes<=30?'duration_short':minutes<=60?'duration_medium':'duration_long'})
       const flex = createFlexSelection(fresh, minutes, preferred, { restSec: S.restSec, goal: S.profile?.goal })
       if (changing && fresh.entries.length) flex.phase = 'review'
       update(s => { if (s.active?.id === A.id) s.active.flex = flex })
-      if (flex.phase === 'confirmed') beginExecution()
+      if (flex.phase === 'confirmed') { trackInsight('flex_adjustment_completed',{flow:'flex',journey_id:A.id,action:'confirm',outcome:'local_applied'}); beginExecution() }
       else setQueueOpen(true)
     }} />)
   }

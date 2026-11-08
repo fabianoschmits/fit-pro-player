@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { configDefaults } from 'vitest/config'
@@ -6,6 +7,7 @@ import { inlineAppleTouchIcon } from './build/inline-apple-touch-icon.js'
 const media = process.env.MEDIA_TARGET || 'http://127.0.0.1:8888'
 
 export default defineConfig({
+  define: { 'import.meta.env.VITE_APP_VERSION': JSON.stringify(JSON.parse(readFileSync(new URL('./package.json',import.meta.url),'utf8')).version) },
   plugins: [inlineAppleTouchIcon(), react()],
   // Browser and unit-test optimizers must not invalidate each other's dependency URLs.
   cacheDir: process.env.VITEST ? 'node_modules/.vite-unit' : `node_modules/.vite-browser-${process.env.FPP_E2E_PORT || 'app'}`,

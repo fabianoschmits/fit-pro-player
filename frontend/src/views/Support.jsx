@@ -1,3 +1,4 @@
+import { readDiagnostics } from '../lib/diagnostics.js'
 import { appErrorMessage } from '../lib/app-errors.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -47,6 +48,7 @@ export default function Support() {
 
 export function SupportComposer() {
   const nav = useNavigate(); const repo = useMemo(repoFor, [])
+  const [shareDiagnostics,setShareDiagnostics] = useState(false)
   const [form, setForm] = useState({ category: '', subject: '', body: '' }); const [errors, setErrors] = useState(/** @type {Record<string,string>} */ ({})); const [success, setSuccess] = useState(false)
   const action = useFppAction({
     onAction: () => {
@@ -54,7 +56,12 @@ export function SupportComposer() {
       if (Object.keys(next).length) return false
       return repo.createTicket({ categorySlug: form.category, subject: form.subject, body: form.body })
     },
-    onSuccess: id => { setSuccess(true); nav(`/support/tickets/${id}`) },
+    onSuccess: async id => {
+      if (shareDiagnostics) {
+        try { await getBrowserSupabaseClient()?.rpc('support_share_diagnostics',{p_ticket_id:id,p_diagnostics:readDiagnostics().slice(-20).map(({type,duration,count})=>({type,duration,count}))}) } catch { /* ticket remains available even when optional sharing fails */ }
+      }
+      setSuccess(true); nav(`/support/tickets/${id}`)
+    },
     onError: err => setErrors({ form: appErrorMessage(err, 'Não foi possível enviar. Tente novamente.') }),
   })
   const submit = e => { e.preventDefault(); void action.run(e) }
@@ -63,6 +70,7 @@ export function SupportComposer() {
     <label>Categoria<select className="field" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}><option value="">Selecione</option>{SUPPORT_CATEGORIES.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select>{errors.category && <small className="support-field-error">{errors.category}</small>}</label>
     <label>Assunto<TextField value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} maxLength={160} placeholder="Como podemos ajudar?" />{errors.subject && <small className="support-field-error">{errors.subject}</small>}</label>
     <label>Mensagem<TextArea value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} rows={7} maxLength={10000} placeholder="Descreva sua dúvida, crítica ou sugestão…" />{errors.body && <small className="support-field-error">{errors.body}</small>}</label>
+    <label><input type="checkbox" checked={shareDiagnostics} onChange={e=>setShareDiagnostics(e.target.checked)} /> Compartilhar diagnóstico técnico deste dispositivo (opcional)</label><p className="muted">Envia somente categorias técnicas e durações para investigar este chamado, por até 30 dias. Não envia mensagens, fotos ou informações corporais.</p>
     <Button type="submit" variant="primary" state={action.state} loadingLabel="Enviando…" successLabel="Mensagem enviada. Abrindo seu chamado…">Enviar mensagem</Button>
   </form></div>
 }
