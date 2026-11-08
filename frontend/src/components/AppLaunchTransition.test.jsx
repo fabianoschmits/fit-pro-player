@@ -16,6 +16,9 @@ const restore = () => { const event = new Event('pageshow'); Object.defineProper
 beforeEach(() => {
   vi.useFakeTimers(); installed = true; reduced = false; visible = 'visible'
   vi.spyOn(Math, 'random').mockReturnValue(0)
+  const css = window.CSS
+  vi.spyOn(window, 'CSS', 'get').mockReturnValue(css)
+  vi.spyOn(css, 'supports').mockReturnValue(true)
   state.ready = true; state.auth = 'anonymous'; state.entered = true
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('reduced-motion') ? reduced : installed }))
@@ -69,6 +72,13 @@ it('does not skip the tunnel when its first animation frame arrives late', async
   expect(layer.dataset.state).toBe('revealing'); expect(layer.hidden).toBe(false)
   await advance(600); expect(layer.dataset.state).toBe('revealing')
   await advance(1400); expect(layer.hidden).toBe(true)
+})
+
+it('preserves a bounded presentation under slow frames instead of stretching the tunnel indefinitely', async () => {
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation(fn => window.setTimeout(() => fn(performance.now()), 200))
+  controller = createLaunchController({ isReady: () => true })
+  await advance(2500); expect(layer.dataset.state).toBe('revealing')
+  await advance(3500); expect(layer.hidden).toBe(true)
 })
 
 it('finishes the whole tunnel even when boot approaches the recovery timeout', async () => {
@@ -130,19 +140,54 @@ it('stops work and observers on disposal without leaving an invisible touch bloc
   expect(layer.dataset.launchCycle).toBe(cycle); expect(vi.getTimerCount()).toBe(0)
 })
 
-it('does not replay on PWA visibility or BFCache returns and preserves the live edit', async () => {
+it('covers a real PWA return before presenting one new cycle and preserves the live edit', async () => {
   controller = createLaunchController({ isReady: () => true })
   await advance(4000)
   const input = document.querySelector('input'); input.value = 'Treino em andamento'; input.focus()
   const cycle = Number(layer.dataset.launchCycle)
-  visibility('hidden'); visibility('visible'); restore(); window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
-  expect(Number(layer.dataset.launchCycle)).toBe(cycle)
-  expect(layer.hidden).toBe(true)
+  visibility('hidden'); expect(layer.hidden).toBe(false)
+  await advance(600); visibility('visible'); restore(); window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
+  expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
+  expect(layer.hidden).toBe(false)
   expect(document.querySelector('input')).toBe(input); expect(input.value).toBe('Treino em andamento')
   expect(document.activeElement).toBe(input)
   await advance(4000); expect(layer.hidden).toBe(true)
   window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
-  expect(Number(layer.dataset.launchCycle)).toBe(cycle)
+  expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
+})
+
+it('deduplicates transient visibility and BFCache events without replaying a PWA cycle', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(4000)
+  visibility('hidden'); await advance(50); visibility('visible'); restore()
+  expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
+  await advance(1000); restore(); restore()
+  expect(layer.hidden).toBe(false); expect(layer.dataset.launchCycle).toBe('2')
+})
+
+it('keeps a closed persistent curtain and falls back to its unmasked rect when masking is unsupported', async () => {
+  vi.spyOn(window.CSS, 'supports').mockReturnValue(false)
+  controller = createLaunchController({ isReady: () => true })
+  expect(document.querySelector('[data-launch-hole]').getAttribute('opacity')).toBe('0')
+  await advance(1060)
+  expect(layer.hasAttribute('data-launch-fallback')).toBe(true)
+  expect(document.querySelector('[data-launch-shield]').hasAttribute('mask')).toBe(false)
+  await advance(200); expect(layer.hidden).toBe(true)
+})
+
+it('invalidates retained callbacks from a completed generation before reopening the PWA', async () => {
+  const callbacks = []
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation(fn => {
+    callbacks.push(fn)
+    return window.setTimeout(() => fn(performance.now()), 16)
+  })
+  controller = createLaunchController({ isReady: () => true })
+  await advance(4000)
+  const stale = [...callbacks]
+  visibility('hidden'); await advance(600); visibility('visible')
+  for (const callback of stale) callback(performance.now() + 100000)
+  expect(layer.hidden).toBe(false); expect(layer.dataset.state).toBe('loading')
+  expect(layer.dataset.launchCycle).toBe('2')
 })
 
 it('plays once for desktop login entry, not auth restoration or subsequent ready/render updates', async () => {

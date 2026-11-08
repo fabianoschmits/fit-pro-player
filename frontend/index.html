@@ -37,16 +37,19 @@
 </head>
 <body>
 <style>
-#fpp-launch{position:fixed;inset:0;right:auto;width:100vw;z-index:2147483600;height:100vh;height:100dvh;overflow:hidden;background:#000;color:#e7e7e7;isolation:isolate;touch-action:none;overscroll-behavior:none}
+#fpp-launch{position:fixed;inset:0;right:auto;width:100vw;z-index:2147483600;height:100vh;height:100dvh;overflow:hidden;color:#e7e7e7;isolation:isolate;touch-action:none;overscroll-behavior:none}
 #fpp-launch[hidden]{display:none!important}
+html:has(#fpp-launch:not([hidden])),body:has(> #fpp-launch:not([hidden])){background:#000}
+html:has(#fpp-launch:not([hidden])),body:has(> #fpp-launch:not([hidden])),html:has(#fpp-launch[data-launch-restoring]),body:has(> #fpp-launch[data-launch-restoring]){transition:none}
+#fpp-launch:not([hidden]) ~ #root{visibility:hidden;clip-path:inset(50%);background:var(--bg,#000)}
 .fpp-launch-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
-.fpp-launch-symbol{position:absolute;left:50%;top:50%;width:180px;max-width:calc(100vw - 48px);aspect-ratio:1140/310;transform:translate(-50%,calc(-50% - 24px))}
+.fpp-launch-symbol{position:absolute;z-index:1;left:50%;top:50%;width:180px;max-width:calc(100vw - 48px);aspect-ratio:1140/310;transform:translate(-50%,calc(-50% - 24px))}
 .fpp-launch-symbol svg{display:block;width:100%;height:100%;overflow:visible;transform-origin:center}
-.fpp-launch-caption{position:absolute;top:calc(50% + 14px);left:0;width:100%;text-align:center;font:400 14px/1.5 system-ui,sans-serif;color:#aaa}
+.fpp-launch-caption{position:absolute;z-index:1;top:calc(50% + 14px);left:0;width:100%;text-align:center;font:400 14px/1.5 system-ui,sans-serif;color:#aaa}
 .fpp-launch-track{display:block;position:relative;width:56px;height:2px;margin:14px auto 0;overflow:hidden;background:#252525;border-radius:2px}
 .fpp-launch-track i{display:block;width:45%;height:100%;background:#aaa;animation:fpp-launch-progress 1.8s cubic-bezier(.45,0,.55,1) infinite}
-.fpp-launch-curtain{display:none;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.fpp-launch-rescue{position:absolute;left:24px;right:24px;bottom:max(24px,env(safe-area-inset-bottom));text-align:center;font:400 14px/1.5 system-ui,sans-serif;visibility:hidden;opacity:0}
+.fpp-launch-curtain{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.fpp-launch-rescue{position:absolute;z-index:1;left:24px;right:24px;bottom:max(24px,env(safe-area-inset-bottom));text-align:center;font:400 14px/1.5 system-ui,sans-serif;visibility:hidden;opacity:0}
 .fpp-launch-rescue button{border:1px solid #777;border-radius:12px;padding:12px 18px;background:#161616;color:#eee;font:inherit;touch-action:manipulation}
 #fpp-launch[data-state="loading"] .fpp-launch-rescue{animation:fpp-launch-rescue 1ms 30s forwards}
 @keyframes fpp-launch-rescue{to{visibility:visible;opacity:1}}
@@ -91,10 +94,11 @@
     <defs>
     <mask id="fpp-launch-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%" style="mask-type:luminance">
       <rect width="100%" height="100%" fill="white"/>
-      <g data-launch-hole><g transform="translate(-650 -235)"><use href="#fpp-logo-shape" fill="black"/><use href="#fpp-logo-counters" fill="white"/></g></g>
-    </mask></defs>
-    <rect width="100%" height="100%" fill="black" mask="url(#fpp-launch-mask)"/>
-    <g data-launch-outline fill="none" stroke="var(--acc, #0F8B8D)" stroke-linejoin="round"><g transform="translate(-650 -235)"><use href="#fpp-logo-shape"/><use href="#fpp-logo-counters"/></g></g>
+      <g data-launch-hole opacity="0"><g transform="translate(-650 -235)"><use href="#fpp-logo-shape" fill="black"/><use href="#fpp-logo-counters" fill="white"/></g></g>
+    </mask>
+    <clipPath id="fpp-launch-clip" clipPathUnits="userSpaceOnUse"></clipPath></defs>
+    <rect data-launch-shield width="100%" height="100%" fill="black" mask="url(#fpp-launch-mask)"/>
+    <g data-launch-outline opacity="0" fill="none" stroke="var(--acc, #0F8B8D)" stroke-linejoin="round"><g transform="translate(-650 -235)"><use href="#fpp-logo-shape"/><use href="#fpp-logo-counters"/></g></g>
   </svg>
   <!-- Recovery is visible through CSS even if both module entry points fail. -->
   <div class="fpp-launch-rescue" role="status"><p>A solicitação demorou mais que o esperado. Tente novamente.</p><button id="fpp-launch-reload" type="button" hidden>Recarregar Fit Pro Player</button><p id="fpp-launch-manual-recovery">Feche e abra novamente o aplicativo para tentar novamente.</p></div>

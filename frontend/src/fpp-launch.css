@@ -1,15 +1,11 @@
 /* Geometry and the first loading frame live in index.html, before module fetch. */
 #fpp-launch:not([hidden]) ~ #root #tabbar{visibility:hidden;pointer-events:none}
 #fpp-launch[data-state="settling"] .fpp-launch-caption{opacity:0;transition:opacity 120ms ease-out}
-#fpp-launch[data-state="revealing"]{background:transparent}
+#fpp-launch[data-state="revealing"][data-mask-ready] ~ #root{visibility:visible;clip-path:url(#fpp-launch-clip)}
+#fpp-launch[data-state="revealing"][data-launch-fallback] ~ #root{visibility:visible;clip-path:none}
 #fpp-launch[data-state="revealing"] .fpp-launch-symbol,
 #fpp-launch[data-state="revealing"] .fpp-launch-caption{visibility:hidden}
-#fpp-launch[data-state="revealing"] .fpp-launch-curtain{display:block}
-#fpp-launch[data-curtain-ready] .fpp-launch-curtain{display:block}
-#fpp-launch .fpp-launch-symbol,#fpp-launch .fpp-launch-caption{z-index:1}
 #fpp-launch[data-launch-finishing]{opacity:0;transition:opacity 100ms linear}
-#fpp-launch[data-reduced-motion="true"][data-state="revealing"]{background:#000}
-#fpp-launch[data-reduced-motion="true"] .fpp-launch-curtain{display:none}
 #fpp-launch[data-paused] *{animation-play-state:paused!important}
 .boot-recovery{display:none;text-align:center;padding:24px;padding-bottom:max(24px,env(safe-area-inset-bottom))}
 #root[data-launch-timeout] .boot-recovery{display:block}
