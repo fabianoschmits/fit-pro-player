@@ -8,5 +8,6 @@ export { default as ConsoleSupport } from '../features/console/ConsoleMessages.j
 export { default as ConsoleSupportTicket } from '../features/console/ConsoleConversation.jsx'
 export { default as ConsoleFaq, ConsoleFaqEditor } from '../features/console/ConsoleFaq.jsx'
 export { default as ConsoleSystem } from '../features/console/ConsoleSystem.jsx'
+export { default as ConsoleSprites } from '../features/console/ConsoleSprites.jsx'
 export { default as ConsoleLaboratory } from '../features/console/ConsoleLaboratory.jsx'
 export { supportStatusLabel } from '../features/console/support-model.js'

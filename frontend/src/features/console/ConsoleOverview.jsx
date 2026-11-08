@@ -36,6 +36,7 @@ export default function ConsoleOverview() {
         <SectionBody><WorkspaceLink to="/console/insights" icon="chartLine" title="FPP Insights" description="Descubra dificuldades, acompanhe o uso e melhore o aplicativo." /><WorkspaceLink to="/console/system" icon="server" title="Sistema & Banco de Dados" description="Monitore conexões, queries lentas, jobs do cron e erros." />
           <WorkspaceLink to="/console/users" icon="person" title="Usuários e contas" description="Consulte perfis, treinos, permissões e acesso." />
           <WorkspaceLink to="/console/professionals" icon="personCircle" title="Profissionais" description="Revise cadastros e gerencie verificações profissionais." />
+          <WorkspaceLink to="/console/sprites" icon="sparkles" title="Criação de sprites" description="Fila de exercícios pendentes ordenada por relevância." />
           <WorkspaceLink to="/console/professionals?status=pending" icon="shield" title="Aguardando verificação" description="Confira os perfis que precisam de análise." count={accounts?.pendingVerificationCount} />
         </SectionBody>
       </section>

@@ -1,0 +1,237 @@
+
+/* Sprites backlog organizer */
+.console-sprites-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.console-sprites-search-wrap {
+  margin-bottom: 16px;
+  animation: slideDownSearch 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownSearch {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.console-sprites-search-bar {
+  display: flex;
+  align-items: center;
+  position: relative;
+  background: var(--surface, #1e2422);
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  padding: 0 12px;
+}
+
+.console-sprites-search-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--label-2, #888);
+  flex: none;
+}
+
+.console-sprites-search-input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 10px 10px !important;
+  font-size: 14px;
+  color: var(--label, #fff);
+}
+
+.console-sprites-search-clear {
+  border: none;
+  background: transparent;
+  color: var(--label-2, #888);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.console-sprites-search-clear:hover {
+  color: var(--label, #fff);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.console-sprites-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.console-sprites-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--surface, #1e2422) 80%, black);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.08));
+}
+
+.console-sprites-tab {
+  border: none;
+  background: transparent;
+  color: var(--label-2, #888);
+  font-size: 13px;
+  font-weight: 550;
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.console-sprites-tab:hover {
+  color: var(--label, #fff);
+}
+
+.console-sprites-tab.is-active {
+  background: var(--surface, #262e2c);
+  color: var(--acc, #45d9b7);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.console-sprites-count-tag {
+  font-size: 13px;
+  color: var(--label-2, #888);
+}
+
+.console-sprites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.console-sprite-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface, #1b211f);
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.06));
+  transition: all 0.15s ease;
+}
+
+.console-sprite-item:hover {
+  background: color-mix(in srgb, var(--surface, #1b211f) 90%, var(--acc, #45d9b7));
+  border-color: rgba(69, 217, 183, 0.2);
+}
+
+.console-sprite-item.is-completed {
+  opacity: 0.6;
+  background: rgba(0, 0, 0, 0.18);
+  border-color: rgba(69, 217, 183, 0.25);
+}
+
+.console-sprite-item.is-completed .console-sprite-name-pt {
+  text-decoration: line-through;
+  color: var(--label-2, #888);
+}
+
+.console-sprite-index {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--label-2, #666);
+  min-width: 28px;
+  text-align: right;
+  flex: none;
+}
+
+.console-sprite-check-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid var(--sep, rgba(255, 255, 255, 0.2));
+  background: transparent;
+  color: var(--label-2, #888);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: all 0.15s ease;
+}
+
+.console-sprite-check-btn:hover {
+  border-color: var(--acc, #45d9b7);
+  color: var(--acc, #45d9b7);
+  background: rgba(69, 217, 183, 0.08);
+}
+
+.console-sprite-check-btn.is-checked {
+  background: var(--acc, #45d9b7);
+  border-color: var(--acc, #45d9b7);
+  color: #0d1e1a;
+}
+
+.console-sprite-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.console-sprite-name-pt {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console-sprite-name-en {
+  font-size: 12px;
+  color: var(--label-2, #888);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console-sprite-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.12));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--label, #fff);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  flex: none;
+  transition: all 0.15s ease;
+}
+
+.console-sprite-copy-btn:hover {
+  border-color: var(--acc, #45d9b7);
+  color: var(--acc, #45d9b7);
+  background: rgba(69, 217, 183, 0.1);
+}
+
+.console-sprite-copy-btn.is-copied {
+  background: rgba(69, 217, 183, 0.18);
+  border-color: var(--acc, #45d9b7);
+  color: var(--acc, #45d9b7);
+}
+

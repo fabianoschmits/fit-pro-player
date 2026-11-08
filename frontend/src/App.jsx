@@ -114,6 +114,7 @@ const ConsoleSupport = lazy(() => loadConsole().then(module => ({ default: modul
 const ConsoleSupportTicket = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSupportTicket })))
 const ConsoleInsights = lazy(() => loadConsole().then(module => ({ default: module.ConsoleInsights })))
 const ConsoleSystem = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSystem })))
+const ConsoleSprites = lazy(() => loadConsole().then(module => ({ default: module.ConsoleSprites })))
 const ConsoleFaq = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaq })))
 const ConsoleFaqEditor = lazy(() => loadConsole().then(module => ({ default: module.ConsoleFaqEditor })))
 const Support = lazy(loadSupport)
@@ -586,6 +587,7 @@ function Shell() {
                 <Route path="/console/community" element={<ConsoleCommunity />} />
                 <Route path="/console/insights" element={<ConsoleInsights />} />
                 <Route path="/console/system" element={<ConsoleSystem />} />
+                <Route path="/console/sprites" element={<ConsoleSprites />} />
                 <Route path="/console/laboratory" element={<ConsoleLaboratory />} />
                 <Route path="/console/laboratory/menus" element={<AlternativeMenus />} />
                 <Route path="/console/laboratory/players" element={<WorkoutPlayers />} />
