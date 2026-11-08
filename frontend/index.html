@@ -41,7 +41,7 @@
 #fpp-launch[hidden]{display:none!important}
 html:has(#fpp-launch:not([hidden])),body:has(> #fpp-launch:not([hidden])){background:#000}
 html:has(#fpp-launch:not([hidden])),body:has(> #fpp-launch:not([hidden])),html:has(#fpp-launch[data-launch-restoring]),body:has(> #fpp-launch[data-launch-restoring]){transition:none}
-#fpp-launch:not([hidden]) ~ #root{visibility:hidden;clip-path:inset(50%);background:var(--bg,#000)}
+#fpp-launch:not([hidden]) ~ #root{visibility:hidden;background:var(--bg,#000)}
 .fpp-launch-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 .fpp-launch-symbol{position:absolute;z-index:1;left:50%;top:50%;width:180px;max-width:calc(100vw - 48px);aspect-ratio:1140/310;transform:translate(-50%,calc(-50% - 24px))}
 .fpp-launch-symbol svg{display:block;width:100%;height:100%;overflow:visible;transform-origin:center}
@@ -96,7 +96,7 @@ html:has(#fpp-launch:not([hidden])),body:has(> #fpp-launch:not([hidden])),html:h
       <rect width="100%" height="100%" fill="white"/>
       <g data-launch-hole opacity="0"><g transform="translate(-650 -235)"><use href="#fpp-logo-shape" fill="black"/><use href="#fpp-logo-counters" fill="white"/></g></g>
     </mask>
-    <clipPath id="fpp-launch-clip" clipPathUnits="userSpaceOnUse"></clipPath></defs>
+    </defs>
     <rect data-launch-shield width="100%" height="100%" fill="black" mask="url(#fpp-launch-mask)"/>
     <g data-launch-outline opacity="0" fill="none" stroke="var(--acc, #0F8B8D)" stroke-linejoin="round"><g transform="translate(-650 -235)"><use href="#fpp-logo-shape"/><use href="#fpp-logo-counters"/></g></g>
   </svg>

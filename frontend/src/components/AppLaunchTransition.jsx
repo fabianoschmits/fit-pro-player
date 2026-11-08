@@ -36,7 +36,6 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const hole = layer.querySelector('[data-launch-hole]')
   const outline = layer.querySelector('[data-launch-outline]')
   const shield = layer.querySelector('[data-launch-shield]')
-  const clip = layer.querySelector('#fpp-launch-clip')
   const svgNS = 'http://www.w3.org/2000/svg'
   const trail = document.createElementNS(svgNS, 'g')
   trail.setAttribute('data-launch-trail', '')
@@ -82,8 +81,6 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     timers.forEach(id => window.clearTimeout(id)); timers.clear()
     pending = false; wake = null; recovery = null
     trail.replaceChildren()
-    // An old StrictMode owner must not clear its replacement's clipping guard.
-    if (owners.get(layer) === owner) clip.replaceChildren()
   }
   const setPhase = next => { phase = next; layer.dataset.state = next }
   const complete = () => {
@@ -99,7 +96,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   }
   const protect = () => {
     // Reset the persistent curtain while still hidden. Its mask starts fully
-    // white; root remains clipped shut until the FPP clipping guard is ready.
+    // white; root stays invisible until the curtain's FPP mask is ready.
     hole.setAttribute('opacity', '0'); trail.setAttribute('opacity', '0'); outline.setAttribute('opacity', '0')
     shield.setAttribute('mask', 'url(#fpp-launch-mask)')
     layer.removeAttribute('data-mask-ready'); layer.removeAttribute('data-launch-fallback')
@@ -131,6 +128,11 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const reveal = () => {
     if (!active) return
     if (document.visibilityState === 'hidden') { frame(reveal); return }
+    if (!isReady() || !surface.childElementCount) {
+      setPhase('loading'); readyAt = null
+      recovery = later(() => { surface.setAttribute('data-launch-timeout', ''); complete() }, SAFETY_LIMIT)
+      check(); return
+    }
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     layer.dataset.reducedMotion = String(!!reduced)
     const fade = () => {
@@ -142,11 +144,16 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       setPhase('revealing')
       animate(FINISH, progress => { layer.style.opacity = String(1 - progress) }, complete)
     }
-    const supported = window.CSS?.supports?.('mask', 'url(#fpp-launch-mask)')
-      && window.CSS?.supports?.('clip-path', 'url(#fpp-launch-clip)')
-      && opening.getAttribute('d') && layer.querySelector('#fpp-launch-mask rect')
+    const mask = layer.querySelector('#fpp-launch-mask')
+    // Validate the SVG resource itself; CSS mask support alone does not prove
+    // that an SVG mask attribute has a valid resource/geometry to render.
+    const supported = mask?.namespaceURI === svgNS && mask.getAttribute('maskUnits') === 'userSpaceOnUse'
+      && mask.querySelector('rect[fill="white"]') && hole.parentElement === mask
+      && shield.namespaceURI === svgNS && curtain.contains(shield)
+      && shield.getAttribute('mask') === 'url(#fpp-launch-mask)' && opening.getAttribute('d')
+      && window.CSS?.supports?.('mask', 'url(#fpp-launch-mask)') !== false
     if (reduced || !supported) { fade(); return }
-    let width, height, endScale, startScale, originX, originY, rootLeft, rootTop, lastStep = -1
+    let width, height, endScale, startScale, originX, originY, lastStep = -1
     const measure = () => {
       const box = layer.getBoundingClientRect()
       width = box.width || window.innerWidth; height = box.height || window.innerHeight
@@ -157,10 +164,9 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       originX = matrix ? matrix.a * 650 + matrix.c * 235 + matrix.e - box.left : width / 2
       originY = matrix ? matrix.b * 650 + matrix.d * 235 + matrix.f - box.top : height / 2 - 24
       endScale = tunnelEndScale(width, height, originX, originY)
-      const rootBox = surface.getBoundingClientRect()
-      rootLeft = rootBox.left; rootTop = rootBox.top
       curtain.setAttribute('viewBox', `0 0 ${width} ${height}`); dimensionsDirty = false
-      for (const path of clip.children) path.setAttribute('transform', `translate(${originX - rootLeft} ${originY - rootTop}) scale(${path.getAttribute('data-scale')}) translate(-650 -235)`)
+      const curtainBox = curtain.getBoundingClientRect()
+      if (!curtain.isConnected || !shield.isConnected || (box.width > 0 && (curtainBox.width + 1 < width || curtainBox.height + 1 < height))) throw new Error('Launch curtain does not cover the viewport')
     }
     const paint = progress => {
       // Keep the retained SVG trail bounded to 60 updates/second, even on
@@ -185,14 +191,6 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       stamp.removeAttribute('opacity')
       stamp.setAttribute('transform', `scale(${scale})`)
       trail.append(stamp)
-      // Independent paint guard on the live React root. If WebKit delays or
-      // drops the mask's paint, content still cannot escape these same letters.
-      // clipPath unions its direct paths, retaining earlier revealed pixels.
-      const clipped = opening.cloneNode(true)
-      clipped.removeAttribute('id'); clipped.setAttribute('clip-rule', 'evenodd')
-      clipped.setAttribute('data-scale', String(scale))
-      clipped.setAttribute('transform', `translate(${originX - rootLeft} ${originY - rootTop}) scale(${scale}) translate(-650 -235)`)
-      clip.append(clipped)
       // Compensate the parent scale: all letter edges retain a subtle 2px
       // contour instead of swelling into thick borders during the tunnel.
       outline.setAttribute('stroke-width', String(2 / scale))

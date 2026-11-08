@@ -28,74 +28,81 @@ async function reopen(page) {
   })
 }
 
-test('persistent curtain and live-root clipping protect actual pixels even if SVG painting is delayed', async ({ page }, info) => {
+test('the SVG curtain reveals the real interface at 25, 50 and 75 percent without clipping the root', async ({ page }, info) => {
   const state = stateFixture(); state.theme = 'light'
   await seed(page, { state }); await installed(page); await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.addInitScript(() => {
-    window.__pixelHeld = []; window.__pixelHold = 'loading'
+    const held = new Map(); let id = -1, base = null, elapsed = 0
+    window.__holdLaunch = true
     const raf = window.requestAnimationFrame.bind(window)
-    window.requestAnimationFrame = callback => raf(time => {
-      const layer = document.getElementById('fpp-launch')
-      const scale = Number(layer?.querySelector('[data-launch-hole]')?.getAttribute('transform')?.match(/scale\(([^)]+)/)?.[1] || 0)
-      if ((window.__pixelHold === 'loading' && layer?.dataset.state === 'loading') || (window.__pixelHold === 'middle' && layer?.dataset.state === 'revealing' && scale >= .32)) window.__pixelHeld.push(callback)
-      else callback(time)
-    })
+    const cancel = window.cancelAnimationFrame.bind(window)
+    window.requestAnimationFrame = callback => {
+      if (window.__holdLaunch && document.getElementById('fpp-launch')?.dataset.state === 'revealing') { held.set(id, callback); return id-- }
+      return raf(callback)
+    }
+    window.cancelAnimationFrame = key => key < 0 ? held.delete(key) : cancel(key)
+    const flush = time => { const callbacks = [...held.values()]; held.clear(); callbacks.forEach(fn => fn(time)) }
+    window.__advanceLaunch = target => {
+      if (base === null) { base = performance.now(); flush(base) }
+      while (elapsed < target) { elapsed = Math.min(target, elapsed + 16); flush(base + elapsed) }
+    }
+    window.__releaseLaunch = () => { window.__holdLaunch = false; held.forEach(fn => raf(fn)); held.clear() }
   })
   await page.goto('/#/home')
+  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-state', 'revealing')
+  await expect(page.locator('#root')).toHaveCSS('visibility', 'visible')
+  await expect(page.locator('#root')).toHaveCSS('clip-path', 'none')
+  await expect(page.locator('#tabbar')).toHaveCSS('visibility', 'visible')
+  await page.evaluate(() => window.__advanceLaunch(0))
+  await page.screenshot({ path: info.outputPath('fpp-first-reveal-frame.png'), scale: 'css' })
   await page.evaluate(() => {
     const marker = document.createElement('div')
     marker.id = 'launch-pixel-marker'
-    marker.style.cssText = 'position:fixed;inset:0;background:rgb(196,40,190);z-index:2147483000'
+    marker.style.cssText = 'position:fixed;inset:0;background:rgb(196,40,190);z-index:2147483000;display:none'
     document.getElementById('root').append(marker)
   })
-  const capture = async name => PNG.sync.read(await page.screenshot({ path: info.outputPath(name), scale: 'css' }))
-  const magenta = (png, x, y) => {
-    const i = (y * png.width + x) * 4
-    return png.data[i] === 196 && png.data[i + 1] === 40 && png.data[i + 2] === 190
-  }
-  const begin = await capture('fpp-protected-start.png')
-  for (let y = 8; y < begin.height; y += 16) for (let x = 8; x < begin.width; x += 16) expect(magenta(begin, x, y)).toBe(false)
-  await page.evaluate(() => { window.__pixelHold = 'middle'; window.__pixelHeld.splice(0).forEach(fn => fn(performance.now())) })
-  await page.waitForFunction(() => document.getElementById('fpp-launch')?.dataset.state === 'revealing' && window.__pixelHeld.length > 0, null, { polling: 25 })
-  const themeBackground = await page.evaluate(() => {
-    const probe = document.createElement('div'); probe.style.color = 'var(--bg)'; document.body.append(probe)
-    const color = getComputedStyle(probe).color; probe.remove(); return color
-  })
-  expect(await page.locator('#root').evaluate(el => getComputedStyle(el).backgroundColor)).toBe(themeBackground)
-  await capture('fpp-protected-middle.png')
-  // Drop the curtain's actual paint. The independent clip on the live root
-  // must still prevent every outside pixel from exposing the page.
-  await page.locator('.fpp-launch-curtain').evaluate(el => { el.querySelectorAll('[data-launch-shield],[data-launch-outline]').forEach(node => { node.style.display = 'none' }) })
-  const checks = await page.evaluate(() => {
-    const paths = [...document.querySelectorAll('#fpp-launch-clip > path')]
-    const svg = document.querySelector('.fpp-launch-curtain')
-    const inside = (x, y) => paths.some(path => {
-      const point = svg.createSVGPoint(); point.x = x; point.y = y
-      return path.isPointInFill(point.matrixTransform(path.getScreenCTM().inverse()))
-    })
-    const points = []
-    for (let y = 8; y < innerHeight; y += 16) for (let x = 8; x < innerWidth; x += 16) {
-      const values = [[0, 0], [-3, 0], [3, 0], [0, -3], [0, 3]].map(([dx, dy]) => inside(x + dx, y + dy))
-      if (values.every(Boolean)) points.push({ x, y, visible: true })
-      else if (values.every(value => !value)) points.push({ x, y, visible: false })
+  // Capture the real Home at each requested time. A temporary paint marker
+  // behind the same curtain then verifies actual inside/outside pixels.
+  for (const percent of [0, 25, 50, 75]) {
+    await page.evaluate(ms => window.__advanceLaunch(ms), 1400 * percent / 100)
+    await page.screenshot({ path: info.outputPath(`fpp-real-home-${percent}.png`), scale: 'css' })
+    await page.locator('#launch-pixel-marker').evaluate(el => { el.style.display = 'block' })
+    // The contour is visible in the real-UI screenshot. Hide only its stroke
+    // for exact pixel assertions: it can pass across previously opened areas.
+    await page.locator('[data-launch-outline]').evaluate(el => { el.style.visibility = 'hidden' })
+    const checks = await page.evaluate(percent => {
+      const svg = document.querySelector('.fpp-launch-curtain')
+      const outer = [...document.querySelectorAll('#fpp-logo-shape path')]
+      const counters = [...document.querySelectorAll('#fpp-logo-counters path')]
+      const openings = [...document.querySelectorAll('[data-launch-trail] > g'), document.querySelector('[data-launch-hole]')]
+      const inside = (x, y) => openings.some(opening => {
+        const point = svg.createSVGPoint(); point.x = x; point.y = y
+        const local = point.matrixTransform(opening.getScreenCTM().inverse()); local.x += 650; local.y += 235
+        return outer.some(path => path.isPointInFill(local)) && !counters.some(path => path.isPointInFill(local))
+      })
+      const points = []
+      const step = percent === 0 ? 8 : 16, margin = percent === 0 ? 2 : 4
+      // Native WebKit scrollbars are browser chrome, outside the page paint.
+      const width = document.documentElement.clientWidth - 16, height = document.documentElement.clientHeight
+      for (let y = step / 2; y < height; y += step) for (let x = step / 2; x < width; x += step) {
+        const values = [-margin, 0, margin].flatMap(dx => [-margin, 0, margin].map(dy => inside(x + .5 + dx, y + .5 + dy)))
+        if (values.every(Boolean)) points.push({ x, y, visible: true })
+        else if (values.every(value => !value)) points.push({ x, y, visible: false })
+      }
+      return points
+    }, percent)
+    const png = PNG.sync.read(await page.screenshot({ path: info.outputPath(`fpp-mask-pixels-${percent}.png`), scale: 'css' }))
+    expect(checks.some(point => point.visible)).toBe(true)
+    for (const { x, y, visible } of checks) {
+      const i = (y * png.width + x) * 4
+      expect([...png.data.subarray(i, i + 3)], `${percent}% ${visible ? 'inside' : 'outside'} ${x},${y}`).toEqual(visible ? [196, 40, 190] : [0, 0, 0])
     }
-    return points
-  })
-  const guarded = await capture('fpp-mask-paint-failure.png')
-  expect(checks.some(point => point.visible)).toBe(true)
-  for (const { x, y, visible } of checks) {
-    if (visible) expect(magenta(guarded, x, y), `inside ${x},${y}`).toBe(true)
-    else {
-      const i = (y * guarded.width + x) * 4
-      expect([...guarded.data.subarray(i, i + 3)], `outside ${x},${y}`).toEqual([0, 0, 0])
-    }
+    await page.locator('#launch-pixel-marker').evaluate(el => { el.style.display = 'none' })
+    await page.locator('[data-launch-outline]').evaluate(el => { el.style.visibility = '' })
   }
-  await page.locator('.fpp-launch-curtain').evaluate(el => { el.querySelectorAll('[data-launch-shield],[data-launch-outline]').forEach(node => { node.style.display = '' }) })
-  await page.evaluate(() => { window.__pixelHold = ''; window.__pixelHeld.splice(0).forEach(fn => fn(performance.now())) })
+  await page.evaluate(() => { window.__advanceLaunch(1400); window.__releaseLaunch() })
   await expect(page.locator('#fpp-launch')).toBeHidden()
-  expect(await page.locator('body').evaluate(el => getComputedStyle(el).backgroundColor)).toBe(themeBackground)
-  const end = await capture('fpp-protected-end.png')
-  expect(magenta(end, Math.floor(end.width / 2), Math.floor(end.height / 2))).toBe(true)
+  await page.screenshot({ path: info.outputPath('fpp-real-home-completed.png'), scale: 'css' })
   expect(await page.locator('#root').evaluate(el => getComputedStyle(el).clipPath)).toBe('none')
 })
 
@@ -135,7 +142,7 @@ test('installed launch paints the vector FPP, reveals the actual interface throu
   const layer = page.locator('#fpp-launch')
   await expect(layer).toHaveAttribute('data-state', 'revealing')
   await expect(layer).toHaveAttribute('data-curtain-ready', '')
-  await expect(page.locator('#tabbar')).toBeHidden()
+  await expect(page.locator('#tabbar')).toHaveCSS('visibility', 'visible')
   await expect(page.locator('#root h1').first()).toBeVisible()
   await expect(page.locator('[data-launch-hole] use').first()).toHaveAttribute('href', '#fpp-logo-opening')
   await expect(page.locator('[data-launch-outline] use').first()).toHaveAttribute('href', '#fpp-logo-shape')
@@ -242,7 +249,7 @@ test('a delayed animation frame cannot skip the tunnel after a fast boot', async
   await page.waitForFunction(() => window.__delayedLaunchFrame, null, { polling: 25 })
   await expect(layer).toHaveAttribute('data-state', 'revealing')
   await expect(layer).toHaveAttribute('data-curtain-ready', '')
-  await expect(page.locator('#tabbar')).toBeHidden()
+  await expect(page.locator('#tabbar')).toHaveCSS('visibility', 'visible')
   await expect(layer).toBeHidden()
   expect(await layer.getAttribute('data-launch-cycle')).toBe('1')
 })

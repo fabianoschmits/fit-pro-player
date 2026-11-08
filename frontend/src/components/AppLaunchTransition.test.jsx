@@ -131,6 +131,41 @@ it('uses the traced FPP paths in both the metallic identity and the synchronized
   expect(document.querySelector('[data-launch-trail]').childElementCount).toBe(0)
 })
 
+it('shows the live root only during reveal, without any second clip on the application', async () => {
+  const html = new DOMParser().parseFromString(readFileSync('index.html', 'utf8'), 'text/html')
+  const styles = document.createElement('style')
+  styles.textContent = html.querySelector('body > style').textContent + readFileSync('src/fpp-launch.css', 'utf8')
+  document.body.append(styles)
+  controller = createLaunchController({ isReady: () => true })
+  const surface = document.getElementById('root')
+  // happy-dom caches sibling-selector styles after dataset updates. Invalidate
+  // the test element before reading each phase; browsers are checked separately.
+  const rootStyle = () => { surface.style.setProperty('--test-phase', layer.dataset.state); return getComputedStyle(surface) }
+  expect(rootStyle().visibility).toBe('hidden')
+  expect(document.getElementById('fpp-launch-clip')).toBeNull()
+  await advance(950)
+  expect(layer.dataset.state).toBe('settling')
+  expect(rootStyle().visibility).toBe('hidden')
+  await advance(160)
+  expect(layer.dataset.state).toBe('revealing')
+  expect(rootStyle().visibility).toBe('visible')
+  expect(rootStyle().clipPath).toBe('none')
+  expect(document.querySelector('[data-launch-shield]').getAttribute('mask')).toBe('url(#fpp-launch-mask)')
+  expect(document.querySelector('[data-launch-hole]').getAttribute('opacity')).toBe('1')
+  await advance(2000)
+  expect(layer.hidden).toBe(true)
+  expect(rootStyle().visibility).not.toBe('hidden')
+})
+
+it('rejects an incomplete SVG mask even when CSS reports mask support', async () => {
+  document.querySelector('#fpp-launch-mask > rect').remove()
+  controller = createLaunchController({ isReady: () => true })
+  await advance(1100)
+  expect(layer.hasAttribute('data-launch-fallback')).toBe(true)
+  expect(document.querySelector('[data-launch-shield]').hasAttribute('mask')).toBe(false)
+  await advance(300); expect(layer.hidden).toBe(true)
+})
+
 it('stops work and observers on disposal without leaving an invisible touch blocker', async () => {
   controller = createLaunchController({ isReady: () => false })
   controller.destroy(); await Promise.resolve()
