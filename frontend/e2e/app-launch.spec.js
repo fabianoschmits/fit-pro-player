@@ -43,6 +43,7 @@ test('installed launch paints the vector FPP, reveals the actual interface throu
   await page.goto('/#/home', { waitUntil: 'commit' })
   const logo = page.locator('.fpp-launch-symbol svg')
   await expect(logo).toBeVisible()
+  expect(await logo.evaluate(el => getComputedStyle(el).animationName)).toBe('none')
   await expect(page.locator('#root')).toBeEmpty()
   expect(await logo.evaluate(el => Math.round(el.getBoundingClientRect().width))).toBeGreaterThanOrEqual(180)
   // WebKit screenshots wait for document load, which this first-paint gate deliberately holds.
@@ -110,6 +111,40 @@ test('the FPP opening never covers an already revealed part of the screen', asyn
   expect(result.samples).toBeGreaterThan(5)
   expect(result.revealed).toBeGreaterThan(5)
   expect(result.regressions).toBe(0)
+})
+
+test('the first tunnel frame matches the fixed logo position and size exactly', async ({ page }) => {
+  await seed(page); await installed(page); await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.addInitScript(() => {
+    // Hold frame zero so this test measures the handoff, not a later growth frame.
+    const raf = window.requestAnimationFrame.bind(window)
+    window.requestAnimationFrame = callback => raf(time => {
+      if (document.getElementById('fpp-launch')?.dataset.state !== 'revealing') callback(time)
+    })
+    window.__launchAlignment = new Promise(resolve => {
+      let loadingMatrix
+      const matrix = element => {
+        const { a, b, c, d, e, f } = element.getScreenCTM()
+        return [a, b, c, d, e, f]
+      }
+      new MutationObserver(() => {
+        const layer = document.getElementById('fpp-launch')
+        const logo = document.querySelector('.fpp-launch-symbol svg')
+        if (layer?.dataset.state === 'loading' && logo) loadingMatrix = matrix(logo)
+        if (layer?.dataset.state === 'revealing') resolve({
+          loading: loadingMatrix,
+          settled: matrix(logo),
+          opening: matrix(document.querySelector('[data-launch-hole] use')),
+        })
+      }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-state'] })
+    })
+  })
+  await page.goto('/#/home')
+  const matrices = await page.evaluate(() => window.__launchAlignment)
+  for (let i = 0; i < 6; i++) {
+    expect(matrices.settled[i]).toBeCloseTo(matrices.loading[i], 3)
+    expect(matrices.opening[i]).toBeCloseTo(matrices.loading[i], 3)
+  }
 })
 
 test('returning to the PWA does not replay launch or disturb workout, rest and route', async ({ page }) => {

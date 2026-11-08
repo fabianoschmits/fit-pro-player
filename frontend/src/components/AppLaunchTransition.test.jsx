@@ -168,10 +168,12 @@ it('bounds route fallback waiting and provides recovery if boot never finishes',
 
 it('covers all corners of tall and landscape viewports through the solid letter geometry', () => {
   for (const [width, height] of [[390, 844], [430, 932], [844, 390], [1024, 1366]]) {
-    const scale = tunnelEndScale(width, height)
-    // Expansion is anchored inside the first P's solid lower bowl, away from
-    // its counter. A radius-10 disc lies entirely within the traced geometry.
-    expect(scale * 10).toBeGreaterThan(Math.hypot(width, height) / 2)
+    for (const y of [height / 2, height / 2 - 24]) {
+      const scale = tunnelEndScale(width, height, width / 2, y)
+      // The fixed logo sits above the viewport center. Include that offset
+      // when expanding the first P's solid radius-10 region past every corner.
+      expect(scale * 10).toBeGreaterThan(Math.hypot(width / 2, Math.max(y, height - y)))
+    }
   }
 })
 

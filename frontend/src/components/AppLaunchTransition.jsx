@@ -13,7 +13,7 @@ const LOGO_START_SCALE = 180 / 1140
 // (650,235) lies inside the first P's solid lower bowl, with a radius-10
 // clearance. Expand this disc beyond the diagonal: counters/gaps cannot leave
 // black remnants at the viewport center or corners, even on tall iPhones.
-export const tunnelEndScale = (width, height) => Math.hypot(width, height) / 18
+export const tunnelEndScale = (width, height, x = width / 2, y = height / 2) => Math.hypot(Math.max(x, width - x), Math.max(y, height - y)) / 9
 function tunnelEase(progress) {
   const curve = (t, a, b) => 3 * (1 - t) ** 2 * t * a + 3 * (1 - t) * t * t * b + t ** 3
   let low = 0, high = 1
@@ -55,7 +55,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   hole.replaceChildren(openingUse)
   const frames = new Set(), timers = new Set()
   let disposed = false, active = false, pending = false, phase = 'completed'
-  let openedAt = 0, readyAt = null, wake = null, settleAnimation = null, presentationMinimum = 0
+  let openedAt = 0, readyAt = null, wake = null, presentationMinimum = 0
   let dimensionsDirty = false
   const now = () => performance.now()
   const installed = () => !native
@@ -72,7 +72,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const clearWork = () => {
     frames.forEach(id => window.cancelAnimationFrame(id)); frames.clear()
     timers.forEach(id => window.clearTimeout(id)); timers.clear()
-    settleAnimation?.cancel(); settleAnimation = null; pending = false; wake = null
+    pending = false; wake = null
     trail.replaceChildren()
   }
   const setPhase = next => { phase = next; layer.dataset.state = next }
@@ -101,11 +101,17 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       animate(FINISH, progress => { layer.style.opacity = String(1 - progress) }, complete)
       return
     }
-    let width, height, endScale, lastStep = -1
+    let width, height, endScale, startScale, originX, originY, lastStep = -1
     const measure = () => {
       const box = layer.getBoundingClientRect()
       width = box.width || window.innerWidth; height = box.height || window.innerHeight
-      endScale = tunnelEndScale(width, height)
+      // Read the actual SVG mapping, including its viewBox/letterboxing and
+      // responsive width. The first hole is the same geometry in the same place.
+      const matrix = symbol.getScreenCTM?.()
+      startScale = matrix?.a || LOGO_START_SCALE
+      originX = matrix ? matrix.a * 650 + matrix.c * 235 + matrix.e - box.left : width / 2
+      originY = matrix ? matrix.b * 650 + matrix.d * 235 + matrix.f - box.top : height / 2 - 24
+      endScale = tunnelEndScale(width, height, originX, originY)
       curtain.setAttribute('viewBox', `0 0 ${width} ${height}`); dimensionsDirty = false
     }
     measure()
@@ -118,15 +124,15 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       if (dimensionsDirty) measure()
       // Ease depth rather than raw magnification. Perspective interpolation
       // keeps the complete FPP lettering legible for most of the approach.
-      const depth = 1 - tunnelEase(progress) * (1 - (LOGO_START_SCALE / Math.max(LOGO_START_SCALE, endScale)) ** 2)
-      const scale = progress === 1 ? endScale : LOGO_START_SCALE / Math.sqrt(depth)
-      const transform = `translate(${width / 2} ${height / 2}) scale(${scale})`
+      const depth = 1 - tunnelEase(progress) * (1 - (startScale / Math.max(startScale, endScale)) ** 2)
+      const scale = progress === 0 ? startScale : progress === 1 ? endScale : startScale / Math.sqrt(depth)
+      const transform = `translate(${originX} ${originY}) scale(${scale})`
       hole.setAttribute('transform', transform)
       outline.setAttribute('transform', transform)
       // Scaling disconnected letters is not a nested opening: gaps and P
       // counters otherwise cover pixels that were visible in the prior frame.
       // Retain each painted opening until completion so reveal only advances.
-      trail.setAttribute('transform', `translate(${width / 2} ${height / 2})`)
+      trail.setAttribute('transform', `translate(${originX} ${originY})`)
       const stamp = hole.cloneNode(true)
       stamp.removeAttribute('data-launch-hole')
       stamp.setAttribute('transform', `scale(${scale})`)
@@ -140,11 +146,8 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   }
   const settle = () => {
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    const transform = getComputedStyle(symbol).transform
     setPhase('settling')
     if (reduced) { reveal(); return }
-    settleAnimation = symbol.animate?.([{ transform }, { transform: 'none' }], { duration: SETTLE, easing: 'ease-out', fill: 'forwards' })
-    settleAnimation?.finished?.catch(() => {})
     later(reveal, SETTLE)
   }
   const check = () => {
