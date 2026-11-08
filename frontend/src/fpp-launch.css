@@ -1,4 +1,5 @@
 /* Geometry and the first loading frame live in index.html, before module fetch. */
+#fpp-launch:not([hidden]) ~ #root #tabbar{visibility:hidden;pointer-events:none}
 #fpp-launch[data-state="settling"] .fpp-launch-caption{opacity:0;transition:opacity 120ms ease-out}
 #fpp-launch[data-state="settling"] .fpp-launch-symbol{transform:translate(-50%,-50%);transition:transform 120ms ease-out}
 #fpp-launch[data-state="revealing"]{background:transparent}

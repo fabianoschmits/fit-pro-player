@@ -15,6 +15,7 @@ const visibility = value => { visible = value; document.dispatchEvent(new Event(
 const restore = () => { const event = new Event('pageshow'); Object.defineProperty(event, 'persisted', { value: true }); window.dispatchEvent(event) }
 beforeEach(() => {
   vi.useFakeTimers(); installed = true; reduced = false; visible = 'visible'
+  vi.spyOn(Math, 'random').mockReturnValue(0)
   state.ready = true; state.auth = 'anonymous'; state.entered = true
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('reduced-motion') ? reduced : installed }))
@@ -32,7 +33,23 @@ afterEach(async () => {
   await Promise.resolve(); vi.clearAllTimers(); vi.restoreAllMocks(); vi.useRealTimers(); document.body.innerHTML = ''
 })
 
-it('keeps the identity for 350ms on an instant installed launch and waits for the real route', async () => {
+it('chooses a bounded loading presentation once per opening and still waits for actual readiness', async () => {
+  const random = vi.spyOn(Math, 'random').mockReturnValue(.9)
+  let ready = true
+  controller = createLaunchController({ isReady: () => ready })
+  await advance(900); expect(layer.dataset.state).toBe('loading')
+  random.mockClear().mockReturnValue(0)
+  controller.check(); controller.check()
+  expect(random).not.toHaveBeenCalled()
+  await advance(900); expect(layer.dataset.state).toBe('settling')
+  await advance(1800); expect(layer.hidden).toBe(true)
+  ready = false; controller.enter()
+  await advance(2200); expect(layer.dataset.state).toBe('loading')
+  ready = true; controller.check()
+  await advance(70); expect(layer.dataset.state).toBe('settling')
+})
+
+it('keeps the identity on an instant installed launch and waits for the real route', async () => {
   let ready = false
   controller = createLaunchController({ isReady: () => ready })
   await advance(1500); expect(layer.dataset.state).toBe('loading')
@@ -48,7 +65,7 @@ it('keeps the identity for 350ms on an instant installed launch and waits for th
 it('enforces the installed minimum without delaying browser or native boot', async () => {
   controller = createLaunchController({ isReady: () => true })
   await advance(300); expect(layer.dataset.state).toBe('loading')
-  await advance(100); expect(layer.dataset.state).toBe('settling')
+  await advance(650); expect(layer.dataset.state).toBe('settling')
   controller.destroy(); installed = false
   controller = createLaunchController({ isReady: () => true })
   await advance(40); expect(layer.dataset.state).toBe('settling')
@@ -56,7 +73,7 @@ it('enforces the installed minimum without delaying browser or native boot', asy
 
 it('uses the traced FPP paths in both the metallic identity and the synchronized reveal', async () => {
   controller = createLaunchController({ isReady: () => true })
-  await advance(600)
+  await advance(1100)
   const outline = document.querySelector('[data-launch-outline]')
   expect(outline).not.toBeNull()
   expect(outline.getAttribute('stroke')).toBe('var(--acc, #0F8B8D)')
@@ -64,11 +81,14 @@ it('uses the traced FPP paths in both the metallic identity and the synchronized
   expect(layer.dataset.state).toBe('revealing'); expect(layer.hidden).toBe(false)
   expect(outline.getAttribute('transform')).toBe(document.querySelector('[data-launch-hole]').getAttribute('transform'))
   expect(outline.querySelector('use').getAttribute('href')).toBe('#fpp-logo-shape')
+  expect(document.querySelector('[data-launch-hole] use').getAttribute('href')).toBe('#fpp-logo-opening')
+  expect(document.querySelector('[data-launch-trail]').childElementCount).toBeGreaterThan(1)
   expect(document.querySelector('.fpp-launch-symbol svg').getAttribute('viewBox')).toBe('80 80 1140 310')
   expect(document.querySelector('.fpp-launch-symbol [data-logo-metal]').getAttribute('href')).toBe('#fpp-logo-shape')
   expect(document.querySelector('.fpp-launch-caption > span').textContent).toBe('Carregando…')
   expect(layer.querySelectorAll('image,text')).toHaveLength(0)
   await advance(1000); expect(layer.hidden).toBe(true)
+  expect(document.querySelector('[data-launch-trail]').childElementCount).toBe(0)
 })
 
 it('stops work and observers on disposal without leaving an invisible touch blocker', async () => {
@@ -82,7 +102,7 @@ it('stops work and observers on disposal without leaving an invisible touch bloc
 
 it('does not replay on PWA visibility or BFCache returns and preserves the live edit', async () => {
   controller = createLaunchController({ isReady: () => true })
-  await advance(2400)
+  await advance(4000)
   const input = document.querySelector('input'); input.value = 'Treino em andamento'; input.focus()
   const cycle = Number(layer.dataset.launchCycle)
   visibility('hidden'); visibility('visible'); restore(); window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
@@ -90,7 +110,7 @@ it('does not replay on PWA visibility or BFCache returns and preserves the live 
   expect(layer.hidden).toBe(true)
   expect(document.querySelector('input')).toBe(input); expect(input.value).toBe('Treino em andamento')
   expect(document.activeElement).toBe(input)
-  await advance(2400); expect(layer.hidden).toBe(true)
+  await advance(4000); expect(layer.hidden).toBe(true)
   window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
   expect(Number(layer.dataset.launchCycle)).toBe(cycle)
 })
@@ -101,14 +121,14 @@ it('plays once for desktop login entry, not auth restoration or subsequent ready
   state.auth = 'initializing'
   root = createRoot(document.getElementById('controller'))
   const render = () => act(async () => root.render(<StrictMode><AppLaunchTransition /></StrictMode>))
-  await render(); state.auth = 'authenticated'; await render(); await advance(2200)
+  await render(); state.auth = 'authenticated'; await render(); await advance(4000)
   expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
   state.auth = 'anonymous'; state.entered = false; await render()
   state.auth = 'authenticated'; state.ready = false; await render()
   expect(layer.hidden).toBe(true)
   state.ready = true; state.entered = true; await render()
   expect(layer.hidden).toBe(false); expect(layer.dataset.launchCycle).toBe('2')
-  await advance(2200); expect(layer.hidden).toBe(true)
+  await advance(4000); expect(layer.hidden).toBe(true)
   state.ready = false; await render(); state.ready = true; await render()
   visibility('hidden'); visibility('visible'); restore(); await render(); await advance(2500)
   expect(layer.dataset.launchCycle).toBe('2'); expect(layer.hidden).toBe(true)
@@ -117,22 +137,22 @@ it('plays once for desktop login entry, not auth restoration or subsequent ready
 it('does not add a second opening for a login inside an already open mobile app', async () => {
   root = createRoot(document.getElementById('controller'))
   const render = () => act(async () => root.render(<AppLaunchTransition />))
-  await render(); await advance(2400)
-  state.auth = 'authenticated'; await render(); await advance(2400)
+  await render(); await advance(4000)
+  state.auth = 'authenticated'; await render(); await advance(4000)
   expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
 })
 
 it.each([false, true])('does not replay on browser/native resume (native=%s)', async native => {
   installed = native
   controller = createLaunchController({ isReady: () => true, native })
-  await advance(2200); const cycle = layer.dataset.launchCycle
+  await advance(4000); const cycle = layer.dataset.launchCycle
   visibility('hidden'); visibility('visible'); restore()
   expect(layer.dataset.launchCycle).toBe(cycle); expect(layer.hidden).toBe(true)
 })
 
 it('uses opacity for reduced motion and removes all interception afterward', async () => {
   reduced = true; controller = createLaunchController({ isReady: () => true })
-  await advance(400); expect(layer.dataset.reducedMotion).toBe('true')
+  await advance(950); expect(layer.dataset.reducedMotion).toBe('true')
   expect(document.querySelector('[data-launch-hole]').getAttribute('transform')).toBeNull()
   await advance(200); expect(layer.hidden).toBe(true); expect(layer.getAttribute('aria-hidden')).toBe('true')
 })
@@ -161,5 +181,5 @@ it('coordinates ready/auth and survives StrictMode without a duplicate cold open
   await advance(500); expect(layer.dataset.state).toBe('loading')
   state.auth = 'anonymous'
   await act(async () => root.render(<StrictMode><AppLaunchTransition /></StrictMode>))
-  await advance(2000); expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
+  await advance(3000); expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
 })

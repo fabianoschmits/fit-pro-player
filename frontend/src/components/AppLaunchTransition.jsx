@@ -6,7 +6,7 @@ import { MOBILE } from '../lib/mobile.js'
 import '../fpp-launch.css'
 
 const owners = new WeakMap()
-const MINIMUM = 350, SETTLE = 120, REVEAL = 1400, FINISH = 100
+const MINIMUM = 900, LOADING_VARIATION = 900, SETTLE = 120, REVEAL = 1400, FINISH = 100
 const ROUTE_LIMIT = 4000, SAFETY_LIMIT = 30000
 
 const LOGO_START_SCALE = 180 / 1140
@@ -34,9 +34,28 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const curtain = layer.querySelector('.fpp-launch-curtain')
   const hole = layer.querySelector('[data-launch-hole]')
   const outline = layer.querySelector('[data-launch-outline]')
+  const svgNS = 'http://www.w3.org/2000/svg'
+  const trail = document.createElementNS(svgNS, 'g')
+  trail.setAttribute('data-launch-trail', '')
+  hole.before(trail)
+  // Transparent counters must belong to each stamp, rather than painting white
+  // over earlier openings. One even-odd path gives the union a true FPP shape.
+  let opening = layer.querySelector('#fpp-logo-opening')
+  if (!opening) {
+    opening = document.createElementNS(svgNS, 'path')
+    opening.id = 'fpp-logo-opening'
+    opening.setAttribute('fill-rule', 'evenodd')
+    opening.setAttribute('d', [...layer.querySelectorAll('#fpp-logo-shape path, #fpp-logo-counters path')].map(path => path.getAttribute('d')).join(' '))
+    layer.querySelector('.fpp-launch-defs defs').append(opening)
+  }
+  const openingUse = document.createElementNS(svgNS, 'use')
+  openingUse.setAttribute('href', '#fpp-logo-opening')
+  openingUse.setAttribute('fill', 'black')
+  openingUse.setAttribute('transform', 'translate(-650 -235)')
+  hole.replaceChildren(openingUse)
   const frames = new Set(), timers = new Set()
   let disposed = false, active = false, pending = false, phase = 'completed'
-  let openedAt = 0, readyAt = null, wake = null, settleAnimation = null
+  let openedAt = 0, readyAt = null, wake = null, settleAnimation = null, presentationMinimum = 0
   let dimensionsDirty = false
   const now = () => performance.now()
   const installed = () => !native
@@ -54,6 +73,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     frames.forEach(id => window.cancelAnimationFrame(id)); frames.clear()
     timers.forEach(id => window.clearTimeout(id)); timers.clear()
     settleAnimation?.cancel(); settleAnimation = null; pending = false; wake = null
+    trail.replaceChildren()
   }
   const setPhase = next => { phase = next; layer.dataset.state = next }
   const complete = () => {
@@ -81,7 +101,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       animate(FINISH, progress => { layer.style.opacity = String(1 - progress) }, complete)
       return
     }
-    let width, height, endScale
+    let width, height, endScale, lastStep = -1
     const measure = () => {
       const box = layer.getBoundingClientRect()
       width = box.width || window.innerWidth; height = box.height || window.innerHeight
@@ -90,6 +110,11 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     }
     measure()
     const paint = progress => {
+      // Keep the retained SVG trail bounded to 60 updates/second, even on
+      // high-refresh displays. No React renders or per-frame layout reads.
+      const step = Math.floor(progress * REVEAL / (1000 / 60))
+      if (step === lastStep && !dimensionsDirty) return
+      lastStep = step
       if (dimensionsDirty) measure()
       // Ease depth rather than raw magnification. Perspective interpolation
       // keeps the complete FPP lettering legible for most of the approach.
@@ -98,6 +123,14 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       const transform = `translate(${width / 2} ${height / 2}) scale(${scale})`
       hole.setAttribute('transform', transform)
       outline.setAttribute('transform', transform)
+      // Scaling disconnected letters is not a nested opening: gaps and P
+      // counters otherwise cover pixels that were visible in the prior frame.
+      // Retain each painted opening until completion so reveal only advances.
+      trail.setAttribute('transform', `translate(${width / 2} ${height / 2})`)
+      const stamp = hole.cloneNode(true)
+      stamp.removeAttribute('data-launch-hole')
+      stamp.setAttribute('transform', `scale(${scale})`)
+      trail.append(stamp)
       // Compensate the parent scale: all letter edges retain a subtle 2px
       // contour instead of swelling into thick borders during the tunnel.
       outline.setAttribute('stroke-width', String(2 / scale))
@@ -123,7 +156,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       if (!active || phase !== 'loading' || !isReady()) return
       if (readyAt === null) readyAt = now()
       const remainingRoute = ROUTE_LIMIT - (now() - readyAt)
-      const remainingMinimum = (installed() ? MINIMUM : 0) - (now() - openedAt)
+      const remainingMinimum = presentationMinimum - (now() - openedAt)
       const waiting = surface.querySelector('[data-route-loading],[data-app-booting]')
       const delay = waiting && remainingRoute > 0 ? remainingRoute : Math.max(0, remainingMinimum)
       if (delay > 0) {
@@ -133,8 +166,11 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       settle()
     }))
   }
-  const start = (adopt = false) => {
+  const start = (adopt = false, login = false) => {
     clearWork(); active = true; openedAt = now(); readyAt = null
+    // Presentation only: requests/boot keep running. Sample once, never on
+    // renders or readiness checks, and never shorten a genuinely slow boot.
+    presentationMinimum = installed() || (!native && login) ? MINIMUM + Math.floor(Math.random() * LOADING_VARIATION) : 0
     layer.hidden = false; layer.removeAttribute('aria-hidden'); layer.removeAttribute('data-launch-finishing')
     layer.removeAttribute('data-reduced-motion'); layer.removeAttribute('data-paused')
     layer.style.opacity = ''; symbol.style.transform = ''; hole.removeAttribute('transform'); outline.removeAttribute('transform')
@@ -162,11 +198,12 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   return { check, enter() {
     if (disposed) return
     if (active) check()
-    else start()
+    else start(false, true)
   }, destroy() {
     disposed = true; clearWork(); observer.disconnect()
     document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pageshow', check)
     window.removeEventListener('resize', resize); window.removeEventListener('orientationchange', resize)
+    trail.remove()
     // StrictMode's replacement owns the same element before this microtask.
     queueMicrotask(() => { if (owners.get(layer) === owner) { complete(); owners.delete(layer) } })
   } }

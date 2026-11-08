@@ -58,8 +58,9 @@ test('installed launch paints the vector FPP, reveals the actual interface throu
   releaseModule()
   const layer = page.locator('#fpp-launch')
   await expect(layer).toHaveAttribute('data-state', 'revealing')
+  await expect(page.locator('#tabbar')).toBeHidden()
   await expect(page.locator('#root h1').first()).toBeVisible()
-  await expect(page.locator('[data-launch-hole] use').first()).toHaveAttribute('href', '#fpp-logo-shape')
+  await expect(page.locator('[data-launch-hole] use').first()).toHaveAttribute('href', '#fpp-logo-opening')
   await expect(page.locator('[data-launch-outline] use').first()).toHaveAttribute('href', '#fpp-logo-shape')
   await page.waitForFunction(() => window.__launchHeldFrames.length > 0, null, { polling: 25 })
   await page.screenshot({ path: info.outputPath('fpp-logo-tunnel.png') })
@@ -67,11 +68,48 @@ test('installed launch paints the vector FPP, reveals the actual interface throu
   await expect(layer).toBeHidden()
   const history = await page.evaluate(() => window.__launchHistory)
   expect(history.map(item => item.state)).toEqual(['loading', 'settling', 'revealing', 'completed'])
-  expect(history.find(item => item.state === 'settling').time - history[0].time).toBeGreaterThanOrEqual(340)
+  expect(history.find(item => item.state === 'settling').time - history[0].time).toBeGreaterThanOrEqual(890)
   await page.evaluate(() => { window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize')); location.hash = '/plan' })
   await expect(layer).toHaveAttribute('data-launch-cycle', '1')
   await expect(page.getByRole('heading', { name: /plano/i }).first()).toBeVisible()
   expect(await layer.evaluate(el => getComputedStyle(el).display)).toBe('none')
+})
+
+test('the FPP opening never covers an already revealed part of the screen', async ({ page }) => {
+  await seed(page); await installed(page); await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.addInitScript(() => {
+    window.__revealProbe = new Promise(resolve => {
+      const seen = new Set(); let regressions = 0, samples = 0
+      const sample = () => {
+        const layer = document.getElementById('fpp-launch')
+        if (layer?.dataset.state === 'completed') { resolve({ regressions, samples, revealed: seen.size }); return }
+        if (layer?.dataset.state === 'revealing') {
+          samples++
+          const outer = [...document.querySelectorAll('#fpp-logo-shape path')]
+          const counters = [...document.querySelectorAll('#fpp-logo-counters path')]
+          const svg = document.querySelector('.fpp-launch-curtain')
+          const openings = [...document.querySelectorAll('[data-launch-trail] > g'), document.querySelector('[data-launch-hole]')]
+          for (let y = 10; y < innerHeight; y += 32) for (let x = 10; x < innerWidth; x += 32) {
+            const visible = openings.some(opening => {
+              const point = svg.createSVGPoint(); point.x = x; point.y = y
+              const local = point.matrixTransform(opening.getCTM().inverse()); local.x += 650; local.y += 235
+              return outer.some(path => path.isPointInFill(local)) && !counters.some(path => path.isPointInFill(local))
+            })
+            const key = `${x},${y}`
+            if (visible) seen.add(key)
+            else if (seen.has(key)) regressions++
+          }
+        }
+        requestAnimationFrame(sample)
+      }
+      requestAnimationFrame(sample)
+    })
+  })
+  await page.goto('/#/home')
+  const result = await page.evaluate(() => window.__revealProbe)
+  expect(result.samples).toBeGreaterThan(5)
+  expect(result.revealed).toBeGreaterThan(5)
+  expect(result.regressions).toBe(0)
 })
 
 test('returning to the PWA does not replay launch or disturb workout, rest and route', async ({ page }) => {
