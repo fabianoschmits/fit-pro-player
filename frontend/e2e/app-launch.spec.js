@@ -24,8 +24,11 @@ async function reopen(page) {
   })
 }
 
-test('installed launch paints once, reveals the actual interface through an SVG dumbbell and releases touches', async ({ page }, info) => {
+test('installed launch paints the vector FPP, reveals the actual interface through its letters and releases touches', async ({ page }, info) => {
   await seed(page); await installed(page); await page.emulateMedia({ reducedMotion: 'no-preference' })
+  let releaseModule
+  const firstPaint = new Promise(resolve => { releaseModule = resolve })
+  await page.route('**/src/main.jsx*', async route => { await firstPaint; await route.continue() })
   // Hold one actual SVG frame for visual inspection; no simulated app image.
   await page.addInitScript(() => {
     window.__launchHeldFrames = []; window.__launchHold = true
@@ -33,18 +36,33 @@ test('installed launch paints once, reveals the actual interface through an SVG 
     window.requestAnimationFrame = callback => raf(time => {
       const layer = document.getElementById('fpp-launch')
       const scale = Number(layer?.querySelector('[data-launch-hole]')?.getAttribute('transform')?.match(/scale\(([^)]+)/)?.[1] || 0)
-      if (window.__launchHold && layer?.dataset.state === 'revealing' && scale >= 8) window.__launchHeldFrames.push(callback)
+      if (window.__launchHold && layer?.dataset.state === 'revealing' && scale >= .32) window.__launchHeldFrames.push(callback)
       else callback(time)
     })
   })
-  await page.goto('/#/home')
+  await page.goto('/#/home', { waitUntil: 'commit' })
+  const logo = page.locator('.fpp-launch-symbol svg')
+  await expect(logo).toBeVisible()
+  await expect(page.locator('#root')).toBeEmpty()
+  expect(await logo.evaluate(el => Math.round(el.getBoundingClientRect().width))).toBeGreaterThanOrEqual(180)
+  // WebKit screenshots wait for document load, which this first-paint gate deliberately holds.
+  if (info.project.name !== 'mobile-webkit') await page.screenshot({ path: info.outputPath('fpp-logo-first-paint.png') })
+  if (info.project.name === 'desktop-chromium') {
+    const vector = await page.evaluate(() => `<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="426" viewBox="0 0 1280 426"><defs>${document.querySelector('.fpp-launch-defs defs').innerHTML}</defs>${document.querySelector('.fpp-launch-symbol svg').innerHTML}</svg>`)
+    const preview = await page.context().newPage()
+    await preview.setViewportSize({ width: 1280, height: 426 })
+    await preview.setContent(`<body style="margin:0;background:white">${vector}</body>`)
+    await preview.screenshot({ path: info.outputPath('fpp-vector-reference-check.png') })
+    await preview.close()
+  }
+  releaseModule()
   const layer = page.locator('#fpp-launch')
   await expect(layer).toHaveAttribute('data-state', 'revealing')
   await expect(page.locator('#root h1').first()).toBeVisible()
-  await expect(page.locator('[data-launch-hole] use')).toHaveAttribute('href', '#fpp-launch-silhouette')
-  await expect(page.locator('[data-launch-outline] use')).toHaveAttribute('href', '#fpp-launch-silhouette')
+  await expect(page.locator('[data-launch-hole] use').first()).toHaveAttribute('href', '#fpp-logo-shape')
+  await expect(page.locator('[data-launch-outline] use').first()).toHaveAttribute('href', '#fpp-logo-shape')
   await page.waitForFunction(() => window.__launchHeldFrames.length > 0, null, { polling: 25 })
-  await page.screenshot({ path: info.outputPath('dumbbell-tunnel.png') })
+  await page.screenshot({ path: info.outputPath('fpp-logo-tunnel.png') })
   await page.evaluate(() => { window.__launchHold = false; window.__launchHeldFrames.splice(0).forEach(callback => callback(performance.now())) })
   await expect(layer).toBeHidden()
   const history = await page.evaluate(() => window.__launchHistory)

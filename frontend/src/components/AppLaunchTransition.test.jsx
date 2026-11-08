@@ -54,7 +54,7 @@ it('enforces the installed minimum without delaying browser or native boot', asy
   await advance(40); expect(layer.dataset.state).toBe('settling')
 })
 
-it('reveals slowly with a single accent outline synchronized to the opening', async () => {
+it('uses the traced FPP paths in both the metallic identity and the synchronized reveal', async () => {
   controller = createLaunchController({ isReady: () => true })
   await advance(600)
   const outline = document.querySelector('[data-launch-outline]')
@@ -63,7 +63,11 @@ it('reveals slowly with a single accent outline synchronized to the opening', as
   await advance(800)
   expect(layer.dataset.state).toBe('revealing'); expect(layer.hidden).toBe(false)
   expect(outline.getAttribute('transform')).toBe(document.querySelector('[data-launch-hole]').getAttribute('transform'))
-  expect(outline.querySelector('use').getAttribute('href')).toBe('#fpp-launch-silhouette')
+  expect(outline.querySelector('use').getAttribute('href')).toBe('#fpp-logo-shape')
+  expect(document.querySelector('.fpp-launch-symbol svg').getAttribute('viewBox')).toBe('80 80 1140 310')
+  expect(document.querySelector('.fpp-launch-symbol [data-logo-metal]').getAttribute('href')).toBe('#fpp-logo-shape')
+  expect(document.querySelector('.fpp-launch-caption > span').textContent).toBe('Carregando…')
+  expect(layer.querySelectorAll('image,text')).toHaveLength(0)
   await advance(1000); expect(layer.hidden).toBe(true)
 })
 
@@ -142,11 +146,12 @@ it('bounds route fallback waiting and provides recovery if boot never finishes',
   expect(document.getElementById('root').hasAttribute('data-launch-timeout')).toBe(true)
 })
 
-it('covers all corners of tall and landscape viewports through the filled central shaft', () => {
+it('covers all corners of tall and landscape viewports through the solid letter geometry', () => {
   for (const [width, height] of [[390, 844], [430, 932], [844, 390], [1024, 1366]]) {
     const scale = tunnelEndScale(width, height)
-    // The central bar contains a circle of radius .8 in the 24-unit geometry.
-    expect(scale * .8).toBeGreaterThan(Math.hypot(width, height) / 2)
+    // Expansion is anchored inside the first P's solid lower bowl, away from
+    // its counter. A radius-10 disc lies entirely within the traced geometry.
+    expect(scale * 10).toBeGreaterThan(Math.hypot(width, height) / 2)
   }
 })
 

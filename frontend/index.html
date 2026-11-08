@@ -39,10 +39,11 @@
 <style>
 #fpp-launch{position:fixed;inset:0;z-index:2147483600;height:100vh;height:100dvh;overflow:hidden;background:#000;color:#e7e7e7;isolation:isolate;touch-action:none;overscroll-behavior:none}
 #fpp-launch[hidden]{display:none!important}
-.fpp-launch-symbol{position:absolute;left:50%;top:50%;width:96px;height:96px;margin:-48px 0 0 -48px}
-.fpp-launch-symbol svg{display:block;width:100%;height:100%;fill:none;stroke:var(--acc,#0F8B8D);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transform-origin:center}
+.fpp-launch-defs{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
+.fpp-launch-symbol{position:absolute;left:50%;top:50%;width:180px;max-width:calc(100vw - 48px);aspect-ratio:1140/310;transform:translate(-50%,calc(-50% - 24px))}
+.fpp-launch-symbol svg{display:block;width:100%;height:100%;overflow:visible;transform-origin:center}
 #fpp-launch[data-state="loading"] .fpp-launch-symbol svg{animation:fpp-launch-float 1.8s cubic-bezier(.45,0,.55,1) infinite}
-.fpp-launch-caption{position:absolute;top:calc(50% + 66px);left:0;width:100%;text-align:center;font:400 14px/1.5 system-ui,sans-serif;color:#aaa}
+.fpp-launch-caption{position:absolute;top:calc(50% + 14px);left:0;width:100%;text-align:center;font:400 14px/1.5 system-ui,sans-serif;color:#aaa}
 .fpp-launch-track{display:block;position:relative;width:56px;height:2px;margin:14px auto 0;overflow:hidden;background:#252525;border-radius:2px}
 .fpp-launch-track i{display:block;width:45%;height:100%;background:#aaa;animation:fpp-launch-progress 1.8s cubic-bezier(.45,0,.55,1) infinite}
 .fpp-launch-curtain{display:none;position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -50,22 +51,52 @@
 .fpp-launch-rescue button{border:1px solid #777;border-radius:12px;padding:12px 18px;background:#161616;color:#eee;font:inherit;touch-action:manipulation}
 #fpp-launch[data-state="loading"] .fpp-launch-rescue{animation:fpp-launch-rescue 1ms 30s forwards}
 @keyframes fpp-launch-rescue{to{visibility:visible;opacity:1}}
-@keyframes fpp-launch-float{0%,100%{transform:translateY(2.5px) scale(1)}50%{transform:translateY(-2.5px) scale(1.035)}}
+@keyframes fpp-launch-float{0%,100%{transform:translateY(2px) scale(1)}50%{transform:translateY(-2px) scale(1.025)}}
 @keyframes fpp-launch-progress{from{transform:translateX(-110%)}to{transform:translateX(330%)}}
 @media(prefers-reduced-motion:reduce){#fpp-launch .fpp-launch-symbol svg,#fpp-launch .fpp-launch-track i{animation:none}}
 </style>
 <div id="fpp-launch" data-state="loading" data-launch-cycle="1" aria-label="Fit Pro Player">
-  <div class="fpp-launch-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><rect x="5.9" y="7.9" width="3.2" height="8.2" rx="1.3"/><rect x="14.9" y="7.9" width="3.2" height="8.2" rx="1.3"/><path d="M9.1 12h5.8M3.6 9.9v4.2M20.4 9.9v4.2"/></svg></div>
-  <div class="fpp-launch-caption" role="status" aria-live="polite"><span>Carregando...</span><span class="fpp-launch-track" aria-hidden="true"><i></i></span></div>
+  <!-- Paths traced from the supplied official FPP reference; no font or raster.
+       Shared definitions stay rendered (zero-size SVG), including on WebKit. -->
+  <svg class="fpp-launch-defs" aria-hidden="true" focusable="false"><defs>
+    <linearGradient id="fpp-logo-metal" gradientUnits="userSpaceOnUse" x1="0" y1="107" x2="0" y2="350">
+      <stop stop-color="#f7f8f9"/><stop offset=".18" stop-color="#e4e8eb"/><stop offset=".36" stop-color="#f1f3f4"/><stop offset=".58" stop-color="#cbd3d7"/><stop offset=".76" stop-color="#a4b3bb"/><stop offset="1" stop-color="#cdd7dc"/>
+    </linearGradient>
+    <linearGradient id="fpp-logo-bevel" gradientUnits="userSpaceOnUse" x1="0" y1="100" x2="0" y2="350">
+      <stop stop-color="#fff"/><stop offset=".3" stop-color="#eaf0f3"/><stop offset=".52" stop-color="#819398"/><stop offset=".75" stop-color="#f4f7f8"/><stop offset="1" stop-color="#e5edf0"/>
+    </linearGradient>
+    <g id="fpp-logo-shape" stroke-linejoin="miter" stroke-miterlimit="4">
+      <path d="M201 110H531L475 151H307L281 194H470L412 244H260L225 309L122 347L226 141Z"/>
+      <path d="M550 110H802Q810 110 816 117L842 146Q848 152 842 163L815 210Q810 217 801 223L753 247H591L554 312H475L560 136Z"/>
+      <path d="M876 110H1144Q1154 110 1160 117L1181 143Q1188 151 1183 159L1156 211Q1152 217 1143 222L1092 247H928L891 312H810L892 137Z"/>
+    </g>
+    <g id="fpp-logo-counters" stroke-linejoin="round">
+      <path d="M634 151H749Q756 152 752 159L735 191Q730 197 725 197H606Z"/>
+      <path d="M971 151H1091Q1099 152 1095 159L1078 191Q1073 197 1067 197H944Z"/>
+    </g>
+    <g id="fpp-logo-details">
+      <path d="M317 172H474L534 126L541 136L482 183H311Z"/>
+      <path d="M640 172H728L722 183H634Z"/>
+      <path d="M979 172H1069L1063 183H973Z"/>
+    </g>
+  </defs></svg>
+  <div class="fpp-launch-symbol" aria-hidden="true"><svg viewBox="80 80 1140 310" focusable="false" preserveAspectRatio="xMidYMid meet">
+    <use href="#fpp-logo-shape" fill="#030909" stroke="#079da0" stroke-width="36"/>
+    <use href="#fpp-logo-shape" fill="#030909" stroke="#020707" stroke-width="20"/>
+    <path d="M307 151H475L535 119L550 136L486 187H289Z" fill="#020707"/>
+    <use data-logo-metal href="#fpp-logo-shape" fill="url(#fpp-logo-metal)" stroke="url(#fpp-logo-bevel)" stroke-width="5"/>
+    <use href="#fpp-logo-counters" fill="#020707" stroke="url(#fpp-logo-bevel)" stroke-width="6"/>
+    <use href="#fpp-logo-details" fill="#079da0"/>
+  </svg></div>
+  <div class="fpp-launch-caption" role="status" aria-live="polite"><span>Carregando…</span><span class="fpp-launch-track" aria-hidden="true"><i></i></span></div>
   <svg class="fpp-launch-curtain" aria-hidden="true" focusable="false" preserveAspectRatio="none">
     <defs>
-      <path id="fpp-launch-silhouette" vector-effect="non-scaling-stroke" transform="translate(-12 -12)" d="M10 11.2H14V9.2A2.2 2.2 0 0 1 16.2 7H16.8A2.2 2.2 0 0 1 19 9.2V11.2H19.5V9.9A.9 .9 0 0 1 21.3 9.9V14.1A.9 .9 0 0 1 19.5 14.1V12.8H19V14.8A2.2 2.2 0 0 1 16.8 17H16.2A2.2 2.2 0 0 1 14 14.8V12.8H10V14.8A2.2 2.2 0 0 1 7.8 17H7.2A2.2 2.2 0 0 1 5 14.8V12.8H4.5V14.1A.9 .9 0 0 1 2.7 14.1V9.9A.9 .9 0 0 1 4.5 9.9V11.2H5V9.2A2.2 2.2 0 0 1 7.2 7H7.8A2.2 2.2 0 0 1 10 9.2Z"/>
     <mask id="fpp-launch-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%" style="mask-type:luminance">
       <rect width="100%" height="100%" fill="white"/>
-      <g data-launch-hole fill="black"><use href="#fpp-launch-silhouette"/></g>
+      <g data-launch-hole><g transform="translate(-650 -235)"><use href="#fpp-logo-shape" fill="black"/><use href="#fpp-logo-counters" fill="white"/></g></g>
     </mask></defs>
     <rect width="100%" height="100%" fill="black" mask="url(#fpp-launch-mask)"/>
-    <g data-launch-outline fill="none" stroke="var(--acc, #0F8B8D)" stroke-width="2" stroke-linejoin="round"><use href="#fpp-launch-silhouette"/></g>
+    <g data-launch-outline fill="none" stroke="var(--acc, #0F8B8D)" stroke-linejoin="round"><g transform="translate(-650 -235)"><use href="#fpp-logo-shape"/><use href="#fpp-logo-counters"/></g></g>
   </svg>
   <!-- Recovery is visible through CSS even if both module entry points fail. -->
   <div class="fpp-launch-rescue" role="status"><p>A solicitação demorou mais que o esperado. Tente novamente.</p><button id="fpp-launch-reload" type="button" hidden>Recarregar Fit Pro Player</button><p id="fpp-launch-manual-recovery">Feche e abra novamente o aplicativo para tentar novamente.</p></div>

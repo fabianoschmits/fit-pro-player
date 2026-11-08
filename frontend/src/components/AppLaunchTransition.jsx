@@ -9,9 +9,11 @@ const owners = new WeakMap()
 const MINIMUM = 350, SETTLE = 120, REVEAL = 1400, FINISH = 100
 const ROUTE_LIMIT = 4000, SAFETY_LIMIT = 30000
 
-// The shaft contains a radius-.8 circle: exceeding the diagonal covers every
-// corner, including tall iPhones, independently of the plate proportions.
-export const tunnelEndScale = (width, height) => Math.hypot(width, height) / 1.5
+const LOGO_START_SCALE = 180 / 1140
+// (650,235) lies inside the first P's solid lower bowl, with a radius-10
+// clearance. Expand this disc beyond the diagonal: counters/gaps cannot leave
+// black remnants at the viewport center or corners, even on tall iPhones.
+export const tunnelEndScale = (width, height) => Math.hypot(width, height) / 18
 function tunnelEase(progress) {
   const curve = (t, a, b) => 3 * (1 - t) ** 2 * t * a + 3 * (1 - t) * t * t * b + t ** 3
   let low = 0, high = 1
@@ -90,12 +92,15 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     const paint = progress => {
       if (dimensionsDirty) measure()
       // Ease depth rather than raw magnification. Perspective interpolation
-      // keeps the complete dumbbell legible for most of the approach.
-      const depth = 1 - tunnelEase(progress) * (1 - (4 / Math.max(4, endScale)) ** 2)
-      const scale = progress === 1 ? endScale : 4 / Math.sqrt(depth)
+      // keeps the complete FPP lettering legible for most of the approach.
+      const depth = 1 - tunnelEase(progress) * (1 - (LOGO_START_SCALE / Math.max(LOGO_START_SCALE, endScale)) ** 2)
+      const scale = progress === 1 ? endScale : LOGO_START_SCALE / Math.sqrt(depth)
       const transform = `translate(${width / 2} ${height / 2}) scale(${scale})`
       hole.setAttribute('transform', transform)
       outline.setAttribute('transform', transform)
+      // Compensate the parent scale: all letter edges retain a subtle 2px
+      // contour instead of swelling into thick borders during the tunnel.
+      outline.setAttribute('stroke-width', String(2 / scale))
     }
     paint(0); setPhase('revealing')
     animate(REVEAL, paint, () => { layer.setAttribute('data-launch-finishing', ''); later(complete, FINISH) })
