@@ -62,6 +62,36 @@ it('keeps the identity on an instant installed launch and waits for the real rou
   await advance(800); expect(layer.hidden).toBe(false); await advance(850); expect(layer.hidden).toBe(true); expect(layer.dataset.state).toBe('completed')
 })
 
+it('does not skip the tunnel when its first animation frame arrives late', async () => {
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation(fn => window.setTimeout(() => fn(performance.now() + 2500), 16))
+  controller = createLaunchController({ isReady: () => true })
+  await advance(1200)
+  expect(layer.dataset.state).toBe('revealing'); expect(layer.hidden).toBe(false)
+  await advance(600); expect(layer.dataset.state).toBe('revealing')
+  await advance(1400); expect(layer.hidden).toBe(true)
+})
+
+it('finishes the whole tunnel even when boot approaches the recovery timeout', async () => {
+  let ready = false
+  controller = createLaunchController({ isReady: () => ready })
+  await advance(29500)
+  ready = true; controller.check()
+  await advance(900)
+  expect(layer.dataset.state).toBe('revealing'); expect(layer.hidden).toBe(false)
+  await advance(1400); expect(layer.hidden).toBe(true)
+})
+
+it('resumes an unfinished tunnel after a visibility interruption without skipping it or starting another cycle', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(1200); expect(layer.dataset.state).toBe('revealing')
+  visibility('hidden'); await advance(2000)
+  expect(layer.hidden).toBe(false); expect(layer.dataset.state).toBe('revealing')
+  visibility('visible'); await advance(400)
+  expect(layer.dataset.state).toBe('revealing')
+  await advance(1800); expect(layer.hidden).toBe(true)
+  expect(layer.dataset.launchCycle).toBe('1')
+})
+
 it('enforces the installed minimum without delaying browser or native boot', async () => {
   controller = createLaunchController({ isReady: () => true })
   await advance(300); expect(layer.dataset.state).toBe('loading')

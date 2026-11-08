@@ -55,7 +55,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   hole.replaceChildren(openingUse)
   const frames = new Set(), timers = new Set()
   let disposed = false, active = false, pending = false, phase = 'completed'
-  let openedAt = 0, readyAt = null, wake = null, presentationMinimum = 0
+  let openedAt = 0, readyAt = null, wake = null, recovery = null, presentationMinimum = 0
   let dimensionsDirty = false
   const now = () => performance.now()
   const installed = () => !native
@@ -72,7 +72,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const clearWork = () => {
     frames.forEach(id => window.cancelAnimationFrame(id)); frames.clear()
     timers.forEach(id => window.clearTimeout(id)); timers.clear()
-    pending = false; wake = null
+    pending = false; wake = null; recovery = null
     trail.replaceChildren()
   }
   const setPhase = next => { phase = next; layer.dataset.state = next }
@@ -82,10 +82,15 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     symbol.style.transform = ''; layer.style.opacity = ''
   }
   const animate = (duration, update, done) => {
-    const start = now()
+    let elapsed = 0, previous = null
     const tick = time => {
       if (!active) return
-      const progress = Math.min(1, Math.max(0, (time - start) / duration))
+      if (document.visibilityState === 'hidden') { previous = null; frame(tick); return }
+      // Start on the first displayed frame. A stalled main thread must not
+      // consume the whole tunnel before the browser has shown any of it.
+      if (previous !== null) elapsed += Math.min(32, Math.max(0, time - previous))
+      previous = time
+      const progress = Math.min(1, elapsed / duration)
       update(progress)
       if (progress < 1) frame(tick)
       else done()
@@ -94,6 +99,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   }
   const reveal = () => {
     if (!active) return
+    if (document.visibilityState === 'hidden') { frame(reveal); return }
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     layer.dataset.reducedMotion = String(!!reduced)
     if (reduced) {
@@ -141,10 +147,18 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       // contour instead of swelling into thick borders during the tunnel.
       outline.setAttribute('stroke-width', String(2 / scale))
     }
-    paint(0); setPhase('revealing')
-    animate(REVEAL, paint, () => { layer.setAttribute('data-launch-finishing', ''); later(complete, FINISH) })
+    paint(0)
+    // Paint the SVG curtain while the opaque loading background still covers
+    // the app. Swap only after the mask has had its own rendering opportunity.
+    layer.setAttribute('data-curtain-ready', '')
+    frame(() => frame(() => {
+      setPhase('revealing')
+      animate(REVEAL, paint, () => { layer.setAttribute('data-launch-finishing', ''); later(complete, FINISH) })
+    }))
   }
   const settle = () => {
+    // This timeout protects boot only; it must never cut a healthy reveal short.
+    if (recovery !== null) { window.clearTimeout(recovery); timers.delete(recovery); recovery = null }
     const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     setPhase('settling')
     if (reduced) { reveal(); return }
@@ -176,19 +190,20 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     presentationMinimum = installed() || (!native && login) ? MINIMUM + Math.floor(Math.random() * LOADING_VARIATION) : 0
     layer.hidden = false; layer.removeAttribute('aria-hidden'); layer.removeAttribute('data-launch-finishing')
     layer.removeAttribute('data-reduced-motion'); layer.removeAttribute('data-paused')
+    layer.removeAttribute('data-curtain-ready')
     layer.style.opacity = ''; symbol.style.transform = ''; hole.removeAttribute('transform'); outline.removeAttribute('transform')
     surface.removeAttribute('data-launch-timeout')
     if (!adopt) layer.dataset.launchCycle = String(Number(layer.dataset.launchCycle || 0) + 1)
     setPhase('loading')
-    later(() => { surface.setAttribute('data-launch-timeout', ''); complete() }, SAFETY_LIMIT)
+    recovery = later(() => { surface.setAttribute('data-launch-timeout', ''); complete() }, SAFETY_LIMIT)
     check()
   }
   const visibility = () => {
     if (document.visibilityState === 'hidden') {
-      // Leaving the window cancels an opening already in progress. Returning
-      // to the same live app must not start a second presentation.
-      if (active) complete()
-    } else check()
+      // Pause an unfinished opening; never expose the app by cancelling it.
+      // A completed opening stays completed when the user returns.
+      if (active) layer.setAttribute('data-paused', '')
+    } else { layer.removeAttribute('data-paused'); check() }
   }
   const resize = () => { if (active) dimensionsDirty = true }
   const observer = new MutationObserver(check)

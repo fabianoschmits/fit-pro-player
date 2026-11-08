@@ -59,6 +59,7 @@ test('installed launch paints the vector FPP, reveals the actual interface throu
   releaseModule()
   const layer = page.locator('#fpp-launch')
   await expect(layer).toHaveAttribute('data-state', 'revealing')
+  await expect(layer).toHaveAttribute('data-curtain-ready', '')
   await expect(page.locator('#tabbar')).toBeHidden()
   await expect(page.locator('#root h1').first()).toBeVisible()
   await expect(page.locator('[data-launch-hole] use').first()).toHaveAttribute('href', '#fpp-logo-opening')
@@ -145,6 +146,29 @@ test('the first tunnel frame matches the fixed logo position and size exactly', 
     expect(matrices.settled[i]).toBeCloseTo(matrices.loading[i], 3)
     expect(matrices.opening[i]).toBeCloseTo(matrices.loading[i], 3)
   }
+})
+
+test('a delayed animation frame cannot skip the tunnel after a fast boot', async ({ page }) => {
+  await seed(page); await installed(page); await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.addInitScript(() => {
+    Math.random = () => .999
+    const raf = window.requestAnimationFrame.bind(window)
+    let delayed = false
+    window.requestAnimationFrame = callback => raf(time => {
+      if (!delayed && document.getElementById('fpp-launch')?.dataset.state === 'revealing') {
+        delayed = true
+        setTimeout(() => { callback(performance.now()); window.__delayedLaunchFrame = true }, 1800)
+      } else callback(time)
+    })
+  })
+  await page.goto('/#/home')
+  const layer = page.locator('#fpp-launch')
+  await page.waitForFunction(() => window.__delayedLaunchFrame, null, { polling: 25 })
+  await expect(layer).toHaveAttribute('data-state', 'revealing')
+  await expect(layer).toHaveAttribute('data-curtain-ready', '')
+  await expect(page.locator('#tabbar')).toBeHidden()
+  await expect(layer).toBeHidden()
+  expect(await layer.getAttribute('data-launch-cycle')).toBe('1')
 })
 
 test('returning to the PWA does not replay launch or disturb workout, rest and route', async ({ page }) => {

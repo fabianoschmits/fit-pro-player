@@ -5,6 +5,8 @@
 #fpp-launch[data-state="revealing"] .fpp-launch-symbol,
 #fpp-launch[data-state="revealing"] .fpp-launch-caption{visibility:hidden}
 #fpp-launch[data-state="revealing"] .fpp-launch-curtain{display:block}
+#fpp-launch[data-curtain-ready] .fpp-launch-curtain{display:block}
+#fpp-launch .fpp-launch-symbol,#fpp-launch .fpp-launch-caption{z-index:1}
 #fpp-launch[data-launch-finishing]{opacity:0;transition:opacity 100ms linear}
 #fpp-launch[data-reduced-motion="true"][data-state="revealing"]{background:#000}
 #fpp-launch[data-reduced-motion="true"] .fpp-launch-curtain{display:none}
