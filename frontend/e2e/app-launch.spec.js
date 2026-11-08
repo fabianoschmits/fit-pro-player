@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { seed, stateFixture, startWorkoutExecution } from './fixtures.test.js'
+import { seed, stateFixture, startWorkoutExecution, USER } from './fixtures.test.js'
 
 async function installed(page) {
   await page.addInitScript(() => {
@@ -56,7 +56,7 @@ test('installed launch paints once, reveals the actual interface through an SVG 
   expect(await layer.evaluate(el => getComputedStyle(el).display)).toBe('none')
 })
 
-test('one PWA resume preserves a running workout, completed set, rest deadline and route', async ({ page }) => {
+test('returning to the PWA does not replay launch or disturb workout, rest and route', async ({ page }) => {
   const state = stateFixture(); state.routines[0].ex[0].sets = 2
   await seed(page, { state }); await installed(page)
   await page.goto('/?launch_probe=callback#/workout')
@@ -73,21 +73,52 @@ test('one PWA resume preserves a running workout, completed set, rest deadline a
   const before = await snapshot()
   await page.evaluate(() => { window.__launchRoot = document.getElementById('root').firstElementChild })
   await reopen(page)
-  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '2')
+  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '1')
   await expect(page.locator('#fpp-launch')).toBeHidden()
   expect(await snapshot()).toEqual(before)
   expect(await page.evaluate(() => window.__launchRoot === document.getElementById('root').firstElementChild)).toBe(true)
   await expect(page.locator('#timer')).toBeVisible()
 })
 
-test('reduced motion fades without expanding the tunnel and resumes only once', async ({ page }) => {
+test('reduced motion fades once without expanding the tunnel or replaying on resume', async ({ page }) => {
   await seed(page); await installed(page); await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/#/home'); await expect(page.locator('#fpp-launch')).toBeHidden()
   await reopen(page)
-  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '2')
+  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '1')
   await expect(page.locator('#fpp-launch')).toHaveAttribute('data-reduced-motion', 'true')
   await expect(page.locator('#fpp-launch')).toBeHidden()
   expect(await page.locator('[data-launch-hole]').getAttribute('transform')).toBeNull()
+})
+
+test('desktop login plays one entry transition and subsequent window returns stay quiet', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop-chromium', 'Desktop login entry')
+  await seed(page)
+  await page.addInitScript(() => {
+    localStorage.removeItem('gym_guest'); localStorage.removeItem('fpp_app_entered:anonymous')
+    window.__launchVisibility = 'visible'
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__launchVisibility })
+  })
+  await page.route('https://fitpp-test.supabase.co/auth/v1/token*', route => {
+    const user = { id: USER, email: 'browser-test@example.invalid', email_confirmed_at: new Date().toISOString(), app_metadata: { provider: 'email' }, user_metadata: {} }
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url')
+    const payload = Buffer.from(JSON.stringify({ sub: USER, role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user, access_token: `${header}.${payload}.fixture`, refresh_token: 'fixture-refresh', token_type: 'bearer', expires_in: 3600 }) })
+  })
+  await page.goto('/')
+  const layer = page.locator('#fpp-launch')
+  await expect(layer).toBeHidden()
+  await page.getByRole('button', { name: 'Entrar ou criar conta', exact: true }).click()
+  await page.locator('.auth-entry').getByRole('button', { name: 'Entrar', exact: true }).click()
+  const form = page.locator('form.auth-form')
+  await form.locator('input[type="email"]').fill('browser-test@example.invalid')
+  await form.locator('input[type="password"]').fill('FixturePassword123!')
+  await form.getByRole('button', { name: 'Entrar', exact: true }).click()
+  await expect(layer).toHaveAttribute('data-launch-cycle', '2')
+  await expect(layer).toBeHidden()
+  await expect(page.getByRole('heading', { name: 'Vamos montar seu plano', exact: true })).toBeVisible()
+  await reopen(page)
+  await expect(layer).toHaveAttribute('data-launch-cycle', '2')
+  await expect(layer).toBeHidden()
 })
 
 test('HTML offers recovery even if the application module fails before React mounts', async ({ page }) => {

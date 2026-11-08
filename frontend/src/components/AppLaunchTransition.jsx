@@ -26,7 +26,7 @@ function tunnelEase(progress) {
 /** One imperative overlay; no route, store, clock or auth mutations. */
 export function createLaunchController({ isReady, native = MOBILE }) {
   const layer = document.getElementById('fpp-launch'), surface = document.getElementById('root')
-  if (!layer || !surface) return { check() {}, destroy() {} }
+  if (!layer || !surface) return { check() {}, enter() {}, destroy() {} }
   const owner = {}; owners.set(layer, owner)
   const symbol = /** @type {SVGSVGElement} */ (layer.querySelector('.fpp-launch-symbol svg'))
   const curtain = layer.querySelector('.fpp-launch-curtain')
@@ -35,7 +35,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const frames = new Set(), timers = new Set()
   let disposed = false, active = false, pending = false, phase = 'completed'
   let openedAt = 0, readyAt = null, wake = null, settleAnimation = null
-  let wasHidden = document.visibilityState === 'hidden', interrupted = false, dimensionsDirty = false
+  let dimensionsDirty = false
   const now = () => performance.now()
   const installed = () => !native
     && detectInstallTarget().platform !== 'desktop'
@@ -141,31 +141,26 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   }
   const visibility = () => {
     if (document.visibilityState === 'hidden') {
-      wasHidden = true; interrupted = active
+      // Leaving the window cancels an opening already in progress. Returning
+      // to the same live app must not start a second presentation.
       if (active) complete()
-    } else if (wasHidden) {
-      wasHidden = false
-      if (installed() || interrupted) start()
-      interrupted = false
-    }
-  }
-  const pageshow = event => {
-    if (!event.persisted || !installed() || document.visibilityState === 'hidden' || active) return
-    // BFCache may emit both events for one opening, in either order.
-    if (!wasHidden && now() - openedAt < MINIMUM + SETTLE + REVEAL + FINISH + 250) return
-    wasHidden = false; start()
+    } else check()
   }
   const resize = () => { if (active) dimensionsDirty = true }
   const observer = new MutationObserver(check)
   observer.observe(surface, { childList: true, subtree: true })
   document.addEventListener('visibilitychange', visibility)
-  window.addEventListener('pageshow', pageshow)
+  window.addEventListener('pageshow', check)
   window.addEventListener('resize', resize)
   window.addEventListener('orientationchange', resize)
   start(layer.dataset.state === 'loading')
-  return { check, destroy() {
+  return { check, enter() {
+    if (disposed) return
+    if (active) check()
+    else start()
+  }, destroy() {
     disposed = true; clearWork(); observer.disconnect()
-    document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pageshow', pageshow)
+    document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pageshow', check)
     window.removeEventListener('resize', resize); window.removeEventListener('orientationchange', resize)
     // StrictMode's replacement owns the same element before this microtask.
     queueMicrotask(() => { if (owners.get(layer) === owner) { complete(); owners.delete(layer) } })
@@ -174,12 +169,24 @@ export function createLaunchController({ isReady, native = MOBILE }) {
 
 export default function AppLaunchTransition() {
   const ready = useStore(state => state.ready), { status } = useAuth()
-  const snapshot = useRef({ ready, status }), controller = useRef(null)
+  const entered = useStore(state => state.isAppEntered?.() ?? true)
+  const snapshot = useRef({ ready, status, entered }), controller = useRef(null)
+  const previousStatus = useRef(status), pendingLogin = useRef(false)
   useLayoutEffect(() => {
-    snapshot.current = { ready, status }; controller.current?.check()
-  }, [ready, status])
+    snapshot.current = { ready, status, entered }
+    if (previousStatus.current === 'anonymous' && status === 'authenticated') pendingLogin.current = true
+    if (status === 'anonymous') pendingLogin.current = false
+    previousStatus.current = status
+    if (pendingLogin.current && entered && ready) {
+      pendingLogin.current = false
+      if (!MOBILE && detectInstallTarget().platform === 'desktop') controller.current?.enter()
+      else controller.current?.check()
+    } else controller.current?.check()
+  }, [ready, status, entered])
   useLayoutEffect(() => {
-    controller.current = createLaunchController({ isReady: () => snapshot.current.ready && snapshot.current.status !== 'initializing' })
+    controller.current = createLaunchController({ isReady: () => snapshot.current.ready
+      && snapshot.current.status !== 'initializing'
+      && (snapshot.current.status !== 'authenticated' || snapshot.current.entered) })
     return () => { controller.current?.destroy(); controller.current = null }
   }, [])
   return null

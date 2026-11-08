@@ -3,7 +3,7 @@ import { StrictMode, act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-const state = vi.hoisted(() => ({ ready: true, auth: 'anonymous' }))
+const state = vi.hoisted(() => ({ ready: true, auth: 'anonymous', entered: true, isAppEntered() { return this.entered } }))
 vi.mock('../store/useStore.js', () => ({ useStore: select => select(state) }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ status: state.auth }) }))
 vi.mock('../lib/mobile.js', () => ({ MOBILE: false }))
@@ -15,7 +15,7 @@ const visibility = value => { visible = value; document.dispatchEvent(new Event(
 const restore = () => { const event = new Event('pageshow'); Object.defineProperty(event, 'persisted', { value: true }); window.dispatchEvent(event) }
 beforeEach(() => {
   vi.useFakeTimers(); installed = true; reduced = false; visible = 'visible'
-  state.ready = true; state.auth = 'anonymous'
+  state.ready = true; state.auth = 'anonymous'; state.entered = true
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('reduced-motion') ? reduced : installed }))
   vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => visible)
@@ -76,18 +76,46 @@ it('stops work and observers on disposal without leaving an invisible touch bloc
   expect(layer.dataset.launchCycle).toBe(cycle); expect(vi.getTimerCount()).toBe(0)
 })
 
-it('deduplicates visibility and persisted pageshow while preserving the live DOM, route and edit', async () => {
+it('does not replay on PWA visibility or BFCache returns and preserves the live edit', async () => {
   controller = createLaunchController({ isReady: () => true })
   await advance(2400)
   const input = document.querySelector('input'); input.value = 'Treino em andamento'; input.focus()
   const cycle = Number(layer.dataset.launchCycle)
   visibility('hidden'); visibility('visible'); restore(); window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
-  expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
+  expect(Number(layer.dataset.launchCycle)).toBe(cycle)
+  expect(layer.hidden).toBe(true)
   expect(document.querySelector('input')).toBe(input); expect(input.value).toBe('Treino em andamento')
   expect(document.activeElement).toBe(input)
   await advance(2400); expect(layer.hidden).toBe(true)
   window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
-  expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
+  expect(Number(layer.dataset.launchCycle)).toBe(cycle)
+})
+
+it('plays once for desktop login entry, not auth restoration or subsequent ready/render updates', async () => {
+  installed = false
+  vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+  state.auth = 'initializing'
+  root = createRoot(document.getElementById('controller'))
+  const render = () => act(async () => root.render(<StrictMode><AppLaunchTransition /></StrictMode>))
+  await render(); state.auth = 'authenticated'; await render(); await advance(2200)
+  expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
+  state.auth = 'anonymous'; state.entered = false; await render()
+  state.auth = 'authenticated'; state.ready = false; await render()
+  expect(layer.hidden).toBe(true)
+  state.ready = true; state.entered = true; await render()
+  expect(layer.hidden).toBe(false); expect(layer.dataset.launchCycle).toBe('2')
+  await advance(2200); expect(layer.hidden).toBe(true)
+  state.ready = false; await render(); state.ready = true; await render()
+  visibility('hidden'); visibility('visible'); restore(); await render(); await advance(2500)
+  expect(layer.dataset.launchCycle).toBe('2'); expect(layer.hidden).toBe(true)
+})
+
+it('does not add a second opening for a login inside an already open mobile app', async () => {
+  root = createRoot(document.getElementById('controller'))
+  const render = () => act(async () => root.render(<AppLaunchTransition />))
+  await render(); await advance(2400)
+  state.auth = 'authenticated'; await render(); await advance(2400)
+  expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
 })
 
 it.each([false, true])('does not replay on browser/native resume (native=%s)', async native => {
