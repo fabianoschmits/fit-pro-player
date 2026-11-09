@@ -111,6 +111,38 @@ describe('AuthProvider', () => {
     });
   });
 
+  it('boots offline using the cached session when getSession() times out (has network but no internet)', async () => {
+    // Simulate: device has a network interface (navigator.onLine = true) but no actual
+    // internet — getSession() hangs forever and never resolves within the timeout.
+    vi.useFakeTimers();
+    const cachedUser = { ...user, id: 'cached-user-id' };
+    const neverResolving = new Promise(() => {}); // simulates a hanging HTTP request
+    const client = createFakeClient({ getSession: vi.fn(() => neverResolving) });
+
+    // Pre-seed localStorage with the Supabase-format cached session.
+    // The key lookup uses client.auth.storageKey or the hostname-based fallback.
+    const storageKey = 'sb-test-auth-token';
+    client.auth.storageKey = storageKey;
+    localStorage.setItem(storageKey, JSON.stringify({ currentSession: { user: cachedUser, access_token: 'cached-token' } }));
+
+    await act(async () => { root.render(<AuthProvider client={client} location={window.location}><Probe onValue={value => { latest = value; }} /></AuthProvider>); });
+
+    // Before the timeout fires the app is still initializing.
+    expect(latest.status).toBe('initializing');
+
+    // Advance past the 4 500 ms bootstrap deadline.
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    await act(async () => Promise.resolve());
+
+    // The app must have booted using the locally cached session.
+    expect(latest).not.toBeNull();
+    expect(latest.status).toBe('authenticated');
+    expect(latest.user.id).toBe(cachedUser.id);
+
+    localStorage.removeItem(storageKey);
+    vi.useRealTimers();
+  });
+
   it('lets a newer SIGNED_IN event beat a stale bootstrap result', async () => {
     let resolveBootstrap;
     const staleUser = { ...user, id: '11111111-1111-4111-8111-111111111111' };

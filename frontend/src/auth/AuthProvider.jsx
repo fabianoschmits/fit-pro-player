@@ -186,8 +186,41 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
       }
 
       const bootstrapRevision = ++revision.current;
+
+      // Guard against the "has network adapter but no actual internet" scenario.
+      // navigator.onLine returns true whenever any network interface is connected,
+      // even when the interface has no route to the internet (e.g. mobile data plan
+      // exhausted, captive portal, etc.).  In that case client.auth.getSession()
+      // will block on the token-refresh HTTP request until the OS TCP timeout fires
+      // (~30 s), keeping the app on a white/loading screen the whole time.
+      //
+      // Fix: race the getSession() call against a short deadline.  If the deadline
+      // fires first we reject with a TypeError, which toAuthError() already maps to
+      // 'network_unavailable', triggering the existing offline fallback path below.
+      // The cached session is read from localStorage synchronously before the race
+      // so we can restore it even if getSession() never resolves.
+      const BOOTSTRAP_TIMEOUT_MS = 4500;
+      const cachedSession = (() => {
+        try {
+          const storageKey = client.auth.storageKey ?? `sb-${new URL(client.supabaseUrl).hostname.split('.')[0]}-auth-token`;
+          const raw = localStorage.getItem(storageKey);
+          return raw ? (JSON.parse(raw)?.currentSession ?? null) : null;
+        } catch {
+          return null;
+        }
+      })();
+
       try {
-        const { data: result, error } = await client.auth.getSession();
+        const { data: result, error } = await Promise.race([
+          client.auth.getSession(),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(Object.assign(new TypeError('bootstrap: network request timed out'), { code: 'fetch_failed' })),
+              BOOTSTRAP_TIMEOUT_MS,
+            ),
+          ),
+        ]);
+
         if (disposed || bootstrapRevision !== revision.current) return;
         if (error) {
           // A network error during bootstrap must not sign out a user who has a valid local session.
@@ -197,14 +230,22 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
           // can boot with local data instead of showing an anonymous/error state.
           const mapped = toAuthError(error, 'bootstrap');
           if (mapped === 'network_unavailable' || !navigator.onLine) {
-            applySession('INITIAL_SESSION', result?.session ?? null);
+            applySession('INITIAL_SESSION', result?.session ?? cachedSession);
             return;
           }
           throw error;
         }
         applySession('INITIAL_SESSION', result?.session);
       } catch (error) {
-        if (!disposed && bootstrapRevision === revision.current) applyError(error, 'bootstrap');
+        if (disposed || bootstrapRevision !== revision.current) return;
+        // Timeout or true network failure: fall back to the locally cached session so
+        // the user stays signed in and can use offline data instead of seeing an error.
+        const mapped = toAuthError(error, 'bootstrap');
+        if (mapped === 'network_unavailable') {
+          applySession('INITIAL_SESSION', cachedSession);
+          return;
+        }
+        applyError(error, 'bootstrap');
       }
     };
 
