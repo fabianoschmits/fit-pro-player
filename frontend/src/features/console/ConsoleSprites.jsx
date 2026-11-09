@@ -57,6 +57,7 @@ export default function ConsoleSprites() {
   const [promptTemplate, setPromptTemplate] = useState(() => readTemplateFromStorage())
   const [templateDraft, setTemplateDraft] = useState(() => readTemplateFromStorage())
   const [templateSavedFeedback, setTemplateSavedFeedback] = useState(false)
+  const [activeCopiedFeedback, setActiveCopiedFeedback] = useState(null) // { id, type } for 2s "Copiado!" animation
 
   // Load pending list sorted by internet popularity / relevance
   const allPendingExercises = useMemo(() => getPendingExercises(), [])
@@ -67,6 +68,13 @@ export default function ConsoleSprites() {
       searchInputRef.current?.focus()
     }
   }, [searchOpen, filterMode])
+
+  // Clear temporary "Copiado!" button label flash after 2s
+  useEffect(() => {
+    if (!activeCopiedFeedback) return undefined
+    const timer = setTimeout(() => setActiveCopiedFeedback(null), 2000)
+    return () => clearTimeout(timer)
+  }, [activeCopiedFeedback])
 
   // Mark as completed (removes from pending, adds to completed, unmarks copied)
   const markAsCompleted = id => {
@@ -100,6 +108,7 @@ export default function ConsoleSprites() {
   const handleCopyPrompt = item => {
     const textToCopy = generateSpritePrompt(item, promptTemplate)
     copyTextToClipboard(textToCopy)
+    setActiveCopiedFeedback({ id: item.id, type: 'prompt' })
     setCopiedMap(prev => {
       const next = { ...prev, [item.id]: 'prompt' }
       saveStorageMap(COPIED_SPRITES_STORAGE_KEY, next)
@@ -110,6 +119,7 @@ export default function ConsoleSprites() {
   // Copy ONLY the exercise name in Portuguese
   const handleCopyNamePt = item => {
     copyTextToClipboard(item.namePt)
+    setActiveCopiedFeedback({ id: item.id, type: 'name' })
     setCopiedMap(prev => {
       const next = { ...prev, [item.id]: 'name' }
       saveStorageMap(COPIED_SPRITES_STORAGE_KEY, next)
@@ -466,28 +476,42 @@ export default function ConsoleSprites() {
                         <div className="console-sprite-actions-col">
                           <div className="console-sprite-copy-group">
                             {/* Copy only Portuguese name button */}
-                            <button
-                              type="button"
-                              className={`console-sprite-copy-btn console-sprite-copy-btn--name ${copiedMode === 'name' ? 'is-copied' : ''}`}
-                              onClick={() => handleCopyNamePt(item)}
-                              title="Copiar apenas o nome do exercício em português"
-                              aria-label={`Copiar apenas nome de ${item.namePt}`}
-                            >
-                              <Icon name={copiedMode === 'name' ? 'check' : 'clipboard'} />
-                              <span>{copiedMode === 'name' ? 'Copiado!' : 'Copiar nome'}</span>
-                            </button>
+                            {(() => {
+                              const isThisJustCopied = activeCopiedFeedback?.id === item.id && activeCopiedFeedback?.type === 'name'
+                              const hasBeenCopied = copiedMode === 'name'
+
+                              return (
+                                <button
+                                  type="button"
+                                  className={`console-sprite-copy-btn console-sprite-copy-btn--name ${hasBeenCopied ? 'is-copied' : ''}`}
+                                  onClick={() => handleCopyNamePt(item)}
+                                  title="Clique para copiar novamente o nome em português"
+                                  aria-label={`Copiar apenas nome de ${item.namePt}`}
+                                >
+                                  <Icon name={hasBeenCopied ? 'check' : 'clipboard'} />
+                                  <span>{isThisJustCopied ? 'Copiado!' : hasBeenCopied ? 'Já copiado' : 'Copiar nome'}</span>
+                                </button>
+                              )
+                            })()}
 
                             {/* Copy full sprite prompt button */}
-                            <button
-                              type="button"
-                              className={`console-sprite-copy-btn console-sprite-copy-btn--prompt ${copiedMode === 'prompt' ? 'is-copied' : ''}`}
-                              onClick={() => handleCopyPrompt(item)}
-                              title="Copiar prompt completo para IA gerar os sprites com movimento completo e câmera fixa"
-                              aria-label={`Copiar prompt de ${item.namePt}`}
-                            >
-                              <Icon name={copiedMode === 'prompt' ? 'check' : 'copy'} />
-                              <span>{copiedMode === 'prompt' ? 'Copiado!' : 'Copiar prompt'}</span>
-                            </button>
+                            {(() => {
+                              const isThisJustCopied = activeCopiedFeedback?.id === item.id && activeCopiedFeedback?.type === 'prompt'
+                              const hasBeenCopied = copiedMode === 'prompt'
+
+                              return (
+                                <button
+                                  type="button"
+                                  className={`console-sprite-copy-btn console-sprite-copy-btn--prompt ${hasBeenCopied ? 'is-copied' : ''}`}
+                                  onClick={() => handleCopyPrompt(item)}
+                                  title="Clique para copiar novamente o prompt completo para IA"
+                                  aria-label={`Copiar prompt de ${item.namePt}`}
+                                >
+                                  <Icon name={hasBeenCopied ? 'check' : 'copy'} />
+                                  <span>{isThisJustCopied ? 'Copiado!' : hasBeenCopied ? 'Já copiado' : 'Copiar prompt'}</span>
+                                </button>
+                              )
+                            })()}
                           </div>
 
                           {/* In completed list: button to restore back to pending list */}
