@@ -7,7 +7,9 @@ import {
   ACTIVE_SPRITE_COUNT,
   getExercisePrompt,
   getPendingExercises,
+  SPRITE_PRIORITY_QUEUE_SET,
   TOTAL_CATALOGUE_EXERCISES,
+  TOTAL_PRIORITY_QUEUE_EXERCISES,
 } from '../../lib/admin-pending-sprites.js'
 import { getExerciseFullPrompt } from '../../lib/exercise-sprite-prompts.js'
 import './console-sprites.css'
@@ -189,12 +191,12 @@ export default function ConsoleSprites() {
   }
 
   const completedCount = useMemo(
-    () => Object.keys(completedMap).length,
+    () => Object.keys(completedMap).filter(id => SPRITE_PRIORITY_QUEUE_SET.has(id)).length,
     [completedMap],
   )
   const remainingCount = Math.max(0, allPendingExercises.length - completedCount)
 
-  // Count exercises with needs_review in the backlog
+  // Count exercises with needs_review in the priority backlog
   const reviewCount = useMemo(
     () => allPendingExercises.filter(ex => ex.needsReview).length,
     [allPendingExercises],
@@ -224,9 +226,9 @@ export default function ConsoleSprites() {
         <div className="cx-page-body fpp-console-page fpp-console-page--sprites">
           <div className="cx-page-head console-page-heading">
             <div>
-              <h1 className="cx-page-title">Fila de criação de sprites</h1>
+              <h1 className="cx-page-title">Fila prioritária de sprites</h1>
               <p className="cx-page-sub">
-                1.324 prompts biomecânicos oficiais e individuais integrados. Visualize, confira pendências e copie com um clique.
+                100 exercícios selecionados para a próxima etapa de criação de sprites do Fit Pro Player.
               </p>
             </div>
 
@@ -279,20 +281,26 @@ export default function ConsoleSprites() {
           <div className="console-sprites-metrics-grid">
             <div className="console-sprites-metric-card is-active-card">
               <span className="console-sprites-metric-val">{ACTIVE_SPRITE_COUNT}</span>
-              <strong className="console-sprites-metric-title">Sprites já ativos</strong>
-              <small className="console-sprites-metric-sub">Publicados no app</small>
+              <strong className="console-sprites-metric-title">Sprites ativos no app</strong>
+              <small className="console-sprites-metric-sub">De {TOTAL_CATALOGUE_EXERCISES} do catálogo geral</small>
             </div>
 
             <div className="console-sprites-metric-card is-pending-card">
               <span className="console-sprites-metric-val">{remainingCount}</span>
-              <strong className="console-sprites-metric-title">Restantes para desenhar</strong>
-              <small className="console-sprites-metric-sub">De {TOTAL_CATALOGUE_EXERCISES} do catálogo</small>
+              <strong className="console-sprites-metric-title">Prioritários sem sprites</strong>
+              <small className="console-sprites-metric-sub">De {allPendingExercises.length} na fila prioritária</small>
             </div>
 
             <div className="console-sprites-metric-card is-done-card">
               <span className="console-sprites-metric-val">{completedCount}</span>
-              <strong className="console-sprites-metric-title">Marcados como prontos</strong>
-              <small className="console-sprites-metric-sub">Salvo localmente</small>
+              <strong className="console-sprites-metric-title">Concluídos nesta fila</strong>
+              <small className="console-sprites-metric-sub">Marcados pelo admin</small>
+            </div>
+
+            <div className="console-sprites-metric-card is-review-card">
+              <span className="console-sprites-metric-val">{reviewCount}</span>
+              <strong className="console-sprites-metric-title">Precisam de revisão</strong>
+              <small className="console-sprites-metric-sub">Pendências biomecânicas</small>
             </div>
           </div>
 
@@ -315,7 +323,7 @@ export default function ConsoleSprites() {
                   aria-selected={filterMode === 'needs_review'}
                   className={`console-sprites-tab console-sprites-tab--review ${filterMode === 'needs_review' ? 'is-active' : ''}`}
                   onClick={() => setFilterMode('needs_review')}
-                  title="Exercícios que possuem observações ou pendências biomecânicas na fonte"
+                  title="Exercícios da fila prioritária com pendências ou observações na fonte"
                 >
                   Revisão necessária ({reviewCount})
                 </button>
@@ -326,7 +334,7 @@ export default function ConsoleSprites() {
                   className={`console-sprites-tab ${filterMode === 'completed' ? 'is-active' : ''}`}
                   onClick={() => setFilterMode('completed')}
                 >
-                  Já feitos ({completedCount})
+                  Concluídos ({completedCount})
                 </button>
                 <button
                   type="button"
@@ -335,7 +343,7 @@ export default function ConsoleSprites() {
                   className={`console-sprites-tab ${filterMode === 'all' ? 'is-active' : ''}`}
                   onClick={() => setFilterMode('all')}
                 >
-                  Todos ({allPendingExercises.length})
+                  Todos os priorizados ({allPendingExercises.length})
                 </button>
               </div>
 
@@ -350,10 +358,12 @@ export default function ConsoleSprites() {
             <div className="console-list-heading">
               <h2>
                 {filterMode === 'completed'
-                  ? 'Exercícios já feitos'
+                  ? 'Exercícios prioritários já concluídos'
                   : filterMode === 'needs_review'
-                  ? 'Exercícios com pendências ou observações na fonte'
-                  : 'Exercícios sem sprites (ordenados por relevância)'}
+                  ? 'Exercícios prioritários com revisão biomecânica necessária'
+                  : filterMode === 'all'
+                  ? 'Todos os 100 exercícios prioritários'
+                  : 'Fila prioritária de sprites (100 selecionados)'}
               </h2>
             </div>
 

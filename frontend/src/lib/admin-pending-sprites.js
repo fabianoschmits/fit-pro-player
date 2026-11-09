@@ -10,6 +10,11 @@ import {
   getExerciseFullPrompt,
   hasPreparedPrompt,
 } from './exercise-sprite-prompts.js'
+import {
+  SPRITE_PRIORITY_QUEUE_IDS,
+  SPRITE_PRIORITY_QUEUE_SET,
+  TOTAL_PRIORITY_QUEUE_EXERCISES,
+} from './sprite-priority-queue.js'
 
 const PNG_SLUG_SET = new Set(EXERCISE_SPRITE_PNG_SLUGS)
 
@@ -124,20 +129,29 @@ export function formatExercisePtName(rawName = '') {
   return trimmed.charAt(0).toLocaleUpperCase('pt-BR') + trimmed.slice(1)
 }
 
+// Pre-indexed map of catalog exercises by ID for fast lookup
+const SOURCE_EXERCISES_BY_ID = new Map(SOURCE_EXERCISES.map(ex => [ex.id, ex]))
+
 /**
- * Returns all exercises that do NOT yet have sprites created,
- * sorted by internet usage / popularity relevance.
+ * Returns exclusively the exercises from the 100-item priority whitelist
+ * that do NOT yet have sprites published, in the exact order defined by the whitelist.
+ *
+ * When an exercise from the priority whitelist receives sprites, it is excluded
+ * without automatic replacement by other exercises from the catalogue.
  */
 export function getPendingExercises() {
   const list = []
-  for (const ex of SOURCE_EXERCISES) {
-    if (!ACTIVE_SPRITE_IDS.has(ex.id)) {
-      const promptMeta = getPromptMetadata(ex.id)
-      const rawPt = promptMeta?.namePt || PT_EXERCISE_NAMES[ex.id] || ex.n
+  for (const id of SPRITE_PRIORITY_QUEUE_IDS) {
+    if (!ACTIVE_SPRITE_IDS.has(id)) {
+      const ex = SOURCE_EXERCISES_BY_ID.get(id)
+      if (!ex) continue
+
+      const promptMeta = getPromptMetadata(id)
+      const rawPt = promptMeta?.namePt || PT_EXERCISE_NAMES[id] || ex.n
       const ptName = formatExercisePtName(rawPt)
-      const score = calculateExerciseRelevance(ex, rawPt)
-      const stepsPt = PT_INSTRUCTIONS[ex.id] || []
+      const stepsPt = PT_INSTRUCTIONS[id] || []
       const stepsEn = ex.st || []
+
       list.push({
         id: ex.id,
         nameEn: ex.n,
@@ -149,7 +163,7 @@ export function getPendingExercises() {
         sm: ex.sm || [],
         stepsPt,
         stepsEn,
-        score,
+        score: 0,
         // Prompt catalog metadata
         hasPrompt: Boolean(promptMeta),
         frameCount: promptMeta?.frameCount || null,
@@ -162,7 +176,7 @@ export function getPendingExercises() {
     }
   }
 
-  return list.sort((a, b) => b.score - a.score || a.namePt.localeCompare(b.namePt, 'pt-BR'))
+  return list
 }
 
 /**
@@ -257,3 +271,4 @@ export function generateSpritePrompt(item, customTemplate = null) {
 
 export const TOTAL_CATALOGUE_EXERCISES = SOURCE_EXERCISES.length
 export const ACTIVE_SPRITE_COUNT = ACTIVE_SPRITE_IDS.size
+export { SPRITE_PRIORITY_QUEUE_IDS, SPRITE_PRIORITY_QUEUE_SET, TOTAL_PRIORITY_QUEUE_EXERCISES }

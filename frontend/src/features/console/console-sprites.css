@@ -67,12 +67,18 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Quick Metrics Cards: side-by-side, compact, centered, small font to fit all text */
+/* Quick Metrics Cards: 4 cards on desktop, 2x2 on mobile */
 .console-sprites-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 16px;
+}
+
+@media (max-width: 768px) {
+  .console-sprites-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .console-sprites-metric-card {
@@ -101,6 +107,11 @@
 .console-sprites-metric-card.is-done-card {
   border-color: rgba(59, 130, 246, 0.25);
   background: color-mix(in srgb, var(--surface, #1b211f) 92%, #3b82f6);
+}
+
+.console-sprites-metric-card.is-review-card {
+  border-color: rgba(239, 68, 68, 0.25);
+  background: color-mix(in srgb, var(--surface, #1b211f) 92%, #ef4444);
 }
 
 .console-sprites-metric-val {
