@@ -152,27 +152,13 @@ export function getPendingExercises() {
 }
 
 /**
- * Generates the complete, rigorous IA prompt for generating consistent animation sprite frames.
- * Ensures fixed camera angle, stationary background, zero screen shake, and complete biomechanical motion.
+ * Default base template for IA sprite creation.
+ * Contains placeholders:
+ * {EXERCISE_NAME_PT}, {EXERCISE_NAME_EN}, {EQUIPMENT}, {BODY_PART}, {TARGET_MUSCLE}, {BIOMECHANICS_STEPS}
  */
-export function generateSpritePrompt(item) {
-  const namePt = item.namePt || ''
-  const nameEn = item.nameEn || ''
-  const eq = item.eq || 'body weight'
-  const bp = item.bp || ''
-  const tg = item.tg || ''
-
-  // Format biomechanical execution steps
-  let executionGuide = ''
-  if (Array.isArray(item.stepsPt) && item.stepsPt.length) {
-    executionGuide = item.stepsPt.map((step, i) => `${i + 1}. ${step}`).join('\n')
-  } else if (Array.isArray(item.stepsEn) && item.stepsEn.length) {
-    executionGuide = item.stepsEn.map((step, i) => `${i + 1}. ${step}`).join('\n')
-  }
-
-  return `### EXERCÍCIO: ${namePt.toUpperCase()} (${nameEn})
-- Equipamento: ${eq}
-- Região do corpo: ${bp} | Foco muscular: ${tg}
+export const DEFAULT_PROMPT_TEMPLATE = `### EXERCÍCIO: {EXERCISE_NAME_PT} ({EXERCISE_NAME_EN})
+- Equipamento: {EQUIPMENT}
+- Região do corpo: {BODY_PART} | Foco muscular: {TARGET_MUSCLE}
 
 ---
 
@@ -204,8 +190,39 @@ Crie uma sequência de 4 imagens (frames) que representem o ciclo COMPLETO e bio
 ---
 
 ### BIOMECÂNICA / PASSO A PASSO DO EXERCÍCIO:
-${executionGuide || 'Execute a repetição completa com postura ereta, abdômen contraído e amplitude controlada.'}
-`
+{BIOMECHANICS_STEPS}`
+
+/**
+ * Generates the prompt by interpolating exercise data into the provided template (or default template).
+ */
+export function generateSpritePrompt(item, customTemplate = null) {
+  const namePt = (item?.namePt || '').toUpperCase()
+  const nameEn = item?.nameEn || ''
+  const eq = item?.eq || 'body weight'
+  const bp = item?.bp || ''
+  const tg = item?.tg || ''
+
+  // Format biomechanical execution steps
+  let executionGuide = ''
+  if (Array.isArray(item?.stepsPt) && item.stepsPt.length) {
+    executionGuide = item.stepsPt.map((step, i) => `${i + 1}. ${step}`).join('\n')
+  } else if (Array.isArray(item?.stepsEn) && item.stepsEn.length) {
+    executionGuide = item.stepsEn.map((step, i) => `${i + 1}. ${step}`).join('\n')
+  } else {
+    executionGuide = 'Execute a repetição completa com postura ereta, abdômen contraído e amplitude controlada.'
+  }
+
+  const template = (customTemplate && typeof customTemplate === 'string' && customTemplate.trim())
+    ? customTemplate
+    : DEFAULT_PROMPT_TEMPLATE
+
+  return template
+    .replace(/{EXERCISE_NAME_PT}/g, namePt)
+    .replace(/{EXERCISE_NAME_EN}/g, nameEn)
+    .replace(/{EQUIPMENT}/g, eq)
+    .replace(/{BODY_PART}/g, bp)
+    .replace(/{TARGET_MUSCLE}/g, tg)
+    .replace(/{BIOMECHANICS_STEPS}/g, executionGuide)
 }
 
 export const TOTAL_CATALOGUE_EXERCISES = SOURCE_EXERCISES.length
