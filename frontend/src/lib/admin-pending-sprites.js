@@ -5,6 +5,11 @@ import {
   EXERCISE_SPRITE_BY_EXERCISE_ID,
   EXERCISE_SPRITE_PNG_SLUGS,
 } from './exercise-guide-assets.js'
+import {
+  getPromptMetadata,
+  getExerciseFullPrompt,
+  hasPreparedPrompt,
+} from './exercise-sprite-prompts.js'
 
 const PNG_SLUG_SET = new Set(EXERCISE_SPRITE_PNG_SLUGS)
 
@@ -127,7 +132,8 @@ export function getPendingExercises() {
   const list = []
   for (const ex of SOURCE_EXERCISES) {
     if (!ACTIVE_SPRITE_IDS.has(ex.id)) {
-      const rawPt = PT_EXERCISE_NAMES[ex.id] || ex.n
+      const promptMeta = getPromptMetadata(ex.id)
+      const rawPt = promptMeta?.namePt || PT_EXERCISE_NAMES[ex.id] || ex.n
       const ptName = formatExercisePtName(rawPt)
       const score = calculateExerciseRelevance(ex, rawPt)
       const stepsPt = PT_INSTRUCTIONS[ex.id] || []
@@ -144,6 +150,14 @@ export function getPendingExercises() {
         stepsPt,
         stepsEn,
         score,
+        // Prompt catalog metadata
+        hasPrompt: Boolean(promptMeta),
+        frameCount: promptMeta?.frameCount || null,
+        family: promptMeta?.family || 'indefinido',
+        status: promptMeta?.status || 'missing',
+        needsReview: promptMeta?.status === 'needs_review',
+        issues: promptMeta?.issues || [],
+        execution: promptMeta?.execution || null,
       })
     }
   }
@@ -193,14 +207,30 @@ Crie uma sequência de 4 imagens (frames) que representem o ciclo COMPLETO e bio
 {BIOMECHANICS_STEPS}`
 
 /**
- * Generates the prompt by interpolating exercise data into the provided template (or default template).
+ * Retrieves the full prepared prompt for an exercise.
+ * If the exercise has a prepared prompt in the catalogue, returns its exact text.
+ * Returns null if no prepared prompt is available.
+ *
+ * Notice: This never silently creates a generic prompt when a prepared prompt is missing,
+ * in strict accordance with the FPP Prompt System specification.
+ */
+export async function getExercisePrompt(itemOrId) {
+  const id = typeof itemOrId === 'string' ? itemOrId : itemOrId?.id
+  if (!id) return null
+  return await getExerciseFullPrompt(id)
+}
+
+/**
+ * Legacy prompt generator retained strictly for backward compatibility.
+ * Primary source for actual prompt copying is getExercisePrompt().
  */
 export function generateSpritePrompt(item, customTemplate = null) {
-  const namePt = (item?.namePt || '').toUpperCase()
-  const nameEn = item?.nameEn || ''
-  const eq = item?.eq || 'body weight'
-  const bp = item?.bp || ''
-  const tg = item?.tg || ''
+  const meta = getPromptMetadata(item?.id)
+  const namePt = (item?.namePt || meta?.namePt || '').toUpperCase()
+  const nameEn = item?.nameEn || meta?.nameEn || ''
+  const eq = item?.eq || meta?.eq || 'body weight'
+  const bp = item?.bp || meta?.bp || ''
+  const tg = item?.tg || meta?.tg || ''
 
   // Format biomechanical execution steps
   let executionGuide = ''

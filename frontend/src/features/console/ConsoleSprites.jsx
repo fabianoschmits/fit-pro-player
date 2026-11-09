@@ -5,11 +5,11 @@ import { AccessGate, useConsoleAccess } from './ConsoleAccess.jsx'
 import { Empty, SectionBody } from './ConsoleUI.jsx'
 import {
   ACTIVE_SPRITE_COUNT,
-  DEFAULT_PROMPT_TEMPLATE,
-  generateSpritePrompt,
+  getExercisePrompt,
   getPendingExercises,
   TOTAL_CATALOGUE_EXERCISES,
 } from '../../lib/admin-pending-sprites.js'
+import { getExerciseFullPrompt } from '../../lib/exercise-sprite-prompts.js'
 import './console-sprites.css'
 
 const COMPLETED_SPRITES_STORAGE_KEY = 'fpp_admin_completed_sprites'
@@ -34,56 +34,59 @@ function saveStorageMap(key, map) {
   }
 }
 
-function readTemplateFromStorage() {
-  try {
-    const raw = localStorage.getItem(CUSTOM_TEMPLATE_STORAGE_KEY)
-    if (raw && typeof raw === 'string' && raw.trim()) return raw
-    return DEFAULT_PROMPT_TEMPLATE
-  } catch {
-    return DEFAULT_PROMPT_TEMPLATE
-  }
-}
-
 export default function ConsoleSprites() {
   const { userId, allowed } = useConsoleAccess()
   const [completedMap, setCompletedMap] = useState(() => readStorageMap(COMPLETED_SPRITES_STORAGE_KEY))
   const [copiedMap, setCopiedMap] = useState(() => readStorageMap(COPIED_SPRITES_STORAGE_KEY))
-  const [filterMode, setFilterMode] = useState('pending') // 'pending' | 'completed' | 'all' | 'template'
+  const [filterMode, setFilterMode] = useState('pending') // 'pending' | 'completed' | 'all' | 'needs_review'
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
   const searchInputRef = useRef(null)
 
-  // Prompt template editor state
-  const [promptTemplate, setPromptTemplate] = useState(() => readTemplateFromStorage())
-  const [templateDraft, setTemplateDraft] = useState(() => readTemplateFromStorage())
-  const [templateSavedFeedback, setTemplateSavedFeedback] = useState(false)
-  const [activeCopiedFeedback, setActiveCopiedFeedback] = useState(null) // { id, type } for 2s "Copiado!" animation
+  // Feedback state for copied items
+  const [activeCopiedFeedback, setActiveCopiedFeedback] = useState(null) // { id, type }
 
-  // Load pending list sorted by internet popularity / relevance
+  // Modal / Sheet for viewing full prompt on demand
+  const [previewItem, setPreviewItem] = useState(null)
+  const [previewPromptText, setPreviewPromptText] = useState('')
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [previewCopied, setPreviewCopied] = useState(false)
+
+  // Ensure legacy custom template does not silently overwrite official prompts
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(CUSTOM_TEMPLATE_STORAGE_KEY)) {
+        localStorage.removeItem(CUSTOM_TEMPLATE_STORAGE_KEY)
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  // Load pending list sorted by internet popularity / relevance with new prompt metadata
   const allPendingExercises = useMemo(() => getPendingExercises(), [])
 
   // Auto focus search field when expanded
   useEffect(() => {
-    if (searchOpen && filterMode !== 'template') {
+    if (searchOpen) {
       searchInputRef.current?.focus()
     }
-  }, [searchOpen, filterMode])
+  }, [searchOpen])
 
-  // Clear temporary "Copiado!" button label flash after 2s
+  // Clear temporary "Copiado!" feedback after 2s
   useEffect(() => {
     if (!activeCopiedFeedback) return undefined
     const timer = setTimeout(() => setActiveCopiedFeedback(null), 2000)
     return () => clearTimeout(timer)
   }, [activeCopiedFeedback])
 
-  // Mark as completed (removes from pending, adds to completed, unmarks copied)
+  // Mark as completed
   const markAsCompleted = id => {
     setCompletedMap(prev => {
       const next = { ...prev, [id]: { completedAt: new Date().toISOString() } }
       saveStorageMap(COMPLETED_SPRITES_STORAGE_KEY, next)
       return next
     })
-    // Unmark copied once marked as done
     setCopiedMap(prev => {
       if (!prev[id]) return prev
       const next = { ...prev }
@@ -104,10 +107,32 @@ export default function ConsoleSprites() {
     })
   }
 
-  // Copy complete IA sprite generation instructions for the exercise
-  const handleCopyPrompt = item => {
-    const textToCopy = generateSpritePrompt(item, promptTemplate)
-    copyTextToClipboard(textToCopy)
+  const copyTextToClipboard = text => {
+    if (navigator?.clipboard?.writeText) {
+      return navigator.clipboard.writeText(text).catch(() => {})
+    }
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    document.body.appendChild(textArea)
+    textArea.select()
+    try {
+      document.execCommand('copy')
+    } catch {
+      // ignore
+    }
+    document.body.removeChild(textArea)
+    return Promise.resolve()
+  }
+
+  // Copy full prepared prompt directly from the official 1.324 prompts catalogue
+  const handleCopyPrompt = async item => {
+    const promptText = await getExercisePrompt(item)
+    if (!promptText || !promptText.trim()) {
+      alert(`Prompt não encontrado para o exercício #${item.id} (${item.namePt}).`)
+      return
+    }
+
+    await copyTextToClipboard(promptText)
     setActiveCopiedFeedback({ id: item.id, type: 'prompt' })
     setCopiedMap(prev => {
       const next = { ...prev, [item.id]: 'prompt' }
@@ -117,8 +142,8 @@ export default function ConsoleSprites() {
   }
 
   // Copy ONLY the exercise name in Portuguese
-  const handleCopyNamePt = item => {
-    copyTextToClipboard(item.namePt)
+  const handleCopyNamePt = async item => {
+    await copyTextToClipboard(item.namePt)
     setActiveCopiedFeedback({ id: item.id, type: 'name' })
     setCopiedMap(prev => {
       const next = { ...prev, [item.id]: 'name' }
@@ -127,44 +152,40 @@ export default function ConsoleSprites() {
     })
   }
 
-  const copyTextToClipboard = text => {
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).catch(() => { })
-    } else {
-      const textArea = document.createElement('textarea')
-      textArea.value = text
-      document.body.appendChild(textArea)
-      textArea.select()
-      try {
-        document.execCommand('copy')
-      } catch {
-        // ignore
-      }
-      document.body.removeChild(textArea)
+  // Open preview modal for an exercise prompt
+  const handleOpenPreview = async item => {
+    setPreviewItem(item)
+    setPreviewPromptText('')
+    setPreviewLoading(true)
+    setPreviewCopied(false)
+    try {
+      const text = await getExerciseFullPrompt(item.id)
+      setPreviewPromptText(text || 'Prompt não disponível para este exercício.')
+    } catch {
+      setPreviewPromptText('Erro ao carregar o prompt do exercício.')
+    } finally {
+      setPreviewLoading(false)
     }
   }
 
-  const handleSaveTemplate = () => {
-    try {
-      localStorage.setItem(CUSTOM_TEMPLATE_STORAGE_KEY, templateDraft)
-      setPromptTemplate(templateDraft)
-      setTemplateSavedFeedback(true)
-      setTimeout(() => setTemplateSavedFeedback(false), 2500)
-    } catch (err) {
-      console.error('Failed to save template to localStorage', err)
-    }
+  const handleClosePreview = () => {
+    setPreviewItem(null)
+    setPreviewPromptText('')
   }
 
-  const handleResetTemplate = () => {
-    setTemplateDraft(DEFAULT_PROMPT_TEMPLATE)
-    try {
-      localStorage.removeItem(CUSTOM_TEMPLATE_STORAGE_KEY)
-      setPromptTemplate(DEFAULT_PROMPT_TEMPLATE)
-      setTemplateSavedFeedback(true)
-      setTimeout(() => setTemplateSavedFeedback(false), 2500)
-    } catch (err) {
-      console.error('Failed to reset template', err)
+  const handleCopyFromPreview = async () => {
+    if (!previewPromptText) return
+    await copyTextToClipboard(previewPromptText)
+    setPreviewCopied(true)
+    if (previewItem) {
+      setActiveCopiedFeedback({ id: previewItem.id, type: 'prompt' })
+      setCopiedMap(prev => {
+        const next = { ...prev, [previewItem.id]: 'prompt' }
+        saveStorageMap(COPIED_SPRITES_STORAGE_KEY, next)
+        return next
+      })
     }
+    setTimeout(() => setPreviewCopied(false), 2000)
   }
 
   const completedCount = useMemo(
@@ -173,7 +194,13 @@ export default function ConsoleSprites() {
   )
   const remainingCount = Math.max(0, allPendingExercises.length - completedCount)
 
-  // Filter based on completion status and search query
+  // Count exercises with needs_review in the backlog
+  const reviewCount = useMemo(
+    () => allPendingExercises.filter(ex => ex.needsReview).length,
+    [allPendingExercises],
+  )
+
+  // Filter based on completion status, review status and search query
   const filteredList = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
 
@@ -182,20 +209,14 @@ export default function ConsoleSprites() {
 
       if (filterMode === 'pending' && isDone) return false
       if (filterMode === 'completed' && !isDone) return false
+      if (filterMode === 'needs_review' && !item.needsReview) return false
 
       if (!normalizedQuery) return true
 
-      const text = `${item.namePt} ${item.nameEn} ${item.eq} ${item.bp} ${item.tg}`.toLocaleLowerCase('pt-BR')
+      const text = `${item.id} ${item.namePt} ${item.nameEn} ${item.eq} ${item.bp} ${item.tg} ${item.family}`.toLocaleLowerCase('pt-BR')
       return text.includes(normalizedQuery)
     })
   }, [allPendingExercises, completedMap, filterMode, query])
-
-  // Sample preview item for template editor
-  const sampleExercise = allPendingExercises[0] || null
-  const sampleRenderedPrompt = useMemo(() => {
-    if (!sampleExercise) return ''
-    return generateSpritePrompt(sampleExercise, templateDraft)
-  }, [sampleExercise, templateDraft])
 
   return (
     <AccessGate allowed={allowed}>
@@ -205,31 +226,29 @@ export default function ConsoleSprites() {
             <div>
               <h1 className="cx-page-title">Fila de criação de sprites</h1>
               <p className="cx-page-sub">
-                Organize e acompanhe os exercícios que ainda não possuem animações (sprites) desenhadas.
+                1.324 prompts biomecânicos oficiais e individuais integrados. Visualize, confira pendências e copie com um clique.
               </p>
             </div>
 
-            {filterMode !== 'template' && (
-              <div className="console-sprites-head-actions">
-                <button
-                  type="button"
-                  className={`cx-pill-btn ${searchOpen ? 'cx-pill-btn--accent' : ''}`}
-                  onClick={() => {
-                    setSearchOpen(prev => !prev)
-                    if (searchOpen) setQuery('')
-                  }}
-                  aria-label="Abrir ou fechar busca de exercícios"
-                  aria-expanded={searchOpen}
-                >
-                  <Icon name="magnifier" />
-                  <span>{searchOpen ? 'Fechar busca' : 'Buscar exercício'}</span>
-                </button>
-              </div>
-            )}
+            <div className="console-sprites-head-actions">
+              <button
+                type="button"
+                className={`cx-pill-btn ${searchOpen ? 'cx-pill-btn--accent' : ''}`}
+                onClick={() => {
+                  setSearchOpen(prev => !prev)
+                  if (searchOpen) setQuery('')
+                }}
+                aria-label="Abrir ou fechar busca de exercícios"
+                aria-expanded={searchOpen}
+              >
+                <Icon name="magnifier" />
+                <span>{searchOpen ? 'Fechar busca' : 'Buscar exercício'}</span>
+              </button>
+            </div>
           </div>
 
           {/* Collapsible search bar */}
-          {searchOpen && filterMode !== 'template' && (
+          {searchOpen && (
             <div className="console-sprites-search-wrap" role="search">
               <div className="console-sprites-search-bar">
                 <Icon name="magnifier" className="console-sprites-search-icon" />
@@ -237,7 +256,7 @@ export default function ConsoleSprites() {
                   ref={searchInputRef}
                   type="search"
                   className="cx-field console-sprites-search-input"
-                  placeholder="Buscar pelo nome do exercício em português ou inglês, equipamento..."
+                  placeholder="Buscar por ID (ex: 0755), nome, equipamento, músculo..."
                   value={query}
                   onChange={e => setQuery(e.target.value)}
                   aria-label="Pesquisar exercícios"
@@ -256,28 +275,28 @@ export default function ConsoleSprites() {
             </div>
           )}
 
-          {/* Quick Metrics: Compact, side-by-side, centered with legible small text */}
+          {/* Quick Metrics */}
           <div className="console-sprites-metrics-grid">
             <div className="console-sprites-metric-card is-active-card">
               <span className="console-sprites-metric-val">{ACTIVE_SPRITE_COUNT}</span>
               <strong className="console-sprites-metric-title">Sprites já ativos</strong>
-              <small className="console-sprites-metric-sub">No app de {TOTAL_CATALOGUE_EXERCISES} do catálogo</small>
+              <small className="console-sprites-metric-sub">Publicados no app</small>
             </div>
 
             <div className="console-sprites-metric-card is-pending-card">
               <span className="console-sprites-metric-val">{remainingCount}</span>
               <strong className="console-sprites-metric-title">Restantes para desenhar</strong>
-              <small className="console-sprites-metric-sub">Ordenados por relevância e busca</small>
+              <small className="console-sprites-metric-sub">De {TOTAL_CATALOGUE_EXERCISES} do catálogo</small>
             </div>
 
             <div className="console-sprites-metric-card is-done-card">
               <span className="console-sprites-metric-val">{completedCount}</span>
               <strong className="console-sprites-metric-title">Marcados como prontos</strong>
-              <small className="console-sprites-metric-sub">Salvo automaticamente</small>
+              <small className="console-sprites-metric-sub">Salvo localmente</small>
             </div>
           </div>
 
-          {/* Filter options bar + Template Editor Tab */}
+          {/* Filter options bar */}
           <section className="console-filter-section" aria-label="Filtros da lista">
             <div className="console-sprites-filter-bar">
               <div className="console-sprites-tabs" role="tablist">
@@ -289,6 +308,16 @@ export default function ConsoleSprites() {
                   onClick={() => setFilterMode('pending')}
                 >
                   Pendentes ({remainingCount})
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={filterMode === 'needs_review'}
+                  className={`console-sprites-tab console-sprites-tab--review ${filterMode === 'needs_review' ? 'is-active' : ''}`}
+                  onClick={() => setFilterMode('needs_review')}
+                  title="Exercícios que possuem observações ou pendências biomecânicas na fonte"
+                >
+                  Revisão necessária ({reviewCount})
                 </button>
                 <button
                   type="button"
@@ -308,232 +337,271 @@ export default function ConsoleSprites() {
                 >
                   Todos ({allPendingExercises.length})
                 </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={filterMode === 'template'}
-                  className={`console-sprites-tab console-sprites-tab--template ${filterMode === 'template' ? 'is-active' : ''}`}
-                  onClick={() => setFilterMode('template')}
-                  title="Configurar o modelo de prompt enviado para a IA"
-                >
-                  <Icon name="pencil" className="console-sprites-tab-icon" />
-                  <span>Modelo de prompt</span>
-                </button>
               </div>
 
-              {filterMode !== 'template' && (
-                <span className="console-sprites-count-tag">
-                  Exibindo {filteredList.length} exercício{filteredList.length === 1 ? '' : 's'}
-                </span>
-              )}
+              <span className="console-sprites-count-tag">
+                Exibindo {filteredList.length} exercício{filteredList.length === 1 ? '' : 's'}
+              </span>
             </div>
           </section>
 
-          {/* View Mode: Template Editor */}
-          {filterMode === 'template' ? (
-            <section className="console-template-editor-wrap" aria-label="Editor de modelo de prompt da IA">
-              <div className="console-list-heading">
-                <h2>Modelo de texto copiado para a IA</h2>
-                <div className="console-template-actions-top">
-                  <button
-                    type="button"
-                    className="console-template-btn console-template-btn--reset"
-                    onClick={handleResetTemplate}
-                    title="Restaurar o modelo padrão original"
-                  >
-                    <Icon name="reset" />
-                    <span>Restaurar padrão</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`console-template-btn console-template-btn--save ${templateSavedFeedback ? 'is-saved' : ''}`}
-                    onClick={handleSaveTemplate}
-                  >
-                    <Icon name={templateSavedFeedback ? 'check' : 'checkCircle'} />
-                    <span>{templateSavedFeedback ? 'Salvo com sucesso!' : 'Salvar modelo'}</span>
-                  </button>
-                </div>
-              </div>
+          {/* Exercise list */}
+          <section aria-label="Lista de exercícios">
+            <div className="console-list-heading">
+              <h2>
+                {filterMode === 'completed'
+                  ? 'Exercícios já feitos'
+                  : filterMode === 'needs_review'
+                  ? 'Exercícios com pendências ou observações na fonte'
+                  : 'Exercícios sem sprites (ordenados por relevância)'}
+              </h2>
+            </div>
 
-              <p className="console-template-help">
-                Edite abaixo a estrutura das instruções que são copiadas com 1 clique ao clicar em <strong>"Copiar prompt"</strong>. As variáveis entre chaves serão preenchidas automaticamente com as informações do exercício selecionado:
-              </p>
+            {filteredList.length === 0 ? (
+              <Empty
+                title="Nenhum exercício encontrado"
+                sub={
+                  query
+                    ? 'Tente buscar com outro termo ou limpe a busca.'
+                    : filterMode === 'completed'
+                    ? 'Você ainda não marcou nenhum exercício como concluído.'
+                    : filterMode === 'needs_review'
+                    ? 'Nenhum exercício com pendência nessa seleção.'
+                    : 'Todos os exercícios foram marcados como concluídos!'
+                }
+              />
+            ) : (
+              <SectionBody className="console-sprites-list">
+                {filteredList.map((item, index) => {
+                  const isDone = Boolean(completedMap[item.id])
+                  const copiedMode = copiedMap[item.id] || null
+                  const isCopied = Boolean(copiedMode)
+                  const hasPrompt = item.hasPrompt
+                  const isNeedsReview = item.needsReview
 
-              <div className="console-template-placeholders">
-                <code>{'{EXERCISE_NAME_PT}'}</code> (Nome em Português)
-                <code>{'{EXERCISE_NAME_EN}'}</code> (Nome em Inglês)
-                <code>{'{EQUIPMENT}'}</code> (Equipamento)
-                <code>{'{BODY_PART}'}</code> (Região)
-                <code>{'{TARGET_MUSCLE}'}</code> (Músculo)
-                <code>{'{BIOMECHANICS_STEPS}'}</code> (Passos de execução)
-              </div>
+                  return (
+                    <div
+                      key={item.id}
+                      className={`console-sprite-item ${isDone ? 'is-completed' : ''} ${isCopied ? 'is-item-copied' : ''} ${isNeedsReview ? 'has-review-issue' : ''}`}
+                    >
+                      <span className="console-sprite-index" title={`Ordem #${index + 1}`}>
+                        {index + 1}
+                      </span>
 
-              <div className="console-template-editor-grid">
-                <div className="console-template-field-wrap">
-                  <label htmlFor="prompt-template-textarea" className="console-template-label">
-                    Texto do modelo (editável):
-                  </label>
-                  <textarea
-                    id="prompt-template-textarea"
-                    className="console-template-textarea"
-                    value={templateDraft}
-                    onChange={e => setTemplateDraft(e.target.value)}
-                    rows={18}
-                    spellCheck="false"
-                  />
-                </div>
-
-                <div className="console-template-preview-wrap">
-                  <label className="console-template-label">
-                    Pré-visualização gerada para o primeiro exercício:
-                  </label>
-                  <pre className="console-template-preview">
-                    {sampleRenderedPrompt}
-                  </pre>
-                </div>
-              </div>
-
-              <div className="console-template-actions-bottom">
-                <button
-                  type="button"
-                  className={`console-template-btn console-template-btn--save ${templateSavedFeedback ? 'is-saved' : ''}`}
-                  onClick={handleSaveTemplate}
-                >
-                  <Icon name={templateSavedFeedback ? 'check' : 'checkCircle'} />
-                  <span>{templateSavedFeedback ? 'Salvo com sucesso!' : 'Salvar modelo'}</span>
-                </button>
-              </div>
-            </section>
-          ) : (
-            /* View Mode: Exercise list */
-            <section aria-label="Lista de exercícios">
-              <div className="console-list-heading">
-                <h2>
-                  {filterMode === 'completed'
-                    ? 'Exercícios já feitos'
-                    : 'Exercícios sem sprites (ordenados por relevância)'}
-                </h2>
-              </div>
-
-              {filteredList.length === 0 ? (
-                <Empty
-                  title="Nenhum exercício encontrado"
-                  sub={
-                    query
-                      ? 'Tente buscar com outro termo ou limpe a busca.'
-                      : filterMode === 'completed'
-                      ? 'Você ainda não marcou nenhum exercício como concluído.'
-                      : 'Todos os exercícios foram marcados como concluídos!'
-                  }
-                />
-              ) : (
-                <SectionBody className="console-sprites-list">
-                  {filteredList.map((item, index) => {
-                    const isDone = Boolean(completedMap[item.id])
-                    const copiedMode = copiedMap[item.id] || null
-                    const isCopied = Boolean(copiedMode)
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={`console-sprite-item ${isDone ? 'is-completed' : ''} ${isCopied ? 'is-item-copied' : ''}`}
-                      >
-                        <span className="console-sprite-index" title={`Ordem #${index + 1}`}>
-                          {index + 1}
+                      {/* Action button: mark completed */}
+                      {!isDone ? (
+                        <button
+                          type="button"
+                          className="console-sprite-check-btn"
+                          onClick={() => markAsCompleted(item.id)}
+                          title="Marcar como feito (move para Já feitos)"
+                          aria-label={`Marcar ${item.namePt} como feito`}
+                        >
+                          <Icon name="plus" />
+                        </button>
+                      ) : (
+                        <span className="console-sprite-done-badge" title="Já concluído">
+                          <Icon name="check" />
                         </span>
+                      )}
 
-                        {/* Action button: in pending list, clicking + marks as done and moves it to completed */}
-                        {!isDone ? (
-                          <button
-                            type="button"
-                            className="console-sprite-check-btn"
-                            onClick={() => markAsCompleted(item.id)}
-                            title="Marcar como feito (move para Já feitos)"
-                            aria-label={`Marcar ${item.namePt} como feito`}
-                          >
-                            <Icon name="plus" />
-                          </button>
-                        ) : (
-                          <span className="console-sprite-done-badge" title="Já concluído">
-                            <Icon name="check" />
+                      {/* Exercise Info */}
+                      <div className="console-sprite-info">
+                        <div className="console-sprite-name-row">
+                          <strong className="console-sprite-name-pt">{item.namePt}</strong>
+                          <span className="console-sprite-id-badge" title="ID oficial do catálogo">
+                            #{item.id}
                           </span>
-                        )}
-
-                        {/* Exercise Name (PT + EN) */}
-                        <div className="console-sprite-info">
-                          <div className="console-sprite-name-row">
-                            <strong className="console-sprite-name-pt">{item.namePt}</strong>
-                            {isCopied && !isDone && (
-                              <span className="console-sprite-copied-tag">
-                                {copiedMode === 'name' ? 'Nome copiado' : 'Prompt copiado'}
-                              </span>
-                            )}
-                          </div>
-                          <span className="console-sprite-name-en">{item.nameEn}</span>
-                        </div>
-
-                        {/* Actions side column */}
-                        <div className="console-sprite-actions-col">
-                          <div className="console-sprite-copy-group">
-                            {/* Copy only Portuguese name button */}
-                            {(() => {
-                              const isThisJustCopied = activeCopiedFeedback?.id === item.id && activeCopiedFeedback?.type === 'name'
-                              const hasBeenCopied = copiedMode === 'name'
-
-                              return (
-                                <button
-                                  type="button"
-                                  className={`console-sprite-copy-btn console-sprite-copy-btn--name ${hasBeenCopied ? 'is-copied' : ''}`}
-                                  onClick={() => handleCopyNamePt(item)}
-                                  title="Clique para copiar novamente o nome em português"
-                                  aria-label={`Copiar apenas nome de ${item.namePt}`}
-                                >
-                                  <Icon name={hasBeenCopied ? 'check' : 'clipboard'} />
-                                  <span>{isThisJustCopied ? 'Copiado!' : hasBeenCopied ? 'Já copiado' : 'Copiar nome'}</span>
-                                </button>
-                              )
-                            })()}
-
-                            {/* Copy full sprite prompt button */}
-                            {(() => {
-                              const isThisJustCopied = activeCopiedFeedback?.id === item.id && activeCopiedFeedback?.type === 'prompt'
-                              const hasBeenCopied = copiedMode === 'prompt'
-
-                              return (
-                                <button
-                                  type="button"
-                                  className={`console-sprite-copy-btn console-sprite-copy-btn--prompt ${hasBeenCopied ? 'is-copied' : ''}`}
-                                  onClick={() => handleCopyPrompt(item)}
-                                  title="Clique para copiar novamente o prompt completo para IA"
-                                  aria-label={`Copiar prompt de ${item.namePt}`}
-                                >
-                                  <Icon name={hasBeenCopied ? 'check' : 'copy'} />
-                                  <span>{isThisJustCopied ? 'Copiado!' : hasBeenCopied ? 'Já copiado' : 'Copiar prompt'}</span>
-                                </button>
-                              )
-                            })()}
-                          </div>
-
-                          {/* In completed list: button to restore back to pending list */}
-                          {isDone && (
-                            <button
-                              type="button"
-                              className="console-sprite-restore-btn"
-                              onClick={() => restoreToPending(item.id)}
-                              title="Voltar para a lista de não feitos"
-                              aria-label={`Voltar ${item.namePt} para não feitos`}
-                            >
-                              <Icon name="reset" />
-                              <span>Voltar</span>
-                            </button>
+                          {isCopied && !isDone && (
+                            <span className="console-sprite-copied-tag">
+                              {copiedMode === 'name' ? 'Nome copiado' : 'Prompt copiado'}
+                            </span>
                           )}
                         </div>
+
+                        <span className="console-sprite-name-en">{item.nameEn}</span>
+
+                        {/* Metadata badges: frames, equipment, status */}
+                        <div className="console-sprite-meta-row">
+                          <span className="console-sprite-meta-pill" title="Equipamento">
+                            {item.eq}
+                          </span>
+                          {item.frameCount && (
+                            <span className="console-sprite-meta-pill console-sprite-meta-pill--frames" title="Quantidade recomendada de frames">
+                              {item.frameCount} frames
+                            </span>
+                          )}
+
+                          {/* Status badge: Disponível, Revisão necessária, Ausente */}
+                          {hasPrompt ? (
+                            isNeedsReview ? (
+                              <span
+                                className="console-sprite-status-badge is-review"
+                                title={item.issues?.join('; ') || 'Revisão biomecânica recomendada'}
+                              >
+                                ⚠ Revisão necessária
+                              </span>
+                            ) : (
+                              <span className="console-sprite-status-badge is-ready" title="Prompt oficial disponível">
+                                ✓ Prompt disponível
+                              </span>
+                            )
+                          ) : (
+                            <span className="console-sprite-status-badge is-missing" title="Prompt ausente">
+                              ✕ Prompt ausente
+                            </span>
+                          )}
+
+                          {/* Preview button */}
+                          <button
+                            type="button"
+                            className="console-sprite-preview-link"
+                            onClick={() => handleOpenPreview(item)}
+                            title="Visualizar prompt completo e instruções de biomecânica"
+                          >
+                            <Icon name="eye" />
+                            <span>Ver prompt</span>
+                          </button>
+                        </div>
+
+                        {/* Issue description when in review mode */}
+                        {isNeedsReview && item.issues && item.issues.length > 0 && (
+                          <div className="console-sprite-issue-box">
+                            <strong>Atenção:</strong> {item.issues.join(' ')}
+                          </div>
+                        )}
                       </div>
-                    )
-                  })}
-                </SectionBody>
-              )}
-            </section>
+
+                      {/* Actions side column */}
+                      <div className="console-sprite-actions-col">
+                        <div className="console-sprite-copy-group">
+                          {/* Copy only Portuguese name button */}
+                          {(() => {
+                            const isThisJustCopied = activeCopiedFeedback?.id === item.id && activeCopiedFeedback?.type === 'name'
+                            const hasBeenCopied = copiedMode === 'name'
+
+                            return (
+                              <button
+                                type="button"
+                                className={`console-sprite-copy-btn console-sprite-copy-btn--name ${hasBeenCopied ? 'is-copied' : ''}`}
+                                onClick={() => handleCopyNamePt(item)}
+                                title="Clique para copiar novamente o nome em português"
+                                aria-label={`Copiar apenas nome de ${item.namePt}`}
+                              >
+                                <Icon name={hasBeenCopied ? 'check' : 'clipboard'} />
+                                <span>{isThisJustCopied ? 'Copiado!' : hasBeenCopied ? 'Já copiado' : 'Copiar nome'}</span>
+                              </button>
+                            )
+                          })()}
+
+                          {/* Copy full sprite prompt button */}
+                          {(() => {
+                            const isThisJustCopied = activeCopiedFeedback?.id === item.id && activeCopiedFeedback?.type === 'prompt'
+                            const hasBeenCopied = copiedMode === 'prompt'
+
+                            return (
+                              <button
+                                type="button"
+                                className={`console-sprite-copy-btn console-sprite-copy-btn--prompt ${hasBeenCopied ? 'is-copied' : ''} ${!hasPrompt ? 'is-disabled' : ''}`}
+                                onClick={() => handleCopyPrompt(item)}
+                                disabled={!hasPrompt}
+                                title={hasPrompt ? 'Clique para copiar o prompt individual oficial' : 'Prompt não disponível'}
+                                aria-label={`Copiar prompt de ${item.namePt}`}
+                              >
+                                <Icon name={hasBeenCopied ? 'check' : 'copy'} />
+                                <span>{isThisJustCopied ? 'Copiado!' : hasBeenCopied ? 'Já copiado' : 'Copiar prompt'}</span>
+                              </button>
+                            )
+                          })()}
+                        </div>
+
+                        {/* In completed list: button to restore back to pending list */}
+                        {isDone && (
+                          <button
+                            type="button"
+                            className="console-sprite-restore-btn"
+                            onClick={() => restoreToPending(item.id)}
+                            title="Voltar para a lista de não feitos"
+                            aria-label={`Voltar ${item.namePt} para não feitos`}
+                          >
+                            <Icon name="reset" />
+                            <span>Voltar</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </SectionBody>
+            )}
+          </section>
+
+          {/* Modal / Dialog for viewing full prompt on demand */}
+          {previewItem && (
+            <div className="console-prompt-modal-overlay" onClick={handleClosePreview}>
+              <div
+                className="console-prompt-modal"
+                onClick={e => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Prompt completo do exercício ${previewItem.namePt}`}
+              >
+                <div className="console-prompt-modal-header">
+                  <div>
+                    <h3 className="console-prompt-modal-title">
+                      #{previewItem.id} — {previewItem.namePt}
+                    </h3>
+                    <span className="console-prompt-modal-subtitle">
+                      {previewItem.nameEn} • {previewItem.eq} • {previewItem.frameCount} frames
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="console-prompt-modal-close"
+                    onClick={handleClosePreview}
+                    aria-label="Fechar pré-visualização"
+                  >
+                    <Icon name="xmark" />
+                  </button>
+                </div>
+
+                {previewItem.needsReview && previewItem.issues?.length > 0 && (
+                  <div className="console-prompt-modal-alert">
+                    <Icon name="alert" />
+                    <div>
+                      <strong>Atenção biomecânica:</strong> {previewItem.issues.join(' ')}
+                    </div>
+                  </div>
+                )}
+
+                <div className="console-prompt-modal-body">
+                  {previewLoading ? (
+                    <div className="console-prompt-modal-loading">Carregando prompt completo...</div>
+                  ) : (
+                    <pre className="console-prompt-modal-text">{previewPromptText}</pre>
+                  )}
+                </div>
+
+                <div className="console-prompt-modal-footer">
+                  <button
+                    type="button"
+                    className="cx-pill-btn"
+                    onClick={handleClosePreview}
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="button"
+                    className={`cx-pill-btn cx-pill-btn--accent ${previewCopied ? 'is-copied' : ''}`}
+                    onClick={handleCopyFromPreview}
+                    disabled={previewLoading || !previewPromptText}
+                  >
+                    <Icon name={previewCopied ? 'check' : 'copy'} />
+                    <span>{previewCopied ? 'Copiado para a área de transferência!' : 'Copiar prompt completo'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       </ConsoleShell>

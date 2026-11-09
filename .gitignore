@@ -3,7 +3,8 @@ media/img/
 media/gif/
 
 # Runtime data — users, passkeys, per-user state, session secret
-data/
+/data/
+!frontend/src/data/
 
 # Local config and deployment metadata
 .env
