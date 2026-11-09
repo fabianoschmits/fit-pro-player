@@ -1,9 +1,9 @@
 import { EXDB as SOURCE_EXERCISES } from './exercises-data.js'
 import PT_EXERCISE_NAMES from '../generated/pt-exercise-names.js'
+import PT_INSTRUCTIONS from '../instr/pt.js'
 import {
   EXERCISE_SPRITE_BY_EXERCISE_ID,
   EXERCISE_SPRITE_PNG_SLUGS,
-  EXERCISE_SPRITE_POPULARITY_IDS,
 } from './exercise-guide-assets.js'
 
 const PNG_SLUG_SET = new Set(EXERCISE_SPRITE_PNG_SLUGS)
@@ -130,6 +130,8 @@ export function getPendingExercises() {
       const rawPt = PT_EXERCISE_NAMES[ex.id] || ex.n
       const ptName = formatExercisePtName(rawPt)
       const score = calculateExerciseRelevance(ex, rawPt)
+      const stepsPt = PT_INSTRUCTIONS[ex.id] || []
+      const stepsEn = ex.st || []
       list.push({
         id: ex.id,
         nameEn: ex.n,
@@ -137,6 +139,10 @@ export function getPendingExercises() {
         eq: ex.eq,
         bp: ex.bp,
         tg: ex.tg,
+        mg: ex.mg,
+        sm: ex.sm || [],
+        stepsPt,
+        stepsEn,
         score,
       })
     }
@@ -145,6 +151,62 @@ export function getPendingExercises() {
   return list.sort((a, b) => b.score - a.score || a.namePt.localeCompare(b.namePt, 'pt-BR'))
 }
 
+/**
+ * Generates the complete, rigorous IA prompt for generating consistent animation sprite frames.
+ * Ensures fixed camera angle, stationary background, zero screen shake, and complete biomechanical motion.
+ */
+export function generateSpritePrompt(item) {
+  const namePt = item.namePt || ''
+  const nameEn = item.nameEn || ''
+  const eq = item.eq || 'body weight'
+  const bp = item.bp || ''
+  const tg = item.tg || ''
+
+  // Format biomechanical execution steps
+  let executionGuide = ''
+  if (Array.isArray(item.stepsPt) && item.stepsPt.length) {
+    executionGuide = item.stepsPt.map((step, i) => `${i + 1}. ${step}`).join('\n')
+  } else if (Array.isArray(item.stepsEn) && item.stepsEn.length) {
+    executionGuide = item.stepsEn.map((step, i) => `${i + 1}. ${step}`).join('\n')
+  }
+
+  return `### EXERCÍCIO: ${namePt.toUpperCase()} (${nameEn})
+- Equipamento: ${eq}
+- Região do corpo: ${bp} | Foco muscular: ${tg}
+
+---
+
+### INSTRUÇÃO DE CRIAÇÃO DOS SPRITES DE ANIMAÇÃO (CICLO COMPLETO DO MOVIMENTO):
+
+Crie uma sequência de 4 imagens (frames) que representem o ciclo COMPLETO e biomecanicamente correto da repetição do exercício, para gerar uma animação fluida em loop (1 → 2 → 3 → 4 → repete):
+
+1. **FRAME 1 (POSIÇÃO INICIAL):**
+   - O modelo na postura inicial exata do exercício, com pegada/apoio corretos, corpo alinhado e pronto para iniciar o movimento.
+
+2. **FRAME 2 (FASE DE TRANSIÇÃO / CONCÊNTRICA OU EXCÊNTRICA):**
+   - Meio do caminho do movimento. A carga/corpo se deslocando de forma suave e contínua em direção ao ponto de máxima contração ou máxima amplitude.
+
+3. **FRAME 3 (PICO DO MOVIMENTO / MÁXIMA AMPLITUDE):**
+   - O ponto ápice do exercício (ex: contração máxima ou flexão/extensão máxima controlada). Amplitude completa com boa postura biomecânica.
+
+4. **FRAME 4 (RETORNO CONTROLADO):**
+   - Meio do caminho no retorno para a posição inicial. Transição suave que conecta perfeitamente de volta ao FRAME 1 sem saltos.
+
+---
+
+### REGRAS OBRIGATÓRIAS DE ÂNGULO E CONSISTÊNCIA VISUAL:
+- **CÂMERA RIGOROSAMENTE FIXA:** Ângulo estático fixo (sem zoom, sem rotação de câmera, sem cortes e sem mudança de enquadramento entre os frames).
+- **SEM MOVIMENTO DE TELA:** O fundo, os pesos/aparelhos fixos e os pés/apoios estáveis devem permanecer EXATAMENTE na mesma posição em todas as 4 imagens para não haver tremor ("screen shake") quando a animação rodar em loop.
+- **ISOLAMENTO / FUNDO:** Fundo uniforme ou transparente limpo, modelo perfeitamente centralizado com margem de segurança ao redor para que nenhuma parte do corpo saia da tela durante a execução.
+- **PROPORÇÃO E RESOLUÇÃO:** Quadrado (1:1), 1024x1024, resolução nítida.
+- **ILUMINAÇÃO CONSISTENTE:** Mesma direção de luz e sombras em todos os 4 frames.
+
+---
+
+### BIOMECÂNICA / PASSO A PASSO DO EXERCÍCIO:
+${executionGuide || 'Execute a repetição completa com postura ereta, abdômen contraído e amplitude controlada.'}
+`
+}
+
 export const TOTAL_CATALOGUE_EXERCISES = SOURCE_EXERCISES.length
 export const ACTIVE_SPRITE_COUNT = ACTIVE_SPRITE_IDS.size
-

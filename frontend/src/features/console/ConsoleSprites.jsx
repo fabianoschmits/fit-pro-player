@@ -5,6 +5,7 @@ import { AccessGate, useConsoleAccess } from './ConsoleAccess.jsx'
 import { Empty, SectionBody } from './ConsoleUI.jsx'
 import {
   ACTIVE_SPRITE_COUNT,
+  generateSpritePrompt,
   getPendingExercises,
   TOTAL_CATALOGUE_EXERCISES,
 } from '../../lib/admin-pending-sprites.js'
@@ -78,9 +79,9 @@ export default function ConsoleSprites() {
     })
   }
 
-  // Copy exercise name and keep marked as copied until marked as done
-  const handleCopyName = (id, namePt, nameEn) => {
-    const textToCopy = `${namePt} (${nameEn})`
+  // Copy complete IA sprite generation instructions for the exercise
+  const handleCopyPrompt = item => {
+    const textToCopy = generateSpritePrompt(item)
     if (navigator?.clipboard?.writeText) {
       navigator.clipboard.writeText(textToCopy).catch(() => {})
     } else {
@@ -97,7 +98,7 @@ export default function ConsoleSprites() {
     }
 
     setCopiedMap(prev => {
-      const next = { ...prev, [id]: true }
+      const next = { ...prev, [item.id]: true }
       saveStorageMap(COPIED_SPRITES_STORAGE_KEY, next)
       return next
     })
@@ -309,16 +310,16 @@ export default function ConsoleSprites() {
 
                       {/* Actions side column */}
                       <div className="console-sprite-actions-col">
-                        {/* Copy name button */}
+                        {/* Copy sprite generation prompt button */}
                         <button
                           type="button"
                           className={`console-sprite-copy-btn ${isCopied ? 'is-copied' : ''}`}
-                          onClick={() => handleCopyName(item.id, item.namePt, item.nameEn)}
-                          title="Copiar nome do exercício"
-                          aria-label={`Copiar nome de ${item.namePt}`}
+                          onClick={() => handleCopyPrompt(item)}
+                          title="Copiar prompt completo para IA gerar os sprites com movimento completo e câmera fixa"
+                          aria-label={`Copiar prompt de ${item.namePt}`}
                         >
                           <Icon name={isCopied ? 'check' : 'copy'} />
-                          <span>{isCopied ? 'Copiado' : 'Copiar'}</span>
+                          <span>{isCopied ? 'Copiado!' : 'Copiar prompt'}</span>
                         </button>
 
                         {/* In completed list: button to restore back to pending list */}
