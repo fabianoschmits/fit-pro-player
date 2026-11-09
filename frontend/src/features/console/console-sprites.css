@@ -67,6 +67,81 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Quick Metrics Cards: side-by-side, compact, centered, small font to fit all text */
+.console-sprites-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.console-sprites-metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: var(--surface, #1b211f);
+  border: 1px solid var(--sep, rgba(255, 255, 255, 0.08));
+  min-width: 0;
+}
+
+.console-sprites-metric-card.is-active-card {
+  border-color: rgba(69, 217, 183, 0.25);
+  background: color-mix(in srgb, var(--surface, #1b211f) 92%, #45d9b7);
+}
+
+.console-sprites-metric-card.is-pending-card {
+  border-color: rgba(245, 158, 11, 0.25);
+  background: color-mix(in srgb, var(--surface, #1b211f) 92%, #f59e0b);
+}
+
+.console-sprites-metric-card.is-done-card {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: color-mix(in srgb, var(--surface, #1b211f) 92%, #3b82f6);
+}
+
+.console-sprites-metric-val {
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  color: var(--label, #fff);
+  margin-bottom: 3px;
+}
+
+.is-active-card .console-sprites-metric-val {
+  color: var(--acc, #45d9b7);
+}
+
+.is-pending-card .console-sprites-metric-val {
+  color: #fbbf24;
+}
+
+.is-done-card .console-sprites-metric-val {
+  color: #60a5fa;
+}
+
+.console-sprites-metric-title {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--label, #fff);
+  line-height: 1.25;
+  white-space: normal;
+  display: block;
+}
+
+.console-sprites-metric-sub {
+  font-size: 10px;
+  color: var(--label-2, #888);
+  line-height: 1.25;
+  margin-top: 2px;
+  white-space: normal;
+  display: block;
+}
+
 .console-sprites-filter-bar {
   display: flex;
   align-items: center;
@@ -116,7 +191,7 @@
 .console-sprites-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .console-sprite-item {
@@ -135,10 +210,15 @@
   border-color: rgba(69, 217, 183, 0.2);
 }
 
+.console-sprite-item.is-item-copied {
+  border-color: rgba(69, 217, 183, 0.4);
+  background: color-mix(in srgb, var(--surface, #1b211f) 88%, rgba(69, 217, 183, 0.3));
+}
+
 .console-sprite-item.is-completed {
-  opacity: 0.6;
-  background: rgba(0, 0, 0, 0.18);
-  border-color: rgba(69, 217, 183, 0.25);
+  opacity: 0.75;
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(69, 217, 183, 0.2);
 }
 
 .console-sprite-item.is-completed .console-sprite-name-pt {
@@ -173,13 +253,21 @@
 .console-sprite-check-btn:hover {
   border-color: var(--acc, #45d9b7);
   color: var(--acc, #45d9b7);
-  background: rgba(69, 217, 183, 0.08);
+  background: rgba(69, 217, 183, 0.12);
+  transform: scale(1.05);
 }
 
-.console-sprite-check-btn.is-checked {
-  background: var(--acc, #45d9b7);
-  border-color: var(--acc, #45d9b7);
-  color: #0d1e1a;
+.console-sprite-done-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(69, 217, 183, 0.15);
+  border: 1.5px solid rgba(69, 217, 183, 0.35);
+  color: var(--acc, #45d9b7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
 }
 
 .console-sprite-info {
@@ -188,6 +276,13 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.console-sprite-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .console-sprite-name-pt {
@@ -199,6 +294,19 @@
   text-overflow: ellipsis;
 }
 
+.console-sprite-copied-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(69, 217, 183, 0.2);
+  color: var(--acc, #45d9b7);
+  border: 1px solid rgba(69, 217, 183, 0.35);
+  flex: none;
+}
+
 .console-sprite-name-en {
   font-size: 12px;
   color: var(--label-2, #888);
@@ -207,19 +315,26 @@
   text-overflow: ellipsis;
 }
 
+.console-sprite-actions-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex: none;
+}
+
 .console-sprite-copy-btn {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 10px;
-  border-radius: 8px;
+  padding: 5px 10px;
+  border-radius: 7px;
   border: 1px solid var(--sep, rgba(255, 255, 255, 0.12));
   background: rgba(255, 255, 255, 0.04);
   color: var(--label, #fff);
   font-size: 12px;
   font-weight: 550;
   cursor: pointer;
-  flex: none;
   transition: all 0.15s ease;
 }
 
@@ -230,8 +345,48 @@
 }
 
 .console-sprite-copy-btn.is-copied {
-  background: rgba(69, 217, 183, 0.18);
+  background: rgba(69, 217, 183, 0.2);
   border-color: var(--acc, #45d9b7);
   color: var(--acc, #45d9b7);
+  font-weight: 600;
 }
 
+.console-sprite-restore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: transparent;
+  color: var(--label-2, #888);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.console-sprite-restore-btn:hover {
+  border-color: #60a5fa;
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+@media (max-width: 600px) {
+  .console-sprites-metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .console-sprites-metric-card {
+    padding: 8px 4px;
+  }
+  .console-sprites-metric-val {
+    font-size: 16px;
+  }
+  .console-sprites-metric-title {
+    font-size: 10px;
+  }
+  .console-sprites-metric-sub {
+    font-size: 9px;
+  }
+}

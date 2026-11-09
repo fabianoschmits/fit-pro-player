@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../../components/Icon.jsx'
 import ConsoleShell from './ConsoleLayout.jsx'
 import { AccessGate, useConsoleAccess } from './ConsoleAccess.jsx'
-import { Chip, Empty, Loading, MetricCard, SectionBody } from './ConsoleUI.jsx'
+import { Empty, SectionBody } from './ConsoleUI.jsx'
 import {
   ACTIVE_SPRITE_COUNT,
   getPendingExercises,
@@ -11,10 +11,11 @@ import {
 import './console-sprites.css'
 
 const COMPLETED_SPRITES_STORAGE_KEY = 'fpp_admin_completed_sprites'
+const COPIED_SPRITES_STORAGE_KEY = 'fpp_admin_copied_sprites'
 
-function readCompletedMap() {
+function readStorageMap(key) {
   try {
-    const raw = localStorage.getItem(COMPLETED_SPRITES_STORAGE_KEY)
+    const raw = localStorage.getItem(key)
     if (!raw) return {}
     return JSON.parse(raw) || {}
   } catch {
@@ -22,21 +23,21 @@ function readCompletedMap() {
   }
 }
 
-function saveCompletedMap(map) {
+function saveStorageMap(key, map) {
   try {
-    localStorage.setItem(COMPLETED_SPRITES_STORAGE_KEY, JSON.stringify(map))
+    localStorage.setItem(key, JSON.stringify(map))
   } catch (error) {
-    console.error('Failed to save completed sprites to localStorage', error)
+    console.error(`Failed to save ${key} to localStorage`, error)
   }
 }
 
 export default function ConsoleSprites() {
   const { userId, allowed } = useConsoleAccess()
-  const [completedMap, setCompletedMap] = useState(() => readCompletedMap())
+  const [completedMap, setCompletedMap] = useState(() => readStorageMap(COMPLETED_SPRITES_STORAGE_KEY))
+  const [copiedMap, setCopiedMap] = useState(() => readStorageMap(COPIED_SPRITES_STORAGE_KEY))
   const [filterMode, setFilterMode] = useState('pending') // 'pending' | 'completed' | 'all'
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
-  const [copiedId, setCopiedId] = useState(null)
   const searchInputRef = useRef(null)
 
   // Load pending list sorted by internet popularity / relevance
@@ -49,26 +50,35 @@ export default function ConsoleSprites() {
     }
   }, [searchOpen])
 
-  // Clear copy feedback after 2 seconds
-  useEffect(() => {
-    if (!copiedId) return undefined
-    const timer = setTimeout(() => setCopiedId(null), 2000)
-    return () => clearTimeout(timer)
-  }, [copiedId])
-
-  const toggleExerciseCompleted = id => {
+  // Mark as completed (removes from pending, adds to completed, unmarks copied)
+  const markAsCompleted = id => {
     setCompletedMap(prev => {
+      const next = { ...prev, [id]: { completedAt: new Date().toISOString() } }
+      saveStorageMap(COMPLETED_SPRITES_STORAGE_KEY, next)
+      return next
+    })
+    // Unmark copied once marked as done
+    setCopiedMap(prev => {
+      if (!prev[id]) return prev
       const next = { ...prev }
-      if (next[id]) {
-        delete next[id]
-      } else {
-        next[id] = { completedAt: new Date().toISOString() }
-      }
-      saveCompletedMap(next)
+      delete next[id]
+      saveStorageMap(COPIED_SPRITES_STORAGE_KEY, next)
       return next
     })
   }
 
+  // Restore exercise back to pending list
+  const restoreToPending = id => {
+    setCompletedMap(prev => {
+      if (!prev[id]) return prev
+      const next = { ...prev }
+      delete next[id]
+      saveStorageMap(COMPLETED_SPRITES_STORAGE_KEY, next)
+      return next
+    })
+  }
+
+  // Copy exercise name and keep marked as copied until marked as done
   const handleCopyName = (id, namePt, nameEn) => {
     const textToCopy = `${namePt} (${nameEn})`
     if (navigator?.clipboard?.writeText) {
@@ -85,7 +95,12 @@ export default function ConsoleSprites() {
       }
       document.body.removeChild(textArea)
     }
-    setCopiedId(id)
+
+    setCopiedMap(prev => {
+      const next = { ...prev, [id]: true }
+      saveStorageMap(COPIED_SPRITES_STORAGE_KEY, next)
+      return next
+    })
   }
 
   const completedCount = useMemo(
@@ -168,26 +183,25 @@ export default function ConsoleSprites() {
             </div>
           )}
 
-          {/* Quick Metrics */}
-          <div className="cx-metric-grid" style={{ marginBottom: 20 }}>
-            <MetricCard
-              label="Sprites já ativos"
-              value={ACTIVE_SPRITE_COUNT}
-              sub={`No app de ${TOTAL_CATALOGUE_EXERCISES} do catálogo`}
-              accent="ok"
-            />
-            <MetricCard
-              label="Restantes para desenhar"
-              value={remainingCount}
-              sub="Ordenados por relevância e busca"
-              accent="warn"
-            />
-            <MetricCard
-              label="Marcados como prontos"
-              value={completedCount}
-              sub="Salvo automaticamente localmente"
-              accent="info"
-            />
+          {/* Quick Metrics: Compact, side-by-side, centered with legible small text */}
+          <div className="console-sprites-metrics-grid">
+            <div className="console-sprites-metric-card is-active-card">
+              <span className="console-sprites-metric-val">{ACTIVE_SPRITE_COUNT}</span>
+              <strong className="console-sprites-metric-title">Sprites já ativos</strong>
+              <small className="console-sprites-metric-sub">No app de {TOTAL_CATALOGUE_EXERCISES} do catálogo</small>
+            </div>
+
+            <div className="console-sprites-metric-card is-pending-card">
+              <span className="console-sprites-metric-val">{remainingCount}</span>
+              <strong className="console-sprites-metric-title">Restantes para desenhar</strong>
+              <small className="console-sprites-metric-sub">Ordenados por relevância e busca</small>
+            </div>
+
+            <div className="console-sprites-metric-card is-done-card">
+              <span className="console-sprites-metric-val">{completedCount}</span>
+              <strong className="console-sprites-metric-title">Marcados como prontos</strong>
+              <small className="console-sprites-metric-sub">Salvo automaticamente</small>
+            </div>
           </div>
 
           {/* Filter options bar */}
@@ -232,7 +246,11 @@ export default function ConsoleSprites() {
           {/* Exercise list */}
           <section aria-label="Lista de exercícios">
             <div className="console-list-heading">
-              <h2>Exercícios sem sprites (ordenados por relevância)</h2>
+              <h2>
+                {filterMode === 'completed'
+                  ? 'Exercícios já feitos'
+                  : 'Exercícios sem sprites (ordenados por relevância)'}
+              </h2>
             </div>
 
             {filteredList.length === 0 ? (
@@ -250,46 +268,73 @@ export default function ConsoleSprites() {
               <SectionBody className="console-sprites-list">
                 {filteredList.map((item, index) => {
                   const isDone = Boolean(completedMap[item.id])
-                  const isCopied = copiedId === item.id
+                  const isCopied = Boolean(copiedMap[item.id])
 
                   return (
                     <div
                       key={item.id}
-                      className={`console-sprite-item ${isDone ? 'is-completed' : ''}`}
+                      className={`console-sprite-item ${isDone ? 'is-completed' : ''} ${isCopied ? 'is-item-copied' : ''}`}
                     >
-                      <span className="console-sprite-index" title={`Ordem de relevância #${index + 1}`}>
+                      <span className="console-sprite-index" title={`Ordem #${index + 1}`}>
                         {index + 1}
                       </span>
 
-                      {/* Checkbox button to mark as completed (auto-saved) */}
-                      <button
-                        type="button"
-                        className={`console-sprite-check-btn ${isDone ? 'is-checked' : ''}`}
-                        onClick={() => toggleExerciseCompleted(item.id)}
-                        title={isDone ? 'Marcar como não feito' : 'Marcar como feito'}
-                        aria-label={isDone ? `Desmarcar ${item.namePt}` : `Marcar ${item.namePt} como feito`}
-                        aria-pressed={isDone}
-                      >
-                        <Icon name={isDone ? 'check' : 'plus'} />
-                      </button>
+                      {/* Action button: in pending list, clicking + marks as done and moves it to completed */}
+                      {!isDone ? (
+                        <button
+                          type="button"
+                          className="console-sprite-check-btn"
+                          onClick={() => markAsCompleted(item.id)}
+                          title="Marcar como feito (move para Já feitos)"
+                          aria-label={`Marcar ${item.namePt} como feito`}
+                        >
+                          <Icon name="plus" />
+                        </button>
+                      ) : (
+                        <span className="console-sprite-done-badge" title="Já concluído">
+                          <Icon name="check" />
+                        </span>
+                      )}
 
                       {/* Exercise Name (PT + EN) */}
                       <div className="console-sprite-info">
-                        <strong className="console-sprite-name-pt">{item.namePt}</strong>
+                        <div className="console-sprite-name-row">
+                          <strong className="console-sprite-name-pt">{item.namePt}</strong>
+                          {isCopied && !isDone && (
+                            <span className="console-sprite-copied-tag">Copiado</span>
+                          )}
+                        </div>
                         <span className="console-sprite-name-en">{item.nameEn}</span>
                       </div>
 
-                      {/* Copy name button */}
-                      <button
-                        type="button"
-                        className={`console-sprite-copy-btn ${isCopied ? 'is-copied' : ''}`}
-                        onClick={() => handleCopyName(item.id, item.namePt, item.nameEn)}
-                        title="Copiar nome do exercício"
-                        aria-label={`Copiar nome de ${item.namePt}`}
-                      >
-                        <Icon name={isCopied ? 'check' : 'copy'} />
-                        <span>{isCopied ? 'Copiado!' : 'Copiar'}</span>
-                      </button>
+                      {/* Actions side column */}
+                      <div className="console-sprite-actions-col">
+                        {/* Copy name button */}
+                        <button
+                          type="button"
+                          className={`console-sprite-copy-btn ${isCopied ? 'is-copied' : ''}`}
+                          onClick={() => handleCopyName(item.id, item.namePt, item.nameEn)}
+                          title="Copiar nome do exercício"
+                          aria-label={`Copiar nome de ${item.namePt}`}
+                        >
+                          <Icon name={isCopied ? 'check' : 'copy'} />
+                          <span>{isCopied ? 'Copiado' : 'Copiar'}</span>
+                        </button>
+
+                        {/* In completed list: button to restore back to pending list */}
+                        {isDone && (
+                          <button
+                            type="button"
+                            className="console-sprite-restore-btn"
+                            onClick={() => restoreToPending(item.id)}
+                            title="Voltar para a lista de não feitos"
+                            aria-label={`Voltar ${item.namePt} para não feitos`}
+                          >
+                            <Icon name="reset" />
+                            <span>Voltar</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
