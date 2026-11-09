@@ -175,20 +175,30 @@ it('stops work and observers on disposal without leaving an invisible touch bloc
   expect(layer.dataset.launchCycle).toBe(cycle); expect(vi.getTimerCount()).toBe(0)
 })
 
-it('covers a real PWA return before presenting one new cycle and preserves the live edit', async () => {
+it('does not replay when returning quickly to the PWA and preserves the live edit', async () => {
   controller = createLaunchController({ isReady: () => true })
   await advance(4000)
   const input = document.querySelector('input'); input.value = 'Treino em andamento'; input.focus()
   const cycle = Number(layer.dataset.launchCycle)
-  visibility('hidden'); expect(layer.hidden).toBe(false)
+  visibility('hidden')
   await advance(600); visibility('visible'); restore(); window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
-  expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
-  expect(layer.hidden).toBe(false)
+  expect(Number(layer.dataset.launchCycle)).toBe(cycle)
+  expect(layer.hidden).toBe(true)
   expect(document.querySelector('input')).toBe(input); expect(input.value).toBe('Treino em andamento')
   expect(document.activeElement).toBe(input)
-  await advance(4000); expect(layer.hidden).toBe(true)
   window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('resize'))
+  expect(Number(layer.dataset.launchCycle)).toBe(cycle)
+})
+
+it('replays launch after long background suspension (e.g. 5+ minutes)', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(4000)
+  const cycle = Number(layer.dataset.launchCycle)
+  visibility('hidden')
+  await advance(5 * 60 * 1000 + 1000); visibility('visible'); restore()
   expect(Number(layer.dataset.launchCycle)).toBe(cycle + 1)
+  expect(layer.hidden).toBe(false)
+  await advance(4000); expect(layer.hidden).toBe(true)
 })
 
 it('deduplicates transient visibility and BFCache events without replaying a PWA cycle', async () => {
@@ -197,7 +207,7 @@ it('deduplicates transient visibility and BFCache events without replaying a PWA
   visibility('hidden'); await advance(50); visibility('visible'); restore()
   expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
   await advance(1000); restore(); restore()
-  expect(layer.hidden).toBe(false); expect(layer.dataset.launchCycle).toBe('2')
+  expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
 })
 
 it('keeps a closed persistent curtain and falls back to its unmasked rect when masking is unsupported', async () => {
@@ -219,7 +229,7 @@ it('invalidates retained callbacks from a completed generation before reopening 
   controller = createLaunchController({ isReady: () => true })
   await advance(4000)
   const stale = [...callbacks]
-  visibility('hidden'); await advance(600); visibility('visible')
+  visibility('hidden'); await advance(5 * 60 * 1000 + 1000); visibility('visible')
   for (const callback of stale) callback(performance.now() + 100000)
   expect(layer.hidden).toBe(false); expect(layer.dataset.state).toBe('loading')
   expect(layer.dataset.launchCycle).toBe('2')

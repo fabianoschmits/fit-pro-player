@@ -254,7 +254,7 @@ test('a delayed animation frame cannot skip the tunnel after a fast boot', async
   expect(await layer.getAttribute('data-launch-cycle')).toBe('1')
 })
 
-test('returning to the installed PWA replays exactly once and preserves workout, rest and route', async ({ page }) => {
+test('returning quickly to the installed PWA does not replay launch and preserves workout, rest and route', async ({ page }) => {
   const state = stateFixture(); state.routines[0].ex[0].sets = 2
   await seed(page, { state }); await installed(page)
   await page.goto('/?launch_probe=callback#/workout')
@@ -271,19 +271,18 @@ test('returning to the installed PWA replays exactly once and preserves workout,
   const before = await snapshot()
   await page.evaluate(() => { window.__launchRoot = document.getElementById('root').firstElementChild })
   await reopen(page)
-  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '2')
+  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '1')
   await expect(page.locator('#fpp-launch')).toBeHidden()
   expect(await snapshot()).toEqual(before)
   expect(await page.evaluate(() => window.__launchRoot === document.getElementById('root').firstElementChild)).toBe(true)
   await expect(page.locator('#timer')).toBeVisible()
 })
 
-test('reduced motion fades safely without expanding the tunnel, including on PWA resume', async ({ page }) => {
+test('reduced motion fades safely on initial launch without replaying on quick resume', async ({ page }) => {
   await seed(page); await installed(page); await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/#/home'); await expect(page.locator('#fpp-launch')).toBeHidden()
   await reopen(page)
-  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '2')
-  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-reduced-motion', 'true')
+  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '1')
   await expect(page.locator('#fpp-launch')).toBeHidden()
   expect(await page.locator('[data-launch-hole]').getAttribute('transform')).toBeNull()
 })

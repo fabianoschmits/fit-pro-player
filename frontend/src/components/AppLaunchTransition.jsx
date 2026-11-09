@@ -8,7 +8,8 @@ import '../fpp-launch.css'
 const owners = new WeakMap()
 const MINIMUM = 900, LOADING_VARIATION = 900, SETTLE = 120, REVEAL = 1400, FINISH = 100
 const ROUTE_LIMIT = 4000, SAFETY_LIMIT = 30000
-const RESUME_MINIMUM = 250, RESUME_DEDUP = 600
+// Only replay the launch presentation if the app was suspended/in background for at least 5 minutes
+const RESUME_MINIMUM = 5 * 60 * 1000, RESUME_DEDUP = 600
 
 const LOGO_START_SCALE = 180 / 1140
 // (650,235) lies inside the first P's solid lower bowl, with a radius-10
@@ -247,9 +248,8 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const visibility = () => {
     if (document.visibilityState === 'hidden') {
       if (hiddenAt === null) hiddenAt = lifecycleNow()
-      // Arm the closed curtain before the OS can show a restored document.
-      // A brief visibility blip can roll back this arm without a new cycle.
-      if (installed() && !active && !armed) { generation++; clearWork(); protect(); armed = true }
+      // Arm the closed curtain only if away long enough, never on quick minimizes.
+      // A brief visibility blip will not flash or replay the tunnel.
       if (active) layer.setAttribute('data-paused', '')
     } else resume()
   }
@@ -260,18 +260,20 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     const separate = lifecycleNow() - lastResume >= RESUME_DEDUP
     if (away !== null) lastResume = lifecycleNow()
     if (installed() && away !== null && away >= RESUME_MINIMUM && separate) {
-      // An unfinished cycle continues safely; a completed one starts exactly once.
+      // An unfinished cycle continues safely; a completed one starts only after long absence
       if (armed || !active) start()
     } else if (armed) complete()
     check()
   }
   const pagehide = () => {
     if (hiddenAt === null) hiddenAt = lifecycleNow()
-    if (installed() && !active && !armed) { generation++; clearWork(); protect(); armed = true }
   }
   const pageshow = event => {
     if (event.persisted && installed() && hiddenAt === null && !active && !armed && lifecycleNow() - lastResume >= RESUME_DEDUP) {
-      lastResume = lifecycleNow(); start()
+      const away = lifecycleNow() - lastResume
+      if (away >= RESUME_MINIMUM) {
+        lastResume = lifecycleNow(); start()
+      } else check()
     } else resume()
   }
   const resize = () => { if (active) dimensionsDirty = true }
