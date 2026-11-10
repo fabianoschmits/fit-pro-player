@@ -472,11 +472,6 @@ export default function ConsoleSprites() {
                           <span className="console-sprite-id-badge" title="ID oficial do catálogo">
                             #{item.id}
                           </span>
-                          {isCopied && !isDone && (
-                            <span className="console-sprite-copied-tag">
-                              {copiedMode === 'name' ? 'Nome copiado' : 'Prompt copiado'}
-                            </span>
-                          )}
                         </div>
 
                         <span className="console-sprite-name-en">{item.nameEn}</span>
