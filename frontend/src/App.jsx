@@ -24,6 +24,8 @@ import Toast from './components/Toast.jsx'
 import { FppSkeleton } from './components/FppFeedback.jsx'
 import AvatarImage from './components/AvatarImage.jsx'
 import { ageFromBirthDate, currentProfileWeight, heightText, weightText } from './lib/profile.js'
+import { calculateBmi, getBmiDetails } from './lib/bmi.js'
+import BmiModal from './components/BmiModal.jsx'
 import { toDisplayMass } from './lib/mass.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import RestTimer from './components/RestTimer.jsx'
@@ -187,6 +189,21 @@ export function ProfileHeader({ S, preview }) {
   const progress = goalProgressPercent == null ? 0 : goalProgressPercent
   const currentWeight = currentProfileWeight(S)
   const age = ageFromBirthDate(profile?.birthDate)
+  const bmiValue = calculateBmi(currentWeight, profile?.heightCm)
+  const bmiDetails = getBmiDetails(bmiValue, profile?.heightCm)
+
+  const openBmiModal = () => {
+    useUI.getState().openSheet(close => (
+      <BmiModal
+        bmi={bmiValue}
+        heightCm={profile?.heightCm}
+        weightKg={currentWeight}
+        unit={S.displayUnit || 'kg'}
+        close={close}
+      />
+    ), { className: 'bmi-sheet' })
+  }
+
   const facts = [
     t('{0} years', age ?? '--'),
     `${heightText(profile?.heightCm) || '--'} m`,
@@ -250,7 +267,28 @@ export function ProfileHeader({ S, preview }) {
       <div className="profile-hero-copy">
         <strong className="profile-hero-name">{profile.name}</strong>
       </div>
-      <div className="profile-hero-facts">{facts.join(' · ')}</div>
+      <div className="profile-hero-facts">
+        <span>{facts.join(' · ')}</span>
+        {bmiDetails && (
+          <>
+            <span className="profile-hero-fact-sep" aria-hidden="true">·</span>
+            <button
+              type="button"
+              className="profile-hero-bmi-badge tap"
+              onClick={openBmiModal}
+              style={{
+                color: bmiDetails.color,
+                backgroundColor: bmiDetails.badgeBg,
+                borderColor: `color-mix(in srgb, ${bmiDetails.color} 40%, transparent)`,
+              }}
+              title="Clique para ver detalhes do seu IMC"
+              aria-label={`IMC ${bmiDetails.bmi.toFixed(1).replace('.', ',')} (${bmiDetails.label}). Clique para ver detalhes.`}
+            >
+              <span>IMC {bmiDetails.bmi.toFixed(1).replace('.', ',')}</span>
+            </button>
+          </>
+        )}
+      </div>
       <div className="profile-hero-goal">
         <div className="profile-hero-goal-head" aria-hidden="true">
           <span>{t('Weight goal')}</span>

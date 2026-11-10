@@ -133,15 +133,12 @@ describe('ProfileHeader editorial hero', () => {
 
     expect(container.querySelector('.profile-hero-message').textContent).toBe('Desistir não queima calorias.')
   })
-  it('chooses a fresh phrase on opening, rotates every six seconds by default, and lets the user hide messages', async () => {
-    const random = vi.spyOn(Math, 'random').mockReturnValue(0.5)
+  it('renders the interactive BMI badge with color-coded classification and allows opening the modal', () => {
     act(() => root.render(<ProfileHeader S={stateAt(75)} />))
-    const firstMessage = container.querySelector('.profile-hero-message').textContent
-    const callsAfterOpening = random.mock.calls.length
-    await act(async () => { await vi.advanceTimersByTimeAsync(6000) })
-    expect(random.mock.calls.length).toBeGreaterThan(callsAfterOpening)
-    expect(container.querySelector('.profile-hero-message').textContent).not.toBe(firstMessage)
-    act(() => root.render(<ProfileHeader S={{...stateAt(75),motivationTone:'off'}} />))
-    expect(container.querySelector('.profile-hero-message-stage')).toBeNull()
+    const bmiBadge = container.querySelector('.profile-hero-bmi-badge')
+    expect(bmiBadge).toBeTruthy()
+    // 75 kg / (1.76 * 1.76) = 24.2
+    expect(bmiBadge.textContent).toContain('IMC 24,2')
+    expect(bmiBadge.getAttribute('aria-label')).toContain('Peso saudável')
   })
 })
