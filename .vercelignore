@@ -1,8 +1,11 @@
 .env
 .env.*
 !frontend/.env.vercel
-data/
+# Apenas a pasta /data/ da raiz (runtime local); preserva frontend/src/data/
+/data/
 media/
+# Garantir explicitamente que os dados de sprites chegam ao build
+!frontend/src/data/
 **/node_modules/
 frontend/dist/
 frontend/android/
