@@ -53,3 +53,6 @@ film/
 test-results/
 skills-lock.json
 frontend/test-results-*/
+
+# Logs internos de auditoria
+.audit-flow/
