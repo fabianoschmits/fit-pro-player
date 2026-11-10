@@ -488,6 +488,14 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
 .corner-nav-tab.is-active{color:var(--acc);background:var(--acc-soft)}
 .corner-nav-tab.is-active::after{content:"";position:absolute;left:25%;right:25%;bottom:3px;height:2px;background:var(--acc)}
 .corner-nav-tab--start .corner-nav-icon{background:var(--acc);color:var(--on-acc);border-radius:8px}
+/* Tamanhos base dos ícones no mobile (barra sempre aberta) */
+:is(.corner-nav-tab,.corner-nav-more-tab) .corner-nav-icon{
+  display:flex;align-items:center;justify-content:center;
+  width:28px;height:28px;
+}
+:is(.corner-nav-tab,.corner-nav-more-tab) .corner-nav-icon .icn{
+  width:20px;height:20px;
+}
 .corner-nav-more-trigger{
   position:absolute;z-index:3;left:7px;bottom:calc(100% + 6px);width:42px;height:24px;padding:0;
   display:grid;place-items:center;border-radius:12px;background:color-mix(in srgb,var(--bg-el) 88%,transparent);color:var(--acc);
