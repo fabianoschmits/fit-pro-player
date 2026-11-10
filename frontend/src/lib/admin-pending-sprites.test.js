@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   getPendingExercises,
+  getRemainingBacklogExercises,
   getExercisePrompt,
   TOTAL_CATALOGUE_EXERCISES,
   ACTIVE_SPRITE_COUNT,
@@ -114,6 +115,24 @@ describe('admin-pending-sprites & priority queue', () => {
     const ex1735 = pending.find(e => e.id === '1735')
     expect(ex1735).toBeDefined()
     expect(ex1735.needsReview).toBe(true)
+  })
+
+  it('returns all remaining 1068 exercises in the secondary backlog sorted by relevance', () => {
+    const backlog = getRemainingBacklogExercises()
+    expect(backlog.length).toBe(TOTAL_CATALOGUE_EXERCISES - ACTIVE_SPRITE_COUNT - TOTAL_PRIORITY_QUEUE_EXERCISES)
+    expect(backlog.length).toBe(1068)
+
+    // Ensure none of the priority 100 exercises leak into the secondary backlog
+    for (const item of backlog) {
+      expect(SPRITE_PRIORITY_QUEUE_SET.has(item.id)).toBe(false)
+      expect(item.hasPrompt).toBe(true)
+      expect(typeof item.score).toBe('number')
+    }
+
+    // Verify sorting by score descending
+    for (let i = 0; i < backlog.length - 1; i++) {
+      expect(backlog[i].score).toBeGreaterThanOrEqual(backlog[i + 1].score)
+    }
   })
 
   it('keeps active sprites count intact (156 sprites activos)', () => {

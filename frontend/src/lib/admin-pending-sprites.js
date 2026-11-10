@@ -164,6 +164,7 @@ export function getPendingExercises() {
         stepsPt,
         stepsEn,
         score: 0,
+        isPriority: true,
         // Prompt catalog metadata
         hasPrompt: Boolean(promptMeta),
         frameCount: promptMeta?.frameCount || null,
@@ -177,6 +178,49 @@ export function getPendingExercises() {
   }
 
   return list
+}
+
+/**
+ * Returns the secondary backlog of all remaining exercises (outside the 100 priority queue)
+ * that do NOT yet have sprites published, sorted by relevance score / popularity.
+ */
+export function getRemainingBacklogExercises() {
+  const list = []
+  for (const ex of SOURCE_EXERCISES) {
+    if (!ACTIVE_SPRITE_IDS.has(ex.id) && !SPRITE_PRIORITY_QUEUE_SET.has(ex.id)) {
+      const promptMeta = getPromptMetadata(ex.id)
+      const rawPt = promptMeta?.namePt || PT_EXERCISE_NAMES[ex.id] || ex.n
+      const ptName = formatExercisePtName(rawPt)
+      const score = calculateExerciseRelevance(ex, rawPt)
+      const stepsPt = PT_INSTRUCTIONS[ex.id] || []
+      const stepsEn = ex.st || []
+
+      list.push({
+        id: ex.id,
+        nameEn: ex.n,
+        namePt: ptName,
+        eq: ex.eq,
+        bp: ex.bp,
+        tg: ex.tg,
+        mg: ex.mg,
+        sm: ex.sm || [],
+        stepsPt,
+        stepsEn,
+        score,
+        isPriority: false,
+        // Prompt catalog metadata
+        hasPrompt: Boolean(promptMeta),
+        frameCount: promptMeta?.frameCount || null,
+        family: promptMeta?.family || 'indefinido',
+        status: promptMeta?.status || 'missing',
+        needsReview: promptMeta?.status === 'needs_review',
+        issues: promptMeta?.issues || [],
+        execution: promptMeta?.execution || null,
+      })
+    }
+  }
+
+  return list.sort((a, b) => b.score - a.score || a.namePt.localeCompare(b.namePt, 'pt-BR'))
 }
 
 /**

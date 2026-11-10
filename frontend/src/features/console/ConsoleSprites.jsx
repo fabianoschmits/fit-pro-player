@@ -7,6 +7,7 @@ import {
   ACTIVE_SPRITE_COUNT,
   getExercisePrompt,
   getPendingExercises,
+  getRemainingBacklogExercises,
   SPRITE_PRIORITY_QUEUE_SET,
   TOTAL_CATALOGUE_EXERCISES,
   TOTAL_PRIORITY_QUEUE_EXERCISES,
@@ -65,8 +66,15 @@ export default function ConsoleSprites() {
     }
   }, [])
 
-  // Load pending list sorted by internet popularity / relevance with new prompt metadata
-  const allPendingExercises = useMemo(() => getPendingExercises(), [])
+  // Active queue tab: 'priority' (os 100 selecionados) ou 'secondary' (os 1.068 demais ordenados por relevância)
+  const [activeQueueTab, setActiveQueueTab] = useState('priority') // 'priority' | 'secondary'
+
+  // Load priority exercises (100) and secondary backlog (1068)
+  const allPriorityExercises = useMemo(() => getPendingExercises(), [])
+  const allSecondaryExercises = useMemo(() => getRemainingBacklogExercises(), [])
+
+  // Current active pool of exercises based on the queue tab
+  const currentPoolExercises = activeQueueTab === 'priority' ? allPriorityExercises : allSecondaryExercises
 
   // Auto focus search field when expanded
   useEffect(() => {
@@ -191,22 +199,26 @@ export default function ConsoleSprites() {
   }
 
   const completedCount = useMemo(
-    () => Object.keys(completedMap).filter(id => SPRITE_PRIORITY_QUEUE_SET.has(id)).length,
-    [completedMap],
+    () => Object.keys(completedMap).filter(id => {
+      return activeQueueTab === 'priority'
+        ? SPRITE_PRIORITY_QUEUE_SET.has(id)
+        : !SPRITE_PRIORITY_QUEUE_SET.has(id)
+    }).length,
+    [completedMap, activeQueueTab],
   )
-  const remainingCount = Math.max(0, allPendingExercises.length - completedCount)
+  const remainingCount = Math.max(0, currentPoolExercises.length - completedCount)
 
-  // Count exercises with needs_review in the priority backlog
+  // Count exercises with needs_review in the current queue
   const reviewCount = useMemo(
-    () => allPendingExercises.filter(ex => ex.needsReview).length,
-    [allPendingExercises],
+    () => currentPoolExercises.filter(ex => ex.needsReview).length,
+    [currentPoolExercises],
   )
 
   // Filter based on completion status, review status and search query
   const filteredList = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR')
 
-    return allPendingExercises.filter(item => {
+    return currentPoolExercises.filter(item => {
       const isDone = Boolean(completedMap[item.id])
 
       if (filterMode === 'pending' && isDone) return false
@@ -218,7 +230,7 @@ export default function ConsoleSprites() {
       const text = `${item.id} ${item.namePt} ${item.nameEn} ${item.eq} ${item.bp} ${item.tg} ${item.family}`.toLocaleLowerCase('pt-BR')
       return text.includes(normalizedQuery)
     })
-  }, [allPendingExercises, completedMap, filterMode, query])
+  }, [currentPoolExercises, completedMap, filterMode, query])
 
   return (
     <AccessGate allowed={allowed}>
@@ -226,9 +238,13 @@ export default function ConsoleSprites() {
         <div className="cx-page-body fpp-console-page fpp-console-page--sprites">
           <div className="cx-page-head console-page-heading">
             <div>
-              <h1 className="cx-page-title">Fila prioritária de sprites</h1>
+              <h1 className="cx-page-title">
+                {activeQueueTab === 'priority' ? 'Fila prioritária de sprites' : 'Fila geral de sprites (Próxima etapa)'}
+              </h1>
               <p className="cx-page-sub">
-                100 exercícios selecionados para a próxima etapa de criação de sprites do Fit Pro Player.
+                {activeQueueTab === 'priority'
+                  ? '100 exercícios prioritários selecionados para a criação imediata de sprites do Fit Pro Player.'
+                  : `${allSecondaryExercises.length} exercícios restantes do catálogo ordenados por relevância e frequência de busca para as próximas etapas.`}
               </p>
             </div>
 
@@ -247,6 +263,36 @@ export default function ConsoleSprites() {
                 <span>{searchOpen ? 'Fechar busca' : 'Buscar exercício'}</span>
               </button>
             </div>
+          </div>
+
+          {/* Primary Queue Switcher: 100 Prioritários vs Fila Geral (Ordenada por Relevância) */}
+          <div className="console-sprites-queue-switcher" role="tablist" aria-label="Seleção da fila de trabalho">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeQueueTab === 'priority'}
+              className={`console-sprites-queue-tab ${activeQueueTab === 'priority' ? 'is-active' : ''}`}
+              onClick={() => {
+                setActiveQueueTab('priority')
+                setFilterMode('pending')
+              }}
+            >
+              <Icon name="star" />
+              <span>Fila prioritária (100 selecionados)</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeQueueTab === 'secondary'}
+              className={`console-sprites-queue-tab ${activeQueueTab === 'secondary' ? 'is-active' : ''}`}
+              onClick={() => {
+                setActiveQueueTab('secondary')
+                setFilterMode('pending')
+              }}
+            >
+              <Icon name="list" />
+              <span>Fila geral por relevância ({allSecondaryExercises.length})</span>
+            </button>
           </div>
 
           {/* Collapsible search bar */}
@@ -287,13 +333,17 @@ export default function ConsoleSprites() {
 
             <div className="console-sprites-metric-card is-pending-card">
               <span className="console-sprites-metric-val">{remainingCount}</span>
-              <strong className="console-sprites-metric-title">Prioritários sem sprites</strong>
-              <small className="console-sprites-metric-sub">De {allPendingExercises.length} na fila prioritária</small>
+              <strong className="console-sprites-metric-title">
+                {activeQueueTab === 'priority' ? 'Prioritários pendentes' : 'Restantes a desenhar'}
+              </strong>
+              <small className="console-sprites-metric-sub">
+                {activeQueueTab === 'priority' ? `De ${allPriorityExercises.length} nesta fila` : `De ${allSecondaryExercises.length} por relevância`}
+              </small>
             </div>
 
             <div className="console-sprites-metric-card is-done-card">
               <span className="console-sprites-metric-val">{completedCount}</span>
-              <strong className="console-sprites-metric-title">Concluídos nesta fila</strong>
+              <strong className="console-sprites-metric-title">Concluídos nesta aba</strong>
               <small className="console-sprites-metric-sub">Marcados pelo admin</small>
             </div>
 
@@ -323,7 +373,7 @@ export default function ConsoleSprites() {
                   aria-selected={filterMode === 'needs_review'}
                   className={`console-sprites-tab console-sprites-tab--review ${filterMode === 'needs_review' ? 'is-active' : ''}`}
                   onClick={() => setFilterMode('needs_review')}
-                  title="Exercícios da fila prioritária com pendências ou observações na fonte"
+                  title="Exercícios com pendências ou observações na fonte"
                 >
                   Revisão necessária ({reviewCount})
                 </button>
@@ -343,7 +393,7 @@ export default function ConsoleSprites() {
                   className={`console-sprites-tab ${filterMode === 'all' ? 'is-active' : ''}`}
                   onClick={() => setFilterMode('all')}
                 >
-                  Todos os priorizados ({allPendingExercises.length})
+                  Todos ({currentPoolExercises.length})
                 </button>
               </div>
 
@@ -358,12 +408,12 @@ export default function ConsoleSprites() {
             <div className="console-list-heading">
               <h2>
                 {filterMode === 'completed'
-                  ? 'Exercícios prioritários já concluídos'
+                  ? `Exercícios já concluídos (${activeQueueTab === 'priority' ? 'fila prioritária' : 'fila geral'})`
                   : filterMode === 'needs_review'
-                  ? 'Exercícios prioritários com revisão biomecânica necessária'
+                  ? 'Exercícios com revisão biomecânica necessária'
                   : filterMode === 'all'
-                  ? 'Todos os 100 exercícios prioritários'
-                  : 'Fila prioritária de sprites (100 selecionados)'}
+                  ? activeQueueTab === 'priority' ? 'Todos os 100 exercícios prioritários' : `Todos os ${allSecondaryExercises.length} exercícios da fila geral`
+                  : activeQueueTab === 'priority' ? 'Fila prioritária de sprites (100 selecionados)' : `Fila geral de sprites por relevância (${remainingCount} restantes)`}
               </h2>
             </div>
 
