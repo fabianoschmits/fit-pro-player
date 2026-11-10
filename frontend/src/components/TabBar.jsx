@@ -314,10 +314,7 @@ export default function TabBar({ onStart }) {
     drag.current = null
   }
   const toggleMenu = () => {
-    if (Date.now() < ignoreClickUntil.current) return
-    setIconActivation(value => value + 1)
-    setOpen(value => !value)
-    setMoreOpen(false)
+    // A barra permanece sempre aberta; a opção de recolher foi desativada a pedido
   }
   const moveMenu = () => {
     if (free) {
@@ -394,15 +391,11 @@ export default function TabBar({ onStart }) {
       <button type="button" ref={moreTrigger} className="corner-nav-more-trigger"
         aria-label={moreOpen ? 'Fechar mais opções' : 'Abrir mais opções'} aria-expanded={moreOpen} aria-controls="corner-nav-more"
         tabIndex={open ? undefined : -1} aria-hidden={!open} inert={!open}
+        onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}
         onClick={() => setMoreOpen(value => !value)}><Icon name={opensDown ? 'chevronDown' : 'chevronUp'} /></button>
       <div className="corner-nav-shell">
-        <button type="button" ref={toggleRef} className="corner-nav-toggle" aria-expanded={open} aria-controls="corner-nav-main"
-          aria-label={`${open ? 'Fechar menu' : 'Abrir menu'}: ${currentItem.label(S)}`}
-          onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag} onClick={toggleMenu}>
-          <PivotTransition currentItem={currentItem} state={S} iconActivation={iconActivation} />
-        </button>
-        <div id="corner-nav-main" className="corner-nav-main" aria-hidden={!open} inert={!open}>
-          {navItems.map((item, index) => <DockSlotButton key={`slot-${index}`} item={item} state={S} active={currentKey === item.k} visible={open} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
+        <div id="corner-nav-main" className="corner-nav-main">
+          {navItems.map((item, index) => <DockSlotButton key={`slot-${index}`} item={item} state={S} active={currentKey === item.k} visible={true} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}
           <button type="button" className={`corner-nav-more-tab${loc.pathname === extraNav.to || (extraNav.to === '/community' && loc.pathname.startsWith('/community/')) ? ' is-active' : ''}`} aria-label={extraNav.label} aria-current={loc.pathname === extraNav.to || (extraNav.to === '/community' && loc.pathname.startsWith('/community/')) ? 'page' : undefined} onClick={() => go(extraNav.to)}>
             <span className="corner-nav-icon"><Icon name={extraNav.icon} /></span><span>{extraNav.label}</span>
           </button>
