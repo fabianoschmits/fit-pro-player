@@ -276,14 +276,10 @@ export function ProfileHeader({ S, preview }) {
               type="button"
               className="profile-hero-bmi-badge tap"
               onClick={openBmiModal}
-              style={{
-                color: bmiDetails.color,
-                backgroundColor: bmiDetails.badgeBg,
-                borderColor: `color-mix(in srgb, ${bmiDetails.color} 40%, transparent)`,
-              }}
               title="Clique para ver detalhes do seu IMC"
               aria-label={`IMC ${bmiDetails.bmi.toFixed(1).replace('.', ',')} (${bmiDetails.label}). Clique para ver detalhes.`}
             >
+              <span className="profile-hero-bmi-dot" style={{ backgroundColor: bmiDetails.color }} aria-hidden="true" />
               <span>IMC {bmiDetails.bmi.toFixed(1).replace('.', ',')}</span>
             </button>
           </>

@@ -14,27 +14,20 @@ export default function BmiModal({ bmi, heightCm, weightKg, unit = 'kg', close }
       <div className="bmi-modal-header">
         <div className="bmi-modal-title-group">
           <span className="bmi-modal-kicker">Composição Corporal</span>
-          <h2 className="bmi-modal-title">Seu Índice de Massa Corporal (IMC)</h2>
+          <h2 className="bmi-modal-title">Índice de Massa Corporal (IMC)</h2>
         </div>
-        <button
-          type="button"
-          className="bmi-modal-close-btn iconbtn tap"
-          onClick={close}
-          aria-label="Fechar"
-        >
-          <Icon name="x" />
-        </button>
       </div>
 
-      <div className="bmi-modal-hero" style={{ borderColor: details?.color || 'var(--acc)' }}>
+      <div className="bmi-modal-hero">
         <div className="bmi-modal-hero-val-wrap">
-          <span className="bmi-modal-hero-val" style={{ color: details?.color || 'var(--acc)' }}>
+          <span className="bmi-modal-hero-val">
             {bmi ? bmi.toFixed(1).replace('.', ',') : '--'}
           </span>
           <span className="bmi-modal-hero-unit">kg/m²</span>
         </div>
-        <div className="bmi-modal-hero-status-pill" style={{ backgroundColor: details?.badgeBg, color: details?.color }}>
-          {details?.label || 'Em análise'}
+        <div className="bmi-modal-hero-status-pill" style={{ backgroundColor: details?.badgeBg, color: details?.color, borderColor: `color-mix(in srgb, ${details?.color || 'var(--label-2)'} 26%, transparent)` }}>
+          <span className="bmi-modal-dot" style={{ backgroundColor: details?.color }} aria-hidden="true" />
+          <span>{details?.label || 'Em análise'}</span>
         </div>
       </div>
 
@@ -108,3 +101,4 @@ export default function BmiModal({ bmi, heightCm, weightKg, unit = 'kg', close }
     </div>
   )
 }
+

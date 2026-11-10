@@ -1,19 +1,18 @@
 .bmi-modal-sheet {
-  padding: 12px 4px 20px;
+  padding: 4px 4px 20px;
   color: var(--label);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   max-width: 520px;
   margin: 0 auto;
 }
 
 .bmi-modal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 .bmi-modal-title-group {
@@ -23,33 +22,19 @@
 }
 
 .bmi-modal-kicker {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--label-3);
 }
 
 .bmi-modal-title {
   margin: 0;
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 800;
   line-height: 1.2;
   color: var(--label);
-}
-
-.bmi-modal-close-btn {
-  flex-shrink: 0;
-  background: var(--surface-2);
-  border: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--label-2);
-  cursor: pointer;
 }
 
 .bmi-modal-hero {
@@ -58,12 +43,11 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 18px 16px;
-  border-radius: 16px;
+  padding: 16px 14px;
+  border-radius: var(--r-xl, 16px);
   background: var(--surface-2);
-  border: 1.5px solid var(--sep);
+  border: 1px solid var(--sep-op, rgba(255, 255, 255, 0.08));
   text-align: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .bmi-modal-hero-val-wrap {
@@ -73,15 +57,16 @@
 }
 
 .bmi-modal-hero-val {
-  font-size: 44px;
-  font-weight: 900;
+  font-size: 40px;
+  font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
+  color: var(--label);
 }
 
 .bmi-modal-hero-unit {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--label-3);
 }
@@ -89,34 +74,35 @@
 .bmi-modal-hero-status-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 750;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 650;
   letter-spacing: -0.01em;
+  border: 1px solid color-mix(in srgb, currentColor 28%, transparent);
 }
 
 .bmi-modal-summary-box {
   background: var(--surface);
-  border: 1px solid var(--sep);
-  border-radius: 12px;
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--r-lg, 12px);
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
 }
 
 .bmi-modal-summary-highlight {
   margin: 0;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--label);
-  line-height: 1.3;
+  line-height: 1.35;
 }
 
 .bmi-modal-summary-text {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--label-2);
   line-height: 1.45;
 }
@@ -127,14 +113,15 @@
   gap: 8px;
   padding: 12px 14px;
   background: var(--surface-2);
-  border-radius: 12px;
+  border-radius: var(--r-lg, 12px);
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.06));
 }
 
 .bmi-modal-target-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .bmi-modal-target-label {
@@ -144,6 +131,7 @@
 .bmi-modal-target-value {
   font-weight: 700;
   color: var(--label);
+  font-variant-numeric: tabular-nums;
 }
 
 .bmi-modal-target-value.highlight {
@@ -152,7 +140,7 @@
 
 .bmi-modal-target-divider {
   height: 1px;
-  background: var(--sep);
+  background: var(--sep-op, rgba(255, 255, 255, 0.08));
 }
 
 .bmi-modal-section {
@@ -166,19 +154,19 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 750;
   color: var(--label);
 }
 
 .bmi-modal-section-icon {
-  font-size: 14px;
-  color: var(--acc);
+  font-size: 13px;
+  color: var(--label-2);
 }
 
 .bmi-modal-section-desc {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 12px;
   line-height: 1.45;
   color: var(--label-2);
 }
@@ -186,9 +174,9 @@
 .bmi-modal-table {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
+  border-radius: var(--r, 10px);
   overflow: hidden;
-  border: 1px solid var(--sep);
+  border: 1px solid var(--sep-op, rgba(255, 255, 255, 0.08));
   background: var(--surface);
 }
 
@@ -197,7 +185,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 7px 10px;
-  border-bottom: 1px solid var(--sep);
+  border-bottom: 1px solid var(--sep-op, rgba(255, 255, 255, 0.08));
   font-size: 11.5px;
 }
 
@@ -206,7 +194,7 @@
 }
 
 .bmi-modal-table-row.is-current {
-  background: color-mix(in srgb, var(--acc) 10%, var(--surface));
+  background: color-mix(in srgb, var(--acc) 12%, var(--surface));
   font-weight: 700;
 }
 
@@ -217,8 +205,8 @@
 }
 
 .bmi-modal-dot {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -227,9 +215,9 @@
   background: var(--acc);
   color: var(--on-acc);
   font-size: 9px;
-  font-weight: 800;
+  font-weight: 750;
   padding: 1px 5px;
-  border-radius: 6px;
+  border-radius: 4px;
   text-transform: uppercase;
   margin-left: 4px;
 }
@@ -242,15 +230,15 @@
 
 .bmi-modal-disclaimer {
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm, 7px);
   background: var(--surface-2);
   color: var(--label-3);
-  font-size: 11px;
+  font-size: 10.5px;
   line-height: 1.35;
 }
 
 .bmi-modal-actions {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .bmi-modal-actions .btn {

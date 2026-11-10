@@ -8,8 +8,8 @@ export const BMI_CATEGORIES = [
     key: 'underweight_severe',
     label: 'Abaixo do peso (Grave)',
     status: 'needs_attention',
-    color: '#ff375f', // red-pink
-    badgeBg: 'rgba(255, 55, 95, 0.15)',
+    color: 'var(--red, #ff453a)',
+    badgeBg: 'color-mix(in srgb, var(--red, #ff453a) 12%, transparent)',
     min: 0,
     max: 16,
     summary: 'Seu IMC indica baixo peso severo.',
@@ -20,8 +20,8 @@ export const BMI_CATEGORIES = [
     key: 'underweight_moderate',
     label: 'Abaixo do peso (Moderado)',
     status: 'needs_attention',
-    color: '#ff9f0a', // orange
-    badgeBg: 'rgba(255, 159, 10, 0.15)',
+    color: 'var(--orange, #ff9f0a)',
+    badgeBg: 'color-mix(in srgb, var(--orange, #ff9f0a) 12%, transparent)',
     min: 16,
     max: 17,
     summary: 'Seu IMC indica baixo peso moderado.',
@@ -32,8 +32,8 @@ export const BMI_CATEGORIES = [
     key: 'underweight_mild',
     label: 'Abaixo do peso (Leve)',
     status: 'caution',
-    color: '#ffd60a', // gold / yellow
-    badgeBg: 'rgba(255, 214, 10, 0.15)',
+    color: 'var(--yellow, #ffd60a)',
+    badgeBg: 'color-mix(in srgb, var(--yellow, #ffd60a) 12%, transparent)',
     min: 17,
     max: 18.5,
     summary: 'Seu IMC está ligeiramente abaixo da faixa normal.',
@@ -44,8 +44,8 @@ export const BMI_CATEGORIES = [
     key: 'normal',
     label: 'Peso saudável',
     status: 'great',
-    color: '#34c759', // green / healthy
-    badgeBg: 'rgba(52, 199, 89, 0.15)',
+    color: 'var(--acc, #0F8B8D)',
+    badgeBg: 'color-mix(in srgb, var(--acc, #0F8B8D) 12%, transparent)',
     min: 18.5,
     max: 24.9,
     summary: 'Parabéns! Seu IMC está na faixa saudável ideal.',
@@ -56,8 +56,8 @@ export const BMI_CATEGORIES = [
     key: 'overweight',
     label: 'Sobrepeso',
     status: 'caution',
-    color: '#ff9f0a', // orange
-    badgeBg: 'rgba(255, 159, 10, 0.15)',
+    color: 'var(--orange, #ff9f0a)',
+    badgeBg: 'color-mix(in srgb, var(--orange, #ff9f0a) 12%, transparent)',
     min: 25,
     max: 29.9,
     summary: 'Seu IMC aponta sobrepeso.',
@@ -68,8 +68,8 @@ export const BMI_CATEGORIES = [
     key: 'obesity_1',
     label: 'Obesidade Grau I',
     status: 'needs_attention',
-    color: '#ff6937', // red-orange
-    badgeBg: 'rgba(255, 105, 55, 0.15)',
+    color: 'var(--orange, #ff9f0a)',
+    badgeBg: 'color-mix(in srgb, var(--orange, #ff9f0a) 12%, transparent)',
     min: 30,
     max: 34.9,
     summary: 'Seu IMC aponta obesidade grau I.',
@@ -80,8 +80,8 @@ export const BMI_CATEGORIES = [
     key: 'obesity_2',
     label: 'Obesidade Grau II',
     status: 'needs_attention',
-    color: '#ff375f', // strong red-pink
-    badgeBg: 'rgba(255, 55, 95, 0.15)',
+    color: 'var(--red, #ff453a)',
+    badgeBg: 'color-mix(in srgb, var(--red, #ff453a) 12%, transparent)',
     min: 35,
     max: 39.9,
     summary: 'Seu IMC aponta obesidade grau II.',
@@ -92,8 +92,8 @@ export const BMI_CATEGORIES = [
     key: 'obesity_3',
     label: 'Obesidade Grau III',
     status: 'urgent',
-    color: '#ff453a', // red
-    badgeBg: 'rgba(255, 69, 58, 0.2)',
+    color: 'var(--red, #ff453a)',
+    badgeBg: 'color-mix(in srgb, var(--red, #ff453a) 15%, transparent)',
     min: 40,
     max: Infinity,
     summary: 'Seu IMC aponta obesidade grau III.',
@@ -148,3 +148,4 @@ export function getBmiDetails(bmi, heightCm) {
     idealWeightMax,
   }
 }
+

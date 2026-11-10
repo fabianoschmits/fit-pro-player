@@ -17,7 +17,7 @@ describe('BMI / IMC calculations and classifications', () => {
   it('categorizes healthy normal BMI appropriately', () => {
     const details = getBmiDetails(22.9, 175)
     expect(details.label).toBe('Peso saudável')
-    expect(details.color).toBe('#34c759')
+    expect(details.color).toBe('var(--acc, #0F8B8D)')
     expect(details.status).toBe('great')
     expect(details.idealWeightMin).toBe(56.7)
     expect(details.idealWeightMax).toBe(76.3)
@@ -40,3 +40,4 @@ describe('BMI / IMC calculations and classifications', () => {
     expect(under.label).toBe('Abaixo do peso (Leve)')
   })
 })
+
