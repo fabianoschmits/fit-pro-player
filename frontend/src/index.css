@@ -445,7 +445,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   --menu-width:100vw;--menu-height:var(--primary-menu-height);
   --more-space:calc(100dvh - var(--menu-height) - 40px - var(--sat));
   position:fixed;z-index:50;left:0;right:auto;bottom:0;
-  width:28px;height:var(--menu-height);font-size:10px;pointer-events:none;
+  width:100vw;height:var(--menu-height);font-size:10px;pointer-events:none;
 }
 #tabbar.corner-nav.is-open{width:var(--menu-width)}
 .corner-nav *{box-sizing:border-box}
@@ -456,28 +456,14 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   box-shadow:0 -6px 24px color-mix(in srgb,var(--label) 8%,transparent);
 }
 .corner-nav-toggle{
-  position:relative;z-index:2;width:28px;height:100%;padding:0 2px;
-  display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;
-  border-radius:0;border-right:var(--hair) solid var(--surface-border);
-  background:var(--acc);color:var(--on-acc);pointer-events:auto;
-  touch-action:none;user-select:none;cursor:pointer;
+  display:none !important;
 }
-.corner-nav.is-move-ready .corner-nav-toggle,
-.corner-nav.is-free .corner-nav-toggle{cursor:grab}
-.corner-nav.is-move-ready .corner-nav-toggle:active,
-.corner-nav.is-free .corner-nav-toggle:active{cursor:grabbing}
-.corner-nav-label{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:12px;font-weight:600}
-.corner-nav:not(.is-open) .corner-nav-label{display:none}
-.corner-nav-icon{width:28px;height:28px;display:grid;place-items:center;flex:none}
-.corner-nav-icon .icn{width:20px;height:20px;--icon-stroke:1.75}
 .corner-nav-main{
-  position:absolute;z-index:1;left:28px;top:0;width:calc(var(--menu-width) - 28px);height:100%;
+  position:absolute;z-index:1;left:0;top:0;width:100%;height:100%;
   display:flex;align-items:stretch;padding:0;border-radius:0;
   background:color-mix(in srgb,var(--bg-el) 24%,transparent);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-  transform-origin:left center;backface-visibility:hidden;
-  transform:perspective(900px) rotateY(-88deg);opacity:0;visibility:hidden;pointer-events:none;
-  transition:transform 240ms cubic-bezier(.32,.72,0,1),opacity 160ms cubic-bezier(.32,.72,0,1),visibility 0s 240ms;
+  transform:none !important;opacity:1 !important;visibility:visible !important;pointer-events:auto !important;
 }
 .corner-nav.is-open .corner-nav-main{
   transform:perspective(900px) rotateY(0deg);opacity:1;visibility:visible;pointer-events:auto;
@@ -508,8 +494,8 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
   border:var(--hair) solid var(--surface-border);
   -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
   box-shadow:0 2px 8px color-mix(in srgb,var(--label) 10%,transparent);
-  visibility:hidden;opacity:0;pointer-events:none;
-  transition:opacity 160ms cubic-bezier(.32,.72,0,1),visibility 0s 240ms;
+  visibility:visible;opacity:1;pointer-events:auto;
+  transition:opacity 160ms cubic-bezier(.32,.72,0,1);
 }
 .corner-nav-more-trigger .icn{width:18px;height:18px}
 .corner-nav.is-open .corner-nav-more-trigger{visibility:visible;opacity:1;pointer-events:auto;transition-delay:0s}
@@ -570,7 +556,7 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
     left:50%;
     right:auto;
     bottom:max(20px,var(--sab));
-    width:32px;
+    width:var(--menu-width);
     font-size:11.5px;
     transform:translateX(-50%);
   }
@@ -586,24 +572,13 @@ details[open]>:not(summary){animation:details-reveal .18s cubic-bezier(.2,.8,.2,
     justify-content:flex-start;
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-toggle{
-    width:32px;
-    padding-bottom:0;
-    border-radius:14px 0 0 14px;
-    box-shadow:0 8px 30px color-mix(in srgb,var(--label) 12%,transparent);
-  }
-  #tabbar.corner-nav:not(.is-free) .corner-nav-toggle .corner-nav-icon{
-    width:32px;
-    height:32px;
-  }
-  #tabbar.corner-nav:not(.is-free) .corner-nav-toggle .corner-nav-icon .icn{
-    width:22px;
-    height:22px;
+    display:none !important;
   }
   #tabbar.corner-nav:not(.is-free) .corner-nav-main{
-    left:32px;
-    width:calc(var(--menu-width) - 32px);
+    left:0;
+    width:100%;
     padding-bottom:0;
-    border-radius:0 14px 14px 0;
+    border-radius:14px;
     box-shadow:0 8px 30px color-mix(in srgb,var(--label) 12%,transparent);
   }
   #tabbar.corner-nav:not(.is-free):not(.is-open) .corner-nav-toggle{
