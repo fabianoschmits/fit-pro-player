@@ -4,6 +4,22 @@ import { DEF, hasData, normalizeState, useStore } from './useStore.js'
 import { starterRoutines, readyMadeRoutines } from '../lib/starter.js'
 
 describe('state migration for first-run profiles', () => {
+  it('preserves a completed coaching setup without invented training measurements', () => {
+    const restored = normalizeState({
+      ...DEF, onboardingDone: true, onboardingVersion: 1,
+      profile: { ...DEF.profile, name: 'Ana', completedAt: 1234 },
+    })
+    expect(restored.onboardingDone).toBe(true)
+    expect(restored.profile.birthDate).toBe('')
+    expect(restored.profile.heightCm).toBeNull()
+    expect(restored.profile.completedAt).toBe(1234)
+  })
+
+  it('keeps an unfinished journey unfinished even when it carries the new version', () => {
+    const restored = normalizeState({ ...DEF, onboardingDone: false, onboardingVersion: 1 })
+    expect(restored.onboardingDone).toBe(false)
+  })
+
   it('seeds ready-made routines without treating a fresh install as user data', () => {
     const state = normalizeState(DEF)
     expect(state.onboardingDone).toBe(false)

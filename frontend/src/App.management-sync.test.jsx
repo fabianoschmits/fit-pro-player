@@ -199,7 +199,7 @@ it('continuously preserves a code from anonymous sign-in through explicit accept
   expect(container.querySelector('.student-professionals-page')).not.toBeNull()
   expect(useStore.getState().S.onboardingDone).toBe(false)
   await go('/home')
-  expect(window.location.hash).toBe('#/plan')
+  expect(window.location.hash).toBe('#/onboarding')
   expect(sessionStorage.getItem('fpp-pending-invite')).toBeNull()
 })
 

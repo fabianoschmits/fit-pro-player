@@ -49,6 +49,7 @@ function auth(overrides = {}) {
     signUp: vi.fn().mockResolvedValue({ kind: 'authenticated' }),
     sendPasswordRecovery: vi.fn().mockResolvedValue({ kind: 'success' }),
     updatePassword: vi.fn().mockResolvedValue({ kind: 'success' }),
+    resendConfirmation: vi.fn().mockResolvedValue({ kind: 'success' }),
     ...overrides,
   };
 }
@@ -227,7 +228,7 @@ describe('AuthSheet', () => {
     expect(container.querySelector('.auth-security-status')).toBeNull();
     const logo = container.querySelector('.auth-brand-logo');
     expect(logo).toBeTruthy();
-    expect(logo.getAttribute('src')).toBe('/brand-logo.svg');
+    expect(logo.getAttribute('src')).toBe('/fpp-wordmark.svg');
   });
 
   it('shows password strength and toggles password visibility', async () => {
@@ -245,23 +246,19 @@ describe('AuthSheet', () => {
 
   it('lets signup choose a professional account without assigning roles in the browser', async () => {
     await render('sign_up');
-    const accountType = container.querySelector('select[aria-label="Account type"]');
+    const accountType = container.querySelector('input[type="radio"][value="professional"]');
     expect(accountType).toBeTruthy();
-    await act(async () => {
-      accountType.value = 'professional';
-      accountType.dispatchEvent(new dom.Event('change', { bubbles: true }));
-    });
+    await click(accountType);
     await setValue(input('Name'), 'Ana');
     await setValue(input('Email'), 'ana@example.com');
     await setValue(input('New password'), 'long-enough-password');
     await setValue(input('Confirm password'), 'long-enough-password');
     await acceptPrivacy();
-    await click(button('Continuar'));
-
-    expect(container.textContent).toContain('Perfil profissional');
     await click(button('Create account'));
 
     expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'professional' }));
+    expect(mocks.auth.signUp.mock.calls[0][0]).not.toHaveProperty('professionalProfile');
+    expect(container.querySelector('[name="professionalName"]')).toBeNull();
   });
 
   it('enters the app immediately after sign-in', async () => {
@@ -302,6 +299,62 @@ describe('AuthSheet', () => {
     await click(button('Create account'));
 
     expect(container.textContent).toContain('Check your email to confirm your account.');
+    expect(container.textContent).toContain('ana@example.com');
+    expect(container.querySelector('input[type="password"]')).toBeNull();
+    expect(button('Alterar email')).toBeTruthy();
+    expect(close).not.toHaveBeenCalled();
+  });
+
+  it('keeps the confirmation email through resend failures and throttles successful resends', async () => {
+    vi.useFakeTimers();
+    mocks.auth = auth({ signUp: vi.fn().mockResolvedValue({ kind: 'confirmation_required' }), resendConfirmation: vi.fn().mockResolvedValueOnce({ kind: 'error', error: 'network_unavailable' }).mockResolvedValue({ kind: 'success' }) });
+    await render('sign_up');
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('New password'), 'long-enough-password');
+    await setValue(input('Confirm password'), 'long-enough-password');
+    await acceptPrivacy();
+    await click(button('Create account'));
+    expect(container.querySelector('[data-resend-confirmation]').disabled).toBe(true);
+    await act(async () => vi.advanceTimersByTimeAsync(30000));
+    await click(button('Reenviar email'));
+    expect(mocks.auth.resendConfirmation).toHaveBeenCalledWith('ana@example.com');
+    expect(container.querySelector('[role="alert"]').textContent).toBe('Check your connection and try again.');
+    expect(container.textContent).toContain('ana@example.com');
+    await click(button('Reenviar email'));
+    expect(container.querySelector('[data-resend-confirmation]').disabled).toBe(true);
+    await click(container.querySelector('[data-resend-confirmation]'));
+    expect(mocks.auth.resendConfirmation).toHaveBeenCalledTimes(2);
+    await click(button('Alterar email'));
+    expect(input('Email').value).toBe('ana@example.com');
+    expect(input('New password').value).toBe('');
+  });
+
+  it('resends email-change confirmation while a local account upgrade remains pending', async () => {
+    vi.useFakeTimers();
+    mocks.auth = auth({ user: { id: 'local-account', isAnonymous: true }, signUp: vi.fn().mockResolvedValue({ kind: 'confirmation_required', confirmationType: 'email_change' }) });
+    await render('sign_up');
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('New password'), 'long-enough-password');
+    await setValue(input('Confirm password'), 'long-enough-password');
+    await acceptPrivacy();
+    await click(button('Create account'));
+    expect(container.textContent).toContain('ana@example.com');
+    expect(mocks.enterApp).not.toHaveBeenCalled();
+    expect(close).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(30000));
+    await click(button('Reenviar email'));
+    expect(mocks.auth.resendConfirmation).toHaveBeenCalledWith('ana@example.com', 'email_change');
+  });
+
+  it.each([true, false])('resends signup confirmation for a different unconfirmed sign-in even with a local session (%s)', async isAnonymous => {
+    mocks.auth = auth({ user: isAnonymous ? { id: 'local-account', isAnonymous: true } : null, signIn: vi.fn().mockResolvedValue({ kind: 'error', error: 'email_confirmation_required' }) });
+    await render('sign_in');
+    await setValue(input('Email'), 'ana@example.com');
+    await setValue(input('Password'), 'long-enough-password');
+    await click(button('Sign in'));
+    await click(button('Reenviar email'));
+    expect(mocks.auth.resendConfirmation).toHaveBeenCalledWith('ana@example.com');
+    expect(close).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -338,6 +391,9 @@ describe('AuthSheet', () => {
 
     expect(container.textContent).toContain('If an account exists for this email, we sent recovery instructions.');
     expect(mocks.auth.sendPasswordRecovery).toHaveBeenCalledWith('ana@example.com');
+    expect(container.textContent).toContain('ana@example.com');
+    expect(input('Email')).toBeUndefined();
+    expect(button('Voltar para entrar')).toBeTruthy();
   });
 
   it('keeps reset open until matching new passwords update successfully', async () => {
@@ -356,6 +412,10 @@ describe('AuthSheet', () => {
     await click(button('Reset password'));
 
     expect(mocks.auth.updatePassword).toHaveBeenCalledWith('long-enough-password');
+    expect(close).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('Senha atualizada');
+    expect(input('New password')).toBeUndefined();
+    await click(button('Continuar no FPP'));
     expect(close).toHaveBeenCalledTimes(1);
   });
 

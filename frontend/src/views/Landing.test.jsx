@@ -151,7 +151,7 @@ describe('public landing page', () => {
 
     expect(container.querySelector('.landing-hero-logo')).toBeTruthy()
     expect(container.querySelector('.landing-hero-copy h1')?.textContent).toContain('Seu treino, no bolso')
-    expect(container.querySelector('.landing-hero-copy p')?.textContent).toMatch(/Plano do dia/i)
+    expect(container.querySelector('.landing-hero-copy p')?.textContent).toMatch(/Monte seu plano/i)
     expect(container.querySelector('.landing-block-copy h2')?.textContent).toBe('Treino')
     expect(container.querySelector('.home-view .home-now--planned')).toBeTruthy()
 
@@ -185,9 +185,9 @@ describe('public landing page', () => {
 
     await act(async () => { root.render(<Landing />) })
 
-    expect(button('Protect your training')).toBeTruthy()
-    await act(async () => { button('Protect your training').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
-    expect(mocks.openAuthSheet).toHaveBeenCalledWith('entry')
+    expect(button('Já tenho conta')).toBeTruthy()
+    await act(async () => { button('Já tenho conta').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
+    expect(mocks.openAuthSheet).toHaveBeenCalledWith('sign_in')
   })
 
   it('offers Supabase account entry on the configured web app', async () => {
@@ -195,10 +195,10 @@ describe('public landing page', () => {
     mocks.auth = { configured: true }
 
     await act(async () => { root.render(<Landing />) })
-    expect(button('Entrar ou criar conta')).toBeTruthy()
+    expect(button('Criar minha conta')).toBeTruthy()
 
-    await act(async () => { button('Entrar ou criar conta').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
-    expect(mocks.openAuthSheet).toHaveBeenCalledWith('entry')
+    await act(async () => { button('Criar minha conta').dispatchEvent(new dom.MouseEvent('click', { bubbles: true })) })
+    expect(mocks.openAuthSheet).toHaveBeenCalledWith('sign_up')
   })
 
   it('lets visitors switch body analysis views without changing the fixed muscle list', async () => {

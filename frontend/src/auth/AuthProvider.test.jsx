@@ -24,6 +24,7 @@ function createFakeClient({ session = null, getSession } = {}) {
     signInAnonymously: vi.fn().mockResolvedValue({ data: { session: { user: { ...user, email: null, is_anonymous: true } } }, error: null }),
     signInWithPassword: vi.fn().mockResolvedValue({ data: { session: { user } }, error: null }),
     resetPasswordForEmail: vi.fn().mockResolvedValue({ data: {}, error: null }),
+    resend: vi.fn().mockResolvedValue({ data: {}, error: null }),
     updateUser: vi.fn().mockResolvedValue({ data: { user }, error: null }),
     signOut: vi.fn().mockResolvedValue({ error: null }),
     rpc: vi.fn().mockResolvedValue({ data: { verification_status: 'unverified' }, error: null }),
@@ -90,7 +91,7 @@ describe('AuthProvider', () => {
     await act(async () => Promise.resolve());
 
     expect(latest.status).toBe('authenticated');
-    expect(latest.user).toEqual({ id: user.id, email: user.email, displayName: '', emailConfirmedAt: user.email_confirmed_at, isAnonymous: false });
+    expect(latest.user).toEqual({ id: user.id, email: user.email, displayName: '', accountType: 'student', emailConfirmedAt: user.email_confirmed_at, isAnonymous: false });
     expect(latest.user).not.toHaveProperty('access_token');
   });
 
@@ -99,6 +100,55 @@ describe('AuthProvider', () => {
     await renderProvider(client);
     expect(latest.user.displayName).toBe('João da Silva');
     expect(latest.user).not.toHaveProperty('user_metadata');
+  });
+
+  it.each([['professional', 'professional'], ['student', 'student'], ['admin', 'student']])('exposes only a supported onboarding account type from %s metadata', async (accountType, expected) => {
+    const client = createFakeClient({ session: { user: { ...user, user_metadata: { account_type: accountType } } } });
+    await renderProvider(client);
+    expect(latest.user.accountType).toBe(expected);
+  });
+
+  it('resends signup confirmation to the hash-free confirmation callback', async () => {
+    const client = createFakeClient();
+    await renderProvider(client, new URL('https://app.example/#/invite/keep-this'));
+    let result;
+    await act(async () => { result = await latest.resendConfirmation('ana@example.com'); });
+    expect(result.kind).toBe('success');
+    expect(client.auth.resend).toHaveBeenCalledWith({ type: 'signup', email: 'ana@example.com', options: { emailRedirectTo: 'https://app.example/?auth_flow=confirm' } });
+  });
+
+  it('maps confirmation resend failures without changing the session', async () => {
+    const client = createFakeClient();
+    client.auth.resend.mockResolvedValue({ data: null, error: { code: 'network_error' } });
+    await renderProvider(client);
+    await act(async () => { await expect(latest.resendConfirmation('ana@example.com')).resolves.toEqual({ kind: 'error', error: 'network_unavailable' }); });
+    expect(latest.status).toBe('anonymous');
+    expect(latest.operation).toBeNull();
+  });
+
+  it.each([
+    { email: 'ana@example.com', email_confirmed_at: null },
+    { email: null, new_email: 'ana@example.com', email_confirmed_at: null },
+    { email: 'old@example.com', new_email: 'ana@example.com', email_confirmed_at: user.email_confirmed_at },
+  ])('resends the email change when upgrading a local session with pending address $new_email', async pending => {
+    const anonymous = { ...user, email: null, email_confirmed_at: null, is_anonymous: true };
+    const client = createFakeClient({ session: { user: anonymous } });
+    client.auth.updateUser.mockResolvedValue({ data: { user: { ...anonymous, ...pending } }, error: null });
+    await renderProvider(client);
+    let result;
+    await act(async () => { result = await latest.signUp({ email: 'ana@example.com', password: 'long-enough-password', displayName: 'Ana' }); });
+    expect(result).toEqual({ kind: 'confirmation_required', confirmationType: 'email_change' });
+    expect(client.auth.signUp).not.toHaveBeenCalled();
+    await act(async () => { await latest.resendConfirmation('ana@example.com', result.confirmationType); });
+    expect(client.auth.resend).toHaveBeenCalledWith({ type: 'email_change', email: 'ana@example.com', options: { emailRedirectTo: 'https://app.example/?auth_flow=confirm' } });
+    expect(latest.user.id).toBe(anonymous.id);
+  });
+
+  it('rejects an unsupported confirmation resend type without contacting Auth', async () => {
+    const client = createFakeClient();
+    await renderProvider(client);
+    await act(async () => { await expect(latest.resendConfirmation('ana@example.com', 'recovery')).resolves.toEqual({ kind: 'error', error: 'auth_unavailable' }); });
+    expect(client.auth.resend).not.toHaveBeenCalled();
   });
 
   it('creates an anonymous session for continue-without-account', async () => {

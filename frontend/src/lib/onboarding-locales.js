@@ -1,6 +1,8 @@
 // Strings introduced by the profile/plan onboarding. Keeping this small catalogue shared avoids
 // eleven locale files drifting whenever the wizard gains a field. Locale packs spread it first,
 // so their existing hand-written translations still take precedence.
+import { accountJourneyLocale } from './account-journey-locales.js'
+
 const ROUTINE_KEYS = [
   'Chest Day', 'Back Day', 'Leg Day', 'Abs Day', 'Arms Day', 'Shoulders Day', 'Glutes Day',
   'Full Body', 'Full Body A', 'Full Body B', 'Upper Body', 'Lower Body', 'Push Day', 'Pull Day',
@@ -212,5 +214,5 @@ const PT = {
 export function onboardingLocale(lang) {
   const routineValues = ROUTINES[lang] || ROUTINES.pt
   const routineTranslations = Object.fromEntries(ROUTINE_KEYS.map((key, index) => [key, routineValues[index]]))
-  return { ...BASE, ...routineTranslations, ...(lang === 'pt' ? PT : {}) }
+  return { ...BASE, ...routineTranslations, ...accountJourneyLocale(lang), ...(lang === 'pt' ? PT : {}) }
 }

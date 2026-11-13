@@ -11,9 +11,11 @@ const mocks = vi.hoisted(() => ({
   openAuthSheet: vi.fn(),
   ready: false,
   onboardingDone: true,
+  appEntered: false,
 }));
 
 vi.mock('./auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }));
+vi.mock('./lib/supabase-client.js', () => ({ getBrowserSupabaseClient: () => null }));
 vi.mock('./components/AuthSheet.jsx', () => ({ openAuthSheet: mocks.openAuthSheet }));
 vi.mock('./views/Landing.jsx', () => ({ default: ({ invitePath }) => <main className="landing-page" data-invite={String(invitePath)} /> }));
 vi.mock('./store/useStore.js', () => ({
@@ -24,9 +26,10 @@ vi.mock('./store/useStore.js', () => ({
     ready: mocks.ready,
     boot: mocks.boot,
     isGuest: () => false,
+    isAppEntered: () => mocks.appEntered,
     }
     return selector ? selector(state) : state
-  }, { getState: () => ({ S: { active: null }, enterApp: mocks.enterApp }) }),
+  }, { getState: () => ({ S: { active: null }, enterApp: mocks.enterApp }), subscribe: () => () => {} }),
   }));
 
 import App from './App.jsx';
@@ -55,6 +58,7 @@ beforeEach(() => {
   mocks.openAuthSheet.mockReset();
   mocks.ready = false;
   mocks.onboardingDone = true;
+  mocks.appEntered = false;
 });
 
 afterEach(async () => {
@@ -64,6 +68,23 @@ afterEach(async () => {
 });
 
 describe('App Auth boot coordination', () => {
+  it('routes an incomplete professional account to the role-specific setup', async () => {
+    mocks.ready = true;
+    mocks.appEntered = true;
+    mocks.onboardingDone = false;
+    mocks.auth = { status: 'authenticated', user: { id: 'professional-1', accountType: 'professional' } };
+    await act(async () => root.render(<App />));
+    expect(window.location.hash).toBe('#/onboarding');
+  });
+  it.each(['/privacy', '/terms', '/data-rights'])('keeps %s accessible before setup is completed', async route => {
+    window.location.hash = '#' + route;
+    mocks.ready = true;
+    mocks.appEntered = true;
+    mocks.onboardingDone = false;
+    mocks.auth = { status: 'authenticated', user: { id: 'new-account' } };
+    await act(async () => root.render(<App />));
+    expect(window.location.hash).toBe('#' + route);
+  });
   it('preserves an open auth surface and its draft across account boot', async () => {
     mocks.ready = true;
     mocks.auth = { status: 'anonymous', user: null };

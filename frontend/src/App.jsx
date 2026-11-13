@@ -49,6 +49,7 @@ import { normalizeNotificationPreferences } from './lib/notification-preferences
 import { PROFILE_MOTIVATION_MESSAGES, profileMotivationMessage } from './lib/profile-motivation.js'
 const loadHome = () => import('./views/Home.jsx')
 const loadPlan = () => import('./views/Plan.jsx')
+const loadAccountOnboarding = () => import('./views/AccountOnboarding.jsx')
 const loadRoutineEdit = () => import('./views/RoutineEdit.jsx')
 const loadWorkout = () => import('./views/Workout.jsx')
 const loadStats = () => import('./views/Stats.jsx')
@@ -80,6 +81,7 @@ const HomeGlass = lazy(() => import('./experiments/home-glass/HomeGlass.jsx'))
 const AlternativeMenus = lazy(() => import('./experiments/alternative-menus/AlternativeMenus.jsx'))
 const WorkoutPlayers = lazy(() => import('./experiments/workout-players/WorkoutPlayers.jsx'))
 const Plan = lazy(loadPlan)
+const AccountOnboarding = lazy(loadAccountOnboarding)
 const RoutineEdit = lazy(loadRoutineEdit)
 const Workout = lazy(loadWorkout)
 const Stats = lazy(loadStats)
@@ -127,7 +129,7 @@ const SupportTicket = lazy(loadSupportTicket)
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
-  loadHome(), loadPlan(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(), loadPersonalData(),
+  loadHome(), loadPlan(), loadAccountOnboarding(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(), loadPersonalData(),
     loadLibrary(), loadCommunity(), loadSettings(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadProfessionalPrograms(), loadStudentProfessionals(), loadSheets(),
 ])
 
@@ -548,7 +550,7 @@ function Shell() {
       navigate('/', { replace: true })
       return
     }
-    if (ready && authed && !invitePath && !inviteAcceptedPath && !S.onboardingDone && loc.pathname !== '/plan') navigate('/plan', { replace: true })
+    if (ready && authed && !invitePath && !inviteAcceptedPath && !publicPrivacyPath && !S.onboardingDone && loc.pathname !== '/onboarding') navigate('/onboarding', { replace: true })
   }, [S.onboardingDone, appEntered, authed, inviteAcceptedPath, invitePath, loc.pathname, navigate, ready, publicPrivacyPath])
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
@@ -568,6 +570,7 @@ function Shell() {
                 <Route path="/data-rights" element={<PrivacyPages kind="rights" />} />
                 <Route path="/privacy-settings" element={<PrivacySettings />} />
                 <Route path="/plan" element={<Plan />} />
+                <Route path="/onboarding" element={<AccountOnboarding />} />
                 <Route path="/plan/r/:id" element={<RoutineEdit />} />
                 <Route path="/workout" element={<Workout />} />
                 <Route path="/progress" element={<Stats />} />
@@ -637,7 +640,7 @@ function Shell() {
           )}
         </ErrorBoundary>
       </PageTransition>
-      {!(/^\/(console|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
+      {S.onboardingDone && loc.pathname !== '/onboarding' && !(/^\/(console|invite|connect)(\/|$)/.test(loc.pathname)) && <TabBar onStart={startFlow} />}
       <RestTimer />
       </>}
       <Modals />

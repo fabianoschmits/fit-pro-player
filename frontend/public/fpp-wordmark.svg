@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 80 1140 310" role="img" aria-label="Fit Pro Player">
+<title>Fit Pro Player</title>
+<defs>
+    <linearGradient id="fpp-logo-metal" gradientUnits="userSpaceOnUse" x1="0" y1="107" x2="0" y2="350">
+      <stop stop-color="#f7f8f9"/><stop offset=".18" stop-color="#e4e8eb"/><stop offset=".36" stop-color="#f1f3f4"/><stop offset=".58" stop-color="#cbd3d7"/><stop offset=".76" stop-color="#a4b3bb"/><stop offset="1" stop-color="#cdd7dc"/>
+    </linearGradient>
+    <linearGradient id="fpp-logo-bevel" gradientUnits="userSpaceOnUse" x1="0" y1="100" x2="0" y2="350">
+      <stop stop-color="#fff"/><stop offset=".3" stop-color="#eaf0f3"/><stop offset=".52" stop-color="#819398"/><stop offset=".75" stop-color="#f4f7f8"/><stop offset="1" stop-color="#e5edf0"/>
+    </linearGradient>
+    <g id="fpp-logo-shape" stroke-linejoin="miter" stroke-miterlimit="4">
+      <path d="M201 110H531L475 151H307L281 194H470L412 244H260L225 309L122 347L226 141Z"/>
+      <path d="M550 110H802Q810 110 816 117L842 146Q848 152 842 163L815 210Q810 217 801 223L753 247H591L554 312H475L560 136Z"/>
+      <path d="M876 110H1144Q1154 110 1160 117L1181 143Q1188 151 1183 159L1156 211Q1152 217 1143 222L1092 247H928L891 312H810L892 137Z"/>
+    </g>
+    <g id="fpp-logo-counters" stroke-linejoin="round">
+      <path d="M634 151H749Q756 152 752 159L735 191Q730 197 725 197H606Z"/>
+      <path d="M971 151H1091Q1099 152 1095 159L1078 191Q1073 197 1067 197H944Z"/>
+    </g>
+    <g id="fpp-logo-details">
+      <path d="M317 172H474L534 126L541 136L482 183H311Z"/>
+      <path d="M640 172H728L722 183H634Z"/>
+      <path d="M979 172H1069L1063 183H973Z"/>
+    </g>
+  </defs>
+<use href="#fpp-logo-shape" fill="#030909" stroke="#079da0" stroke-width="36"/>
+    <use href="#fpp-logo-shape" fill="#030909" stroke="#020707" stroke-width="20"/>
+    <path d="M307 151H475L535 119L550 136L486 187H289Z" fill="#020707"/>
+    <use href="#fpp-logo-shape" fill="url(#fpp-logo-metal)" stroke="url(#fpp-logo-bevel)" stroke-width="5"/>
+    <use href="#fpp-logo-counters" fill="#020707" stroke="url(#fpp-logo-bevel)" stroke-width="6"/>
+    <use href="#fpp-logo-details" fill="#079da0"/>
+</svg>

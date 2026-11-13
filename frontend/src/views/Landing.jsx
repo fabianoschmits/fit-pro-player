@@ -486,12 +486,12 @@ export default function Landing({ invitePath = false }) {
   const primaryAction = auth.status === 'authenticated'
     ? enterLocal
     : auth.configured
-      ? () => openAuthSheet('entry')
+      ? () => openAuthSheet('sign_up')
       : enter
   const primaryLabel = auth.status === 'authenticated'
     ? 'Entrar no app'
     : auth.configured
-      ? 'Entrar ou criar conta'
+      ? 'Criar minha conta'
       : localEntry
         ? (DEMO ? 'Abrir demonstração' : 'Começar agora')
         : 'Usar neste dispositivo'
@@ -504,10 +504,10 @@ export default function Landing({ invitePath = false }) {
         <div className="landing-invite-overlay" role="status" aria-live="polite">
           <div className="landing-invite-banner">
             <strong>Você recebeu um convite profissional.</strong>
-            <span>Crie sua conta ou entre para aceitar o vínculo.</span>
+            <span>Crie sua conta ou entre para conferir o perfil e solicitar o vínculo.</span>
             <div className="landing-invite-actions fpp-spaced-actions">
               <Button variant="primary" onClick={() => openAuthSheet('sign_up')}>Criar conta</Button>
-              <Button variant="secondary" onClick={() => openAuthSheet('entry')}>Já tenho conta</Button>
+              <Button variant="secondary" onClick={() => openAuthSheet('sign_in')}>Já tenho conta</Button>
             </div>
           </div>
         </div>
@@ -523,7 +523,7 @@ export default function Landing({ invitePath = false }) {
           <button
             className="landing-nav-cta landing-nav-cta--accent"
             disabled={entryUnavailable}
-            onClick={primaryAction}
+            onClick={auth.configured && auth.status !== 'authenticated' ? () => openAuthSheet('sign_in') : primaryAction}
           >
             {localEntry ? 'Abrir' : 'Entrar'}
           </button>
@@ -540,7 +540,7 @@ export default function Landing({ invitePath = false }) {
           <div className="landing-hero-copy">
             <img className="landing-hero-logo" src={BRAND_LOGO} alt="Fit Pro Player" fetchPriority="high" />
             <h1>Seu treino, no bolso.</h1>
-            <p>Plano do dia, execução e evolução — como no app.</p>
+            <p>Monte seu plano, acompanhe cada série e veja sua evolução. Treine por conta própria ou com seu profissional.</p>
             <div className="landing-actions">
               <Button variant="primary" disabled={entryUnavailable} onClick={primaryAction}>
                 {primaryLabel}
@@ -548,7 +548,7 @@ export default function Landing({ invitePath = false }) {
             </div>
             {!localEntry && (
               <div className="landing-account-actions">
-                {auth.configured && <button onClick={() => openAuthSheet('entry')}>{t('Protect your training')}</button>}
+                {auth.configured && <button onClick={() => openAuthSheet('sign_in')}>Já tenho conta</button>}
                 {canGuest && <button onClick={enter}>Continuar sem conta</button>}
               </div>
             )}

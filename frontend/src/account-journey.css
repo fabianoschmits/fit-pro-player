@@ -1,0 +1,146 @@
+/* Account journeys share the app's theme; the athletic brand panel stays dark. */
+#app:has(.fpp-journey) { max-width: none; padding: 0; }
+.fpp-journey {
+  --journey-bg: #000;
+  --journey-surface: #1c1c1e;
+  --journey-input: #141416;
+  --journey-line: #35383b;
+  --journey-text: #fff;
+  --journey-muted: #a7b3b8;
+  --journey-accent: #0f8b8d;
+  --journey-focus: #53d2d0;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100dvh;
+  color: var(--journey-text);
+  background: var(--journey-bg);
+  font-family: var(--font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  line-height: 1.5;
+  padding: max(20px, env(safe-area-inset-top)) max(28px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(28px, env(safe-area-inset-left));
+}
+.fpp-journey *, .fpp-journey *::before, .fpp-journey *::after { box-sizing: border-box; }
+.fpp-journey .fpp-journey__frame { width: min(1180px, 100%); margin: auto; }
+.fpp-journey .fpp-journey__header { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.fpp-journey .fpp-journey__logo { display: block; width: 150px; height: 48px; margin: 0; object-fit: contain; }
+.fpp-journey .fpp-journey__back { display: inline-flex; align-items: center; gap: 5px; min-height: 44px; color: var(--journey-muted); background: none; border: 0; padding: 8px 4px; font: inherit; cursor: pointer; }
+.fpp-journey .fpp-journey__back svg { width: 18px; height: 18px; }
+.fpp-journey .fpp-journey__body { min-height: calc(100dvh - 164px); display: grid; grid-template-columns: minmax(270px, .9fr) minmax(0, 1fr); gap: clamp(40px, 7vw, 108px); align-items: center; padding: 36px 0 48px; }
+.fpp-journey .fpp-journey__body--single { grid-template-columns: minmax(0, 620px); justify-content: center; }
+.fpp-journey .fpp-journey__aside { position: relative; align-self: stretch; min-height: 560px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; background: #1c1c1e; color: #fff; padding: 38px 34px 26px; border-radius: 24px 4px 24px 4px; }
+.fpp-journey .fpp-journey__brand-copy { position: relative; z-index: 1; max-width: 355px; }
+.fpp-journey .journey-eyebrow { margin: 0 0 16px; font-size: 13px; font-weight: 650; color: var(--journey-muted); }
+.fpp-journey .fpp-journey__brand-copy .fpp-journey__brand-title { color: #fff; font-size: clamp(32px, 3.5vw, 46px); line-height: 1.06; font-weight: 850; letter-spacing: -.045em; margin: 0 0 20px; text-wrap: balance; }
+.fpp-journey .fpp-journey__brand-copy > p:last-child { color: #a7b3b8; font-size: 15px; line-height: 1.6; margin: 0; max-width: 31ch; }
+.fpp-journey .fpp-journey__anatomy { position: relative; display: flex; justify-content: flex-end; height: 300px; margin-top: 24px; }
+.fpp-journey .fpp-journey__anatomy .bodymap { width: 72%; max-width: 230px; height: 100%; min-height: 0; display: flex; justify-content: center; opacity: .8; }
+.fpp-journey .fpp-journey__anatomy .bm-v { width: 100%; height: 100%; }
+.fpp-journey .fpp-journey__anatomy-caption { position: absolute; left: 0; bottom: 3px; color: #a7b3b8; font-size: 12px; max-width: 80px; }
+.fpp-journey .fpp-journey__content { min-width: 0; width: 100%; max-width: 560px; padding: 12px 0; }
+.fpp-journey .fpp-journey__heading { margin-bottom: 30px; }
+.fpp-journey .fpp-journey__heading h1:focus { outline: none; }
+.fpp-journey .fpp-journey__heading h1 { color: var(--journey-text); margin: 0 0 12px; font-size: clamp(30px, 3.3vw, 42px); line-height: 1.1; letter-spacing: -.04em; font-weight: 800; text-wrap: balance; }
+.fpp-journey .fpp-journey__heading p { margin: 0; font-size: 15px; color: var(--journey-muted); max-width: 48ch; }
+.fpp-journey .fpp-journey__progress { margin-bottom: 24px; display: grid; gap: 8px; color: var(--journey-muted); font-size: 12px; }
+.fpp-journey .fpp-journey__progress progress { appearance: none; width: 100%; height: 3px; border: 0; background: var(--journey-line); color: var(--journey-accent); }
+.fpp-journey .fpp-journey__progress progress::-webkit-progress-bar { background: var(--journey-line); }
+.fpp-journey .fpp-journey__progress progress::-webkit-progress-value { background: var(--journey-accent); }
+.fpp-journey .fpp-journey__progress progress::-moz-progress-bar { background: var(--journey-accent); }
+.fpp-journey .fpp-journey__footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; color: var(--journey-muted); font-size: 11px; padding: 12px 0; }
+.fpp-journey .fpp-journey__footer nav { display: flex; flex-wrap: wrap; gap: 18px; }
+.fpp-journey a { color: inherit; text-underline-offset: 3px; }
+.fpp-journey .fpp-journey__footer a { text-decoration: none; }
+.fpp-journey :is(button, a, input, textarea, select, summary):focus-visible { outline: 2px solid var(--journey-focus); outline-offset: 4px; }
+.fpp-journey .journey-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.fpp-journey .journey-actions > .btn { flex: 1; }
+.fpp-journey .journey-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.fpp-journey .journey-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.fpp-journey .journey-choice { position: relative; display: flex; align-items: flex-start; gap: 12px; margin: 0; padding: 18px 14px; border: 1px solid var(--journey-line); border-radius: 10px; background: transparent; color: var(--journey-text); text-align: left; cursor: pointer; }
+.fpp-journey .journey-choice.is-selected, .fpp-journey .journey-choice[aria-pressed="true"] { border-color: var(--journey-accent); background: color-mix(in srgb, var(--journey-accent) 10%, transparent); }
+.fpp-journey .journey-choice > svg { width: 22px; height: 22px; flex: 0 0 auto; color: #38babc; }
+.fpp-journey .journey-choice strong { display: block; font-size: 13px; font-weight: 700; line-height: 1.3; margin-bottom: 5px; }
+.fpp-journey .journey-choice small { display: block; color: var(--journey-muted); font-size: 11px; font-weight: 400; line-height: 1.4; }
+.fpp-journey .journey-choice input[type="radio"] { appearance: none; position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; }
+.fpp-journey .journey-choice:has(input:focus-visible) { outline: 2px solid var(--journey-focus); outline-offset: 3px; }
+.fpp-journey .journey-summary { display: grid; gap: 14px; padding: 20px; border: 1px solid var(--journey-line); border-radius: 14px; background: var(--journey-surface); }
+.fpp-journey .journey-note { margin: 0; color: var(--journey-muted); font-size: 13px; line-height: 1.55; }
+.fpp-journey .input, .fpp-journey .field, .fpp-journey textarea, .fpp-journey select { min-width: 0; width: 100%; min-height: 48px; background: var(--journey-input); color: var(--journey-text); border: 1px solid var(--journey-line); border-radius: 9px; padding: 12px 14px; box-shadow: none; font: inherit; font-size: 15px; }
+.fpp-journey input::placeholder, .fpp-journey textarea::placeholder { color: var(--journey-muted); opacity: .7; }
+.fpp-journey .btn { min-height: 48px; border-radius: 9px; font-size: 14px; font-weight: 700; }
+.fpp-journey .btn.primary { background: var(--journey-accent); color: #fff; border-color: var(--journey-accent); }
+.fpp-journey button:disabled { cursor: default; }
+.fpp-journey .auth-form { position: static; width: 100%; max-width: none; min-height: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 18px; justify-content: flex-start; }
+.fpp-journey .auth-form > label { display: grid; gap: 7px; margin: 0; color: var(--journey-text); font-size: 13px; font-weight: 600; line-height: 1.5; letter-spacing: 0; }
+.fpp-journey .auth-form .input { display: block; height: 48px; min-height: 48px; margin: 0; padding: 12px 14px; background: var(--journey-input); border: 1px solid var(--journey-line); border-radius: 9px; color: var(--journey-text); font-size: 15px; }
+.fpp-journey .auth-form .input:focus { background: var(--journey-input); border-color: var(--journey-focus); }
+.fpp-journey .auth-form .btn { width: 100%; min-height: 48px; margin: 0; background: var(--journey-surface); color: var(--journey-text); border: 1px solid var(--journey-line); border-radius: 9px; font-size: 14px; font-weight: 700; }
+.fpp-journey .auth-form .btn.primary { background: var(--journey-accent); color: #fff; border-color: var(--journey-accent); }
+.fpp-journey .auth-form .auth-account-type { margin: 0 0 4px; padding: 0; border: 0; min-width: 0; }
+.fpp-journey .auth-account-type legend { color: var(--journey-muted); padding: 0 0 10px; font-size: 12px; font-weight: 600; }
+.fpp-journey .auth-password-field { display: flex; position: relative; }
+.fpp-journey .auth-form .auth-password-field .input { padding-right: 52px; }
+.fpp-journey .auth-password-field button { position: absolute; inset: 2px 3px 2px auto; width: 44px; min-height: 44px; background: transparent; border: 0; border-radius: 7px; color: var(--journey-muted); display: grid; place-items: center; cursor: pointer; }
+.fpp-journey .auth-password-field button svg { width: 19px; height: 19px; }
+.fpp-journey .auth-password-strength { display: flex; align-items: center; gap: 10px; margin: -9px 0 0; font-size: 11px; color: var(--journey-muted); }
+.fpp-journey .auth-password-strength > span { flex: 1; height: 3px; background: var(--journey-line); border-radius: 2px; overflow: hidden; }
+.fpp-journey .auth-password-strength i { display: block; height: 100%; background: var(--journey-accent); }
+.fpp-journey .auth-password-strength b { font-size: inherit; font-weight: 600; }
+.fpp-journey .auth-complementary { border-top: 1px solid var(--journey-line); padding-top: 12px; }
+.fpp-journey .auth-complementary > summary { min-height: 44px; color: var(--journey-muted); font-size: 12px; cursor: pointer; }
+.fpp-journey .auth-complementary .fpp-phone-field { margin-top: 10px; }
+.fpp-journey .fpp-phone-field label, .fpp-journey .fpp-phone-hint { color: var(--journey-muted); }
+.fpp-journey .fpp-phone-country > summary, .fpp-journey .fpp-phone-country-menu { background: var(--journey-input); border-color: var(--journey-line); color: var(--journey-text); }
+.fpp-journey .auth-form .auth-consent { display: flex; align-items: flex-start; gap: 10px; color: var(--journey-muted); font-size: 11px; font-weight: 400; line-height: 1.6; }
+.fpp-journey .auth-consent input { appearance: auto; width: 17px; height: 17px; min-width: 17px; margin: 1px 0 0; accent-color: var(--journey-accent); }
+.fpp-journey .auth-form .link { width: fit-content; max-width: 100%; min-height: 40px; align-self: center; border: 0; background: none; padding: 6px 2px; margin: -6px 0; color: var(--journey-muted); font-size: 12px; font-weight: 500; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.fpp-journey .auth-form #auth-error, .fpp-journey .auth-email-status { margin: 0; color: #ff9d98; font-size: 12px; line-height: 1.5; }
+.fpp-journey .auth-form #auth-error:empty { display: none; }
+.fpp-journey .auth-form [role="status"] { margin: 0; padding: 12px; color: var(--journey-text); background: color-mix(in srgb, var(--journey-accent) 14%, transparent); border-radius: 9px; font-size: 13px; }
+.fpp-journey .auth-entry .journey-actions { flex-direction: column; margin: 0 0 4px; }
+.fpp-journey .auth-entry .journey-note { margin-top: 12px; text-align: center; font-size: 12px; }
+.fpp-journey .auth-result__email { margin: 0; font-size: 18px; font-weight: 700; overflow-wrap: anywhere; }
+.fpp-journey .auth-result__icon { display: grid; place-items: center; width: 56px; height: 56px; background: color-mix(in srgb, var(--journey-accent) 16%, transparent); color: #38babc; border-radius: 14px; }
+.fpp-journey .auth-result__icon svg { width: 26px; height: 26px; }
+.sheet.auth-fullscreen:has(.fpp-journey) { position: fixed; inset: 0; width: 100vw; max-width: none; margin: 0; padding: 0; background: var(--bg, #000); animation: none; }
+.sheet.auth-fullscreen:has(.fpp-journey)::before { display: none; }
+:root[data-theme="light"] .fpp-journey { --journey-bg: var(--bg, #eef2f6); --journey-surface: var(--surface, #fff); --journey-input: #fff; --journey-line: #cbd3da; --journey-text: #142027; --journey-muted: #56636c; --journey-focus: #0f8b8d; }
+:root[data-theme="light"] .fpp-journey .fpp-journey__logo { filter: brightness(.18); }
+:root[data-theme="light"] .fpp-journey .auth-form #auth-error, :root[data-theme="light"] .fpp-journey .auth-email-status { color: #ac2822; }
+@media (min-width: 761px) and (max-height: 800px) {
+  .fpp-journey .fpp-journey__body { min-height: calc(100dvh - 150px); padding: 18px 0 22px; }
+  .fpp-journey .fpp-journey__aside { min-height: 0; padding-top: 28px; }
+  .fpp-journey .fpp-journey__anatomy { height: 220px; }
+  .fpp-journey .fpp-journey__brand-copy .fpp-journey__brand-title { font-size: 37px; }
+}
+@media (max-width: 760px) {
+  .fpp-journey--training .fpp-journey__aside, .fpp-journey--professional .fpp-journey__aside { display: none; }
+  .fpp-journey { padding: max(14px, env(safe-area-inset-top)) max(22px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left)); }
+  .fpp-journey .fpp-journey__header { min-height: 48px; }
+  .fpp-journey .fpp-journey__logo { width: 132px; height: 40px; }
+  .fpp-journey .fpp-journey__body { min-height: calc(100dvh - 160px); display: flex; flex-direction: column; align-items: stretch; gap: 24px; padding: 22px 0 30px; }
+  .fpp-journey .fpp-journey__aside { min-height: 0; padding: 18px 20px; border-radius: 14px; flex-direction: row; align-items: center; }
+  .fpp-journey .fpp-journey__brand-copy { max-width: 230px; }
+  .fpp-journey .fpp-journey__brand-copy .journey-eyebrow, .fpp-journey .fpp-journey__brand-copy > p:last-child, .fpp-journey .fpp-journey__anatomy-caption { display: none; }
+  .fpp-journey .fpp-journey__brand-copy .fpp-journey__brand-title { font-size: 23px; margin: 0; max-width: 15ch; }
+  .fpp-journey .fpp-journey__anatomy { height: 90px; width: 76px; margin: -8px 0; flex: 0 0 auto; }
+  .fpp-journey .fpp-journey__anatomy .bodymap { width: 100%; }
+  .fpp-journey--auth .fpp-journey__aside { height: 64px; padding: 10px 18px; }
+  .fpp-journey--auth .fpp-journey__brand-copy .fpp-journey__brand-title { display: none; }
+  .fpp-journey--auth .fpp-journey__brand-copy .journey-eyebrow { display: block; margin: 0; color: #a7b3b8; font-size: 13px; }
+  .fpp-journey--auth .fpp-journey__anatomy { height: 60px; width: 50px; }
+  .fpp-journey .fpp-journey__content { max-width: 560px; align-self: center; padding: 0; }
+  .fpp-journey .fpp-journey__heading { margin-bottom: 25px; }
+  .fpp-journey .fpp-journey__heading h1 { font-size: 32px; }
+  .fpp-journey .fpp-journey__heading p { font-size: 14px; }
+  .fpp-journey .fpp-journey__footer > span { display: none; }
+  .fpp-journey .fpp-journey__footer { justify-content: center; }
+  .fpp-journey .journey-field-grid { grid-template-columns: 1fr; }
+  .fpp-journey .auth-form { gap: 16px; padding-bottom: 14px; }
+  .fpp-journey .auth-form .auth-submit { position: sticky; bottom: 0; z-index: 3; padding: 12px 0 max(12px, env(safe-area-inset-bottom)); margin: 0 -2px; background: var(--journey-bg); border-top: 1px solid var(--journey-line); }
+  .fpp-journey .input, .fpp-journey .auth-form .input, .fpp-journey .field, .fpp-journey textarea, .fpp-journey select { font-size: 16px; }
+  .fpp-journey .journey-choice { padding: 13px 11px; gap: 8px; flex-direction: column; }
+  .fpp-journey .journey-choice small { font-size: 10px; }
+  .fpp-journey .journey-actions { flex-direction: column; }
+}
+@media (max-width: 360px) { .fpp-journey .journey-choice-grid { grid-template-columns: 1fr; } .fpp-journey .journey-choice { flex-direction: row; } }
+@media (prefers-reduced-motion: reduce) { .fpp-journey *, .fpp-journey *::before, .fpp-journey *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }

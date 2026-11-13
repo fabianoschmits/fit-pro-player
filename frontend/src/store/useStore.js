@@ -33,7 +33,7 @@ export const DEF = {
   reminder: { on: false, time: '08:00', tz: null }, effort: null, assignedProgram: null,
   notifications: DEFAULT_NOTIFICATION_PREFERENCES,
   // UX prefs — weighBeforeWorkout defaults true; skipped automatically when already weighed today.
-  weighBeforeWorkout: true, onboardingDone: false, simpleMode: true, seenTips: {}, pwaInstallPrompt: null, pendingProfessionalEvents: [], professionalProgramDrafts: {}
+  weighBeforeWorkout: true, onboardingDone: false, onboardingVersion: 0, onboardingDraft: null, simpleMode: true, seenTips: {}, pwaInstallPrompt: null, pendingProfessionalEvents: [], professionalProgramDrafts: {}
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 const uuidOrNull = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '')) ? value : null
@@ -80,7 +80,7 @@ export function normalizeState(source) {
   state.pwaInstallPrompt = normalizePwaInstallPrompt(raw.pwaInstallPrompt)
   syncProfileWeightFromBodyweight(state)
 
-  if (!hasCompleteProfile(state.profile) && legacyHasPersonalData(raw)) {
+  if (state.onboardingVersion !== 1 && !hasCompleteProfile(state.profile) && legacyHasPersonalData(raw)) {
     state.onboardingDone = false
     state.profile.startWeight = state.profile.startWeight || state.bodyweight[0]?.w || null
     state.profile.completedAt = null

@@ -23,13 +23,17 @@ const assigned = record(fields('assignmentId programId versionId versionNumber u
 const notifications = record({...fields('rest timedSet workoutReminder professional weightReminder measurementReminder trainingTime checkinTime leadMinutes checkinDay'),quietHours:record(fields('enabled start end'))})
 const schedule = record({week:dictionary(day,scalar),dayPlan:dictionary(date,scalar), assignedProgram:assigned,...fields('libraryId libraryTitle')})
 const wirePlan = record({mode:scalar,schedule,routines:list(record({id:scalar,title:scalar,prescription:record({...routineMarkers,...fields('emoji assigned assignedDayKey assignmentId programVersionId prog'),ex:list(prescription)})}))})
-const preferenceSchema = {...fields('displayUnit massUnit stateSchemaVersion restSec sound keepAwake lang theme accent body targetW mediaSize effort weighBeforeWorkout onboardingDone simpleMode'),profile,notifications,
+const preferenceSchema = {...fields('displayUnit massUnit stateSchemaVersion restSec sound keepAwake lang theme accent body targetW mediaSize effort weighBeforeWorkout onboardingDone onboardingVersion simpleMode'),profile,notifications,
  reminder:record(fields('on time tz')),bodyMeasurementGoals:dictionary(/^(chest|waist|hips|neck|shoulders|abdomen|(?:left|right)-(?:arm|forearm|thigh|calf))$/,scalar),
  seenTips:dictionary(id,scalar), pwaInstallPrompt:record(fields('dismissForever snoozeUntil'))}
 const wirePreference = record({displayUnit:scalar,values:record(preferenceSchema)})
 const wireBody = record({weights:list(record(fields('id date weightKg'))),measurements:list(record({...fields('id date note'),valuesCm:dictionary(/^(chest|waist|hips|neck|shoulders|abdomen|(?:left|right)-(?:arm|forearm|thigh|calf))$/,scalar)}))})
 const conflict = project => record({base:project,local:project,remote:project,path:scalar})
-const schema = {...preferenceSchema,...fields('planMode bodyServerRevision planServerRevision activeLibraryId activeLibraryTitle _ts unit'),
+const onboardingDraft = record({...fields('version kind owner step'),days:list(scalar),values:record({
+ ...fields('name avatarId birthDate sex height heightCm startWeight targetWeight goal experience preferredWorkoutMinutes unit planMode intent intention path professionalName bio stateUf cityName neighborhood registrationType registrationNumber customSpecialty'),
+ specialties:list(scalar),
+})})
+const schema = {...preferenceSchema,...fields('planMode bodyServerRevision planServerRevision activeLibraryId activeLibraryTitle _ts unit'),onboardingDraft,
  routines:list(routine), week:dictionary(day,scalar),dayPlan:dictionary(date,scalar),
  workouts:list(workout),active:workout,exWeights:dictionary(id,value => typeof value === 'number' ? value : record(fields('w d sec min speed rir rpe'))(value)),
  bodyweight:list(record(fields('id d w t'))), bodyMeasurements:list(record({...fields('id date notes createdAt updatedAt'),values:dictionary(/^(chest|waist|hips|neck|shoulders|abdomen|(?:left|right)-(?:arm|forearm|thigh|calf))$/,value => typeof value === 'number' ? value : undefined)})),

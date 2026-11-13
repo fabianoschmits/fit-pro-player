@@ -17,6 +17,7 @@ function publicUser(user) {
     id: user.id,
     email: user.email || null,
     displayName: typeof user.user_metadata?.display_name === 'string' ? user.user_metadata.display_name : '',
+    accountType: user.user_metadata?.account_type === 'professional' ? 'professional' : 'student',
     emailConfirmedAt: user.email_confirmed_at || null,
     isAnonymous: Boolean(user.is_anonymous),
   };
@@ -339,8 +340,8 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
             setState(next => ({ ...next, error: mapped }));
             return { kind: 'error', error: mapped };
           }
-          if (!result.data?.user?.email_confirmed_at && result.data?.user?.email) {
-            return { kind: 'confirmation_required' };
+          if (result.data?.user?.new_email || (!result.data?.user?.email_confirmed_at && result.data?.user?.email)) {
+            return { kind: 'confirmation_required', confirmationType: 'email_change' };
           }
           return { kind: 'authenticated' };
         }
@@ -363,6 +364,13 @@ export function AuthProvider({ children = undefined, client: injectedClient = un
         return { kind: 'confirmation_required' };
       },
       signIn: ({ email, password }) => execute('signing_in', () => client.auth.signInWithPassword({ email, password })),
+      resendConfirmation: async (email, type = 'signup') => {
+        if (type !== 'signup' && type !== 'email_change') return unavailable();
+        return execute('resending_confirmation', () => client.auth.resend({
+          type, email,
+          options: { emailRedirectTo: buildAuthRedirectUrl(location, 'confirm') },
+        }));
+      },
       sendPasswordRecovery: email => execute('sending_recovery', () => client.auth.resetPasswordForEmail(email, {
         redirectTo: buildAuthRedirectUrl(location, 'recovery'),
       })),
