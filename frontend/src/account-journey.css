@@ -85,10 +85,8 @@
 .fpp-journey .auth-password-strength > span { flex: 1; height: 3px; background: var(--journey-line); border-radius: 2px; overflow: hidden; }
 .fpp-journey .auth-password-strength i { display: block; height: 100%; background: var(--journey-accent); }
 .fpp-journey .auth-password-strength b { font-size: inherit; font-weight: 600; }
-.fpp-journey .auth-complementary { border-top: 1px solid var(--journey-line); padding-top: 12px; }
-.fpp-journey .auth-complementary > summary { min-height: 44px; color: var(--journey-muted); font-size: 12px; cursor: pointer; }
-.fpp-journey .auth-complementary .fpp-phone-field { margin-top: 10px; }
 .fpp-journey .fpp-phone-field label, .fpp-journey .fpp-phone-hint { color: var(--journey-muted); }
+.fpp-journey .auth-form .fpp-phone-field > label { color: var(--journey-text); font-size: 13px; font-weight: 600; }
 .fpp-journey .fpp-phone-country > summary, .fpp-journey .fpp-phone-country-menu { background: var(--journey-input); border-color: var(--journey-line); color: var(--journey-text); }
 .fpp-journey .auth-form .auth-consent { display: flex; align-items: flex-start; gap: 10px; color: var(--journey-muted); font-size: 11px; font-weight: 400; line-height: 1.6; }
 .fpp-journey .auth-consent input { appearance: auto; width: 17px; height: 17px; min-width: 17px; margin: 1px 0 0; accent-color: var(--journey-accent); }
@@ -144,3 +142,7 @@
 }
 @media (max-width: 360px) { .fpp-journey .journey-choice-grid { grid-template-columns: 1fr; } .fpp-journey .journey-choice { flex-direction: row; } }
 @media (prefers-reduced-motion: reduce) { .fpp-journey *, .fpp-journey *::before, .fpp-journey *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+.account-restore { display: grid; gap: 18px; padding: 32px 20px; }
+.account-restore h1, .account-restore p { margin: 0; }
+.account-restore p { color: var(--label-2); line-height: 1.6; }
+.account-restore .btn { justify-self: start; min-height: 44px; }

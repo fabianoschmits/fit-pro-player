@@ -28,3 +28,13 @@ Typecheck global mantém dois erros em exercise-sprite-prompts.js:62 e :86 (defa
 ## Preservação do trabalho existente
 frontend/src/index.css não foi editado ou transferido. SHA-256 antes e depois: 65CC6CCA6A99491D0697CD7C78DA34C1AA3272D3E91DCE4D95217B98052F2305.
 Arquivos temporários de demonstração, configuração de testes e cópias de ambiente do worktree não foram transferidos.
+
+## Ajustes posteriores de cadastro e retorno à conta
+- Telefone visível após o email, sem recolhimento nem legenda de opcional; campo vazio continua aceito e números informados continuam validados.
+- Avatar primeiro na etapa de perfil; altura, peso alvo, nascimento e mapa corporal visíveis. A revisão final inclui os dados preenchidos e o avatar.
+- Seletor de avatar captura o ponteiro apenas durante um arrasto; toque/clique seleciona normalmente. Avatar selecionado aparece na galeria ao abrir. Altura e espaçamento da galeria corrigidos em celular.
+- Cadastro concluído não é invalidado pela ausência de medidas opcionais. Perfis de treino já salvos e timestamps de conclusão recuperam marcadores antigos perdidos.
+- Decisão de abrir o cadastro aguarda as preferências da própria conta. Perfil profissional existente e autorizado confirma a conclusão mesmo sem o marcador antigo. Leituras atrasadas de outra conta são ignoradas.
+- Ausência confirmada de preferências representa conta nova sem criar registros automaticamente; falha de leitura oferece tentar novamente. Conta concluída em cache continua acessível.
+- Verificação final: 222 arquivos e 1.926 testes passaram; build, 11 catálogos de tradução e ESLint dos arquivos alterados passaram. Typecheck mantém somente os dois erros anteriores em exercise-sprite-prompts.js.
+- Conferência na versão compilada: telefone visível no desktop; avatar, objetivos e medidas em 390x844; seleção de avatar por clique confirmada no navegador. Testes integrados cobrem retorno de aluno/profissional, URL antiga de cadastro, falha/repetição de leitura e troca de conta.

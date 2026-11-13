@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { parsePhoneNumberFromString } from 'libphonenumber-js/max'
 import { defaultPhoneCountry, formatPhoneInput, getCountryCallingCode, normalizePhone, phoneCountries } from '../lib/phone.js'
+import { t } from '../lib/i18n.js'
 import './phone-contact.css'
 
 const flags = import.meta.glob('/node_modules/country-flag-icons/3x2/*.svg', { query: '?url', import: 'default', eager: true })
@@ -8,8 +9,9 @@ const flagUrl = country => String(flags[`/node_modules/country-flag-icons/3x2/${
 const names = new Intl.DisplayNames(['pt-BR'], { type: 'region' })
 const countries = [...phoneCountries].sort((a, b) => a === 'BR' ? -1 : b === 'BR' ? 1 : names.of(a).localeCompare(names.of(b), 'pt-BR'))
 
-export default function PhoneField({ value, onChange, disabled = false, showErrors = false }) {
+export default function PhoneField({ value, onChange, disabled = false, showErrors = false, label = undefined }) {
  const id = useId(), menu = useRef(null), inputRef = useRef(null)
+ const customLabel = label ? t(label) : ''
  const [search, setSearch] = useState('')
  const [touched, setTouched] = useState(false)
  const country = value.country || defaultPhoneCountry()
@@ -31,7 +33,7 @@ export default function PhoneField({ value, onChange, disabled = false, showErro
   onChange({ country, number: formatPhoneInput(input, country) })
  }
  return <div className="fpp-phone-field">
-  <label htmlFor={id}>Telefone / WhatsApp <span className="muted">(opcional)</span></label>
+  <label htmlFor={id}>{customLabel || <>Telefone / WhatsApp <span className="muted">(opcional)</span></>}</label>
   <div className="fpp-phone-controls">
    <details ref={menu} className="fpp-phone-country" onKeyDown={event => { if (event.key === 'Escape') menu.current.open = false }}>
     <summary aria-label={`País do telefone: ${names.of(country)}, +${getCountryCallingCode(country)}`} tabIndex={disabled ? -1 : 0} onClick={event => { if (disabled) event.preventDefault() }}>
@@ -44,7 +46,7 @@ export default function PhoneField({ value, onChange, disabled = false, showErro
      </button>)}{!options.length && <p>Nenhum país encontrado.</p>}</div>
     </div>
    </details>
-   <input ref={inputRef} id={id} className="field" aria-label="Telefone / WhatsApp (opcional)" type="tel" inputMode="tel" autoComplete="tel-national" placeholder={country === 'BR' ? '(11) 91234-5678' : 'Número com código de área'} value={value.number} onChange={changeNumber} onBlur={() => setTouched(true)} onInvalid={event => { event.preventDefault(); setTouched(true); event.currentTarget.focus() }} disabled={disabled} aria-invalid={Boolean(error)} aria-describedby={`${id}-hint${error ? ` ${id}-error` : ''}`} />
+   <input ref={inputRef} id={id} className="field" aria-label={customLabel || 'Telefone / WhatsApp (opcional)'} type="tel" inputMode="tel" autoComplete="tel-national" placeholder={country === 'BR' ? '(11) 91234-5678' : 'Número com código de área'} value={value.number} onChange={changeNumber} onBlur={() => setTouched(true)} onInvalid={event => { event.preventDefault(); setTouched(true); event.currentTarget.focus() }} disabled={disabled} aria-invalid={Boolean(error)} aria-describedby={`${id}-hint${error ? ` ${id}-error` : ''}`} />
   </div>
   {error && <p id={`${id}-error`} className="fpp-phone-error" role="alert">{error}</p>}
   <p id={`${id}-hint`} className="fpp-phone-hint">Compartilhado apenas com seus profissionais e alunos com vínculo ativo. Não aparece na comunidade.</p>

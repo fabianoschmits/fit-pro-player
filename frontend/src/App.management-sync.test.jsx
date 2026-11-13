@@ -51,6 +51,7 @@ const seedAccount = async (id, assigned = true, onboardingDone = true) => {
   if (assigned) state = assignedPlanToState(state, version('old-version'), oldAssignment)
   state.week[2] = 'personal-r'
   state.onboardingDone = onboardingDone
+  if (!onboardingDone) state.onboardingDraft = { version: 1, owner: `account:${id}`, kind: 'training', step: 0, values: {}, days: [] }
   useStore.getState().replaceState(state)
   useStore.getState().enterApp()
 }

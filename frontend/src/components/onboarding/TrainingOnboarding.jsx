@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { useAuth } from '../../auth/AuthProvider.jsx'
 import { useStore } from '../../store/useStore.js'
 import { DAYN, todayISO } from '../../lib/format.js'
-import { t } from '../../lib/i18n.js'
+import { dateLocale, t } from '../../lib/i18n.js'
 import { fromDisplayMass, toDisplayMass } from '../../lib/mass.js'
 import {
   decimalNumber, EXPERIENCE_LABELS, EXPERIENCE_LEVELS, formatPersonName, heightCmFromText,
@@ -12,6 +12,7 @@ import {
   completeTrainingOnboarding, createTrainingDraft, onboardingOwner, readTrainingDraft, saveTrainingDraft,
 } from '../../lib/onboarding.js'
 import AvatarPicker from '../AvatarPicker.jsx'
+import AvatarImage from '../AvatarImage.jsx'
 import BodyMap from '../BodyMap.jsx'
 import Icon from '../Icon.jsx'
 import JourneyLayout from '../JourneyLayout.jsx'
@@ -130,6 +131,10 @@ function TrainingJourney({ owner, user, onDone }) {
         </div>}
 
         {step === 1 && <div className="training-step">
+          <div className="training-group training-avatar" role="group" aria-labelledby="training-avatar-label">
+            <span className="training-label" id="training-avatar-label">{t('Your avatar')}</span>
+            <AvatarPicker value={values.avatarId} onChange={avatarId => set({ avatarId })} t={t} orientation="horizontal" disabled={busy} />
+          </div>
           <div className="training-group" role="group" aria-labelledby="training-goal-label"><span className="training-label" id="training-goal-label">{t('Main goal')}</span>
             <div className="training-goals">{PROFILE_GOALS.map((goal, index) => <Choice key={goal} selected={values.goal === goal} icon={['scale', 'figureStrength', 'bolt', 'heart'][index]} title={t(PROFILE_GOAL_LABELS[goal])} onClick={() => set({ goal })} />)}</div>
           </div>
@@ -139,9 +144,11 @@ function TrainingJourney({ owner, user, onDone }) {
           <div className="training-weight-row"><label className="training-field" htmlFor="training-weight"><span>{t('Body weight')}</span><span className="training-unit-input"><input className="field" id="training-weight" name="startWeight" inputMode="decimal" value={values.startWeight} onChange={event => set({ startWeight: weightInput(event.target.value) })} /><span>{values.unit}</span></span></label>
             <div className="training-chips training-units" role="group" aria-label={t('Weight unit')}>{['kg', 'lb'].map(unit => <button type="button" key={unit} aria-pressed={values.unit === unit} onClick={() => switchUnit(unit)}>{unit}</button>)}</div>
           </div>
-          <details className="training-optional"><summary>{t('Dados complementares')} <span>{t('optional')}</span></summary><div className="training-optional__body">
-            <p className="journey-note">{t('Preencha apenas o que quiser. Esses dados podem ser adicionados depois.')}</p>
-            <span className="training-label">{t('Your avatar')}</span><AvatarPicker value={values.avatarId} onChange={avatarId => set({ avatarId })} t={t} orientation="horizontal" />
+          <div className="journey-field-grid training-measurements"><label className="training-field" htmlFor="training-height"><span>{t('Height')}</span><span className="training-unit-input"><input className="field" id="training-height" name="height" inputMode="decimal" placeholder="1,75" value={values.height} onChange={event => set({ height: heightInput(event.target.value, values.height) })} /><span>m</span></span></label>
+            <label className="training-field" htmlFor="training-target"><span>{t('Target weight')}</span><span className="training-unit-input"><input className="field" id="training-target" name="targetWeight" inputMode="decimal" value={values.targetWeight} onChange={event => set({ targetWeight: weightInput(event.target.value) })} /><span>{values.unit}</span></span></label>
+          </div>
+          <div className="training-personal">
+            <label className="training-field" htmlFor="training-birth"><span>{t('Date of birth')}</span><input className="field" type="date" id="training-birth" name="birthDate" min="1900-01-01" max={todayISO()} value={values.birthDate} onChange={event => set({ birthDate: event.target.value })} /></label>
             <div className="training-body-choice">
               {values.sex && <div className="training-body-map" aria-hidden="true"><BodyMap body={values.sex} view="front" decorative /></div>}
               <div className="training-group" role="group" aria-label={t('Sex')}><span className="training-label">{t('Seu mapa corporal')}</span><div className="training-chips">
@@ -149,11 +156,7 @@ function TrainingJourney({ owner, user, onDone }) {
                 <button type="button" aria-pressed={values.sex === 'female'} onClick={() => set({ sex: values.sex === 'female' ? '' : 'female' })}>{t('Female')}</button>
               </div><small className="journey-note">{t('The body map and body statistics follow this selection.')}</small></div>
             </div>
-            <div className="journey-field-grid"><label className="training-field" htmlFor="training-height"><span>{t('Height')}</span><span className="training-unit-input"><input className="field" id="training-height" name="height" inputMode="decimal" value={values.height} onChange={event => set({ height: heightInput(event.target.value, values.height) })} /><span>m</span></span></label>
-              <label className="training-field" htmlFor="training-target"><span>{t('Target weight')}</span><span className="training-unit-input"><input className="field" id="training-target" name="targetWeight" inputMode="decimal" value={values.targetWeight} onChange={event => set({ targetWeight: weightInput(event.target.value) })} /><span>{values.unit}</span></span></label>
-            </div>
-            <label className="training-field" htmlFor="training-birth"><span>{t('Date of birth')}</span><input className="field" type="date" id="training-birth" name="birthDate" min="1900-01-01" max={todayISO()} value={values.birthDate} onChange={event => set({ birthDate: event.target.value })} /></label>
-          </div></details>
+          </div>
         </div>}
 
         {step === 2 && <div className="training-step">
@@ -166,11 +169,15 @@ function TrainingJourney({ owner, user, onDone }) {
         </div>}
 
         {step === 3 && <div className="training-step training-review">
-          <div className="training-review__heading"><Icon name={professional ? 'person2' : 'dumbbell'} /><div><strong>{values.name}</strong><span>{professional ? t('Seguir um profissional') : t('Criar meu plano')}</span></div></div>
+          <div className="training-review__heading">{professional ? <Icon name="person2" /> : <AvatarImage avatarId={values.avatarId} className="training-review__avatar" />}<div><strong>{values.name}</strong><span>{professional ? t('Seguir um profissional') : t('Criar meu plano')}</span></div></div>
           {!professional && <dl className="journey-summary training-summary">
             <div><dt>{t('Main goal')}</dt><dd>{t(PROFILE_GOAL_LABELS[values.goal])}</dd></div>
             <div><dt>{t('Experience')}</dt><dd>{t(EXPERIENCE_LABELS[values.experience])}</dd></div>
             <div><dt>{t('Body weight')}</dt><dd>{values.startWeight} {values.unit}</dd></div>
+            {values.height && <div><dt>{t('Height')}</dt><dd>{values.height} m</dd></div>}
+            {values.targetWeight && <div><dt>{t('Target weight')}</dt><dd>{values.targetWeight} {values.unit}</dd></div>}
+            {values.birthDate && <div><dt>{t('Date of birth')}</dt><dd>{new Date(`${values.birthDate}T12:00:00`).toLocaleDateString(dateLocale())}</dd></div>}
+            {values.sex && <div><dt>{t('Seu mapa corporal')}</dt><dd>{values.sex === 'female' ? t('Female') : t('Male')}</dd></div>}
             <div><dt>{t('Tempo por treino')}</dt><dd>{values.preferredWorkoutMinutes} min</dd></div>
             <div><dt>{t('Plan style')}</dt><dd>{values.planMode === 'weekly' ? t('Weekly plan') : t('Daily plan')}</dd></div>
             {values.planMode === 'weekly' && <div><dt>{t('Training days')}</dt><dd>{WEEK_DAYS.filter(day => days.includes(day)).map(day => t(DAYN[day]).slice(0, 3)).join(', ')}</dd></div>}

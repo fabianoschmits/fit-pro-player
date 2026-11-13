@@ -10,7 +10,7 @@
 .fpp-journey--training .training-intentions { grid-template-columns: 1fr; }
 .training-choice__icon { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 44px; color: var(--journey-accent, #18b7ba); }
 .training-choice__icon .icon { width: 25px; height: 25px; }
-.training-choice__copy { display: grid; gap: 5px; flex: 1; }
+.training-choice__copy { display: grid; gap: 5px; flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .training-choice__copy strong { line-height: 1.25; }
 .fpp-journey--training .training-choice__copy small { color: var(--journey-muted, #a7b3b8); font-size: 13px; line-height: 1.5; font-weight: 400; }
 .training-choice > .icon { width: 19px; height: 19px; flex-shrink: 0; }
@@ -21,19 +21,16 @@
 .training-chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .training-chips button, .training-days button { min-height: 44px; padding: 10px 15px; border: 1px solid var(--surface-border); border-radius: 12px; background: var(--surface); color: var(--label); font: inherit; font-size: 13px; cursor: pointer; }
 .training-chips button[aria-pressed="true"], .training-days button[aria-pressed="true"] { border-color: var(--journey-accent, #0f8b8d); background: color-mix(in srgb, #0f8b8d 20%, var(--surface)); color: var(--label); box-shadow: inset 0 0 0 1px var(--journey-accent, #0f8b8d); }
-.training-onboarding button:focus-visible, .training-optional > summary:focus-visible, .training-complete button:focus-visible { outline: 3px solid var(--journey-accent, #18b7ba); outline-offset: 3px; }
+.training-onboarding button:focus-visible, .training-complete button:focus-visible { outline: 3px solid var(--journey-accent, #18b7ba); outline-offset: 3px; }
 .training-weight-row { display: flex; align-items: flex-end; gap: 12px; }
 .training-weight-row > .training-field { flex: 1; }
 .training-units { flex-wrap: nowrap; padding-bottom: 1px; }
 .training-unit-input { display: flex; align-items: center; position: relative; }
 .training-unit-input .field { padding-right: 45px; }
 .training-unit-input > span { position: absolute; right: 15px; pointer-events: none; font-size: 13px; font-weight: 500; color: var(--label-2); }
-.training-optional { border-top: 1px solid var(--surface-border); padding-top: 18px; }
-.training-optional > summary { cursor: pointer; font-weight: 600; padding: 6px 0; font-size: 14px; }
-.training-optional > summary > span { margin-left: 7px; color: var(--label-2); font-size: 12px; font-weight: 400; }
-.training-optional__body { display: grid; gap: 18px; padding-top: 14px; min-width: 0; }
-.training-optional__body > .training-label { margin-bottom: -8px; }
-.training-optional__body .avatar-picker-horizontal { max-width: 100%; }
+.training-avatar { min-width: 0; padding-bottom: 16px; border-bottom: 1px solid var(--surface-border); }
+.training-avatar .avatar-picker-horizontal { max-width: 100%; height: 154px; }
+.training-personal { display: grid; gap: 22px; border-top: 1px solid var(--surface-border); padding-top: 22px; }
 .training-body-choice { display: flex; align-items: center; gap: 20px; }
 .training-body-map { width: 88px; height: 165px; flex-shrink: 0; overflow: hidden; }
 .training-body-map .bodymap { height: 100%; width: 100%; }
@@ -45,6 +42,7 @@
 .training-callout > .icon { flex: 0 0 19px; margin-top: 2px; color: var(--journey-accent, #18b7ba); }
 .training-review__heading { display: flex; gap: 15px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--surface-border); }
 .training-review__heading > .icon { width: 36px; height: 36px; color: var(--journey-accent, #18b7ba); }
+.training-review__heading .training-review__avatar { width: 64px; height: 72px; flex-shrink: 0; object-fit: contain; object-position: center bottom; border-radius: 12px; background: var(--surface); }
 .training-review__heading > div { display: grid; gap: 5px; }
 .training-review__heading strong { font-size: 21px; letter-spacing: -.04em; }
 .training-review__heading span { color: var(--label-2); font-size: 13px; }
@@ -62,6 +60,10 @@
 .training-complete__check { width: 72px; height: 72px; display: grid; place-items: center; color: var(--journey-accent, #18b7ba); background: color-mix(in srgb, #0f8b8d 17%, var(--surface)); border-radius: 50%; }
 .training-complete__check .icon { width: 40px; height: 40px; }
 .training-complete p { font-size: 14px; color: var(--label-2); margin: 0; }
+@media (max-width: 480px) {
+  .training-goals .training-choice__icon { display: none; }
+  .fpp-journey--training .training-goals .training-choice { gap: 8px; min-height: 68px; }
+}
 @media (max-width: 390px) {
   .training-chips { gap: 6px; }
   .training-chips button { padding-inline: 11px; }

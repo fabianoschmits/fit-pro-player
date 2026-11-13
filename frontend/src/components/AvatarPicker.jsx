@@ -13,8 +13,9 @@ export default function AvatarPicker({ value = undefined, onChange = undefined, 
     const grid = gridRef.current
     const selected = selectedRef.current
     if (!grid || !selected) return
-    grid.scrollTop = Math.max(0, selected.offsetTop - (grid.clientHeight / 2) + (selected.clientHeight / 2))
-  }, [])
+    if (orientation === 'horizontal') grid.scrollLeft = Math.max(0, selected.offsetLeft - (grid.clientWidth / 2) + (selected.clientWidth / 2))
+    else grid.scrollTop = Math.max(0, selected.offsetTop - (grid.clientHeight / 2) + (selected.clientHeight / 2))
+  }, [orientation])
 
   const selectAndFocus = index => {
     const normalizedIndex = (index + AVATARS.length) % AVATARS.length
@@ -42,17 +43,20 @@ export default function AvatarPicker({ value = undefined, onChange = undefined, 
   const onPointerDown = event => {
     if (disabled || orientation !== 'horizontal' || event.pointerType === 'mouse' && event.button !== 0) return
     drag.current = { active: true, startX: event.clientX, startScroll: gridRef.current.scrollLeft, moved: false }
-    gridRef.current.setPointerCapture?.(event.pointerId)
   }
   const onPointerMove = event => {
     if (!drag.current.active || !gridRef.current) return
     const delta = event.clientX - drag.current.startX
-    if (Math.abs(delta) > 4) drag.current.moved = true
+    if (!drag.current.moved) {
+      if (Math.abs(delta) <= 4) return
+      drag.current.moved = true
+      gridRef.current.setPointerCapture?.(event.pointerId)
+    }
     gridRef.current.scrollLeft = drag.current.startScroll - delta
   }
   const onPointerUp = event => {
     if (!drag.current.active) return
-    gridRef.current?.releasePointerCapture?.(event.pointerId)
+    if (gridRef.current?.hasPointerCapture?.(event.pointerId)) gridRef.current.releasePointerCapture?.(event.pointerId)
     drag.current.active = false
   }
 

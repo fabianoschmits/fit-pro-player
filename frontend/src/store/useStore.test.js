@@ -4,6 +4,31 @@ import { DEF, hasData, normalizeState, useStore } from './useStore.js'
 import { starterRoutines, readyMadeRoutines } from '../lib/starter.js'
 
 describe('state migration for first-run profiles', () => {
+  it.each([
+    { name: 'Ana', goal: 'build_muscle', experience: 'beginner', startWeight: 70 },
+    { name: 'Profissional Ana' },
+  ])('preserves an existing completed account without requiring optional training data: $name', profile => {
+    const restored = normalizeState({ ...DEF, onboardingDone: true, onboardingVersion: 0, profile })
+    expect(restored.onboardingDone).toBe(true)
+    expect(restored.profile.name).toBe(profile.name)
+    expect(restored.profile.birthDate).toBe('')
+    expect(restored.profile.heightCm).toBeNull()
+  })
+
+  it('recovers a saved profile completion when the old boolean flag is missing', () => {
+    const restored = normalizeState({ profile: { name: 'Ana', completedAt: '2026-11-13T10:00:00.000Z' } })
+    expect(restored.onboardingDone).toBe(true)
+    expect(restored.profile.completedAt).toBe('2026-11-13T10:00:00.000Z')
+  })
+
+  it('recovers an established legacy training profile whose completion marker was lost', () => {
+    const restored = normalizeState({ profile: { name: 'Ana', goal: 'build_muscle', experience: 'beginner', startWeight: 70 }, onboardingDone: false })
+    expect(restored.onboardingDone).toBe(true)
+    expect(restored.profile.birthDate).toBe('')
+    expect(restored.profile.heightCm).toBeNull()
+    expect(normalizeState({ ...restored, onboardingDone: false }).onboardingDone).toBe(true)
+  })
+
   it('preserves a completed coaching setup without invented training measurements', () => {
     const restored = normalizeState({
       ...DEF, onboardingDone: true, onboardingVersion: 1,

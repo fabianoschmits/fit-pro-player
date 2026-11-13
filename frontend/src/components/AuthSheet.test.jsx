@@ -89,7 +89,8 @@ describe('AuthSheet', () => {
   it('marks an invalid optional phone inline and blocks signup until it is corrected', async () => {
     vi.spyOn(globalThis.navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
     await render('sign_up');
-    const telephone = input('Telefone / WhatsApp (opcional)');
+    const telephone = input('Telefone');
+    expect(telephone).toBeTruthy();
     await setValue(telephone, '123');
     await act(async () => telephone.dispatchEvent(new dom.FocusEvent('focusout', { bubbles: true })));
     expect(telephone.getAttribute('aria-invalid')).toBe('true');
@@ -105,7 +106,8 @@ describe('AuthSheet', () => {
     vi.spyOn(globalThis.navigator, 'languages', 'get').mockReturnValue(['pt-BR']);
     mocks.auth = auth({ signUp: vi.fn().mockResolvedValue({ kind: 'confirmation_required' }) });
     await render('sign_up');
-    const telephone = input('Telefone / WhatsApp (opcional)');
+    const telephone = input('Telefone');
+    expect(telephone).toBeTruthy();
     expect(telephone.placeholder).toBe('(11) 91234-5678');
     expect(telephone.required).toBe(false);
     await setValue(telephone, '11912345678');
@@ -256,7 +258,7 @@ describe('AuthSheet', () => {
     await acceptPrivacy();
     await click(button('Create account'));
 
-    expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'professional' }));
+    expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'professional', phone: null }));
     expect(mocks.auth.signUp.mock.calls[0][0]).not.toHaveProperty('professionalProfile');
     expect(container.querySelector('[name="professionalName"]')).toBeNull();
   });
@@ -298,6 +300,7 @@ describe('AuthSheet', () => {
 
     await click(button('Create account'));
 
+    expect(mocks.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ accountType: 'student', phone: null }));
     expect(container.textContent).toContain('Check your email to confirm your account.');
     expect(container.textContent).toContain('ana@example.com');
     expect(container.querySelector('input[type="password"]')).toBeNull();

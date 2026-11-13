@@ -37,6 +37,7 @@ import PrivacyConsentModal from './components/PrivacyConsentModal.jsx'
 import { createTrainingRepository } from './lib/training-repository.js'
 import { attachDomainFocusRefresh, createDomainRefresh } from './lib/domain-refresh.js'
 import { createAccountDomainSync } from './lib/account-domain-sync.js'
+import { createProfessionalProfileRepository } from './lib/professional-profile.js'
 
 import { flushProfessionalEvents } from './lib/professional-events.js'
 import { startNotificationCoordinator, syncNotificationPreferences, syncNotificationVisibility, reconnectNotifications, refreshNotificationReadiness, hasBackgroundNotifications, useNotificationStatus } from './lib/notification-client.js'
@@ -331,11 +332,15 @@ function Shell() {
   const recoveryShown = useRef(false)
   const boot = useStore(s => s.boot)
   const { S, ready } = useStore()
+  const [accountRead, setAccountRead] = useState({ accountId: '', state: 'idle' })
+  const [accountReadAttempt, setAccountReadAttempt] = useState(0)
   const profilePreview = useUI(s => s.profilePreview)
   const isGuest = useStore(s => s.isGuest())
   const appEntered = useStore(s => s.isAppEntered ? s.isAppEntered() : s.isGuest())
   const authenticated = auth.status === 'authenticated'
   const authed = (authenticated || isGuest) && appEntered
+  const accountRestoring = authenticated && !S.onboardingDone && typeof getBrowserSupabaseClient()?.rpc === 'function'
+    && (accountRead.accountId !== auth.user?.id || accountRead.state !== 'ready')
   const profileEditorOpen = loc.pathname === '/plan' && new URLSearchParams(loc.search).get('profile') === 'edit'
   const showProfileHeader = loc.pathname === '/home' || loc.pathname === '/tests/home-glass' || profileEditorOpen
   const inviteEntry = ['/connect', '/student/professionals', '/student/professionals/add'].includes(loc.pathname)
@@ -370,7 +375,9 @@ function Shell() {
     if (!client || typeof client.rpc !== 'function') return undefined
     const accountId = auth.user.id
     const token = useStore.getState().getScopeToken?.()
-    const current = id => id === accountId && useStore.getState().isScopeCurrent?.(token)
+    let connected = true
+    const current = id => connected && id === accountId && useStore.getState().isScopeCurrent?.(token)
+    setAccountRead({ accountId, state: 'loading' })
     const repository = createTrainingRepository({ client, accountId })
     let tabSync = null
     let observedSyncState = 'saved'
@@ -392,11 +399,28 @@ function Shell() {
       onCommitted: (domain, revision) => tabSync?.publish(domain, revision),
     })
     useStore.getState().configureAccountSync(() => sync.retry(), (data, context) => sync.acceptConfirmedPlan(data, context), () => sync.beginPlanApplication())
+    const loadPreferences = async () => {
+      const data = await repository.loadPreferences()
+      if (auth.user?.accountType !== 'professional' || data.values?.onboardingDone) return data
+      const profiles = createProfessionalProfileRepository({ client })
+      const [role, profile] = await Promise.all([profiles.role(accountId), profiles.own(accountId)])
+      if (!role || !profile?.professionalName) return data
+      // An existing owned coaching profile is completion evidence even when the
+      // older signup never wrote the personal-training preferences marker.
+      return { ...data, values: { ...data.values, onboardingDone: true, onboardingVersion: 1,
+        profile: { ...data.values?.profile, name: data.values?.profile?.name || profile.professionalName,
+          completedAt: data.values?.profile?.completedAt || profile.updatedAt || profile.createdAt || Date.now() } } }
+    }
     const refresh = createDomainRefresh({
       accountId,
-      repository,
+      repository: { ...repository, loadPreferences },
       isCurrent: current,
       apply: (domain, data) => sync.acceptRemote(domain, data),
+      onStatus: ({ domains }) => {
+        if (current(accountId) && ['ready', 'error'].includes(domains.preferences.state)) {
+          setAccountRead({ accountId, state: domains.preferences.state })
+        }
+      },
     })
     const planChannel = typeof client.channel === 'function' ? client.channel(`account-plan:${accountId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'athlete_schedules', filter: `user_id=eq.${accountId}` }, () => { if (current(accountId)) void refresh.refresh('plan') }).subscribe() : null
@@ -420,6 +444,7 @@ function Shell() {
     window.addEventListener('online', reconnect)
     window.addEventListener('focus', retry)
     return () => {
+      connected = false
       tabSync?.dispose()
       if (planChannel) void client.removeChannel(planChannel)
       sync.dispose()
@@ -431,7 +456,7 @@ function Shell() {
       window.removeEventListener('focus', retry)
       useStore.getState().releaseAccountSync()
     }
-  }, [auth.status, auth.user?.id, ready, appEntered])
+  }, [auth.status, auth.user?.id, auth.user?.accountType, ready, appEntered, accountReadAttempt])
   useEffect(() => {
     if (auth.status !== 'authenticated' || !auth.user?.id || !ready || !appEntered) return undefined
     const client = getBrowserSupabaseClient()
@@ -543,15 +568,14 @@ function Shell() {
   useEffect(() => { document.documentElement.lang = (S.lang || DEFAULT_LANG) === 'pt' ? 'pt-BR' : (S.lang || DEFAULT_LANG) }, [langV, S.lang])
   // every tab/route change starts at the top of the page
   useEffect(() => { if (!loc.pathname.startsWith('/community')) window.scrollTo(0, 0) }, [loc.pathname])
-  // First entry is a single, resumable setup inside Plan. Until it is complete, other routes
-  // cannot accidentally surface an empty dashboard or the retired Home overlay.
+  // Resolve saved account preferences before treating an empty local cache as first use.
   useEffect(() => {
-    if (ready && !appEntered && !invitePath && !publicPrivacyPath && loc.pathname !== '/') {
+    if (ready && !authenticated && !appEntered && !invitePath && !publicPrivacyPath && loc.pathname !== '/') {
       navigate('/', { replace: true })
       return
     }
-    if (ready && authed && !invitePath && !inviteAcceptedPath && !publicPrivacyPath && !S.onboardingDone && loc.pathname !== '/onboarding') navigate('/onboarding', { replace: true })
-  }, [S.onboardingDone, appEntered, authed, inviteAcceptedPath, invitePath, loc.pathname, navigate, ready, publicPrivacyPath])
+    if (ready && authed && !accountRestoring && !invitePath && !inviteAcceptedPath && !publicPrivacyPath && !S.onboardingDone && loc.pathname !== '/onboarding') navigate('/onboarding', { replace: true })
+  }, [S.onboardingDone, accountRestoring, appEntered, authed, authenticated, inviteAcceptedPath, invitePath, loc.pathname, navigate, ready, publicPrivacyPath])
   // bound to the workout, not to the route — checking Stats mid-session keeps the screen on
   useWakeLock(!!S.active && S.keepAwake !== false)
 
@@ -561,7 +585,11 @@ function Shell() {
       {/* Navigation clears failed renders without remounting a healthy workspace. */}
       <PageTransition>
         <ErrorBoundary resetKey={`${loc.pathname}${loc.search}`}>
-          {publicPrivacyPath ? <PrivacyPages kind={loc.pathname === '/terms' ? 'terms' : loc.pathname === '/data-rights' ? 'rights' : 'privacy'} /> : !(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : (
+          {publicPrivacyPath ? <PrivacyPages kind={loc.pathname === '/terms' ? 'terms' : loc.pathname === '/data-rights' ? 'rights' : 'privacy'} /> : !(authed || inviteAuthenticated) ? <Suspense fallback={<RouteFallback />}><Landing invitePath={invitePath} /></Suspense> : accountRestoring && !invitePath && !inviteAcceptedPath ? (
+            accountRead.accountId === auth.user?.id && accountRead.state === 'error'
+              ? <div className="narrow account-restore" role="alert"><h1>{t('Não foi possível carregar seus dados.')}</h1><p>{t('Verifique sua conexão e tente novamente para continuar de onde parou.')}</p><button type="button" className="btn primary" onClick={() => setAccountReadAttempt(value => value + 1)}>{t('Tentar novamente')}</button></div>
+              : <RouteFallback />
+          ) : (
             <div className={loc.pathname === '/home' ? 'home-route-scenery' : undefined}>{showProfileHeader && <ProfileHeader S={S} preview={profilePreview} />}<Suspense fallback={<RouteFallback />}><Routes>
                 <Route path="/home" element={<Home />} />
                 <Route path="/tests/home-glass" element={<HomeGlass />} />

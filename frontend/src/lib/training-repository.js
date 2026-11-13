@@ -168,7 +168,9 @@ export function createTrainingRepository({ client, accountId }) {
     loadPreferences() {
       if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
       const query = client.from('account_preferences').select('*').eq('user_id', accountId).maybeSingle()
-      return read(query, parsePreferences)
+      return read(query, (value, owner) => value === null
+        ? { accountId: owner, revision: 0, displayUnit: 'kg', massUnit: 'kg', stateSchemaVersion: 2, values: {}, updatedAt: null }
+        : parsePreferences(value, owner))
     },
 
     loadBody() {

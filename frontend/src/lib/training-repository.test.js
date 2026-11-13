@@ -138,6 +138,15 @@ describe('training repository', () => {
     expect(from).not.toHaveBeenCalledWith('bodyweight_entries')
   })
 
+  it('reads a new account with no preferences row as empty without writing defaults', async () => {
+    const { createTrainingRepository } = await load()
+    const query = { select() { return query }, eq() { return query }, maybeSingle: async () => ({ data: null, error: null }) }
+    const rpc = vi.fn()
+    const repo = createTrainingRepository({ client: { rpc, from: () => query }, accountId: 'account-1' })
+    await expect(repo.loadPreferences()).resolves.toMatchObject({ accountId: 'account-1', revision: 0, displayUnit: 'kg', values: {} })
+    expect(rpc).not.toHaveBeenCalled()
+  })
+
   it('loads every body entry beyond the first thousand before a replacement save', async () => {
     const { createTrainingRepository } = await load()
     const weights = Array.from({ length: 1001 }, (_, index) => ({

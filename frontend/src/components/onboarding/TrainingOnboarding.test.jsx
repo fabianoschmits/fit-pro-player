@@ -82,6 +82,25 @@ describe('training first-use journey', () => {
     expect(done).toHaveBeenCalledWith('/student/professionals/add')
   })
 
+  it('reviews and saves the selected avatar and body measurements with the chosen weight unit', async () => {
+    await render(); await click('Criar meu plano'); await submit()
+    await act(async () => container.querySelector('[data-avatar-index="1"]').click())
+    await click('Ganhar massa muscular'); await click('Iniciante')
+    await fill('startWeight', '70'); await fill('height', '175'); await fill('targetWeight', '65')
+    await fill('birthDate', '2000-04-15'); await click('Feminino'); await click('lb')
+    expect(container.querySelector('[name="startWeight"]').value).toBe('154,3')
+    expect(container.querySelector('[name="targetWeight"]').value).toBe('143,3')
+    await submit(); await submit()
+    const summaryValue = label => [...container.querySelectorAll('dt')].find(item => item.textContent === label)?.nextElementSibling.textContent
+    expect(summaryValue('Altura')).toBe('1,75 m')
+    expect(summaryValue('Peso alvo')).toBe('143,3 lb')
+    await submit()
+    expect(useStore.getState().S.profile).toMatchObject({ avatarId: 'avatar-02', heightCm: 175, birthDate: '2000-04-15', sex: 'female' })
+    expect(useStore.getState().S.profile.startWeight).toBeCloseTo(70, 1)
+    expect(useStore.getState().S.targetW).toBeCloseTo(65, 1)
+    expect(useStore.getState().S.displayUnit).toBe('lb')
+  })
+
   it('shows failed persistence without advancing and retries with entered answers', async () => {
     await render(); await click('Criar meu plano')
     const write = vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('quota') })

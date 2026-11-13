@@ -6,7 +6,7 @@ import { registerCustom } from '../lib/exercises.js'
 import { DEMO, DEMO_SEEDED, STANDALONE } from '../lib/demo.js'
 import { MOBILE, nativeLoad, nativeSave, nativeClear, clearLegacyReminders } from '../lib/mobile.js'
 import { annotateStarterRoutines, ensureStarterRoutines, isStarterRoutine } from '../lib/starter.js'
-import { DEFAULT_PROFILE, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
+import { DEFAULT_PROFILE, EXPERIENCE_LEVELS, PROFILE_GOALS, normalizeProfile, syncProfileWeightFromBodyweight } from '../lib/profile.js'
 import { normalizeBodyMeasurementCheckins, normalizeBodyMeasurementGoals } from '../lib/body-measurements.js'
 import { nextStateTimestamp } from '../lib/sync-state.js'
 import { ANONYMOUS_SCOPE, resolveLocalScope, storageKeyForScope } from '../lib/local-state-scope.js'
@@ -40,16 +40,11 @@ const uuidOrNull = value => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-
 
 const object = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {}
 
-// Older installations did not have the full personal-profile object. Established data should
-// enter the new wizard prefilled, while untouched starter plans remain first-run installs.
+// Older installations may have training history without a personal-profile object.
 function legacyHasPersonalData(state) {
   if (state.onboardingDone || state.active) return true
   if ((state.workouts || []).length || (state.bodyweight || []).length || (state.bodyMeasurements || []).length || (state.customEx || []).length) return true
   return (state.routines || []).some(routine => !isStarterRoutine(routine))
-}
-
-function hasCompleteProfile(profile) {
-  return !!(profile?.name && profile?.birthDate && profile?.heightCm && profile?.startWeight && profile?.goal && profile?.experience)
 }
 
 export function normalizeState(source) {
@@ -80,10 +75,19 @@ export function normalizeState(source) {
   state.pwaInstallPrompt = normalizePwaInstallPrompt(raw.pwaInstallPrompt)
   syncProfileWeightFromBodyweight(state)
 
-  if (state.onboardingVersion !== 1 && !hasCompleteProfile(state.profile) && legacyHasPersonalData(raw)) {
-    state.onboardingDone = false
+  if (legacyHasPersonalData(raw)) {
     state.profile.startWeight = state.profile.startWeight || state.bodyweight[0]?.w || null
-    state.profile.completedAt = null
+  }
+  const completedAt = typeof state.profile.completedAt === 'number' ? state.profile.completedAt : Date.parse(state.profile.completedAt)
+  const savedTrainingProfile = !state.onboardingDraft && state.profile.name
+    && PROFILE_GOALS.includes(state.profile.goal) && EXPERIENCE_LEVELS.includes(state.profile.experience)
+    && Number.isFinite(state.profile.startWeight) && state.profile.startWeight > 0
+  // Optional body data never invalidates a completed training or coaching account.
+  // Persisted training fields (separate from draft answers) and completion timestamps
+  // repair older snapshots whose boolean was cleared by the former mandatory fields.
+  if (state.onboardingDone || savedTrainingProfile || (!state.onboardingDraft && state.profile.name && Number.isFinite(completedAt) && completedAt > 0)) {
+    state.onboardingDone = true
+    state.onboardingVersion = 1
   }
 
   annotateStarterRoutines(state)
