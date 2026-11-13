@@ -29,6 +29,7 @@ async function reopen(page) {
 }
 
 test('the SVG curtain reveals the real interface at 25, 50 and 75 percent without clipping the root', async ({ page }, info) => {
+  await page.setViewportSize({ width: 390, height: 844 })
   const state = stateFixture(); state.theme = 'light'
   await seed(page, { state }); await installed(page); await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.addInitScript(() => {
@@ -72,14 +73,23 @@ test('the SVG curtain reveals the real interface at 25, 50 and 75 percent withou
     await page.locator('[data-launch-outline]').evaluate(el => { el.style.visibility = 'hidden' })
     const checks = await page.evaluate(percent => {
       const svg = document.querySelector('.fpp-launch-curtain')
-      const outer = [...document.querySelectorAll('#fpp-logo-shape path')]
-      const counters = [...document.querySelectorAll('#fpp-logo-counters path')]
+      const context = document.createElement('canvas').getContext('2d')
+      const outer = new Path2D([...document.querySelectorAll('#fpp-logo-shape path')].map(path => path.getAttribute('d')).join(' '))
+      const counters = new Path2D([...document.querySelectorAll('#fpp-logo-counters path')].map(path => path.getAttribute('d')).join(' '))
       const openings = [...document.querySelectorAll('[data-launch-trail] > g'), document.querySelector('[data-launch-hole]')]
-      const inside = (x, y) => openings.some(opening => {
+      const sweep = document.querySelector('[data-launch-sweep]')
+      const sweptPath = new Path2D(sweep.getAttribute('d'))
+      const sweptMatrix = sweep.getScreenCTM().inverse()
+      const openingMatrices = openings.map(opening => opening.getScreenCTM().inverse())
+      const inside = (x, y) => {
         const point = svg.createSVGPoint(); point.x = x; point.y = y
-        const local = point.matrixTransform(opening.getScreenCTM().inverse()); local.x += 650; local.y += 235
-        return outer.some(path => path.isPointInFill(local)) && !counters.some(path => path.isPointInFill(local))
-      })
+        const sweptPoint = point.matrixTransform(sweptMatrix)
+        if (context.isPointInPath(sweptPath, sweptPoint.x, sweptPoint.y)) return true
+        return openingMatrices.some(matrix => {
+          const local = point.matrixTransform(matrix); local.x += 650; local.y += 235
+          return context.isPointInPath(outer, local.x, local.y) && !context.isPointInPath(counters, local.x, local.y)
+        })
+      }
       const points = []
       const step = percent === 0 ? 8 : 16, margin = percent === 0 ? 2 : 4
       // Native WebKit scrollbars are browser chrome, outside the page paint.
@@ -96,6 +106,12 @@ test('the SVG curtain reveals the real interface at 25, 50 and 75 percent withou
     for (const { x, y, visible } of checks) {
       const i = (y * png.width + x) * 4
       expect([...png.data.subarray(i, i + 3)], `${percent}% ${visible ? 'inside' : 'outside'} ${x},${y}`).toEqual(visible ? [196, 40, 190] : [0, 0, 0])
+    }
+    if (percent === 75) {
+      // A point between successive zoom stamps was black before the continuous
+      // sweep. It lies inside the swept edge at this fixed phone viewport.
+      const edge = (458 * png.width + 325) * 4
+      expect([...png.data.subarray(edge, edge + 3)], 'continuous edge without stamped teeth').toEqual([196, 40, 190])
     }
     await page.locator('#launch-pixel-marker').evaluate(el => { el.style.display = 'none' })
     await page.locator('[data-launch-outline]').evaluate(el => { el.style.visibility = '' })
@@ -174,8 +190,10 @@ test('the FPP opening never covers an already revealed part of the screen', asyn
           const counters = [...document.querySelectorAll('#fpp-logo-counters path')]
           const svg = document.querySelector('.fpp-launch-curtain')
           const openings = [...document.querySelectorAll('[data-launch-trail] > g'), document.querySelector('[data-launch-hole]')]
+          const sweep = document.querySelector('[data-launch-sweep]')
           for (let y = 10; y < innerHeight; y += 32) for (let x = 10; x < innerWidth; x += 32) {
-            const visible = openings.some(opening => {
+            const point = svg.createSVGPoint(); point.x = x; point.y = y
+            const visible = sweep.isPointInFill(point.matrixTransform(sweep.getCTM().inverse())) || openings.some(opening => {
               const point = svg.createSVGPoint(); point.x = x; point.y = y
               const local = point.matrixTransform(opening.getCTM().inverse()); local.x += 650; local.y += 235
               return outer.some(path => path.isPointInFill(local)) && !counters.some(path => path.isPointInFill(local))
@@ -278,6 +296,46 @@ test('returning quickly to the installed PWA does not replay launch and preserve
   await expect(page.locator('#timer')).toBeVisible()
 })
 
+test('an authenticated PWA consumes each long suspension once and ignores duplicate restore events', async ({ page }) => {
+  await seed(page, { authenticated: true }); await installed(page)
+  await page.addInitScript(() => {
+    const now = Date.now.bind(Date)
+    window.__launchClockOffset = 0
+    Date.now = () => now() + window.__launchClockOffset
+  })
+  await page.goto('/#/home')
+  const layer = page.locator('#fpp-launch')
+  await expect(layer).toBeHidden()
+  await page.evaluate(() => {
+    window.__launchRoot = document.getElementById('root').firstElementChild
+    const restore = () => {
+      const event = new Event('pageshow'); Object.defineProperty(event, 'persisted', { value: true }); window.dispatchEvent(event)
+    }
+    restore()
+    window.__launchClockOffset += 6 * 60 * 1000
+    restore()
+  })
+  await expect(layer).toHaveAttribute('data-launch-cycle', '1')
+  await expect(layer).toBeHidden()
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('pagehide'))
+    window.__launchClockOffset += 6 * 60 * 1000
+    for (let i = 0; i < 3; i++) {
+      const event = new Event('pageshow'); Object.defineProperty(event, 'persisted', { value: true }); window.dispatchEvent(event)
+      document.dispatchEvent(new Event('visibilitychange'))
+    }
+  })
+  await expect(layer).toHaveAttribute('data-launch-cycle', '2')
+  await expect(layer).toBeHidden()
+  await page.evaluate(() => {
+    const event = new Event('pageshow'); Object.defineProperty(event, 'persisted', { value: true }); window.dispatchEvent(event)
+  })
+  await expect(layer).toHaveAttribute('data-launch-cycle', '2')
+  await expect(layer).toBeHidden()
+  expect(await page.evaluate(() => window.__launchRoot === document.getElementById('root').firstElementChild)).toBe(true)
+  await expect(page.getByRole('heading', { name: 'Hoje', exact: true })).toBeVisible()
+})
+
 test('reduced motion fades safely on initial launch without replaying on quick resume', async ({ page }) => {
   await seed(page); await installed(page); await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.goto('/#/home'); await expect(page.locator('#fpp-launch')).toBeHidden()
@@ -304,15 +362,15 @@ test('desktop login plays one entry transition and subsequent window returns sta
   await page.goto('/')
   const layer = page.locator('#fpp-launch')
   await expect(layer).toBeHidden()
-  await page.getByRole('button', { name: 'Entrar ou criar conta', exact: true }).click()
-  await page.locator('.auth-entry').getByRole('button', { name: 'Entrar', exact: true }).click()
+  await page.locator('.landing-nav').getByRole('button', { name: 'Abrir', exact: true }).click()
   const form = page.locator('form.auth-form')
   await form.locator('input[type="email"]').fill('browser-test@example.invalid')
   await form.locator('input[type="password"]').fill('FixturePassword123!')
   await form.getByRole('button', { name: 'Entrar', exact: true }).click()
   await expect(layer).toHaveAttribute('data-launch-cycle', '2')
   await expect(layer).toBeHidden()
-  await expect(page.getByRole('heading', { name: 'Vamos montar seu plano', exact: true })).toBeVisible()
+  await expect(page).toHaveURL(/#\/onboarding$/)
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await reopen(page)
   await expect(layer).toHaveAttribute('data-launch-cycle', '2')
   await expect(layer).toBeHidden()

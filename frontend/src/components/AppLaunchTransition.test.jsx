@@ -102,6 +102,31 @@ it('resumes an unfinished tunnel after a visibility interruption without skippin
   expect(layer.dataset.launchCycle).toBe('1')
 })
 
+it('continues the same unfinished tunnel after the OS suspends the PWA for several minutes', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(1200)
+  visibility('hidden')
+  vi.setSystemTime(Date.now() + 6 * 60 * 1000)
+  visibility('visible'); restore(); restore()
+  expect(layer.dataset.launchCycle).toBe('1'); expect(layer.dataset.state).toBe('revealing')
+  await advance(2000)
+  expect(layer.hidden).toBe(true)
+})
+
+it('releases the curtain safely if viewport geometry becomes invalid during the reveal', async () => {
+  const box = { width: 390, height: 844, left: 0, top: 0 }
+  vi.spyOn(layer, 'getBoundingClientRect').mockReturnValue(box)
+  const curtainBox = vi.spyOn(layer.querySelector('.fpp-launch-curtain'), 'getBoundingClientRect').mockReturnValue(box)
+  controller = createLaunchController({ isReady: () => true })
+  await advance(1200)
+  expect(layer.dataset.state).toBe('revealing')
+  curtainBox.mockReturnValue({ ...box, width: 0, height: 0 })
+  window.dispatchEvent(new Event('resize'))
+  await advance(500)
+  expect(layer.hidden).toBe(true)
+  expect(layer.hasAttribute('data-launch-fallback')).toBe(true)
+})
+
 it('enforces the installed minimum without delaying browser or native boot', async () => {
   controller = createLaunchController({ isReady: () => true })
   await advance(300); expect(layer.dataset.state).toBe('loading')
@@ -115,6 +140,8 @@ it('uses the traced FPP paths in both the metallic identity and the synchronized
   controller = createLaunchController({ isReady: () => true })
   await advance(1100)
   const outline = document.querySelector('[data-launch-outline]')
+  const trail = document.querySelector('[data-launch-trail]')
+  const openings = [...trail.children]
   expect(outline).not.toBeNull()
   expect(outline.getAttribute('stroke')).toBe('var(--acc, #0F8B8D)')
   await advance(800)
@@ -122,7 +149,8 @@ it('uses the traced FPP paths in both the metallic identity and the synchronized
   expect(outline.getAttribute('transform')).toBe(document.querySelector('[data-launch-hole]').getAttribute('transform'))
   expect(outline.querySelector('use').getAttribute('href')).toBe('#fpp-logo-shape')
   expect(document.querySelector('[data-launch-hole] use').getAttribute('href')).toBe('#fpp-logo-opening')
-  expect(document.querySelector('[data-launch-trail]').childElementCount).toBeGreaterThan(1)
+  expect(trail.childElementCount).toBe(2)
+  expect([...trail.children]).toEqual(openings)
   expect(document.querySelector('.fpp-launch-symbol svg').getAttribute('viewBox')).toBe('80 80 1140 310')
   expect(document.querySelector('.fpp-launch-symbol [data-logo-metal]').getAttribute('href')).toBe('#fpp-logo-shape')
   expect(document.querySelector('.fpp-launch-caption > span').textContent).toBe('Carregando…')
@@ -208,6 +236,37 @@ it('deduplicates transient visibility and BFCache events without replaying a PWA
   expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
   await advance(1000); restore(); restore()
   expect(layer.hidden).toBe(true); expect(layer.dataset.launchCycle).toBe('1')
+})
+
+it('ignores restored pageshow events without a recorded departure, even after long foreground use', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(4000)
+  restore(); await advance(4000)
+  expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
+  await advance(6 * 60 * 1000)
+  restore(); restore(); await advance(4000)
+  expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
+})
+
+it('does not count foreground time since the last resume as another suspension', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(4000)
+  visibility('hidden'); await advance(100); visibility('visible')
+  await advance(6 * 60 * 1000)
+  restore(); await advance(4000)
+  expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
+})
+
+it('consumes one long pagehide departure once across repeated pageshow and visibility events', async () => {
+  controller = createLaunchController({ isReady: () => true })
+  await advance(4000)
+  window.dispatchEvent(new Event('pagehide'))
+  await advance(6 * 60 * 1000)
+  restore(); visibility('visible'); restore()
+  expect(layer.dataset.launchCycle).toBe('2')
+  await advance(4000)
+  restore(); visibility('visible'); restore()
+  expect(layer.dataset.launchCycle).toBe('2'); expect(layer.hidden).toBe(true)
 })
 
 it('keeps a closed persistent curtain and falls back to its unmasked rect when masking is unsupported', async () => {

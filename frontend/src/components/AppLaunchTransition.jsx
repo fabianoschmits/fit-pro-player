@@ -3,13 +3,14 @@ import { useAuth } from '../auth/AuthProvider.jsx'
 import { useStore } from '../store/useStore.js'
 import { detectInstallTarget } from '../lib/pwa-install.js'
 import { MOBILE } from '../lib/mobile.js'
+import { createLaunchOpeningSweep } from '../lib/launch-opening.js'
 import '../fpp-launch.css'
 
 const owners = new WeakMap()
 const MINIMUM = 900, LOADING_VARIATION = 900, SETTLE = 120, REVEAL = 1400, FINISH = 100
 const ROUTE_LIMIT = 4000, SAFETY_LIMIT = 30000
 // Only replay the launch presentation if the app was suspended/in background for at least 5 minutes
-const RESUME_MINIMUM = 5 * 60 * 1000, RESUME_DEDUP = 600
+const RESUME_MINIMUM = 5 * 60 * 1000
 
 const LOGO_START_SCALE = 180 / 1140
 // (650,235) lies inside the first P's solid lower bowl, with a radius-10
@@ -57,11 +58,18 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   openingUse.setAttribute('fill', 'black')
   openingUse.setAttribute('transform', 'translate(-650 -235)')
   hole.replaceChildren(openingUse)
+  const initialOpening = /** @type {Element} */ (hole.cloneNode(true))
+  initialOpening.removeAttribute('data-launch-hole')
+  initialOpening.removeAttribute('opacity')
+  const sweptOpening = document.createElementNS(svgNS, 'path')
+  sweptOpening.setAttribute('data-launch-sweep', '')
+  sweptOpening.setAttribute('fill', 'black')
+  sweptOpening.setAttribute('fill-rule', 'nonzero')
   const frames = new Set(), timers = new Set()
   let disposed = false, active = false, pending = false, phase = 'completed'
   let openedAt = 0, readyAt = null, wake = null, recovery = null, presentationMinimum = 0
   let dimensionsDirty = false
-  let generation = 0, hiddenAt = null, lastResume = -Infinity, armed = false
+  let generation = 0, hiddenAt = null
   const now = () => performance.now()
   const lifecycleNow = () => Date.now() // continues across OS suspension on iOS
   const installed = () => !native
@@ -87,7 +95,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const complete = () => {
     if (disposed && owners.get(layer) !== owner) return
     layer.setAttribute('data-launch-restoring', '')
-    layer.hidden = true; clearWork(); active = false; armed = false; setPhase('completed')
+    layer.hidden = true; clearWork(); active = false; setPhase('completed')
     layer.setAttribute('aria-hidden', 'true')
     symbol.style.transform = ''; layer.style.opacity = ''
     // Restore the page's theme without its unrelated background transition
@@ -107,7 +115,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     layer.style.opacity = ''; setPhase('loading')
     layer.hidden = false; layer.removeAttribute('aria-hidden')
   }
-  const animate = (duration, update, done) => {
+  const animate = (duration, update, done, failed = complete) => {
     let elapsed = 0, previous = null
     const tick = time => {
       if (!active) return
@@ -120,7 +128,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       if (previous !== null) elapsed += Math.min(100, Math.max(0, time - previous))
       previous = time
       const progress = Math.min(1, elapsed / duration)
-      update(progress)
+      try { update(progress) } catch { failed(); return }
       if (progress < 1) frame(tick)
       else done()
     }
@@ -154,7 +162,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       && shield.getAttribute('mask') === 'url(#fpp-launch-mask)' && opening.getAttribute('d')
       && window.CSS?.supports?.('mask', 'url(#fpp-launch-mask)') !== false
     if (reduced || !supported) { fade(); return }
-    let width, height, endScale, startScale, originX, originY, lastStep = -1
+    let width, height, endScale, startScale, originX, originY, sweep
     const measure = () => {
       const box = layer.getBoundingClientRect()
       width = box.width || window.innerWidth; height = box.height || window.innerHeight
@@ -170,11 +178,6 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       if (!curtain.isConnected || !shield.isConnected || (box.width > 0 && (curtainBox.width + 1 < width || curtainBox.height + 1 < height))) throw new Error('Launch curtain does not cover the viewport')
     }
     const paint = progress => {
-      // Keep the retained SVG trail bounded to 60 updates/second, even on
-      // high-refresh displays. No React renders or per-frame layout reads.
-      const step = Math.floor(progress * REVEAL / (1000 / 60))
-      if (step === lastStep && !dimensionsDirty) return
-      lastStep = step
       if (dimensionsDirty) measure()
       // Ease depth rather than raw magnification. Perspective interpolation
       // keeps the complete FPP lettering legible for most of the approach.
@@ -183,26 +186,27 @@ export function createLaunchController({ isReady, native = MOBILE }) {
       const transform = `translate(${originX} ${originY}) scale(${scale})`
       hole.setAttribute('transform', transform)
       outline.setAttribute('transform', transform)
-      // Scaling disconnected letters is not a nested opening: gaps and P
-      // counters otherwise cover pixels that were visible in the prior frame.
-      // Retain each painted opening until completion so reveal only advances.
+      // Sweep every edge continuously from the first opening to the current
+      // scale. Discrete frame stamps left visible teeth between the letters,
+      // especially on slow phones. Two fixed nodes preserve the open area.
       trail.setAttribute('transform', `translate(${originX} ${originY})`)
-      const stamp = /** @type {Element} */ (hole.cloneNode(true))
-      stamp.removeAttribute('data-launch-hole')
-      stamp.removeAttribute('opacity')
-      stamp.setAttribute('transform', `scale(${scale})`)
-      trail.append(stamp)
+      initialOpening.setAttribute('transform', `scale(${startScale})`)
+      sweptOpening.setAttribute('d', sweep(startScale, scale))
       // Compensate the parent scale: all letter edges retain a subtle 2px
       // contour instead of swelling into thick borders during the tunnel.
       outline.setAttribute('stroke-width', String(2 / scale))
     }
-    try { measure(); paint(0) } catch { fade(); return }
+    try {
+      sweep = createLaunchOpeningSweep([...layer.querySelectorAll('#fpp-logo-shape path, #fpp-logo-counters path')].map(path => path.getAttribute('d')))
+      trail.replaceChildren(initialOpening, sweptOpening)
+      measure(); paint(0)
+    } catch { fade(); return }
     layer.setAttribute('data-curtain-ready', '')
     layer.setAttribute('data-mask-ready', '')
     frame(() => frame(() => {
       hole.setAttribute('opacity', '1'); trail.setAttribute('opacity', '1'); outline.setAttribute('opacity', '1')
       setPhase('revealing')
-      animate(REVEAL, paint, () => frame(() => { layer.setAttribute('data-launch-finishing', ''); later(complete, FINISH) }))
+      animate(REVEAL, paint, () => frame(() => { layer.setAttribute('data-launch-finishing', ''); later(complete, FINISH) }), fade)
     }))
   }
   const settle = () => {
@@ -233,7 +237,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     }))
   }
   const start = (adopt = false, login = false) => {
-    generation++; clearWork(); active = true; armed = false; openedAt = now(); readyAt = null
+    generation++; clearWork(); active = true; openedAt = now(); readyAt = null
     // Presentation only: requests/boot keep running. Sample once, never on
     // renders or readiness checks, and never shorten a genuinely slow boot.
     presentationMinimum = installed() || (!native && login) ? MINIMUM + Math.floor(Math.random() * LOADING_VARIATION) : 0
@@ -248,8 +252,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   const visibility = () => {
     if (document.visibilityState === 'hidden') {
       if (hiddenAt === null) hiddenAt = lifecycleNow()
-      // Arm the closed curtain only if away long enough, never on quick minimizes.
-      // A brief visibility blip will not flash or replay the tunnel.
+      // A brief visibility blip must not flash or replay the tunnel.
       if (active) layer.setAttribute('data-paused', '')
     } else resume()
   }
@@ -257,25 +260,15 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     if (document.visibilityState === 'hidden') return
     const away = hiddenAt === null ? null : Math.max(0, lifecycleNow() - hiddenAt)
     hiddenAt = null; layer.removeAttribute('data-paused')
-    const separate = lifecycleNow() - lastResume >= RESUME_DEDUP
-    if (away !== null) lastResume = lifecycleNow()
-    if (installed() && away !== null && away >= RESUME_MINIMUM && separate) {
-      // An unfinished cycle continues safely; a completed one starts only after long absence
-      if (armed || !active) start()
-    } else if (armed) complete()
+    // Consume an observed departure once. pageshow/focus can arrive again
+    // after visibilitychange; time spent using the app is never an absence.
+    if (installed() && away !== null && away >= RESUME_MINIMUM && !active) start()
     check()
   }
   const pagehide = () => {
     if (hiddenAt === null) hiddenAt = lifecycleNow()
   }
-  const pageshow = event => {
-    if (event.persisted && installed() && hiddenAt === null && !active && !armed && lifecycleNow() - lastResume >= RESUME_DEDUP) {
-      const away = lifecycleNow() - lastResume
-      if (away >= RESUME_MINIMUM) {
-        lastResume = lifecycleNow(); start()
-      } else check()
-    } else resume()
-  }
+  const pageshow = () => resume()
   const resize = () => { if (active) dimensionsDirty = true }
   const observer = new MutationObserver(check)
   observer.observe(surface, { childList: true, subtree: true })
