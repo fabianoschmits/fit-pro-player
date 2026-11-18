@@ -345,9 +345,12 @@ test('reduced motion fades safely on initial launch without replaying on quick r
   expect(await page.locator('[data-launch-hole]').getAttribute('transform')).toBeNull()
 })
 
-test('desktop login plays one entry transition and subsequent window returns stay quiet', async ({ page }, info) => {
+test('desktop first login opens onboarding without a tunnel and subsequent window returns stay quiet', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop-chromium', 'Desktop login entry')
-  await seed(page)
+  const state = stateFixture()
+  state.onboardingDone = false
+  state.profile = {}
+  await seed(page, { state })
   await page.addInitScript(() => {
     localStorage.removeItem('gym_guest'); localStorage.removeItem('fpp_app_entered:anonymous')
     window.__launchVisibility = 'visible'
@@ -367,14 +370,38 @@ test('desktop login plays one entry transition and subsequent window returns sta
   await form.locator('input[type="email"]').fill('browser-test@example.invalid')
   await form.locator('input[type="password"]').fill('FixturePassword123!')
   await form.getByRole('button', { name: 'Entrar', exact: true }).click()
-  await expect(layer).toHaveAttribute('data-launch-cycle', '2')
+  await expect(layer).toHaveAttribute('data-launch-cycle', '1')
   await expect(layer).toBeHidden()
   await expect(page).toHaveURL(/#\/onboarding$/)
+  await expect(form).toHaveCount(0)
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
   await reopen(page)
-  await expect(layer).toHaveAttribute('data-launch-cycle', '2')
+  await expect(layer).toHaveAttribute('data-launch-cycle', '1')
   await expect(layer).toBeHidden()
 })
+
+for (const path of ['/', '/privacy', '/terms', '/data-rights', '/onboarding', '/plan', '/workout']) {
+  test(`excluded opening ${path} never runs the tunnel`, async ({ page }) => {
+    await seed(page)
+    if (path === '/') await page.addInitScript(() => {
+      localStorage.removeItem('gym_guest')
+      localStorage.removeItem('fpp_app_entered:anonymous')
+    })
+    await installed(page)
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.goto(`/#${path}`)
+    await expect(page.locator('#fpp-launch')).toBeHidden()
+    expect(await page.evaluate(() => window.__launchHistory.some(entry => entry.state === 'revealing'))).toBe(false)
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event('pagehide'))
+      const now = Date.now.bind(Date)
+      Date.now = () => now() + 6 * 60 * 1000
+      window.dispatchEvent(new Event('pageshow'))
+    })
+    await expect(page.locator('#fpp-launch')).toBeHidden()
+    expect(await page.evaluate(() => window.__launchHistory.some(entry => entry.state === 'revealing'))).toBe(false)
+  })
+}
 
 test('HTML offers recovery even if the application module fails before React mounts', async ({ page }) => {
   await seed(page)

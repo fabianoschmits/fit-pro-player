@@ -29,7 +29,7 @@ function tunnelEase(progress) {
 }
 
 /** One imperative overlay; no route, store, clock or auth mutations. */
-export function createLaunchController({ isReady, native = MOBILE }) {
+export function createLaunchController({ isReady, shouldAnimate = () => true, native = MOBILE }) {
   const layer = document.getElementById('fpp-launch'), surface = document.getElementById('root')
   if (!layer || !surface) return { check() {}, enter() {}, destroy() {} }
   const owner = {}; owners.set(layer, owner)
@@ -218,12 +218,14 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     later(reveal, SETTLE)
   }
   const check = () => {
+    if (!disposed && active && !shouldAnimate()) { complete(); return }
     if (disposed || !active || phase !== 'loading' || pending || document.visibilityState === 'hidden' || !isReady() || !surface.childElementCount) return
     pending = true
     // A ready store is not proof that React's destination has committed/painted.
     frame(() => frame(() => {
       pending = false
       if (!active || phase !== 'loading' || !isReady()) return
+      if (!shouldAnimate()) { complete(); return }
       if (readyAt === null) readyAt = now()
       const remainingRoute = ROUTE_LIMIT - (now() - readyAt)
       const remainingMinimum = presentationMinimum - (now() - openedAt)
@@ -237,6 +239,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     }))
   }
   const start = (adopt = false, login = false) => {
+    if (!shouldAnimate()) { complete(); return }
     generation++; clearWork(); active = true; openedAt = now(); readyAt = null
     // Presentation only: requests/boot keep running. Sample once, never on
     // renders or readiness checks, and never shorten a genuinely slow boot.
@@ -277,6 +280,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
   window.addEventListener('pageshow', pageshow)
   window.addEventListener('resize', resize)
   window.addEventListener('orientationchange', resize)
+  window.addEventListener('hashchange', check)
   start(layer.dataset.state === 'loading')
   return { check, enter() {
     if (disposed) return
@@ -286,6 +290,7 @@ export function createLaunchController({ isReady, native = MOBILE }) {
     disposed = true; generation++; clearWork(); observer.disconnect()
     document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pageshow', pageshow); window.removeEventListener('pagehide', pagehide)
     window.removeEventListener('resize', resize); window.removeEventListener('orientationchange', resize)
+    window.removeEventListener('hashchange', check)
     trail.remove()
     // StrictMode's replacement owns the same element before this microtask.
     queueMicrotask(() => { if (owners.get(layer) === owner) { complete(); owners.delete(layer) } })
@@ -295,10 +300,11 @@ export function createLaunchController({ isReady, native = MOBILE }) {
 export default function AppLaunchTransition() {
   const ready = useStore(state => state.ready), { status } = useAuth()
   const entered = useStore(state => state.isAppEntered?.() ?? true)
-  const snapshot = useRef({ ready, status, entered }), controller = useRef(null)
+  const onboardingDone = useStore(state => state.S.onboardingDone)
+  const snapshot = useRef({ ready, status, entered, onboardingDone }), controller = useRef(null)
   const previousStatus = useRef(status), pendingLogin = useRef(false)
   useLayoutEffect(() => {
-    snapshot.current = { ready, status, entered }
+    snapshot.current = { ready, status, entered, onboardingDone }
     if (previousStatus.current === 'anonymous' && status === 'authenticated') pendingLogin.current = true
     if (status === 'anonymous') pendingLogin.current = false
     previousStatus.current = status
@@ -307,11 +313,18 @@ export default function AppLaunchTransition() {
       if (!MOBILE && detectInstallTarget().platform === 'desktop') controller.current?.enter()
       else controller.current?.check()
     } else controller.current?.check()
-  }, [ready, status, entered])
+  }, [ready, status, entered, onboardingDone])
   useLayoutEffect(() => {
     controller.current = createLaunchController({ isReady: () => snapshot.current.ready
-      && snapshot.current.status !== 'initializing'
-      && (snapshot.current.status !== 'authenticated' || snapshot.current.entered) })
+      && snapshot.current.status !== 'initializing',
+      shouldAnimate: () => {
+        const path = window.location.hash.slice(1).split('?')[0] || '/'
+        // Public pages and deep links should open directly. Keep the launch
+        // presentation for returning users opening the app's Home only.
+        if (path !== '/' && path !== '/home') return false
+        if (snapshot.current.status === 'initializing') return true
+        return snapshot.current.entered && snapshot.current.onboardingDone
+      } })
     return () => { controller.current?.destroy(); controller.current = null }
   }, [])
   return null

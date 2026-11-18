@@ -3,7 +3,7 @@ import { StrictMode, act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { readFileSync } from 'node:fs'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-const state = vi.hoisted(() => ({ ready: true, auth: 'anonymous', entered: true, isAppEntered() { return this.entered } }))
+const state = vi.hoisted(() => ({ ready: true, auth: 'anonymous', entered: true, S: { onboardingDone: true }, isAppEntered() { return this.entered } }))
 vi.mock('../store/useStore.js', () => ({ useStore: select => select(state) }))
 vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => ({ status: state.auth }) }))
 vi.mock('../lib/mobile.js', () => ({ MOBILE: false }))
@@ -20,6 +20,8 @@ beforeEach(() => {
   vi.spyOn(window, 'CSS', 'get').mockReturnValue(css)
   vi.spyOn(css, 'supports').mockReturnValue(true)
   state.ready = true; state.auth = 'anonymous'; state.entered = true
+  state.S = { onboardingDone: true }
+  window.location.hash = '#/home'
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   vi.spyOn(window, 'matchMedia').mockImplementation(query => ({ matches: query.includes('reduced-motion') ? reduced : installed }))
   vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => visible)
@@ -34,6 +36,39 @@ afterEach(async () => {
   if (root) await act(async () => root.unmount())
   root = null; controller?.destroy(); controller = null
   await Promise.resolve(); vi.clearAllTimers(); vi.restoreAllMocks(); vi.useRealTimers(); document.body.innerHTML = ''
+})
+
+it.each(['/', '/onboarding', '/privacy', '/terms', '/data-rights', '/invite/code', '/connect', '/workout', '/plan', '/console', '/support'])('skips the tunnel outside a configured Home opening (%s)', async path => {
+  window.location.hash = `#${path}`
+  state.entered = path !== '/'
+  state.S.onboardingDone = path !== '/onboarding'
+  root = createRoot(document.getElementById('controller'))
+  await act(async () => root.render(<AppLaunchTransition />))
+  await advance(1800)
+  expect(layer.hidden).toBe(true)
+  expect(layer.dataset.state).toBe('completed')
+  expect(layer.hasAttribute('data-mask-ready')).toBe(false)
+  visibility('hidden'); await advance(6 * 60 * 1000); visibility('visible')
+  expect(layer.hidden).toBe(true)
+})
+
+it('skips Home for a first-time visitor even before the redirect to onboarding', async () => {
+  state.S.onboardingDone = false
+  root = createRoot(document.getElementById('controller'))
+  await act(async () => root.render(<AppLaunchTransition />))
+  expect(layer.hidden).toBe(true)
+})
+
+it('dismisses an active tunnel when navigation leaves Home', async () => {
+  root = createRoot(document.getElementById('controller'))
+  await act(async () => root.render(<AppLaunchTransition />))
+  await advance(1100)
+  expect(layer.dataset.state).toBe('revealing')
+  window.location.hash = '#/privacy'
+  window.dispatchEvent(new Event('hashchange'))
+  expect(layer.hidden).toBe(true)
+  await advance(2000)
+  expect(layer.dataset.state).toBe('completed')
 })
 
 it('chooses a bounded loading presentation once per opening and still waits for actual readiness', async () => {
