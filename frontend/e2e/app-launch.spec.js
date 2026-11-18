@@ -380,6 +380,29 @@ test('desktop first login opens onboarding without a tunnel and subsequent windo
   await expect(layer).toBeHidden()
 })
 
+test('browser Home restoration and refresh do not run a tunnel', async ({ page }) => {
+  await seed(page, { authenticated: true })
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/#/home')
+  await expect(page.locator('#fpp-launch')).toBeHidden()
+  await expect(page.locator('#fpp-launch')).not.toHaveAttribute('data-mask-ready')
+  await page.reload()
+  await expect(page.locator('#fpp-launch')).toBeHidden()
+  await expect(page.locator('#fpp-launch')).not.toHaveAttribute('data-mask-ready')
+})
+
+test('navigating from settings back to Home does not replay the PWA tunnel', async ({ page }) => {
+  await seed(page); await installed(page)
+  await page.goto('/#/home')
+  await expect(page.locator('#fpp-launch')).toBeHidden()
+  await page.evaluate(() => { location.hash = '#/settings' })
+  await expect(page).toHaveURL(/#\/settings$/)
+  await page.evaluate(() => { location.hash = '#/home' })
+  await expect(page.getByRole('heading', { name: 'Hoje', exact: true })).toBeVisible()
+  await expect(page.locator('#fpp-launch')).toBeHidden()
+  await expect(page.locator('#fpp-launch')).toHaveAttribute('data-launch-cycle', '1')
+})
+
 for (const path of ['/', '/privacy', '/terms', '/data-rights', '/onboarding', '/plan', '/workout']) {
   test(`excluded opening ${path} never runs the tunnel`, async ({ page }) => {
     await seed(page)

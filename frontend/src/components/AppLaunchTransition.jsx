@@ -12,6 +12,10 @@ const ROUTE_LIMIT = 4000, SAFETY_LIMIT = 30000
 // Only replay the launch presentation if the app was suspended/in background for at least 5 minutes
 const RESUME_MINIMUM = 5 * 60 * 1000
 
+const isInstalledMobilePwa = (native = MOBILE) => !native
+  && detectInstallTarget().platform !== 'desktop'
+  && (window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true)
+
 const LOGO_START_SCALE = 180 / 1140
 // (650,235) lies inside the first P's solid lower bowl, with a radius-10
 // clearance. Expand this disc beyond the diagonal: counters/gaps cannot leave
@@ -29,7 +33,7 @@ function tunnelEase(progress) {
 }
 
 /** One imperative overlay; no route, store, clock or auth mutations. */
-export function createLaunchController({ isReady, shouldAnimate = () => true, native = MOBILE }) {
+export function createLaunchController({ isReady, shouldAnimate = () => true, native = MOBILE, startOnOpen = true }) {
   const layer = document.getElementById('fpp-launch'), surface = document.getElementById('root')
   if (!layer || !surface) return { check() {}, enter() {}, destroy() {} }
   const owner = {}; owners.set(layer, owner)
@@ -72,9 +76,7 @@ export function createLaunchController({ isReady, shouldAnimate = () => true, na
   let generation = 0, hiddenAt = null
   const now = () => performance.now()
   const lifecycleNow = () => Date.now() // continues across OS suspension on iOS
-  const installed = () => !native
-    && detectInstallTarget().platform !== 'desktop'
-    && (window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true)
+  const installed = () => isInstalledMobilePwa(native)
   const frame = fn => {
     const cycle = generation
     const id = window.requestAnimationFrame(time => { frames.delete(id); if (!disposed && cycle === generation) fn(time) })
@@ -281,7 +283,8 @@ export function createLaunchController({ isReady, shouldAnimate = () => true, na
   window.addEventListener('resize', resize)
   window.addEventListener('orientationchange', resize)
   window.addEventListener('hashchange', check)
-  start(layer.dataset.state === 'loading')
+  if (startOnOpen) start(layer.dataset.state === 'loading')
+  else complete()
   return { check, enter() {
     if (disposed) return
     if (active) check()
@@ -310,12 +313,11 @@ export default function AppLaunchTransition() {
     previousStatus.current = status
     if (pendingLogin.current && entered && ready) {
       pendingLogin.current = false
-      if (!MOBILE && detectInstallTarget().platform === 'desktop') controller.current?.enter()
-      else controller.current?.check()
+      controller.current?.enter()
     } else controller.current?.check()
   }, [ready, status, entered, onboardingDone])
   useLayoutEffect(() => {
-    controller.current = createLaunchController({ isReady: () => snapshot.current.ready
+    controller.current = createLaunchController({ startOnOpen: isInstalledMobilePwa(), isReady: () => snapshot.current.ready
       && snapshot.current.status !== 'initializing',
       shouldAnimate: () => {
         const path = window.location.hash.slice(1).split('?')[0] || '/'

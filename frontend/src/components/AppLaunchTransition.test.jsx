@@ -348,12 +348,45 @@ it('plays once for desktop login entry, not auth restoration or subsequent ready
   expect(layer.dataset.launchCycle).toBe('2'); expect(layer.hidden).toBe(true)
 })
 
-it('does not add a second opening for a login inside an already open mobile app', async () => {
+it('plays for an explicit mobile login after the public entry has opened', async () => {
+  state.entered = false
   root = createRoot(document.getElementById('controller'))
   const render = () => act(async () => root.render(<AppLaunchTransition />))
   await render(); await advance(4000)
-  state.auth = 'authenticated'; await render(); await advance(4000)
-  expect(layer.dataset.launchCycle).toBe('1'); expect(layer.hidden).toBe(true)
+  state.auth = 'authenticated'; state.entered = true; await render()
+  expect(layer.hidden).toBe(false)
+  expect(layer.dataset.launchCycle).toBe('2')
+  await advance(4000); expect(layer.hidden).toBe(true)
+})
+
+it('does not animate browser restoration, refresh, or navigation back to Home', async () => {
+  installed = false
+  state.auth = 'authenticated'
+  root = createRoot(document.getElementById('controller'))
+  await act(async () => root.render(<AppLaunchTransition />))
+  expect(layer.hidden).toBe(true)
+  expect(layer.hasAttribute('data-mask-ready')).toBe(false)
+  window.location.hash = '#/settings'; window.dispatchEvent(new Event('hashchange'))
+  window.location.hash = '#/home'; window.dispatchEvent(new Event('hashchange'))
+  await advance(2000)
+  expect(layer.hidden).toBe(true)
+  expect(layer.dataset.launchCycle).toBe('1')
+})
+
+it('does not defer a new-account login tunnel until onboarding finishes or Home is clicked', async () => {
+  state.entered = false; state.S.onboardingDone = false
+  root = createRoot(document.getElementById('controller'))
+  const render = () => act(async () => root.render(<AppLaunchTransition />))
+  await render()
+  state.auth = 'authenticated'; state.entered = true
+  window.location.hash = '#/onboarding'
+  await render()
+  state.S.onboardingDone = true; await render()
+  window.location.hash = '#/home'; window.dispatchEvent(new Event('hashchange'))
+  await advance(2000)
+  expect(layer.hidden).toBe(true)
+  expect(layer.dataset.launchCycle).toBe('1')
+  expect(layer.hasAttribute('data-mask-ready')).toBe(false)
 })
 
 it.each([false, true])('does not replay on browser/native resume (native=%s)', async native => {
