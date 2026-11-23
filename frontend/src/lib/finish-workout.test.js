@@ -3,6 +3,19 @@ import { buildCompletedWorkout } from './finish-workout.js'
 import { workoutDuration } from './format.js'
 
 describe('completed workout boundary', () => {
+  it('carries an independent comparison and the frozen entry muscle snapshot into completion', () => {
+    const comparison = { version: 1, origin: 'personal', planned: [{ exerciseId: 'custom', workSets: 3, muscleWeights: { chest: 1 } }], adjusted: [{ exerciseId: 'custom', workSets: 2, muscleWeights: { chest: 1 } }], flexApplied: true }
+    const active = { id: 'w', comparison, entries: [{ id: 'custom', sets: [{ done: true }], muscleSnapshot: { n: 'Old custom', muscleWeights: { chest: 1 } } }] }
+    const completed = buildCompletedWorkout(active, { snapshotFor: () => ({ n: 'Edited custom', muscleWeights: { back: 1 } }) })
+    expect(completed.comparison).toEqual(comparison)
+    expect(completed.comparison).not.toBe(comparison)
+    expect(completed.entries[0].muscleSnapshot).toEqual({ n: 'Old custom', muscleWeights: { chest: 1 } })
+    active.comparison.planned[0].muscleWeights.chest = 99
+    active.entries[0].muscleSnapshot.muscleWeights.chest = 99
+    expect(completed.comparison.planned[0].muscleWeights.chest).toBe(1)
+    expect(completed.entries[0].muscleSnapshot.muscleWeights.chest).toBe(1)
+  })
+
   it('keeps the time adaptation separate from completed exercises', () => {
     const flex = { targetMinutes: 40, preferredMinutes: 60, estimatedMinutes: 39, mode: 'adapted', phase: 'confirmed', outline: [
       { key: 'position:0', exerciseId: 'bench', selected: true },

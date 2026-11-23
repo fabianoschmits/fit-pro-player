@@ -1,5 +1,23 @@
 import { buildSets, modeOf } from './history.js'
 import { isWarmupRow, modeForSet } from './workout-model.js'
+import { EXIDX } from './exercises.js'
+import { exerciseMuscleSnapshot } from './muscles.js'
+import { confirmTrainingComparison } from './training-comparison.js'
+
+/** Freeze known anatomy at insertion, including entries repeated from deleted custom lifts. */
+export function snapshotSessionExercise(entry, exercise = EXIDX[entry.id]) {
+  const snapshot = entry.muscleSnapshot && typeof entry.muscleSnapshot === 'object' && !Array.isArray(entry.muscleSnapshot)
+    ? entry.muscleSnapshot : exerciseMuscleSnapshot(exercise || entry)
+  return { ...entry, muscleSnapshot: structuredClone(snapshot) }
+}
+
+/** The start boundary is the only place the selected prescription becomes historical. */
+export function startSessionExecution(active, now = Date.now()) {
+  if (!active || active.start) return active
+  const comparison = confirmTrainingComparison(active)
+  return { ...active, start: now, durationMs: Math.max(0, Number(active.durationMs) || 0),
+    ...(comparison ? { comparison } : {}) }
+}
 
 const MODE_FIELDS = {
   cardio: ['min', 'speed'],

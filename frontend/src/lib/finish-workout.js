@@ -1,3 +1,5 @@
+import { normalizeTrainingComparison } from './training-comparison.js'
+
 // The persisted boundary for a finished session. Keep this pure so compatibility tests can
 // exercise the exact shape the UI writes without mounting React or mutating store state.
 export function normalizeWorkoutNote(value) {
@@ -9,6 +11,7 @@ export function normalizeWorkoutNote(value) {
 export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snapshotFor = undefined, endedEarly = false, note = undefined } = {}) {
   const start = active?.start || end
   const normalizedNote = normalizeWorkoutNote(note)
+  const comparison = normalizeTrainingComparison(active?.comparison)
   const entries = (active?.entries || []).map(entry => {
     const completed = {
       id: entry.id,
@@ -19,9 +22,9 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
     if (entry.sg) completed.sg = entry.sg
     if (entry.replacedFrom) completed.replacedFrom = entry.replacedFrom
     if (entry.replacedBy) completed.replacedBy = entry.replacedBy
-    const snapshot = typeof snapshotFor === 'function' ? snapshotFor(entry) : null
+    const snapshot = entry.muscleSnapshot || (typeof snapshotFor === 'function' ? snapshotFor(entry) : null)
     if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot) && Object.keys(snapshot).length) {
-      completed.muscleSnapshot = { ...snapshot }
+      completed.muscleSnapshot = structuredClone(snapshot)
     }
     return completed
   }).filter(entry => entry.sets.some(set => set.done))
@@ -36,6 +39,7 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
     bw: active.bw,
     entries,
     prs,
+    ...(comparison ? { comparison } : {}),
     ...(active.flex ? { flex: structuredClone(active.flex) } : {}),
     ...(Number.isFinite(active?.durationMs) ? { durationMs: Math.max(0, Math.round(active.durationMs)) } : {}),
     ...(endedEarly ? { endedEarly: true } : {}),

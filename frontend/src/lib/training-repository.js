@@ -6,6 +6,7 @@ import {
   parseCompletedWorkoutRecords,
   parsePreferences,
   parseWorkoutSession,
+  parseActiveWorkoutSession,
 } from './training-dto.js'
 
 export class TrainingRepositoryError extends Error {
@@ -146,14 +147,24 @@ export function createTrainingRepository({ client, accountId }) {
       }, parseWorkoutSession)
     },
 
-    loadActiveSession() {
+    async loadActiveSession() {
       if (typeof client.from !== 'function') throw new TypeError('training-repository-read-client-required')
       const query = client.from('workout_sessions')
         .select('*')
         .eq('user_id', accountId)
         .eq('status', 'active')
         .maybeSingle()
-      return read(query, (value, ownerId) => value === null ? null : parseWorkoutSession(value, ownerId))
+      const value = await read(query, result => result)
+      if (value === null) return null
+      const session = parseResponse(parseWorkoutSession, value, accountId)
+      if (!session.prescriptionSnapshot.comparison) return session
+      const operations = await read(client.from('workout_session_operations')
+        .select('session_id,user_id,kind,payload,session_revision')
+        .eq('user_id', accountId)
+        .eq('session_id', session.id)
+        .order('session_revision', { ascending: true })
+        .limit(1000), result => result)
+      return parseResponse((result, owner) => parseActiveWorkoutSession(value, result, owner), operations, accountId)
     },
 
     async loadPlan() {

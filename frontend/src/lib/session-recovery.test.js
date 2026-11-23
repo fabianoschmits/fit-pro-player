@@ -58,6 +58,27 @@ describe('active session recovery', () => {
   beforeEach(() => { storage = memoryStorage(); vi.useFakeTimers() })
   afterEach(() => { vi.clearAllTimers(); vi.useRealTimers() })
 
+  it('retains confirmed comparison after an acknowledged operation and a later writer takeover', async () => {
+    const planned = [{ exerciseId: 'bench', workSets: 4, muscleWeights: { chest: 1 } }]
+    const comparison = { version: 1, origin: 'personal', planned, adjusted: null, flexApplied: false }
+    const executed = { ...comparison, adjusted: [{ exerciseId: 'bench', workSets: 2, muscleWeights: { chest: 1 } }], flexApplied: true }
+    const session = activeSession({ prescriptionSnapshot: { comparison, exercises: [] } })
+    const repo = repository({
+      appendOperation: async ({ expectedRevision }) => ({ ...session, revision: expectedRevision + 1 }),
+      loadActiveSession: async () => ({ ...session, revision: 2 }),
+      takeOverSession: async () => ({ ...session, revision: 3, writerToken: 'writer-2' }),
+    })
+    const recovery = createSessionRecovery({ repository: repo, accountId: accountA, storage })
+    recovery.adopt(session)
+    await recovery.enqueue(operation({ payload: { active: { id: session.id, comparison: executed, entries: [] } } }))
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).session.prescriptionSnapshot.comparison).toEqual(executed)
+    await recovery.enqueue(operation({ operationId: 'new-operation', payload: { active: { id: session.id, comparison: { version: 999 }, entries: [] } } }))
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).session.prescriptionSnapshot.comparison).toEqual(executed)
+    await recovery.takeOver()
+    expect(readSessionRecoveryDraft({ accountId: accountA, storage }).session.prescriptionSnapshot.comparison).toEqual(executed)
+    recovery.dispose()
+  })
+
   it('isolates drafts by account and rejects a foreign payload stored under an account key', () => {
     const draft = { schemaVersion: 1, accountId: accountA, phase: 'active', session: activeSession(), pendingOperations: [], updatedAt: 1 }
     storage.setItem(sessionRecoveryKey(accountA), JSON.stringify(draft))

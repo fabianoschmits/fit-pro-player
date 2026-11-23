@@ -11,6 +11,54 @@ const row = (overrides = {}) => ({
 })
 
 describe('training DTOs', () => {
+  it('normalizes optional snapshot and completion metadata without discarding malformed historical rows', async () => {
+    const { parseCompletedWorkoutRecords, parseWorkoutSession } = await load()
+    const comparison = { version: 1, origin: 'personal', planned: [{ exerciseId: 'bench', workSets: 3, muscleWeights: { chest: 1 } }], adjusted: null, flexApplied: false }
+    const source = row({ prescription_snapshot: { comparison, exercises: [] } })
+    const parsed = parseWorkoutSession(source, 'account-1')
+    source.prescription_snapshot.comparison.planned[0].muscleWeights.chest = 99
+    expect(parsed.prescriptionSnapshot.comparison.planned[0].muscleWeights.chest).toBe(1)
+    const records = parseCompletedWorkoutRecords({
+      sessions: [row({ status: 'completed', prescription_snapshot: { comparison: { version: 99 }, exercises: [] } })],
+      operations: [{ session_id: 'session-1', user_id: 'account-1', kind: 'session_completed', payload: { workout: { id: 'session-1', entries: [], comparison: { version: 99 } } } }],
+    }, 'account-1')
+    expect(records).toHaveLength(1)
+    expect(records[0].session.prescriptionSnapshot).not.toHaveProperty('comparison')
+    expect(records[0].workout).toEqual({ id: 'session-1', entries: [] })
+  })
+
+  it('recovers execution comparison from owner-scoped operations while preserving the original reference', async () => {
+    const { parseActiveWorkoutSession } = await load()
+    const planned = [{ exerciseId: 'bench', workSets: 4, muscleWeights: { chest: 1 } }]
+    const snapshot = { version: 1, origin: 'professional', planned, adjusted: null, flexApplied: false }
+    const execution = { ...snapshot, planned: [{ exerciseId: 'edited', workSets: 99, muscleWeights: {} }], adjusted: [{ exerciseId: 'bench', workSets: 2, muscleWeights: { chest: 1 } }], flexApplied: true }
+    const source = row({ prescription_snapshot: { comparison: snapshot, exercises: [] } })
+    const operations = [
+      { session_id: 'session-1', user_id: 'account-1', kind: 'set_upserted', session_revision: 2, payload: { active: { comparison: execution } } },
+      { session_id: 'session-1', user_id: 'account-1', kind: 'set_upserted', session_revision: 3, payload: { active: { comparison: { version: 999 } } } },
+    ]
+    expect(parseActiveWorkoutSession(source, operations, 'account-1').prescriptionSnapshot.comparison).toEqual({
+      version: 1, origin: 'professional', planned: [{ exerciseId: 'bench', workSets: 4, muscleWeights: { chest: 1 } }],
+      adjusted: [{ exerciseId: 'bench', workSets: 2, muscleWeights: { chest: 1 } }], flexApplied: true,
+    })
+    expect(() => parseActiveWorkoutSession(source, [{ ...operations[0], user_id: 'account-2' }], 'account-1')).toThrow('invalid-workout-operation')
+    expect(() => parseActiveWorkoutSession(source, [{ ...operations[0], session_id: 'foreign-session' }], 'account-1')).toThrow('invalid-workout-operation')
+  })
+
+  it('preserves the starting reference when reconstructing completed history from a later payload', async () => {
+    const { parseCompletedWorkoutRecords } = await load()
+    const original = { version: 1, origin: 'professional', planned: [{ exerciseId: 'bench', workSets: 4, muscleWeights: { chest: 1 } }], adjusted: null, flexApplied: false }
+    const changed = { ...original, planned: [{ exerciseId: 'edited', workSets: 99, muscleWeights: {} }], adjusted: [{ exerciseId: 'bench', workSets: 2, muscleWeights: { chest: 1 } }], flexApplied: true }
+    const records = parseCompletedWorkoutRecords({
+      sessions: [row({ status: 'completed', prescription_snapshot: { comparison: original, exercises: [] } })],
+      operations: [{ session_id: 'session-1', user_id: 'account-1', kind: 'session_completed', payload: { workout: { id: 'session-1', entries: [], comparison: changed } } }],
+    }, 'account-1')
+    expect(records[0].workout.comparison).toEqual({
+      version: 1, origin: 'professional', planned: [{ exerciseId: 'bench', workSets: 4, muscleWeights: { chest: 1 } }],
+      adjusted: [{ exerciseId: 'bench', workSets: 2, muscleWeights: { chest: 1 } }], flexApplied: true,
+    })
+  })
+
   it('maps a server workout session without leaking snake_case into views', async () => {
     const { parseWorkoutSession } = await load()
     expect(parseWorkoutSession(row(), 'account-1')).toEqual({

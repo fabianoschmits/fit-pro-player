@@ -279,6 +279,7 @@ export const useStore = create((set, get) => {
     startSessionRecovery(active) {
       if (!sessionRecovery || !active) return Promise.resolve({ state: 'idle', pending: 0 })
       const prescriptionSnapshot = {
+        ...(active.comparison ? { comparison: clone(active.comparison) } : {}),
         ...(active.flex ? { flex: clone(active.flex) } : {}),
         ...(active.prescribedEntries ? { prescribedEntries: clone(active.prescribedEntries) } : {}),
         name: active.name || '',
@@ -286,6 +287,7 @@ export const useStore = create((set, get) => {
         massUnit: MASS_UNIT,
         exercises: (active.entries || []).map(entry => ({
           id: entry.id,
+          ...(entry.muscleSnapshot ? { muscleSnapshot: clone(entry.muscleSnapshot) } : {}),
           ...(entry.sg ? { sg: entry.sg } : {}),
           target: clone(entry.target || {}),
           plan: entry.plan ? clone(entry.plan) : null,

@@ -1,3 +1,5 @@
+import { normalizeTrainingComparison } from './training-comparison.js'
+
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value)
 const isText = value => typeof value === 'string' && value.length > 0
 const isNullableText = value => value === null || isText(value)
@@ -12,6 +14,21 @@ const isIsoDate = value => {
 
 function invalid(kind) {
   throw new TypeError(`invalid-${kind}`)
+}
+
+function normalizeComparisonRecord(value) {
+  const { comparison: source, ...record } = value
+  const comparison = normalizeTrainingComparison(source)
+  return { ...record, ...(comparison ? { comparison } : {}) }
+}
+
+// The starting prescription owns the original reference. A journal operation
+// can only supply the execution reference frozen when the workout began.
+export function mergeSessionComparison(reference, execution) {
+  const comparison = normalizeTrainingComparison(reference)
+  const confirmed = normalizeTrainingComparison(execution)
+  if (!comparison || comparison.adjusted !== null || !confirmed || confirmed.origin !== comparison.origin || confirmed.adjusted === null) return comparison
+  return { ...comparison, adjusted: confirmed.adjusted, flexApplied: confirmed.flexApplied }
 }
 
 export function parseWorkoutSession(value, accountId) {
@@ -42,12 +59,27 @@ export function parseWorkoutSession(value, accountId) {
     revision: value.revision,
     writerToken: value.writer_token,
     massUnit: value.mass_unit,
-    prescriptionSnapshot: value.prescription_snapshot,
+    prescriptionSnapshot: normalizeComparisonRecord(value.prescription_snapshot),
     startedAt: value.started_at,
     completedAt: value.completed_at,
     ...(value.note ? { note: value.note } : {}),
     updatedAt: value.updated_at,
   }
+}
+
+export function parseActiveWorkoutSession(value, operations, accountId) {
+  const session = parseWorkoutSession(value, accountId)
+  if (!Array.isArray(operations)) invalid('workout-operation')
+  for (const operation of operations) {
+    if (!isObject(operation) || operation.user_id !== accountId || operation.session_id !== session.id
+      || !isRevision(operation.session_revision) || !isObject(operation.payload)) invalid('workout-operation')
+  }
+  const firstConfirmation = [...operations].sort((left, right) => left.session_revision - right.session_revision)
+    .filter(operation => operation.session_revision <= session.revision)
+    .map(operation => normalizeTrainingComparison(operation.payload.active?.comparison))
+    .find(comparison => comparison && comparison.adjusted !== null && comparison.origin === session.prescriptionSnapshot.comparison?.origin)
+  const comparison = mergeSessionComparison(session.prescriptionSnapshot.comparison, firstConfirmation)
+  return comparison ? { ...session, prescriptionSnapshot: { ...session.prescriptionSnapshot, comparison } } : session
 }
 
 export function parsePreferences(value, accountId) {
@@ -146,7 +178,7 @@ function parseCompletionOperation(value, accountId) {
   }
   const workout = value.payload.workout
   if (workout != null && (!isObject(workout) || workout.id !== value.session_id || !Array.isArray(workout.entries))) invalid('workout-operation')
-  return { sessionId: value.session_id, workout: workout || null }
+  return { sessionId: value.session_id, workout: workout ? normalizeComparisonRecord(workout) : null }
 }
 
 export function parseCompletedWorkoutRecords(value, accountId) {
@@ -157,9 +189,10 @@ export function parseCompletedWorkoutRecords(value, accountId) {
   }))
   return parseWorkoutHistory(value.sessions, accountId).map(session => {
     const workout = completions.get(session.id) || null
+    const comparison = mergeSessionComparison(session.prescriptionSnapshot.comparison, workout?.comparison) || workout?.comparison
     return {
       session,
-      workout: workout ? { ...workout, ...(session.note && !workout.note ? { note: session.note } : {}) } : null,
+      workout: workout ? { ...workout, ...(comparison ? { comparison } : {}), ...(session.note && !workout.note ? { note: session.note } : {}) } : null,
     }
   })
 }

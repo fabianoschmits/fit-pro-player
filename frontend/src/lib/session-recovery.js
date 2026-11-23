@@ -1,6 +1,7 @@
 import { detectInsightFailure, getInsightsAccount, trackInsight } from './insights-client.js'
 import { projectSessionRecovery } from './persisted-state.js'
 import { MASS_UNIT } from './mass.js'
+import { mergeSessionComparison } from './training-dto.js'
 
 export const SESSION_RECOVERY_SCHEMA_VERSION = 1
 const KEY_PREFIX = 'fpp_active_session_v1:'
@@ -84,7 +85,11 @@ function recoveryState(error) {
   return 'failed'
 }
 
-function serverSession(session) {
+function serverSession(session, previousSnapshot = null) {
+  const prescriptionSnapshot = copy(session.prescriptionSnapshot)
+  const comparison = mergeSessionComparison(prescriptionSnapshot.comparison, previousSnapshot?.comparison)
+  delete prescriptionSnapshot.comparison
+  if (comparison) prescriptionSnapshot.comparison = comparison
   return {
     id: session.id,
     accountId: session.accountId,
@@ -94,7 +99,7 @@ function serverSession(session) {
     revision: session.revision,
     writerToken: session.writerToken,
     massUnit: session.massUnit,
-    prescriptionSnapshot: copy(session.prescriptionSnapshot),
+    prescriptionSnapshot,
     startedAt: session.startedAt,
     completedAt: session.completedAt ?? null,
     updatedAt: session.updatedAt,
@@ -204,7 +209,7 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
           ...current,
           phase: remaining.some(item => item.kind === 'session_completed') ? 'completing'
             : remaining.some(item => item.kind === 'session_abandoned') ? 'abandoning' : 'active',
-          session: serverSession(session),
+          session: serverSession(session, { comparison: mergeSessionComparison(current.session.prescriptionSnapshot.comparison, queued.payload.active?.comparison) }),
           pendingOperations: remaining,
         })
       }
@@ -296,9 +301,9 @@ export function createSessionRecovery({ repository, accountId, storage = globalT
         if (!latest || latest.id !== current.session.id || latest.status !== 'active') {
           return publish('failed', { error: 'session-finalized', pending: current.pendingOperations.length })
         }
-        persist({ ...current, session: serverSession(latest) })
+        persist({ ...current, session: serverSession(latest, current.session.prescriptionSnapshot) })
         const session = await repository.takeOverSession({ sessionId: current.session.id, expectedRevision: latest.revision })
-        persist({ ...current, session: serverSession(session) })
+        persist({ ...current, session: serverSession(session, current.session.prescriptionSnapshot) })
       } catch (error) {
         return fail(error)
       }
