@@ -21,7 +21,7 @@ import { nextPrescription, applyPrescription } from '../lib/progression.js'
 import {  DEFAULT_GLYPH } from '../lib/glyphs.js'
 import { routineName } from '../lib/starter.js'
 import { isWarmupRow } from '../lib/workout-model.js'
-import { applyPreviousSetValues, replaceSessionExercise, editSessionExercise } from '../lib/workout-session.js'
+import { applyPreviousSetValues, replaceSessionExercise, editSessionExercise, snapshotSessionExercise, startSessionExecution } from '../lib/workout-session.js'
 import { createFlexSelection, toggleFlexSelection, confirmFlexSelection, estimateWorkoutDuration, getPreferredWorkoutMinutes } from '../lib/workout-duration.js'
 import WorkoutDurationSheet from '../components/WorkoutDurationSheet.jsx'
 import ExerciseSpriteThumb from '../components/ExerciseSpriteThumb.jsx'
@@ -219,7 +219,7 @@ function ActiveWorkout() {
   }
   const beginExecution = () => {
     update(s => {
-      if (s.active && !s.active.start) { s.active.start = Date.now(); s.active.durationMs = Math.max(0, Number(s.active?.durationMs) || 0) }
+      if (s.active && !s.active.start) s.active = startSessionExecution(s.active)
     })
     queueActive()
   }
@@ -352,7 +352,7 @@ function ActiveWorkout() {
         const full = { ...cfg, id: ex.id }
         const plan = freestyle ? null : nextPrescription(s, full, s.routines.find(r => r.id === s.active.routineId))
         const sets = buildSets(s, full, freestyle ? { preferLast: true } : undefined)
-        s.active.entries.push({ id: ex.id, target: { ...cfg }, plan, sets: freestyle ? sets : applyPrescription(sets, plan) })
+        s.active.entries.push(snapshotSessionExercise({ id: ex.id, target: { ...cfg }, plan, sets: freestyle ? sets : applyPrescription(sets, plan) }, ex))
         s.active.cur = s.active.entries.length - 1
       })
       queueActive('exercise_added')
@@ -401,12 +401,12 @@ function ActiveWorkout() {
       update(s => {
         if (!s.active?.entries?.[idx]) return
         const full = { ...cfg, id: ex.id }
-        const replacement = {
+        const replacement = snapshotSessionExercise({
           id: ex.id,
           target: { ...cfg },
           plan: null,
           sets: buildSets(s, full, { preferLast: true }),
-        }
+        }, ex)
         const result = replaceSessionExercise(s.active.entries, idx, replacement)
         s.active.entries = result.entries
         cleanupSg(s.active.entries)

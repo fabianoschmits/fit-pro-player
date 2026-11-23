@@ -15,6 +15,7 @@ import { Button } from '../components/ui.jsx'
 import { routineName } from '../lib/starter.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 import { toDisplayMass } from '../lib/mass.js'
+import { trainingComparisonHref } from '../components/training/TrainingComparisonPreview.jsx'
 
 function nextPlannedWorkout(S, from) {
   for (let offset = 1; offset <= 14; offset++) {
@@ -131,6 +132,7 @@ export default function Home() {
       {nextWorkout && <div className="home-next-session"><span>{t('Next')}</span><b>{routineName(nextWorkout.routine)}</b><small>{fmtDate(nextWorkout.iso, true)}</small></div>}
       <div className="home-now-actions fpp-spaced-actions">
         <Button variant="plain" size="sm" onClick={() => workoutDetailSheet(todayWorkout)}>{t('Details')}</Button>
+        <Button variant="ghost" size="sm" onClick={() => nav(trainingComparisonHref(todayWorkout.id))}>{t('Ver músculos treinados')}</Button>
       </div>
     </section>
 

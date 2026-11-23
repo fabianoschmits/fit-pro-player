@@ -93,6 +93,19 @@ describe('home theme toggle', () => {
 })
 
 describe('home next action', () => {
+  it('offers the comparison for a completed workout without an active session', async () => {
+    mocks.state.S.active = null
+    const now = new Date()
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    mocks.state.S.workouts = [{ id: 'finished', d: date, name: 'Treino concluído', start: 1, end: 2, entries: [] }]
+    await act(async () => root.render(<MemoryRouter><Home /></MemoryRouter>))
+    expect(container.querySelector('.home-now--done')?.textContent).toContain('Ver músculos treinados')
+    mocks.state.S.active = { name: 'Ativo', entries: [], start: 1 }
+    await act(async () => root.render(<MemoryRouter><Home /></MemoryRouter>))
+    expect(container.querySelector('.home-now')?.textContent).not.toContain('Ver músculos treinados')
+    mocks.state.S.workouts = []
+    mocks.state.S.active = null
+  })
   it('marks the next action, weekly progress and secondary progress regions', async () => {
     await act(async () => root.render(<MemoryRouter><Home /></MemoryRouter>))
     expect(container.querySelector('[data-home-section="next-action"]')).toBeTruthy()

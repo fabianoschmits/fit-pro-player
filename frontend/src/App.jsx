@@ -95,6 +95,7 @@ const Settings = lazy(loadSettings)
 const MotionFeedback = lazy(() => import('./views/MotionFeedback.jsx'))
 const PersonalData = lazy(loadPersonalData)
 const BodyProgress = lazy(loadBodyProgress)
+const TrainingComparison = lazy(() => import('./views/TrainingComparison.jsx'))
 const ProgressPhotos = lazy(() => import('./views/ProgressPhotos.jsx'))
 const ProfessionalProfile = lazy(loadProfessionalProfile)
 const ProfessionalDashboard = lazy(loadProfessionalDashboard)
@@ -602,6 +603,7 @@ function Shell() {
                 <Route path="/plan/r/:id" element={<RoutineEdit />} />
                 <Route path="/workout" element={<Workout />} />
                 <Route path="/progress" element={<Stats />} />
+                <Route path="/progress/training-map" element={<TrainingComparison />} />
                 <Route path="/progress/history" element={<History />} />
                 <Route path="/progress/body" element={<BodyProgress />} />
                 <Route path="/progress/photos" element={<ProgressPhotos />} />

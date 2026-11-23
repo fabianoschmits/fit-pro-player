@@ -34,13 +34,15 @@ import { MOBILE, shareExport } from './lib/mobile.js'
 import { buildCompletedWorkout } from './lib/finish-workout.js'
 import { isWarmupRow } from './lib/workout-model.js'
 import { syncProfileWeightFromBodyweight } from './lib/profile.js'
-import { resetHistoricalSets } from './lib/workout-session.js'
+import { resetHistoricalSets, snapshotSessionExercise } from './lib/workout-session.js'
+import { createTrainingComparison } from './lib/training-comparison.js'
 import { getBrowserSupabaseClient } from './lib/supabase-client.js'
 import { enqueueProfessionalEvent, flushProfessionalEvents } from './lib/professional-events.js'
 import { assignedSessionEntries } from './lib/assigned-program.js'
 import { isManagedPersonalizedRoutine, refreshManagedPersonalizedPlan } from './lib/personalized-plan.js'
 import { getPreferredWorkoutMinutes } from './lib/workout-duration.js'
 import { WorkoutShareModal } from './components/WorkoutShareModal.jsx'
+import { trainingComparisonHref } from './components/training/TrainingComparisonPreview.jsx'
 import { FppActionFeedback, FppStatusAnimation } from './components/FppFeedback.jsx'
 import { fromDisplayMass, toDisplayMass } from './lib/mass.js'
 
@@ -1272,6 +1274,7 @@ function WorkoutDetail({ w, close }) {
       </div>
     })}
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+      <Button variant="tinted" icon="person" onClick={() => { close(); nav(trainingComparisonHref(w.id)) }}>{t('Mapa do treino')}</Button>
       <Button variant="secondary" icon="instagram" onClick={() => workoutShareSheet(w)}>{t('Compartilhar treino')}</Button>
       <Button variant="primary" icon="reset" onClick={() => { close(); repeatWorkout(w) }}>{t('Repeat {0}', w.name)}</Button>
       <Button variant="danger" onClick={() => confirmSheet({ title: t('Delete workout?'), message: t('This removes it from your history for good.'), confirmText: t('Delete'), danger: true, onConfirm: async () => {
@@ -1421,18 +1424,20 @@ function beginWorkoutFromHistory(workout, bw) {
     const historicalSets = resetHistoricalSets(entry.sets || [])
     const workSetCount = historicalSets.filter(set => !isWarmupRow(set)).length
     const full = { ...defaultConfig(entry.id), ...(entry.target || {}), sets: Math.max(1, workSetCount || entry.target?.sets || 1), id: entry.id }
-    return {
+    return snapshotSessionExercise({
       id: entry.id,
       sg: entry.sg,
+      ...(entry.muscleSnapshot ? { muscleSnapshot: entry.muscleSnapshot } : {}),
       target: { ...full },
       plan: null,
       sets: historicalSets.length ? historicalSets : buildSets(st, full, { preferLast: true }),
-    }
+    })
   })
   stopWorkoutExecution()
   update(state => {
     queueAbandon(state)
-    state.active = { id: crypto.randomUUID(), d: todayISO(), start: null, durationMs: 0, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries }
+    state.active = { id: crypto.randomUUID(), d: todayISO(), start: null, durationMs: 0, routineId: null, name: workout.name || t('Freestyle'), bw: bw || null, cur: 0, entries,
+      comparison: createTrainingComparison(entries, 'repeat') }
   })
   void useStore.getState().startSessionRecovery(S().active)
   nav('/workout')
@@ -1456,17 +1461,18 @@ export function beginWorkout(routineId, bw, professionalExecutionId = null) {
   // The prescription is applied as the session is built, so you walk up to the bar with the
   // right weight already on the screen instead of being told about it afterwards. `plan` is
   // kept on the entry purely so the workout can explain the number it chose.
-  const entries = r?.assigned ? assignedSessionEntries(r) : (r ? r.ex : []).map(cfg => {
+  const entries = (r?.assigned ? assignedSessionEntries(r) : (r ? r.ex : []).map(cfg => {
     const plan = nextPrescription(st, cfg, r)
     return { id: cfg.id, sg: cfg.sg, target: { ...cfg }, plan, sets: applyPrescription(buildSets(st, cfg), plan) }
-  })
+  })).map(entry => snapshotSessionExercise(entry))
   stopWorkoutExecution()
   update(s => {
     queueAbandon(s)
     const executionId = r?.assigned ? (professionalExecutionId || crypto.randomUUID()) : null
     s.active = { id: crypto.randomUUID(), d: todayISO(), start: null, durationMs: 0, routineId, name: r ? routineName(r) : t('Freestyle'), bw: bw || null, cur: 0, entries, professionalExecutionId: executionId,
+      comparison: createTrainingComparison(entries, r?.assigned ? 'professional' : r ? 'personal' : 'freestyle'),
       ...(r?.assigned ? { assignmentId: r.assignmentId, programVersionId: r.programVersionId, assignedDayKey: r.assignedDayKey, prescribedEntries: structuredClone(r.ex), massUnit: 'kg' } : {}) }
-    if (executionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId, assignmentId: r.assignmentId, type: 'start', dayKey: r.assignedDayKey, payload: { source: 'professional-program', workoutId: s.active.id, prescription: s.active.prescribedEntries, massUnit: 'kg' } })
+    if (executionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId, assignmentId: r.assignmentId, type: 'start', dayKey: r.assignedDayKey, payload: { source: 'professional-program', workoutId: s.active.id, prescription: s.active.prescribedEntries, comparison: s.active.comparison, massUnit: 'kg' } })
   })
   void useStore.getState().startSessionRecovery(S().active)
   flushEvents()
@@ -1476,7 +1482,7 @@ const flushEvents = () => flushProfessionalEvents({ client: getBrowserSupabaseCl
 function queueAbandon(state) {
   const active = state.active
   if (!active?.professionalExecutionId) return
-  enqueueProfessionalEvent(state, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: active.professionalExecutionId, type: 'abandon', payload: { source: 'professional-program', workoutId: active.id, prescription: active.prescribedEntries, entries: active.entries, ...(active.flex ? { flex: active.flex } : {}), massUnit: 'kg' } })
+  enqueueProfessionalEvent(state, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: active.professionalExecutionId, type: 'abandon', payload: { source: 'professional-program', workoutId: active.id, prescription: active.prescribedEntries, entries: active.entries, ...(active.comparison ? { comparison: active.comparison } : {}), ...(active.flex ? { flex: active.flex } : {}), massUnit: 'kg' } })
 }
 export function abandonWorkout() {
   stopWorkoutExecution()
@@ -1605,6 +1611,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     <BodyMap className="finish-bodymap" load={loadOfWorkouts([w])} body={st.body} />
     <div style={{ height: 14 }} />
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <Button variant="tinted" icon="person" onClick={() => { close(); nav(trainingComparisonHref(w.id)) }}>{t('Ver mapa do treino')}</Button>
       <Button variant="secondary" icon="instagram" onClick={() => workoutShareSheet(w)}>{t('Compartilhar treino')}</Button>
       <Button variant="primary" icon="house" onClick={() => { close(); nav('/home') }}>{t('Home')}</Button>
     </div>
@@ -1641,7 +1648,7 @@ function doFinishWorkout(note) {
     prs,
     endedEarly,
     note,
-    snapshotFor: e => EXIDX[e.id]?.custom ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
+    snapshotFor: e => e.muscleSnapshot || exerciseMuscleSnapshot(EXIDX[e.id]),
   })
   Object.assign(w, {vol: workoutVolume(w) })
   void useStore.getState().completeSessionRecovery({
@@ -1657,7 +1664,7 @@ function doFinishWorkout(note) {
       if (mx > 0) { const cur = s.exWeights[e.id]; if (!cur || mx > cur.w) s.exWeights[e.id] = { w: mx, d: w.d } }
     })
     s.workouts.push(w)
-    if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, durationMs: w.durationMs, massUnit: 'kg', prescription: A.prescribedEntries, entries: A.entries, ...(A.flex ? { flex: A.flex } : {}) } })
+    if (A.professionalExecutionId) enqueueProfessionalEvent(s, { accountId: useStore.getState().getActiveLocalScope().userId, executionId: A.professionalExecutionId, type: 'complete', payload: { source: 'professional-program', workoutId: w.id, workoutName: w.name, start: w.start, end: w.end, durationMs: w.durationMs, massUnit: 'kg', prescription: A.prescribedEntries, entries: A.entries, ...(w.comparison ? { comparison: w.comparison } : {}), ...(A.flex ? { flex: A.flex } : {}) } })
     s.active = null
   })
   flushEvents()

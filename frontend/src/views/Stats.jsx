@@ -25,6 +25,7 @@ import TipOnce from '../components/TipOnce.jsx'
 import { toDisplayMass } from '../lib/mass.js'
 import BodyProgressNavigation from '../components/BodyProgressNavigation.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
+import TrainingComparisonPreview, { trainingSessionsByRecent } from '../components/training/TrainingComparisonPreview.jsx'
 
 const ProgressPhotoGallery = lazy(() => import('../components/ProgressPhotoGallery.jsx'))
 
@@ -404,6 +405,8 @@ export default function Stats() {
       <div><span>{t('Week streak')}</span><b>{streakWeeks(S)}</b></div>
       <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{displayBwDelta30 === null ? '—' : (displayBwDelta30 > 0 ? '+' : '') + fmtNum(displayBwDelta30) + ' ' + displayUnit}</b></div>
     </section>
+
+    <TrainingComparisonPreview workout={trainingSessionsByRecent(workouts)[0] || null} />
 
     <section className="card stats-photo-progress fpp-polished-card" aria-label="Comparação corporal">
       <BodyProgressNavigation current="comparison" />
