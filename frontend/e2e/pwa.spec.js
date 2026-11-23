@@ -140,6 +140,39 @@ test.describe('PWA Offline', () => {
     expect(failedFrameRequests, `Failed frame requests: ${failedFrameRequests.join(', ')}`).toHaveLength(0)
   })
 
+  test('training map cold-loads its lazy route and anatomy offline with persisted snapshots', async ({ page, context }, testInfo) => {
+    const state = stateFixture()
+    const muscleWeights = { chest: 1, triceps: .4 }
+    const snapshot = workSets => [{ exerciseId: '0025', workSets, muscleWeights: { ...muscleWeights } }]
+    state.workouts = [{ id: 'offline-map', d: '2026-11-23', name: 'Mapa offline', start: 1795446000000, end: 1795447800000,
+      comparison: { version: 1, origin: 'personal', planned: snapshot(3), adjusted: snapshot(2), flexApplied: true },
+      entries: [{ id: '0025', muscleSnapshot: { muscleWeights: { ...muscleWeights } }, sets: [{ done: true, r: 10, w: 20 }, { done: true, r: 10, w: 20 }] }],
+    }]
+    await seed(page, { state })
+    await page.goto('/#/home')
+    await waitForSWController(page)
+    // Do not visit the lazy comparison route before disconnecting. Its code and
+    // anatomy must come from the existing shell precache on the first visit.
+    await page.waitForFunction(async () => {
+      const key = (await caches.keys()).find(name => name.startsWith('fpp-shell-'))
+      if (!key) return false
+      const urls = (await (await caches.open(key)).keys()).map(request => request.url)
+      return urls.some(url => /\/TrainingComparison-[^/]+\.js$/.test(url)) && urls.some(url => /\/body-paths-[^/]+\.js$/.test(url))
+    }, undefined, { timeout: 30000 })
+    await context.setOffline(true)
+    await page.goto('/#/progress/training-map?session=offline-map', { waitUntil: 'domcontentloaded' })
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(page.getByRole('heading', { name: 'Planejado × Realizado', exact: true })).toBeVisible()
+    await expect(page.locator('[data-comparison-execution]')).toContainText('100%')
+    const stages = page.getByRole('group', { name: 'Etapa do treino' })
+    await stages.getByRole('button', { name: 'Original', exact: true }).click()
+    await expect(stages.getByRole('button', { name: 'Original', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    await stages.getByRole('button', { name: 'Realizado', exact: true }).click()
+    await page.locator('.tc-map-panel.is-active .bm-v').getByRole('button', { name: 'Peito', exact: true }).first().click()
+    await expect(page.locator('.tc-muscle-detail dl')).toContainText('Original3Ajustado2Realizado2')
+    await page.screenshot({ path: testInfo.outputPath('offline-training-map.png'), fullPage: true })
+  })
+
   test('Test 5 — complete restart offline: React boots, routes accessible', async ({ page, context }) => {
     const state = stateFixture()
     await seed(page, { state })
