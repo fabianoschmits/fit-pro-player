@@ -27,10 +27,13 @@ function isolate(element) {
 export function useDialogFocus(ref, { active = true, onClose = undefined, locked = false, titleId = undefined, layerRef = undefined } = {}) {
   const closeRef = useRef(onClose); closeRef.current = onClose
   const lockedRef = useRef(locked); lockedRef.current = locked
+  const triggerRef = useRef(null)
   useLayoutEffect(() => {
     const surface = ref.current
     if (!surface || !active) return
-    const trigger = document.activeElement
+    const trigger = surface.contains(document.activeElement) && triggerRef.current
+      ? triggerRef.current : document.activeElement
+    triggerRef.current = trigger
     const title = surface.querySelector('h1,h2,h3,[data-dialog-title]')
     if (title && !surface.hasAttribute('aria-label')) {
       if (!title.id) title.id = titleId
@@ -62,10 +65,17 @@ export function useDialogFocus(ref, { active = true, onClose = undefined, locked
       document.removeEventListener('keydown', key, true); document.removeEventListener('focusin', focus)
       const wasTop = stack.at(-1) === surface
       const index = stack.indexOf(surface); if (index >= 0) stack.splice(index, 1)
+      const remainingTop = stack.at(-1)
       release()
       if (wasTop) {
-        const target = trigger?.isConnected && !trigger.closest?.('[inert]') ? trigger : stack.at(-1)
-        target?.focus?.({ preventScroll: true })
+        // React restores the pre-commit selection after layout cleanups. Return
+        // focus after that commit so a closing dialog cannot reclaim it. A
+        // StrictMode effect replay can reactivate this same surface meanwhile.
+        queueMicrotask(() => {
+          if (stack.includes(surface) || stack.at(-1) !== remainingTop) return
+          const target = trigger?.isConnected && !trigger.closest?.('[inert]') ? trigger : stack.at(-1)
+          target?.focus?.({ preventScroll: true })
+        })
       }
     }
   }, [ref, active, titleId, layerRef])

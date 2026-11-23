@@ -38,22 +38,22 @@ beforeEach(() => {
   root = createRoot(container)
 })
 
-afterEach(() => {
-  act(() => root.unmount())
+afterEach(async () => {
+  await act(async () => root.unmount())
   container.remove()
   vi.useRealTimers()
   vi.restoreAllMocks()
 })
 
 describe('Media SVG playback', () => {
-  it('keeps nested muscle popup focus above the exercise dialog and restores its trigger', () => {
+  it('keeps nested muscle popup focus above the exercise dialog and restores its trigger', async () => {
     const close = vi.fn()
     act(() => root.render(<Dialog title="Exercício" onClose={close}><Media ex={EXERCISE} /></Dialog>))
     const trigger=document.querySelector('.media-muscles')
     act(() => { trigger.focus(); trigger.click() })
     const popup=document.querySelector('.media-muscles-pop')
     expect(popup.contains(document.activeElement)).toBe(true)
-    act(() => popup.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})))
+    await act(async () => popup.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true})))
     expect(document.querySelector('.media-muscles-pop')).toBeNull()
     expect(document.activeElement).toBe(trigger)
     expect(close).not.toHaveBeenCalled()
@@ -123,7 +123,7 @@ describe('Media SVG playback', () => {
     expect(document.body.style.overflow).toBe('')
   })
 
-  it('closes with Escape without resuming a sprite that was paused before opening', () => {
+  it('closes with Escape without resuming a sprite that was paused before opening', async () => {
     act(() => root.render(<Media ex={EXERCISE} />))
     act(() => { vi.advanceTimersByTime(500) })
     const playback = container.querySelector('.media-playback')
@@ -133,7 +133,7 @@ describe('Media SVG playback', () => {
     const trigger = container.querySelector('.media-muscles')
     act(() => trigger.dispatchEvent(new MouseEvent('click', { bubbles: true })))
     expect(document.body.querySelector('[role="dialog"]')).toBeTruthy()
-    act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })))
+    await act(async () => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })))
 
     expect(document.body.querySelector('[role="dialog"]')).toBeFalsy()
     expect(container.querySelector('[data-testid="sprite"]').dataset.playing).toBe('false')

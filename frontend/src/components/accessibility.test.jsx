@@ -12,7 +12,7 @@ beforeEach(() => {
   host = document.createElement('div'); document.body.append(host); root = createRoot(host)
   window.scrollTo = vi.fn()
 })
-afterEach(() => { act(() => root.unmount()); host.remove() })
+afterEach(async () => { await act(async () => root.unmount()); host.remove() })
 
 it('names switches from their containing row and numerical fields from their labels', () => {
   act(() => root.render(<><Row title="Lembretes"><Switch checked onChange={() => {}} /></Row><Stepper label="Carga" unit="kg" value={20} onChange={() => {}} /></>))
@@ -32,7 +32,7 @@ it('names a slider and supports the Home/End keys', () => {
   expect(change).toHaveBeenLastCalledWith(15)
 })
 
-it('isolates background, names dialogue, closes on Escape and restores trigger focus', () => {
+it('isolates background, names dialogue, closes on Escape and restores trigger focus', async () => {
   const trigger = document.createElement('button'); trigger.textContent = 'Abrir'; document.body.append(trigger); trigger.focus()
   const close = vi.fn()
   act(() => root.render(<Dialog title="Escolher exercício" onClose={close}><select aria-label="Equipamento"><option>Barra</option></select><button>Selecionar</button></Dialog>))
@@ -43,7 +43,7 @@ it('isolates background, names dialogue, closes on Escape and restores trigger f
   expect(dialog.contains(document.activeElement)).toBe(true)
   act(() => dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
   expect(close).toHaveBeenCalledTimes(1)
-  act(() => root.render(null))
+  await act(async () => root.render(null))
   expect(host.hasAttribute('inert')).toBe(false)
   expect(document.activeElement).toBe(trigger)
   trigger.remove()
