@@ -1,3 +1,4 @@
+import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
@@ -1315,5 +1316,6 @@ export default {
   "Workout waiting to send. It will retry when the connection returns.": "Antrenman gönderilmeyi bekliyor. Bağlantı geri geldiğinde tekrar denenecek.",
   "Saving workout…": "Antrenman kaydediliyor…",
   "Continue here": "Burada devam et",
-  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Bu antrenmanda animasyonu olmayan egzersizler var. Bunları katalogdaki egzersizlerle değiştirin."
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Bu antrenmanda animasyonu olmayan egzersizler var. Bunları katalogdaki egzersizlerle değiştirin.",
+  ...trainingComparisonLocale('tr'),
 }

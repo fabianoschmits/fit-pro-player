@@ -1,3 +1,4 @@
+import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
@@ -1315,5 +1316,6 @@ export default {
   "Workout waiting to send. It will retry when the connection returns.": "L’entraînement attend d’être envoyé. Un nouvel essai aura lieu au retour de la connexion.",
   "Saving workout…": "Enregistrement de l’entraînement…",
   "Continue here": "Continuer ici",
-  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Cet entraînement contient des exercices sans animation. Remplacez-les par des exercices du catalogue."
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Cet entraînement contient des exercices sans animation. Remplacez-les par des exercices du catalogue.",
+  ...trainingComparisonLocale('fr'),
 }

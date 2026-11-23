@@ -1,3 +1,4 @@
+import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
@@ -1315,5 +1316,6 @@ export default {
   "Workout waiting to send. It will retry when the connection returns.": "वर्कआउट भेजे जाने की प्रतीक्षा में है। कनेक्शन लौटने पर फिर प्रयास होगा।",
   "Saving workout…": "वर्कआउट सेव हो रहा है…",
   "Continue here": "यहाँ जारी रखें",
-  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "इस वर्कआउट में बिना एनीमेशन वाले व्यायाम हैं। उन्हें कैटलॉग के व्यायामों से बदलें।"
+  "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "इस वर्कआउट में बिना एनीमेशन वाले व्यायाम हैं। उन्हें कैटलॉग के व्यायामों से बदलें।",
+  ...trainingComparisonLocale('hi'),
 }
