@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { buildCompletedWorkout } from './finish-workout.js'
 import { workoutDuration } from './format.js'
+import { compareTraining } from './training-comparison.js'
 
 describe('completed workout boundary', () => {
+  it('preserves explicitly empty anatomy instead of inferring it from a later catalogue', () => {
+    const completed = buildCompletedWorkout({ id: 'empty-anatomy', entries: [{ id: '0025', muscleSnapshot: {}, sets: [{ done: true }] }] })
+    expect(completed.entries[0].muscleSnapshot).toEqual({})
+    expect(compareTraining(JSON.parse(JSON.stringify(completed))).loads.actual.chest || 0).toBe(0)
+  })
+
   it('carries an independent comparison and the frozen entry muscle snapshot into completion', () => {
     const comparison = { version: 1, origin: 'personal', planned: [{ exerciseId: 'custom', workSets: 3, muscleWeights: { chest: 1 } }], adjusted: [{ exerciseId: 'custom', workSets: 2, muscleWeights: { chest: 1 } }], flexApplied: true }
     const active = { id: 'w', comparison, entries: [{ id: 'custom', sets: [{ done: true }], muscleSnapshot: { n: 'Old custom', muscleWeights: { chest: 1 } } }] }

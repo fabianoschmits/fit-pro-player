@@ -23,7 +23,7 @@ export function buildCompletedWorkout(active, { end = Date.now(), prs = [], snap
     if (entry.replacedFrom) completed.replacedFrom = entry.replacedFrom
     if (entry.replacedBy) completed.replacedBy = entry.replacedBy
     const snapshot = entry.muscleSnapshot || (typeof snapshotFor === 'function' ? snapshotFor(entry) : null)
-    if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot) && Object.keys(snapshot).length) {
+    if (snapshot && typeof snapshot === 'object' && !Array.isArray(snapshot)) {
       completed.muscleSnapshot = structuredClone(snapshot)
     }
     return completed
