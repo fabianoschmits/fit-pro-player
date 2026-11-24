@@ -1,0 +1,57 @@
+.weekly-progress-mode #app{max-width:1120px}
+.weekly-progress-view{width:100%;max-width:1060px;margin-inline:auto;padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));color:var(--label)}
+.weekly-progress-view h1{font-size:clamp(25px,5.5vw,34px);line-height:1.15;letter-spacing:-.025em}
+.weekly-progress-view h2,.weekly-preview h2{font-size:18px;line-height:1.3;margin:0}
+.weekly-progress-view h3{font-size:15px;line-height:1.4}
+.weekly-section{padding:16px;margin-block:16px;min-width:0}
+.weekly-section>p,.weekly-caption,.weekly-notice{font-size:13px;line-height:1.5;color:var(--label-2);overflow-wrap:anywhere}
+.weekly-section-heading,.weekly-preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}
+.weekly-section-heading>span{font-size:12px;color:var(--label-2)}
+.weekly-selector{margin-block:18px;display:grid;gap:10px}
+.weekly-selector-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.weekly-selector-row>div{display:grid;text-align:center;gap:5px;min-width:0;font-size:14px}
+.weekly-selector-row span{color:var(--label-2);font-size:12px}
+.weekly-date-picker{display:flex;align-items:center;justify-content:center;gap:12px;font-size:12px;color:var(--label-2)}
+.weekly-date-picker input{min-width:0;max-width:165px;min-height:44px;background:var(--surface);border:1px solid var(--surface-border);border-radius:var(--r);color:var(--label);padding:8px;font:inherit;color-scheme:light dark}
+.weekly-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-block:16px}
+.weekly-metric{margin:0;padding:14px;display:grid;align-content:start;gap:10px;min-width:0}
+.weekly-metric>span{display:flex;gap:6px;align-items:center;color:var(--label-2);font-size:12px;min-height:32px;line-height:1.35}
+.weekly-metric .icn{flex:none;width:16px;height:16px}
+.weekly-metric strong{font-size:clamp(22px,4vw,30px);line-height:1.15;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.weekly-metric small{font-size:12px;color:var(--label-2)}
+.weekly-chart{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;padding-top:16px}
+.weekly-day{display:grid;gap:8px;border:0;border-radius:8px;background:transparent;color:var(--label-2);min-width:0;min-height:44px;padding:5px 1px;font:inherit;font-size:10px;text-align:center}
+.weekly-day[aria-pressed=true]{background:var(--surface);outline:1px solid var(--acc);color:var(--label)}
+.weekly-day-value{font-size:11px;min-height:16px;font-variant-numeric:tabular-nums}
+.weekly-day-track{height:110px;width:clamp(12px,4vw,30px);margin:auto;display:flex;align-items:flex-end;border-bottom:1px solid var(--surface-border)}
+.weekly-day-track i{display:block;width:100%;background:var(--acc);border-radius:5px 5px 0 0}
+.weekly-day.is-future{opacity:.45}
+.weekly-day-detail,.weekly-muscle-detail{border-top:1px solid var(--surface-border);margin-top:16px;padding-top:14px;font-size:13px;line-height:1.5}
+.weekly-comparison-list{margin:0}.weekly-comparison-list>div{padding-block:12px;border-bottom:1px solid var(--surface-border)}
+.weekly-comparison-list dt{font-size:12px;color:var(--label-2)}
+.weekly-comparison-list dd{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0 0;font-size:13px}
+.weekly-comparison-list dd span{min-width:0;overflow-wrap:anywhere}.weekly-comparison-list dd strong{flex:none;font-variant-numeric:tabular-nums}
+.weekly-insights{padding:8px 4px;margin-block:16px}
+.weekly-insights ul{padding-left:20px;margin-bottom:0;font-size:14px;line-height:1.5}.weekly-insights li+li{margin-top:10px}
+.weekly-bodymap{height:420px;min-height:420px;justify-content:center;margin-block:16px;gap:24px}
+.weekly-bodymap .bm-v{height:100%;max-width:100%;min-width:0}.weekly-bodymap .bm-ph{height:420px}
+.weekly-muscle-ranking{display:grid;gap:8px;margin-top:16px}
+.weekly-muscle-ranking button{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;min-height:44px;padding:10px;border:1px solid var(--surface-border);border-radius:var(--r);color:var(--label);background:transparent;text-align:left;font:inherit;font-size:13px}
+.weekly-muscle-ranking button[aria-pressed=true]{border-color:var(--acc)}
+.weekly-rank-track{grid-column:1/-1;height:4px;background:var(--surface-border);border-radius:2px}.weekly-rank-track i{display:block;height:100%;background:var(--acc);border-radius:2px}
+.weekly-planning-bars{display:grid;gap:15px;margin-block:20px}.weekly-planning-bars dt{display:flex;justify-content:space-between;gap:12px;font-size:13px}.weekly-planning-bars dd{height:10px;background:var(--surface-border);margin:7px 0 0;border-radius:5px;overflow:hidden}.weekly-planning-bars dd span{display:block;height:100%;background:var(--acc);border-radius:5px}
+.weekly-performance-list{list-style:none;margin:0;padding:0}.weekly-performance-list li{display:grid;gap:8px;padding-block:16px;border-bottom:1px solid var(--surface-border);min-width:0}.weekly-performance-list li>span,.weekly-performance-list small{font-size:12px;color:var(--label-2)}.weekly-performance-list li>b{font-size:18px;overflow-wrap:anywhere}.weekly-performance-list .btn{justify-self:start;max-width:100%}
+.weekly-workouts{scroll-margin-top:90px;margin-block:20px}.weekly-workout{padding:12px;margin-block:10px}.weekly-workout-main{display:grid;gap:6px;width:100%;min-height:64px;padding:4px;border:0;color:var(--label);background:transparent;text-align:left;font:inherit}.weekly-workout-main strong{overflow-wrap:anywhere}.weekly-workout-main span,.weekly-workout-main small{color:var(--label-2);font-size:12px;line-height:1.5}.weekly-workout>.btn{margin-top:8px;max-width:100%}
+.weekly-inline-actions{display:flex;flex-wrap:wrap;gap:8px}.weekly-inline-actions .btn{max-width:100%}
+.weekly-notice{padding:12px 16px;border-left:3px solid var(--acc);border-radius:0 var(--r) var(--r) 0;background:var(--surface);margin-block:16px}
+.weekly-preview{display:block;padding:14px 16px;margin-block:16px;color:var(--label);text-decoration:none;min-width:0}
+.weekly-preview-head .icn{flex:none;color:var(--acc)}.weekly-preview p{font-size:12px;line-height:1.5;color:var(--label-2);margin:8px 0}
+.weekly-preview-values{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;margin-block:12px}.weekly-preview-values b{font-size:16px;font-variant-numeric:tabular-nums}
+.weekly-preview-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;max-width:360px;margin-top:12px}.weekly-preview-days>span{display:grid;place-items:center;border-bottom:3px solid var(--surface-border);min-height:25px;font-size:10px;color:var(--label-2)}.weekly-preview-days .is-active{border-color:var(--acc);color:var(--acc)}.weekly-preview-days .is-future{opacity:.45}
+.weekly-preview-link{display:block;color:var(--acc);font-size:12px;font-weight:600;margin-top:12px}.weekly-preview-empty strong{display:block;font-size:14px;margin-top:10px}
+.weekly-empty .btn{margin-top:8px}.weekly-skeleton>.card{height:140px;margin-block:16px}.weekly-skeleton .weekly-metrics>.card{height:120px;margin:0}.weekly-preview-loading{min-height:140px}
+.weekly-progress-view button:focus-visible,.weekly-progress-view input:focus-visible,.weekly-preview:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+@media(min-width:900px){.weekly-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.weekly-section{padding:22px}.weekly-muscle-ranking{grid-template-columns:repeat(2,minmax(0,1fr))}.weekly-bodymap{height:450px}.weekly-selector{max-width:600px;margin-inline:auto}.weekly-progress-view>.weekly-section,.weekly-progress-view>.weekly-insights,.weekly-progress-view>.weekly-workouts{max-width:850px;margin-inline:auto}}
+@media(prefers-reduced-motion:reduce){.weekly-progress-view *,.weekly-preview *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.weekly-muscle-picker{display:grid;gap:8px;margin-top:16px;font-size:12px;color:var(--label-2)}.weekly-muscle-picker select{width:100%;min-width:0;min-height:44px;padding:8px;background:var(--surface);color:var(--label);border:1px solid var(--surface-border);border-radius:var(--r);font:inherit}.weekly-progress-view select:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
