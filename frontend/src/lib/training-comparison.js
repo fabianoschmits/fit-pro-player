@@ -126,7 +126,7 @@ function performedSnapshots(entries) {
 
 // The session has one scale, so equal weighted loads always receive equal shades
 // across all three maps, even after Flex removes most of the original plan.
-function thresholdsOf(loads) {
+export function thresholdsOf(loads) {
   const max = Math.max(0, ...Object.values(loads).flatMap(load => load ? Object.values(load) : []))
   const rules = [{ at: 0, level: 1, exclusive: true }]
   if (max > 0) {

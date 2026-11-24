@@ -1,9 +1,11 @@
+import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Hindi UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...weeklyProgressLocale('hi'),
   ...projectErrorLocale('hi'),
   "Clique para desmarcar": "चयन हटाने के लिए क्लिक करें",
   "Clique para remover": "हटाने के लिए क्लिक करें",

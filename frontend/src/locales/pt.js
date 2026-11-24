@@ -1,9 +1,11 @@
+import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+  ...weeklyProgressLocale('pt'),
   ...projectErrorLocale('pt'),
   "Clique para desmarcar": "Clique para desmarcar",
   "Clique para remover": "Clique para remover",

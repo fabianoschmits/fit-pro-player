@@ -1,9 +1,11 @@
+import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...weeklyProgressLocale('zh'),
   ...projectErrorLocale('zh'),
   "Clique para desmarcar": "点击取消选择",
   "Clique para remover": "点击移除",

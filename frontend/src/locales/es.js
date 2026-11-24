@@ -1,9 +1,11 @@
+import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
 import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Spanish UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+  ...weeklyProgressLocale('es'),
   ...projectErrorLocale('es'),
   "Clique para desmarcar": "Haz clic para desmarcar",
   "Clique para remover": "Haz clic para eliminar",
