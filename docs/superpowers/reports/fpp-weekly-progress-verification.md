@@ -123,5 +123,3 @@ b7b006f test: cover weekly progress and offline navigation
 60ce662 feat: connect weekly progress to workout and evolution flows
 f0d6119 feat: build weekly progress screen and shared previews
 29721ec feat: add weekly progress engines and localized metrics
-
-
