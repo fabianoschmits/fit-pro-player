@@ -5,7 +5,9 @@ import { join } from 'node:path'
 const shellFile = name => /^(?:index\.html|manifest\.json|favicon[^/]*\.(?:ico|png)|apple-touch-icon[^/]*\.png)$/.test(name)
   || /^icons\/.+\.(?:png|ico|svg)$/.test(name)
   || /^assets\/[^/]+\.(?:js|css|png|webp)$/.test(name)
-const optionalFile = name => /^assets\/(?:ProgressPhoto|progress-photo|frames-|hi-|zh-|ko-|ru-|ar-)[^/]*\.js$/.test(name)
+// Sprite loader modules are required after first-install imports made before SW control.
+// Keep their small URL metadata in the shell; raster frames remain demand-cached.
+const optionalFile = name => /^assets\/(?:ProgressPhoto|progress-photo|hi-|zh-|ko-|ru-|ar-)[^/]*\.js$/.test(name)
   || /^assets\/(?:frame-[^/]*\.(?:webp|png)|avatar-[^/]*\.webp)$/.test(name)
 
 export function buildPrecacheManifest(dist) {

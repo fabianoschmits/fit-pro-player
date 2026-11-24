@@ -12,10 +12,10 @@ function fixture() {
 }
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, {recursive:true,force:true}) })
 
-it('keeps the shell and excludes private photos, optional languages, exercise media and avatars', () => {
+it('keeps shell and sprite loader modules while excluding private photos, optional languages, raster frames and avatars', () => {
   const root=fixture(), dist=join(root,'dist')
-  const included=['index.html','manifest.json','favicon.ico','apple-touch-icon.png','icons/app.svg','assets/index-ab.js','assets/index.css','assets/bg.webp']
-  const excluded=['sw.js','assets/ProgressPhotoGallery-x.js','assets/progress-photo-pose-x.js','assets/frames-0025.js','assets/frame-0025.webp','assets/avatar-01.webp','assets/hi-x.js','assets/ru-x.js','debug.txt']
+  const included=['index.html','manifest.json','favicon.ico','apple-touch-icon.png','icons/app.svg','assets/index-ab.js','assets/frames-0025.js','assets/index.css','assets/bg.webp']
+  const excluded=['sw.js','assets/ProgressPhotoGallery-x.js','assets/progress-photo-pose-x.js','assets/frame-0025.webp','assets/avatar-01.webp','assets/hi-x.js','assets/ru-x.js','debug.txt']
   for (const file of [...included,...excluded]) writeFileSync(join(dist,file), 'fixture')
   const result=buildPrecacheManifest(dist)
   expect(result.manifest.map(entry=>entry.url).sort()).toEqual(included.sort())
@@ -30,7 +30,7 @@ it('skips oversized files and injects a deterministic cache identity and exercis
   writeFileSync(join(dist,'assets/frames-0025.js'),'sprite')
   writeFileSync(join(root,'public/sw.js'),'const shell=self.__WB_MANIFEST; const cache="__BUILD_ID__"; const exercises=/* exercise-catalogue */ [];')
   const result=injectServiceWorker(root)
-  expect(result.count).toBe(1)
+  expect(result.count).toBe(2)
   const first=readFileSync(join(dist,'sw.js'),'utf8')
   expect(first).toContain('/assets/frames-0025.js')
   expect(first).not.toMatch(/__BUILD_ID__|self\.__WB_MANIFEST|big\.js/)

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 import {readFile,writeFile,unlink} from 'node:fs/promises'
-import { seed, stateFixture, openMainNavigation } from './fixtures.test.js'
+import { seed, stateFixture, openMainNavigation, startWorkoutExecution } from './fixtures.test.js'
+
+import { exerciseGuideAsset } from '../src/lib/exercise-guide-assets.js'
 
 const upgradeWorkerFile=new URL('../dist/sw-upgrade-test.js',import.meta.url)
 test.afterEach(async()=>{await unlink(upgradeWorkerFile).catch(()=>{})})
@@ -88,11 +90,20 @@ test.describe('PWA Offline', () => {
     await openMainNavigation(page)
     await page.locator('[data-tab-key="start"]').click()
     await expect(page.locator('.workout-session-title')).toContainText('Treino de teste', { timeout: 10000 })
+    await startWorkoutExecution(page)
+    const before = await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).active)
+    expect(before.start).toBeTruthy()
+    expect(before.entries).toHaveLength(1)
 
     await context.setOffline(true)
     await page.reload({ waitUntil: 'domcontentloaded' })
 
     await expect(page.locator('.workout-session-title')).toContainText('Treino de teste')
+    const restored = await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).active)
+    expect(restored.id).toBe(before.id)
+    expect(restored.entries).toEqual(before.entries)
+    expect(restored.comparison).toEqual(before.comparison)
+    await expect(page.locator('.wp-exercise-player')).toBeVisible()
     await page.screenshot({ path: testInfo.outputPath('offline-workout.png'), fullPage: true })
   })
 
@@ -104,40 +115,30 @@ test.describe('PWA Offline', () => {
     await waitForSWController(page)
     await waitForPrecache(page)
 
-    // Wait until bench-press frames (0025 — always in SHOWCASE, always in plan) are fully cached.
-    // bench-press has 3 unique frame images (frame-4 reuses frame-2); wait for all 3.
-    // We identify them by their build-hash names which are stable across builds for the same source.
-    const BENCH_PRESS_FRAMES = ['frame-1-LyFiu4C4.webp', 'frame-2-DlIzf7GR.webp', 'frame-3-31OQMumA.webp']
-    await page.waitForFunction(async (frames) => {
-      const keys = await caches.keys()
-      const exKey = keys.find(k => k.startsWith('fpp-exercise-media-'))
-      if (!exKey) return false
-      const cache = await caches.open(exKey)
-      const entries = await cache.keys()
-      const cachedUrls = entries.map(r => r.url)
-      return frames.every(name => cachedUrls.some(u => u.includes(name)))
-    }, BENCH_PRESS_FRAMES, { timeout: 30000 })
-    // Brief pause to ensure all cache.put() calls have resolved
-    await page.waitForTimeout(500)
-    // Dismiss PWA install modal if it appeared while we were waiting
-    await dismissInstallModal(page)
-
-    const failedFrameRequests = []
-    page.on('requestfailed', req => {
-      if (/\/assets\/frame-[^/]+\.(webp|png)/.test(req.url())) {
-        failedFrameRequests.push(req.url())
-      }
-    })
-
-    // Now go offline and open workout containing the plan exercise
-    await context.setOffline(true)
-    await dismissInstallModal(page)
     await openMainNavigation(page)
     await page.locator('[data-tab-key="start"]').click()
-    await expect(page.locator('.workout-session-title')).toContainText('Treino de teste', { timeout: 10000 })
-    await page.waitForTimeout(1500)
-
-    expect(failedFrameRequests, `Failed frame requests: ${failedFrameRequests.join(', ')}`).toHaveLength(0)
+    await startWorkoutExecution(page)
+    const animation = page.locator('.wp-media-card [data-exercise-animation="0025"]')
+    const frameCount = new Set(exerciseGuideAsset({ id: '0025' }).sequence).size
+    const images = animation.locator('img')
+    await expect(images).toHaveCount(frameCount)
+    await expect.poll(() => images.evaluateAll(items => items.every(image => image.complete && image.naturalWidth > 0))).toBe(true)
+    const frames = await images.evaluateAll(items => items.map(image => image.currentSrc || image.src))
+    // URLs come from the rendered catalogue mapping for this build, including
+    // all frame positions even when identical source files share a build hash.
+    await page.waitForFunction(async frames => {
+      const name = (await caches.keys()).find(key => key.startsWith('fpp-exercise-media-'))
+      if (!name) return false
+      const cache = await caches.open(name)
+      return (await Promise.all(frames.map(url => cache.match(url)))).every(Boolean)
+    }, frames)
+    await context.setOffline(true)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await expect(images).toHaveCount(frameCount)
+    await expect.poll(() => images.evaluateAll(items => items.every(image => image.complete && image.naturalWidth > 0))).toBe(true)
+    expect(await images.evaluateAll(items => items.map(image => image.currentSrc || image.src))).toEqual(frames)
+    const first = await animation.locator('[data-guide-frame].is-active').getAttribute('data-guide-frame')
+    await expect.poll(() => animation.locator('[data-guide-frame].is-active').getAttribute('data-guide-frame')).not.toBe(first)
   })
 
   test('training map cold-loads its lazy route and anatomy offline with persisted snapshots', async ({ page, context }, testInfo) => {
