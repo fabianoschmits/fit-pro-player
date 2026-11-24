@@ -43,6 +43,7 @@ import { isManagedPersonalizedRoutine, refreshManagedPersonalizedPlan } from './
 import { getPreferredWorkoutMinutes } from './lib/workout-duration.js'
 import { WorkoutShareModal } from './components/WorkoutShareModal.jsx'
 import { trainingComparisonHref } from './components/training/TrainingComparisonPreview.jsx'
+import { weeklyHref } from './lib/weekly-progress-format.js'
 import { FppActionFeedback, FppStatusAnimation } from './components/FppFeedback.jsx'
 import { fromDisplayMass, toDisplayMass } from './lib/mass.js'
 
@@ -1612,6 +1613,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     <div style={{ height: 14 }} />
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <Button variant="tinted" icon="person" onClick={() => { close(); nav(trainingComparisonHref(w.id)) }}>{t('Ver mapa do treino')}</Button>
+      <Button variant="ghost" icon="calendar" onClick={() => { close(); nav(weeklyHref(w.end ?? w.d, st.profile?.timeZone || st.reminder?.tz)) }}>{t('View my week')}</Button>
       <Button variant="secondary" icon="instagram" onClick={() => workoutShareSheet(w)}>{t('Compartilhar treino')}</Button>
       <Button variant="primary" icon="house" onClick={() => { close(); nav('/home') }}>{t('Home')}</Button>
     </div>

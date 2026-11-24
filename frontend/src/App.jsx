@@ -96,6 +96,8 @@ const MotionFeedback = lazy(() => import('./views/MotionFeedback.jsx'))
 const PersonalData = lazy(loadPersonalData)
 const BodyProgress = lazy(loadBodyProgress)
 const TrainingComparison = lazy(() => import('./views/TrainingComparison.jsx'))
+const loadWeeklyProgress = () => import('./views/WeeklyProgress.jsx')
+const WeeklyProgress = lazy(loadWeeklyProgress)
 const ProgressPhotos = lazy(() => import('./views/ProgressPhotos.jsx'))
 const ProfessionalProfile = lazy(loadProfessionalProfile)
 const ProfessionalDashboard = lazy(loadProfessionalDashboard)
@@ -131,6 +133,7 @@ const SupportTicket = lazy(loadSupportTicket)
 // Once the PWA shell is installed, warm its core routes while the browser is idle. Requests
 // pass through the service worker and become available offline without delaying first paint.
 export const preloadCoreRoutes = () => Promise.allSettled([
+  loadWeeklyProgress(),
   loadHome(), loadPlan(), loadAccountOnboarding(), loadRoutineEdit(), loadWorkout(), loadStats(), loadHistory(), loadPersonalData(),
     loadLibrary(), loadCommunity(), loadSettings(), loadBodyProgress(), loadProfessionalDashboard(), loadProfessionalInvites(), loadInviteLanding(), loadProfessionalStudents(), loadProfessionalStudentPage(), loadProfessionalPrograms(), loadStudentProfessionals(), loadSheets(),
 ])
@@ -604,6 +607,7 @@ function Shell() {
                 <Route path="/workout" element={<Workout />} />
                 <Route path="/progress" element={<Stats />} />
                 <Route path="/progress/training-map" element={<TrainingComparison />} />
+                <Route path="/progress/weekly" element={<WeeklyProgress />} />
                 <Route path="/progress/history" element={<History />} />
                 <Route path="/progress/body" element={<BodyProgress />} />
                 <Route path="/progress/photos" element={<ProgressPhotos />} />

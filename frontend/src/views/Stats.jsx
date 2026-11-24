@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { EXIDX, exerciseName } from '../lib/exercises.js'
 import { lastBW, streakWeeks, setLabel, modeOf, effortOf, metricModeForEntry, metricRowsForEntry, bestWeightForEntry, workoutVolume } from '../lib/history.js'
@@ -26,6 +26,7 @@ import { toDisplayMass } from '../lib/mass.js'
 import BodyProgressNavigation from '../components/BodyProgressNavigation.jsx'
 import { FppActionFeedback } from '../components/FppFeedback.jsx'
 import TrainingComparisonPreview, { trainingSessionsByRecent } from '../components/training/TrainingComparisonPreview.jsx'
+import WeeklyProgressPreview from '../components/training/weekly/WeeklyProgressPreview.jsx'
 
 const ProgressPhotoGallery = lazy(() => import('../components/ProgressPhotoGallery.jsx'))
 
@@ -288,7 +289,12 @@ export default function Stats() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const [range, setRange] = useState(0)
-  const [exId, setExId] = useState(null)
+  const [params] = useSearchParams()
+  const [exId, setExId] = useState(() => params.get('exercise'))
+  useEffect(() => {
+    const requested = params.get('exercise')
+    if (requested) { setExId(requested); document.getElementById('exercise-progress')?.scrollIntoView({ block: 'start' }) }
+  }, [params])
   const [exMetric, setExMetric] = useState('top')
   const workouts = S.workouts
   const displayUnit = S.displayUnit || 'kg'
@@ -366,7 +372,7 @@ export default function Stats() {
         const doneSets = metricRowsForEntry(en, curMode)
         const mx = curMode === 'reps' ? bestWeightForEntry(en) : Math.max(0, ...doneSets.map(metric))
         if (mx > 0) {
-          exPts.push({ t: w.start, y: mx, d: w.d, sets: doneSets, target: en.target })
+          exPts.push({ t: w.start || w.end || new Date(w.d).getTime(), y: mx, d: w.d, sets: doneSets, target: en.target })
           if (mx > exBest) exBest = mx
         }
       }
@@ -406,6 +412,7 @@ export default function Stats() {
       <div><span>{t('Weight 30d')}</span><b style={{ color: bwDelta30 === null ? 'inherit' : bwDeltaColor(bwDelta30, (lastBW(S) || {}).w || 0) }}>{displayBwDelta30 === null ? '—' : (displayBwDelta30 > 0 ? '+' : '') + fmtNum(displayBwDelta30) + ' ' + displayUnit}</b></div>
     </section>
 
+    <WeeklyProgressPreview />
     <TrainingComparisonPreview workout={trainingSessionsByRecent(workouts)[0] || null} />
 
     <section className="card stats-photo-progress fpp-polished-card" aria-label="Comparação corporal">
@@ -418,7 +425,7 @@ export default function Stats() {
     <TipOnce id="e1rm-tip">
       <span>{t('Est. 1RM is a calculated guess from your best set — useful for tracking progress, not a tested max.')}</span>
     </TipOnce>
-    <div className="card stats-exercise-card">
+    <div className="card stats-exercise-card" id="exercise-progress">
       <div className="stats-card-heading">
         <div><h2>{t('Exercise progress')}</h2>{curEx && <span>{nameOf(curEx)}</span>}</div>
         {exBest > 0 && <b>{t('Best:')} {fmtNum(onE1 ? displayMass(e1Best?.est) : (curCardio || curTimed ? exBest : displayMass(exBest)))} {onE1 ? displayUnit : exUnit}</b>}

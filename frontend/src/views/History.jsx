@@ -3,6 +3,7 @@ import { t, dateLocale } from '../lib/i18n.js'
 import { WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
 import AppHeader from '../components/AppHeader.jsx'
 import Icon from '../components/Icon.jsx'
+import { Link } from 'react-router-dom'
 
 export default function History() {
   const S = useStore(s => s.S)
@@ -14,6 +15,7 @@ export default function History() {
   }, new Map())
   return <div className="history-view page-scenery fpp-ui-view fpp-screen-history">
     <AppHeader title={t('History')} subtitle={t('{0} workouts', S.workouts.length)} backTo="/progress" className="history-titlebar" />
+    <Link className="btn btn-ghost" to="/progress/weekly" state={{ weeklyBackTo: '/progress/history' }}>{t('View weekly summary')}</Link>
     {S.workouts.length ? <div className="history-groups">{[...groups].map(([month, workouts]) => {
       const date = new Date(`${month}-01T12:00:00`)
       const label = Number.isNaN(date.getTime()) ? month : date.toLocaleDateString(dateLocale(), { month: 'long', year: 'numeric' })

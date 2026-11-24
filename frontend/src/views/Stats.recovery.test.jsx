@@ -16,6 +16,7 @@ const BASE_NOW = Date.UTC(2026, 0, 22, 12)
 const mocks = vi.hoisted(() => {
   return {
     maps: [],
+    charts: [],
     mapMounts: 0,
     navigate: vi.fn(),
     S: {
@@ -29,12 +30,12 @@ const mocks = vi.hoisted(() => {
 vi.mock('../store/useStore.js', () => ({
   useStore: selector => selector({ S: mocks.S }),
 }))
-vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate }))
+vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navigate, useSearchParams: () => [new URLSearchParams(), vi.fn()], Link: ({ children, to, state: _state, ...props }) => React.createElement('a', { ...props, href: to }, children) }))
 vi.mock('../sheets.jsx', () => ({
   bwSheet: () => {}, goalSheet: () => {}, calendarSheet: () => {}, workoutDetailSheet: () => {},
   WorkoutRow: () => React.createElement('div'), bwDeltaColor: () => 'inherit',
 }))
-vi.mock('../components/LineChart.jsx', () => ({ default: () => React.createElement('div') }))
+vi.mock('../components/LineChart.jsx', () => ({ default: props => { mocks.charts.push(props); return React.createElement('div') } }))
 vi.mock('../components/Heatmap.jsx', () => ({ default: () => React.createElement('div') }))
 vi.mock('../components/ProgressPhotoGallery.jsx', () => ({ default: ({ mode }) => React.createElement('div', { 'data-photo-mode': mode }) }))
 vi.mock('../components/Icon.jsx', () => ({ default: props => React.createElement('span', props) }))
@@ -315,4 +316,14 @@ describe('Stats muscle recovery view runtime', () => {
     expect(container.textContent).toContain(t('{0} sets', fmtNum(1.2)))
     expect(container.textContent).not.toMatch(/1[.,]2000000000000002/)
   })
+})
+
+it('plots legacy exercise records with a calendar date but no session start', async () => {
+  const legacy = workout('legacy', BASE_NOW, [entry('0025', [set(true)])])
+  delete legacy.start
+  resetFixture([legacy]); mocks.charts.length = 0
+  await mountStats()
+  const points = mocks.charts.flatMap(chart => chart.points || [])
+  expect(points.length).toBeGreaterThan(0)
+  expect(points.every(point => Number.isFinite(point.t))).toBe(true)
 })

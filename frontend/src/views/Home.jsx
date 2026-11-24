@@ -16,6 +16,7 @@ import { routineName } from '../lib/starter.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 import { toDisplayMass } from '../lib/mass.js'
 import { trainingComparisonHref } from '../components/training/TrainingComparisonPreview.jsx'
+import WeeklyProgressPreview from '../components/training/weekly/WeeklyProgressPreview.jsx'
 
 function nextPlannedWorkout(S, from) {
   for (let offset = 1; offset <= 14; offset++) {
@@ -210,6 +211,7 @@ export default function Home() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
     <div data-home-section="next-action">{renderNow()}</div>
+    <WeeklyProgressPreview compact />
 
     <section className="home-week-block" data-home-section="week-progress">
       <div className="home-section-head">

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import  { act } from 'react'
 import { createRoot } from 'react-dom/client'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 const state = { S: { workouts: [] } }
@@ -28,12 +29,12 @@ afterEach(async () => {
 })
 
 it('renders the empty history state before any workout is recorded', async () => {
-  await act(async () => root.render(<History />))
+  await act(async () => root.render(<MemoryRouter><History /></MemoryRouter>))
   expect(container.textContent).toContain('No workouts yet.')
   expect(container.querySelector('svg')).not.toBeNull()
 })
 
 it('returns from history to the canonical progress destination', async () => {
-  await act(async () => root.render(<History />))
+  await act(async () => root.render(<MemoryRouter><History /></MemoryRouter>))
   expect(container.querySelector('header').dataset.backTo).toBe('/progress')
 })
