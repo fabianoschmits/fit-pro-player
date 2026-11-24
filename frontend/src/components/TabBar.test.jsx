@@ -11,16 +11,9 @@ vi.mock('../auth/AuthProvider.jsx', () => ({ useAuth: () => mocks.auth }))
 
 let container, root
 const click = element => act(() => element.click())
-// O botão de recolher foi removido — helper retorna null sempre (não utilizado em novos testes)
-const toggle = () => container.querySelector('.corner-nav-toggle')
 function Location() { return <output>{useLocation().pathname}</output> }
 function render(path = '/home', onStart = vi.fn()) {
   act(() => root.render(<MemoryRouter initialEntries={[path]}><TabBar onStart={onStart} /><Location /></MemoryRouter>))
-}
-function pointer(type, x, y) {
-  // Sem botão de toggle, não há alvo para drag — dispatcha no tabbar diretamente
-  const tabbar = container.querySelector('#tabbar')
-  act(() => tabbar.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y })))
 }
 function reopenApp() {
   act(() => root.unmount())
@@ -48,6 +41,33 @@ afterEach(() => {
 })
 
 describe('TabBar folding navigation', () => {
+  it('ignores the pointer click synthesized after dragging but still accepts keyboard activation', () => {
+    render()
+    click(container.querySelector('.corner-nav-more-trigger'))
+    click(container.querySelector('.corner-nav-drag-toggle'))
+    vi.spyOn(container.querySelector('#tabbar'), 'getBoundingClientRect').mockReturnValue({left:0,top:680,width:390,height:68})
+    const trigger = container.querySelector('.corner-nav-more-trigger')
+    act(() => {
+      trigger.dispatchEvent(new MouseEvent('pointerdown', {bubbles:true,clientX:20,clientY:700}))
+      trigger.dispatchEvent(new MouseEvent('pointermove', {bubbles:true,clientX:80,clientY:500}))
+      trigger.dispatchEvent(new MouseEvent('pointerup', {bubbles:true,clientX:80,clientY:500}))
+      trigger.dispatchEvent(new MouseEvent('click', {bubbles:true,detail:1}))
+    })
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    act(() => trigger.dispatchEvent(new MouseEvent('click', {bubbles:true,detail:0})))
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+  })
+  it.each([null, { x: 60, y: 300 }])('normalizes legacy closed navigation without losing position %j', position => {
+    window.localStorage.setItem('fpp_navigation_layout_v1', JSON.stringify({ open: false, position }))
+    render()
+    const trigger = container.querySelector('.corner-nav-more-trigger')
+    expect(trigger.getAttribute('aria-hidden')).toBe('false')
+    expect(trigger.hasAttribute('inert')).toBe(false)
+    expect(container.querySelector('#tabbar').className).toContain('is-open')
+    expect(JSON.parse(window.localStorage.getItem('fpp_navigation_layout_v1'))).toEqual({open:true,position})
+    click(trigger)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+  })
   it('keeps the dumbbell when a workout becomes resumable and resumes the same entry point', () => {
     render()
     const start = () => container.querySelector('[data-tab-key="start"]')

@@ -111,67 +111,6 @@ function DockSlotButton({ item, active, state = undefined, visible, entryKey = u
   </button>
 }
 
-function PivotTransition({ currentItem, state = undefined, iconActivation }) {
-  const currentVisualId = getVisualId(currentItem, state)
-
-  const [transition, setTransition] = useState({
-    current: currentItem,
-    currentVisualId,
-    previous: null,
-    previousVisualId: null,
-    animating: false,
-  })
-
-  useEffect(() => {
-    setTransition(prev => {
-      if (prev.current.k === currentItem.k && prev.currentVisualId === currentVisualId) {
-        return { ...prev, current: currentItem, currentVisualId }
-      }
-      return {
-        current: currentItem,
-        currentVisualId,
-        previous: prev.current,
-        previousVisualId: prev.currentVisualId,
-        animating: true,
-      }
-    })
-  }, [currentItem, currentVisualId])
-
-  const onAnimationEnd = () => {
-    setTransition(prev => ({
-      ...prev,
-      previous: null,
-      previousVisualId: null,
-      animating: false,
-    }))
-  }
-
-  const morph = transition.animating
-    ? findIconMorph(transition.previousVisualId, transition.currentVisualId)
-    : null
-
-  return <span className="pivot-transition-shell">
-    {transition.previous && (
-      <span className="pivot-layer pivot-layer--exiting" aria-hidden="true" onAnimationEnd={onAnimationEnd}>
-        <span className="corner-nav-icon" style={{ visibility: morph ? 'hidden' : 'visible' }}>
-          <NavItemIcon item={transition.previous} resume={Boolean(state.active)} active visible activation={0} />
-        </span>
-        <span className="corner-nav-label">{transition.previous.label(state)}</span>
-      </span>
-    )}
-    <span className={'pivot-layer pivot-layer--current' + (transition.animating ? ' is-entering' : '')}>
-      <span className="corner-nav-icon">
-        {morph ? (
-          <morph.Component isReversed={morph.isReversed} />
-        ) : (
-          <NavItemIcon item={currentItem} resume={Boolean(state.active)} active visible activation={iconActivation} />
-        )}
-      </span>
-      <span className="corner-nav-label">{currentItem.label(state)}</span>
-    </span>
-  </span>
-}
-
 // Keep a moved menu reachable, including after rotating or resizing the screen.
 function constrainPosition(point, height = menuHeightForWidth(window.innerWidth)) {
   const margin = window.innerWidth >= 768 ? 16 : 0
@@ -187,7 +126,7 @@ function readNavigationLayout() {
     const saved = JSON.parse(window.localStorage.getItem(NAVIGATION_LAYOUT_KEY) || 'null')
     const point = saved?.position
     return {
-      open: saved === null ? true : saved?.open === true,
+      open: true,
       position: Number.isFinite(point?.x) && Number.isFinite(point?.y) ? constrainPosition(point) : null,
     }
   } catch { return { open: true, position: null } }
@@ -200,7 +139,6 @@ export default function TabBar({ onStart }) {
   const account = auth.status === 'authenticated' ? auth.user : null
   const [layout, setLayout] = useState(readNavigationLayout)
   const { open, position } = layout
-  const setOpen = value => setLayout(current => ({ ...current, open: typeof value === 'function' ? value(current.open) : value }))
   const setPosition = value => setLayout(current => {
     const next = typeof value === 'function' ? value(current.position) : value
     return next === current.position ? current : { ...current, position: next }
@@ -208,11 +146,10 @@ export default function TabBar({ onStart }) {
   const [moreOpen, setMoreOpen] = useState(false)
   const [professional, setProfessional] = useState(false), [consoleAccess, setConsoleAccess] = useState(false)
   const [moveReady, setMoveReady] = useState(false)
-  const [iconActivation, setIconActivation] = useState(0)
   const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
   const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight)
   const menuHeight = menuHeightForWidth(viewportWidth)
-  const rootRef = useRef(null), toggleRef = useRef(null), moreTrigger = useRef(null), firstMore = useRef(null)
+  const rootRef = useRef(null), moreTrigger = useRef(null), firstMore = useRef(null)
   const drag = useRef(null), ignoreClickUntil = useRef(0)
   const free = position !== null
 
@@ -313,9 +250,6 @@ export default function TabBar({ onStart }) {
     if (drag.current?.moved) { ignoreClickUntil.current = Date.now() + 300; setMoveReady(false) }
     drag.current = null
   }
-  const toggleMenu = () => {
-    // A barra permanece sempre aberta; a opção de recolher foi desativada a pedido
-  }
   const moveMenu = () => {
     if (free) {
       setPosition(null)
@@ -324,7 +258,7 @@ export default function TabBar({ onStart }) {
       setMoveReady(true)
     }
     setMoreOpen(false)
-    toggleRef.current?.focus()
+    moreTrigger.current?.focus()
   }
   /** @type {Array<[string,Array<{icon:string,title:string,sub?:string,to?:string,action?:Function,dragToggle?:boolean}>]>} */
   const groups = [
@@ -366,8 +300,6 @@ export default function TabBar({ onStart }) {
       : resolved.contextId === 'workout'
         ? { icon: 'list', label: t('Exercises'), to: '/library' }
         : { icon: 'calendar', label: t('Plan'), to: '/plan' }
-  const secondary = groups.flatMap(([, links]) => links).find(item => item.to === loc.pathname)
-  const currentItem = resolved.pivotItem || navItems.find(item => item.k === currentKey) || (secondary && { ...secondary, label: () => secondary.title }) || navItems[0]
   // Expand toward the side with room, preserving the pivot's chosen location.
   const opensLeft = free && position.x > (viewportWidth - PIVOT_WIDTH) / 2
   const opensDown = free && position.y < (viewportHeight - menuHeight) / 2
@@ -392,7 +324,7 @@ export default function TabBar({ onStart }) {
         aria-label={moreOpen ? 'Fechar mais opções' : 'Abrir mais opções'} aria-expanded={moreOpen} aria-controls="corner-nav-more"
         tabIndex={open ? undefined : -1} aria-hidden={!open} inert={!open}
         onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onLostPointerCapture={endDrag}
-        onClick={() => setMoreOpen(value => !value)}><Icon name={opensDown ? 'chevronDown' : 'chevronUp'} /></button>
+        onClick={event => { if (event.detail === 0 || Date.now() >= ignoreClickUntil.current) setMoreOpen(value => !value) }}><Icon name={opensDown ? 'chevronDown' : 'chevronUp'} /></button>
       <div className="corner-nav-shell">
         <div id="corner-nav-main" className="corner-nav-main">
           {navItems.map((item, index) => <DockSlotButton key={`slot-${index}`} item={item} state={S} active={currentKey === item.k} visible={true} entryKey={loc.key} onSelect={() => item.action ? start() : go(item.to)} />)}

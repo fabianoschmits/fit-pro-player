@@ -1,6 +1,5 @@
-import { useState } from 'react'
 import Icon from './Icon.jsx'
-import { BMI_CATEGORIES, calculateBmi, getBmiDetails } from '../lib/bmi.js'
+import { BMI_CATEGORIES, getBmiDetails } from '../lib/bmi.js'
 import { toDisplayMass } from '../lib/mass.js'
 import { fmtNum } from '../lib/format.js'
 import './bmi-modal.css'

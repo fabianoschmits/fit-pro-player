@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BMI_CATEGORIES, calculateBmi, getBmiDetails } from './bmi.js'
+import { calculateBmi, getBmiDetails } from './bmi.js'
 
 describe('BMI / IMC calculations and classifications', () => {
   it('calculates BMI accurately given weight in kg and height in cm', () => {

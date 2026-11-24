@@ -8,7 +8,6 @@ import {
 import {
   getPromptMetadata,
   getExerciseFullPrompt,
-  hasPreparedPrompt,
 } from './exercise-sprite-prompts.js'
 import {
   SPRITE_PRIORITY_QUEUE_IDS,

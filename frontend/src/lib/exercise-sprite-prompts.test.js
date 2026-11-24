@@ -4,10 +4,25 @@ import {
   hasPreparedPrompt,
   getExerciseFullPrompt,
   getExerciseFullData,
+  normalizePromptChunk,
   PROMPTS_MINI,
 } from './exercise-sprite-prompts.js'
 
 describe('exercise-sprite-prompts', () => {
+  it('normalizes default exports and direct chunk objects safely', () => {
+    const chunk = { '0001': { prompt: 'Full prompt' } }
+    expect(normalizePromptChunk({ default: chunk })).toBe(chunk)
+    expect(normalizePromptChunk(chunk)).toBe(chunk)
+    expect(normalizePromptChunk(null)).toBeNull()
+  })
+
+  it('shares cached records between prompt and full-data access and handles absent chunks', async () => {
+    const first = await getExerciseFullData('0025')
+    expect(first.prompt).toBe(await getExerciseFullPrompt('0025'))
+    expect(await getExerciseFullData('0025')).toBe(first)
+    expect(await getExerciseFullData('9999')).toBeNull()
+    expect(await getExerciseFullData('not-an-id')).toBeNull()
+  })
   it('loads all 1324 exercises in the prompts index', () => {
     expect(Object.keys(PROMPTS_MINI).length).toBe(1324)
   })

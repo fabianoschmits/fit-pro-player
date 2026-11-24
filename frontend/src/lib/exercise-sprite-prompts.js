@@ -12,6 +12,22 @@ const loadedChunks = new Map()
 // Vite glob import of chunks for on-demand dynamic loading
 const chunkModules = import.meta.glob('../data/prompts/chunk_*.json')
 
+/** @param {unknown} imported */
+export function normalizePromptChunk(imported) {
+  return imported !== null && typeof imported === 'object' && 'default' in imported
+    ? imported.default
+    : imported
+}
+
+async function loadPromptChunk(chunkKey) {
+  if (!loadedChunks.has(chunkKey)) {
+    const importer = chunkModules[`../data/prompts/chunk_${chunkKey}.json`]
+    if (!importer) return null
+    loadedChunks.set(chunkKey, normalizePromptChunk(await importer()))
+  }
+  return loadedChunks.get(chunkKey)
+}
+
 /**
  * Returns the lightweight metadata record for an exercise from the pre-indexed catalogue.
  * Returns null if not found.
@@ -50,19 +66,7 @@ export async function getExerciseFullPrompt(id) {
   if (Number.isNaN(numId)) return null
 
   const chunkKey = Math.floor(numId / 100)
-  const chunkModulePath = `../data/prompts/chunk_${chunkKey}.json`
-
-  if (!loadedChunks.has(chunkKey)) {
-    const importer = chunkModules[chunkModulePath]
-    if (!importer) {
-      console.warn(`[exercise-sprite-prompts] Chunk not found for id ${id} (chunk ${chunkKey})`)
-      return null
-    }
-    const module = await importer()
-    loadedChunks.set(chunkKey, module.default || module)
-  }
-
-  const chunkData = loadedChunks.get(chunkKey)
+  const chunkData = await loadPromptChunk(chunkKey)
   const exercise = chunkData ? chunkData[paddedId] : null
   return exercise?.prompt || null
 }
@@ -77,16 +81,7 @@ export async function getExerciseFullData(id) {
   if (Number.isNaN(numId)) return null
 
   const chunkKey = Math.floor(numId / 100)
-  const chunkModulePath = `../data/prompts/chunk_${chunkKey}.json`
-
-  if (!loadedChunks.has(chunkKey)) {
-    const importer = chunkModules[chunkModulePath]
-    if (!importer) return null
-    const module = await importer()
-    loadedChunks.set(chunkKey, module.default || module)
-  }
-
-  const chunkData = loadedChunks.get(chunkKey)
+  const chunkData = await loadPromptChunk(chunkKey)
   return chunkData ? chunkData[paddedId] || null : null
 }
 

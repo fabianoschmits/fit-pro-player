@@ -10,7 +10,6 @@ import {
   getRemainingBacklogExercises,
   SPRITE_PRIORITY_QUEUE_SET,
   TOTAL_CATALOGUE_EXERCISES,
-  TOTAL_PRIORITY_QUEUE_EXERCISES,
 } from '../../lib/admin-pending-sprites.js'
 import { getExerciseFullPrompt } from '../../lib/exercise-sprite-prompts.js'
 import './console-sprites.css'
