@@ -350,9 +350,8 @@ test('desktop first login opens onboarding without a tunnel and subsequent windo
   const state = stateFixture()
   state.onboardingDone = false
   state.profile = {}
-  await seed(page, { state })
+  await seed(page, { state, guest: false, entered: false })
   await page.addInitScript(() => {
-    localStorage.removeItem('gym_guest'); localStorage.removeItem('fpp_app_entered:anonymous')
     window.__launchVisibility = 'visible'
     Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => window.__launchVisibility })
   })
@@ -365,7 +364,7 @@ test('desktop first login opens onboarding without a tunnel and subsequent windo
   await page.goto('/')
   const layer = page.locator('#fpp-launch')
   await expect(layer).toBeHidden()
-  await page.locator('.landing-nav').getByRole('button', { name: 'Abrir', exact: true }).click()
+  await page.locator('.landing-nav').getByRole('button', { name: 'Entrar', exact: true }).click()
   const form = page.locator('form.auth-form')
   await form.locator('input[type="email"]').fill('browser-test@example.invalid')
   await form.locator('input[type="password"]').fill('FixturePassword123!')

@@ -3,10 +3,12 @@ import { expect } from '@playwright/test'
 export const USER='11111111-1111-4111-8111-111111111111'
 export const STUDENT='22222222-2222-4222-8222-222222222222'
 export async function openMainNavigation(page) {
-  const toggle = page.locator('.corner-nav-toggle')
-  await expect(toggle).toBeVisible()
-  if (await toggle.getAttribute('aria-expanded') !== 'true') await toggle.click()
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  const navigation = page.locator('#tabbar')
+  const main = navigation.locator('.corner-nav-main')
+  await expect(navigation).toBeVisible()
+  await expect(main).toBeVisible()
+  await expect(main).not.toHaveAttribute('aria-hidden', 'true')
+  await expect(main.locator('.corner-nav-tab')).toHaveCount(4)
 }
 export async function startWorkoutExecution(page) {
   await page.locator('.active-workout').getByRole('button', { name: 'Começar treino', exact: true }).click()
@@ -23,7 +25,7 @@ export function stateFixture(){
     week:Object.fromEntries(Array.from({length:7},(_,day)=>[day,'e2e-routine'])),dayPlan:{},exWeights:{},workouts:[],active:null,customEx:[],mediaSize:'mini',
     reminder:{on:false,time:'08:00',tz:null},effort:null,assignedProgram:null,weighBeforeWorkout:false,onboardingDone:true,simpleMode:true,seenTips:{},pendingProfessionalEvents:[],professionalProgramDrafts:{},_ts:1}
 }
-export async function seed(page,{professional=false,authenticated=professional,userId=USER,roles=null,state=stateFixture(),rpc={}}={}){
+export async function seed(page,{professional=false,authenticated=professional,guest=!authenticated,entered=true,userId=USER,roles=null,state=stateFixture(),rpc={}}={}){
   const user={id:userId,email:'browser-test@example.invalid',email_confirmed_at:'2026-10-01T12:00:00Z',app_metadata:{provider:'email'},user_metadata:{}}
   await page.route('https://fitpp-test.supabase.co/**',async route=>{
     const url=new URL(route.request().url()), name=url.pathname.split('/').at(-1)
@@ -42,6 +44,7 @@ export async function seed(page,{professional=false,authenticated=professional,u
       const args=route.request().postDataJSON();data={user_id:userId,revision:args.p_expected_revision+1,display_unit:args.p_display_unit,mass_unit:'kg',state_schema_version:2,preferences:args.p_preferences,updated_at:'2026-11-01T12:00:00Z'}
     }
     else if(name==='account_snapshots')data={user_id:userId,revision:1,state_schema_version:1,payload:state,updated_at:'2026-10-02T12:00:00Z'}
+    else if(name==='check_email_registered' && !Object.hasOwn(rpc,name))data=false
     else if(name==='is_current_user_suspended' && !Object.hasOwn(rpc,name))data=false
     else if(name==='community_access_status' && !Object.hasOwn(rpc,name))data={active:null}
     else if(name==='community_has_block' && !Object.hasOwn(rpc,name))data=false
@@ -66,7 +69,7 @@ export async function seed(page,{professional=false,authenticated=professional,u
     if(error){data=error.body;await route.fulfill({status:error.status||400,contentType:'application/json',body:JSON.stringify(data)})}
     else await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)})
   })
-  await page.addInitScript(({authenticated,state,user})=>{
+  await page.addInitScript(({authenticated,guest,entered,state,user})=>{
     if(localStorage.getItem('e2e_initialized'))return
     localStorage.setItem('e2e_initialized','1')
     // Functional flows start after the separate privacy-choice screen.
@@ -77,7 +80,7 @@ export async function seed(page,{professional=false,authenticated=professional,u
       localStorage.setItem('sb-fitpp-test-auth-token',JSON.stringify({access_token:`${header}.${payload}.fixture`,refresh_token:'browser-test-refresh',expires_at:Math.floor(Date.now()/1000)+3600,expires_in:3600,token_type:'bearer',user}))
       localStorage.setItem(`fpp_account_cache_v1:${user.id}`,JSON.stringify({ownerId:user.id,schemaVersion:1,state}))
       localStorage.setItem(`fpp_account_sync_v1:${user.id}`,JSON.stringify({revision:1,dirty:false}))
-      localStorage.setItem(`fpp_app_entered:${user.id}`,'1')
-    }else{localStorage.setItem('gym_state_v1',JSON.stringify(state));localStorage.setItem('gym_guest','1');localStorage.setItem('fpp_app_entered:anonymous','1')}
-  },{authenticated,state,user})
+      if(entered)localStorage.setItem(`fpp_app_entered:${user.id}`,'1')
+    }else{localStorage.setItem('gym_state_v1',JSON.stringify(state));if(guest)localStorage.setItem('gym_guest','1');if(entered)localStorage.setItem('fpp_app_entered:anonymous','1')}
+  },{authenticated,guest,entered,state,user})
 }

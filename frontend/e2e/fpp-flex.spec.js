@@ -163,32 +163,44 @@ for (const decision of ['Manter meus treinos', 'Readequar treinos', 'dismiss']) 
   })
 }
 
-test('seven-step onboarding saves duration only on completion and keeps it after reload', async ({ page }) => {
+async function prepareOnboarding(page) {
   await page.emulateMedia({ reducedMotion: 'reduce' })
   const state = stateFixture()
   state.onboardingDone = false
+  state.profile = { name: 'Pessoa Teste', preferredWorkoutMinutes: 60 }
   state.routines = []
   state.week = {}
   await seed(page, { state })
-  await page.goto('/#/plan')
-  const wizard = page.locator('.plan-wizard')
+  await page.goto('/#/onboarding', { waitUntil: 'domcontentloaded' })
+  const wizard = page.locator('.training-onboarding')
   await expect(wizard).toBeVisible()
-  const next = wizard.getByRole('button', { name: 'Continuar', exact: true })
-  for (let step = 0; step < 5; step++) {
-    await next.click()
-    await expect(wizard.locator('.wizard-progress')).toHaveAttribute('aria-valuenow', String(step + 2))
-  }
-  await expect(wizard.getByText('Quanto tempo você costuma treinar?', { exact: true })).toBeVisible()
+  await wizard.getByRole('button', { name: /^Criar meu plano/ }).click()
+  await wizard.getByRole('button', { name: 'Continuar', exact: true }).click()
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '2')
+  await wizard.getByRole('button', { name: /massa|músculo/i }).click()
+  await wizard.getByRole('button', { name: /Intermedi/ }).click()
+  await wizard.locator('#training-weight').fill('75')
+  await wizard.locator('#training-height').fill('1,75')
+  await wizard.getByRole('button', { name: 'Continuar', exact: true }).click()
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '3')
   await wizard.getByRole('button', { name: '40 min', exact: true }).click()
   expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(60)
-  await next.click()
-  await expect(wizard.locator('.wizard-progress')).toHaveAttribute('aria-valuenow', '7')
-  await expect(wizard.locator('.wizard-progress')).toHaveAttribute('aria-valuemax', '7')
-  await expect(wizard.locator('.wizard-schedule-preview')).toContainText('min')
+  await wizard.getByRole('button', { name: 'Continuar', exact: true }).click()
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '4')
+  await expect(page.getByRole('progressbar')).toHaveAttribute('max', '4')
+  await expect(wizard.locator('.training-summary')).toContainText('40 min')
+  return wizard
+}
+
+test('four-step onboarding saves preferred duration on completion and preserves it after reload', async ({ page }) => {
+  const wizard = await prepareOnboarding(page)
+  expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(60)
   await wizard.getByRole('button', { name: 'Concluir configuração', exact: true }).click()
-  await expect(wizard).toHaveCount(0)
+  await page.getByRole('button', { name: 'Abrir meu plano', exact: true }).click()
+  await expect(page).toHaveURL(/#\/plan$/)
   const completed = await saved(page)
   expect(completed.profile.preferredWorkoutMinutes).toBe(40)
+  expect(completed.onboardingDone).toBe(true)
   expect(completed.routines.length).toBeGreaterThan(0)
   const estimates = await page.evaluate(async routines => {
     const durationModule = '/src/lib/workout-duration.js'
@@ -200,10 +212,19 @@ test('seven-step onboarding saves duration only on completion and keeps it after
     expect(minutes).toBeLessThanOrEqual(40)
   }
   expect(completed.routines.every(routine => routine.planTemplateVersion === 2 && routine.planTargetMinutes === 40)).toBe(true)
-  expect(completed.routines.every(routine => !/push|pull/i.test(routine.starterKey))).toBe(true)
-  await page.reload()
-  await expect(page.locator('.plan-wizard')).toHaveCount(0)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('.created-workouts')).toBeVisible()
   expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(40)
+})
+
+test('four-step onboarding restores its saved review draft after reload', async ({ page }) => {
+  await prepareOnboarding(page)
+  expect((await saved(page)).onboardingDraft.values.preferredWorkoutMinutes).toBe(40)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.getByRole('progressbar')).toHaveAttribute('value', '4')
+  await expect(page.locator('.training-summary')).toContainText('40 min')
+  expect((await saved(page)).profile.preferredWorkoutMinutes).toBe(60)
+  expect((await saved(page)).onboardingDone).toBe(false)
 })
 
 test('exercise queue animates both directions and collapses after confirming the selection', async ({ page }) => {

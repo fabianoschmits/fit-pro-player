@@ -1,15 +1,17 @@
 import { test, expect } from '@playwright/test'
-import { seed, stateFixture } from './fixtures.test.js'
+import { seed, stateFixture, openMainNavigation } from './fixtures.test.js'
 
 test('first-time visitor can continue without an account on the configured app', async ({ page }) => {
-  await seed(page)
-  await page.addInitScript(() => {
-    localStorage.removeItem('gym_guest')
-    localStorage.removeItem('fpp_app_entered:anonymous')
-  })
+  await seed(page, { guest: false, entered: false })
   await page.goto('/')
-  await page.getByRole('button', { name: 'Entrar ou criar conta', exact: true }).click()
-  await page.getByRole('button', { name: 'Continuar sem conta', exact: true }).click()
+  const guest = page.getByRole('button', { name: 'Continuar sem conta', exact: true })
+  await expect(guest).toBeVisible()
+  await guest.click()
+  await openMainNavigation(page)
+  await expect(page).toHaveURL(/#\/home$/)
+  expect(await page.evaluate(() => localStorage.getItem('gym_guest'))).toBe('1')
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await openMainNavigation(page)
   await expect(page.getByRole('navigation', { name: 'Navegação principal', exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Seu treino, no bolso.' })).toHaveCount(0)
 })
@@ -42,4 +44,13 @@ test('desktop install prompt uses the detected computer instructions', async ({ 
   await expect(prompt).toBeVisible()
   await expect(prompt.getByRole('button', { name: 'PC', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await expect(prompt.getByRole('button', { name: 'Android', exact: true })).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('landing opens the current sign-in form', async ({ page }) => {
+  await seed(page, { guest: false, entered: false })
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Já tenho conta', exact: true }).click()
+  await expect(page.locator('form.auth-form')).toBeVisible()
+  await expect(page.getByRole('textbox', { name: /email|e-mail/i })).toBeVisible()
+  await expect(page.locator('input[autocomplete="current-password"]')).toBeVisible()
 })

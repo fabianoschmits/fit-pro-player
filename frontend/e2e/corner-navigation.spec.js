@@ -1,592 +1,116 @@
 import { test, expect } from '@playwright/test'
-import { seed, openMainNavigation } from './fixtures.test.js'
-
-const height = 720
-const pivotWidth = 28
-const nav = page => page.locator('.corner-nav')
-const toggle = page => page.locator('.corner-nav-toggle')
+import { seed, stateFixture, openMainNavigation } from './fixtures.test.js'
+const bar = page => page.locator('#tabbar')
 const main = page => page.locator('.corner-nav-main')
-
-async function load(page, width, reducedMotion = 'reduce') {
-  await page.setViewportSize({ width, height })
-  await page.emulateMedia({ reducedMotion })
-  await seed(page)
-  await page.addInitScript(()=>{if(!sessionStorage.getItem('navigation-fixture')){sessionStorage.setItem('navigation-fixture','1');localStorage.setItem('fpp_navigation_layout_v1',JSON.stringify({open:false,position:null}))}})
-  await page.goto('/#/home')
-  await expect(toggle(page)).toBeVisible()
+const more = page => page.locator('.corner-nav-more-trigger')
+async function load(page, width=390, {theme='dark',position=null,reducedMotion='reduce',active=null}={}) {
+  await page.setViewportSize({width,height:800});await page.emulateMedia({reducedMotion})
+  const state=stateFixture();state.theme=theme;state.active=active
+  await seed(page,{state})
+  await page.addInitScript(position=>{if(sessionStorage.getItem('layout-seeded'))return;sessionStorage.setItem('layout-seeded','1');localStorage.setItem('fpp_navigation_layout_v1',JSON.stringify({open:false,position}))},position)
+  await page.goto('/#/home',{waitUntil:'domcontentloaded'});await openMainNavigation(page)
+  await expect(more(page)).not.toHaveAttribute('inert')
 }
-
+async function fits(page,locator) {
+  const r=await locator.boundingBox(),size=page.viewportSize();expect(r).not.toBeNull()
+  expect(r.x).toBeGreaterThanOrEqual(-1);expect(r.y).toBeGreaterThanOrEqual(-1)
+  expect(r.x+r.width).toBeLessThanOrEqual(size.width+1);expect(r.y+r.height).toBeLessThanOrEqual(size.height+1)
+}
+async function closed(page) {
+  await expect(more(page)).toHaveAttribute('aria-expanded','false')
+  await expect(page.locator('.corner-nav-more')).toHaveAttribute('aria-hidden','true')
+  expect(await page.locator('.corner-nav-more').evaluate(el=>el.inert)).toBe(true)
+}
+async function drag(page,dx,dy) {
+  const r=await more(page).boundingBox();await page.mouse.move(r.x+r.width/2,r.y+r.height/2);await page.mouse.down()
+  await page.mouse.move(r.x+r.width/2+dx,r.y+r.height/2+dy,{steps:8});await page.mouse.up()
+}
 async function settle(page) {
-  await expect.poll(() => nav(page).evaluate(element =>
-    element.getAnimations({ subtree: true }).some(animation => animation.playState === 'running')
-  )).toBe(false)
+  await expect.poll(()=>bar(page).evaluate(el=>el.getAnimations({subtree:true}).some(a=>a.playState==='running'))).toBe(false)
 }
-
-async function reloadNavigation(page) {
-  await page.reload()
-  await expect(toggle(page)).toBeVisible()
-  await settle(page)
-}
-
-async function expectMoreClosed(page) {
-  const panel = page.locator('.corner-nav-more')
-  await expect(page.locator('.corner-nav-more-trigger')).toHaveAttribute('aria-expanded', 'false')
-  await expect(panel).not.toHaveClass(/is-visible/)
-  await expect(panel).toHaveAttribute('aria-hidden', 'true')
-  expect(await panel.evaluate(element => element.inert)).toBe(true)
-}
-
-async function expectPosition(page, position) {
-  const box = await toggle(page).boundingBox()
-  expect(box.x).toBeCloseTo(position.x, 0)
-  expect(box.y).toBeCloseTo(position.y, 0)
-}
-
-async function dragBy(page, dx, dy) {
-  if (!(await nav(page).getAttribute('class')).match(/is-free|is-move-ready/)) {
-    const wasOpen=await toggle(page).getAttribute('aria-expanded')==='true'
-    await openMainNavigation(page)
-    await page.locator('.corner-nav-more-trigger').click()
-    await page.getByRole('menuitem',{name:/Mover menu livremente/}).click()
-    await expect(nav(page)).toHaveClass(/is-move-ready/)
-    if(!wasOpen){await toggle(page).click();await settle(page)}
+for(const width of [320,390,600,768,1024,1280])for(const theme of ['dark','light'])test(`always-open ${width}px navigation keeps geometry, safe area and icons accessible in ${theme}`,async({page},info)=>{
+  await load(page,width,{theme});if(width<768)await page.addStyleTag({content:':root{--sab:24px}'})
+  await expect(bar(page)).toHaveClass(/is-open/);await expect(main(page)).not.toHaveAttribute('inert')
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('fpp_navigation_layout_v1')))).toEqual({open:true,position:null})
+  await fits(page,main(page));const tabs=main(page).locator('.corner-nav-tab')
+  for(const tab of await tabs.all()){
+    if(width<768)for(const content of await tab.locator('.dock-slot-layer--current > span').all())expect((await content.boundingBox()).y+(await content.boundingBox()).height).toBeLessThanOrEqual(776)
+    const glyph=tab.locator('.dock-slot-layer--current svg')
+    await expect(glyph).toHaveAttribute('viewBox','0 0 24 24')
+    expect(await glyph.evaluate(el=>getComputedStyle(el).stroke===getComputedStyle(el).color)).toBe(true)
+    await fits(page,tab);const r=await tab.boundingBox();expect(r.width).toBeGreaterThanOrEqual(44);expect(r.height).toBeGreaterThanOrEqual(44)
+    expect(await tab.evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))})).toBe(true)
   }
-  const box = await toggle(page).boundingBox()
-  const start = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
-  await page.mouse.move(start.x, start.y)
-  await page.mouse.down()
-  await page.mouse.move(start.x + dx, start.y + dy, { steps: 8 })
-  await page.mouse.up()
-}
-
-async function expectReachableMore(page, { activateFirst = false } = {}) {
-  const trigger = page.locator('.corner-nav-more-trigger')
-  const triggerBox = await trigger.boundingBox()
-  const toggleBox = await toggle(page).boundingBox()
-  const desktopDock=page.viewportSize().width>=768 && !(await nav(page).getAttribute('class')).includes('is-free')
-  expect(triggerBox.width).toBeCloseTo(desktopDock?44:42, 0)
-  expect(triggerBox.height).toBeCloseTo(desktopDock?26:24, 0)
-  const down=(await nav(page).getAttribute('class')).includes('opens-down')
-  expect(down ? triggerBox.y-toggleBox.y-toggleBox.height : toggleBox.y-triggerBox.y-triggerBox.height).toBeCloseTo(desktopDock?8:6, 0)
-  const radii = await trigger.evaluate(element => {
-    const style = getComputedStyle(element)
-    return [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomLeftRadius, style.borderBottomRightRadius].map(parseFloat)
-  })
-  expect(radii).toEqual([12,12,12,12])
-  // Inspect the rendered chevron in screen coordinates, including any SVG rotation.
-  expect(await trigger.locator('path').evaluate((path,down) => {
-    const length = path.getTotalLength()
-    const matrix = path.getScreenCTM()
-    const points = [0, length / 2, length].map(distance => {
-      const point = path.getPointAtLength(distance)
-      return new DOMPoint(point.x, point.y).matrixTransform(matrix)
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true)
+  const centers=await tabs.evaluateAll(es=>es.map(el=>{const r=el.getBoundingClientRect();return r.y+r.height/2}))
+  expect(Math.max(...centers)-Math.min(...centers)).toBeLessThan(2)
+  expect((await bar(page).boundingBox()).y).toBeGreaterThan(600)
+  if(width===320||width===1280)await page.screenshot({path:info.outputPath('navigation-'+width+'-'+theme+'.png'),fullPage:true})
+  await page.locator('[data-tab-key="plan"]').click();await expect(page).toHaveURL(/#\/plan$/)
+  await expect(page.locator('[data-tab-key="plan"]')).toHaveAttribute('aria-current','page')
+  await page.locator('.created-workouts').scrollIntoViewIfNeeded();await expect(page.locator('.created-workouts')).toBeVisible()
+})
+test('More uses keyboard focus, Escape restoration and an inert closed panel',async({page})=>{
+  await load(page);await closed(page);await more(page).focus();await page.keyboard.press('Enter')
+  await expect(more(page)).toHaveAttribute('aria-expanded','true');await fits(page,page.locator('.corner-nav-more'))
+  await expect(page.getByRole('menuitem').first()).toBeFocused();await page.keyboard.press('Escape');await closed(page);await expect(more(page)).toBeFocused()
+  await page.keyboard.press('Tab');await expect(page.locator('[data-tab-key="home"]')).toBeFocused()
+})
+test('movement arms explicitly, ignores jitter, persists position and reattaches after reload',async({page})=>{
+  await load(page);await more(page).click();await page.getByRole('menuitem',{name:/Mover menu livremente/}).click()
+  await expect(bar(page)).toHaveClass(/is-move-ready/);await expect(more(page)).toBeFocused()
+  await drag(page,2,-1);await expect(bar(page)).not.toHaveClass(/is-free/)
+  await page.keyboard.press('Escape');await closed(page)
+  await drag(page,70,-220);await expect(bar(page)).toHaveClass(/is-free/);await closed(page);await fits(page,main(page))
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('fpp_navigation_layout_v1')));expect(saved.position.y).toBeLessThan(650)
+  await page.reload({waitUntil:'domcontentloaded'});await openMainNavigation(page);await expect(bar(page)).toHaveClass(/is-free/);await closed(page)
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('fpp_navigation_layout_v1')))).toEqual(saved)
+  await more(page).click();await page.getByRole('menuitem',{name:/Prender menu ao rodapé/}).click();await expect(bar(page)).not.toHaveClass(/is-free/)
+  await page.reload({waitUntil:'domcontentloaded'});await openMainNavigation(page)
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('fpp_navigation_layout_v1')).position)).toBeNull()
+})
+for(const position of [{x:0,y:160},{x:360,y:200},{x:9000,y:9000}])test(`restored position ${position.x},${position.y} keeps More reachable after resizing`,async({page})=>{
+  await load(page,390,{position});await fits(page,main(page));await more(page).click();await fits(page,page.locator('.corner-nav-more'))
+  await page.keyboard.press('Escape');await page.setViewportSize({width:320,height:640});await fits(page,main(page));await more(page).click();await fits(page,page.locator('.corner-nav-more'))
+})
+test('context follows Home, Plan, Exercises, History and Progress without remounting navigation',async({page})=>{
+  await load(page);await bar(page).evaluate(el=>{el.dataset.identity='persistent'})
+  await page.locator('[data-tab-key="plan"]').click();await page.locator('[data-tab-key="library"]').click();await expect(page).toHaveURL(/#\/library$/)
+  await page.locator('[data-tab-key="history"]').click();await expect(page).toHaveURL(/#\/progress\/history$/)
+  await expect(page.locator('[data-tab-key="progress"]')).toHaveAttribute('aria-current','page');await page.locator('[data-tab-key="progress"]').click()
+  await expect(page).toHaveURL(/#\/progress$/);await expect(bar(page)).toHaveAttribute('data-identity','persistent')
+})
+test('Retomar preserves the active workout and the dumbbell/play artwork',async({page})=>{
+  const active={id:'resume-fixture',name:'Treino ativo',d:'2026-11-24',start:1795521600000,cur:0,entries:[{id:'0025',sets:[{r:10,w:20,done:false}]}]}
+  await load(page,390,{active});const button=page.locator('[data-tab-key="start"]');await expect(button).toContainText('Retomar')
+  await expect(button.locator('.nav-icon__dumbbell')).toHaveCount(1);await expect(button.locator('.nav-icon__play')).toHaveCount(1)
+  await button.click();await expect(page).toHaveURL(/#\/workout$/);await expect(page.locator('.workout-session-title strong')).toHaveText('Treino ativo')
+  expect(await page.evaluate(()=>JSON.parse(localStorage.getItem('gym_state_v1')).active.id)).toBe(active.id)
+})
+for(const reducedMotion of ['reduce','no-preference'])test(`context and pointer icon animations settle without blocking with motion ${reducedMotion}`,async({page})=>{
+  await load(page,390,{reducedMotion});await page.locator('[data-tab-key="progress"]').click();await expect(page).toHaveURL(/#\/progress$/);await settle(page)
+  await page.locator('[data-tab-key="home"]').click();await expect(page).toHaveURL(/#\/home$/);await settle(page)
+  for(const icon of await main(page).locator('svg.nav-icon').all()){expect(await icon.getAttribute('viewBox')).toBe('0 0 24 24');expect(await icon.evaluate(el=>getComputedStyle(el).stroke)).not.toBe('none')}
+  const home=page.locator('[data-tab-key="home"]')
+  await home.evaluate(el=>{
+    el.dataset.animationStarts='0';el.dataset.animationTimings='[]'
+    el.addEventListener('animationstart',event=>{
+      if(!event.target.closest('.nav-icon'))return
+      el.dataset.animationStarts=String(Number(el.dataset.animationStarts)+1)
+      const timings=event.target.getAnimations().filter(a=>a.animationName===event.animationName).map(a=>({duration:a.effect.getTiming().duration,iterations:a.effect.getTiming().iterations}))
+      el.dataset.animationTimings=JSON.stringify([...JSON.parse(el.dataset.animationTimings),...timings])
     })
-    return down ? points[1].y > Math.max(points[0].y,points[2].y) : points[1].y < Math.min(points[0].y, points[2].y)
-  },down)).toBe(true)
-  await trigger.click()
-  const panel = page.locator('.corner-nav-more')
-  await expect(panel).toHaveClass(/is-visible/)
-  await settle(page)
-  const panelBox = await panel.boundingBox()
-  const viewport = page.viewportSize()
-  expect(panelBox.x).toBeGreaterThanOrEqual(0)
-  expect(panelBox.x + panelBox.width).toBeLessThanOrEqual(viewport.width + 1)
-  expect(panelBox.height).toBeGreaterThanOrEqual(88)
-  expect(panelBox.y).toBeGreaterThanOrEqual(7)
-  expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height - 7)
-  if(down)expect(panelBox.y).toBeGreaterThanOrEqual(triggerBox.y+triggerBox.height-1)
-  else expect(panelBox.y+panelBox.height).toBeLessThanOrEqual(triggerBox.y+1)
-  const firstItem = panel.getByRole('menuitem').first()
-  await expect(firstItem).toBeFocused()
-  const itemBox = await firstItem.boundingBox()
-  expect(itemBox.height).toBeGreaterThanOrEqual(44)
-  expect(itemBox.y).toBeGreaterThanOrEqual(panelBox.y)
-  expect(itemBox.y + itemBox.height).toBeLessThanOrEqual(panelBox.y + panelBox.height)
-  if (activateFirst) {
-    await firstItem.click()
-    await expect(page).toHaveURL(/#\/personal-data$/)
-    await expect(panel).not.toHaveClass(/is-visible/)
-    return
+  })
+  await home.click()
+  if(reducedMotion==='no-preference'){
+    await expect.poll(async()=>Number(await home.getAttribute('data-animation-starts'))).toBeGreaterThan(0)
+    const timings=JSON.parse(await home.getAttribute('data-animation-timings'))
+    expect(timings.length).toBeGreaterThan(0)
+    expect(timings.every(item=>Number.isFinite(item.duration)&&item.duration>0&&item.duration<=500&&item.iterations===1)).toBe(true)
+  }else{
+    expect(await home.getAttribute('data-animation-starts')).toBe('0')
+    await expect(home.locator('.nav-icon__house')).toBeVisible()
+    expect(await main(page).locator('.nav-icon__motion').evaluateAll(items=>items.every(el=>Number(getComputedStyle(el).opacity)>0))).toBe(true)
   }
-  await page.keyboard.press('Escape')
-  await expect(trigger).toBeFocused()
-  await expect(panel).not.toHaveClass(/is-visible/)
-}
-
-for (const width of [320, 390, 600]) {
-  test(`mobile ${width}px restores a compact saved layout and unfolds across the bottom with aligned icons`, async ({ page }) => {
-    await load(page, width)
-    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false')
-    await expect(main(page)).toHaveAttribute('aria-hidden', 'true')
-    expect(await main(page).evaluate(element => element.inert)).toBe(true)
-    await expect(page.locator('.corner-nav-more-trigger')).toBeHidden()
-    await expect(nav(page).getByRole('button')).toHaveCount(1)
-    const closed = await nav(page).boundingBox()
-    expect(closed.width).toBeCloseTo(pivotWidth, 0)
-    expect(closed.height).toBeCloseTo(68, 0)
-    expect(closed.x).toBeCloseTo(0, 0)
-    expect(closed.y + closed.height).toBeCloseTo(height, 0)
-
-    await openMainNavigation(page)
-    await settle(page)
-    const opened = await page.locator('.corner-nav-shell').boundingBox()
-    expect(opened.x).toBeCloseTo(0, 0)
-    expect(opened.width).toBeCloseTo(width, 0)
-    expect(opened.height).toBeCloseTo(68, 0)
-    expect(opened.y + opened.height).toBeCloseTo(height, 0)
-    await expect(main(page)).toHaveAttribute('aria-hidden', 'false')
-    expect(await main(page).evaluate(element => element.inert)).toBe(false)
-    await expect(main(page).getByRole('button')).toHaveCount(5)
-    const shape = await nav(page).evaluate(element => {
-      const surfaces = [...element.querySelectorAll('.corner-nav-shell, .corner-nav-toggle, .corner-nav-main')].map(surface => getComputedStyle(surface))
-      const material = getComputedStyle(element.querySelector('.corner-nav-main'))
-      // Canvas accepts computed rgb(), color(srgb ...), and other browser color syntaxes.
-      const canvas = document.createElement('canvas')
-      canvas.width = canvas.height = 1
-      const context = canvas.getContext('2d')
-      context.fillStyle = material.backgroundColor
-      context.fillRect(0, 0, 1, 1)
-      const icons = [...element.querySelectorAll('.corner-nav-toggle .corner-nav-icon > .icn, .corner-nav-main .corner-nav-icon > .icn')]
-      return {
-        topCorners: surfaces.flatMap(surface => [surface.borderTopLeftRadius, surface.borderTopRightRadius].map(parseFloat)),
-        materialAlpha: context.getImageData(0, 0, 1, 1).data[3] / 255,
-        backdropFilter: material.backdropFilter || material.webkitBackdropFilter,
-        centers: icons.map(icon => { const box = icon.getBoundingClientRect(); return box.top + box.height / 2 }),
-        overflow: document.documentElement.scrollWidth > innerWidth + 1,
-      }
-    })
-    expect(shape.topCorners.every(radius => radius === 0)).toBe(true)
-    expect(shape.materialAlpha).toBeGreaterThan(0)
-    expect(shape.materialAlpha).toBeLessThan(0.4)
-    expect(shape.backdropFilter).toMatch(/blur\(/)
-    expect(shape.centers).toHaveLength(6)
-    expect(Math.max(...shape.centers) - Math.min(...shape.centers)).toBeLessThanOrEqual(1)
-    expect(shape.overflow).toBe(false)
-    await expectReachableMore(page)
-    await toggle(page).click()
-    await settle(page)
-    expect((await nav(page).boundingBox()).width).toBeCloseTo(pivotWidth, 0)
-  })
-}
-
-test('desktop navigation floats above the bottom when closed and open', async ({ page }) => {
-  await load(page, 1280)
-  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false')
-  for (const open of [false, true]) {
-    if (open) await openMainNavigation(page)
-    await settle(page)
-    const box = await page.locator('.corner-nav-shell').boundingBox()
-    expect(box.height).toBeCloseTo(60, 0)
-    expect(box.x).toBeGreaterThanOrEqual(16)
-    expect(height - box.y - box.height).toBeGreaterThanOrEqual(16)
-    expect(box.width).toBeLessThan(1280 - 32)
-  }
-  await expectReachableMore(page)
-})
-
-for (const theme of ['light', 'dark']) {
-  test(`the ${theme} mobile footer has no empty strip below its buttons on an inset screen`, async ({ page }, testInfo) => {
-    await load(page, 390)
-    await page.evaluate(theme => {
-      document.documentElement.dataset.theme = theme
-      document.documentElement.style.setProperty('--sab', '34px')
-    }, theme)
-    await openMainNavigation(page)
-    await settle(page)
-    const geometry = await nav(page).evaluate(element => {
-      const bar = element.getBoundingClientRect()
-      const item = element.querySelector('[data-tab-key="home"]')
-      const button = item.getBoundingClientRect()
-      const indicator = getComputedStyle(item, '::after')
-      return {
-        barHeight: bar.height,
-        buttonHeight: button.height,
-        bottomGap: innerHeight - bar.bottom,
-        emptyStrip: bar.bottom - button.bottom,
-        indicatorGap: innerHeight - button.bottom + parseFloat(indicator.bottom),
-      }
-    })
-    expect(geometry.barHeight).toBeCloseTo(geometry.buttonHeight, 0)
-    expect(geometry.bottomGap).toBeCloseTo(0, 0)
-    expect(Math.abs(geometry.emptyStrip)).toBeLessThanOrEqual(1)
-    expect(geometry.indicatorGap).toBeGreaterThanOrEqual(0)
-    expect(geometry.indicatorGap).toBeLessThanOrEqual(4)
-    await page.screenshot({ path: testInfo.outputPath(`footer-${theme}-inset.png`) })
-    await toggle(page).click()
-    await settle(page)
-    const collapsed = await toggle(page).boundingBox()
-    expect(collapsed.height).toBeCloseTo(geometry.buttonHeight, 0)
-    expect(collapsed.y + collapsed.height).toBeCloseTo(height, 0)
-  })
-}
-
-test('small pointer movement keeps the mobile bar docked', async ({ page }) => {
-  await load(page, 390)
-  await dragBy(page, 3, -2)
-  await expect(nav(page)).not.toHaveClass(/is-free/)
-  const box = await page.locator('.corner-nav-shell').boundingBox()
-  expect(box.x).toBeCloseTo(0, 0)
-  expect(box.y + box.height).toBeCloseTo(height, 0)
-})
-
-test('dragging detaches without a jump and preserves the chosen position across menu and route changes', async ({ page }) => {
-  await load(page, 390)
-  const before = await toggle(page).boundingBox()
-  await dragBy(page, 8, -80)
-  await expect(nav(page)).toHaveClass(/is-free/)
-  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false')
-  await expectPosition(page, { x: before.x + 8, y: before.y - 80 })
-  // Place the pivot where the options panel has room in either direction.
-  const current = await toggle(page).boundingBox()
-  await dragBy(page, 16 - current.x, 280 - current.y)
-  const chosen = await toggle(page).boundingBox()
-  await page.waitForTimeout(320) // Drag release intentionally suppresses its following click.
-  await openMainNavigation(page)
-  await settle(page)
-  await expectPosition(page, chosen)
-  await expectReachableMore(page)
-  await page.locator('[data-tab-key="plan"]').click()
-  await expect(page).toHaveURL(/#\/plan$/)
-  await expectPosition(page, chosen)
-  await toggle(page).click()
-  await settle(page)
-  await expectPosition(page, chosen)
-  await openMainNavigation(page)
-  await settle(page)
-  await expectPosition(page, chosen)
-})
-
-test('a pivot moved toward the right stays anchored and keeps options usable near the top', async ({ page }) => {
-  await load(page, 390)
-  const initial = await toggle(page).boundingBox()
-  await dragBy(page, 200 - initial.x, 280 - initial.y)
-  await expect(nav(page)).toHaveClass(/is-free/)
-  const chosen = await toggle(page).boundingBox()
-  expect(chosen.x).toBeCloseTo(200, 0)
-  expect(chosen.y).toBeCloseTo(280, 0)
-  await page.waitForTimeout(320)
-  await openMainNavigation(page)
-  await settle(page)
-  await expectPosition(page, chosen)
-  expect((await nav(page).boundingBox()).width).toBeCloseTo(pivotWidth, 0)
-  await expectReachableMore(page, { activateFirst: true })
-  await expectPosition(page, chosen)
-  await toggle(page).click()
-  await settle(page)
-  await expectPosition(page, chosen)
-  await openMainNavigation(page)
-  await settle(page)
-  await expectPosition(page, chosen)
-
-  // Overshoot the viewport: enough room must remain for real, clickable options above.
-  await dragBy(page, 0, -600)
-  await settle(page)
-  const constrained = await toggle(page).boundingBox()
-  expect(constrained.x).toBeCloseTo(chosen.x, 0)
-  expect(constrained.y).toBeGreaterThanOrEqual(0)
-  expect(constrained.y).toBeLessThan(chosen.y)
-  await expectReachableMore(page, { activateFirst: true })
-  await expectPosition(page, constrained)
-})
-
-test('resizing a moved desktop menu constrains only its compact pivot', async ({ page }) => {
-  await load(page, 1280)
-  const initial = await toggle(page).boundingBox()
-  await dragBy(page, 1000 - initial.x, 280 - initial.y)
-  await page.setViewportSize({ width: 390, height })
-  await settle(page)
-  await expect.poll(async () => (await toggle(page).boundingBox()).x).toBeCloseTo(390 - pivotWidth, 0)
-  const fitted = await toggle(page).boundingBox()
-  await page.waitForTimeout(320)
-  await openMainNavigation(page)
-  await settle(page)
-  await expectPosition(page, fitted)
-  await expectReachableMore(page, { activateFirst: true })
-  await page.setViewportSize({ width: 1280, height })
-  await settle(page)
-  await expectPosition(page, fitted)
-})
-
-test('reload restores an open docked bar while always closing its extra options', async ({ page }) => {
-  await load(page, 390)
-  await openMainNavigation(page)
-  await page.locator('.corner-nav-more-trigger').click()
-  await expect(page.locator('.corner-nav-more')).toHaveClass(/is-visible/)
-  await settle(page)
-
-  await reloadNavigation(page)
-  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true')
-  await expect(main(page)).toHaveAttribute('aria-hidden', 'false')
-  expect(await main(page).evaluate(element => element.inert)).toBe(false)
-  await expect(nav(page)).not.toHaveClass(/is-free/)
-  await expectMoreClosed(page)
-  await expectReachableMore(page)
-})
-
-for (const open of [false, true]) {
-  test(`reload preserves a moved pivot with the main bar ${open ? 'open' : 'closed'}`, async ({ page }) => {
-    await load(page, 390)
-    if (open) await openMainNavigation(page)
-    const initial = await toggle(page).boundingBox()
-    await dragBy(page, 100 - initial.x, 280 - initial.y)
-    await expect(nav(page)).toHaveClass(/is-free/)
-    await settle(page)
-    const chosen = await toggle(page).boundingBox()
-
-    await reloadNavigation(page)
-    await expect(nav(page)).toHaveClass(/is-free/)
-    await expect(toggle(page)).toHaveAttribute('aria-expanded', String(open))
-    await expect(main(page)).toHaveAttribute('aria-hidden', String(!open))
-    await expectPosition(page, chosen)
-    await expectMoreClosed(page)
-    if (open) await expectReachableMore(page)
-  })
-}
-
-test('reattaching a moved menu persists its default docked position after reload', async ({ page }) => {
-  await load(page, 390)
-  await openMainNavigation(page)
-  const initial = await toggle(page).boundingBox()
-  await dragBy(page, 100 - initial.x, 280 - initial.y)
-  await expect(nav(page)).toHaveClass(/is-free/)
-  await settle(page)
-  await page.locator('.corner-nav-more-trigger').click()
-  await expect(page.locator('.corner-nav-more')).toHaveClass(/is-visible/)
-  await page.locator('.corner-nav-drag-toggle').click()
-  await expect(nav(page)).not.toHaveClass(/is-free/)
-  await settle(page)
-
-  await reloadNavigation(page)
-  await expect(nav(page)).not.toHaveClass(/is-free/)
-  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true')
-  await expectMoreClosed(page)
-  const docked = await page.locator('.corner-nav-shell').boundingBox()
-  expect(docked.x).toBeCloseTo(0, 0)
-  expect(docked.y + docked.height).toBeCloseTo(height, 0)
-  expect(docked.width).toBeCloseTo(390, 0)
-})
-
-test('the mounted main menu folds in both directions and respects reduced motion', async ({ page }) => {
-  await load(page, 390, 'no-preference')
-  await expect(main(page)).toHaveCount(1)
-  const original = await main(page).elementHandle()
-  const startTransition = async () => toggle(page).evaluate(async button => {
-    button.click()
-    await new Promise(requestAnimationFrame)
-    return document.querySelector('.corner-nav-main').getAnimations({ subtree: true }).map(animation => ({
-      duration: animation.effect.getTiming().duration,
-      transforms: animation.effect.getKeyframes().map(frame => frame.transform).filter(Boolean),
-    }))
-  })
-  for (const expanded of ['true', 'false']) {
-    const animations = await startTransition()
-    await expect(toggle(page)).toHaveAttribute('aria-expanded', expanded)
-    expect(animations.some(animation => animation.duration > 0 && new Set(animation.transforms).size > 1)).toBe(true)
-    expect(await main(page).evaluate((element, first) => element === first, original)).toBe(true)
-    await settle(page)
-  }
-  await expect(main(page)).toHaveAttribute('aria-hidden', 'true')
-  expect(await main(page).evaluate(element => element.inert)).toBe(true)
-  await page.emulateMedia({ reducedMotion: 'reduce' })
-  await openMainNavigation(page)
-  await settle(page)
-  const durations = await main(page).evaluate(element => [element, ...element.querySelectorAll('*')].flatMap(node => {
-    const style = getComputedStyle(node)
-    return [...style.transitionDuration.split(','), ...style.animationDuration.split(',')].map(parseFloat)
-  }))
-  expect(durations.every(duration => duration <= 0.01)).toBe(true)
-  await expect(main(page).getByRole('button')).toHaveCount(5)
-})
-
-test.describe('navigation icons', () => {
-  const icons = page => nav(page).locator('.pivot-layer--current svg.icn.nav-icon, .dock-slot-layer--current svg.icn.nav-icon')
-  const tab = (page, key) => page.locator(`[data-tab-key="${key}"]`)
-
-  async function recordAnimations(page) {
-    await nav(page).evaluate(element => {
-      window.navigationIconAnimations = []
-      element.addEventListener('animationstart', event => {
-        const icon = event.target.closest('.nav-icon')
-        if (!icon) return
-        for (const animation of event.target.getAnimations()) {
-          if (animation.animationName !== event.animationName) continue
-          const timing = animation.effect.getTiming()
-          window.navigationIconAnimations.push({
-            name: event.animationName,
-            at: performance.now(),
-            icon: icon.dataset.navIcon,
-            pivot: Boolean(icon.closest('.corner-nav-toggle')),
-            duration: timing.duration,
-            iterations: timing.iterations,
-          })
-        }
-      })
-    })
-  }
-
-  async function expectIdle(page) {
-    await expect.poll(() => icons(page).evaluateAll(elements => elements.flatMap(element =>
-      element.getAnimations({ subtree: true }).filter(animation => animation.playState === 'running')
-    ).length)).toBe(0)
-  }
-
-  async function expectFiniteAnimations(page, from, kind) {
-    await expect.poll(() => page.evaluate(({ from, kind }) =>
-      window.navigationIconAnimations.slice(from).filter(animation => animation.icon === kind).length,
-    { from, kind })).toBeGreaterThan(0)
-    const animations = await page.evaluate(from => window.navigationIconAnimations.slice(from), from)
-    expect(animations.every(animation => animation.duration > 0 && animation.duration <= 500 && animation.iterations === 1)).toBe(true)
-    await expectIdle(page)
-  }
-
-  test('pointer activation and active-tab re-click finish, and history entry updates the pivot', async ({ page }) => {
-    await load(page, 390, 'no-preference')
-    await expect(icons(page)).toHaveCount(4)
-    await expectIdle(page)
-    await openMainNavigation(page)
-    await settle(page)
-    await recordAnimations(page)
-
-    await tab(page, 'plan').click()
-    await expect(page).toHaveURL(/#\/plan$/)
-    await expect(tab(page, 'plan')).toHaveAttribute('aria-current', 'page')
-    await expect(toggle(page).locator('.pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'plan')
-    await expectFiniteAnimations(page, 0, 'plan')
-    const planEvents = await page.evaluate(() => window.navigationIconAnimations
-      .filter(animation => animation.icon === 'plan' && !animation.pivot))
-    const planMotions = planEvents.map(animation => animation.name)
-    expect(planMotions, JSON.stringify(planEvents)).toEqual([...new Set(planMotions)])
-
-    const beforeBack = await page.evaluate(() => window.navigationIconAnimations.length)
-    await page.goBack()
-    await expect(page).toHaveURL(/#\/home$/)
-    await expect(tab(page, 'home')).toHaveAttribute('aria-current', 'page')
-    await expect(toggle(page).locator('.pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'home')
-    await expectFiniteAnimations(page, beforeBack, 'home')
-    expect(await page.evaluate(from => window.navigationIconAnimations.slice(from).some(animation => animation.pivot && animation.icon === 'home'), beforeBack)).toBe(true)
-
-    const beforeReclick = await page.evaluate(() => window.navigationIconAnimations.length)
-    await tab(page, 'home').click()
-    await expectFiniteAnimations(page, beforeReclick, 'home')
-
-    const beforeIdle = await page.evaluate(() => window.navigationIconAnimations.length)
-    await tab(page, 'plan').hover()
-    await page.mouse.move(200, 180)
-    await page.evaluate(() => window.scrollBy(0, 180))
-    await page.waitForTimeout(600)
-    await expectIdle(page)
-    expect(await page.evaluate(() => window.navigationIconAnimations.length)).toBe(beforeIdle)
-  })
-
-  test('keeps a previously visited inactive icon idle when the menu reopens', async ({ page }) => {
-    await load(page, 390, 'no-preference')
-    await openMainNavigation(page)
-    await settle(page)
-    await tab(page, 'plan').click()
-    await expect(page).toHaveURL(/#\/plan$/)
-    await settle(page)
-    await tab(page, 'home').click()
-    await expect(page).toHaveURL(/#\/home$/)
-    await settle(page)
-    await recordAnimations(page)
-    await toggle(page).click()
-    await settle(page)
-    await openMainNavigation(page)
-    await settle(page)
-    expect(await page.evaluate(() => window.navigationIconAnimations.filter(animation => animation.icon === 'plan'))).toEqual([])
-  })
-
-  test('starting the fixture workout keeps the dumbbell and adds play when the action becomes Retomar', async ({ page }, testInfo) => {
-    await load(page, 390, 'no-preference')
-    await openMainNavigation(page)
-    await settle(page)
-    const start = tab(page, 'start')
-    await expect(start.locator('.nav-icon')).toHaveAttribute('data-nav-icon', 'start')
-    await expect(start.locator('.nav-icon__dumbbell')).toHaveCount(1)
-    await expect(start.locator('.nav-icon__play')).toHaveCount(0)
-    for (const theme of ['light', 'dark']) {
-      await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
-      await page.locator('.corner-nav-shell').screenshot({ path: testInfo.outputPath(`navigation-start-${theme}.png`) })
-    }
-    await recordAnimations(page)
-
-    await start.click()
-    await expect(page).toHaveURL(/#\/workout$/)
-    await expect(start).toContainText('Retomar')
-    await expect(toggle(page)).toHaveAccessibleName(/Retomar/)
-    // The pivot briefly keeps the departing icon while the current one enters.
-    await settle(page)
-    for (const control of [start, toggle(page)]) {
-      await expect(control.locator('.dock-slot-layer--current .nav-icon, .pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
-      await expect(control.locator('.nav-icon__dumbbell')).toHaveCount(1)
-      await expect(control.locator('.nav-icon__play')).toHaveCount(1)
-    }
-    await expectFiniteAnimations(page, 0, 'resume')
-    for (const theme of ['light', 'dark']) {
-      await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
-      await page.locator('.corner-nav-shell').screenshot({ path: testInfo.outputPath(`navigation-resume-${theme}.png`) })
-    }
-  })
-
-  test('reduced motion keeps complete resume shapes and disables moving feedback', async ({ page }) => {
-    await load(page, 390, 'reduce')
-    await openMainNavigation(page)
-    await settle(page)
-    await expect(icons(page)).toHaveCount(4)
-    await recordAnimations(page)
-    await tab(page, 'start').click()
-    await expect(page).toHaveURL(/#\/workout$/)
-    await expect(tab(page, 'start')).toContainText('Retomar')
-    await expect(toggle(page).locator('.pivot-layer--current .nav-icon')).toHaveAttribute('data-nav-icon', 'resume')
-    await settle(page)
-
-    const artwork = await nav(page).locator('.pivot-layer--current svg.icn, .dock-slot-layer--current svg.icn').evaluateAll(elements => elements.map(element => ({
-      animations: element.getAnimations({ subtree: true }).length,
-      shapes: [...element.querySelectorAll('.nav-icon__dumbbell, .nav-icon__play, .morph-group:not(.morph-from)')].map(shape => ({
-        opacity: Number(getComputedStyle(shape).opacity),
-        visibility: getComputedStyle(shape).visibility,
-        width: shape.getBBox().width,
-        height: shape.getBBox().height,
-      })),
-    })))
-    expect(artwork.every(icon => icon.animations === 0)).toBe(true)
-    const resumeShapes = artwork.flatMap(icon => icon.shapes)
-    expect(resumeShapes).toHaveLength(4)
-    expect(resumeShapes.every(shape => shape.opacity > 0 && shape.visibility === 'visible' && shape.width > 0 && shape.height > 0)).toBe(true)
-    expect(await page.evaluate(() => window.navigationIconAnimations)).toEqual([])
-  })
-
-  test('inline artwork inherits currentColor and keeps the existing icon dimensions in both themes', async ({ page }) => {
-    await load(page, 390, 'reduce')
-    await openMainNavigation(page)
-    await settle(page)
-    await expect(icons(page)).toHaveCount(4)
-    for (const theme of ['light', 'dark']) {
-      await page.evaluate(theme => { document.documentElement.dataset.theme = theme }, theme)
-      const appearance = await icons(page).evaluateAll(elements => elements.map(element => {
-        const style = getComputedStyle(element)
-        const slot = element.parentElement.getBoundingClientRect()
-        const bounds = element.getBoundingClientRect()
-        return {
-          color: style.color,
-          slotColor: getComputedStyle(element.parentElement).color,
-          stroke: style.stroke,
-          width: bounds.width,
-          height: bounds.height,
-          slotWidth: slot.width,
-          slotHeight: slot.height,
-          externalImages: element.querySelectorAll('image, foreignObject').length,
-        }
-      }))
-      for (const icon of appearance) {
-        expect(icon.color).toBe(icon.slotColor)
-        expect(icon.stroke).toBe(icon.color)
-        expect(icon.width).toBeCloseTo(20, 0)
-        expect(icon.height).toBeCloseTo(20, 0)
-        expect(icon.slotWidth).toBeCloseTo(28, 0)
-        expect(icon.slotHeight).toBeCloseTo(28, 0)
-        expect(icon.externalImages).toBe(0)
-      }
-    }
-  })
+  await settle(page);await openMainNavigation(page)
 })

@@ -34,7 +34,7 @@ test('page changes fade on touch and desktop with one persistent app surface', a
   expect(motion.copies).toBe(1)
   expect(motion.entrances.every(entrance => entrance.duration >= 100 && entrance.duration <= 250)).toBe(true)
   expect(motion.entrances.every(entrance => entrance.frames.every(frame => !frame.transform && frame.opacity != null))).toBe(true)
-  await expect(page.locator('.corner-nav-toggle')).toBeVisible()
+  await openMainNavigation(page)
 })
 
 test('reduced motion and keyboard navigation keep page changes immediate', async ({ page }) => {
