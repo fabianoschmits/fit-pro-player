@@ -102,7 +102,7 @@ Sem biblioteca gráfica ou dependência nova. Na build final a rota tem chunk pr
 
 ## Git e limites
 
-Commits de implementação: `0519f3d` (motor), `63a55b4` (persistência), `6263922` (idiomas), `b1a9b23` (foco acessível), `e9c13b9` (ciclo e interface), `0c01cbe` (PWA offline) e `4bf5c6f` (anatomia explicitamente vazia). Documentação consolidada neste relatório, especificação, plano, anexo nominal e sete capturas. O push exclusivo desta branch é a última operação da entrega; sem merge na main e sem publicação. Não foram executadas alterações de banco hospedado. A próxima etapa pode consumir este histórico versionado para o Resumo Semanal, sem reconstruir o mecanismo; o resumo não foi implementado aqui.
+Commits de implementação: `0519f3d` (motor), `63a55b4` (persistência), `6263922` (idiomas), `b1a9b23` (foco acessível), `e9c13b9` (ciclo e interface), `0c01cbe` (PWA offline) e `4bf5c6f` (anatomia explicitamente vazia). Documentação consolidada neste relatório, especificação, plano, anexo nominal e sete capturas. Push executado com `git push -u origin feat/fpp-training-comparison`. `git ls-remote --heads origin feat/fpp-training-comparison` confirmou **c9107f22a63fb135b0b6f558787a319e161ee162**, idêntico ao HEAD que contém código, documentação e evidências. Este registro de confirmação acompanha a mesma branch. [Branch no GitHub](https://github.com/fabianoschmits/fit-pro-player/tree/feat/fpp-training-comparison). Sem merge na main, PR ou deploy. Não foram executadas alterações de banco hospedado. A próxima etapa pode consumir este histórico versionado para o Resumo Semanal, sem reconstruir o mecanismo; o resumo não foi implementado aqui.
 
 ## Inventário dos arquivos da entrega
 
