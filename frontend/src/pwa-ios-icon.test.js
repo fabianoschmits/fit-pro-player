@@ -14,15 +14,20 @@ describe('native iOS installation icon', () => {
   let document
 
   beforeAll(async () => {
+    const started = performance.now()
     server = await createServer({
       configFile: fileURLToPath(new URL('../vite.config.js', import.meta.url)),
       root: frontendRoot,
       logLevel: 'silent',
       server: { middlewareMode: true, watch: null, hmr: false },
+      // The project has no PostCSS configuration. Avoid filesystem discovery
+      // for this HTML/icon assertion; still run the real Vite HTML and CSS hooks.
+      css: { postcss: {} },
     })
     const source = readFileSync(new URL('../index.html', import.meta.url), 'utf8')
     const html = await server.transformIndexHtml('/', source)
     document = parseHTML(html).document
+    console.info(`[iOS icon preparation] ${Math.round(performance.now() - started)} ms`)
   })
 
   afterAll(async () => {
