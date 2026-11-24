@@ -3,9 +3,60 @@ import {readFile,writeFile,unlink} from 'node:fs/promises'
 import { seed, stateFixture, openMainNavigation, startWorkoutExecution } from './fixtures.test.js'
 
 import { exerciseGuideAsset } from '../src/lib/exercise-guide-assets.js'
+import { WEEKLY_NOW, weeklyState } from './weekly-fixtures.js'
 
 const upgradeWorkerFile=new URL('../dist/sw-upgrade-test.js',import.meta.url)
 test.afterEach(async()=>{await unlink(upgradeWorkerFile).catch(()=>{})})
+
+test('weekly summary cold-loads offline, changes weeks and keeps anatomy and selection after reload', async ({ page, context }, info) => {
+  await page.clock.setFixedTime(WEEKLY_NOW)
+  await seed(page, { state: weeklyState() }); await page.goto('/#/home')
+  await waitForSWController(page); await waitForPrecache(page)
+  const cached = await page.evaluate(async () => {
+    const name = (await caches.keys()).find(key => key.startsWith('fpp-shell-'))
+    return (await (await caches.open(name)).keys()).map(request => request.url)
+  })
+  expect(cached.some(url => /WeeklyProgress-[^/]+\.js/.test(url))).toBe(true)
+  expect(cached.some(url => /body-paths-[^/]+\.js/.test(url))).toBe(true)
+  await context.setOffline(true); await page.goto('/#/progress/weekly')
+  await expect(page.locator('[data-weekly-metric="completedSets"] strong')).toHaveText('24')
+  await expect(page.locator('.weekly-insights')).toContainText('aumentou em 10 min.')
+  await expect(page.locator('.weekly-progress-view').getByRole('status')).toContainText('Você está offline')
+  await page.getByRole('button', { name: 'Semana anterior', exact: true }).click()
+  await expect(page).toHaveURL(/week=2026-11-09/)
+  await expect(page.locator('[data-weekly-metric="completedSets"] strong')).toHaveText('38')
+  await page.locator('.weekly-muscle-ranking').getByRole('button', { name: /^Peito/ }).click()
+  await expect(page.locator('.weekly-muscle-detail')).toContainText('38')
+  await expect(page.locator('[data-weekly-muscles] .bm-v').first()).toBeVisible()
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page).toHaveURL(/week=2026-11-09/)
+  await expect(page.locator('[data-weekly-metric="completedSets"] strong')).toHaveText('38')
+  await page.screenshot({ path: info.outputPath('weekly-offline.png'), fullPage: true })
+})
+
+test('a real offline workout updates the weekly summary and reconnecting never duplicates it', async ({ page, context }) => {
+  await page.clock.setFixedTime(WEEKLY_NOW)
+  await seed(page, { state: stateFixture() }); await page.goto('/#/home')
+  await waitForSWController(page); await waitForPrecache(page)
+  await context.setOffline(true)
+  await page.locator('.home-now').getByRole('button', { name: 'Começar Treino de teste', exact: true }).click()
+  await startWorkoutExecution(page)
+  await page.locator('.set-start-action').click()
+  await page.getByRole('button', { name: 'Concluir série 1', exact: true }).click()
+  await page.getByRole('dialog').last().getByRole('button', { name: 'Salvar', exact: true }).click()
+  await page.getByRole('dialog').last().getByRole('button', { name: 'Terminar treino', exact: true }).click()
+  await page.getByLabel('Nota curta (opcional)', { exact: true }).fill('Conclusão offline semanal')
+  await page.getByRole('dialog').last().getByRole('button', { name: 'Terminar treino', exact: true }).click()
+  await page.getByRole('button', { name: 'Ver minha semana', exact: true }).click()
+  await expect(page.locator('[data-weekly-metric="workouts"] strong')).toHaveText('1')
+  await expect(page.locator('[data-weekly-metric="completedSets"] strong')).toHaveText('1')
+  const savedId = await page.evaluate(() => JSON.parse(localStorage.getItem('gym_state_v1')).workouts[0].id)
+  await context.setOffline(false)
+  await expect(page.locator('.weekly-notice')).toHaveCount(0)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('[data-weekly-metric="workouts"] strong')).toHaveText('1')
+  expect(await page.evaluate(id => JSON.parse(localStorage.getItem('gym_state_v1')).workouts.filter(workout => workout.id === id).length, savedId)).toBe(1)
+})
 
 async function waitForSWController(page) {
   await page.evaluate(async () => {
