@@ -36,6 +36,7 @@ test('student shares reasons, professional reviews once, and revocation removes 
  await professional.goto('/#/professional/insights')
  await professional.locator('.professional-insight-card').filter({hasText:'Falta de tempo recorrente'}).click()
  await expect(professional.locator('[data-professional-insights]')).toContainText('3 treinos relacionados.')
+ await expect(professional.locator('.professional-insight-workout strong')).toHaveText(['Treino sintético one','Treino sintético two','Treino sintético three'])
  await expect(professional.locator('[data-professional-insights]')).not.toContainText('PRIVATE NOTE')
  await professional.screenshot({path:info.outputPath('professional-insight-mobile.png')})
  await professional.getByRole('button',{name:'Marcar como revisado',exact:true}).click()

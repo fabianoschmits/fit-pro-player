@@ -1,5 +1,5 @@
 const languages=['pt','de','es','fr','it','pl','tr','ru','zh','ko','hi']
-const rows=`Follow-up|Acompanhar|Betreuung|Seguimiento|Suivi|Segui|Monitoruj|Takip|Обзор|跟进|관리|निगरानी
+const rows=`Follow-up|Alertas|Betreuung|Seguimiento|Suivi|Segui|Monitoruj|Takip|Обзор|跟进|관리|निगरानी
 Category|Categoria|Kategorie|Categoría|Catégorie|Categoria|Kategoria|Kategori|Категория|类别|분류|श्रेणी
 Previous|Anterior|Zurück|Anterior|Précédent|Precedente|Poprzednie|Önceki|Предыдущий|上一页|이전|पिछला
 Privacy|Privacidade|Datenschutz|Privacidad|Confidentialité|Privacy|Prywatność|Gizlilik|Конфиденциальность|隐私|개인정보|गोपनीयता

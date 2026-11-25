@@ -31,6 +31,7 @@ export default function ProfessionalInsights(){
  const {data,alerts,error,online,loading,refresh,save}=useProfessionalInsights({studentId,offset})
  const [failure,setFailure]=useState(false),[busy,setBusy]=useState(false)
  const selected=alerts.find(a=>a.episodeKey===params.get('alert'))
+ const related=selected?.workouts.filter(workout=>selected.evidence.workoutIds.includes(workout.id)).sort((a,b)=>String(b.completedAt||b.d).localeCompare(String(a.completedAt||a.d)))||[]
  const counts=insightCounts(alerts,data?.total)
  const update=(key,value)=>setParams(previous=>{const next=new URLSearchParams(previous);value?next.set(key,value):next.delete(key);return next})
  const filtered=useMemo(()=>alerts.filter(a=>(!params.get('status')||a.status===params.get('status'))&&(!params.get('category')||a.priority===params.get('category'))&&(!params.get('type')||a.type===params.get('type'))&&a.student.displayName?.toLocaleLowerCase().includes((params.get('search')||'').toLocaleLowerCase())).sort((a,b)=>{
@@ -47,8 +48,8 @@ export default function ProfessionalInsights(){
  {selected?<>
  <div className="management-record professional-insight-student"><ManagementAvatar name={selected.student.displayName} avatarRef={selected.student.avatarRef} userId={selected.studentId}/><strong>{selected.student.displayName}</strong></div>
  <section className="card"><h2><Icon name={insightIcon(selected.type)}/>{t(selected.titleKey)}</h2><small>{t(statusLabels[selected.status])}</small><p>{t(ruleKeys[selected.type])}</p><small>{formatDate(selected.window.start)} – {formatDate(selected.window.end)}</small><p>{t('{0} related workouts.',selected.evidence.count)}</p>{selected.evidence.completion!=null&&<p>{t('{0}% of adjusted sets.',new Intl.NumberFormat(undefined,{maximumFractionDigits:1}).format(selected.evidence.completion))}</p>}</section>
- <h3>{t('Related workouts')}</h3>{selected.evidence.workoutIds.map(id=>{
-  const workout=selected.workouts.find(w=>w.id===id),date=workout&&workoutCalendarDate(workout,undefined),comparison=compareTraining(workout),percent=comparison.summary.percent
+ <h3>{t('Related workouts')}</h3>{related.map(workout=>{
+  const id=workout.id,date=workoutCalendarDate(workout,undefined),comparison=compareTraining(workout),percent=comparison.summary.percent
   return <Link className="professional-insight-workout" key={id} to={'/professional/students/'+selected.studentId+'?section=history'}>
    <time>{date?formatDate(date):'—'}</time><div><strong>{workout?.name||t('Workout')}</strong>{percent!=null&&<><small>{t('{0}% of adjusted sets.',new Intl.NumberFormat(undefined,{maximumFractionDigits:1}).format(percent))}</small><progress aria-label={t('Execution below the confirmed plan')} value={percent} max={Math.max(100,percent)}/></>}</div><span>›</span>
   </Link>

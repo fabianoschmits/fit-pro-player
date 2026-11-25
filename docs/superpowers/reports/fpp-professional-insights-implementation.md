@@ -57,7 +57,7 @@ O PostgreSQL nativo estava incompleto (postgres.bki ausente). O teste de banco a
 
 Falhas encontradas foram corrigidas: fingerprint revelando associações retiradas em revogação parcial; consentimento sensível existente perdido ao editar outro grant; remoção com grants antigos; e deslocamento do botão mobile ao ocultar o contador da observação. O contador agora preserva o espaço sem ficar visível fora da edição. A revisão focada confirmou as duas correções de privacidade.
 
-Capturas sintéticas selecionadas ficam fora do Git nos diretórios de test-results: detalhe profissional mobile e check-in. Revisão mobile escura realizada; não foi executada matriz visual de todos os temas/navegadores. Precache: 368 entradas, aproximadamente 56,76 MB; nenhuma geometria/sprite duplicado. Chunks aproximados: tela 8,4 kB, hook/motor 6,5 kB, preview 1,1 kB e CSS 2,1 kB antes de gzip.
+Capturas sintéticas selecionadas ficam fora do Git nos diretórios de test-results: detalhe profissional mobile e check-in. Revisão mobile escura realizada, com ajuste da barra nativa ao token de destaque e ordenação dos treinos por data; não foi executada matriz visual de todos os temas/navegadores. Precache: 368 entradas, aproximadamente 56,76 MB; nenhuma geometria/sprite duplicado. Chunks aproximados: tela 8,4 kB, hook/motor 6,5 kB, preview 1,1 kB e CSS 2,1 kB antes de gzip.
 
 ## Limitações e publicação futura
 
