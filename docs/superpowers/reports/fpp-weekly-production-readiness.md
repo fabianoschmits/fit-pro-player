@@ -69,7 +69,21 @@ Web final: entrada 1.145,40 kB / 317,14 kB gzip; WeeklyProgress 24,55 / 7,94 kB;
 
 ## Prévia e publicação
 
-Identificação final dos deployments e smoke tests será acrescentada após a integração autorizada. A prévia é criada pela integração Git; produção exclusivamente pelo push da main. Sem promoção manual de preview, alteração de DNS, variáveis ou autenticação.
+Prévia validada: `dpl_HBofxqnap7K2bvg6AhNq55RUb9fe`, commit `379869b42b6e8ff57c577315313df9a475a48c9e`, branch de correção, READY, aliasError null. URL https://fit-pro-player-ldrdvn0ow-fabianoschmits-9996s-projects.vercel.app . A proteção Vercel Authentication permaneceu ativa: acesso por link temporário de dez minutos, revogado após os testes; arquivos locais de credenciais removidos.
+
+Integração fast-forward da main `5b402590a4a00571d82e2541bc4716f97f39749a` para `379869b42b6e8ff57c577315313df9a475a48c9e`, seguida de push oficial. Ancestralidade de `2456bf6`, `c722bb5`, implementação semanal e correções confirmada. Nenhum force push, merge commit ou produção por promoção de preview.
+
+Primeiro deployment publicado: `dpl_4HNmTyNU1anJg6D6A2V3nhxPbvvV`, projeto fit-pro-player, Git main, commit `379869b42b6e8ff57c577315313df9a475a48c9e`, target production, READY em **2026-11-24 21:41:45 −03:00**, aliasError null. URL https://fit-pro-player-jvkw3hqtm-fabianoschmits-9996s-projects.vercel.app . Aliases oficiais `www.fitpp.com.br` e `fitpp.com.br` associados. O commit de encerramento deste relatório altera somente documentação e é integrado pelo mesmo fluxo oficial, sem alterações adicionais de aplicação.
+
+Smoke no domínio https://www.fitpp.com.br concluído às 21:43:06 −03:00: HTTP 200 para aplicação, manifesto com ícones e Service Worker; precache contendo WeeklyProgress, TrainingComparison e body-paths. `fitpp.com.br` responde 308 para `https://www.fitpp.com.br/`, conforme configuração anterior.
+
+Chromium e WebKit: cinco rotas por navegador (`/home`, `/progress`, `/progress/weekly`, `/progress/training-map?session=B`, `/progress/history`), com visitante isolado e dados sintéticos locais. Métricas de dois treinos/24 séries/90 minutos verificadas; anatomia carregada; seleção muscular; navegação inferior; temas claro/escuro; larguras 320, 360, 390, 430, 768 e 1280 sem overflow. Zero exceções JavaScript, zero falhas JS/CSS e zero mensagens console.error nos dois navegadores. Login com credenciais reais não foi executado.
+
+Capturas locais ignoradas em `frontend/test-results-production/{preview,production}/` (26 por rodada), inspecionadas visualmente em 320 escuro e WebKit claro. Capturas de estado parcial offline e teste de fotos também são exclusivamente sintéticas; não foram incorporadas imagens grandes ao Git.
+
+Logs Vercel filtrados pelo deployment publicado e níveis error/fatal, consultas às 21:42:48 e 21:43:31 −03:00, janela de dez minutos: nenhum registro encontrado. A janela efetivamente observada após READY foi de aproximadamente dois minutos; isso não substitui observabilidade de longo prazo e não coleta automaticamente erros do navegador. Os erros de cliente foram verificados separadamente no smoke.
+
+PWA: onze testes locais aprovados, incluindo atualização SW, sessão ativa, retomada offline, histórico, mapas e personalizado após reload. No domínio publicado, manifesto, SW e chunks novos acessíveis. O mecanismo existente posterga reload automático quando a sessão não permite atualização; nenhum armazenamento foi limpo e nenhum logout forçado. Para PWA instalada, aguardar o fluxo normal de atualização e concluir/salvar treino ativo antes de aceitar recarregamento. Sem atualização agressiva ou duplicação de anatomia.
 
 ## Produção anterior e rollback
 
