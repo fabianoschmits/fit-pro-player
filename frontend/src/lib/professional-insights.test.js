@@ -3,7 +3,7 @@ import { buildProfessionalInsights, applyInsightState, insightCounts } from './p
 const now = new Date('2026-11-25T15:00:00Z')
 const student = { id: 'student', relationshipId: 'cycle', relationshipCreatedAt: '2026-10-01', activePlan: true }
 const workout = (id, d = '2026-11-23', actual = 2, planned = 4) => ({ id, d, status: 'completed', entries: [{ id: 'bench', sets: Array.from({ length: actual }, () => ({ done: true, reps: 8 })) }], comparison: { version: 1, origin: 'professional', flexApplied: false, planned: [{ exerciseId: 'bench', workSets: planned, muscleWeights: {} }], adjusted: [{ exerciseId: 'bench', workSets: planned, muscleWeights: {} }] } })
-const build = (extra = {}) => buildProfessionalInsights({ student, workouts: [workout('a'), workout('b'), workout('c')], coverage: { complete: true }, now, timeZone: 'America/Sao_Paulo', ...extra })
+const build = (extra = {}) => buildProfessionalInsights({ student, workouts: [workout('a'), workout('b'), workout('c')], coverage: {complete:true,status:'authorized-professional-complete',scope:'authorized-professional-executions',start:'2026-10-14',end:'2026-11-27',timeZone:'America/Sao_Paulo'}, now, timeZone: 'America/Sao_Paulo', ...extra })
 describe('professional insights — authorized input', () => {
  it('counts only explicitly shared reasons once per session', () => {
   const sharedCheckins = ['a', 'b', 'c'].map(workoutId => ({ workoutId, reasons: ['time_constraint', 'fatigue', 'equipment_unavailable', 'time_constraint'] }))
@@ -60,4 +60,20 @@ describe('professional insights — authorized input', () => {
   expect(build({workouts}).some(a=>a.type==='frequent_flex_adjustments')).toBe(true)
   expect(build({workouts,student:{...student,relationshipCreatedAt:'2026-11-24'},coverage:{complete:false}}).some(a=>a.type==='no_recent_workouts')).toBe(false)
  })
+})
+
+it('requires bounded, untruncated professional coverage and identifies its authorized scope',()=>{
+ const workouts=[0,1,2,3].map(i=>workout('old'+i,'2026-11-10')).concat(workout('new','2026-11-18'))
+ const coverage={complete:true,status:'authorized-professional-complete',scope:'authorized-professional-executions',start:'2026-10-14',end:'2026-11-26',timeZone:'America/Sao_Paulo'}
+ const alerts=build({workouts,coverage})
+ expect(alerts.find(a=>a.type==='reduced_training_frequency')).toMatchObject({scope:coverage.scope,timeZone:coverage.timeZone,window:{start:'2026-11-09',end:'2026-11-22'}})
+ for(const partial of [{...coverage,complete:false},{...coverage,start:'2026-11-15'},{...coverage,timeZone:'Asia/Tokyo'},{...coverage,status:'professional-partial'}])expect(build({workouts,coverage:partial}).some(a=>a.type==='reduced_training_frequency')).toBe(false)
+ const consistent=['2026-11-02','2026-11-09','2026-11-16'].flatMap((d,i)=>[workout(i+'a',d),workout(i+'b',d)])
+ expect(build({workouts:consistent,coverage}).some(a=>a.type==='positive_training_consistency')).toBe(true)
+ expect(build({workouts:[workout('last','2026-11-10')],coverage}).some(a=>a.type==='no_recent_workouts')).toBe(true)
+})
+it('uses the student zone at midnight for both evidence and complete-day absence',()=>{
+ const late={...workout('late','2026-11-24'),completedAt:'2026-11-25T01:00:00Z'}
+ const result=build({workouts:[late],sharedCheckins:[{workoutId:'late',reasons:['pain_or_discomfort']}],now:new Date('2026-11-25T02:00:00Z'),timeZone:'America/Sao_Paulo'})
+ expect(result.find(a=>a.type==='reported_discomfort')).toMatchObject({timeZone:'America/Sao_Paulo',window:{end:'2026-11-24'}})
 })

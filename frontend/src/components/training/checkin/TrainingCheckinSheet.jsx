@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
 import { t } from '../../../lib/i18n.js'
 import { detectTrainingChanges, orderedCheckinReasons } from '../../../lib/training-checkin.js'
-import { CHECKIN_NOTE_LIMIT } from '../../../lib/training-checkin-data.js'
-import { checkinFor, saveTrainingCheckin, useTrainingCheckins } from '../../../lib/training-checkin-state.js'
+import { CHECKIN_REASON_LABELS, CHECKIN_NOTE_LIMIT } from '../../../lib/training-checkin-data.js'
+import { checkinFor, resolveTrainingCheckin, saveTrainingCheckin, useTrainingCheckins } from '../../../lib/training-checkin-state.js'
 import { Button } from '../../ui.jsx'
 import TrainingCheckinReasons from './TrainingCheckinReasons.jsx'
 import TrainingCheckinSharing from './TrainingCheckinSharing.jsx'
 import '../../../professional-insights.css'
 import '../../../training-checkin.css'
 export default function TrainingCheckinSheet({ workoutId, ownerScope, close, onReturn = undefined }) {
- const { records, workouts, scopeKey, syncError } = useTrainingCheckins()
+ const { records, workouts, scopeKey, syncError, conflicts } = useTrainingCheckins()
  const workout = workouts.find(item => item.id === workoutId), saved = checkinFor(records, workoutId)
  const [selected, setSelected] = useState(saved?.status === 'answered' ? saved.reasons : [])
  const [note, setNote] = useState(saved?.status === 'answered' ? saved.note : '')
@@ -17,6 +17,18 @@ export default function TrainingCheckinSheet({ workoutId, ownerScope, close, onR
  const [focused, setFocused] = useState(false), [confirmRemoval, setConfirmRemoval] = useState(false), [error, setError] = useState(false)
  const detection = useMemo(() => detectTrainingChanges(workout), [workout])
  if (!workout || scopeKey !== ownerScope) return null
+ const conflict=conflicts[workoutId]
+ if(conflict) {
+  const decide=choice=>{try{resolveTrainingCheckin(workoutId,ownerScope,choice);close();onReturn?.()}catch{setError(true)}}
+  const values=record=><><p>{record?.reasons?.map(reason=>t(CHECKIN_REASON_LABELS[reason])).join(', ')||'—'}</p><p>{record?.note||'—'}</p>{record?.status!=='answered'&&<small>{t('No response')}</small>}</>
+  return <section className="training-checkin-sheet" data-checkin-conflict>
+   <h3>{t('Resolve response conflict')}</h3><p>{t('Choose one response. Keeping your response revokes sharing; share again only after confirmation.')}</p>
+   <h4>{t('My response')}</h4>{values(conflict.local??records[workoutId])}
+   <h4>{t('Synchronized response')}</h4>{values(conflict.remote)}
+   {error&&<p role="alert">{t('Could not save the response. Please try again.')}</p>}
+   <Button onClick={()=>decide('local')}>{t('Keep my response')}</Button><Button onClick={()=>decide('remote')}>{t('Use synchronized response')}</Button><Button variant="ghost" onClick={close}>{t('Cancel')}</Button>
+  </section>
+ }
  const finish = status => {
   try {
    saveTrainingCheckin(workoutId, { status, reasons: selected, note }, ownerScope,sharesChanged?shares.map(s=>({...s,reasons:s.reasons.filter(reason=>selected.includes(reason))})):null)

@@ -8,7 +8,7 @@ export function useProfessionalInsights({studentId=null,offset=0,limit=20}={}) {
  const {user}=useAuth(),owner=user?.id
  const repo=useMemo(()=>createProfessionalInsightsRepository(getBrowserSupabaseClient()),[])
  const [state,setState]=useState(null),[attempt,setAttempt]=useState(0),[online,setOnline]=useState(navigator.onLine!==false)
- const refresh=useCallback(()=>setAttempt(n=>n+1),[])
+ const refresh=useCallback(()=>{setState(null);setAttempt(n=>n+1)},[])
  useRelationshipRefresh(refresh)
  useEffect(()=>{
   const changed=()=>{setOnline(navigator.onLine!==false);setState(null);if(navigator.onLine!==false)refresh()}
@@ -25,7 +25,7 @@ export function useProfessionalInsights({studentId=null,offset=0,limit=20}={}) {
   return()=>{alive=false}
  },[key,owner,online,repo,studentId,offset,limit])
  const data=online&&state?.key===key?state.data:null,error=online&&state?.key===key&&state.error
- const alerts=useMemo(()=>data?.items.flatMap(item=>buildProfessionalInsights({...item,now:new Date(),timeZone:item.timeZone}).map(alert=>({...applyInsightState(alert,item.states?.find(s=>s.type===alert.type)),student:item.student,workouts:item.workouts})))||[],[data])
+ const alerts=useMemo(()=>data?.items.flatMap(item=>buildProfessionalInsights({...item,now:new Date(),timeZone:item.timeZone||'America/Sao_Paulo'}).map(alert=>({...applyInsightState(alert,item.states?.find(s=>s.type===alert.type)),student:item.student,workouts:item.workouts})))||[],[data])
  const save=async(alert,status,days=null)=>{await repo.save(alert,status,days);refresh()}
  return {data,alerts,error,online,refresh,save,loading:online&&!data&&!error}
 }

@@ -58,10 +58,41 @@ begin
  perform pg_temp.assert_true(public.get_professional_insights_context()->'items'='[]','ended relationship immediately removes context');
  perform pg_temp.assert_true(not has_table_privilege('authenticated','public.professional_insight_states','SELECT'),'state cannot bypass ended relationship');
  perform set_config('request.jwt.claim.sub','11250000-0000-4000-8000-000000000002',true);
- saved:=public.save_training_checkin('legacy-text-id','{"version":1,"status":"removed"}',4,'11250000-0000-4000-8000-000000000040');
+ saved:=public.save_training_checkin('legacy-text-id',rec,4,'11250000-0000-4000-8000-000000000041','[{"relationshipId":"11250000-0000-4000-8000-000000000010","reasons":[]}]');
+ perform pg_temp.assert_true(saved->>'note'='PRIVATE','ended cycle permits private edit and explicit revocation');
+ begin perform public.save_training_checkin('legacy-text-id',rec,5,'11250000-0000-4000-8000-000000000042',shares);raise exception 'ended grant accepted';exception when insufficient_privilege then null;end;
+ saved:=public.save_training_checkin('legacy-text-id','{"version":1,"status":"removed"}',5,'11250000-0000-4000-8000-000000000040');
  perform pg_temp.assert_true(saved->>'note'='' and saved->'reasons'='[]','removed record discards note and reasons');
  saved:=public.save_training_checkin('legacy-text-id',rec,0,'11250000-0000-4000-8000-000000000030',null,true);
  perform pg_temp.assert_true(saved->>'status'='removed','retrying an old import cannot resurrect a response');
+end$$;
+reset role;
+insert into public.professional_student_relationships(id,professional_user_id,student_user_id,status,accepted_at) values('11250000-0000-4000-8000-000000000011','11250000-0000-4000-8000-000000000001','11250000-0000-4000-8000-000000000002','active',now()-interval '60 days');
+insert into public.program_assignments(id,program_id,version_id,professional_user_id,student_user_id,relationship_id,status) values('11250000-0000-4000-8000-000000000064','11250000-0000-4000-8000-000000000060','11250000-0000-4000-8000-000000000061','11250000-0000-4000-8000-000000000001','11250000-0000-4000-8000-000000000002','11250000-0000-4000-8000-000000000011','active');
+update public.account_preferences set preferences=preferences||'{"reminder":{"tz":"America/New_York"}}' where user_id='11250000-0000-4000-8000-000000000002';
+insert into public.athlete_schedules(user_id,schedule) values('11250000-0000-4000-8000-000000000002','{"assignedProgram":{"assignmentId":"11250000-0000-4000-8000-000000000064"}}') on conflict(user_id) do update set schedule=excluded.schedule;
+set local role authenticated;
+select set_config('request.jwt.claim.sub','11250000-0000-4000-8000-000000000001',true);
+do $$declare item jsonb;begin
+ item:=public.get_professional_insights_context()->'items'->0;
+ perform pg_temp.assert_true(item->'coverage'->>'status'='authorized-professional-complete' and (item->'coverage'->>'complete')::boolean and not (item->'coverage'->>'personalComplete')::boolean,'complete only within authorized scope');
+ perform pg_temp.assert_true(item->>'timeZone'='America/New_York' and (item->'student'->>'activePlan')::boolean,'student zone and selected active assignment projected without preferences');
+ perform pg_temp.assert_true(item->'coverage'->>'start'=((now() at time zone 'America/New_York')::date-42)::text,'coverage boundaries use student calendar');
+end$$;
+reset role;
+insert into public.workout_executions(assignment_id,version_id,student_user_id,day_key,status,completed_at,payload)
+ select '11250000-0000-4000-8000-000000000064','11250000-0000-4000-8000-000000000061','11250000-0000-4000-8000-000000000002','monday','completed',now()-interval '1 day',jsonb_build_object('workoutId','cap-'||n,'entries','[]'::jsonb) from generate_series(1,201)n;
+set local role authenticated;
+do $$declare item jsonb;begin
+ item:=public.get_professional_insights_context()->'items'->0;
+ perform pg_temp.assert_true(not (item->'coverage'->>'complete')::boolean and (item->'coverage'->>'truncated')::boolean and jsonb_array_length(item->'workouts')=200,'200 cap cannot masquerade as full coverage');
+end$$;
+reset role;
+update public.account_preferences set preferences=preferences||'{"reminder":{"tz":"Invalid/Zone"}}' where user_id='11250000-0000-4000-8000-000000000002';
+set local role authenticated;
+do $$declare item jsonb;begin
+ item:=public.get_professional_insights_context()->'items'->0;
+ perform pg_temp.assert_true(item->>'timeZone'='America/Sao_Paulo' and not (item->'coverage'->>'complete')::boolean,'unknown student timezone uses explicit fallback and suppresses period claims');
 end$$;
 select 'PASS training checkin authorization, idempotence, revision, migration, consent and revocation';
 rollback;

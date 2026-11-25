@@ -40,6 +40,7 @@ const onboardingDraft = record({...fields('version kind owner step'),days:list(s
 const schema = {...preferenceSchema,...fields('planMode bodyServerRevision planServerRevision activeLibraryId activeLibraryTitle _ts unit'),onboardingDraft,
  trainingCheckinRecords:dictionary(id,record({...fields('id revision version status sharing answeredAt updatedAt dismissedAt removedAt operationId note'),reasons:list(scalar),shares:list(record({relationshipId:scalar,reasons:list(scalar),sensitiveConsent:scalar}))})),
  pendingCheckinOperations:list(record({...fields('accountId workoutId operationId expectedRevision import'),record:value=>normalizeTrainingCheckinMap({record:value}).record,shares:list(record({relationshipId:scalar,reasons:list(scalar),sensitiveConsent:scalar}))})),
+ checkinConflicts:dictionary(id,record({local:value=>normalizeTrainingCheckinMap({record:value}).record,remote:record({...fields('id revision version status sharing answeredAt updatedAt dismissedAt removedAt operationId note'),reasons:list(scalar),shares:list(record({relationshipId:scalar,reasons:list(scalar),sensitiveConsent:scalar}))}),operationIds:list(scalar)})),
  checkinMigrationConflicts:value=>normalizeTrainingCheckinMap(value),checkinSyncError:scalar,
  routines:list(routine), week:dictionary(day,scalar),dayPlan:dictionary(date,scalar),
  workouts:list(workout),active:workout,exWeights:dictionary(id,value => typeof value === 'number' ? value : record(fields('w d sec min speed rir rpe'))(value)),

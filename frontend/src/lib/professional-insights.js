@@ -1,7 +1,7 @@
 import { compareTraining } from './training-comparison.js'
 import { detectTrainingChanges } from './training-checkin.js'
 import { completedWeeklyHistory, workoutCalendarDate } from './weekly-progress-core.js'
-import { addCalendarDays, calendarDate, getWeekStart } from './weekly-progress-calendar.js'
+import { addCalendarDays, calendarDate, getWeekStart, resolveWeeklyTimeZone } from './weekly-progress-calendar.js'
 
 export const PROFESSIONAL_INSIGHT_LIMITS = Object.freeze({ days:14, recent:5, lowRatio:0.75, minimumPlannedSets:4, recurrence:3, equipment:2, flexReduction:0.2 })
 export const PROFESSIONAL_INSIGHT_TYPES = {
@@ -16,7 +16,11 @@ export const PROFESSIONAL_INSIGHT_TYPES = {
  frequent_flex_adjustments:['attention','Frequent duration adjustments','Review preferred duration'],
  positive_training_consistency:['positive','Consistent training records','View evolution'],
 }
-export function buildProfessionalInsights({student,workouts=[],sharedCheckins=[],coverage={complete:false},now=new Date(),timeZone}) {
+/** @type {{complete:boolean,scope?:string,status?:string,timeZone?:string,start?:string,end?:string}} */
+const DEFAULT_COVERAGE={complete:false}
+export function buildProfessionalInsights({student,workouts=[],sharedCheckins=[],coverage=DEFAULT_COVERAGE,now=new Date(),timeZone}) {
+ try { new Intl.DateTimeFormat('en',{timeZone:timeZone||'America/Sao_Paulo'}) } catch { timeZone='America/Sao_Paulo' }
+ timeZone=resolveWeeklyTimeZone(timeZone||'America/Sao_Paulo')
  if (!student?.id || !student.relationshipId) return []
  const today=calendarDate(now,timeZone), start=addCalendarDays(today,-13), week=getWeekStart(today,timeZone)
  const all=completedWeeklyHistory(workouts,now,timeZone).sort((a,b)=>String(workoutCalendarDate(b,timeZone)).localeCompare(String(workoutCalendarDate(a,timeZone))) || a.id.localeCompare(b.id))
@@ -28,7 +32,7 @@ export function buildProfessionalInsights({student,workouts=[],sharedCheckins=[]
   const episodeKey=student.relationshipId+':'+type
   const evidenceFingerprint=JSON.stringify([type,ids,evidence.period || null])
   alerts.push({version:1,ruleVersion:1,type,studentId:student.id,relationshipId:student.relationshipId,episodeKey,evidenceFingerprint,priority,titleKey,suggestedAction,
-   window:{start,end:today},evidence:{...evidence,workoutIds:ids,count:ids.length},status:'new'})
+   timeZone,scope:coverage.scope,window:{start:type==='positive_training_consistency'?addCalendarDays(week,-21):type==='reduced_training_frequency'?addCalendarDays(week,-14):type==='no_recent_workouts'?addCalendarDays(today,-7):start,end:['positive_training_consistency','reduced_training_frequency'].includes(type)?addCalendarDays(week,-1):type==='no_recent_workouts'?addCalendarDays(today,-1):today},evidence:{...evidence,workoutIds:ids,count:ids.length},status:'new'})
  }
  for (const [reason,type,minimum] of [['time_constraint','recurring_time_constraint',3],['equipment_unavailable','recurring_equipment_unavailable',2],['fatigue','recurring_fatigue',3],['pain_or_discomfort','reported_discomfort',1]]) {
   const ids=new Set(sharedCheckins.filter(c=>c.reasons?.includes(reason) && byId.has(c.workoutId)).map(c=>c.workoutId))
@@ -45,12 +49,13 @@ export function buildProfessionalInsights({student,workouts=[],sharedCheckins=[]
  if(flex.length>=3)emit('frequent_flex_adjustments',flex.map(x=>x.w))
  // Absence/frequency claims require proof of the entire interval, not just visible assignments.
  const linked=calendarDate(student.relationshipCreatedAt,timeZone)
- if(coverage.complete===true && linked) {
+ const covers=from=>coverage.complete===true&&coverage.scope==='authorized-professional-executions'&&coverage.status==='authorized-professional-complete'&&coverage.timeZone===timeZone&&coverage.start<=from&&coverage.end>=today
+ if(linked) {
   const weeks=[1,2,3].map(n=>all.filter(w=>{const d=workoutCalendarDate(w,timeZone);return d>=addCalendarDays(week,-7*n)&&d<addCalendarDays(week,-7*(n-1))}))
-  if(linked<=addCalendarDays(week,-14)&&weeks[1].length>=3 && weeks[1].length-weeks[0].length>=2 && weeks[0].length<=weeks[1].length/2)emit('reduced_training_frequency',weeks[0],{current:weeks[0].length,previous:weeks[1].length,period:addCalendarDays(week,-7)})
-  if(linked<=addCalendarDays(week,-21)&&weeks.every(rows=>rows.length>=2))emit('positive_training_consistency',weeks.flat(),{period:addCalendarDays(week,-7)})
+  if(covers(addCalendarDays(week,-14))&&linked<=addCalendarDays(week,-14)&&weeks[1].length>=3 && weeks[1].length-weeks[0].length>=2 && weeks[0].length<=weeks[1].length/2)emit('reduced_training_frequency',weeks[0],{current:weeks[0].length,previous:weeks[1].length,period:addCalendarDays(week,-7)})
+  if(covers(addCalendarDays(week,-21))&&linked<=addCalendarDays(week,-21)&&weeks.every(rows=>rows.length>=2))emit('positive_training_consistency',weeks.flat(),{period:addCalendarDays(week,-7)})
   const past=all.filter(w=>workoutCalendarDate(w,timeZone)<today)
-  if(linked<=addCalendarDays(today,-7)&&student.activePlan && !past.some(w=>workoutCalendarDate(w,timeZone)>=addCalendarDays(today,-7)) && past.some(w=>workoutCalendarDate(w,timeZone)>=addCalendarDays(today,-42)))emit('no_recent_workouts',past.slice(0,1))
+  if(covers(addCalendarDays(today,-7))&&linked<=addCalendarDays(today,-7)&&student.activePlan && !past.some(w=>workoutCalendarDate(w,timeZone)>=addCalendarDays(today,-7)) && past.some(w=>workoutCalendarDate(w,timeZone)>=addCalendarDays(today,-42)))emit('no_recent_workouts',past.slice(0,1))
  }
  return alerts
 }

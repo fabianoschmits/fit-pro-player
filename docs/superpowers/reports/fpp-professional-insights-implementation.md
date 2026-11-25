@@ -38,7 +38,7 @@ Novas respostas autenticadas usam diário individual no estado local já escopad
 
 A importação legada é incremental e idempotente. Só limpa o valor legado exato confirmado; preserva outras preferências e tombstones. O dedicado prevalece; legado divergente é conservado em conflito pendente, sem decidir por relógio. Uma PWA antiga pode reintroduzir um legado nas preferências, mas não sobrescreve o dedicado. Novas respostas deixam de consumir o limite de 262.144 bytes das preferências. Durante indisponibilidade da migration, novas operações permanecem locais e pendentes.
 
-## Validação direcionada
+## Validação anterior da implementação 04
 
 Executada em worktree isolado, sem incorporar `index.css` ou `output/` locais. Nenhuma dependência adicionada.
 
@@ -61,10 +61,26 @@ Capturas sintéticas selecionadas ficam fora do Git nos diretórios de test-resu
 
 ## Limitações e publicação futura
 
-- A consulta atual só comprova execuções profissionais autorizadas, não todo o histórico pessoal do aluno. Retorna cobertura parcial: redução de frequência, ausência e consistência ficam conservadoramente suprimidas na integração real até existir prova de cobertura completa. O motor e testes cobrem essas regras com evidência completa. As demais regras usam somente registros efetivamente autorizados.
-- Conflitos de revisão/legado são preservados e identificados; não há descarte nem resolução automática. Uma interface específica de reconciliação poderá ser necessária para conflitos reais entre dispositivos.
+- A cobertura é exclusivamente das execuções autorizadas deste profissional; nunca comprova todo o histórico pessoal. As três regras de período completo são condicionais à prova descrita abaixo. Acima de 200 execuções, fuso não registrado/inválido ou intervalo insuficiente, continuam suprimidas.
+- Conflitos de revisão/legado têm resolução explícita no detalhe do check-in; não há mescla automática ou descarte silencioso.
 - Sem suíte integral, outros browsers, builds mobile/web redundantes ou auditoria geral. Browser usa transporte sintético; autorização foi exercitada no banco descartável, não em contas reais.
 - A prévia depende da migration aprovada para funcionalidade remota completa. Não foi aplicado SQL no Supabase de produção para habilitá-la.
 - Ordem futura: aplicar migration aditiva aprovada, verificar permissões, publicar frontend compatível das etapas 03/04, acompanhar importação incremental, confirmar gravação/leitura e acompanhamento. Rollback do frontend não exige remover as tabelas ou contratos legados.
 
 Entrega somente em branch para revisão; sem merge, publicação, implementação 05/06 ou alteração da Home, fórmulas dos BodyMaps e cálculos semanais.
+
+## Correções finais — 25/11/2026
+
+Referência revisada: `35f69171696b66df0c2bfca3c070e61fad20c890`. Continuação na mesma branch, sem alterações na Home, fórmulas, snapshots ou main.
+
+- **Cobertura:** RPC calcula quantidade de execuções concluídas autorizadas e existência de datas inválidas no backend, antes do limite de 200. Retorna escopo, status, intervalo local, truncamento e `personalComplete:false`. A prova exige assignment acessível, fuso conhecido e ausência de truncamento/datas ausentes. O início respeita a aceitação do vínculo; seu primeiro dia incompleto não é considerado coberto. Paginação de alunos não representa totais globais de alertas. Cancelados/ativos/futuros não entram. Há 10 tipos habilitados: 7 baseados em evidências presentes e 3 condicionais (frequência, ausência, consistência) agora disponíveis no escopo profissional comprovado. A interface explicita esse escopo.
+- **Fuso/plano:** somente o escalar `reminder.tz` já persistido é projetado, validado em `pg_timezone_names`. Sem ele, usa America/Sao_Paulo explicitamente, identifica fallback e suprime conclusões de período completo. O mesmo fuso acompanha alerta e datas relacionadas. `activePlan` comprova assignment ativo deste vínculo realmente selecionado em athlete_schedules, sem expor preferências.
+- **Fila/conflitos:** revisão conflitante bloqueia somente o treino afetado e seus dependentes. Outros treinos continuam; conflitos e versões locais/remotas sobrevivem ao reload fora das preferências sincronizadas. Erros globais interrompem. Falha de replaceState interrompe o adaptador, inclusive após ACK, evitando repetição automática. A sheet mostra ambas as respostas: manter local cria operação nova na revisão remota e revoga compartilhamentos; usar sincronizada descarta somente operações autorizadas daquele treino. Tombstones são preservados; compartilhamento posterior exige nova escolha explícita. Migração divergente também usa essa resolução.
+- **Vínculos encerrados:** edição de consentimentos filtra ciclos que não estão na lista ativa. A RPC permite revogação vazia de grant antigo e edição privada sem reativar vínculo; qualquer concessão não vazia continua exigindo vínculo ativo. Revogações seguem filtrando motivos e fingerprints; notas nunca integram o contexto profissional. Cache continua somente em memória, escopado por conta e invalidado em refresh/foco/eventos de vínculo/offline.
+- **Migration final:** `202611250002_professional_coverage_checkin_conflicts.sql`, incremental e aditiva, após `202611250001`. Original preservada porque não foi possível atestar o histórico de aplicação de todos os ambientes persistentes. Nenhuma migration foi aplicada remotamente nesta correção.
+
+Validações desta rodada: ESLint dos arquivos alterados, TypeScript e i18n aprovados (11 idiomas/1.969 chaves); **19 testes unitários direcionados**; SQL PostgreSQL/WASM descartável com **23 asserções**, rejeições de autorização/revisão e 35 statements; **1 fluxo Chromium mobile** de conflito, escolha local sem consentimento automático, sincronização e reload. Testes cobrem também cobertura parcial/completa, limites, fuso, resolução remota, tombstone legado, isolamento de fila e falhas de persistência. Sem novas exclusões/skips. Não foram repetidas suítes completas, matriz de navegadores ou PWA integral.
+
+`npm run build:vercel`: aprovado. Primeiro build identificou byte de codificação inválido em texto novo da sheet, corrigido antes da repetição do mesmo build. Precache permanece 368 entradas (~56,77 MB); tela ~8,93 kB, hook/motor ~7,00 kB antes de gzip. Nenhum asset anatômico ou estratégia de cache alterado.
+
+Prévia de branch: https://fit-pro-player-git-feat-fp-27eb42-fabianoschmits-9996s-projects.vercel.app — recibo do commit/deployment final na entrega. Funcionalidade remota depende da revisão/aplicação das migrations; não foi usado Supabase de produção para habilitá-la. Ordem futura permanece: migrations aprovadas, permissões, frontend compatível e migração incremental. Publicação não realizada.

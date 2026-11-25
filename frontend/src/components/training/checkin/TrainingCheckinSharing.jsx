@@ -13,7 +13,7 @@ export default function TrainingCheckinSharing({ownerScope,selected,shares,onCha
   return()=>{alive=false}
  },[ownerScope])
  if(ownerScope==='visitor')return <p className="small dim">{t('Only you can see this response.')}</p>
- const update=(relationshipId,reasons)=>onChange([...shares.filter(s=>s.relationshipId!==relationshipId),...(reasons.length?[{relationshipId,reasons,sensitiveConsent:reasons.includes('pain_or_discomfort')}]:[])])
+ const update=(relationshipId,reasons)=>onChange([...shares.filter(s=>s.relationshipId!==relationshipId&&professionals?.some(pro=>pro.relationshipId===s.relationshipId)),...(reasons.length?[{relationshipId,reasons,sensitiveConsent:reasons.includes('pain_or_discomfort')}]:[])])
  return <fieldset className="checkin-share-controls"><legend>{t('Privacy')}</legend>
  <p className="small">{t('Your note remains private. Only explicitly selected reasons are shared with the chosen professional.')}</p>
  {!professionals&&<p role="status">{t(error?'Sharing is unavailable. Your response can still be saved privately.':'Loading…')}</p>}

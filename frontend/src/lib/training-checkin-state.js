@@ -3,7 +3,7 @@ import { useOptionalAuth } from '../auth/auth-context.js'
 import { useStore } from '../store/useStore.js'
 import { withTrainingCheckin } from './training-checkin.js'
 import { normalizeTrainingCheckin } from './training-checkin-data.js'
-import { queueCheckin } from './training-checkin-repository.js'
+import { queueCheckin, resolveCheckinConflict } from './training-checkin-repository.js'
 const EMPTY = Object.freeze({})
 export const checkinScopeKey = store => {
  const scope = store.getActiveLocalScope?.()
@@ -17,7 +17,7 @@ export function useTrainingCheckins() {
  const authorized = ready && expected === scopeKey
  const records=useMemo(()=>authorized?{...state.trainingCheckIns,...state.trainingCheckinRecords}:EMPTY,[authorized,state.trainingCheckIns,state.trainingCheckinRecords])
  const syncError=state.checkinSyncError||(Object.keys(state.checkinMigrationConflicts||{}).length?'conflict':state.pendingCheckinOperations?.length?'pending':null)
- return { records, workouts: authorized ? state.workouts : [], scopeKey: authorized ? scopeKey : null, syncError:authorized?syncError:null }
+ return { records, conflicts:authorized?state.checkinConflicts||EMPTY:EMPTY, workouts: authorized ? state.workouts : [], scopeKey: authorized ? scopeKey : null, syncError:authorized?syncError:null }
 }
 export function saveTrainingCheckin(workoutId, input, ownerScope, shares=null) {
  const store = useStore.getState()
@@ -35,4 +35,10 @@ export async function openTrainingCheckin(workoutId, closeCurrent = undefined, o
  if (checkinScopeKey(store) !== ownerScope || !store.S.workouts.some(workout => workout.id === workoutId)) return
  closeCurrent?.()
  useUI.getState().openSheet(close => React.createElement(TrainingCheckinSheet, { key: ownerScope + workoutId, workoutId, ownerScope, close, onReturn }))
+}
+
+export function resolveTrainingCheckin(workoutId,ownerScope,choice) {
+ const store=useStore.getState()
+ if(!ownerScope||ownerScope==='visitor'||!store.ready||checkinScopeKey(store)!==ownerScope)throw new Error('training-checkin-scope-changed')
+ if(!store.replaceState(resolveCheckinConflict(store.S,ownerScope,workoutId,choice)))throw new Error('training-checkin-local-write-failed')
 }
