@@ -90,3 +90,15 @@ Prévia de branch: https://fit-pro-player-git-feat-fp-27eb42-fabianoschmits-9996
 Correções verificadas e enviadas no commit `afc0af04a3990fb59e1d299205138b6064cd518f`. HEAD final da entrega (incluindo este recibo documental): [branch no GitHub](https://github.com/fabianoschmits/fit-pro-player/commits/feat/fpp-professional-insights). Push confirmado, sem alterações pendentes no worktree da implementação.
 
 Prévia criada para o commit das correções: `dpl_6rzd49s9hpWe2nkLYyomnAq5LFrZ`, https://fit-pro-player-r3ks0yiv9-fabianoschmits-9996s-projects.vercel.app — BUILDING na primeira consulta. A URL de branch acima acompanha o HEAD; estado mais recente e hash final no recibo da resposta. Nenhuma publicação em produção ou aplicação remota de migration.
+
+## Publicação conjunta 03/04 — preparação em 25/11/2026
+
+Correção residual: rejeição de concessão a vínculo encerrado agora usa SQLSTATE específico `PCK01`, isolado por treino no mesmo mecanismo de conflito. Resposta privada/diário permanecem locais; manter minha resposta exige ação explícita e envia shares vazio. Erros 42501 de autenticação/propriedade continuam globais. Migration incremental `202611250003_checkin_ended_share_rejection.sql`; migrations anteriores inalteradas.
+
+Projeto de produção confirmado em duas fontes: bundle do domínio oficial e API de gerenciamento autorizada: **Fpp / bgqavxoxwgheloeubbpf / sa-east-1**. Histórico remoto tinha somente as três migrations desta entrega pendentes. Contratos das nove tabelas dependentes conferidos. **202611250001, 202611250002 e 202611250003 aplicadas e registradas**, em ordem, cada uma com transação incluindo recibo em schema_migrations. Nenhum backfill/limpeza global de dados foi executado. Frontend anterior continua compatível com as estruturas aditivas.
+
+Segurança pós-aplicação: quatro tabelas com RLS, nenhum SELECT anônimo; políticas privadas usam auth.uid(); operações e estados sem SELECT direto autenticado; três RPCs públicas do recurso com SECURITY DEFINER/search_path explícito, EXECUTE autenticado e sem EXECUTE anônimo. Guardas de vínculo/consentimento e ausência de projeção de note confirmadas no catálogo de produção. Teste de autorização com dados sintéticos somente no PostgreSQL/WASM descartável: 24 asserções e rejeições esperadas, 35 statements. Nenhum treino de usuário real foi criado/modificado para validação.
+
+Verificações novas: 9 testes do repositório de check-ins aprovados (incluem os 2 casos residuais); ESLint dos 2 arquivos JS alterados, TypeScript e um build Vercel aprovados. Nenhuma tradução alterada; i18n anterior reaproveitado. Sem suítes integrais, matriz Playwright ou PWA completa. Compatibilidade offline coberta pelo diário no teste direcionado, incluindo salvamento privado após reconexão.
+
+Main anterior: `6673db825d042e8ab948b79018dd9f72e901db1b`. Rollback frontend disponível: **dpl_83KckSeWiwqggxnZCRGFMSb7PnVa**, https://fit-pro-player-pcxammmh0-fabianoschmits-9996s-projects.vercel.app, READY, target production. Em rollback, preservar as três migrations aditivas e dados. Recibo de deployment/commit e smoke test será registrado após o deploy oficial da main.

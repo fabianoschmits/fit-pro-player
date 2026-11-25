@@ -82,7 +82,7 @@ export function createTrainingCheckinSync({repository,getState,replaceState,isCu
       }
       if(!replace({...fresh,pendingCheckinOperations:queue,trainingCheckIns:legacyCopy,trainingCheckinRecords:{...fresh.trainingCheckinRecords,[op.workoutId]:newer?{...fresh.trainingCheckinRecords[op.workoutId],revision:ack.revision}:{...ack,shares:op.shares??fresh.trainingCheckinRecords?.[op.workoutId]?.shares??[]}}}))return
      } catch(error) {
-      if(error.code==='40001') {
+      if(error.code==='40001'||error.code==='PCK01') {
        // Block only this workout, including its dependent operations. No retry
        // until the owner explicitly chooses a revision in the existing sheet.
        const latestRemote=await repository.load()

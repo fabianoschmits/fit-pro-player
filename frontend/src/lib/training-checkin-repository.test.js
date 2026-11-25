@@ -70,3 +70,23 @@ it('preserves revision conflicts and never sends the previous account queue',asy
  await sync.flush();expect(state.checkinSyncError).toBe('conflict');expect(state.pendingCheckinOperations).toHaveLength(1)
  sync.dispose();await sync.flush();expect(writes).toBe(1)
 })
+
+it('isolates an offline grant rejected after link termination and confirms private saving explicitly',async()=>{
+ let online=false,state=queueCheckin({},'owner','a',{...answer,operationId:'a'},[{relationshipId:'ended',reasons:['time_constraint']}])
+ state=queueCheckin(state,'owner','b',{...answer,operationId:'b'},[])
+ const sent=[],remote={}
+ const sync=createTrainingCheckinSync({repository:{load:async()=>remote,save:async op=>{sent.push(op);if(op.shares?.length)throw {code:'PCK01'};remote[op.workoutId]={...op.record,revision:1};return remote[op.workoutId]}},accountId:'owner',getState:()=>state,replaceState:s=>{state=s;return true},isCurrent:()=>true,isOnline:()=>online})
+ await sync.flush();expect(sent).toHaveLength(0)
+ online=true;await sync.flush()
+ expect(sent.map(op=>op.workoutId)).toEqual(['a','b']);expect(state.trainingCheckinRecords.a.note).toBe('private');expect(state.pendingCheckinOperations).toHaveLength(1)
+ state=resolveCheckinConflict(state,'owner','a','local')
+ expect(state.pendingCheckinOperations[0].shares).toEqual([])
+ await sync.flush()
+ expect(state.pendingCheckinOperations).toHaveLength(0);expect(remote.a.note).toBe('private');expect(sent.at(-1).shares).toEqual([])
+})
+it('does not classify authentication or workout ownership rejection as a recoverable share conflict',async()=>{
+ let state=queueCheckin({},'owner','a',answer),sent=[]
+ state=queueCheckin(state,'owner','b',{...answer,operationId:'b'})
+ const sync=createTrainingCheckinSync({repository:{load:async()=>({}),save:async op=>{sent.push(op.workoutId);throw {code:'42501'}}},accountId:'owner',getState:()=>state,replaceState:s=>{state=s;return true},isCurrent:()=>true,isOnline:()=>true})
+ await sync.flush();expect(sent).toEqual(['a']);expect(state.checkinConflicts).toEqual({});expect(state.pendingCheckinOperations).toHaveLength(2)
+})

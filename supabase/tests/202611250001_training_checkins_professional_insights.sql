@@ -60,7 +60,8 @@ begin
  perform set_config('request.jwt.claim.sub','11250000-0000-4000-8000-000000000002',true);
  saved:=public.save_training_checkin('legacy-text-id',rec,4,'11250000-0000-4000-8000-000000000041','[{"relationshipId":"11250000-0000-4000-8000-000000000010","reasons":[]}]');
  perform pg_temp.assert_true(saved->>'note'='PRIVATE','ended cycle permits private edit and explicit revocation');
- begin perform public.save_training_checkin('legacy-text-id',rec,5,'11250000-0000-4000-8000-000000000042',shares);raise exception 'ended grant accepted';exception when insufficient_privilege then null;end;
+ begin perform public.save_training_checkin('legacy-text-id',rec,5,'11250000-0000-4000-8000-000000000042',shares);raise exception 'ended grant accepted';exception when sqlstate 'PCK01' then null;end;
+ perform pg_temp.assert_true(not exists(select 1 from public.training_checkin_shares where checkin_id=(saved->>'id')::uuid and revoked_at is null and cardinality(shared_reasons)>0),'rejected ended grant never confers access');
  saved:=public.save_training_checkin('legacy-text-id','{"version":1,"status":"removed"}',5,'11250000-0000-4000-8000-000000000040');
  perform pg_temp.assert_true(saved->>'note'='' and saved->'reasons'='[]','removed record discards note and reasons');
  saved:=public.save_training_checkin('legacy-text-id',rec,0,'11250000-0000-4000-8000-000000000030',null,true);
