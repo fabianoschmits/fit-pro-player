@@ -84,3 +84,9 @@ Validações desta rodada: ESLint dos arquivos alterados, TypeScript e i18n apro
 `npm run build:vercel`: aprovado. Primeiro build identificou byte de codificação inválido em texto novo da sheet, corrigido antes da repetição do mesmo build. Precache permanece 368 entradas (~56,77 MB); tela ~8,93 kB, hook/motor ~7,00 kB antes de gzip. Nenhum asset anatômico ou estratégia de cache alterado.
 
 Prévia de branch: https://fit-pro-player-git-feat-fp-27eb42-fabianoschmits-9996s-projects.vercel.app — recibo do commit/deployment final na entrega. Funcionalidade remota depende da revisão/aplicação das migrations; não foi usado Supabase de produção para habilitá-la. Ordem futura permanece: migrations aprovadas, permissões, frontend compatível e migração incremental. Publicação não realizada.
+
+### Recibo Git e prévia
+
+Correções verificadas e enviadas no commit `afc0af04a3990fb59e1d299205138b6064cd518f`. HEAD final da entrega (incluindo este recibo documental): [branch no GitHub](https://github.com/fabianoschmits/fit-pro-player/commits/feat/fpp-professional-insights). Push confirmado, sem alterações pendentes no worktree da implementação.
+
+Prévia criada para o commit das correções: `dpl_6rzd49s9hpWe2nkLYyomnAq5LFrZ`, https://fit-pro-player-r3ks0yiv9-fabianoschmits-9996s-projects.vercel.app — BUILDING na primeira consulta. A URL de branch acima acompanha o HEAD; estado mais recente e hash final no recibo da resposta. Nenhuma publicação em produção ou aplicação remota de migration.
