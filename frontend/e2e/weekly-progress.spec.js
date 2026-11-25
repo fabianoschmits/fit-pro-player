@@ -91,15 +91,25 @@ test('weekly direct route shows equivalent Wednesday metrics and preserves selec
   await openMainNavigation(page)
 })
 
-test('Home card follows the primary workout action and returns to Home', async ({ page }, info) => {
+test('Home integrated calendar follows the workout action and returns to its selected week', async ({ page }, info) => {
   await seed(page, { state: weeklyState() }); await page.goto('/#/home')
-  const preview = page.locator('[data-weekly-preview="home"]')
-  await expect(preview).toContainText('Sua semana')
+  const preview = page.locator('.home-week-block .home-week-summary-link')
+  await expect(page.locator('[data-weekly-preview="home"]')).toHaveCount(0)
+  await expect(preview).toContainText('Ver resumo semanal')
+  await expect(preview).toHaveAttribute('href', '#/progress/weekly?week=2026-11-16')
+  await page.getByRole('button', { name: 'Semana anterior', exact: true }).click()
+  await expect(preview).toHaveAttribute('href', '#/progress/weekly?week=2026-11-09')
+  await expect(page.locator('[data-home-week-count]')).toContainText('3')
   const action = await page.locator('[data-home-section="next-action"]').boundingBox(), card = await preview.boundingBox()
   expect(card.y).toBeGreaterThanOrEqual(action.y + action.height)
   await page.screenshot({ style: '#tabbar-debug{display:none}', path: info.outputPath('weekly-home.png'), fullPage: true })
   await preview.click(); await expect(page).toHaveURL(/progress\/weekly/)
   await page.getByRole('button', { name: 'Voltar', exact: true }).click(); await expect(page).toHaveURL(/#\/home$/)
+  await expect(preview).toHaveAttribute('href', '#/progress/weekly?week=2026-11-09')
+  await page.getByRole('button', { name: 'Esta semana', exact: true }).click()
+  await page.getByRole('button', { name: 'Próxima semana', exact: true }).click()
+  await expect(preview).toHaveCount(0)
+  await expect(page.locator('.home-week-strip .wday')).toHaveCount(7)
 })
 
 test('Progress card precedes the training map and performance opens existing exercise statistics', async ({ page }, info) => {
@@ -279,4 +289,38 @@ for (const width of [320, 360, 390, 430, 600, 768, 1280]) for (const theme of ['
   for (const card of await page.locator('[data-weekly-metric]').all()) expect(await card.evaluate(element => element.scrollWidth <= element.clientWidth + 1)).toBe(true)
   await openMainNavigation(page)
   if ([320, 390, 1280].includes(width)) await page.screenshot({ style: '#tabbar-debug{display:none}', path: info.outputPath(`weekly-${width}-${theme}.png`), fullPage: true })
+})
+
+
+test('Home calendar stays compact and accessible in both themes at supported widths', async ({ page }, info) => {
+  const state = weeklyState()
+  for (const workout of state.workouts) { workout.start = Date.parse(`${workout.d}T10:00:00Z`); workout.end = workout.start + workout.durationMs }
+  await seed(page, { state }); await page.goto('/#/home')
+  for (const width of [320, 360, 390, 430, 768, 1280]) {
+    await page.setViewportSize({ width, height: 900 })
+    const section = page.locator('.home-week-block'), link = section.locator('.home-week-summary-link')
+    await expect(link).toBeVisible()
+    await expect(section.locator('.home-week-strip .wday')).toHaveCount(7)
+    const box = await link.boundingBox()
+    expect(box.height).toBeGreaterThanOrEqual(44)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+    await page.screenshot({ style: '#tabbar-debug{display:none}', path: info.outputPath(`home-weekly-${width}-dark.png`), fullPage: true })
+  }
+  await page.locator('.home-theme-toggle').click()
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.locator('.home-week-summary-link')).toBeVisible()
+  await page.screenshot({ style: '#tabbar-debug{display:none}', path: info.outputPath('home-weekly-390-light.png'), fullPage: true })
+})
+
+test('Home calendar counter waits for authenticated history without claiming an empty week', async ({ page }) => {
+  await seed(page, { authenticated: true, state: stateFixture() })
+  let finishRead
+  const pending = new Promise(resolve => { finishRead = resolve })
+  await page.route('**/rest/v1/workout_sessions*', async route => { await pending; await route.fulfill({ json: [] }) })
+  await page.goto('/#/home')
+  await expect(page.locator('[data-home-week-count]')).toHaveText('Atualizando seu histórico…')
+  await expect(page.locator('.home-week-strip .wday')).toHaveCount(7)
+  finishRead()
+  await expect(page.locator('[data-home-week-count]')).toContainText('0')
+  await expect(page.locator('[data-home-week-count]')).not.toContainText('Atualizando')
 })

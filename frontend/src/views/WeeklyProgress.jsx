@@ -62,7 +62,7 @@ export default function WeeklyProgress() {
   const backTo = location.state?.weeklyBackTo === '/home' ? '/home' : location.state?.weeklyBackTo === '/progress/history' ? '/progress/history' : '/progress'
   return <div key={scopeKey} className="weekly-progress-view fpp-ui-view">
     {summary ? <>
-      <WeeklyProgressHeader summary={summary} firstWeek={firstWeek} currentWeek={current} onSelect={select} backTo={backTo} />
+      <WeeklyProgressHeader summary={summary} firstWeek={firstWeek} currentWeek={current} onSelect={select} backTo={backTo} backState={backTo === '/home' ? { homeWeek: location.state?.homeWeek } : undefined} />
       {!online && <p className="weekly-notice" role="status">{t("You're offline. Showing data available on this device.")}</p>}
       {availability.updating && <p className="weekly-notice" role="status">{t('Updating your history…')}</p>}
       {!historyComplete && <p className="weekly-notice" role="status">{t(availability.unavailable ? 'Your history is not available on this device yet.' : 'History partially available.')}</p>}
@@ -78,6 +78,6 @@ export default function WeeklyProgress() {
       <WeeklyPerformanceSummary key={`performance:${week}`} performance={summary.performance} exerciseCatalog={exerciseCatalog} displayUnit={displayUnit || 'kg'} />
       <WeeklyWorkoutList workouts={summary.workouts} selectedDay={selectedDay} onClearDay={() => setSelectedDay(null)} onWorkout={openWorkout} onMap={id => navigate(trainingComparisonHref(id))} />
       </>}
-    </> : <><AppHeader title={t('Weekly summary')} subtitle={t('Track your progress each week.')} backTo={backTo} /><WeeklyProgressSkeleton /></>}
+    </> : <><AppHeader title={t('Weekly summary')} subtitle={t('Track your progress each week.')} backTo={backTo} backState={backTo === '/home' ? { homeWeek: location.state?.homeWeek } : undefined} /><WeeklyProgressSkeleton /></>}
   </div>
 }

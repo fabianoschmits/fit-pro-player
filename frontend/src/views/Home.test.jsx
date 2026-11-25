@@ -19,12 +19,17 @@ const mocks = vi.hoisted(() => ({
       displayUnit: 'kg',
     },
   },
+  ready: true,
+  auth: null,
+  scope: { kind: 'anonymous' },
+  history: undefined,
   update: vi.fn(recipe => recipe(mocks.state.S)),
 }))
 
 vi.mock('../store/useStore.js', () => ({
-  useStore: selector => selector({ S: mocks.state.S, update: mocks.update }),
+  useStore: selector => selector({ S: mocks.state.S, ready: mocks.ready, accountHistory: mocks.history, getActiveLocalScope: () => mocks.scope, update: mocks.update }),
 }))
+vi.mock('../auth/auth-context.js', () => ({ useOptionalAuth: () => mocks.auth }))
 vi.mock('../sheets.jsx', () => ({
   bwSheet: vi.fn(),
   goalSheet: vi.fn(),
@@ -50,6 +55,10 @@ let container
 
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  mocks.auth = null
+  mocks.scope = { kind: 'anonymous' }
+  mocks.history = undefined
+  mocks.ready = true
   mocks.state.S.theme = 'dark'
   mocks.update.mockClear()
   mocks.update.mockImplementation(recipe => recipe(mocks.state.S))
@@ -118,4 +127,82 @@ describe('home next action', () => {
     await act(async () => root.render(<MemoryRouter><Home /></MemoryRouter>))
     expect(container.querySelector('[data-home-section="next-action"]')?.textContent).toContain('Resume')
   })
+})
+
+describe('integrated weekly calendar', () => {
+  it('contains one summary link immediately after the existing calendar', async () => {
+    await act(async () => { root.render(<MemoryRouter><Home /></MemoryRouter>) })
+    expect(container.querySelector('[data-weekly-preview="home"]')).toBeNull()
+    const section = container.querySelector('.home-week-block')
+    const link = section.querySelector('.home-week-summary-link')
+    expect(link).toBeTruthy()
+    expect(link.previousElementSibling.classList.contains('home-week-strip')).toBe(true)
+    expect(container.querySelectorAll('.home-week-summary-link')).toHaveLength(1)
+  })
+  it('opens the selected past week and hides the access in future weeks', async () => {
+    await act(async () => { root.render(<MemoryRouter><Home /></MemoryRouter>) })
+    const initial = container.querySelector('.home-week-summary-link')?.getAttribute('href')
+    await act(async () => { container.querySelector('[aria-label="Previous week"]').click() })
+    expect(container.querySelector('.home-week-summary-link')?.getAttribute('href')).not.toBe(initial)
+    await act(async () => { container.querySelector('[aria-label="This week"]').click() })
+    await act(async () => { container.querySelector('[aria-label="Next week"]').click() })
+    expect(container.querySelector('.home-week-summary-link')).toBeNull()
+    expect(container.querySelectorAll('.home-week-strip .wday')).toHaveLength(7)
+  })
+})
+
+
+describe('weekly calendar history reliability', () => {
+  it('keeps loading explicit without a false zero', async () => {
+    mocks.ready = false
+    await act(async () => { root.render(<MemoryRouter><Home /></MemoryRouter>) })
+    expect(container.querySelector('[data-home-week-count]').textContent).toBe('Updating your history…')
+    expect(container.querySelectorAll('.home-week-strip .done')).toHaveLength(0)
+  })
+  it('restores the selected calendar week from scoped return state', async () => {
+    await act(async () => { root.render(<MemoryRouter initialEntries={[{ pathname: '/home', state: { homeWeek: { week: '2026-10-05', scopeKey: 'visitor' } } }]}><Home /></MemoryRouter>) })
+    expect(container.querySelector('.home-week-summary-link').getAttribute('href')).toContain('week=2026-10-05')
+    expect(container.querySelector('[data-home-week-count]').textContent).not.toContain('week streak')
+  })
+})
+
+
+describe('selected week counts', () => {
+  it('deduplicates valid sessions and never borrows the current goal for a past week', async () => {
+    const saved = mocks.state.S.workouts
+    mocks.state.S.workouts = [
+      { id: 'one', d: '2026-10-05', entries: [] },
+      { id: 'one', d: '2026-10-05', entries: [] },
+      { id: 'two', d: '2026-10-06', entries: [] },
+      { id: 'cancelled', d: '2026-10-06', status: 'cancelled', entries: [] },
+    ]
+    await act(async () => { root.render(<MemoryRouter initialEntries={[{ pathname: '/home', state: { homeWeek: { week: '2026-10-05', scopeKey: 'visitor' } } }]}><Home /></MemoryRouter>) })
+    expect(container.querySelector('[data-home-week-count]').textContent.trim()).toBe('2 Completed workouts')
+    expect(container.querySelectorAll('.home-week-strip .done')).toHaveLength(2)
+    mocks.state.S.workouts = saved
+  })
+  it('withholds old account counts and completion marks during an account transition', async () => {
+    mocks.auth = { status: 'authenticated', user: { id: 'new-account' } }
+    mocks.scope = { kind: 'account', userId: 'old-account' }
+    await act(async () => { root.render(<MemoryRouter><Home /></MemoryRouter>) })
+    expect(container.querySelector('[data-home-week-count]').textContent).toBe('Updating your history…')
+    expect(container.querySelectorAll('.home-week-strip .done')).toHaveLength(0)
+    expect(container.querySelectorAll('.home-week-strip .plan')).toHaveLength(0)
+  })
+})
+
+
+it('highlights today using the profile calendar near a timezone boundary', async () => {
+  vi.useFakeTimers()
+  vi.setSystemTime(new Date('2026-11-22T16:00:00Z'))
+  const previous = mocks.state.S.profile
+  mocks.state.S.profile = { timeZone: 'Asia/Tokyo' }
+  try {
+    await act(async () => { root.render(<MemoryRouter><Home /></MemoryRouter>) })
+    expect(container.querySelector('.home-week-summary-link').getAttribute('href')).toContain('week=2026-11-23')
+    expect(container.querySelector('.home-week-strip .today .num').textContent).toBe('23')
+  } finally {
+    mocks.state.S.profile = previous
+    vi.useRealTimers()
+  }
 })

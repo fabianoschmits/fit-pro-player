@@ -5,10 +5,10 @@ import { t } from '../../../lib/i18n.js'
 import { getPreviousWeek, getNextWeek } from '../../../lib/weekly-progress-calendar.js'
 import { weeklyDate } from '../../../lib/weekly-progress-format.js'
 
-export default function WeeklyProgressHeader({ summary, firstWeek, currentWeek, onSelect, backTo = '/progress' }) {
+export default function WeeklyProgressHeader({ summary, firstWeek, currentWeek, onSelect, backTo = '/progress', backState = undefined }) {
   const { period, days } = summary
   return <>
-    <AppHeader title={t('Weekly summary')} subtitle={t('Track your progress each week.')} backTo={backTo} />
+    <AppHeader title={t('Weekly summary')} subtitle={t('Track your progress each week.')} backTo={backTo} backState={backState} />
     <section className="weekly-selector" aria-label={t('Choose week')}>
       <div className="weekly-selector-row">
         <button type="button" className="iconbtn" aria-label={t('Previous week')} disabled={period.start <= firstWeek} onClick={() => onSelect(getPreviousWeek(period.start))}><Icon name="chevronLeft" /></button>

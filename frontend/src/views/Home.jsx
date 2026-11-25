@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from '../store/useStore.js'
 import { maybeOpenPwaInstallPrompt } from '../components/PwaInstallPrompt.jsx'
 import { exOr, exerciseName } from '../lib/exercises.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, workoutVolume, setsDone, setsDoneActive } from '../lib/history.js'
-import { fmtNum, fmtDate, fmtDur, fmtTrainingVolume, todayISO, isoOf, weekKey, DAYS, exCount, sentenceCase, workoutDuration } from '../lib/format.js'
+import { fmtNum, fmtDate, fmtDur, fmtTrainingVolume, todayISO, isoOf, DAYS, exCount, sentenceCase, workoutDuration } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { planSetupProgress } from '../lib/ux.js'
 import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor, repeatWorkout, WorkoutRow, workoutDetailSheet } from '../sheets.jsx'
@@ -16,7 +16,11 @@ import { routineName } from '../lib/starter.js'
 import PlanProgress from '../components/PlanProgress.jsx'
 import { toDisplayMass } from '../lib/mass.js'
 import { trainingComparisonHref } from '../components/training/TrainingComparisonPreview.jsx'
-import WeeklyProgressPreview from '../components/training/weekly/WeeklyProgressPreview.jsx'
+import { useWeeklyClock } from '../lib/use-weekly-clock.js'
+import { useWeeklyHistory } from '../lib/use-weekly-history.js'
+import { buildWeeklyPreview } from '../lib/weekly-progress-core.js'
+import { addCalendarDays, calendarDate, getWeekStart, isCalendarDate } from '../lib/weekly-progress-calendar.js'
+import '../home-weekly.css'
 
 function nextPlannedWorkout(S, from) {
   for (let offset = 1; offset <= 14; offset++) {
@@ -41,7 +45,20 @@ export default function Home() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
-  const [weekOffset, setWeekOffset] = useState(0)
+  const location = useLocation()
+  const { now, online, timeZone } = useWeeklyClock(S.profile?.timeZone || S.reminder?.tz)
+  const { workouts, availability, scopeKey } = useWeeklyHistory(online)
+  const currentWeek = getWeekStart(now, timeZone)
+  const restored = location.state?.homeWeek
+  const [selection, setSelection] = useState(() => restored?.scopeKey === scopeKey && isCalendarDate(restored.week) ? restored : null)
+  const selectedWeek = selection?.scopeKey === scopeKey ? selection.week : currentWeek
+  const weekOffset = Math.round((Date.parse(selectedWeek) - Date.parse(currentWeek)) / 604800000)
+  const setWeekOffset = value => {
+    const offset = typeof value === 'function' ? value(weekOffset) : value
+    setSelection(offset === 0 ? null : { week: addCalendarDays(currentWeek, offset * 7), scopeKey })
+  }
+  const canComparePeriods = availability.canComparePeriods
+  const summary = useMemo(() => buildWeeklyPreview({ workouts, weekStart: selectedWeek, now, timeZone, canComparePeriods }), [workouts, selectedWeek, now, timeZone, canComparePeriods])
   const [weightExpanded, setWeightExpanded] = useState(false)
   const reducedMotion = useReducedMotion()
   const lightTheme = S.theme === 'light'
@@ -65,21 +82,20 @@ export default function Home() {
   const displayUnit = S.displayUnit || 'kg'
   const displayMass = value => toDisplayMass(value, displayUnit)
 
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7) + weekOffset * 7)
+  const monday = new Date(`${selectedWeek}T12:00:00`)
   const sunday = new Date(monday)
   sunday.setDate(monday.getDate() + 6)
-  const doneDays = new Set(S.workouts.map(workout => workout.d))
+  const doneDays = new Set(weekOffset <= 0 ? summary.days.filter(day => day.workouts > 0).map(day => day.date) : [])
   const strip = []
   for (let i = 0; i < 7; i++) {
     const date = new Date(monday)
     date.setDate(monday.getDate() + i)
     const iso = isoOf(date)
-    const effectiveId = effectiveRoutineId(S, iso)
+    const effectiveId = availability.scopeMatches ? effectiveRoutineId(S, iso) : null
     const override = S.dayPlan[iso] !== undefined
     const done = doneDays.has(iso)
     const dot = done ? ' done' : override && effectiveId ? ' ovr' : effectiveId ? ' plan' : ''
-    strip.push(<button type="button" key={iso} className={'wday' + (iso === isoToday ? ' today' : '')} onClick={() => dayOverrideSheet(iso)}
+    strip.push(<button type="button" key={iso} className={'wday' + (iso === calendarDate(now, timeZone) ? ' today' : '')} onClick={() => dayOverrideSheet(iso)}
       aria-label={date.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}>
       <span className="lbl">{t(DAYS[date.getDay()])}</span><span className="num">{date.getDate()}</span><span className={'dot' + dot} />
     </button>)
@@ -87,7 +103,7 @@ export default function Home() {
   const weekLabel = weekOffset === 0
     ? t('This week')
     : `${monday.getDate()} ${monday.toLocaleDateString(dateLocale(), { month: 'short' })} - ${sunday.getDate()} ${sunday.toLocaleDateString(dateLocale(), { month: 'short' })}`
-  const workoutsThisWeek = S.workouts.filter(workout => weekKey(workout.d) === weekKey(isoToday)).length
+  const workoutsThisWeek = summary.metrics.workouts
   const plannedPerWeek = S.planMode === 'daily' ? 0 : Object.keys(S.week).filter(key => S.week[key]).length
   const bwPoints = S.bodyweight.slice(-90).map(entry => ({ t: new Date(entry.d).getTime(), y: displayMass(entry.w), d: entry.d, iso: entry.d }))
   const weightStart = bwPoints[0]
@@ -211,11 +227,13 @@ export default function Home() {
 
     {planProgress && <PlanProgress progress={planProgress} />}
     <div data-home-section="next-action">{renderNow()}</div>
-    <WeeklyProgressPreview compact />
 
     <section className="home-week-block" data-home-section="week-progress">
       <div className="home-section-head">
-        <div><h2>{weekLabel}</h2><span>{workoutsThisWeek}{plannedPerWeek ? ` / ${plannedPerWeek}` : ''} {t('this week')} · {t('{0} week streak', streakWeeks(S))}</span></div>
+        <div><h2>{weekLabel}</h2><span aria-live="polite" data-home-week-count>{availability.status === 'loading' ? t('Updating your history…') : weekOffset > 0 ? t('Future day') : <>
+          {(workoutsThisWeek > 0 || availability.canShowEmpty) && (weekOffset < 0 && workoutsThisWeek === 0 ? t('No workouts in this period yet.') : <>{workoutsThisWeek}{weekOffset === 0 && plannedPerWeek ? ` / ${plannedPerWeek}` : ''} {t(weekOffset === 0 ? 'Workouts' : 'Completed workouts')}{weekOffset === 0 && availability.scopeMatches && <> · {t('{0} week streak', streakWeeks(S))}</>}</>)}
+          {availability.updating ? <> · {t('Updating your history…')}</> : !availability.historyComplete ? <> · {t(availability.unavailable ? 'Your history is not available on this device yet.' : 'History partially available.')}</> : null}
+        </>}</span></div>
         <div className="home-week-actions">
           <button className="iconbtn" onClick={() => setWeekOffset(offset => offset - 1)} aria-label={t('Previous week')}><Icon name="chevronLeft" /></button>
           <button className="iconbtn" onClick={() => setWeekOffset(0)} aria-label={t('This week')} disabled={weekOffset === 0}><Icon name="dot" /></button>
@@ -224,6 +242,9 @@ export default function Home() {
         </div>
       </div>
       <div className="week home-week-strip">{strip}</div>
+      {selectedWeek <= currentWeek && <Link className="home-week-summary-link" to={`/progress/weekly?week=${calendarDate(selectedWeek, timeZone)}`} state={{ weeklyBackTo: '/home', homeWeek: { week: selectedWeek, scopeKey } }}>
+        <Icon name="chart" /><span>{t('View weekly summary')}</span><Icon name="chevronRight" />
+      </Link>}
     </section>
 
     <motion.section layout={!reducedMotion} transition={weightTransition} data-home-section="secondary-progress" className={'home-weight-block' + (weightExpanded ? ' is-expanded' : '')}>

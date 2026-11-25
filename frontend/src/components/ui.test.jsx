@@ -28,6 +28,12 @@ afterEach(() => {
 })
 
 describe('AppHeader', () => {
+  it('passes explicit return state without changing legacy navigation calls', () => {
+    const backState = { homeWeek: { week: '2026-11-16', scopeKey: 'visitor' } }
+    act(() => root.render(<AppHeader title="Resumo" backTo="/home" backState={backState} />))
+    act(() => container.querySelector('.app-header-back').click())
+    expect(mocks.navigate).toHaveBeenCalledWith('/home', { state: backState })
+  })
   it('renders a contextual title and an accessible back action', () => {
     act(() => root.render(<AppHeader title="Histórico" subtitle="Treinos concluídos" backTo="/more" />))
 

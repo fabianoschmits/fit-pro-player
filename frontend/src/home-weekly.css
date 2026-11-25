@@ -1,0 +1,5 @@
+.home-week-summary-link { display:flex; align-items:center; gap:10px; min-height:44px; margin-top:6px; padding:4px 2px; color:var(--acc); text-decoration:none; font:inherit; }
+.home-week-summary-link svg { width:20px; height:20px; flex-shrink:0; }
+.home-week-summary-link span { flex:1; }
+.home-week-summary-link:active { opacity:.7; }
+.home-week-summary-link:focus-visible { outline:2px solid var(--acc); outline-offset:3px; border-radius:var(--radius, 8px); }

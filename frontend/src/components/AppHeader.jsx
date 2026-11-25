@@ -8,13 +8,13 @@ import { Button } from './ui.jsx'
  * The shell owns primary navigation; this component only gives a screen a
  * predictable title, optional supporting text, and one contextual action.
  */
-export function AppHeader({ title, subtitle = undefined, backTo = undefined, action = undefined, identity = undefined, className = '' }) {
+export function AppHeader({ title, subtitle = undefined, backTo = undefined, backState = undefined, action = undefined, identity = undefined, className = '' }) {
   const navigate = useNavigate()
   return (
     <header className={`app-header ${className}`.trim()}>
       <div className="app-header-main">
         {backTo && (
-          <Button appearance="custom" className="iconbtn app-header-back" aria-label={t('Back')} onClick={() => navigate(backTo)}>
+          <Button appearance="custom" className="iconbtn app-header-back" aria-label={t('Back')} onClick={() => backState === undefined ? navigate(backTo) : navigate(backTo, { state: backState })}>
             <Icon name="chevronLeft" />
           </Button>
         )}
