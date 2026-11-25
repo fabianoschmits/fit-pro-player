@@ -1,7 +1,7 @@
 import { beginPersonalRoutineJourney } from './lib/insights-journeys.js'
 import { appErrorMessage } from './lib/app-errors.js'
 import ExerciseSpriteThumb from './components/ExerciseSpriteThumb.jsx'
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
@@ -1275,6 +1275,7 @@ function WorkoutDetail({ w, close }) {
       </div>
     })}
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+      <Suspense fallback={null}><TrainingCheckinSummary workoutId={w.id} mode="history" closeCurrent={close} onReturn={() => workoutDetailSheet(w)} /></Suspense>
       <Button variant="tinted" icon="person" onClick={() => { close(); nav(trainingComparisonHref(w.id)) }}>{t('Mapa do treino')}</Button>
       <Button variant="secondary" icon="instagram" onClick={() => workoutShareSheet(w)}>{t('Compartilhar treino')}</Button>
       <Button variant="primary" icon="reset" onClick={() => { close(); repeatWorkout(w) }}>{t('Repeat {0}', w.name)}</Button>
@@ -1589,6 +1590,8 @@ function WorkoutFinishNote({ close }) {
 
 const workoutFinishNoteSheet = () => ui().openSheet(close => <WorkoutFinishNote close={close} />, { kind: 'center' })
 
+const TrainingCheckinSummary = lazy(() => import('./components/training/checkin/TrainingCheckinSummary.jsx'))
+
 function FinishSummary({ w, prs, e1prs = [], close }) {
   const st = useStore(s => s.S)
   return <div className="finish-summary">
@@ -1610,6 +1613,7 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     </div>}
     <h4 className="sec" style={{ textAlign: 'left' }}>{t('What you just trained')}</h4>
     <BodyMap className="finish-bodymap" load={loadOfWorkouts([w])} body={st.body} />
+    <Suspense fallback={null}><TrainingCheckinSummary workoutId={w.id} mode="finish" closeCurrent={close} onReturn={() => ui().openSheet(nextClose => <FinishSummary w={w} prs={prs} e1prs={e1prs} close={nextClose} />, { kind: 'center', locked: true })} /></Suspense>
     <div style={{ height: 14 }} />
     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <Button variant="tinted" icon="person" onClick={() => { close(); nav(trainingComparisonHref(w.id)) }}>{t('Ver mapa do treino')}</Button>

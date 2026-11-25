@@ -12,6 +12,7 @@ export function buildWeeklyInsights(summary) {
   else if (summary.canComparePeriods !== false) messages.push({ key: `weekly.frequency.${current === previous ? 'same' : current > previous ? 'up' : 'down'}`, args: [current, Math.abs(current - previous)] })
   const duration = summary.deltas?.durationSeconds
   if (duration?.comparable && duration.absolute > 0) messages.push({ key: 'weekly.time.up', args: [Math.round(duration.absolute / 60)] })
+  if (summary.checkins?.answeredWorkouts) messages.push({ key: 'weekly.checkins', args: [summary.checkins.answeredWorkouts] })
   const ranking = summary.muscles?.ranking || []
   if (ranking.length) messages.push({ key: 'weekly.muscles', args: ranking.slice(0, 2).map(item => item.id) })
   if (summary.planning?.flexWorkouts) messages.push({ key: 'weekly.flex', args: [] })

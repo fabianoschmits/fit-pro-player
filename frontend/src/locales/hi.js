@@ -1,3 +1,4 @@
+import { trainingCheckinLocale } from '../lib/training-checkin-locales.js'
 import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
@@ -1320,4 +1321,5 @@ export default {
   "Continue here": "यहाँ जारी रखें",
   "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "इस वर्कआउट में बिना एनीमेशन वाले व्यायाम हैं। उन्हें कैटलॉग के व्यायामों से बदलें।",
   ...trainingComparisonLocale('hi'),
+  ...trainingCheckinLocale('hi'),
 }

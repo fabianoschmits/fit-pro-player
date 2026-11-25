@@ -1,3 +1,5 @@
+import WeeklyCheckinSummary from '../components/training/checkin/WeeklyCheckinSummary.jsx'
+import { useTrainingCheckins } from '../lib/training-checkin-state.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -33,12 +35,13 @@ export default function WeeklyProgress() {
   const { now, online, timeZone } = useWeeklyClock(zone)
   const { workouts, availability, exerciseCatalog, scopeKey } = useWeeklyHistory(online)
   const [params, setParams] = useSearchParams(), navigate = useNavigate(), location = useLocation()
+  const { records: checkinRecords } = useTrainingCheckins()
   const requested = params.get('week'), current = getWeekStart(now, timeZone)
   const week = normalizeWeekParam(requested, now, timeZone)
   const previousCurrent = useRef(current)
   const [selectedDay, setSelectedDay] = useState(null)
   const { historyComplete, canComparePeriods, status } = availability
-  const summary = useMemo(() => status !== 'loading' ? buildWeeklyProgress({ workouts, weekStart: week, now, timeZone, exerciseCatalog, historyComplete, canComparePeriods }) : null, [status, workouts, week, now, timeZone, exerciseCatalog, historyComplete, canComparePeriods])
+  const summary = useMemo(() => status !== 'loading' ? buildWeeklyProgress({ workouts, weekStart: week, now, timeZone, exerciseCatalog, historyComplete, canComparePeriods, checkinRecords }) : null, [status, workouts, week, now, timeZone, exerciseCatalog, historyComplete, canComparePeriods, checkinRecords])
   const firstWeek = useMemo(() => workouts.reduce((first, workout) => { const date = workoutCalendarDate(workout, timeZone); const start = date && getWeekStart(date, timeZone); return start && start < first ? start : first }, current), [workouts, current, timeZone])
   useEffect(() => { if (requested !== week) setParams({ week }, { replace: true, state: location.state }) }, [requested, week, setParams, location.state])
   useEffect(() => {
@@ -75,6 +78,7 @@ export default function WeeklyProgress() {
       <WeeklyProgressInsights insights={summary.insights} />
       <WeeklyMuscleSummary key={`muscles:${week}`} muscles={summary.muscles} body={body} workouts={summary.workouts} onWorkout={openWorkout} />
       <WeeklyPlanningSummary planning={summary.planning} />
+      <WeeklyCheckinSummary key={`checkins:${scopeKey}:${week}`} workouts={summary.workouts} partial={!historyComplete} />
       <WeeklyPerformanceSummary key={`performance:${week}`} performance={summary.performance} exerciseCatalog={exerciseCatalog} displayUnit={displayUnit || 'kg'} />
       <WeeklyWorkoutList workouts={summary.workouts} selectedDay={selectedDay} onClearDay={() => setSelectedDay(null)} onWorkout={openWorkout} onMap={id => navigate(trainingComparisonHref(id))} />
       </>}

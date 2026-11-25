@@ -1,3 +1,4 @@
+import { trainingCheckinLocale } from '../lib/training-checkin-locales.js'
 import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
@@ -1320,4 +1321,5 @@ export default {
   "Continue here": "여기서 계속",
   "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "이 운동에는 애니메이션이 없는 동작이 포함되어 있습니다. 카탈로그에 있는 동작으로 교체하세요.",
   ...trainingComparisonLocale('ko'),
+  ...trainingCheckinLocale('ko'),
 }

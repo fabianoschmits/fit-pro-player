@@ -1,3 +1,4 @@
+import { trainingCheckinLocale } from '../lib/training-checkin-locales.js'
 import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
@@ -1320,4 +1321,5 @@ export default {
   "Continue here": "在此继续",
   "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "此训练包含没有动画的动作。请将其替换为目录中的动作。",
   ...trainingComparisonLocale('zh'),
+  ...trainingCheckinLocale('zh'),
 }

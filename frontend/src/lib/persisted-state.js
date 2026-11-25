@@ -1,3 +1,4 @@
+import { normalizeTrainingCheckinMap } from './training-checkin-data.js'
 import { normalizeTrainingComparison } from './training-comparison.js'
 
 // Explicit functional-state projection, shared by browser, native storage and recovery copies.
@@ -26,7 +27,7 @@ const assigned = record(fields('assignmentId programId versionId versionNumber u
 const notifications = record({...fields('rest timedSet workoutReminder professional weightReminder measurementReminder trainingTime checkinTime leadMinutes checkinDay'),quietHours:record(fields('enabled start end'))})
 const schedule = record({week:dictionary(day,scalar),dayPlan:dictionary(date,scalar), assignedProgram:assigned,...fields('libraryId libraryTitle')})
 const wirePlan = record({mode:scalar,schedule,routines:list(record({id:scalar,title:scalar,prescription:record({...routineMarkers,...fields('emoji assigned assignedDayKey assignmentId programVersionId prog'),ex:list(prescription)})}))})
-const preferenceSchema = {...fields('displayUnit massUnit stateSchemaVersion restSec sound keepAwake lang theme accent body targetW mediaSize effort weighBeforeWorkout onboardingDone onboardingVersion simpleMode'),profile,notifications,
+const preferenceSchema = {trainingCheckIns: value => value === undefined ? undefined : normalizeTrainingCheckinMap(value),...fields('displayUnit massUnit stateSchemaVersion restSec sound keepAwake lang theme accent body targetW mediaSize effort weighBeforeWorkout onboardingDone onboardingVersion simpleMode'),profile,notifications,
  reminder:record(fields('on time tz')),bodyMeasurementGoals:dictionary(/^(chest|waist|hips|neck|shoulders|abdomen|(?:left|right)-(?:arm|forearm|thigh|calf))$/,scalar),
  seenTips:dictionary(id,scalar), pwaInstallPrompt:record(fields('dismissForever snoozeUntil'))}
 const wirePreference = record({displayUnit:scalar,values:record(preferenceSchema)})

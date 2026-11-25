@@ -1,3 +1,4 @@
+import { normalizeTrainingCheckinMap } from '../lib/training-checkin-data.js'
 import { confirmedPlanState } from '../lib/confirmed-plan.js'
 import { ensureBodyIds } from '../lib/body-sync-state.js'
 import { migrateLocalState } from '../lib/local-state-migrations.js'
@@ -51,6 +52,7 @@ export function normalizeState(source) {
   const raw = migrateLocalState(source)
   const state = Object.assign(clone(DEF), raw)
   state.displayUnit = state.displayUnit === 'lb' ? 'lb' : 'kg'
+  if (state.trainingCheckIns !== undefined) state.trainingCheckIns = normalizeTrainingCheckinMap(state.trainingCheckIns)
   state.massUnit = MASS_UNIT
   state.stateSchemaVersion = STATE_SCHEMA_VERSION
   delete state.unit

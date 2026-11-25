@@ -1,3 +1,4 @@
+import { trainingCheckinLocale } from '../lib/training-checkin-locales.js'
 import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
 import { projectErrorLocale } from '../lib/project-error-locales.js'
@@ -1320,4 +1321,5 @@ export default {
   "Continue here": "Продолжить здесь",
   "This workout contains exercises without animations. Replace them with exercises from the catalogue.": "Эта тренировка содержит упражнения без анимации. Замените их упражнениями из каталога.",
   ...trainingComparisonLocale('ru'),
+  ...trainingCheckinLocale('ru'),
 }

@@ -1,3 +1,4 @@
+import TrainingCheckinSummary from '../components/training/checkin/TrainingCheckinSummary.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
@@ -64,6 +65,7 @@ export default function TrainingComparison() {
       {comparison.origin === 'freestyle' && <p className="tc-notice">{t('Este treino livre não tinha uma referência planejada.')}</p>}
       {comparison.hasComparison && comparison.origin !== 'freestyle' && <p className="tc-context">{t(comparison.hasAdjusted ? 'Ajustado representa o treino disponível quando você começou a executar.' : 'A referência ajustada não está disponível para este treino.')}</p>}
       <TrainingComparisonSummary comparison={comparison} />
+      <TrainingCheckinSummary workoutId={workout.id} />
       <TrainingComparisonBodyMap key={workout.id} comparison={comparison} body={body} />
     </> : <section className="tc-empty" role="status">
       <Icon name="dumbbell" />

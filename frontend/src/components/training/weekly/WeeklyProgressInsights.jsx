@@ -15,6 +15,7 @@ export function weeklyInsightText(item) {
     case 'weekly.time.up': return t('Your recorded training time increased by {0} min.', weeklyNumber(count))
     case 'weekly.muscles': return t('Highest recorded muscular activity: {0}.', item.args.map(id => t(MUSCLE_NAME[id])).join(', '))
     case 'weekly.flex': return t('Your workouts were adjusted to your chosen duration; the original plan remains available.')
+    case 'weekly.checkins': return t(count === 1 ? 'Context recorded for {0} workout.' : 'Context recorded for {0} workouts.', weeklyNumber(count))
     case 'weekly.coverage': return t('Some historical records have partial information. Available data is shown.')
     default: return ''
   }

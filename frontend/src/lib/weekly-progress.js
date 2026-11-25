@@ -1,3 +1,5 @@
+import { buildWeeklyCheckinSummary } from './training-checkin.js'
+import { normalizeTrainingCheckin } from './training-checkin-data.js'
 import { compareTraining, snapshotTrainingEntries, thresholdsOf } from './training-comparison.js'
 import { MUSCLES, levelsOf, musclesOf } from './muscles.js'
 import { buildWeeklyBase, completedWeeklyRows, weeklyEntries, workoutCalendarDate } from './weekly-progress-core.js'
@@ -48,7 +50,7 @@ export function buildWeeklyProgress(options = {}) {
         related[id].exerciseIds.add(entry.id); related[id].workoutIds.add(workout.id)
       }
     })
-    normalizedWorkouts.push({ ...workout, date: cache.get(workout).date, metrics: cache.get(workout).detail, hasPlanning: comparison.hasPlanned, origin: comparison.origin || (workout.assignmentId ? 'professional' : 'personal') })
+    normalizedWorkouts.push({ ...workout, checkIn: normalizeTrainingCheckin(options.checkinRecords?.[workout.id]), date: cache.get(workout).date, metrics: cache.get(workout).detail, hasPlanning: comparison.hasPlanned, origin: comparison.origin || (workout.assignmentId ? 'professional' : 'personal') })
   }
   for (const id of unverifiedDirect) directSets[id] = null
   const thresholds = thresholdsOf({ actual: actualLoad })
@@ -59,7 +61,7 @@ export function buildWeeklyProgress(options = {}) {
     planning: { eligibleWorkouts, totalWorkouts: summary.metrics.workouts, originalSets: eligibleWorkouts ? originalSets : null,
       adjustedSets: eligibleWorkouts ? adjustedSets : null, actualSets: eligibleWorkouts ? actualSets : null,
       originalCompletion: originalSets > 0 ? actualSets / originalSets * 100 : null, adjustedCompletion: adjustedSets > 0 ? actualSets / adjustedSets * 100 : null, flexWorkouts },
-    performance: { improvements: [], personalRecords: [] }, insights: [],
+    checkins: buildWeeklyCheckinSummary(normalizedWorkouts), performance: { improvements: [], personalRecords: [] }, insights: [],
     workouts: normalizedWorkouts.sort((a, b) => b.date.localeCompare(a.date) || Number(b.end || b.start || 0) - Number(a.end || a.start || 0) || a.id.localeCompare(b.id)),
     coverage: { legacyWorkouts: summary.metrics.workouts - snapshotWorkouts, snapshotWorkouts, unknownDurationWorkouts: summary.metrics.workouts - summary.metrics.durationKnownWorkouts, unknownMuscleSets, estimatedMuscleSets } }
   result.performance = buildWeeklyPerformance({ ...options, workouts: records, weekStart: summary.period.start })
