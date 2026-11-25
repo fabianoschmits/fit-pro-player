@@ -12,6 +12,7 @@ import ManagementLayout from '../components/ManagementLayout.jsx'
 import { professionalDate } from '../lib/professional-ux.js'
 import { ManagementAvatar, ManagementStatus } from '../components/ManagementUI.jsx'
 import { Button } from '../components/ui.jsx'
+import ProfessionalInsightsPreview from '../components/professional/insights/ProfessionalInsightsPreview.jsx'
 export default function ProfessionalDashboard() {
  const { user } = useAuth(), repo = useMemo(() => createProfessionalWorkflowRepository({ client: getBrowserSupabaseClient() }), [])
  const name = useStore(s => s.S.profile?.name)
@@ -22,6 +23,7 @@ export default function ProfessionalDashboard() {
  const cards = items => items.map(student=><Link key={student.studentUserId} className="management-record card" to={`/professional/students/${student.studentUserId}`}><ManagementAvatar name={student.displayName} avatarRef={student.avatarRef} userId={student.studentUserId}/><div><strong>{student.displayName}</strong><p>{student.workoutTitle || student.currentProgram?.title || 'Sem plano'}</p></div><span>›</span></Link>)
  return <ManagementLayout title="Área profissional" subtitle={`Olá, ${name || 'profissional'}`} action={<Link to="/professional/profile" aria-label="Perfil"><ManagementAvatar name={name} avatarRef={avatarId}/></Link>}>
  {error&&<p role="alert" className="fpp-inline-notice" data-tone="error">{error}<Button onClick={()=>setRetry(x=>x+1)}>Tentar novamente</Button></p>}
+ <ProfessionalInsightsPreview />
  <details className="management-requests-details fpp-details-flow">
   <summary>
    <span className="requests-summary-label">

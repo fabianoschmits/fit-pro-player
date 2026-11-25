@@ -37,6 +37,7 @@ import PrivacyConsentModal from './components/PrivacyConsentModal.jsx'
 import { createTrainingRepository } from './lib/training-repository.js'
 import { attachDomainFocusRefresh, createDomainRefresh } from './lib/domain-refresh.js'
 import { createAccountDomainSync } from './lib/account-domain-sync.js'
+import { createTrainingCheckinRepository, createTrainingCheckinSync } from './lib/training-checkin-repository.js'
 import { createProfessionalProfileRepository } from './lib/professional-profile.js'
 
 import { flushProfessionalEvents } from './lib/professional-events.js'
@@ -101,6 +102,7 @@ const WeeklyProgress = lazy(loadWeeklyProgress)
 const ProgressPhotos = lazy(() => import('./views/ProgressPhotos.jsx'))
 const ProfessionalProfile = lazy(loadProfessionalProfile)
 const ProfessionalDashboard = lazy(loadProfessionalDashboard)
+const ProfessionalInsights = lazy(() => import('./views/ProfessionalInsights.jsx'))
 const ProfessionalInvites = lazy(loadProfessionalInvites)
 const InviteLanding = lazy(loadInviteLanding)
 const ProfessionalStudents = lazy(loadProfessionalStudents)
@@ -390,6 +392,7 @@ function Shell() {
       if (!historyComplete) useStore.getState().setAccountHistory({ accountId, state: 'loading', complete: false })
     } })
     let tabSync = null
+    const checkins=createTrainingCheckinSync({repository:createTrainingCheckinRepository(client),accountId,getState:()=>useStore.getState().S,replaceState:next=>useStore.getState().replaceState(next,false),isCurrent:()=>current(accountId),isOnline:()=>navigator.onLine!==false})
     let observedSyncState = 'saved'
     const sync = createAccountDomainSync({
       repository,
@@ -408,7 +411,7 @@ function Shell() {
       },
       onCommitted: (domain, revision) => tabSync?.publish(domain, revision),
     })
-    useStore.getState().configureAccountSync(() => Promise.all([sync.retry(), refresh.refresh('history')]), (data, context) => sync.acceptConfirmedPlan(data, context), () => sync.beginPlanApplication())
+    useStore.getState().configureAccountSync(() => Promise.all([sync.retry(), refresh.refresh('history'),checkins.flush()]), (data, context) => sync.acceptConfirmedPlan(data, context), () => sync.beginPlanApplication())
     const loadPreferences = async () => {
       const data = await repository.loadPreferences()
       if (auth.user?.accountType !== 'professional' || data.values?.onboardingDone) return data
@@ -437,11 +440,14 @@ function Shell() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'athlete_schedules', filter: `user_id=eq.${accountId}` }, () => { if (current(accountId)) void refresh.refresh('plan') }).subscribe() : null
     if (typeof BroadcastChannel !== 'undefined') tabSync = createTabSync({accountId,refresh:domain=>refresh.refresh(domain),getRevision:domain=>sync.revision(domain)})
     const unsubscribe = useStore.subscribe((state, previous) => {
-      if (state.S !== previous.S && current(accountId)) void sync.changed()
+      if (state.S !== previous.S && current(accountId)) {
+        void sync.changed()
+        if(state.S.pendingCheckinOperations!==previous.S.pendingCheckinOperations || state.S.trainingCheckIns!==previous.S.trainingCheckIns || state.S.workouts!==previous.S.workouts)void checkins.flush()
+      }
     })
-    void refresh.boot().then(() => { if (current(accountId)) void sync.start() })
+    void refresh.boot().then(() => { if (current(accountId)) {void sync.start();void checkins.flush()} })
     const detach = attachDomainFocusRefresh({ refresh: refresh.refresh, domains: ['preferences', 'plan', 'history', 'body'] })
-    const retry = () => { if (current(accountId)) void sync.retry() }
+    const retry = () => { if (current(accountId)) {void sync.retry();void checkins.flush()} }
     let authRetryTimer = null
     const detachAuth = repository.onAuthRestored(() => {
       window.clearTimeout(authRetryTimer)
@@ -450,6 +456,7 @@ function Shell() {
     const reconnect = () => {
       if (!current(accountId)) return
       void sync.retry()
+      void checkins.flush()
       for (const domain of ['preferences', 'plan', 'history', 'body']) void refresh.refresh(domain)
     }
     window.addEventListener('online', reconnect)
@@ -459,6 +466,7 @@ function Shell() {
       tabSync?.dispose()
       if (planChannel) void client.removeChannel(planChannel)
       sync.dispose()
+      checkins.dispose()
       unsubscribe()
       detach()
       detachAuth()
@@ -626,6 +634,7 @@ function Shell() {
                 <Route path="/professional/profile" element={<ProfessionalProfile />} />
                 <Route path="/professional/profile/edit" element={<ProfessionalProfile />} />
                 <Route path="/professional" element={<ProfessionalDashboard />} />
+                <Route path="/professional/insights" element={<ProfessionalInsights />} />
                 <Route path="/professional/invites" element={<ProfessionalInvites />} />
                 <Route path="/professional/students" element={<ProfessionalStudents />} />
                 <Route path="/professional/students/:studentId" element={<ProfessionalStudentPage />} />

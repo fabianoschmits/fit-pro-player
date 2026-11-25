@@ -5,18 +5,21 @@ import { CHECKIN_NOTE_LIMIT } from '../../../lib/training-checkin-data.js'
 import { checkinFor, saveTrainingCheckin, useTrainingCheckins } from '../../../lib/training-checkin-state.js'
 import { Button } from '../../ui.jsx'
 import TrainingCheckinReasons from './TrainingCheckinReasons.jsx'
+import TrainingCheckinSharing from './TrainingCheckinSharing.jsx'
+import '../../../professional-insights.css'
 import '../../../training-checkin.css'
 export default function TrainingCheckinSheet({ workoutId, ownerScope, close, onReturn = undefined }) {
- const { records, workouts, scopeKey } = useTrainingCheckins()
+ const { records, workouts, scopeKey, syncError } = useTrainingCheckins()
  const workout = workouts.find(item => item.id === workoutId), saved = checkinFor(records, workoutId)
  const [selected, setSelected] = useState(saved?.status === 'answered' ? saved.reasons : [])
  const [note, setNote] = useState(saved?.status === 'answered' ? saved.note : '')
+ const [shares,setShares]=useState(records[workoutId]?.shares||[]),[sharesChanged,setSharesChanged]=useState(false)
  const [focused, setFocused] = useState(false), [confirmRemoval, setConfirmRemoval] = useState(false), [error, setError] = useState(false)
  const detection = useMemo(() => detectTrainingChanges(workout), [workout])
  if (!workout || scopeKey !== ownerScope) return null
  const finish = status => {
   try {
-   saveTrainingCheckin(workoutId, { status, reasons: selected, note }, ownerScope)
+   saveTrainingCheckin(workoutId, { status, reasons: selected, note }, ownerScope,sharesChanged?shares.map(s=>({...s,reasons:s.reasons.filter(reason=>selected.includes(reason))})):null)
    close(); onReturn?.()
   } catch { setError(true) }
  }
@@ -28,8 +31,9 @@ export default function TrainingCheckinSheet({ workoutId, ownerScope, close, onR
   <TrainingCheckinReasons reasons={orderedCheckinReasons(detection, workout.comparison?.flexApplied)} selected={selected} onToggle={reason => setSelected(value => value.includes(reason) ? value.filter(item => item !== reason) : [...value, reason])} />
   {selected.includes('pain_or_discomfort') && <p className="training-checkin-notice" role="status">{t('Respect your limits. If discomfort persists, consider seeking professional guidance.')}</p>}
   <label className="training-checkin-note">{t('Add an optional note')}<textarea maxLength={CHECKIN_NOTE_LIMIT} rows={3} value={note} onChange={event => setNote(event.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} /></label>
-  {focused && <small className="dim">{new Intl.NumberFormat().format(note.length)} / {CHECKIN_NOTE_LIMIT}</small>}
-  <p className="small dim">{t('Only you can see this response.')}</p>
+  <small className="dim training-checkin-counter" style={{visibility:focused?'visible':'hidden'}} aria-hidden={!focused}>{new Intl.NumberFormat().format(note.length)} / {CHECKIN_NOTE_LIMIT}</small>
+  <TrainingCheckinSharing ownerScope={ownerScope} selected={selected} shares={shares} onChange={value=>{setShares(value);setSharesChanged(true)}}/>
+  {syncError&&<p role="status">{t(syncError==='unavailable'?'Dedicated storage is awaiting activation. Your response remains saved on this device.':syncError==='conflict'?'A response conflict is pending resolution. Your local changes were preserved.':'Your response is saved on this device and is awaiting synchronization.')}</p>}
   {error && <p role="alert">{t('Could not save the response. Please try again.')}</p>}
   <Button type="submit" variant="primary" disabled={!selected.length && !note.trim()}>{t('Save response')}</Button>
   <Button variant="ghost" onClick={() => saved?.status === 'answered' ? (close(), onReturn?.()) : finish('dismissed')}>{t('Not now')}</Button>

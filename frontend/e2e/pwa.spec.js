@@ -1,9 +1,39 @@
 import { test, expect } from '@playwright/test'
 import {readFile,writeFile,unlink} from 'node:fs/promises'
-import { seed, stateFixture, openMainNavigation, startWorkoutExecution } from './fixtures.test.js'
+import { seed, stateFixture, openMainNavigation, startWorkoutExecution, USER } from './fixtures.test.js'
 
 import { exerciseGuideAsset } from '../src/lib/exercise-guide-assets.js'
 import { WEEKLY_NOW, weeklyState } from './weekly-fixtures.js'
+
+test('dedicated checkin journal survives offline reload and reconnect without duplicating history',async({page,context})=>{
+ await page.clock.setFixedTime(new Date('2026-11-25T15:00:00Z'))
+ const state=stateFixture(),workout={id:'offline-dedicated',d:'2026-11-25',name:'Treino offline sintético',start:Date.parse('2026-11-25T12:00:00Z'),end:Date.parse('2026-11-25T13:00:00Z'),entries:[{id:'0025',sets:[{done:true,r:8,w:20}]}],comparison:{version:1,origin:'personal',flexApplied:false,planned:[{exerciseId:'0025',workSets:4,muscleWeights:{chest:1}}],adjusted:[{exerciseId:'0025',workSets:4,muscleWeights:{chest:1}}]}}
+ state.workouts=[workout]
+ const rows=[]
+ await seed(page,{authenticated:true,state,rpc:{
+  workout_sessions:(_args,{request})=>new URL(request.url()).searchParams.get('status')==='eq.active'?null:[{id:workout.id,user_id:USER,status:'completed',revision:1,writer_token:'fixture',mass_unit:'kg',prescription_snapshot:{comparison:workout.comparison},started_at:new Date(workout.start).toISOString(),completed_at:new Date(workout.end).toISOString(),updated_at:new Date(workout.end).toISOString()}],
+  workout_session_operations:[{session_id:workout.id,user_id:USER,kind:'session_completed',payload:{workout}}],
+  training_checkins:()=>rows,training_checkin_shares:[],student_professional_cards:[],
+  save_training_checkin:args=>{const row={...args.p_record,id:'private-checkin',workout_id:args.p_workout_id,user_id:USER,operation_id:args.p_operation_id,revision:1};rows.splice(0,rows.length,row);return row},
+ }})
+ await page.goto('/#/progress/training-map?session=offline-dedicated')
+ await waitForSWController(page);await waitForPrecache(page)
+ await context.setOffline(true)
+ await page.locator('[data-training-checkin-summary]').getByRole('button',{name:'Informar o motivo',exact:true}).click()
+ await page.locator('[data-training-checkin]').getByRole('button',{name:'Falta de tempo',exact:true}).click()
+ await page.getByLabel('Adicionar observação (opcional)').fill('Resposta offline dedicada')
+ await page.getByRole('button',{name:'Salvar resposta',exact:true}).click()
+ await expect.poll(async()=>page.evaluate(user=>JSON.parse(localStorage.getItem('fpp_account_cache_v1:'+user)).state.trainingCheckinRecords?.['offline-dedicated']?.status,USER)).toBe('answered')
+ await expect(page.locator('[data-training-checkin-summary]')).toContainText('Resposta offline dedicada')
+ await page.reload({waitUntil:'domcontentloaded'})
+ await expect(page.locator('[data-training-checkin-summary]')).toContainText('Resposta offline dedicada')
+ await context.setOffline(false)
+ await expect.poll(()=>rows.length).toBe(1)
+ await expect.poll(async()=>page.evaluate(user=>JSON.parse(localStorage.getItem('fpp_account_cache_v1:'+user)).state.pendingCheckinOperations.length,USER)).toBe(0)
+ const persisted=await page.evaluate(user=>JSON.parse(localStorage.getItem('fpp_account_cache_v1:'+user)).state,USER)
+ expect(persisted.workouts).toHaveLength(1);expect(persisted.workouts[0].comparison).toEqual(workout.comparison)
+ expect(persisted.trainingCheckIns?.[workout.id]).toBeUndefined()
+})
 
 test('custom exercise metadata remains available in the weekly map after an offline reload', async ({ page, context }) => {
   await page.clock.setFixedTime(WEEKLY_NOW)

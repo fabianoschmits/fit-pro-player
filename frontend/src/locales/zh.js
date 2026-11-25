@@ -1,3 +1,4 @@
+import { professionalInsightsLocale } from '../lib/professional-insights-locales.js'
 import { trainingCheckinLocale } from '../lib/training-checkin-locales.js'
 import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
@@ -6,6 +7,7 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Simplified Chinese UI strings. Keys are the English source strings (see lib/i18n.js).
 export default {
+ ...professionalInsightsLocale('zh'),
   ...weeklyProgressLocale('zh'),
   ...projectErrorLocale('zh'),
   "Clique para desmarcar": "点击取消选择",

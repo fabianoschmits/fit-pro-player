@@ -1,3 +1,4 @@
+import { professionalInsightsLocale } from '../lib/professional-insights-locales.js'
 import { trainingCheckinLocale } from '../lib/training-checkin-locales.js'
 import { weeklyProgressLocale } from '../weekly-progress-locales.js'
 import { trainingComparisonLocale } from '../lib/training-comparison-locales.js'
@@ -6,6 +7,7 @@ import { onboardingLocale } from '../lib/onboarding-locales.js'
 
 // Brazilian Portuguese UI strings. Keys are the English source strings.
 export default {
+ ...professionalInsightsLocale('pt'),
   ...weeklyProgressLocale('pt'),
   ...projectErrorLocale('pt'),
   "Clique para desmarcar": "Clique para desmarcar",
