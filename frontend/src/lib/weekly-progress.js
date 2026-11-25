@@ -1,5 +1,5 @@
 import { compareTraining, snapshotTrainingEntries, thresholdsOf } from './training-comparison.js'
-import { MUSCLES, levelsOf } from './muscles.js'
+import { MUSCLES, levelsOf, musclesOf } from './muscles.js'
 import { buildWeeklyBase, completedWeeklyRows, weeklyEntries, workoutCalendarDate } from './weekly-progress-core.js'
 import { buildWeeklyPerformance } from './weekly-progress-performance.js'
 import { buildWeeklyInsights } from './weekly-progress-insights.js'
@@ -17,7 +17,16 @@ export function buildWeeklyProgress(options = {}) {
   const catalog = options.exerciseCatalog instanceof Map ? options.exerciseCatalog : options.exerciseCatalog ? new Map(Object.entries(options.exerciseCatalog)) : null
   for (const workout of summary.workouts) {
     const entries = weeklyEntries(workout)
-    const snapshots = snapshotTrainingEntries(entries, catalog ? id => catalog.get(id) : undefined)
+    const snapshots = snapshotTrainingEntries(entries, (id, entry) => {
+      const historical = entry.exercise
+      const weights = historical?.muscleWeights
+      const savedMap = weights !== null && typeof weights === 'object' && !Array.isArray(weights)
+        && Object.values(weights).every(value => typeof value === 'number' && Number.isFinite(value) && value >= 0)
+      if (savedMap || (historical && Object.values(musclesOf(historical)).some(value => value > 0))) return historical
+      // An explicit catalogue is an authorization boundary. Missing private IDs
+      // must not fall through to EXIDX's mutable custom overlay.
+      return catalog ? catalog.get(id) || { muscleWeights: {} } : undefined
+    })
     const comparison = compareTraining({ ...workout, entries: entries.map((entry, index) => ({ ...entry, muscleSnapshot: { muscleWeights: snapshots[index]?.muscleWeights || {} } })) })
     if (comparison.hasComparison) snapshotWorkouts++
     if (comparison.flexApplied) flexWorkouts++
@@ -54,6 +63,6 @@ export function buildWeeklyProgress(options = {}) {
     workouts: normalizedWorkouts.sort((a, b) => b.date.localeCompare(a.date) || Number(b.end || b.start || 0) - Number(a.end || a.start || 0) || a.id.localeCompare(b.id)),
     coverage: { legacyWorkouts: summary.metrics.workouts - snapshotWorkouts, snapshotWorkouts, unknownDurationWorkouts: summary.metrics.workouts - summary.metrics.durationKnownWorkouts, unknownMuscleSets, estimatedMuscleSets } }
   result.performance = buildWeeklyPerformance({ ...options, workouts: records, weekStart: summary.period.start })
-  result.insights = buildWeeklyInsights({ ...result, hasEarlierHistory: records.some(workout => workoutCalendarDate(workout, summary.period.timeZone) < summary.period.start) })
+  result.insights = buildWeeklyInsights({ ...result, historyComplete: options.historyComplete === true, hasEarlierHistory: records.some(workout => workoutCalendarDate(workout, summary.period.timeZone) < summary.period.start) })
   return result
 }

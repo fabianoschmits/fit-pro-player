@@ -57,7 +57,7 @@ function nullableUuid(value) {
     : null
 }
 
-export function createTrainingRepository({ client, accountId }) {
+export function createTrainingRepository({ client, accountId, onHistoryRead = _evidence => {} }) {
   if (!client || typeof client.rpc !== 'function' || typeof accountId !== 'string' || accountId.length === 0) {
     throw new TypeError('invalid-training-repository-scope')
   }
@@ -204,7 +204,10 @@ export function createTrainingRepository({ client, accountId }) {
           .order('id', { ascending: false })
           .limit(limit), value => value),
       ])
-      return parseResponse(parseCompletedWorkoutRecords, { sessions, operations }, accountId)
+      const records = parseResponse(parseCompletedWorkoutRecords, { sessions, operations }, accountId)
+      // Both reads are capped. A full page cannot establish all-time coverage.
+      onHistoryRead({ complete: sessions.length < limit && operations.length < limit && records.every(record => record.workout !== null) })
+      return records
     },
 
     savePreferences({ expectedRevision, displayUnit, values }) {

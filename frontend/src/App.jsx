@@ -382,7 +382,13 @@ function Shell() {
     let connected = true
     const current = id => connected && id === accountId && useStore.getState().isScopeCurrent?.(token)
     setAccountRead({ accountId, state: 'loading' })
-    const repository = createTrainingRepository({ client, accountId })
+    let historyComplete = false
+    const repository = createTrainingRepository({ client, accountId, onHistoryRead: evidence => {
+      if (!current(accountId)) return
+      historyComplete = evidence.complete
+      // Revoke old proof before projecting a newly truncated response.
+      if (!historyComplete) useStore.getState().setAccountHistory({ accountId, state: 'loading', complete: false })
+    } })
     let tabSync = null
     let observedSyncState = 'saved'
     const sync = createAccountDomainSync({
@@ -402,7 +408,7 @@ function Shell() {
       },
       onCommitted: (domain, revision) => tabSync?.publish(domain, revision),
     })
-    useStore.getState().configureAccountSync(() => sync.retry(), (data, context) => sync.acceptConfirmedPlan(data, context), () => sync.beginPlanApplication())
+    useStore.getState().configureAccountSync(() => Promise.all([sync.retry(), refresh.refresh('history')]), (data, context) => sync.acceptConfirmedPlan(data, context), () => sync.beginPlanApplication())
     const loadPreferences = async () => {
       const data = await repository.loadPreferences()
       if (auth.user?.accountType !== 'professional' || data.values?.onboardingDone) return data
@@ -421,6 +427,7 @@ function Shell() {
       isCurrent: current,
       apply: (domain, data) => sync.acceptRemote(domain, data),
       onStatus: ({ domains }) => {
+        if (current(accountId)) useStore.getState().setAccountHistory({ accountId, state: domains.history.state, complete: historyComplete })
         if (current(accountId) && ['ready', 'error'].includes(domains.preferences.state)) {
           setAccountRead({ accountId, state: domains.preferences.state })
         }

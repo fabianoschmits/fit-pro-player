@@ -1,5 +1,6 @@
 import { useStore } from '../store/useStore.js'
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { AuthContext } from './auth-context.js';
 
 import { getBrowserSupabaseClient } from '../lib/supabase-client.js';
 import { MOBILE } from '../lib/mobile.js';
@@ -8,8 +9,6 @@ import { normalizeProfessionalProfile, professionalProfileMetadata } from '../li
 import { toAuthError } from './auth-errors.js';
 import { disableBackgroundNotifications } from '../lib/notification-client.js';
 import { useUI } from '../store/useUI.js';
-
-const AuthContext = createContext(null);
 
 function publicUser(user) {
   if (!user?.id) return null;

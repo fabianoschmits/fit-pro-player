@@ -199,6 +199,8 @@ export const useStore = create((set, get) => {
     ready: false,
     persistence: { state: 'saved', error: null },
     accountSync: { state: 'saved', pending: 0, error: null },
+    accountHistory: { accountId: null, state: 'idle', complete: false },
+    setAccountHistory(status) { set({ accountHistory: status }) },
     sessionRecovery: { state: 'idle', pending: 0, error: null },
     getActiveLocalScope: () => activeScope,
     setAccountSyncStatus(status) { set({ accountSync: status }) },
@@ -329,6 +331,7 @@ export const useStore = create((set, get) => {
       if (MOBILE && saveTm) saveNative(activeScope, get().S, scopeGeneration)
       const generation = ++scopeGeneration
       activeScope = scope
+      set({ accountHistory: { accountId: scope.userId, state: 'idle', complete: false } })
       disposeSessionRecovery()
       clearTimeout(saveTm); saveTm = null
       const local = readScopedState(scope, localStorage, DEF)

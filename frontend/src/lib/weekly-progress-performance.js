@@ -4,7 +4,7 @@ import { modeForEntry } from './workout-model.js'
 import { completedWeeklyHistory, validWeeklyNumber, weeklyEntries, workoutCalendarDate, workoutCompletionInstant } from './weekly-progress-core.js'
 import { getComparableWeekRange, getNextWeek, normalizeWeekParam } from './weekly-progress-calendar.js'
 
-export function buildWeeklyPerformance({ workouts = [], weekStart = undefined, now = new Date(), timeZone = undefined, exerciseCatalog = undefined, historyComplete = true } = {}) {
+export function buildWeeklyPerformance({ workouts = [], weekStart = undefined, now = new Date(), timeZone = undefined, exerciseCatalog = undefined, historyComplete = false, canComparePeriods = historyComplete } = {}) {
   const start = normalizeWeekParam(weekStart, now, timeZone), end = getNextWeek(start, timeZone)
   const previousRange = getComparableWeekRange(start, now, timeZone)
   const catalog = exerciseCatalog instanceof Map ? exerciseCatalog : new Map(Object.entries(exerciseCatalog || EXIDX))
@@ -14,9 +14,9 @@ export function buildWeeklyPerformance({ workouts = [], weekStart = undefined, n
   for (const { workout, date } of sorted) {
     const currentWeek = date >= start
     for (const entry of weeklyEntries(workout)) {
-      const target = { id: entry.id, ...(entry.target || {}) }
-      const exercise = catalog.get(entry.id) || entry.exercise || {}
-      if (modeForEntry(entry) !== 'reps' || isBw(target) || target.assisted === true || /assist/i.test(String(exercise.eq || exercise.e || ''))) continue
+      const exercise = { ...(catalog.get(entry.id) || {}), ...(entry.exercise || {}) }
+      const target = { id: entry.id, ...(entry.target || {}), bodyweight: entry.target?.bodyweight ?? (exercise.eq === 'body weight') }
+      if (modeForEntry(entry) !== 'reps' || isBw(target) || target.assisted === true || exercise.assisted === true || exercise.bp === 'cardio' || exercise.mode === 'time' || /assist/i.test(String(exercise.eq || exercise.e || ''))) continue
       const rows = metricRowsForEntry(entry, 'reps').filter(row => validWeeklyNumber(row.w) && validWeeklyNumber(row.r) && row.r > 0).map(row => ({ ...row, workoutId: workout.id }))
       if (!rows.length) continue
       const load = bestWeightForEntry({ id: entry.id, target, sets: rows })
@@ -45,8 +45,8 @@ export function buildWeeklyPerformance({ workouts = [], weekStart = undefined, n
   for (const [key, current] of selected) {
     const prior = previous.get(key)
     const base = { exerciseId: current.exerciseId, workoutId: current.workoutId, unit: 'kg' }
-    if (!historyComplete) { improvements.push({ ...base, type: 'available', previous: null, current: current.load }); continue }
-    if (!current.earlierCount) { improvements.push({ ...base, type: 'first', previous: null, current: current.load }); continue }
+    if (!historyComplete && (!canComparePeriods || !prior)) { improvements.push({ ...base, type: 'available', previous: null, current: current.load }); continue }
+    if (historyComplete && !current.earlierCount) { improvements.push({ ...base, type: 'first', previous: null, current: current.load }); continue }
     if (!prior) continue
     if (current.load > prior.load && prior.load > 0) { improvements.push({ ...base, type: 'load', previous: prior.load, current: current.load }); continue }
     let best = null

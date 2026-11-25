@@ -70,6 +70,12 @@ export function registerCustom(list) {
 // Full searchable catalogue — customs first so your own exercises are easy to find.
 export const allExercises = st => [...(st.customEx || []), ...EXDB]
 
+// Account reports must not inherit registerCustom's mutable compatibility overlay.
+export const weeklyExerciseCatalog = customEx => new Map([
+  ...SOURCE_EXERCISES.map(exercise => [exercise.id, exercise]),
+  ...(customEx || []).map(exercise => [exercise.id, exercise]),
+])
+
 // Catalogue names are localized independently of user-created exercise names. Keeping the
 // English name searchable lets a Brazilian user find an exercise by either term.
 export const exerciseName = ex => {

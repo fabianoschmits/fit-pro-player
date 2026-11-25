@@ -28,7 +28,7 @@ export function completedWeeklyHistory(workouts, now, timeZone) {
       || (workout.status != null && workout.status !== 'completed') || workout.cancelled === true || workout.discarded === true) continue
     const date = workoutCalendarDate(workout, timeZone)
     const completion = workout.completedAt ?? workout.end
-    if (!date || date > today || (completion != null && new Date(completion).getTime() > instant)) continue
+    if (!date || date > today || (completion != null && workoutCompletionInstant(workout) > instant)) continue
     const existing = byId.get(workout.id)
     // Store/domain reconciliation is authoritative. Defensive duplicates choose
     // their latest version using revision/update/completion, never date or title.
@@ -86,7 +86,7 @@ function aggregate(records, start, end, timeZone, cache) {
   return { metrics, selected, byDay }
 }
 
-export function buildWeeklyBase({ workouts = [], weekStart = undefined, now = new Date(), timeZone = undefined } = {}) {
+export function buildWeeklyBase({ workouts = [], weekStart = undefined, now = new Date(), timeZone = undefined, historyComplete = false, canComparePeriods = historyComplete } = {}) {
   const zone = resolveWeeklyTimeZone(timeZone), start = normalizeWeekParam(weekStart, now, zone)
   const today = calendarDate(now, zone), end = addCalendarDays(start, 7)
   const isCurrentWeek = start === getWeekStart(now, zone)
@@ -100,11 +100,12 @@ export function buildWeeklyBase({ workouts = [], weekStart = undefined, now = ne
   const current = aggregate(records, start, end, zone, cache)
   const previous = aggregate(records, comparisonPeriod.start, comparisonPeriod.end, zone, cache)
   const deltas = Object.fromEntries(Object.keys(current.metrics).map(key => [key, buildMetricDelta(current.metrics[key], previous.metrics[key])]))
+  if (!canComparePeriods) for (const key of Object.keys(deltas)) deltas[key] = buildMetricDelta(null, null)
   if (current.metrics.durationKnownWorkouts !== current.metrics.workouts || previous.metrics.durationKnownWorkouts !== previous.metrics.workouts) deltas.durationSeconds = buildMetricDelta(null, null)
   const days = getWeekDays(start, zone).map(date => ({ date, isFuture: isCurrentWeek && date > today, isToday: date === today,
     ...(current.byDay.get(date) || { workouts: 0, completedSets: 0, durationSeconds: null, durationKnownWorkouts: 0, workoutIds: [] }) }))
   return { schemaVersion: 1, period: { start, end, isCurrentWeek, isComplete: !isCurrentWeek, elapsedDays: comparisonPeriod.comparableDays, timeZone: zone },
-    comparisonPeriod, metrics: current.metrics, previousMetrics: previous.metrics, deltas, days,
+    comparisonPeriod, canComparePeriods, metrics: current.metrics, previousMetrics: previous.metrics, deltas, days,
     workouts: current.selected, records, cache }
 }
 
