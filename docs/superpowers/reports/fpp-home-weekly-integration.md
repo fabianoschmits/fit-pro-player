@@ -77,4 +77,39 @@ As alterações preexistentes de `frontend/src/index.css` e `output/` foram pres
 
 Rollback anterior preparado: `dpl_2VKnNwrRw6Zga7Fyq7Nh4p3U8A6t`, READY, main `37d4bb6ad8013c6804c43727f7f30ebd8147e339`, URL `https://fit-pro-player-2dd8p8tqs-fabianoschmits-9996s-projects.vercel.app`.
 
-A integração ocorrerá por main após os gates, sem force push e sem promoção direta de prévia. IDs e resultados efetivos da publicação serão registrados na conclusão.
+## Publicação efetivamente verificada
+
+- Commit funcional: `d0c4117b3edf87bf58c26a9e549c36e028cd8412` (`fix: integrate weekly summary into home calendar`), enviado à branch e integrado por fast-forward à main; push confirmado.
+- Main anterior: `37d4bb6ad8013c6804c43727f7f30ebd8147e339`.
+- Prévia exata: `dpl_D7dNf4tkGVR8wmwT4cafXmmMwPCr`, READY, SHA funcional confirmado, `aliasError: null`; URL `https://fit-pro-player-hon95op3b-fabianoschmits-9996s-projects.vercel.app`.
+- Primeiro deployment de produção desta correção: **`dpl_Bah4gELz3gHc1DgNdTXQcm6uJKC1`**, main, target production, SHA `d0c4117b3edf87bf58c26a9e549c36e028cd8412`, **READY em 24/11/2026 às 22:38:24 BRT**, `aliasError: null`.
+- URL do deployment: `https://fit-pro-player-p44e3p1ft-fabianoschmits-9996s-projects.vercel.app`.
+- Domínio oficial: **https://www.fitpp.com.br**. Apex `https://fitpp.com.br` responde 308 para o domínio www.
+
+A prévia protegida foi acessada com autorização temporária de dez minutos, revogada após o teste. WebKit registrou somente o bloqueio do script de feedback `vercel.live` pela CSP existente; isso foi classificado como ocorrência da infraestrutura de prévia, preservado nas evidências, sem afrouxar CSP. Nenhum erro da aplicação, JavaScript ou asset foi encontrado. A validação local de PWA e a produção utilizam o Service Worker real; a prévia utiliza o bloqueio de workers previsto pelo ambiente de testes para evitar redirecionamentos da proteção Vercel.
+
+## Smoke test no domínio oficial
+
+Executado em Chromium e WebKit, de 22:38 até 22:39 BRT, com visitante isolado e fixtures sintéticas, sem credenciais ou alterações em contas reais:
+
+- HTTP 200 da aplicação, manifesto com ícones e Service Worker.
+- Precache contém os chunks lazy de WeeklyProgress, TrainingComparison e anatomia.
+- Entrada pelo botão real “Continuar sem conta”.
+- Cinco rotas por navegador: `/home`, `/progress`, `/progress/weekly`, `/progress/training-map?session=B`, `/progress/history`.
+- Home sem cartão independente; link único abaixo dos dias.
+- Semana atual com dois treinos sintéticos e semana anterior com um; contador acompanha seleção e não recebe meta histórica.
+- Link abre a semana selecionada, Voltar preserva a semana, futuro mantém os sete dias e oculta o link.
+- Calendário mensal abre e fecha, planejamento de um dia continua editável no visitante sintético.
+- Evolução mantém o cartão completo; BodyMaps individual e semanal carregam, com seleção muscular funcional.
+- Temas claro/escuro; larguras 320, 360, 390, 430, 768 e 1280 px; sem overflow e acesso de pelo menos 44 px.
+- **Zero erros JavaScript, zero erros de console e zero falhas de assets nos dois navegadores de produção.**
+
+Evidências: `frontend/test-results-home-weekly/preview/preview.json`, `frontend/test-results-home-weekly/production/production.json` e PNGs adjacentes. Logs de comandos: `.git/fpp-home-weekly-evidence/` (ignorados). Consulta dos logs Vercel error/fatal em 22:38 BRT, janela de dez minutos, retornou nenhum log para o deployment; essa verificação imediata não substitui monitoramento prolongado.
+
+O mecanismo de atualização PWA existente foi preservado; a suíte testa transição do worker sem tela branca, recuperação de sessão ativa, histórico local e ausência de duplicatas. Nenhum armazenamento foi limpo, nenhum logout foi imposto e não há orientação adicional de atualização obrigatória.
+
+## Encerramento documental e limitações
+
+Este registro de publicação é acrescentado em commit exclusivamente documental após o primeiro deployment acima. O pipeline normal da main também gera um deployment desse fechamento; seu SHA/ID final serão confirmados na entrega e no recibo local `frontend/test-results-home-weekly/production-final/release.json`. Nenhum código da aplicação muda nesse fechamento.
+
+A matriz Playwright integral não foi executada nesta alteração pontual. Não foram usadas contas reais nem credenciais de teste autenticadas em produção; os estados autenticados/sincronização e isolamento são verificados por fixtures locais e testes unitários. As capturas são sintéticas e permanecem fora do Git. Sem alterações no Supabase, DNS, variáveis de ambiente ou configurações de autenticação. Implementação 03 não foi iniciada.
