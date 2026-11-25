@@ -7,7 +7,7 @@ export function weeklyWorkout(id, d, count = 3, minutes = 40, extra = {}) {
     entries: [{ id: '0025', sets: Array.from({ length: count }, () => ({ done: true, w: 20, r: 10 })), muscleSnapshot: { muscleWeights: { chest: 1, triceps: 0.4 } } }], ...extra }
 }
 export const referenceWeek = () => [weeklyWorkout('a', '2026-11-16', 10, 40), weeklyWorkout('b', '2026-11-18', 14, 50), weeklyWorkout('c', '2026-11-09', 8, 35), weeklyWorkout('d', '2026-11-10', 10, 45), weeklyWorkout('e', '2026-11-12', 20, 60)]
-const build = (workouts, extra = {}) => buildWeeklyProgress({ workouts, weekStart: '2026-11-16', now: weeklyNow, timeZone: 'America/Sao_Paulo', ...extra })
+const build = (workouts, extra = {}) => buildWeeklyProgress({ workouts, weekStart: '2026-11-16', now: weeklyNow, timeZone: 'America/Sao_Paulo', historyComplete: true, ...extra })
 describe('weekly aggregation', () => {
   it('matches the Wednesday fixture without counting the previous Thursday', () => {
     const result = build(referenceWeek())

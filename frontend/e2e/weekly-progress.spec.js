@@ -1,8 +1,74 @@
 import { test, expect } from '@playwright/test'
-import { seed, stateFixture, openMainNavigation, startWorkoutExecution } from './fixtures.test.js'
+import { seed, stateFixture, openMainNavigation, startWorkoutExecution, USER } from './fixtures.test.js'
 import { WEEKLY_NOW, weeklyState, weeklySession } from './weekly-fixtures.js'
 
 test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(WEEKLY_NOW) })
+
+test('weekly account history shows skeleton until the real history read completes', async ({ page }) => {
+  await seed(page, { authenticated: true, state: stateFixture() })
+  let finishRead
+  const pending = new Promise(resolve => { finishRead = resolve })
+  await page.route('**/rest/v1/workout_sessions*', async route => { await pending; await route.fulfill({ json: [] }) })
+  await page.goto('/#/progress/weekly?week=2026-11-09')
+  await expect(page.locator('.weekly-progress-view [aria-busy="true"]')).toBeVisible()
+  await expect(page.locator('[data-weekly-metric]')).toHaveCount(0)
+  await expect(page.getByText('Nenhum treino registrado nesta semana.', { exact: true })).toHaveCount(0)
+  finishRead()
+  await expect(page.getByText('Nenhum treino registrado nesta semana.', { exact: true })).toBeVisible()
+  await expect(page).toHaveURL(/week=2026-11-09/)
+})
+
+test('weekly local history stays visible while unconfirmed records and deltas are suppressed', async ({ page }) => {
+  const state = weeklyState()
+  const sessions = state.workouts.map(workout => ({ id: workout.id, user_id: USER, routine_id: null, assignment_id: null, status: 'completed', revision: 1, writer_token: 'fixture', mass_unit: 'kg', prescription_snapshot: { exercises: [] }, started_at: `${workout.d}T10:00:00Z`, completed_at: `${workout.d}T11:00:00Z`, updated_at: `${workout.d}T11:00:00Z` }))
+  const operations = state.workouts.map(workout => ({ session_id: workout.id, user_id: USER, kind: 'session_completed', payload: { workout } }))
+  await seed(page, { authenticated: true, state, rpc: { workout_session_operations: operations } })
+  let finishRead
+  const pending = new Promise(resolve => { finishRead = resolve })
+  await page.route('**/rest/v1/workout_sessions*', async route => { await pending; await route.fulfill({ json: sessions }) })
+  await page.goto('/#/progress/weekly?week=2026-11-16')
+  await expect(page.getByText('Atualizando seu histórico…', { exact: true })).toBeVisible()
+  await expect(page.locator('[data-weekly-metric="workouts"] > strong')).toHaveText('2')
+  await expect(page.locator('[data-weekly-comparison]')).toContainText('Comparação ainda indisponível.')
+  await expect(page.locator('[data-weekly-performance]')).not.toContainText('Recorde pessoal registrado')
+  await expect(page.locator('[data-weekly-performance]')).toContainText('Melhor registro disponível')
+  finishRead()
+  await expect(page.getByText('Atualizando seu histórico…', { exact: true })).toHaveCount(0)
+  await expect(page.locator('[data-weekly-comparison]')).not.toContainText('Comparação ainda indisponível.')
+  await expect(page.locator('[data-weekly-performance]')).toContainText('Recorde pessoal registrado')
+})
+
+test('weekly custom exercise keeps its name and estimates legacy muscles from the active catalogue', async ({ page }) => {
+  const state = weeklyState()
+  state.customEx = [{ id: 'custom-weekly', custom: true, n: 'Movimento semanal sintético', muscleWeights: { chest: 1 }, eq: 'barbell' }]
+  state.workouts = [weeklySession('custom-history', '2026-11-16', 2, 15)]
+  state.workouts[0].entries[0].id = 'custom-weekly'
+  delete state.workouts[0].entries[0].muscleSnapshot
+  await seed(page, { state })
+  await page.goto('/#/progress/weekly')
+  await expect(page.locator('[data-weekly-metric="completedSets"] > strong')).toHaveText('2')
+  await expect(page.locator('[data-weekly-performance]')).toContainText('Movimento semanal sintético')
+  await expect(page.locator('[data-weekly-metric="muscleGroupsWorked"] > strong')).toHaveText('1/18')
+})
+
+test('weekly failed history preserves local data offline and retries without changing the week', async ({ page, context }) => {
+  await seed(page, { authenticated: true, state: weeklyState() })
+  let failed = true
+  await page.route('**/rest/v1/workout_sessions*', route => failed ? route.fulfill({ status: 503, json: { message: 'synthetic unavailable' } }) : route.fulfill({ json: [] }))
+  await page.goto('/#/progress/weekly?week=2026-11-09')
+  await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toBeVisible()
+  await expect(page.locator('[data-weekly-metric="workouts"] > strong')).toHaveText('3')
+  await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toBeVisible()
+  await context.setOffline(true)
+  await expect(page.locator('.weekly-progress-view')).toContainText('Você está offline')
+  await expect(page.locator('[data-weekly-performance]')).not.toContainText('Recorde pessoal registrado')
+  await page.screenshot({ path: 'test-results/weekly-partial-offline.png', fullPage: true })
+  failed = false
+  await context.setOffline(false)
+  await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toHaveCount(0)
+  await expect(page).toHaveURL(/week=2026-11-09/)
+})
 
 test('weekly direct route shows equivalent Wednesday metrics and preserves selection after reload', async ({ page }) => {
   await seed(page, { state: weeklyState() })

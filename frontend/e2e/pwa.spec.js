@@ -5,6 +5,23 @@ import { seed, stateFixture, openMainNavigation, startWorkoutExecution } from '.
 import { exerciseGuideAsset } from '../src/lib/exercise-guide-assets.js'
 import { WEEKLY_NOW, weeklyState } from './weekly-fixtures.js'
 
+test('custom exercise metadata remains available in the weekly map after an offline reload', async ({ page, context }) => {
+  await page.clock.setFixedTime(WEEKLY_NOW)
+  const state = weeklyState()
+  state.customEx = [{ id: 'offline-custom', custom: true, n: 'Movimento offline sintético', muscleWeights: { chest: 1 }, eq: 'barbell' }]
+  for (const workout of state.workouts) { workout.entries[0].id = 'offline-custom'; delete workout.entries[0].muscleSnapshot }
+  await seed(page, { state }); await page.goto('/#/progress/weekly')
+  await waitForSWController(page); await waitForPrecache(page)
+  await expect(page.locator('[data-weekly-metric="completedSets"] strong')).toHaveText('24')
+  await context.setOffline(true)
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await expect(page.locator('[data-weekly-metric="muscleGroupsWorked"] strong')).toHaveText('1/18')
+  await expect(page.locator('[data-weekly-performance]')).toContainText('Movimento offline sintético')
+  await expect(page.locator('[data-weekly-performance]')).toContainText('Recorde pessoal registrado')
+  await context.setOffline(false)
+  await expect(page.locator('[data-weekly-metric="workouts"] strong')).toHaveText('2')
+})
+
 const upgradeWorkerFile=new URL('../dist/sw-upgrade-test.js',import.meta.url)
 test.afterEach(async()=>{await unlink(upgradeWorkerFile).catch(()=>{})})
 

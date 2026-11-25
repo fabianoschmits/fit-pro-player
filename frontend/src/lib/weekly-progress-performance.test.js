@@ -3,7 +3,7 @@ import { buildWeeklyPerformance } from './weekly-progress-performance.js'
 import { fromDisplayMass } from './mass.js'
 const now = new Date('2026-11-18T15:00:00Z')
 const w = (id, d, weight, reps = 10, target = {}, exercise = '0025', extra = {}) => ({ id, d, entries: [{ id: exercise, target, sets: [{ done: true, w: weight, r: reps }] }], ...extra })
-const build = (workouts, extra = {}) => buildWeeklyPerformance({ workouts, weekStart: '2026-11-16', now, timeZone: 'America/Sao_Paulo', ...extra })
+const build = (workouts, extra = {}) => buildWeeklyPerformance({ workouts, weekStart: '2026-11-16', now, timeZone: 'America/Sao_Paulo', historyComplete: true, ...extra })
 describe('weekly comparable performance', () => {
   it('describes a higher recorded load without claiming strength gains', () => {
     const result = build([w('old', '2026-11-09', 50), w('new', '2026-11-16', 55, 5)])

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildWeeklyInsights } from './weekly-progress-insights.js'
-const summary = (extra = {}) => ({ period: { isCurrentWeek: true }, metrics: { workouts: 2, durationSeconds: null }, previousMetrics: { workouts: 1 },
+const summary = (extra = {}) => ({ historyComplete: true, canComparePeriods: true, period: { isCurrentWeek: true }, metrics: { workouts: 2, durationSeconds: null }, previousMetrics: { workouts: 1 },
   performance: { personalRecords: [], improvements: [] }, muscles: { ranking: [] }, planning: { flexWorkouts: 0 },
   coverage: { legacyWorkouts: 0, unknownDurationWorkouts: 0, unknownMuscleSets: 0 }, ...extra })
 describe('deterministic weekly insights', () => {
